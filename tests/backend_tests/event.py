@@ -2959,7 +2959,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
         # Test logging
-        log_expectation = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'change_note': 'Geheime Etage',
                 'code': const.EventLogCodes.lodgement_group_created,
