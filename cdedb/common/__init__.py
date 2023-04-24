@@ -986,16 +986,15 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.IntEnum):
+class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
-    Account0 = 8068900
-    Account1 = 8068901
-    Account2 = 8068902
+    Account0 = "DE26370205000008068900"
+    Account1 = "DE96370205000008068901"
     # Fallback if Account is none of the above
-    Unknown = 0
+    Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return str(self.value)
+        return self.value[-7:]
 
 
 @enum.unique
