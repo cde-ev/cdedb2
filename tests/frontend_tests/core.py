@@ -122,8 +122,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
-        core_admin = {"Nutzer verwalten", "Alle Nutzer verwalten", "Änderungen prüfen",
-                      "Metadaten"}
+        core_admin = {"Nutzer verwalten", "Änderungen prüfen", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
 
@@ -679,7 +678,7 @@ class TestCoreFrontend(FrontendTest):
         f['phrase'] = "ad"
         f['include_archived'].checked = True
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("Allgemeine Nutzerverwaltung")
         self.assertPresence("Anton Armin A.", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
         self.assertPresence("Charly C.", div='query-result')
@@ -1136,8 +1135,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Farin", div='query-result')
         self.assertPresence("Findus", div='query-result')
         self.assertPresence("Generalis", div='query-result')
-        self.assertPresence("Inga", div='query-result')
         self.assertPresence("Katarina", div='query-result')
+        self.assertPresence("Ludwig", div='query-result')
         self.assertPresence("Meister", div='query-result')
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
@@ -1493,9 +1492,11 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse("Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.traverse("Nutzer verwalten")
+        self.assertTitle("Allgemeine Nutzerverwaltung")
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = QueryOperators.equal.value
+        f['qval_is_archived'] = True
         self.submit(f)
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertNonPresence("Anton", div='query-result')
@@ -1506,7 +1507,7 @@ class TestCoreFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [25]", div='query-results')
+        self.assertPresence("Ergebnis [26]", div='query-results')
         self.assertPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value
@@ -1515,7 +1516,7 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("Allgemeine Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Hell", div='query-result')
 
@@ -1761,7 +1762,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ferdinand F. Findus", div="event")
         self.assertPresence("Bertålotta Beispiel", div="event")
         self.assertPresence("Nina Neubauer", div="ml")
-        self.assertPresence("Inga Iota", div="cdelokal")
+        self.assertPresence("Ludwig Lokus", div="cdelokal")
         self.assertPresence("Anton Armin A. Administrator", div="assembly")
         self.assertPresence("Ferdinand F. Findus", div="assembly")
         self.assertPresence("Bertålotta Beispiel", div="assembly")

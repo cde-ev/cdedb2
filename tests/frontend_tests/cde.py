@@ -147,8 +147,8 @@ class TestCdEFrontend(FrontendTest):
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten", "Semesterverwaltung",
-                     "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
+                     "Semesterverwaltung"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen"}
@@ -929,17 +929,18 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
-        self.assertNonPresence("Massenaufnahme")
+        self.traverse({'href': '/cde/$'}, "Nutzer verwalten")
+        self.assertTitle("CdE-Nutzerverwaltung")
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = QueryOperators.equal.value
+        f['qval_is_archived'] = True
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("CdE-Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
@@ -948,7 +949,7 @@ class TestCdEFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
@@ -2048,7 +2049,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("562,55 € Guthaben von 10 Exmitgliedern", div="3-1003")
+        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 
@@ -2834,7 +2835,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–32 von 32]")
+        self.assertTitle("Nutzerdaten-Log [1–33 von 33]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
@@ -2847,7 +2848,8 @@ class TestCdEFrontend(FrontendTest):
         personas_without_address = {
             USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
             USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
-            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"]
+            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"],
+            USER_DICT["ludwig"]["id"],
         }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations

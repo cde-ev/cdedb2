@@ -22,6 +22,7 @@ from typing import (
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
+from passlib.hash import sha512_crypt
 
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
@@ -664,6 +665,18 @@ def inspect_validation(
     """
     return validate.validate_check(
         type_, value, ignore_warnings=ignore_warnings, **kwargs)
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    """Central function, so that the actual implementation may be easily
+    changed.
+    """
+    return sha512_crypt.verify(password, password_hash)
+
+
+def encrypt_password(password: str) -> str:
+    """We currently use passlib for password protection."""
+    return sha512_crypt.hash(password)
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
