@@ -20,14 +20,13 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, overload,
 )
 
-from passlib.hash import sha512_crypt
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    inspect_validation as inspect, internal, singularize,
+    encrypt_password, inspect_validation as inspect, internal, singularize,
+    verify_password,
 )
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
@@ -143,17 +142,8 @@ class CoreBaseBackend(AbstractBackend):
             return False
         return self.verify_password(password, password_hash)
 
-    @staticmethod
-    def verify_password(password: str, password_hash: str) -> bool:
-        """Central function, so that the actual implementation may be easily
-        changed.
-        """
-        return sha512_crypt.verify(password, password_hash)
-
-    @staticmethod
-    def encrypt_password(password: str) -> str:
-        """We currently use passlib for password protection."""
-        return sha512_crypt.hash(password)
+    verify_password = staticmethod(verify_password)
+    encrypt_password = staticmethod(encrypt_password)
 
     @staticmethod
     def create_fulltext(persona: CdEDBObject) -> str:
