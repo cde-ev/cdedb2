@@ -517,6 +517,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
+            'n_': n_,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
