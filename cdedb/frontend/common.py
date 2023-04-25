@@ -1130,8 +1130,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         This takes care of validating the filter input and retrieving log entries via
         the passed backend method.
         """
-        # Take care not to overwrite existing parameters (which come in via URL).
-
         data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
         if rs.has_validation_errors() or data is None:
             # If validation fails, there is no good way to get a partial filter
@@ -1929,8 +1927,6 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
       but the only two allowed argument types are ``str`` and
       ``[str]``. Additionally the argument type may be omitted and a default
       of ``str`` is assumed.
-    :param skip_existing: If True, do not extract parameters alread in `rs.values`,
-        use the existing parameter instead.
     """
     spec = []
     for arg in proto_spec:
@@ -1946,17 +1942,11 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
-                    if name in rs.values and skip_existing:
-                        data[name] = rs.values[name]
-                    else:
-                        data[name] = rs.request.values.get(name, "")
-                        rs.values[name] = data[name]
+                    data[name] = rs.request.values.get(name, "")
+                    rs.values[name] = data[name]
                 elif argtype == "[str]":
-                    if name in rs.values and skip_existing:
-                        data[name] = tuple(rs.values.getlist(name))
-                    else:
-                        data[name] = tuple(rs.request.values.getlist(name))
-                        rs.values.setlist(name, data[name])
+                    data[name] = tuple(rs.request.values.getlist(name))
+                    rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
@@ -2009,7 +1999,6 @@ def request_extractor(
 
 def request_dict_extractor(
         rs: RequestState, args: Collection[Union[str, Tuple[str, str]]],
-        skip_existing: bool = False,
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -2019,7 +2008,7 @@ def request_dict_extractor(
     :returns: dict containing the requested values
     """
 
-    @REQUESTdatadict(*args, skip_existing=skip_existing)
+    @REQUESTdatadict(*args)
     def fun(_: None, rs: RequestState, data: CdEDBObject) -> CdEDBObject:
         return data
 
