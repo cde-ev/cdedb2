@@ -1592,7 +1592,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertFalse(f['trial_member'].checked)
         f['change_note'] = 'nop'
         # Test 'Nothing changed!' info
-        self.submit(f)
+        self.submit(f, check_notification=False)
         self.assertPresence("Keine Änderungen", div="notifications")
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
         # Test missing change note entry warning
@@ -1713,7 +1713,7 @@ class TestCoreFrontend(FrontendTest):
             self.traverse({'description': 'Ganondorf'},
                           {'description': 'Änderungen bearbeiten'})
             self.assertTitle("Bertå Ganondorf bearbeiten")
-            self.assertPresence("Profil speichern")
+            self.assertPresence("Speichern (inklusive zu prüfender Änderungen)")
             f = self.response.forms['changedataform']
             f['family_name'] = family_name
             self.submit(f)
