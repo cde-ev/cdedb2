@@ -913,8 +913,8 @@ CREATE TABLE event.orga_apitokens (
         id                      serial PRIMARY KEY,
         -- Event which this token grants access to.
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- The api tokens consists of two parts. One identifying the token, one secret for authentication. Secret may be null for deauthorized tokens.
-        identifier              varchar NOT NULL UNIQUE,
+        -- The api tokens consists of two parts. The id and a secret that will be compared to the stored hash.
+        -- A hash of NULL indicates that the token has been invalidated.
         secret_hash             varchar,
         -- Creation, expiration and last access time of the token.
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -925,7 +925,7 @@ CREATE TABLE event.orga_apitokens (
         notes                   varchar
 );
 CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
-GRANT SELECT (id, event_id, identifier, secret_hash, expiration, title) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT (id, event_id, secret_hash, expiration, title) ON event.orga_apitokens TO cdb_anonymous;
 GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
 GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
 GRANT UPDATE (secret_hash, expiration, title, notes) ON event.orga_apitokens TO cdb_persona;

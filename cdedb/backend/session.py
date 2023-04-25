@@ -144,7 +144,7 @@ class SessionBackend:
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
         """
         apitoken, errs = inspect(vtypes.PrintableASCII, apitoken)
-        if errs:
+        if not apitoken or errs:
             return User()
 
         ret = None
@@ -168,7 +168,7 @@ class SessionBackend:
 
         return ret
 
-    def _lookup_droid_token(self, apitoken: str) -> Optional[User]:
+    def _lookup_droid_token(self, apitoken: vtypes.PrintableASCII) -> Optional[User]:
         # Try finding apitoken in secrets config.
         droid_identity = self.api_token_lookup(apitoken)
         if droid_identity:
@@ -177,38 +177,39 @@ class SessionBackend:
         # Otherwise return None.
         return None
 
-    def _lookup_orga_token(self, apitoken: str) -> Optional[User]:
+    def _lookup_orga_token(self, apitoken: vtypes.PrintableASCII) -> Optional[User]:
         parsed_token, errs = inspect(vtypes.OrgaToken, apitoken)
 
         # Wrong format. Probably not meant to be an orga token.
         if errs or not parsed_token:
+            self.logger.debug(f"Wrong format for orgatoken.")
             return None
 
-        identifier, secret = parsed_token
+        id_, secret = parsed_token
 
-        formatter = lambda d: f"{d['title']!r}({d['id']}) for event ({d['event_id']})"
+        formatter = lambda d: f"{d['title']!r} ({d['id']}) for event ({d['event_id']})"
 
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
                 query = """
                     SELECT id, event_id, title, expiration, secret_hash
-                    FROM event.orga_apitokens WHERE identifier = %s
+                    FROM event.orga_apitokens WHERE id = %s
                 """
-                cur.execute(query, (identifier,))
+                cur.execute(query, (id_,))
                 data = cur.fetchone()
 
                 # Not a valid orga token. Probably garbage input or deleted token.
                 if not data:
                     self.logger.warning(
-                        f"Access using unknown orgatoken identifier: {identifier!r}.")
-                    return None
+                        f"Access using unknown orgatoken id: {id_!r}.")
+                    raise PrivilegeError(n_("Unknown orga api token."))
 
                 # Log latest access time.
                 query = """
                     UPDATE event.orga_apitokens SET atime = now()
                     WHERE id = %s
                 """
-                cur.execute(query, (data['id'],))
+                cur.execute(query, (id_,))
 
         if data['secret_hash'] is None:
             self.logger.warning(f"Access using inactive orgatoken {formatter(data)}.")
@@ -222,7 +223,7 @@ class SessionBackend:
             raise PrivilegeError(n_("This orga api token has expired."))
 
         return User(
-            droid_id=data['id'],
+            droid_id=id_,
             orga={data['event_id']},
             roles=droid_roles("orga"),
         )

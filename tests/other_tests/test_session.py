@@ -5,7 +5,7 @@ import datetime
 import secrets
 from typing import List, NamedTuple, Optional, Sequence, cast
 
-from cdedb.common import RequestState, User, now
+from cdedb.common import PrivilegeError, RequestState, User, now
 from tests.common import (
     USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
     get_user,
@@ -54,20 +54,32 @@ class TestSessionBackend(BackendTest):
 
         # "resolve" droid api token.
         user = self.session.lookuptoken(
-            self.secrets['API_TOKENS']['resolve'], "127.0.0.0")
+            self.secrets['API_TOKENS']['resolve'], "127.0.0.1")
         self.assertIsNone(user.persona_id)
         self.assertEqual(
             {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
 
         # event specific orga droid.
-        user = self.session.lookuptoken(
-            "CdEDB-Orga-e3f6ed57b975e9b53e14d4129e540759b2a23ab372fb2ad6bf3d8f41ee54ad99",  # pylint: disable=line-too-long
-            "127.0.0.1")
+        orgatoken = "CdEDB-Orga/1/0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210/"  # pylint: disable=line-too-long
+
+        user = self.session.lookuptoken(orgatoken, "127.0.0.2")
         self.assertIsNone(user.persona_id)
         self.assertEqual(1, user.droid_id)
         self.assertIn(1, user.orga)
         self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
 
+        # Expire token and try again.
+        execsql("UPDATE event.orga_apitokens SET expiration = now()")
+        with self.assertRaisesRegex(PrivilegeError, "This orga api token has expired."):
+            user = self.session.lookuptoken(orgatoken, "127.0.0.3")
+
+        with self.assertRaisesRegex(PrivilegeError, "Invalid orga api token."):
+            user = self.session.lookuptoken(orgatoken.replace("10", "01"), "127.0.0.4")
+
+        execsql("UPDATE event.orga_apitokens SET expiration = NULL, secret_hash = NULL")
+        with self.assertRaisesRegex(
+                PrivilegeError, "This orga api token has been deactivated"):
+            user = self.session.lookuptoken(orgatoken, "127.0.0.5")
 
     def test_ip_mismatch(self) -> None:
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")
