@@ -661,22 +661,26 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
 
 
 @dataclass
-class GeneralOptInMailinglist(GeneralMailinglist):
-    role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.subscribable)
-    ])
+class GeneralMeta(GeneralMailinglist):
     relevant_admins = {"core_admin"}
 
 
 @dataclass
-class GeneralModeratedOptInMailinglist(GeneralMailinglist):
+class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
+    role_map = OrderedDict([
+        ("ml", SubscriptionPolicy.subscribable)
+    ])
+
+
+@dataclass
+class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
 @dataclass
-class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
+class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.invitation_only)
     ])
