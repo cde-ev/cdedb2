@@ -1523,6 +1523,9 @@ class FrontendTest(BackendTest):
         elif realm == "finance":
             self.get("/cde/finances")
             entities = {}
+        elif realm == "changelog":
+            self.get("/core/changelog/view")
+            entities = {}
         else:
             self.get(f"/{realm}/log")
             entities = {}
