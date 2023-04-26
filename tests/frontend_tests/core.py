@@ -12,6 +12,7 @@ from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
 )
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
@@ -1727,7 +1728,8 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Bertå Beispiel")
 
         with self.switch_user("paul"):
-            total_entries = self.core.retrieve_changelog_meta(self.key, {})[0]
+            total_entries = self.core.retrieve_changelog_meta(
+                self.key, ChangelogLogFilter())[0]
 
         _berta_change_profile()
         _quintus_displace_change("Beispiel")
@@ -1799,7 +1801,6 @@ class TestCoreFrontend(FrontendTest):
 
             # Set offset to avoid selecting the Init. changelog entries
             self.assertLogEqual(changelog_expectation, realm='changelog',
-                                log_retriever=self.core.retrieve_changelog_meta,
                                 offset=total_entries)
 
     @as_users("vera")

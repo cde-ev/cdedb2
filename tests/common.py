@@ -24,6 +24,7 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import (
@@ -55,6 +56,10 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import (
+    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
+    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
+)
 from cdedb.common.roles import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
 )
@@ -464,22 +469,21 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None,
-                       log_retriever: Callable[..., CdEDBLog] = None,
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        if realm and not log_retriever:
-            log_retriever = getattr(self, realm).retrieve_log
-        if log_retriever:
-            new_kwargs = dict(kwargs)
-            for k in ('assembly_id', 'event_id', 'mailinglist_id'):
-                if k in kwargs:
-                    new_kwargs['entity_ids'] = [kwargs[k]]
-                    del new_kwargs[k]
-            _, log = log_retriever(self.key, new_kwargs)
-        else:
-            raise ValueError("No method of log retrieval provided.")
+        logs: dict[str, tuple[Callable[..., CdEDBLog], Type[GenericLogFilter]]] = {
+            'core': (self.core.retrieve_log, CoreLogFilter),
+            'changelog': (self.core.retrieve_changelog_meta, ChangelogLogFilter),
+            'cde': (self.cde.retrieve_cde_log, CdELogFilter),
+            'finance': (self.cde.retrieve_finance_log, FinanceLogFilter),
+            'assembly': (self.assembly.retrieve_log, AssemblyLogFilter),
+            'event': (self.event.retrieve_log, EventLogFilter),
+            'ml': (self.ml.retrieve_log, MlLogFilter),
+            'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+        }
+        log_retriever, log_filter_class = logs[realm]
+        _, log = log_retriever(self.key, log_filter_class(**kwargs))
 
         for real, exp in zip(log, log_expectation):
             if 'id' not in exp:
@@ -1484,11 +1488,9 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None, **kwargs: Any) -> None:
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+                       **kwargs: Any) -> None:
         saved_response = self.response
-        if not realm:
-            raise RuntimeError("Need to specify realm.")
 
         # Check raw log.
         super().assertLogEqual(log_expectation, realm=realm, **kwargs)

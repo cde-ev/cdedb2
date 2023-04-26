@@ -23,7 +23,7 @@ from typing import (
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
+    AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
     encrypt_password, inspect_validation as inspect, internal, singularize,
     verify_password,
@@ -41,7 +41,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogFilterChangelogLike, LogFilterLike
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -244,24 +244,25 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "core.log")
+        log_filter = affirm_dataclass(CoreLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState,
-                                log_filter: LogFilterChangelogLike) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: ChangelogLogFilter
+                                ) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "core.changelog")
+        log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
