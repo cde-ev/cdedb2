@@ -99,6 +99,8 @@ class Mailinglist(CdEDataclass):
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
 
+    database_table = "ml.mailinglists"
+
     def __post_init__(self) -> None:
         if self.__class__ not in ML_TYPE_MAP_INV:
             raise TypeError("Cannot instantiate abstract class.")

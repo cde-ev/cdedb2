@@ -10,17 +10,20 @@ special in here.
 """
 
 import logging
-from typing import Optional
+from typing import Match, Optional, Type
 
 import psycopg2.extensions
+from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import inspect_validation as inspect, verify_password
-from cdedb.common import PrivilegeError, User, n_, now, setup_logger
+from cdedb.common import User, n_, now, setup_logger
+from cdedb.common.exceptions import APITokenError
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import droid_roles, extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
+from cdedb.models.droid import DYNAMIC_DROIDS, STATIC_DROIDS, DynamicAPIToken
 
 
 class SessionBackend:
@@ -37,8 +40,8 @@ class SessionBackend:
         secrets = SecretsConfig()
 
         # local variable also to prevent closure over secrets
-        lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
-        self.api_token_lookup = lookup.get
+        self._validate_static_droid_secret = lambda droid, secret: consteq(
+            secrets['API_TOKENS'][droid], secret)
 
         setup_logger(
             "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
@@ -142,88 +145,109 @@ class SessionBackend:
 
         Resolve an API token (originally submitted via header) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
+
+        A malformed token is ignored, but a valid token for an unknown droid or
+        with an invalid secret will raise an error.
         """
-        apitoken, errs = inspect(vtypes.PrintableASCII, apitoken)
+        apitoken, errs = inspect(vtypes.APITokenString, apitoken)
         if not apitoken or errs:
+            # Exit gracefully for misformed token.
             return User()
 
-        ret = None
+        droid_name, secret = apitoken
 
-        for auth in {
-            self._lookup_droid_token,
-            self._lookup_orga_token,
-        }:
-            ret = auth(apitoken)
-            if ret is not None:
-                break
-
-        # Log invalid token access for fail2ban.
-        if ret is None:
-            self.logger.warning(f"CdEDB invalid API token from {ip}")
-            ret = User()
+        try:
+            if static_droid := STATIC_DROIDS.get(droid_name):
+                if self._validate_static_droid_secret(static_droid.identity, secret):
+                    ret = User(
+                        droid_identity=static_droid.identity,
+                        roles=droid_roles(static_droid.identity)
+                    )
+                else:
+                    raise APITokenError(n_("Invalid API token."))
+            else:
+                for droid_name_pattern, dynamic_droid in DYNAMIC_DROIDS.items():
+                    if m := droid_name_pattern.fullmatch(droid_name):
+                        ret = self._validate_dynamic_droid_secret(
+                            dynamic_droid, m, secret)
+                        break
+                else:
+                    # Droid name did not match any known droid.
+                    self.logger.warning(
+                        f"API token did not match any known droid: {droid_name!r}.")
+                    raise APITokenError(n_("Unknown droid name."))
+        except APITokenError:
+            self.logger.exception(f"Received invalid API token from {ip}.")
+            raise
 
         # Prevent non-infrastructure droids from access during lockdown.
-        elif self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
+        if self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
             ret = User()
 
         return ret
 
-    def _lookup_droid_token(self, apitoken: vtypes.PrintableASCII) -> Optional[User]:
-        # Try finding apitoken in secrets config.
-        droid_identity = self.api_token_lookup(apitoken)
-        if droid_identity:
-            return User(roles=droid_roles(droid_identity))
+    def _validate_dynamic_droid_secret(self, droid: Type[DynamicAPIToken],
+                                       droid_name_match: Match[str],
+                                       secret: str) -> User:
 
-        # Otherwise return None.
-        return None
-
-    def _lookup_orga_token(self, apitoken: vtypes.PrintableASCII) -> Optional[User]:
-        parsed_token, errs = inspect(vtypes.OrgaToken, apitoken)
-
-        # Wrong format. Probably not meant to be an orga token.
-        if errs or not parsed_token:
-            self.logger.debug(f"Wrong format for orgatoken.")
-            return None
-
-        id_, secret = parsed_token
-
-        formatter = lambda d: f"{d['title']!r} ({d['id']}) for event ({d['event_id']})"
+        token_id, errs = inspect(vtypes.ID, droid_name_match.group(1))
+        if errs or not token_id:
+            raise APITokenError(
+                n_("Invalid %(droid_identity)s droid name."),
+                {'droid_identity': droid.identity}
+            )
 
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
-                query = """
-                    SELECT id, event_id, title, expiration, secret_hash
-                    FROM event.orga_apitokens WHERE id = %s
-                """
-                cur.execute(query, (id_,))
-                data = cur.fetchone()
-
-                # Not a valid orga token. Probably garbage input or deleted token.
-                if not data:
-                    self.logger.warning(
-                        f"Access using unknown orgatoken id: {id_!r}.")
-                    raise PrivilegeError(n_("Unknown orga api token."))
-
-                # Log latest access time.
-                query = """
-                    UPDATE event.orga_apitokens SET atime = now()
+                query = f"""
+                    SELECT
+                        {','.join(droid.database_fields())}, secret_hash
+                    FROM {droid.database_table}
                     WHERE id = %s
                 """
-                cur.execute(query, (id_,))
+                cur.execute(query, (token_id,))
+                data = cur.fetchone()
 
-        if data['secret_hash'] is None:
-            self.logger.warning(f"Access using inactive orgatoken {formatter(data)}.")
-            raise PrivilegeError(n_("This orga api token has been deactivated."))
-        if not verify_password(secret, data['secret_hash']):
+                # Not a valid token id. Probably garbage input or deleted token.
+                if not data:
+                    self.logger.warning(
+                        f"Access using unknown {droid.identity} token id: {token_id}.")
+                    raise APITokenError(
+                        n_(f"Unknown %(droid_identity)s token."),
+                        {'droid_identity': droid.identity}
+                    )
+
+                data = dict(data)
+                secret_hash = data.pop('secret_hash')
+                token = droid(**data)
+
+                # Log latest access time.
+                query = f"""
+                    UPDATE {droid.database_table}
+                    SET atime = now()
+                    WHERE id = %s
+                """
+                cur.execute(query, (token_id,))
+
+        if secret_hash is None:
             self.logger.warning(
-                f"Invalid secret for orga token {formatter(data)}.")
-            raise PrivilegeError(n_("Invalid orga api token."))
+                f"Access using inactive {droid.identity} token {token}.")
+            raise APITokenError(
+                n_("This %(droid_identity)s token has been revoked."),
+                {'droid_identity': droid.identity}
+            )
+        if not verify_password(secret, secret_hash):
+            self.logger.warning(
+                f"Invalid secret for {droid.identity} token {token}.")
+            raise APITokenError(
+                n_("Invalid %(droid_identity)s token."),
+                {'droid_identity': droid.identity}
+            )
         if data['expiration'] and now() > data['expiration']:
-            self.logger.warning(f"Access using expired orgatoken {formatter(data)}")
-            raise PrivilegeError(n_("This orga api token has expired."))
+            self.logger.warning(f"Access using expired {droid.identity} token {token}")
+            raise APITokenError(
+                n_("This %(droid_identity)s token has expired."),
+                {'droid_identity': droid.identity}
+            )
 
-        return User(
-            droid_id=id_,
-            orga={data['event_id']},
-            roles=droid_roles("orga"),
-        )
+        return token.get_user()

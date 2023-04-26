@@ -83,6 +83,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.droid as models_droid
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -186,7 +187,8 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
-    models_ml.Mailinglist: Mailinglist
+    models_ml.Mailinglist: Mailinglist,
+    models_droid.OrgaToken: OrgaToken,
 }
 
 
@@ -1152,20 +1154,35 @@ def _password_strength(
     return PasswordStrength(val)
 
 
-OrgaTokenPattern = re.compile(r'CdEDB-Orga/(\d+)/([0-9a-fA-F]{64})/')
+@_add_typed_validator
+def _api_token_string(
+        val: Any, argname: str = "api_token_string", **kwargs: Any
+) -> APITokenString:
+    """Check if a string has the correct format to be a valid api token.
+
+    Split the token into the droid name and the secret.
+    """
+    val = _printable_ascii(val, argname, **kwargs)
+    if m := models_droid.APIToken.apitoken_pattern.fullmatch(val):
+        droid_name = m.group(1)
+        secret = m.group(2)
+        return APITokenString((droid_name, secret))
+    raise ValidationSummary(ValueError(
+        argname, n_("Wrong format for api token.")))
 
 
 @_add_typed_validator
 def _orga_token(
-        val: Any, argname: str = "orga_token", **kwargs: Any
+        val: Any, argname: str = "orga_token", *, creation: bool = False,
+        **kwargs: Any
 ) -> OrgaToken:
-    val = _printable_ascii(val, argname, **kwargs)
-    if m := OrgaTokenPattern.fullmatch(val):
-        id_ = _id(m.group(1))
-        secret = PrintableASCII(m.group(2))
-        return OrgaToken((id_, secret))
-    raise ValidationSummary(ValueError(
-        argname, n_("Wrong format for orga token.")))
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
+    val = _examine_dictionary_fields(
+        val, mandatory, optional, argname=argname, **kwargs)
+
+    return OrgaToken(val)
 
 
 @_add_typed_validator

@@ -925,7 +925,7 @@ CREATE TABLE event.orga_apitokens (
         notes                   varchar
 );
 CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
-GRANT SELECT (id, event_id, secret_hash, expiration, title) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT ON event.orga_apitokens TO cdb_anonymous;
 GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
 GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
 GRANT UPDATE (secret_hash, expiration, title, notes) ON event.orga_apitokens TO cdb_persona;

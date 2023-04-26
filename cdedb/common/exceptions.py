@@ -28,6 +28,13 @@ class PrivilegeError(RuntimeError):
         super().__init__(msg, *args)
 
 
+class APITokenError(PrivilegeError):
+    """
+    Special type of privilege error only raised by trying to access an API with an
+    invalid or unknown key.
+    """
+
+
 class ArchiveError(RuntimeError):
     """
     Exception for signalling an exact error when archiving a persona

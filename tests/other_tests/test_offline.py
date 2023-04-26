@@ -7,6 +7,7 @@ import tempfile
 
 import webtest
 
+import cdedb.models.droid as model_droid
 from cdedb.cli.database import connect
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
 from cdedb.config import SecretsConfig, get_configpath, set_configpath
@@ -95,7 +96,11 @@ class TestOffline(FrontendTest):
             self.logout()
             self.get(
                 '/event/offline/partial',
-                headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
+                headers={
+                    'X-CdEDB-API-token':
+                        model_droid.QuickPartialExportToken.format_apitoken(
+                            self.secrets['API_TOKENS']['quick_partial_export']),
+                })
             self.assertEqual(self.response.json["message"], "success")
             expectation = {
                 'EVENT_SCHEMA_VERSION',

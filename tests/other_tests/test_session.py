@@ -5,7 +5,9 @@ import datetime
 import secrets
 from typing import List, NamedTuple, Optional, Sequence, cast
 
-from cdedb.common import PrivilegeError, RequestState, User, now
+import cdedb.models.droid as model_droid
+from cdedb.common import RequestState, User, now
+from cdedb.common.exceptions import APITokenError
 from tests.common import (
     USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
     get_user,
@@ -47,39 +49,76 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
     def test_tokenlookup(self) -> None:
+        # pylint: disable=protected-access
         # Invalid apitoken.
         user = self.session.lookuptoken("random token", "127.0.0.0")
         self.assertIsNone(user.persona_id)
+        self.assertIsNone(user.droid_identity)
+        self.assertIsNone(user.droid_token_id)
         self.assertEqual({"anonymous"}, user.roles)
 
         # "resolve" droid api token.
-        user = self.session.lookuptoken(
-            self.secrets['API_TOKENS']['resolve'], "127.0.0.1")
+        resolve_secret = self.secrets['API_TOKENS']['resolve']
+        resolve_token = model_droid.ResolveToken.format_apitoken(resolve_secret)
+
+        user = self.session.lookuptoken(resolve_token, "127.0.1.0")
         self.assertIsNone(user.persona_id)
+        self.assertIsNone(user.droid_token_id)
+        self.assertEqual("resolve", user.droid_identity)
         self.assertEqual(
             {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
 
-        # event specific orga droid.
-        orgatoken = "CdEDB-Orga/1/0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210/"  # pylint: disable=line-too-long
+        # "resolve" droid api token with invalid secret.
+        invalid_resolve_token = model_droid.ResolveToken.format_apitoken("abc")
 
-        user = self.session.lookuptoken(orgatoken, "127.0.0.2")
+        with self.assertRaisesRegex(APITokenError, "Invalid API token."):
+            self.session.lookuptoken(invalid_resolve_token, "127.0.1.1")
+
+        # "quick_partial_export" droid.
+        qpe_secret = self.secrets['API_TOKENS']['quick_partial_export']
+        qpe_token = model_droid.QuickPartialExportToken.format_apitoken(qpe_secret)
+
+        user = self.session.lookuptoken(qpe_token, "127.0.1.2")
         self.assertIsNone(user.persona_id)
-        self.assertEqual(1, user.droid_id)
+        self.assertIsNone(user.droid_token_id)
+        self.assertEqual("quick_partial_export", user.droid_identity)
+        self.assertEqual(
+            {"anonymous", "droid", "droid_quick_partial_export"}, user.roles)
+
+        # "quick_partial_export" with invalid secret.
+        invalid_qpe_token = model_droid.QuickPartialExportToken.format_apitoken("abc")
+
+        with self.assertRaisesRegex(APITokenError, "Invalid API token."):
+            self.session.lookuptoken(invalid_qpe_token, "127.0.1.3")
+
+        # event specific orga droid.
+        orga_token_secret = "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210"  # pylint: disable=line-too-long
+        orgatoken = model_droid.OrgaToken._format_apitoken(
+            model_droid.OrgaToken._droid_name(1), orga_token_secret)
+
+        user = self.session.lookuptoken(orgatoken, "127.0.2.0")
+        self.assertIsNone(user.persona_id)
+        self.assertEqual(model_droid.OrgaToken.identity, user.droid_identity)
+        self.assertEqual(1, user.droid_token_id)
         self.assertIn(1, user.orga)
         self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
 
+        # orga droid with invalid secret.
+        invalid_orgatoken = model_droid.OrgaToken._format_apitoken(
+            model_droid.OrgaToken._droid_name(1), "abc")
+        with self.assertRaisesRegex(APITokenError, "Invalid .+ token."):
+            self.session.lookuptoken(invalid_orgatoken, "127.0.2.1")
+
         # Expire token and try again.
         execsql("UPDATE event.orga_apitokens SET expiration = now()")
-        with self.assertRaisesRegex(PrivilegeError, "This orga api token has expired."):
-            user = self.session.lookuptoken(orgatoken, "127.0.0.3")
+        with self.assertRaisesRegex(APITokenError, r"This .+ token has expired."):
+            self.session.lookuptoken(orgatoken, "127.0.2.2")
 
-        with self.assertRaisesRegex(PrivilegeError, "Invalid orga api token."):
-            user = self.session.lookuptoken(orgatoken.replace("10", "01"), "127.0.0.4")
-
+        # Revoke token and try again.
         execsql("UPDATE event.orga_apitokens SET expiration = NULL, secret_hash = NULL")
         with self.assertRaisesRegex(
-                PrivilegeError, "This orga api token has been deactivated"):
-            user = self.session.lookuptoken(orgatoken, "127.0.0.5")
+                APITokenError, "This .+ token has been revoked."):
+            self.session.lookuptoken(orgatoken, "127.0.2.3")
 
     def test_ip_mismatch(self) -> None:
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")

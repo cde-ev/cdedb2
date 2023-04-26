@@ -8,6 +8,7 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
 )
@@ -2788,9 +2789,11 @@ class TestCoreFrontend(FrontendTest):
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
+        resolve_token = model_droid.ResolveToken.format_apitoken(
+            self.secrets['API_TOKENS']['resolve'])
         self.get(
             '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={'X-CdEDB-API-token': resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
@@ -2800,7 +2803,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=anton{}example.cde'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={'X-CdEDB-API-token': resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
@@ -2810,7 +2813,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=antonatexample.cde',
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={'X-CdEDB-API-token': resolve_token})
         self.assertEqual(self.response.json, {
             'error':  ["('username', ValueError('Must be a valid email address.'))"]
         })
