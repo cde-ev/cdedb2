@@ -1920,7 +1920,6 @@ def REQUESTdata(
 
 # noinspection PyPep8Naming
 def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
-                    skip_existing: bool = False,
                     ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
