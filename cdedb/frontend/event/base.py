@@ -216,30 +216,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'country': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices)
-
-    @access("core_admin", "event_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_event_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_event_users,
             self.eventproxy.submit_general_query, choices=choices)
 
     @access("event")

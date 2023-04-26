@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import keydictsort_filter, money_filter
+from cdedb.filter import date_filter, keydictsort_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -378,6 +378,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
+        # display the date for part choices
+        part_options = None
+        if len(event['parts']) > 1:
+            part_options = [
+                # narrow non-breaking space below, the string is purely user-facing
+                (part_id,
+                 f"{part['title']}"
+                 f" ({date_filter(part['part_begin'], lang=rs.lang)}\u202f–\u202f"
+                 f"{date_filter(part['part_end'], lang=rs.lang)})")
+                for part_id, part
+                in keydictsort_filter(event['parts'], EntitySorter.event_part)]
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
@@ -386,7 +397,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(rs, "registration/register", {
             'persona': persona, 'age': age, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
-            **course_choice_params,
+            'part_options': part_options, **course_choice_params,
         })
 
     @access("event")

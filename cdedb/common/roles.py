@@ -8,6 +8,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Set
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.config import LazyConfig
+
+_CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -68,11 +71,6 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
     return ret
 
 
-# The following droids are exempt from lockdown to keep our infrastructure
-# working
-INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
-
-
 def droid_roles(identity: str) -> Set[Role]:
     """Resolve droid identity to a complete set of roles.
 
@@ -82,7 +80,7 @@ def droid_roles(identity: str) -> Set[Role]:
     :param identity: The name for the API functionality, e.g. ``resolve``.
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
-    if identity in INFRASTRUCTURE_DROIDS:
+    if identity in _CONF["INFRASTRUCTURE_DROIDS"]:
         ret.add('droid_infra')
     return ret
 

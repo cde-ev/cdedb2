@@ -125,6 +125,10 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id'])) }}
+        {% if values['code'] == enums['MemberChangeStati'].pending %}
+            {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, user.persona_id)) }}
+        {% else %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+        {% endif %}
     </form>
 {% endblock %}

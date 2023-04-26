@@ -41,7 +41,7 @@
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
         {{ generic_event.select_all_course_choices(involved_tracks=involved_tracks) }}
 
-        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
+        {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
         <div class="panel panel-primary">

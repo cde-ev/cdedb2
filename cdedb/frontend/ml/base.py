@@ -124,21 +124,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.ml_user, QueryScope.ml_user,
-            self.mlproxy.submit_general_query)
-
-    @access("core_admin", "ml_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_ml_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_ml_users,
             self.mlproxy.submit_general_query)
 
     @access("ml")

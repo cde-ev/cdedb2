@@ -838,9 +838,6 @@ class CoreBaseFrontend(AbstractFrontend):
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
-            if include_archived:
-                return self.full_user_search(
-                    rs, is_search=True, download=None, query=query)
             return self.user_search(rs, is_search=True, download=None, query=query)
         else:
             rs.notify("warning", n_("No account found."))
@@ -1159,8 +1156,11 @@ class CoreBaseFrontend(AbstractFrontend):
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
         }
+        if query and query.scope == QueryScope.core_user:
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
+            query.scope = QueryScope.all_core_users
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
+            rs, download, is_search, QueryScope.all_core_users,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
@@ -1180,22 +1180,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
-
-    @access("core_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                         is_search: bool, query: Query = None) -> Response:
-        """Search all users, both archived and not archived."""
-        choices: Dict[str, Dict[Any, str]] = {
-            'gender': collections.OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext)),
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_core_users, QueryScope.all_core_users,
-            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:
@@ -1679,7 +1663,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         if (persona['balance'] == new_balance
                 and persona['trial_member'] == trial_member):
-            rs.notify("warning", n_("Nothing changed."))
+            rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
@@ -2081,7 +2065,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_changes(
@@ -2120,7 +2104,7 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
         history = self.coreproxy.changelog_get_history(rs, persona_id,
@@ -2137,7 +2121,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:

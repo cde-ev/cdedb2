@@ -14,7 +14,7 @@
 {% endblock %}
 {% block content %}
     {% if grouped_ballots.running %}
-        <h3>{% trans %}Current Ballots{% endtrans %}</h3>
+        {{ util.h(n_("Current Ballots")) }}
         <ul class="slim" id="running-ballots">
             {{ ballot_meta.details_list(config_grouped, grouped_ballots.running) }}
         </ul>
@@ -22,13 +22,13 @@
     {% endif %}
 
     {% if grouped_ballots.upcoming %}
-        <h3>{% trans %}Upcoming Ballots{% endtrans %}</h3>
+        {{ util.h(n_("Upcoming Ballots")) }}
         <ul class="slim" id="upcoming-ballots">
             {{ ballot_meta.details_list(config_grouped, grouped_ballots.upcoming) }}
         </ul>
     {% endif %}
 
-    <h3>{% trans %}Concluded Ballots{% endtrans %}</h3>
+    {{ util.h(n_("Concluded Ballots")) }}
     {% for ballot_id, ballot in grouped_ballots.concluded|keydictsort(EntitySorter.ballot) %}
         {% set title = util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
                                  ballot['title']) %}

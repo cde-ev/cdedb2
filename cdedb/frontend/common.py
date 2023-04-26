@@ -515,6 +515,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
+            'n_': n_,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
@@ -796,7 +797,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
-                            default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             choices: Mapping[str, Mapping[Any, str]] = None,
@@ -808,8 +808,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param scope: The query scope of the search.
-        :param default_scope: Use the default queries associated with this scope.
+        :param scope: The query scope of the search. Source for default queries.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
@@ -828,7 +827,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = DEFAULT_QUERIES[default_scope]
+        default_queries = DEFAULT_QUERIES[scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -852,7 +851,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
-                rs.values['qval_is_archived'] = True
+                rs.values['qval_is_archived'] = False
             rs.values['is_search'] = False
         return self.render(rs, scope.get_target(redirect=False), params)
 
@@ -1813,7 +1812,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1859,6 +1859,10 @@ def REQUESTdata(
                     else:
                         type_ = hints[name]
                         optional = False
+
+                    # Optionally skip items that are not given.
+                    if _omit_missing and name not in rs.request.values:
+                        continue
 
                     val = rs.request.values.get(name, "")
 
@@ -1963,7 +1967,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
         constraints: Collection[RequestConstraint] = None,
-        postpone_validation: bool = False) -> CdEDBObject:
+        postpone_validation: bool = False,
+        omit_missing: bool = False,
+) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1986,7 +1992,8 @@ def request_extractor(
     :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation,
+                 _omit_missing=omit_missing)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:

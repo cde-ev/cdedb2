@@ -76,7 +76,7 @@
        <div id="gallery-link">{{ ambience['pevent']['participant_info']|md }}</div>
     {% endif %}
     {% if courses or "past_event" in user.admin_views %}
-        <h2>{% trans %}Courses{% endtrans %}</h2>
+        {{ util.h(n_("Courses"), level=2) }}
     {% endif %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
@@ -95,7 +95,7 @@
         </ul>
     {% endif %}
 
-    <h2>{% trans %}Participants{% endtrans %}</h2>
+    {{ util.h(n_("Participants"), level=2) }}
     {% if "past_event" in user.admin_views %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">

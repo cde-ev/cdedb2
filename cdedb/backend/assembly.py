@@ -75,6 +75,15 @@ BallotConfiguration = NamedTuple(
 )
 
 
+@dataclasses.dataclass
+class AssembyAttendees:
+    all: CdEDBObjectMap
+    early: CdEDBObjectMap
+    late: CdEDBObjectMap
+    undetermined: CdEDBObjectMap
+    cutoff: datetime.datetime
+
+
 @dataclasses.dataclass(frozen=True)
 class ConfigurationGroupedBallots:
     ballots: Dict[BallotConfiguration, Set[int]]
@@ -502,6 +511,53 @@ class AssemblyBackend(AbstractBackend):
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
         return {e['persona_id'] for e in attendees}
+
+    @access("assembly")
+    def get_attendees(self, rs: RequestState, assembly_id: int,
+                      cutoff: datetime.datetime) -> AssembyAttendees:
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        cutoff = affirm(datetime.datetime, cutoff)
+
+        if not self.may_access(rs, assembly_id=assembly_id):
+            raise PrivilegeError()
+
+        all_attendees = {
+            e['persona_id'] for e in self.sql_select(
+                rs, "assembly.attendees", ("persona_id",), (assembly_id,),
+                entity_key="assembly_id")
+        }
+        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime < %s
+        """
+        early_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+        """
+        late_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
+            raise ValueError("Unexpected overlap in early and late attendees.")
+
+        return AssembyAttendees(
+            all=attendee_data, early=early_attendees, late=late_attendees,
+            undetermined={
+                persona_id: attendee_data[persona_id]
+                for persona_id in (all_attendees - early_attendees.keys()
+                                   - late_attendees.keys())
+            },
+            cutoff=cutoff
+        )
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,

@@ -594,7 +594,7 @@ span.result-separator, code.result-separator {
 }
 
 /* <details> are clickable, show a cursor */
-details {
+details summary {
     cursor: pointer;
 }
 
@@ -1089,7 +1089,7 @@ span.color-legend {
 }
 .heading-supplement {
     /* Subheading without to much space above */
-    margin-top: -10px;
+    margin-top: -9px;
 }
 .nowrap {
     white-space: nowrap;

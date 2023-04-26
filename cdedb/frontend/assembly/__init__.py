@@ -104,21 +104,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
-            self.assemblyproxy.submit_general_query)
-
-    @access("core_admin", "assembly_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_assembly_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_assembly_users,
             self.assemblyproxy.submit_general_query)
 
     @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
@@ -531,39 +517,37 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
 
-    def _get_list_attendees_data(self, rs: RequestState,
-                                 assembly_id: int) -> Dict[int, Dict[str, Any]]:
-        """This lists all attendees of an assembly.
-
-        This is un-inlined to provide a download file too."""
-        attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
-        attendees = collections.OrderedDict(
-            (e['id'], e) for e in xsorted(
-                self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
-                key=EntitySorter.persona))
-        return attendees
-
     @access("assembly")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> Response:
         """Provide a online list of who is/was present."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        attendees = self._get_list_attendees_data(rs, assembly_id)
+        attendees = self.assemblyproxy.get_attendees(rs, assembly_id, cutoff=now())
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        if ballots:
+            rs.values['cutoff'] = max(b['vote_begin'] for b in ballots.values())
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly")
     @assembly_guard
-    def download_list_attendees(self, rs: RequestState,
-                                assembly_id: int) -> Response:
+    @REQUESTdata("cutoff")
+    def download_list_attendees(self, rs: RequestState, assembly_id: int,
+                                cutoff: datetime.datetime) -> Response:
         """Provides a tex-snipped with all attendes of an assembly."""
-        attendees = self._get_list_attendees_data(rs, assembly_id)
-        if not attendees:
+        if rs.has_validation_errors() or not cutoff:
+            return self.list_attendees(rs, assembly_id)
+
+        attendees = self.assemblyproxy.get_attendees(rs, assembly_id, cutoff=cutoff)
+        if not attendees.all:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "assembly/list_attendees")
+
         tex = self.fill_template(
             rs, "tex", "list_attendees", {'attendees': attendees})
         return self.send_file(
-            rs, data=tex, inline=False, filename="Anwesenheitsliste-Export.tex")
+            rs, data=tex, inline=False,
+            filename=f"Anwesenheitsliste ({rs.ambience['assembly']['shortname']}).tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("ack_conclude")

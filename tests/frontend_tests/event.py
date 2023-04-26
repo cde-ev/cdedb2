@@ -89,14 +89,14 @@ class TestEventFrontend(FrontendTest):
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            out = admin | {"Nutzer verwalten"}
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten"}
             out = admin
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            ins = everyone | admin | {"Nutzer verwalten"}
             out = set()
         # auditors
         elif self.user_in('katarina'):
@@ -1543,6 +1543,7 @@ etc;anything else""", f['entries_2'].value)
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
+        self.assertPresence("Warmup (02.02.2222 – 02.02.2222)")
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['reg.mixed_lodging'] = 'True'
