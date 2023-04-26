@@ -271,20 +271,19 @@ class Application(BaseApp):
             # It will be made accessible for the backends by the make_proxy.
             rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
-            if "droid" not in user.roles:
+            # Retrieve entity related privileges for personas.
+            # The session backend takes care of this for droids.
+            if user.persona_id:
                 # Insert orga and moderator status context
                 orga: Set[int] = set()
                 if "event" in user.roles:
-                    assert user.persona_id is not None
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                 moderator: Set[int] = set()
                 if "ml" in user.roles:
-                    assert user.persona_id is not None
                     moderator = self.mlproxy.moderator_info(
                         rs, user.persona_id)
                 presider: Set[int] = set()
                 if "assembly" in user.roles:
-                    assert user.persona_id is not None
                     presider = self.assemblyproxy.presider_info(
                         rs, user.persona_id)
                 user.orga = orga
