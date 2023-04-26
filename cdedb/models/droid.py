@@ -22,7 +22,7 @@ class APIToken(abc.ABC):
 
     * `identity`: A unique string identifying the kind of droid the token belongs to.
         Must match `\\w+`, i.e. be alpha numeric, but may contain `_`.
-    * `droid_name`: The droid identity prefixed with the namspace of the droid.
+    * `droid_name`: The droid identity prefixed with the namespace of the droid.
         Simple droids (also called static droids) live in the `static` namespace,
         while complex droids (also called dynamic droids), i.e. those with instances
         that are saved to the database, each have their own namespace.
