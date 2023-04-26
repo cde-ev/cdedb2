@@ -53,7 +53,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.exceptions import APITokenError, PrivilegeError
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
@@ -177,12 +177,12 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, ip)
-        if user.roles == {'anonymous'}:
+        try:
+            user = sessionproxy.lookuptoken(key, ip)
+            apitoken = key
+        except APITokenError:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
-        else:
-            apitoken = key
 
         rs = RequestState(
             sessionkey=sessionkey,

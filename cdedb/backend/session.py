@@ -146,13 +146,12 @@ class SessionBackend:
         Resolve an API token (originally submitted via header) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
 
-        A malformed token is ignored, but a valid token for an unknown droid or
+        A malformed token or a valid token for an unknown droid or
         with an invalid secret will raise an error.
         """
         apitoken, errs = inspect(vtypes.APITokenString, apitoken)
         if not apitoken or errs:
-            # Exit gracefully for misformed token.
-            return User()
+            raise APITokenError(n_("Malformed API token."))
 
         droid_name, secret = apitoken
 

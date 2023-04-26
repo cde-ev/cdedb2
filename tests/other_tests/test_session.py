@@ -51,11 +51,8 @@ class TestSessionBackend(BackendTest):
     def test_tokenlookup(self) -> None:
         # pylint: disable=protected-access
         # Invalid apitoken.
-        user = self.session.lookuptoken("random token", "127.0.0.0")
-        self.assertIsNone(user.persona_id)
-        self.assertIsNone(user.droid_identity)
-        self.assertIsNone(user.droid_token_id)
-        self.assertEqual({"anonymous"}, user.roles)
+        with self.assertRaisesRegex(APITokenError, "Malformed API token."):
+            self.session.lookuptoken("random token", "127.0.0.0")
 
         # "resolve" droid api token.
         resolve_secret = self.secrets['API_TOKENS']['resolve']
