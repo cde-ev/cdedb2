@@ -176,6 +176,7 @@ class SessionBackend:
                         f"API token did not match any known droid: {droid_name!r}.")
                     raise APITokenError(n_("Unknown droid name."))
         except APITokenError:
+            # log message to be picked up by fail2ban.
             self.logger.exception(f"Received invalid API token from {ip}.")
             raise
 
