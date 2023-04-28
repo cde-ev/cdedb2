@@ -56,53 +56,53 @@ class TestSessionBackend(BackendTest):
 
         # "resolve" droid api token.
         resolve_secret = self.secrets['API_TOKENS']['resolve']
-        resolve_token = model_droid.ResolveToken.format_apitoken(resolve_secret)
+        resolve_token = model_droid.ResolveToken.get_token_string(resolve_secret)
 
         user = self.session.lookuptoken(resolve_token, "127.0.1.0")
         self.assertIsNone(user.persona_id)
+        self.assertIs(model_droid.ResolveToken, user.droid_class)
         self.assertIsNone(user.droid_token_id)
-        self.assertEqual("resolve", user.droid_identity)
         self.assertEqual(
             {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
 
         # "resolve" droid api token with invalid secret.
-        invalid_resolve_token = model_droid.ResolveToken.format_apitoken("abc")
+        invalid_resolve_token = model_droid.ResolveToken.get_token_string("abc")
 
         with self.assertRaisesRegex(APITokenError, "Invalid API token."):
             self.session.lookuptoken(invalid_resolve_token, "127.0.1.1")
 
         # "quick_partial_export" droid.
         qpe_secret = self.secrets['API_TOKENS']['quick_partial_export']
-        qpe_token = model_droid.QuickPartialExportToken.format_apitoken(qpe_secret)
+        qpe_token = model_droid.QuickPartialExportToken.get_token_string(qpe_secret)
 
         user = self.session.lookuptoken(qpe_token, "127.0.1.2")
         self.assertIsNone(user.persona_id)
+        self.assertIs(model_droid.QuickPartialExportToken, user.droid_class)
         self.assertIsNone(user.droid_token_id)
-        self.assertEqual("quick_partial_export", user.droid_identity)
         self.assertEqual(
             {"anonymous", "droid", "droid_quick_partial_export"}, user.roles)
 
         # "quick_partial_export" with invalid secret.
-        invalid_qpe_token = model_droid.QuickPartialExportToken.format_apitoken("abc")
+        invalid_qpe_token = model_droid.QuickPartialExportToken.get_token_string("abc")
 
         with self.assertRaisesRegex(APITokenError, "Invalid API token."):
             self.session.lookuptoken(invalid_qpe_token, "127.0.1.3")
 
         # event specific orga droid.
         orga_token_secret = "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210"  # pylint: disable=line-too-long
-        orgatoken = model_droid.OrgaToken._format_apitoken(
-            model_droid.OrgaToken._droid_name(1), orga_token_secret)
+        orgatoken = model_droid.OrgaToken._get_token_string(
+            model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
 
         user = self.session.lookuptoken(orgatoken, "127.0.2.0")
         self.assertIsNone(user.persona_id)
-        self.assertEqual(model_droid.OrgaToken.identity, user.droid_identity)
+        self.assertIs(model_droid.OrgaToken, user.droid_class)
         self.assertEqual(1, user.droid_token_id)
         self.assertIn(1, user.orga)
         self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
 
         # orga droid with invalid secret.
-        invalid_orgatoken = model_droid.OrgaToken._format_apitoken(
-            model_droid.OrgaToken._droid_name(1), "abc")
+        invalid_orgatoken = model_droid.OrgaToken._get_token_string(
+            model_droid.OrgaToken._get_droid_name(1), "abc")
         with self.assertRaisesRegex(APITokenError, "Invalid .+ token."):
             self.session.lookuptoken(invalid_orgatoken, "127.0.2.1")
 

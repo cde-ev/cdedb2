@@ -10,7 +10,7 @@ special in here.
 """
 
 import logging
-from typing import Match, Optional, Type
+from typing import Optional, Type
 
 import psycopg2.extensions
 from passlib.utils import consteq
@@ -20,10 +20,10 @@ from cdedb.backend.common import inspect_validation as inspect, verify_password
 from cdedb.common import User, n_, now, setup_logger
 from cdedb.common.exceptions import APITokenError
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
-from cdedb.common.roles import droid_roles, extract_roles
+from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.models.droid import DYNAMIC_DROIDS, STATIC_DROIDS, DynamicAPIToken
+from cdedb.models.droid import DynamicAPIToken, StaticAPIToken, resolve_droid_name
 
 
 class SessionBackend:
@@ -156,25 +156,22 @@ class SessionBackend:
         droid_name, secret = apitoken
 
         try:
-            if static_droid := STATIC_DROIDS.get(droid_name):
-                if self._validate_static_droid_secret(static_droid.identity, secret):
-                    ret = User(
-                        droid_identity=static_droid.identity,
-                        roles=droid_roles(static_droid.identity)
-                    )
+            droid_class, token_id = resolve_droid_name(droid_name)
+
+            if droid_class is None:
+                # Droid name did not match any known droid.
+                self.logger.warning(
+                    f"API token did not match any known droid: {droid_name!r}.")
+                raise APITokenError(n_("Unknown droid name."))
+            elif issubclass(droid_class, StaticAPIToken):
+                if self._validate_static_droid_secret(droid_class.name, secret):
+                    ret = droid_class.get_user()
                 else:
-                    raise APITokenError(n_("Invalid API token."))
+                    raise APITokenError
+            elif issubclass(droid_class, DynamicAPIToken) and token_id:
+                ret = self._validate_dynamic_droid_secret(droid_class, token_id, secret)
             else:
-                for droid_name_pattern, dynamic_droid in DYNAMIC_DROIDS.items():
-                    if m := droid_name_pattern.fullmatch(droid_name):
-                        ret = self._validate_dynamic_droid_secret(
-                            dynamic_droid, m, secret)
-                        break
-                else:
-                    # Droid name did not match any known droid.
-                    self.logger.warning(
-                        f"API token did not match any known droid: {droid_name!r}.")
-                    raise APITokenError(n_("Unknown droid name."))
+                raise APITokenError
         except APITokenError:
             # log message to be picked up by fail2ban.
             self.logger.exception(f"Received invalid API token from {ip}.")
@@ -186,23 +183,14 @@ class SessionBackend:
 
         return ret
 
-    def _validate_dynamic_droid_secret(self, droid: Type[DynamicAPIToken],
-                                       droid_name_match: Match[str],
-                                       secret: str) -> User:
-
-        token_id, errs = inspect(vtypes.ID, droid_name_match.group(1))
-        if errs or not token_id:
-            raise APITokenError(
-                n_("Invalid %(droid_identity)s droid name."),
-                {'droid_identity': droid.identity}
-            )
-
+    def _validate_dynamic_droid_secret(self, droid_class: Type[DynamicAPIToken],
+                                       token_id: int, secret: str) -> User:
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
                 query = f"""
                     SELECT
-                        {','.join(droid.database_fields())}, secret_hash
-                    FROM {droid.database_table}
+                        {','.join(droid_class.database_fields())}, secret_hash
+                    FROM {droid_class.database_table}
                     WHERE id = %s
                 """
                 cur.execute(query, (token_id,))
@@ -211,19 +199,20 @@ class SessionBackend:
                 # Not a valid token id. Probably garbage input or deleted token.
                 if not data:
                     self.logger.warning(
-                        f"Access using unknown {droid.identity} token id: {token_id}.")
+                        f"Access using unknown {droid_class.name}"
+                        f" token id: {token_id}.")
                     raise APITokenError(
-                        n_(f"Unknown %(droid_identity)s token."),
-                        {'droid_identity': droid.identity}
+                        n_(f"Unknown %(droid_name)s token."),
+                        {'droid_name': droid_class.name}
                     )
 
                 data = dict(data)
                 secret_hash = data.pop('secret_hash')
-                token = droid(**data)
+                token = droid_class(**data)
 
                 # Log latest access time.
                 query = f"""
-                    UPDATE {droid.database_table}
+                    UPDATE {droid_class.database_table}
                     SET atime = now()
                     WHERE id = %s
                 """
@@ -231,23 +220,24 @@ class SessionBackend:
 
         if secret_hash is None:
             self.logger.warning(
-                f"Access using inactive {droid.identity} token {token}.")
+                f"Access using inactive {droid_class.name} token {token}.")
             raise APITokenError(
-                n_("This %(droid_identity)s token has been revoked."),
-                {'droid_identity': droid.identity}
+                n_("This %(droid_name)s token has been revoked."),
+                {'droid_name': droid_class.name}
             )
         if not verify_password(secret, secret_hash):
             self.logger.warning(
-                f"Invalid secret for {droid.identity} token {token}.")
+                f"Invalid secret for {droid_class.name} token {token}.")
             raise APITokenError(
-                n_("Invalid %(droid_identity)s token."),
-                {'droid_identity': droid.identity}
+                n_("Invalid %(droid_name)s token."),
+                {'droid_name': droid_class.name}
             )
         if data['expiration'] and now() > data['expiration']:
-            self.logger.warning(f"Access using expired {droid.identity} token {token}")
+            self.logger.warning(
+                f"Access using expired {droid_class.name} token {token}")
             raise APITokenError(
-                n_("This %(droid_identity)s token has expired."),
-                {'droid_identity': droid.identity}
+                n_("This %(droid_name)s token has expired."),
+                {'droid_name': droid_class.name}
             )
 
         return token.get_user()

@@ -40,6 +40,7 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 
 
 class Application(BaseApp):
@@ -179,7 +180,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            apitoken = request.headers.get("X-CdEDB-API-Token")
+            apitoken = request.headers.get(APIToken.request_header_key)
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:

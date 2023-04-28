@@ -43,6 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 CdEDBObject = Dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
 
@@ -98,7 +99,7 @@ class User:
     """Container for a persona."""
 
     def __init__(self, *, persona_id: Optional[int] = None,
-                 droid_identity: Optional[str] = None,
+                 droid_class: Optional[Type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
@@ -106,8 +107,8 @@ class User:
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
+        self.droid_class = droid_class
         self.droid_token_id = droid_token_id
-        self.droid_identity = droid_identity
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name

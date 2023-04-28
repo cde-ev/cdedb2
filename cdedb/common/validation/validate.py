@@ -1163,7 +1163,7 @@ def _api_token_string(
     Split the token into the droid name and the secret.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if m := models_droid.APIToken.apitoken_pattern.fullmatch(val):
+    if m := models_droid.APIToken.token_string_pattern.fullmatch(val):
         droid_name = m.group(1)
         secret = m.group(2)
         return APITokenString((droid_name, secret))

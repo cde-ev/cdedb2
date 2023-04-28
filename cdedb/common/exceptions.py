@@ -5,6 +5,8 @@ from typing import Any
 
 import werkzeug.exceptions
 
+from cdedb.common.n_ import n_
+
 
 class QuotaException(werkzeug.exceptions.TooManyRequests):
     """
@@ -33,6 +35,8 @@ class APITokenError(PrivilegeError):
     Special type of privilege error only raised by trying to access an API with an
     invalid or unknown key.
     """
+    def __init__(self, msg: str = n_("Invalid API token."), *args: Any):
+        super().__init__(msg, *args)
 
 
 class ArchiveError(RuntimeError):

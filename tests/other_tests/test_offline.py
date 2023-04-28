@@ -97,8 +97,8 @@ class TestOffline(FrontendTest):
             self.get(
                 '/event/offline/partial',
                 headers={
-                    'X-CdEDB-API-token':
-                        model_droid.QuickPartialExportToken.format_apitoken(
+                    model_droid.APIToken.request_header_key:
+                        model_droid.QuickPartialExportToken.get_token_string(
                             self.secrets['API_TOKENS']['quick_partial_export']),
                 })
             self.assertEqual(self.response.json["message"], "success")
