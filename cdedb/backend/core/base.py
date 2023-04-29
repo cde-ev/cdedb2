@@ -1706,7 +1706,7 @@ class CoreBaseBackend(AbstractBackend):
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.

@@ -282,7 +282,7 @@ class OrgaToken(DynamicAPIToken):
         return ret
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.id=}, {self.title=}, {self.event_id})"
+        return f"{self.__class__.__name__}({self.id=}, {self.title=}, {self.event_id=})"
 
 
 def resolve_droid_name(

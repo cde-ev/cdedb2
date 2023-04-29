@@ -53,7 +53,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
 )
-from cdedb.common.exceptions import APITokenError, PrivilegeError
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
@@ -67,6 +67,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -177,10 +178,10 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        try:
+        if key and APIToken.token_string_pattern.fullmatch(key):
             user = sessionproxy.lookuptoken(key, ip)
             apitoken = key
-        except APITokenError:
+        else:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
 
