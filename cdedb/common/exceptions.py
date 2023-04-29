@@ -35,7 +35,7 @@ class APITokenError(PrivilegeError):
     Special type of privilege error only raised by trying to access an API with an
     invalid or unknown key.
     """
-    def __init__(self, msg: str = n_("Invalid API token."), *args: Any):
+    def __init__(self, msg: str = n_("Invalid API token."), *args: Any):  # pylint: disable=keyword-arg-before-vararg
         super().__init__(msg, *args)
 
 

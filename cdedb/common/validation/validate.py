@@ -1182,6 +1182,18 @@ def _orga_token(
     val = _examine_dictionary_fields(
         val, mandatory, optional, argname=argname, **kwargs)
 
+    errs = ValidationSummary()
+
+    timestamp = now()
+    if 'etime' in val:
+        if val['etime'] and val['etime'] <= timestamp:
+            with errs:
+                raise ValidationSummary(ValueError(
+                    'etime', n_("Expiration time must be in the future.")))
+
+    if errs:
+        raise errs
+
     return OrgaToken(val)
 
 

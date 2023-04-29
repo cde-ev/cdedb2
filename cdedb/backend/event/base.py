@@ -450,7 +450,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
                     edata[f] for f in ("lodge_field", "camping_mat_field",
-                                       "course_room_field") if f in edata)
+                                       "course_room_field") if f in edata
+                )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
                         rs, "event.field_definitions",

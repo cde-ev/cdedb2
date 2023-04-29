@@ -146,6 +146,7 @@ class APIToken(abc.ABC):
     # The key of the token string in the request header.
     request_header_key = "X-CdEDB-API-token"
 
+
 class StaticAPIToken(APIToken):
     """
     Base class for static droids.
@@ -199,19 +200,31 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Regular fields.
     title: str
     notes: Optional[str]
-    expiration: Optional[datetime.datetime]
 
+    #
     # Special logging fields. Are set automatically by session backend.
+    #
+
+    # Creation time.
     ctime: datetime.datetime
+    # Expiration time.
+    etime: datetime.datetime
+    # Revocation time.
+    rtime: Optional[datetime.datetime]
+    # Last access time.
     atime: Optional[datetime.datetime]
 
-    # Subclasses may definde unchangeable fields.
-    fixed_fields: ClassVar[tuple[str, ...]]
+    # Subclasses may define unchangeable fields.
+    fixed_fields: ClassVar[tuple[str, ...]] = ('etime',)
 
     def to_database(self) -> dict[str, Any]:
         """Exclude special fields from being set manually."""
         ret = super().to_database()
+        # Creation time is written behind the scenes upon creation.
         del ret['ctime']
+        # Revocation time is written behind the scenes upon revocation.
+        del ret['rtime']
+        # Last access time is written by the session backend on every droid request.
         del ret['atime']
         return ret
 
@@ -250,11 +263,12 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.id=}, {self.title=})"
 
+
 @dataclass
 class OrgaToken(DynamicAPIToken):
     # ID fields. May not be changed.
     event_id: vtypes.ID
-    fixed_fields = ("event_id",)
+    fixed_fields = DynamicAPIToken.fixed_fields + ("event_id",)
 
     # Name of droid class.
     name = "orga"

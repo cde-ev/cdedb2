@@ -107,12 +107,12 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken(invalid_orgatoken, "127.0.2.1")
 
         # Expire token and try again.
-        execsql("UPDATE event.orga_apitokens SET expiration = now()")
+        execsql("UPDATE event.orga_apitokens SET etime = now()")
         with self.assertRaisesRegex(APITokenError, r"This .+ token has expired."):
             self.session.lookuptoken(orgatoken, "127.0.2.2")
 
         # Revoke token and try again.
-        execsql("UPDATE event.orga_apitokens SET expiration = NULL, secret_hash = NULL")
+        execsql("UPDATE event.orga_apitokens SET rtime = now(), secret_hash = NULL")
         with self.assertRaisesRegex(
                 APITokenError, "This .+ token has been revoked."):
             self.session.lookuptoken(orgatoken, "127.0.2.3")

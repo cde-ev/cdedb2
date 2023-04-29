@@ -202,7 +202,7 @@ class SessionBackend:
                         f"Access using unknown {droid_class.name}"
                         f" token id: {token_id}.")
                     raise APITokenError(
-                        n_(f"Unknown %(droid_name)s token."),
+                        n_("Unknown %(droid_name)s token."),
                         {'droid_name': droid_class.name}
                     )
 
@@ -218,7 +218,7 @@ class SessionBackend:
                 """
                 cur.execute(query, (token_id,))
 
-        if secret_hash is None:
+        if secret_hash is None or token.rtime:
             self.logger.warning(
                 f"Access using inactive {droid_class.name} token {token}.")
             raise APITokenError(
@@ -232,9 +232,9 @@ class SessionBackend:
                 n_("Invalid %(droid_name)s token."),
                 {'droid_name': droid_class.name}
             )
-        if data['expiration'] and now() > data['expiration']:
+        if now() > token.etime:
             self.logger.warning(
-                f"Access using expired {droid_class.name} token {token}")
+                f"Access using expired {droid_class.name} token {token}.")
             raise APITokenError(
                 n_("This %(droid_name)s token has expired."),
                 {'droid_name': droid_class.name}
