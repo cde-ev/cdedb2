@@ -1,0 +1,7 @@
+Updating the cdedb is easy, you just need to run the following command:
+
+sudo -u cdb psql -U cdb -d cdb -f /cdedb2/cdedb/database/evolutions/2023-04-30_add_orga_tokens.sql
+
+However this makes a change to the way existing api tokens need to be formatted.
+
+Use `APIToken.get_token_string(secret)` with the existing secret to reformat api tokens for all external services using a cdedb API ("resolve" or "quick_partial_export").
