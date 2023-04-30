@@ -74,10 +74,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
-        orga_tokesn = self.sql_select(
+        orga_tokens = self.sql_select(
             rs, OrgaToken.database_table, ("id",), (event_id,), entity_key="event_id")
-        if orga_tokesn:
-            blockers["orga_tokens"] = [e["id"] for e in orga_tokesn]
+        if orga_tokens:
+            blockers["orga_tokens"] = [e["id"] for e in orga_tokens]
 
         field_definitions = self.sql_select(
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
