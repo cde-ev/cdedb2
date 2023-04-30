@@ -1309,6 +1309,9 @@ msgstr "Mehr Adminprivilegien benötigt."
 msgid "Malformed API token."
 msgstr "Falsch formatiertes API-Token."
 
+msgid "This API is not available in offline mode."
+msgstr "Diese API ist in der Offline-Instanz nicht verfügbar."
+
 #: cdedb/backend/session.py:165
 msgid "Unknown droid name."
 msgstr "Unbekannter Droid-Name."

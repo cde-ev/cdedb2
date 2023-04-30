@@ -501,7 +501,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.sql_update(rs, OrgaToken.database_table, data)
 
                 if 'title' in data and data['title'] != current.title:
-                    change_note = f"{current.title} -> {data['title']}"
+                    change_note = f"'{current.title}' -> '{data['title']}'"
                 else:
                     change_note = current.title
                 self.event_log(
@@ -512,7 +512,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def revoke_orga_token(self, rs: RequestState, orga_token_id: int
                           ) -> DefaultReturnCode:
-        """Revoke an existing orga token by deleting it's hashed secret."""
+        """Revoke an existing orga token and delete its hashed secret."""
         orga_token_id = affirm(vtypes.ID, orga_token_id)
 
         with Atomizer(rs):

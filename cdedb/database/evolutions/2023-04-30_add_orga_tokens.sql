@@ -18,4 +18,5 @@ BEGIN;
     GRANT SELECT, UPDATE ON event.orga_apitokens_id_seq TO cdb_persona;
 
     ALTER TABLE event.log ADD COLUMN droid_id integer REFERENCES event.orga_apitokens(id);
+    ALTER TABLE event.log ADD CONSTRAINT event_log_submitted_by_droid CHECK (submitted_by is NULL or droid_id is NULL);
 COMMIT;

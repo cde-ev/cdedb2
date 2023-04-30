@@ -109,6 +109,8 @@ class User:
         self.persona_id = persona_id
         self.droid_class = droid_class
         self.droid_token_id = droid_token_id
+        if self.persona_id and (self.droid_class or self.droid_token_id):
+            raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name

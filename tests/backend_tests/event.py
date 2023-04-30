@@ -4579,7 +4579,7 @@ class TestEventBackend(BackendTest):
                 },
                 {
                     'code': const.EventLogCodes.orga_token_changed,
-                    'change_note': f"{new_token.title} -> {changed_token['title']}",
+                    'change_note': f"'{new_token.title}' -> '{changed_token['title']}'",
                 }
             ])
 

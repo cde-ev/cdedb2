@@ -1076,6 +1076,8 @@ CREATE TABLE event.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         droid_id                integer REFERENCES event.orga_apitokens(id),
+        CONSTRAINT event_log_submitted_by_droid
+            CHECK (submitted_by is NULL or droid_id is NULL),
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),

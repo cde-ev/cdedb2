@@ -185,6 +185,10 @@ class SessionBackend:
 
     def _validate_dynamic_droid_secret(self, droid_class: Type[DynamicAPIToken],
                                        token_id: int, secret: str) -> User:
+
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            raise APITokenError(n_("This API is not available in offline mode."))
+
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
                 query = f"""
