@@ -1072,7 +1072,7 @@ class EventEventMixin(EventBaseFrontend):
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups"
+            "part_groups", "orga_tokens",
         }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
