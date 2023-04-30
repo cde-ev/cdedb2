@@ -49,9 +49,9 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
     def test_tokenlookup(self) -> None:
-        persona_sessionkey = self.core.login(
+        persona_sessionkey = cast(RequestState, self.core.login(
             self.key, USER_DICT['anton']['username'],
-            USER_DICT['anton']['password'], '127.0.0.0')
+            USER_DICT['anton']['password'], '127.0.0.0'))
 
         # pylint: disable=protected-access
         # Invalid apitoken.

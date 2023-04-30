@@ -499,6 +499,9 @@ class BackendTest(CdEDBTest):
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
+            for k in ('droid_id',):
+                if k not in exp and k in real:
+                    exp[k] = None
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
                     exp[k] = decimal.Decimal(exp[k])

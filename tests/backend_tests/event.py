@@ -4511,7 +4511,7 @@ class TestEventBackend(BackendTest):
             1: OrgaToken(
                 id=cast(vtypes.ID, 1),
                 event_id=cast(vtypes.ID, event_id),
-                title="Garcia's technische Spielerei",
+                title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
                 ctime=nearly_now(),
                 etime=datetime.datetime(2222, 12, 31, 23, 59, 59, tzinfo=pytz.utc),
