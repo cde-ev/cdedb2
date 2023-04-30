@@ -210,6 +210,28 @@ class SessionBackend:
                 secret_hash = data.pop('secret_hash')
                 token = droid_class(**data)
 
+                if secret_hash is None or token.rtime:
+                    self.logger.warning(
+                        f"Access using inactive {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("This %(droid_name)s token has been revoked."),
+                        {'droid_name': droid_class.name}
+                    )
+                if not verify_password(secret, secret_hash):
+                    self.logger.warning(
+                        f"Invalid secret for {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("Invalid %(droid_name)s token."),
+                        {'droid_name': droid_class.name}
+                    )
+                if now() > token.etime:
+                    self.logger.warning(
+                        f"Access using expired {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("This %(droid_name)s token has expired."),
+                        {'droid_name': droid_class.name}
+                    )
+
                 # Log latest access time.
                 query = f"""
                     UPDATE {droid_class.database_table}
@@ -217,27 +239,5 @@ class SessionBackend:
                     WHERE id = %s
                 """
                 cur.execute(query, (token_id,))
-
-        if secret_hash is None or token.rtime:
-            self.logger.warning(
-                f"Access using inactive {droid_class.name} token {token}.")
-            raise APITokenError(
-                n_("This %(droid_name)s token has been revoked."),
-                {'droid_name': droid_class.name}
-            )
-        if not verify_password(secret, secret_hash):
-            self.logger.warning(
-                f"Invalid secret for {droid_class.name} token {token}.")
-            raise APITokenError(
-                n_("Invalid %(droid_name)s token."),
-                {'droid_name': droid_class.name}
-            )
-        if now() > token.etime:
-            self.logger.warning(
-                f"Access using expired {droid_class.name} token {token}.")
-            raise APITokenError(
-                n_("This %(droid_name)s token has expired."),
-                {'droid_name': droid_class.name}
-            )
 
         return token.get_user()

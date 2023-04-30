@@ -567,7 +567,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def delete_orga_token(self, rs: RequestState, orga_token_id: int,
-                             cascade: Collection[str] = None) -> DefaultReturnCode:
+                          cascade: Collection[str] = None) -> DefaultReturnCode:
         """Delete an orga  token.
 
         :param cascade: Specify which deletion blockers to cascadingly remove or ignore.

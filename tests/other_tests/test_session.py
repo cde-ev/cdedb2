@@ -6,7 +6,7 @@ import secrets
 from typing import List, NamedTuple, Optional, Sequence, cast
 
 import cdedb.models.droid as model_droid
-from cdedb.common import RequestState, User, now
+from cdedb.common import RequestState, User, nearly_now, now
 from cdedb.common.exceptions import APITokenError
 from tests.common import (
     USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
@@ -49,6 +49,10 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
     def test_tokenlookup(self) -> None:
+        persona_sessionkey = self.core.login(
+            self.key, USER_DICT['anton']['username'],
+            USER_DICT['anton']['password'], '127.0.0.0')
+
         # pylint: disable=protected-access
         # Invalid apitoken.
         with self.assertRaisesRegex(APITokenError, "Malformed API token."):
@@ -93,12 +97,17 @@ class TestSessionBackend(BackendTest):
         orgatoken = model_droid.OrgaToken._get_token_string(
             model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
 
+        self.assertIsNone(self.event.get_orga_token(persona_sessionkey, 1).atime)
+
         user = self.session.lookuptoken(orgatoken, "127.0.2.0")
         self.assertIsNone(user.persona_id)
         self.assertIs(model_droid.OrgaToken, user.droid_class)
         self.assertEqual(1, user.droid_token_id)
         self.assertIn(1, user.orga)
         self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
+
+        last_valid_access = self.event.get_orga_token(persona_sessionkey, 1).atime
+        self.assertEqual(nearly_now(), last_valid_access)
 
         # orga droid with invalid secret.
         invalid_orgatoken = model_droid.OrgaToken._get_token_string(
@@ -116,6 +125,9 @@ class TestSessionBackend(BackendTest):
         with self.assertRaisesRegex(
                 APITokenError, "This .+ token has been revoked."):
             self.session.lookuptoken(orgatoken, "127.0.2.3")
+
+        self.assertEqual(
+            last_valid_access, self.event.get_orga_token(persona_sessionkey, 1).atime)
 
     def test_ip_mismatch(self) -> None:
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")
