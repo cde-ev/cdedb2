@@ -43,7 +43,7 @@ from cdedb.common.fields import (
     TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -119,16 +119,14 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: EventLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "event.log")
-        event_ids = log_filter.get('entity_ids', ())
-        event_ids = affirm_set(vtypes.ID, event_ids)
+        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        event_ids = log_filter.event_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
@@ -139,7 +137,7 @@ class EventBaseBackend(EventLowLevelBackend):
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter, "event.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
@@ -379,8 +377,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': event_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "event.orgas", new_orga,
-                                    drop_on_conflict=True)
+                r = self.sql_insert(rs, "event.orgas", new_orga, drop_on_conflict=True)
                 if r:
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
@@ -1484,7 +1481,7 @@ class EventBaseBackend(EventLowLevelBackend):
             # timestamp to not include log entries from the latest commit.
             timestamp += datetime.timedelta(seconds=1)
             _, entries = self.retrieve_log(
-                rs, {'entity_ids': [event_id], 'ctime': (timestamp, None)})
+                rs, EventLogFilter(event_id=event_id, ctime_from=timestamp))
             # short circuit if there are no new log entries
             if not entries:
                 return None

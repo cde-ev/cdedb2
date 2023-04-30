@@ -82,11 +82,8 @@
         <div id="list-courses">
         {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
-                <h3>
-                    {{ entry['nr'] }}. {{ entry['title'] }}&nbsp;{# prevent linebreak before the (invisible) headerlink -#}
-                    <a class="headerlink" href="#course-{{ entry['id'] }}"
-                       title="{% trans %}Permanent link{% endtrans %}">&para;</a>
-                </h3>
+                {{ util.h(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
+                          translate=False) }}
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
                     <div class="pull-right heading-supplement">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),

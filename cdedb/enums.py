@@ -17,7 +17,6 @@ from cdedb.common import (
     TransactionType,
 )
 from cdedb.common.query import QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogTable
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
@@ -46,7 +45,6 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.CourseTrackGroupType,
     QueryOperators,
     QueryScope,
-    LogTable,
     AgeClasses,
     LineResolutions,
     GenesisDecision,

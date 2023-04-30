@@ -214,7 +214,7 @@ class RequestState(ConnectionContainer):
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_return_code(self, code: Union[DefaultReturnCode, bool, None],
+    def notify_return_code(self, code: Union[DefaultReturnCode, bool], *,
                            success: str = n_("Change committed."),
                            info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
@@ -223,7 +223,7 @@ class RequestState(ConnectionContainer):
         We allow some flexibility in what type of return code we accept. It
         may be a boolean (with the obvious meanings), an integer (specifying
         the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
+        pending review).
 
         :param success: Affirmative message for positive return codes.
         :param info: Message for negative return codes signalling review.
@@ -991,16 +991,15 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.IntEnum):
+class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
-    Account0 = 8068900
-    Account1 = 8068901
-    Account2 = 8068902
+    Account0 = "DE26370205000008068900"
+    Account1 = "DE96370205000008068901"
     # Fallback if Account is none of the above
-    Unknown = 0
+    Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return str(self.value)
+        return self.value[-7:]
 
 
 @enum.unique

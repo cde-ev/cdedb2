@@ -24,6 +24,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
@@ -683,9 +684,10 @@ class TestEventBackend(BackendTest):
         self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
         count, log = self.event.retrieve_log(
-            self.key, {'codes': {const.EventLogCodes.minor_form_updated,
-                                 const.EventLogCodes.minor_form_removed},
-                       'entity_ids': [event_id]}
+            self.key, EventLogFilter(
+                codes=[const.EventLogCodes.minor_form_updated,
+                       const.EventLogCodes.minor_form_removed],
+                event_id=event_id)
         )
         expectation = [
             {
@@ -2960,169 +2962,104 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
         # Test logging
-        log_expectation = (
-            {'change_note': 'Geheime Etage',
-             'code': 70,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1023,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Warme Stube',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1024,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kalte Kammer',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1025,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kellerverlies',
-             'code': 27,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1026,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Einzelzelle',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1027,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Geheimkabinett',
-             'code': 26,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1028,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Handtuchraum',
-             'code': 26,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1029,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 41,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1030,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1031,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1032,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Lustigsein für Fortgeschrittene',
-             'code': 41,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1033,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kurzer Kurs',
-             'code': 44,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1034,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Langer Kurs',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1035,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Backup-Kurs',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1036,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1037,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1038,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 40,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1039,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1040,
-             'persona_id': 1,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1041,
-             'persona_id': 5,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1042,
-             'persona_id': 7,
-             'submitted_by': 27},
-            {'change_note': None,
-             'code': 52,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1043,
-             'persona_id': 9,
-             'submitted_by': 27},
-            {'change_note': None,
-             'code': 50,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1044,
-             'persona_id': 3,
-             'submitted_by': 27},
-            {'change_note': 'Sehr wichtiger Import',
-             'code': 62,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1045,
-             'persona_id': None,
-             'submitted_by': 27})
-        self.assertLogEqual(log_expectation, realm="event", offset=6)
+        log_expectation: list[CdEDBObject] = [
+            {
+                'change_note': 'Geheime Etage',
+                'code': const.EventLogCodes.lodgement_group_created,
+            },
+            {
+                'change_note': 'Warme Stube',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Kalte Kammer',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Kellerverlies',
+                'code': const.EventLogCodes.lodgement_deleted,
+            },
+            {
+                'change_note': 'Einzelzelle',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Geheimkabinett',
+                'code': const.EventLogCodes.lodgement_created,
+            },
+            {
+                'change_note': 'Handtuchraum',
+                'code': const.EventLogCodes.lodgement_created,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_changed,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Lustigsein für Fortgeschrittene',
+                'code': const.EventLogCodes.course_changed,
+            },
+            {
+                'change_note': 'Kurzer Kurs',
+                'code': const.EventLogCodes.course_deleted,
+            },
+            {
+                'change_note': 'Langer Kurs',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Backup-Kurs',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_created,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 1,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 5,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 7,
+            },
+            {
+                'code': const.EventLogCodes.registration_deleted,
+                'persona_id': 9,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'persona_id': 3,
+            },
+            {
+                'change_note': 'Sehr wichtiger Import',
+                'code': const.EventLogCodes.event_partial_import,
+            },
+        ]
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=6)
 
     @storage
     @event_keeper
@@ -4041,12 +3978,12 @@ class TestEventBackend(BackendTest):
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'code': const.EventLogCodes.course_created,
                 'event_id': 1,
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_created,
+                'code': const.EventLogCodes.course_segments_changed,
                 'event_id': 1,
             },
             {
@@ -4566,7 +4503,7 @@ class TestEventBackend(BackendTest):
     def test_orga_apitokens(self) -> None:
         event_id = 1
         event_log_offset, _ = self.event.retrieve_log(
-            self.key, {'entity_ids': [event_id]})
+            self.key, EventLogFilter(event_id=1))
 
         orga_token_ids = self.event.list_orga_tokens(self.key, event_id)
         orga_tokens = self.event.get_orga_tokens(self.key, orga_token_ids)

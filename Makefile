@@ -160,7 +160,7 @@ check:
 
 .PHONY: xss-check
 xss-check:
-	$(PYTHONBIN) bin/check.py --xss-check --verbose
+	$(PYTHONBIN) bin/check.py --verbose --parts xss
 
 .PHONY: dump-html
 dump-html:
