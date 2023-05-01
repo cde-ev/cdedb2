@@ -39,11 +39,13 @@ from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue, SqlQueryBackend
+from cdedb.models.common import CdEDataclass
 
 F = TypeVar('F', bound=Callable[..., Any])
 LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
 S = TypeVar('S')
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 @overload
@@ -604,7 +606,7 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_dataclass(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+def affirm_dataclass(assertion: Type[DC], value: Any, **kwargs: Any) -> DC:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.backend.common.affirm_validation`

@@ -106,6 +106,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.models.common import CdEDataclass
 
 NoneType = type(None)
 
@@ -117,6 +118,7 @@ _CONFIG = LazyConfig()
 T = TypeVar('T')
 T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -189,8 +191,8 @@ DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
 }
 
 
-def _validate_dataclass_preprocess(type_: Type[T], value: Any
-                                   ) -> Tuple[Type[T], Type[T]]:
+def _validate_dataclass_preprocess(type_: Type[DC], value: Any
+                                   ) -> Tuple[Type[DC], Type[DC]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -210,15 +212,15 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+def _validate_dataclass_postprocess(subtype: Type[DC], validated: DC) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
-    return subtype(**validated)
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[union-attr]
+    return cast(DC, subtype(**validated))
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
+def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> DC:
     """Wrapper of validate_assert that accepts dataclasses.
 
     Allows for subclasses, and figures out the appropriate superclass, for which
@@ -4691,7 +4693,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, misc]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
         except ValidationSummary as e:
             errs.extend(e)
             continue

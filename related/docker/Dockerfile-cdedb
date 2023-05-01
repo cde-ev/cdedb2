@@ -112,7 +112,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     segno==1.5.2 \
     \
     && python3 -m pip --no-cache-dir install \
-    mypy==0.971 \
+    mypy==1.2.0 \
     types-werkzeug \
     types-pytz \
     types-jinja2 \
