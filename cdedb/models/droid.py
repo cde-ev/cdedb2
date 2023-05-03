@@ -1,10 +1,8 @@
-"""Class definitions for api tokens/droids.
-
-A note on nomenclature:
-
+"""
 The API facility is based on three different kinds of objects:
 
-- "class": A class, that inherits from either `StaticAPIToken` or `DynamicAPIToken`.
+class
+    A class, that inherits from either `StaticAPIToken` or `DynamicAPIToken`.
     Accordingly there are two "kinds" of classes: "static" and "dynamic".
 
     Every such class creates its own API with a unique scope of available endpoints
@@ -13,7 +11,8 @@ The API facility is based on three different kinds of objects:
 
     Also called "class of droid" or "class of token".
 
-- "token": A set of credentials for a "class" of token.
+token
+    A set of credentials for a "class" of token.
 
     "static droids" are singletons, i.e. there is exactly one of each class (there is
     no need to instantiate the class). For every static droid, a "secret" may be set
@@ -32,7 +31,8 @@ The API facility is based on three different kinds of objects:
     Might also be called "API token", "droid token" or "<kind> token",
     e.g. "orga token" for orga droids, "resolve token" for the resolve droid, etc.
 
-- "droid": A `User` object for a request performed via the API.
+droid
+    A `User` object for a request performed via the API.
 
     When a valid API token is provided in the request header, the session backend
     returns an instance of the `User` class for that request. This user object
@@ -48,7 +48,8 @@ The API facility is based on three different kinds of objects:
 
 Other nomenclature:
 
-- "secret": A string of cryptographically random alphanumeric characters of
+secret
+    A string of cryptographically random alphanumeric characters of
     sufficient length, that serves as authentication for an API.
 
     Newly created secrets are 64 hexadecimal characters, i.e. 256 Bits of entropy.
@@ -57,10 +58,12 @@ Other nomenclature:
     A newly created secret will be displayed to the user exactly once, after which
     it is impossible to discern the secret from the stored hash.
 
-- "token string": A specially formatted string that is sent in the request header,
+token string
+    A specially formatted string that is sent in the request header,
     when using an API. This string includes the "droid name" and the "secret".
 
-- "class name": A class attribute of a "class".
+class name
+    A class attribute of a "class".
     Used in the "droid name" to indentify the class of droid.
 
     Not to be confused with the actual programmatic name of the class (`<class>.name`
@@ -68,16 +71,19 @@ Other nomenclature:
 
     Examples: "resolve", "quick_partial_export", "orga".
 
-- "droid name": A string, identifying exactly one "token" (see above), i.e.
+droid name
+    A string, identifying exactly one "token" (see above), i.e.
     a static droid (which are singletons) or one instance of a dynamic droid.
 
     To determine the class of the droid from the droid name use `resolve_droid_name()`.
 
     Examples: "static/resolve", "orga/<token_id>".
 
-- "static droid": A simple API with only one secret set via the `SecretsConfig`.
+static droid
+    A simple API with only one secret set via the `SecretsConfig`.
 
-- "dynamic droid": A complex API for which users can create instances ("tokens"),
+dynamic droid
+    A complex API for which users can create instances ("tokens"),
     each with an individual secret.
 """
 import abc
@@ -99,28 +105,24 @@ class APIToken(abc.ABC):
     """
     Base class for all API Tokens.
 
-    Every Token class has at least the following attributes:
+    This baseclass conveniently bundles some constants and static methods useful
+    in the context of droid APIs.
+    """
 
-    * `name`: A unique string identifying the class of droid the token belongs to.
+    name: ClassVar[str]
+    """
+    A Unique string identifying the class of droid a token belongs to.
 
-        Must match `\\w+`, i.e. be alpha numeric, but may contain `_`.
+    Must match ``\\w+``, i.e. be alphanumeric, but may contain ``_``.
 
-    * `get_droid_name()`: The droid name prefixed with the namespace of the droid.
+    Needs to be overridden by subclasses.
+    """
 
-        For static droids this is a classmethod, for dynamic droids an instance method.
-
-        Static droids live in the `static` namespace, with their name being their
-        class name.
-
-        Dynamic droids each have their own namespaces, which is their class name,
-        while the name is simply the `id` of the database entry.
-        Dynamic droids also provide a `_get_droid_name()` class method which is used
-        in `get_droid_name()` and takes the id as an argument, so the droid name can
-        be determined without needing to create an instance.
-
-        Example droid names: `static/resolve`, `orga/<orga_token_id>`.
-
-    * `get_droid_name_pattern()`: A re pattern matching all droid names for this class.
+    @classmethod
+    @lru_cache()
+    def get_droid_name_pattern(cls) -> Pattern[str]:
+        """
+        Return a regex pattern matching all droid names for this class.
 
         This is a classmethod with a constant return per class, which should be cached.
 
@@ -128,47 +130,63 @@ class APIToken(abc.ABC):
 
         The pattern for a dynamic droid must have exactly one capture group, which
         captures the token id in that droids namespace. (i.e. the pattern for orga
-        droids should match for example "orga/123" and capture "123").
+        droids should match for example ``orga/123`` and capture ``123``).
+        """
+        raise NotImplementedError
 
-    * `get_token_string()`: A method that takes a secret and returns a correlty
-        formatted token string, which includes the droid name and the given secret.
+    def get_droid_name(self) -> str:
+        """
+        Return the droid name prefixed with the namespace for this class of droid.
 
         For static droids this is a classmethod, for dynamic droids an instance method.
 
-    * `get_user()`: A method that creates a `User` object for API requests.
+        Static droids live in the `static` namespace, with their name being their
+        class name.
 
-    This baseclass conveniently bundles some constants and static methods useful
-    in the context of droid APIs.
-    """
-    name: ClassVar[str]
+        Dynamic droids each have their own namespaces, which is their class name,
+        while the name is simply the id of the database entry.
+        Dynamic droids also provide a ``_get_droid_name()`` class method which is used
+        in ``get_droid_name()`` and takes the id as an argument, so the droid name can
+        be determined without needing to create an instance.
 
-    @classmethod
-    @lru_cache()
-    def get_droid_name_pattern(cls) -> Pattern[str]:
-        """Construct a pattern to check if a token belongs to this class."""
+        Example droid names: ``static/resolve``, ``orga/<orga_token_id>``.
+        """
         raise NotImplementedError
+
+    @staticmethod
+    def _get_token_string(droid_name: str, secret: str) -> str:
+        """Construct a correctly formatted token string from droid name and secret."""
+        return f"CdEDB-{droid_name}/{secret}/"
+
+    def get_token_string(self, secret: str) -> str:
+        """
+        Return a correctly formatted token string from droid name given secret.
+
+        For static droids this is a classmethod, for dynamic droids an instance method.
+        """
+        return self._get_token_string(self.get_droid_name(), secret)
+
+    def get_user(self) -> User:
+        """Return a `User` object for API requests."""
+        raise NotImplementedError
+
+    #: The key of the token string in the request header.
+    request_header_key = "X-CdEDB-API-token"
 
     @staticmethod
     def create_secret() -> str:
         """Provide a central definition for how to create a secret token."""
         return token_hex()
 
-    # Basic pattern for all api token. The droid name will be used to decide how
-    #  to validate the given secret.
+    #: Basic pattern for all api token. The droid name will be used to decide how
+    #:  to validate the given secret.
     token_string_pattern = re.compile(
         r"CdEDB-(?P<droid_name>\w+/\w+)/(?P<secret>[0-9a-zA-Z\-]+)/")
-
-    @staticmethod
-    def _get_token_string(droid_name: str, secret: str) -> str:
-        return f"CdEDB-{droid_name}/{secret}/"
-
-    # The key of the token string in the request header.
-    request_header_key = "X-CdEDB-API-token"
 
 
 class StaticAPIToken(APIToken):
     """
-    Base class for static droids.
+    Base class for static droids. These tokens need not be instantiated.
 
     Static droids have no attributes other than their name, although subclasses might
     want to override the `get_user` classmethod.
@@ -176,6 +194,8 @@ class StaticAPIToken(APIToken):
     A static droid API can only be accessed if a secret is set in the `API_TOKENS`
     section of the `SecretsConfig`.
     """
+    #: Name of the static droid.
+    name: ClassVar[str]
 
     @classmethod
     @lru_cache
@@ -200,11 +220,11 @@ class StaticAPIToken(APIToken):
 
 
 class ResolveToken(StaticAPIToken):
-    name = "resolve"
+    name = "resolve"  #:
 
 
 class QuickPartialExportToken(StaticAPIToken):
-    name = "quick_partial_export"
+    name = "quick_partial_export"  #:
 
 
 @dataclass
@@ -221,24 +241,27 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     Fields of dynamic tokens which should not be changeable after creation can be
     specified as `fixed_fields` in the form of a tuple of string.
     """
+    #: Name of the static droid. Also serves as namespace for droid names.
+    name: ClassVar[str]
+
     # Regular fields.
-    title: str
-    notes: Optional[str]
 
-    #
-    # Special logging fields. Are set automatically by session backend.
-    #
+    title: str  #: Configurable title.
+    notes: Optional[str]  #: Configurable notes field.
+    etime: datetime.datetime  #: Expiration time. Set once during creation.
 
-    # Creation time.
+    # Special logging fields.
+
+    #: Creation time. Automatically set by event backend on creation.
     ctime: datetime.datetime
-    # Expiration time.
-    etime: datetime.datetime
-    # Revocation time.
+    #: Revocation time. Automatically set by event backend on revocation.
     rtime: Optional[datetime.datetime]
-    # Last access time.
+    #: Last access time. Automatically updated by session backend on every request.
     atime: Optional[datetime.datetime]
 
-    # Subclasses may define unchangeable fields.
+    # Sepcial fields and methods for datacase storage using `CdEDataclass` interface.
+
+    #: Subclasses may define unchangeable fields.
     fixed_fields: ClassVar[tuple[str, ...]] = ('etime',)
 
     def to_database(self) -> dict[str, Any]:
@@ -260,10 +283,11 @@ class DynamicAPIToken(CdEDataclass, APIToken):
                 del optional[key]
         return mandatory, optional
 
+    # Implementations of inherited methods.
+
     @classmethod
     @lru_cache()
     def get_droid_name_pattern(cls) -> Pattern[str]:
-        """Construct a pattern to check if a token belongs to this class."""
         return re.compile(rf"{cls.name}/(\d+)")
 
     @classmethod
@@ -291,13 +315,22 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
 @dataclass
 class OrgaToken(DynamicAPIToken):
-    # ID fields. May not be changed.
-    event_id: vtypes.ID
+    """
+    OrgaToken(
+        id: vtypes.ID, title: str, notes: Optional[str], etime: datetime.datetime,
+        ctime: datetime.datetime, rtime: Optional[datetime.datetime],
+        atime: Optional[datetime.datetime], event_id: vtypes.ID)
+
+    """
+    name = "orga"  #:
+
+    event_id: vtypes.ID  #: ID of the event this token is linked to. May not change.
+
+    # Special attributes for `CdEDatabase` interface.
+
+    #: Fields which may not change.
     fixed_fields = DynamicAPIToken.fixed_fields + ("event_id",)
-
-    # Name of droid class.
-    name = "orga"
-
+    #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"
 
     def get_user(self) -> User:
@@ -322,15 +355,16 @@ def resolve_droid_name(
 
     The return should be interpreted similar to this:
 
-    ```
-    droid_class, token_id = resolve_droid_name(…)
-    if droid_class is None:
-        # Invalid droid name.
-    if token_id is None:
-        # Static droid.
-    else:
-        # Dynamic droid.
-    ```
+    .. code-block:: python
+
+        droid_class, token_id = resolve_droid_name(...)
+        if droid_class is None:
+            # Invalid droid name.
+        if token_id is None:
+            # Static droid.
+        else:
+            # Dynamic droid.
+    ..
 
     Alternatively and if the type of `droid_class` needs to be statically inferred
     more accurately, one can use `issubclass(droid_class, StaticAPIToken)` and

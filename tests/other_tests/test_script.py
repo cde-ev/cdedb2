@@ -249,7 +249,6 @@ Aborting Dry Run! Time taken: 0.000 seconds.
         session: SessionBackend = offline_script.make_backend('session', proxy=False)
 
         token = event.get_orga_token(offline_script.rs(), 1)
-        token_string = token.get_token_string("abc")
         with self.assertRaisesRegex(
                 APITokenError, "This API is not available in offline mode."
         ):
