@@ -469,6 +469,10 @@ class EventBaseBackend(EventLowLevelBackend):
             if not self.is_orga(rs, event_id=data.event_id):
                 raise PrivilegeError
 
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not create new orga token in offline instance."))
+
             secret = OrgaToken.create_secret()
             tdata = data.to_database()
             tdata['secret_hash'] = encrypt_password(secret)
@@ -520,6 +524,10 @@ class EventBaseBackend(EventLowLevelBackend):
 
             if not self.is_orga(rs, event_id=current.event_id):
                 raise PrivilegeError
+
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not revoke orga token in offline instance."))
 
             if current.rtime:
                 raise ValueError(n_("This orga token has already been revoked."))
@@ -1164,6 +1172,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
+                (OrgaToken.database_table, "event_id", tuple(
+                    OrgaToken.database_fields())),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
                 ('event.log', "event_id", (
@@ -1243,6 +1253,9 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            tokens = list_to_dict(self.sql_select(
+                rs, OrgaToken.database_table, OrgaToken.database_fields(),
+                (event_id,), entity_key="event_id"))
             questionnaire = self.get_questionnaire(rs, event_id)
             persona_ids = tuple(reg['persona_id']
                                 for reg in registrations.values())
@@ -1312,6 +1325,12 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['fields'] = cast_fields(registration['fields'],
                                                  event['fields'])
         ret['registrations'] = registrations
+
+        for token_id, orga_token in tokens.items():
+            del orga_token['id']
+            del orga_token['event_id']
+        event['orga_tokens'] = tokens
+
         # now we add additional information that is only auxillary and
         # does not correspond to changeable entries
         #

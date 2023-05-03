@@ -31,6 +31,7 @@ from cdedb.frontend.event.query_stats import (
     PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
+from cdedb.models.droid import OrgaToken
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
     storage,
@@ -4196,6 +4197,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             del log_entry['ctime']
         for log_entry in expectation['event.log'].values():
             del log_entry['ctime']
+        for token_id, token in expectation[OrgaToken.database_table].items():
+            token['ctime'] = result[OrgaToken.database_table][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -4922,6 +4925,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for reg_id, reg in result['registrations'].items():
             expectation['registrations'][reg_id]['ctime'] = reg['ctime']
             expectation['registrations'][reg_id]['mtime'] = reg['mtime']
+        for token_id, token in expectation['event']['orga_tokens'].items():
+            token['ctime'] = result['event']['orga_tokens'][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @event_keeper

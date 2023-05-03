@@ -7,11 +7,11 @@ The API facility is based on three different kinds of objects:
 - "class": A class, that inherits from either `StaticAPIToken` or `DynamicAPIToken`.
     Accordingly there are two "kinds" of classes: "static" and "dynamic".
 
-    Every such class creates it's own API with a unique scope of available endpoints
+    Every such class creates its own API with a unique scope of available endpoints
     and backend methods. The `name` attribute of the class determines the primary role
     of resulting "droids" and the "droid name" used to identify instances of the class.
 
-    Also called "class of droid" or "class of token.
+    Also called "class of droid" or "class of token".
 
 - "token": A set of credentials for a "class" of token.
 
@@ -19,22 +19,25 @@ The API facility is based on three different kinds of objects:
     no need to instantiate the class). For every static droid, a "secret" may be set
     in the `API_TOKENS` section of the `SecretsConfig` using the "class name" as a key.
     This "secret" is the "token" for that "static droid".
-    "dynamic" "droids" have multiple instances, each with their own secet. Here
+
+    "dynamic droids" have multiple instances, each with their own secet. Here
     a "token" is a row in a database table. This data is represented by an instance
-    of the "kind" class (which is a subclass of `CdEDataclass`).
+    of the "droid class" (which is a subclass of `DynamicAPIToken`, which also
+    subclasses `CdEDataclass`).
 
     "token" may also refer to the specially formatted string submitted in the request
     header of a request accessing an API. More accurately this should be called
     "token string".
 
-    Might also be called "API token", "droid token", "bot token" or "<kind> token",
+    Might also be called "API token", "droid token" or "<kind> token",
     e.g. "orga token" for orga droids, "resolve token" for the resolve droid, etc.
 
 - "droid": A `User` object for a request performed via the API.
 
     When a valid API token is provided in the request header, the session backend
     returns an instance of the `User` class for that request. This user object
-    and/or the program/person submitting the request is called a droid.
+    and/or the program submitting the request is called a droid. Unless the droid class
+    defines such an association, this user object is not assicated with a persona.
 
     The "kind" defines how the user object is created, often gaining additional
     attributes depending on the specific "kind", like an event id for orga droids.
@@ -117,6 +120,16 @@ class APIToken(abc.ABC):
 
         Example droid names: `static/resolve`, `orga/<orga_token_id>`.
 
+    * `get_droid_name_pattern()`: A re pattern matching all droid names for this class.
+
+        This is a classmethod with a constant return per class, which should be cached.
+
+        The pattern for a static droid may only match exactly one string.
+
+        The pattern for a dynamic droid must have exactly one capture group, which
+        captures the token id in that droids namespace. (i.e. the pattern for orga
+        droids should match for example "orga/123" and capture "123").
+
     * `get_token_string()`: A method that takes a secret and returns a correlty
         formatted token string, which includes the droid name and the given secret.
 
@@ -128,6 +141,12 @@ class APIToken(abc.ABC):
     in the context of droid APIs.
     """
     name: ClassVar[str]
+
+    @classmethod
+    @lru_cache()
+    def get_droid_name_pattern(cls) -> Pattern[str]:
+        """Construct a pattern to check if a token belongs to this class."""
+        raise NotImplementedError
 
     @staticmethod
     def create_secret() -> str:
@@ -157,6 +176,11 @@ class StaticAPIToken(APIToken):
     A static droid API can only be accessed if a secret is set in the `API_TOKENS`
     section of the `SecretsConfig`.
     """
+
+    @classmethod
+    @lru_cache
+    def get_droid_name_pattern(cls) -> Pattern[str]:
+        return re.compile(cls.get_droid_name())
 
     @classmethod
     def get_droid_name(cls) -> str:
@@ -244,6 +268,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     @classmethod
     def _get_droid_name(cls, id_: int) -> str:
+        """Construct the droid name for a known token_id w/o need to instantiate."""
         return f"{cls.name}/{id_}"
 
     def get_droid_name(self) -> str:
@@ -316,7 +341,7 @@ def resolve_droid_name(
         For a matching dynamic droid return `(<dynamic droid class>, <token_id>)`.
     """
     for static_droid in StaticAPIToken.__subclasses__():
-        if static_droid.get_droid_name() == droid_name:
+        if static_droid.get_droid_name_pattern().fullmatch(droid_name):
             return static_droid, None
     for dynamic_droid in DynamicAPIToken.__subclasses__():
         if m := dynamic_droid.get_droid_name_pattern().fullmatch(droid_name):

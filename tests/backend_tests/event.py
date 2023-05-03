@@ -2351,7 +2351,7 @@ class TestEventBackend(BackendTest):
                     ret[k] = datetime.date.fromisoformat(v)
                 elif k in {"ctime", "mtime", "timestamp", "registration_start",
                            "registration_soft_limit", "registration_hard_limit",
-                           }:
+                           "etime", "rtime", "atime"}:
                     ret[k] = datetime.datetime.fromisoformat(v)
 
         return ret
@@ -2365,6 +2365,8 @@ class TestEventBackend(BackendTest):
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         for log_entry in expectation['event.log'].values():
             log_entry['ctime'] = nearly_now()
+        for token in expectation[OrgaToken.database_table].values():
+            token['ctime'] = nearly_now()
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
     @event_keeper
@@ -2843,6 +2845,8 @@ class TestEventBackend(BackendTest):
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
+        for token in expectation['event']['orga_tokens'].values():
+            token['ctime'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
@@ -4535,7 +4539,7 @@ class TestEventBackend(BackendTest):
                 atime=None,
             )
             new_id, secret = self.event.create_orga_token(self.key, new_token)
-            new_token.id = cast(vtypes.ProtoID, new_id)
+            new_token.id = vtypes.ProtoID(new_id)
             apitoken = cast(RequestState, new_token.get_token_string(secret))
 
             log_expectation = [
