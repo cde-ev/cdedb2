@@ -185,14 +185,14 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
+DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     GenericLogFilter: LogFilter,
 }
 
 
 def _validate_dataclass_preprocess(type_: Type[DC], value: Any
-                                   ) -> Tuple[Type[DC], Type[DC]]:
+                                   ) -> Tuple[Type[DC], Type[CdEDBObject]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -212,10 +212,10 @@ def _validate_dataclass_preprocess(type_: Type[DC], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[DC], validated: DC) -> DC:
+def _validate_dataclass_postprocess(subtype: Type[DC], validated: CdEDBObject) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[union-attr]
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
     return cast(DC, subtype(**validated))
 
 
