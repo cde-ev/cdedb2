@@ -960,6 +960,14 @@ msgstr "Einige dieser Orgas sind keine Veranstaltungsnutzer."
 msgid "Only orga tokens from one event allowed."
 msgstr "Alle Orga-Tokens müssen zur gleichen Veranstaltung gehören."
 
+#: cdedb/backend/event/base.py:473
+msgid "May not create new orga token in offline instance."
+msgstr "Im Offlinemodus können keine neuen Orga-Tokens erstellt werden."
+
+#: cdedb/backend/event/base.py:529
+msgid "May not revoke orga token in offline instance."
+msgstr "Im Offlinemodus können Orga-Tokens nicht widerrufen werden."
+
 #: cdedb/backend/event/base.py:525
 msgid "This orga token has already been revoked."
 msgstr "Dieses Orga-Token wurde bereits widerrufen."
