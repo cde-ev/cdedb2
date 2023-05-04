@@ -50,7 +50,7 @@ Instead, we provide some convenient wrappers around them for frontend and backen
 Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
-
+import collections
 import copy
 import dataclasses
 import distutils.util
@@ -3438,6 +3438,8 @@ def _serialized_event(
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
+    }
+    mandatory_tables: TypeMapping = {
         'event.events': Mapping,
         'event.event_parts': Mapping,
         'event.course_tracks': Mapping,
@@ -3456,15 +3458,17 @@ def _serialized_event(
         'event.event_fees': Mapping,
         'event.stored_queries': Mapping,
     }
-    optional_fields: TypeMapping = {
+    optional_tables: TypeMapping = {
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
         'event.track_groups': Mapping,
         'event.track_group_tracks': Mapping,
+        models_droid.OrgaToken.database_table: Mapping,
     }
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, dict(collections.ChainMap(mandatory_fields, mandatory_tables)),
+        optional_tables, **kwargs)
 
     if val['EVENT_SCHEMA_VERSION'] != EVENT_SCHEMA_VERSION:
         raise ValidationSummary(ValueError(
@@ -3536,7 +3540,10 @@ def _serialized_event(
             _event_track_group, {'id': ID, 'event_id': ID}),
         'event.track_group_tracks': _augment_dict_validator(
             _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
+        # Ignore models_droid.OrgaToken. Do not validate and do not import.
     }
+
+    new_val = {k: val[k] for k in mandatory_fields}
 
     errs = ValidationSummary()
     for table, validator in table_validators.items():
@@ -3546,7 +3553,7 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     for table, validator in optional_table_validators.items():
         if table not in val:
@@ -3557,28 +3564,29 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     if errs:
         raise errs
 
     # Third a consistency check
-    if len(val['event.events']) != 1:
+    if len(new_val['event.events']) != 1:
         errs.append(ValueError('event.events', n_(
             "Only a single event is supported.")))
-    if val['event.events'] and val['id'] != val['event.events'][val['id']]['id']:
+    event_id = new_val['id']
+    if new_val['event.events'] and event_id != new_val['event.events'][event_id]['id']:
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
-    for k, v in val.items():
-        if k not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
-            for event in v.values():
-                if event.get('event_id') and event['event_id'] != val['id']:
-                    errs.append(ValueError(k, n_("Mismatched event.")))
+    for table, entity_dict in new_val.items():
+        if table not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
+            for entity in entity_dict.values():
+                if entity.get('event_id') and entity['event_id'] != event_id:
+                    errs.append(ValueError(table, n_("Mismatched event.")))
 
     if errs:
         raise errs
 
-    return SerializedEvent(val)
+    return SerializedEvent(new_val)
 
 
 @_add_typed_validator
