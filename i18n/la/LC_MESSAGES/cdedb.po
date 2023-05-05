@@ -14221,7 +14221,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/index.tmpl:45
 #, python-format
 msgid ""
-"Here you can find the CdE’s Mailinglists; notably also those linked to "
+"Here you can find the CdE’s Mailinglists, notably also those linked to "
 "events and assemblies. For further information on the general lists see the "
 "%(infolink)s."
 msgstr ""

@@ -14993,12 +14993,13 @@ msgstr "CdE-Webseite"
 #: cdedb/frontend/templates/web/ml/index.tmpl:45
 #, python-format
 msgid ""
-"Here you can find the CdE’s Mailinglists; notably also those linked to "
+"Here you can find the CdE’s Mailinglists, notably also those linked to "
 "events and assemblies. For further information on the general lists see the "
 "%(infolink)s."
 msgstr ""
-"Hier findest Du die Mailinglisten des CdE; insbesondere auch zu Akademien und Versammlungen assoziierte.\n"
-"Für weitere Informationen zu den allgemeinen Mailinglisten siehe die %(infolink)s."
+"Hier findest Du die Mailinglisten des CdE, insbesondere auch zu Akademien "
+"und Versammlungen. Für weitere Informationen zu den allgemeinen "
+"Mailinglisten siehe die %(infolink)s."
 
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:24
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:16
