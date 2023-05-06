@@ -113,15 +113,22 @@
              * Note that these might be either checkboxes or selects.
              * They are wrapped in a div, which has the field id as a data attribute.
              */
-            var field_ids = [];
+            var field_ids_true = [];
+            var field_ids_false = [];
             field_checkboxes.each(function() {
+                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
                 if ($(this).prop('checked')) {
-                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
+                    field_ids_true.push(field_id);
+                } else {
+                    field_ids_false.push(field_id);
                 }
             });
             field_selects.each(function() {
+                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
                 if ($(this).val() == 'True') {
-                    field_ids.push($(this).parents('[id^="questionnaire_field_entry"]').data('field_id'));
+                    field_ids_true.push(field_id);
+                } else {
+                    field_ids_false.push(field_id);
                 }
             });
 
@@ -132,7 +139,8 @@
             params = {
                 persona_id: constants['persona_id'],
                 part_ids: part_ids.join(","),
-                field_ids: field_ids.join(","),
+                field_ids_true: field_ids_true.join(","),
+                field_ids_false: field_ids_false.join(","),
                 is_orga: constants['is_orga'],
                 is_member: constants['is_member'],
             }

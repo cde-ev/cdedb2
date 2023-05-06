@@ -1264,34 +1264,58 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
-                       part_ids: Collection[int], field_ids: Collection[int],
-                       is_member: Optional[bool], is_orga: Optional[bool],
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
+                       part_ids: Collection[int], field_ids_true: Collection[int],
+                       field_ids_false: Collection[int], is_member: Optional[bool],
+                       is_orga: Optional[bool],
                        ) -> RegistrationFeeData:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
         :param part_ids: Collection of part ids the user is (supposedly) registered for.
-        :param field_ids: Collection of fields, which have a truthy value.
+        :param field_ids_true: Collection of fields, which have a truthy value.
+        :param field_ids_true: Collection of fields, which have a falsy value.
         :param is_member: Optional override for membership status in fee calculation.
         :param is_orga: Optional override for orga status in fee calculation.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
         part_ids = affirm_set(vtypes.ID, part_ids)
-        field_ids = affirm_set(vtypes.ID, field_ids)
+        field_ids_true = affirm_set(vtypes.ID, field_ids_true)
+        field_ids_false = affirm_set(vtypes.ID, field_ids_false)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
 
         event = self.get_event(rs, event_id)
 
+        registration_id = None
+        if persona_id:
+            registration_id = unwrap(
+                self.list_registrations(rs, event_id, persona_id) or None)
+
         if self.is_orga(rs, event_id=event_id):
             pass
-        elif persona_id == rs.user.persona_id and (
-                event['is_open'] or self.list_registrations(rs, event_id, persona_id)):
+        elif persona_id and persona_id == rs.user.persona_id and (
+                event['is_open'] or registration_id):
             pass
         else:
             raise PrivilegeError
+
+        reg = None
+        if registration_id:
+            reg = self.get_registration(rs, registration_id)
+
+        fields = {}
+        for field_id, field in event['fields'].items():
+            fn = field['field_name']
+            if field_id in field_ids_true:
+                fields[fn] = True
+            elif field_id in field_ids_false:
+                fields[fn] = False
+            elif reg:
+                fields[fn] = bool(reg['fields'].get(fn, False))
+            else:
+                field[fn] = False
 
         fake_registration = {
             'persona_id': persona_id,
@@ -1304,10 +1328,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 }
                 for part_id in event['parts']
             },
-            'fields': {
-                event['fields'][field_id]['field_name']: field_id in field_ids
-                for field_id in event['fields']
-            }
+            'fields': fields,
         }
         return self._calculate_complex_fee(
             rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,

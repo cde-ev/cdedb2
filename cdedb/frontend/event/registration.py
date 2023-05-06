@@ -401,10 +401,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
-                       part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
-                       is_member: bool = None, is_orga: bool = None,
+    @REQUESTdata("persona_id", "part_ids", "field_ids_true", "field_ids_false",
+                 "is_member", "is_orga")
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
+                       part_ids: vtypes.IntCSVList, field_ids_true: vtypes.IntCSVList,
+                       field_ids_false: vtypes.IntCSVList, is_member: bool = None,
+                       is_orga: bool = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -429,7 +431,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             return Response("{}", mimetype='application/json', status=400)
 
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, field_ids, is_member, is_orga)
+            rs, event_id, persona_id, part_ids, field_ids_true, field_ids_false,
+            is_member, is_orga)
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"
