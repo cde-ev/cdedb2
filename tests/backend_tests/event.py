@@ -78,6 +78,7 @@ class TestEventBackend(BackendTest):
             academy! :)""",
             'use_additional_questionnaire': False,
             'notes': None,
+            'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
             'parts': {
                 -1: {

@@ -942,6 +942,8 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
         # fields
+        self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
+                            div="field-definition-notes", exact=True)
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
