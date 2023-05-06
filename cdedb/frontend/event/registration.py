@@ -239,7 +239,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                                        csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
