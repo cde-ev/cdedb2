@@ -731,6 +731,8 @@ class PastEventBackend(AbstractBackend):
             course_map[course_id] = pcourse_id
         reg_ids = self.event.list_registrations(rs, event['id'])
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
+        # keep track of all registrations for this part.
+        registrations_seen = set()
         # we want to later delete empty courses
         courses_seen = set()
         # we want to add each participant/course combination at
@@ -740,6 +742,7 @@ class PastEventBackend(AbstractBackend):
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
+            registrations_seen.add(reg['persona_id'])
             is_orga = reg['persona_id'] in event['orgas']
             for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
@@ -760,6 +763,10 @@ class PastEventBackend(AbstractBackend):
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
                     is_instructor=False, is_orga=is_orga)
+        # Delete past event if it has no participants.
+        if not registrations_seen:
+            self.delete_past_event(rs, new_id, cascade=("log",))
+            return 0
         # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
@@ -806,8 +813,11 @@ class PastEventBackend(AbstractBackend):
                                                'is_archived': True})
             new_ids = None
             if create_past_event:
-                new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                                for part_id in xsorted(event['parts']))
+                new_ids = []
+                for part_id in xsorted(event['oarts']):
+                    new_id = self.archive_one_part(rs, event, part_id)
+                    if new_id:
+                        new_ids.append(new_id)
         return new_ids, None
 
     @access("member", "cde_admin")
