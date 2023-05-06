@@ -12002,6 +12002,16 @@ msgid "Special Purpose Custom Fields"
 msgstr "Datenfelder mit besonderem Zweck"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
+#: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:113
+msgid "Custom Fields Notes"
+msgstr "Notizen zu Datenfeldern"
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
+#, python-format
+msgid "This will be shown on the '%(field_summary)s' page."
+msgstr "Wird auf der '%(field_summary)s'-Seite angezeigt."
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Field for Rooming Preferences"
 msgstr "Feld für Hauswünsche"
 

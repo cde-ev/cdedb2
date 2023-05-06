@@ -85,8 +85,8 @@
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
         {{ util.form_input_textarea(name="field_definition_notes", label=gettext("Custom Fields Notes"),
-                                    info=gettext("This will be shown on the '%(field_summary)s' page."|format(
-                                        field_summary=gettext("Configure Custom Fields"))))  }}
+                                    info=gettext("This will be shown on the '%(field_summary)s' page.")|format(
+                                        field_summary=gettext("Configure Custom Fields")))  }}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the automatic detection "

@@ -779,7 +779,7 @@ class PastEventBackend(AbstractBackend):
     def archive_event(self, rs: RequestState, event_id: int,
                       create_past_event: bool = True
                       ) -> Union[Tuple[None, str],
-                                 Tuple[Optional[Tuple[int, ...]], None]]:
+                                 Tuple[Optional[List[int]], None]]:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -814,7 +814,7 @@ class PastEventBackend(AbstractBackend):
             new_ids = None
             if create_past_event:
                 new_ids = []
-                for part_id in xsorted(event['oarts']):
+                for part_id in xsorted(event['parts']):
                     new_id = self.archive_one_part(rs, event, part_id)
                     if new_id:
                         new_ids.append(new_id)
