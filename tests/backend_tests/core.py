@@ -16,6 +16,7 @@ from cdedb.common.exceptions import ArchiveError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
 )
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, create_mock_image, prepsql, storage,
@@ -211,7 +212,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': newaddress,
         }
-        _, log_entry = self.core.retrieve_log(self.key, {})
+        _, log_entry = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertIn(expected_log, log_entry)
 
     @storage
@@ -485,7 +486,7 @@ class TestCoreBackend(BackendTest):
             'submitted_by': self.user['id'],
             'change_note': change_note,
         }
-        _, expected_log = self.core.retrieve_log(self.key, {})
+        _, expected_log = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertIn(log_entry, expected_log)
 
     @as_users("vera")
@@ -586,7 +587,8 @@ class TestCoreBackend(BackendTest):
             'persona_id': None,
             'submitted_by': self.user['id'],
         }
-        _, log_entries = self.core.retrieve_log(self.key, {'codes': (genesis_deleted,)})
+        _, log_entries = self.core.retrieve_log(
+            self.key, CoreLogFilter(codes=[genesis_deleted]))
         self.assertIn(log_entry_expectation, log_entries)
 
     @as_users("annika", "vera")
@@ -916,7 +918,7 @@ class TestCoreBackend(BackendTest):
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(
-            self.key, {'codes': (const.CoreLogCodes.genesis_verified,)})
+            self.key, CoreLogFilter(codes=[const.CoreLogCodes.genesis_verified]))
         self.assertEqual(1, total)
 
     @as_users("vera")
@@ -1035,8 +1037,8 @@ class TestCoreBackend(BackendTest):
             "total": "113.76",
             "transaction_date": None,
         }]
-        self.assertLogEqual(log, log_retriever=self.cde.retrieve_finance_log,
-                            codes=[const.FinanceLogCodes.remove_balance_on_archival])
+        self.assertLogEqual(
+            log, 'finance', codes=[const.FinanceLogCodes.remove_balance_on_archival])
         ret = self.core.dearchive_persona(self.key, persona_id,
                                           new_username="charly@example.cde")
         self.assertLess(0, ret)
@@ -1180,10 +1182,11 @@ class TestCoreBackend(BackendTest):
                 'submitted_by': admin2['id'],
             },
         ))
-        result = self.core.retrieve_log(self.key, {})
+        result = self.core.retrieve_log(self.key, CoreLogFilter())
         self.assertEqual(core_log_expectation, result)
 
-        total_entries = self.core.retrieve_changelog_meta(self.key, {})[0]
+        total_entries = self.core.retrieve_changelog_meta(
+            self.key, ChangelogLogFilter())[0]
         changelog_expectation = (
             # Committing the changed admin bits.
             {
@@ -1199,10 +1202,7 @@ class TestCoreBackend(BackendTest):
             },
         )
         # Set offset to avoid selecting the Init. changelog entries
-        self.assertLogEqual(
-            changelog_expectation, log_retriever=self.core.retrieve_changelog_meta,
-            offset=total_entries - 1
-        )
+        self.assertLogEqual(changelog_expectation, 'changelog', offset=total_entries-1)
 
     @as_users("anton", "martin")
     def test_invalid_privilege_change(self) -> None:
@@ -1383,19 +1383,19 @@ class TestCoreBackend(BackendTest):
             "core.changelog", ids=None,
             keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
                   "change_note", "code", "persona_id", "automated_change"))
-        self.assertLogEqual(
-            list(expectation.values()), log_retriever=self.core.retrieve_changelog_meta)
+        self.assertLogEqual(list(expectation.values()), 'changelog')
 
     @as_users("katarina")
     def test_auditor(self) -> None:
-        for retriever, table in (
-            (self.core.retrieve_log, "core.log"),
-            (self.core.retrieve_changelog_meta, "core.changelog"),
-            (self.cde.retrieve_cde_log, "cde.log"),
-            (self.cde.retrieve_finance_log, "cde.finance_log"),
-            (self.event.retrieve_log, "event.log"),
-            (self.assembly.retrieve_log, "assembly.log"),
-            (self.ml.retrieve_log, "ml.log"),
+        for log_realm, table in (
+            ('core', "core.log"),
+            ('changelog', "core.changelog"),
+            ('cde', "cde.log"),
+            ('finance', "cde.finance_log"),
+            ('assembly', "assembly.log"),
+            ('event', "event.log"),
+            ('ml', "ml.log"),
+            ('past_event', "past_event.log"),
         ):
             with self.subTest(log=table):
                 keys = None
@@ -1405,5 +1405,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    log_retriever=retriever,
+                    realm=log_realm
                 )

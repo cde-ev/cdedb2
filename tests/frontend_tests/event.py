@@ -21,6 +21,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
 from cdedb.filter import iban_filter
@@ -88,14 +89,14 @@ class TestEventFrontend(FrontendTest):
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            out = admin | {"Nutzer verwalten"}
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten"}
             out = admin
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Nutzer verwalten", "Alle Nutzer verwalten"}
+            ins = everyone | admin | {"Nutzer verwalten"}
             out = set()
         # auditors
         elif self.user_in('katarina'):
@@ -1418,7 +1419,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
+            ml_log_expectation, realm="ml", _mailinglist_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -1542,6 +1543,7 @@ etc;anything else""", f['entries_2'].value)
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
+        self.assertPresence("Warmup (02.02.2222 – 02.02.2222)")
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['reg.mixed_lodging'] = 'True'
@@ -5377,7 +5379,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 4
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
-        offset = self.event.retrieve_log(self.key, {'entity_ids': [event_id]})[0]
+        offset = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
                       "Gruppen")

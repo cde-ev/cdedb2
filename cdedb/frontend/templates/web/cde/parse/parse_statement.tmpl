@@ -38,18 +38,8 @@
                     <li>
                         {% trans %}Reference{% endtrans %}: {{ data["reference{}".format(t_id)] }}
                     </li>
-                    {% if data["other_references{}".format(t_id)] %}
                     <li>
-                        {% trans %}Other References{% endtrans %}:
-                        <ul>
-                            {% for ref in data["other_references{}".format(t_id)].split(ref_sep) %}
-                                <li>{{ ref }}</li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                    {% endif %}
-                    <li>
-                        {% trans %}Statement Date{% endtrans %}: {{ data["statement_date{}".format(t_id)] }}
+                        {% trans %}Transaction Date{% endtrans %}: {{ data["transaction_date{}".format(t_id)] }}
                     </li>
                     <li>
                         {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
@@ -158,9 +148,7 @@
         <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
-            {{ util.input_hidden(name="start") }}
-            {{ util.input_hidden(name="end") }}
-            {{ util.input_hidden(name="timestamp") }}
+            {{ util.input_hidden(name="date") }}
             <div>
             {% if params["has_error"] %}
                 <div id="has_error_summary">

@@ -13,7 +13,9 @@ from typing import Set, Tuple, cast
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, LineResolutions, RequestState, Role, now
+from cdedb.common import (
+    IGNORE_WARNINGS_NAME, CdEDBObject, LineResolutions, RequestState, Role, now,
+)
 from cdedb.common.i18n import (
     format_country_code, get_country_code_from_country, get_localized_country_codes,
 )
@@ -145,8 +147,8 @@ class TestCdEFrontend(FrontendTest):
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Alle Nutzer verwalten", "Semesterverwaltung",
-                     "Organisationen verwalten"}
+        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
+                     "Semesterverwaltung"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen"}
@@ -927,17 +929,18 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
-        self.assertNonPresence("Massenaufnahme")
+        self.traverse({'href': '/cde/$'}, "Nutzer verwalten")
+        self.assertTitle("CdE-Nutzerverwaltung")
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = QueryOperators.equal.value
+        f['qval_is_archived'] = True
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("CdE-Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
@@ -946,7 +949,7 @@ class TestCdEFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [16]", div='query-results')
+        self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
         self.assertPresence("Lost", div='query-result')
@@ -1197,8 +1200,25 @@ class TestCdEFrontend(FrontendTest):
         # check the warning about the donation missmatch
         self.assertValidationWarning("donation", "abweichende Spende von 25,00")
         f = self.response.forms['createlastschriftform']
-        f["_magic_ignore_warnings"].checked = True
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
+
+    @as_users("berta")
+    def test_lastschrift_change_donation(self) -> None:
+        self.traverse(self.user['display_name'], "Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['donation'] = "4200"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+        f = self.response.forms['changedataform']
+        f['donation'] = "3"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME] = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Änderung wartet auf Bestätigung", 'info')
 
     @as_users("farin")
     def test_lastschrift_change(self) -> None:
@@ -1843,7 +1863,6 @@ class TestCdEFrontend(FrontendTest):
         ]
         self.assertLogEqual(
             log_expectation, realm="finance",
-            log_retriever=self.cde.retrieve_finance_log,
             codes=[const.FinanceLogCodes.increase_balance,
                    const.FinanceLogCodes.gain_membership])
         self.admin_view_profile("daniel")
@@ -2029,7 +2048,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("562,55 € Guthaben von 10 Exmitgliedern", div="3-1003")
+        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 
@@ -2815,7 +2834,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–32 von 32]")
+        self.assertTitle("Nutzerdaten-Log [1–33 von 33]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
@@ -2828,7 +2847,8 @@ class TestCdEFrontend(FrontendTest):
         personas_without_address = {
             USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
             USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
-            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"]
+            USER_DICT["vera"]["id"], USER_DICT["werner"]["id"],
+            USER_DICT["ludwig"]["id"],
         }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations

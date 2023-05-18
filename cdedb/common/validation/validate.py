@@ -96,9 +96,7 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-from cdedb.common.query.log_filter import (
-    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
-)
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -186,7 +184,8 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
-    models_ml.Mailinglist: Mailinglist
+    models_ml.Mailinglist: Mailinglist,
+    GenericLogFilter: LogFilter,
 }
 
 
@@ -225,7 +224,10 @@ def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
     Allows for subclasses, and figures out the appropriate superclass, for which
     a validator exists, dynamically."""
     subtype, validator = _validate_dataclass_preprocess(type_, value)
-    val = dataclasses.asdict(value)
+    if hasattr(value, 'to_validation'):
+        val = value.to_validation()
+    else:
+        val = dataclasses.asdict(value)
     validated = validate_assert(
         validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
     return _validate_dataclass_postprocess(subtype, validated)
@@ -4749,61 +4751,22 @@ def _range(
 
 @_add_typed_validator
 def _log_filter(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilter:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilter)
-
-
-@_add_typed_validator
-def _log_filter_changelog(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterChangelog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
-
-
-@_add_typed_validator
-def _log_filter_entity_log(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterEntityLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
-
-
-@_add_typed_validator
-def _log_filter_finance(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterFinanceLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
-
-
-LF = TypeVar("LF", bound=LogFilter)
-
-
-def _log_filter_common(
     val: Any, argname: str = None,
-    *, log_table: LogTable, filter_class: Type[LF],
+    *, subtype: Type[GenericLogFilter],
     **kwargs: Any
-) -> LF:
+) -> LogFilter:
 
-    if isinstance(val, filter_class):
-        val_dict = val.__dict__
-    else:
-        val_dict = dict(_mapping(val, argname, **kwargs))
+    if isinstance(val, GenericLogFilter):
+        val = val.to_validation()
+    val = dict(_mapping(val, argname, **kwargs))
 
-    if not val_dict.get('length'):
-        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
-    if val_dict.get('table', log_table) != log_table:
-        raise ValidationSummary(ValueError(n_("Table mismatch.")))
-    # Ensure this is an enum member, not just a string.
-    val_dict['table'] = LogTable(log_table)
+    if not val.get('length'):
+        val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
 
-    val_dict = _examine_dictionary_fields(
-        val_dict, {}, typing.get_type_hints(filter_class))
+    mandatory, optional = subtype.validation_fields()
+    val = _examine_dictionary_fields(val, mandatory, optional)
 
-    return filter_class(**val_dict)
+    return LogFilter(val)
 
 
 E = TypeVar('E', bound=Enum)

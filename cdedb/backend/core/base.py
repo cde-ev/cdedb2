@@ -20,14 +20,13 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, overload,
 )
 
-from passlib.hash import sha512_crypt
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
+    AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    inspect_validation as inspect, internal, singularize,
+    encrypt_password, inspect_validation as inspect, internal, singularize,
+    verify_password,
 )
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
@@ -42,7 +41,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogFilterChangelogLike, LogFilterLike
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
 )
@@ -143,17 +142,8 @@ class CoreBaseBackend(AbstractBackend):
             return False
         return self.verify_password(password, password_hash)
 
-    @staticmethod
-    def verify_password(password: str, password_hash: str) -> bool:
-        """Central function, so that the actual implementation may be easily
-        changed.
-        """
-        return sha512_crypt.verify(password, password_hash)
-
-    @staticmethod
-    def encrypt_password(password: str) -> str:
-        """We currently use passlib for password protection."""
-        return sha512_crypt.hash(password)
+    verify_password = staticmethod(verify_password)
+    encrypt_password = staticmethod(encrypt_password)
 
     @staticmethod
     def create_fulltext(persona: CdEDBObject) -> str:
@@ -254,24 +244,25 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "core.log")
+        log_filter = affirm_dataclass(CoreLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState,
-                                log_filter: LogFilterChangelogLike) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: ChangelogLogFilter
+                                ) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "core.changelog")
+        log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
@@ -341,16 +332,20 @@ class CoreBaseBackend(AbstractBackend):
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
+                elif (current_state != committed_state
+                        and {"core_admin", "cde_admin"} & rs.user.roles):
+                    # if user is admin, set pending change as reviewed
+                    return self.changelog_resolve_change(
+                        rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
-                # values. It's not our fault, that we didn't have to do any
-                # work.
+                # values. It's not our fault, that we didn't have to do any work.
+                rs.notify('info', n_("Nothing changed."))
                 return 1
-
             # Determine if something requiring a review changed.
             fields_requiring_review = {
                 "birthday", "family_name", "given_names", "birth_name",
                 "gender", "address_supplement", "address", "postal_code",
-                "location", "country",
+                "location", "country", "donation",
             }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
@@ -469,7 +464,10 @@ class CoreBaseBackend(AbstractBackend):
             udata = {key: data[key] for key in relevant_keys}
             # commit changes
             ret = 0
-            if len(udata) > 1:
+            if len(udata) == 1:
+                rs.notify('warning', n_("Change has reverted pending change."))
+                return 1
+            elif len(udata) > 1:
                 ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
@@ -498,7 +496,7 @@ class CoreBaseBackend(AbstractBackend):
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def changelog_get_changes(self, rs: RequestState,
                               stati: Collection[const.MemberChangeStati]
                               ) -> CdEDBObjectMap:
@@ -694,7 +692,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         if not change_note:
             self.logger.info(f"No change note specified (persona_id={data['id']}).")
-            change_note = "Allgemeine Änderung"
+            change_note = "Allgemeine Änderung."
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])

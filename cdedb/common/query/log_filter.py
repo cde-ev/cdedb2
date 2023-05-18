@@ -3,80 +3,35 @@
 import dataclasses
 import datetime
 import decimal
-import enum
-from typing import Any, Optional, Type, Union, cast
+import enum  # pylint: disable=unused-import
+from typing import ClassVar, Collection, Optional, Type
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, diacritic_patterns
+from cdedb.common.validation.types import TypeMapping
 from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
+from cdedb.filter import cdedbid_filter
+from cdedb.models.common import requestdict_field_spec
+
+__all__ = [
+    'GenericLogFilter', 'CoreLogFilter', 'CdELogFilter', 'ChangelogLogFilter',
+    'FinanceLogFilter', 'AssemblyLogFilter', 'EventLogFilter', 'MlLogFilter',
+    'PastEventLogFilter',
+]
 
 _CONFIG = LazyConfig()
 _DEFAULT_LOG_COLUMNS = (
-    "id", "ctime", "code", "submitted_by", "persona_id", "change_note")
-
-
-# Use this TypeAlias where both a LogFilter and a dict, that can be turned into a
-# LogFilter by validation is acceptable.
-LogFilterLike = Union["LogFilter", CdEDBObject]
-LogFilterChangelogLike = Union["LogFilterChangelog", CdEDBObject]
-LogFilterEntityLogLike = Union["LogFilterEntityLog", CdEDBObject]
-LogFilterFinanceLogLike = Union["LogFilterFinanceLog", CdEDBObject]
-
-
-class LogTable(enum.Enum):
-    """Enum containing all the different log tables.
-
-    Has a few helper methods providing additional data depending on the table.
-    """
-    core_log = "core.log"
-    core_changelog = "core.changelog"
-    cde_finance_log = "cde.finance_log"
-    cde_log = "cde.log"
-    past_event_log = "past_event.log"
-    event_log = "event.log"
-    assembly_log = "assembly.log"
-    ml_log = "ml.log"
-
-    def get_log_code_class(self) -> Type[enum.IntEnum]:
-        """Map each log table to the corresponsing LogCode class."""
-        return {
-            self.core_log: const.CoreLogCodes,
-            self.core_changelog: const.MemberChangeStati,
-            self.cde_finance_log: const.FinanceLogCodes,
-            self.cde_log: const.CdeLogCodes,
-            self.past_event_log: const.PastEventLogCodes,
-            self.event_log: const.EventLogCodes,
-            self.assembly_log: const.AssemblyLogCodes,
-            self.ml_log: const.MlLogCodes,
-        }[cast(str, self)]
-
-    def get_additional_columns(self) -> tuple[str, ...]:
-        """Provide a list of non-default columns for every table."""
-        return {
-            self.core_changelog: ("reviewed_by", "generation", "automated_change",),
-            self.cde_finance_log: ("delta", "new_balance", "transaction_date",
-                                   "members", "total",),
-            self.past_event_log: ("pevent_id",),
-            self.event_log: ("event_id",),
-            self.ml_log: ("mailinglist_id",),
-            self.assembly_log: ("assembly_id",),
-        }.get(cast(str, self), ())
-
-    def get_filter_class(self) -> "Type[LogFilter]":
-        """Map log tables to appropriate filter class."""
-        return {
-            self.core_changelog: LogFilterChangelog,
-            self.assembly_log: LogFilterEntityLog,
-            self.event_log: LogFilterEntityLog,
-            self.past_event_log: LogFilterEntityLog,
-            self.ml_log: LogFilterEntityLog,
-            self.cde_finance_log: LogFilterFinanceLog,
-        }.get(cast(str, self), LogFilter)
+    "id", "ctime", "code", "submitted_by", "persona_id", "change_note",
+)
+_DEFAULT_PERSONA_COLUMNS = (
+    "persona_id", "submitted_by",
+)
 
 
 @dataclasses.dataclass
-class LogFilter:
+class GenericLogFilter:
     """Dataclass to validate, pass and process filter parameters for querying a log.
 
     Everything except for the table should be optional.
@@ -84,8 +39,10 @@ class LogFilter:
     This can be created from a dict of parameters by the validation, using the type
     annotations to validate the parameters.
     """
-    # The log that is being retrieved.
-    table: LogTable
+    log_table: ClassVar[str]
+    log_code_class: ClassVar["Type[enum.IntEnum]"]
+    additional_columns: ClassVar[tuple[str, ...]] = ()
+    additional_persona_columns: ClassVar[tuple[str, ...]] = ()
 
     # Pagination parameters.
     offset: Optional[int] = None  # How many entries to skip at the start.
@@ -99,8 +56,8 @@ class LogFilter:
     submitted_by: Optional[int] = None  # ID of the active user.
     change_note: Optional[str] = None  # Additional notes.
     # Range for the log timestamp.
-    ctime: tuple[Optional[datetime.datetime],
-                 Optional[datetime.datetime]] = (None, None)
+    ctime_from: Optional[datetime.datetime] = None
+    ctime_to: Optional[datetime.datetime] = None
 
     def __post_init__(self) -> None:
         """Do a little processing on the data.
@@ -119,10 +76,6 @@ class LogFilter:
                 self.length = self.length + self.offset
             self.offset = 0
 
-    def get(self, name: str, default: Any) -> Any:
-        """Emulate dict access."""
-        return getattr(self, name, default)
-
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         """Create a list of SQL conditions and the corresponding parameters."""
         conditions = []
@@ -139,14 +92,12 @@ class LogFilter:
         if self.change_note:
             conditions.append("change_note ~* %s")
             params.append(diacritic_patterns(self.change_note))
-        if self.ctime:
-            ctime_from, ctime_to = self.ctime
-            if ctime_from:
-                conditions.append("ctime >= %s")
-                params.append(ctime_from)
-            if ctime_to:
-                conditions.append("ctime <= %s")
-                params.append(ctime_to)
+        if self.ctime_from:
+            conditions.append("ctime >= %s")
+            params.append(self.ctime_from)
+        if self.ctime_to:
+            conditions.append("ctime <= %s")
+            params.append(self.ctime_to)
 
         return conditions, params
 
@@ -159,135 +110,267 @@ class LogFilter:
         conditions, params = self._get_sql_conditions()
         return f"WHERE {' AND '.join(conditions)}" if conditions else "", tuple(params)
 
-    def get_columns(self) -> tuple[str, ...]:
+    @classmethod
+    def get_columns(cls) -> tuple[str, ...]:
         """Get a list of columns in the respective log table."""
-        return _DEFAULT_LOG_COLUMNS + self.table.get_additional_columns()
+        return _DEFAULT_LOG_COLUMNS + cls.additional_columns
 
-    def get_columns_str(self) -> str:
+    @classmethod
+    def get_columns_str(cls) -> str:
         """Get a comma-separated list of columns to select from the log table."""
-        return ", ".join(self.get_columns())
+        return ", ".join(cls.get_columns())
+
+    @classmethod
+    def requestdict_fields(cls) -> list[tuple[str, str]]:
+        """Determine which fields should be extracted from the request.
+
+        For use with `REQUESTdatadict` or `request_dict_extractor`.
+        """
+        return [
+            (field.name, requestdict_field_spec(field))
+            for field in dataclasses.fields(cls)
+            if field.name not in ("_offset", "_length")
+        ]
+
+    def to_validation(self) -> CdEDBObject:
+        """Turn an instance of the dataclass into a dict, that can be validated.
+
+        Because CdEDB-ID validation is not idempotent, we need to fix some data.
+        """
+        ret = dataclasses.asdict(self)
+        for k in self.get_persona_columns():
+            ret[k] = cdedbid_filter(ret[k])
+        return ret
+
+    @classmethod
+    def validation_fields(cls) -> tuple[TypeMapping, TypeMapping]:
+        """Create a specification for validating the dataclass.
+
+        Returns two dicts, with mandatory and optional keys respectively.
+        Some type annotations differ slightly from the validation type.
+        """
+        mandatory: TypeMapping = {'length': int}
+        optional: TypeMapping = {
+            field.name: field.type for field in dataclasses.fields(cls)
+        }
+        del optional['length']
+        optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
+        for k in cls.get_persona_columns():
+            optional[k] = Optional[vtypes.CdedbID]  # type: ignore[assignment]
+        return mandatory, optional
+
+    @classmethod
+    def get_persona_columns(cls) -> tuple[str, ...]:
+        """Determine which filter attributes are persona ids."""
+        return _DEFAULT_PERSONA_COLUMNS + cls.additional_persona_columns
+
+    @classmethod
+    def get_persona_ids(cls, log_entries: Collection[CdEDBObject]) -> set[int]:
+        """Extract a set of all persona ids in the given log entries."""
+        ret: set[int] = set()
+        for k in cls.get_persona_columns():
+            ret.update(e[k] for e in log_entries if e[k])
+        return ret
 
 
 @dataclasses.dataclass
-class LogFilterChangelog(LogFilter):
-    # changelog only
+class CoreLogFilter(GenericLogFilter):
+    log_table = "core.log"
+    log_code_class = const.CoreLogCodes
+
+
+@dataclasses.dataclass
+class CdELogFilter(GenericLogFilter):
+    log_table = "cde.log"
+    log_code_class = const.CdeLogCodes
+
+
+@dataclasses.dataclass
+class ChangelogLogFilter(GenericLogFilter):
+    log_table = "core.changelog"
+    log_code_class = const.MemberChangeStati
+    additional_columns = ("reviewed_by", "generation", "automated_change",)
+    additional_persona_columns = ("reviewed_by",)
+
     reviewed_by: Optional[int] = None  # ID of the reviewer.
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if not self.table == LogTable.core_changelog:
-            raise ValueError("Table mismatch.")
-
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        # Special column for core.changelog
-        if self.table == LogTable.core_changelog:
-            if self.reviewed_by:
-                conditions.append("reviewed_by = %s")
-                params.append(self.reviewed_by)
+        if self.reviewed_by:
+            conditions.append("reviewed_by = %s")
+            params.append(self.reviewed_by)
 
         return conditions, params
 
 
 @dataclasses.dataclass
-class LogFilterEntityLog(LogFilter):
-    # ID of the relevant entity (assembly, event, past_event, ml).
-    entity_ids: list[int] = dataclasses.field(default_factory=list)
+class AssemblyLogFilter(GenericLogFilter):
+    log_table = "assembly.log"
+    log_code_class = const.AssemblyLogCodes
+    additional_columns = ("assembly_id",)
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if self.table not in {LogTable.assembly_log, LogTable.event_log,
-                              LogTable.ml_log, LogTable.past_event_log}:
-            raise ValueError("Table mismatch.")
+    assembly_id: Optional[int] = None
+    _assembly_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def assembly_ids(self) -> list[int]:
+        if self.assembly_id:
+            return [self.assembly_id]
+        return self._assembly_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.table == LogTable.assembly_log:
-            if self.entity_ids:
-                conditions.append("assembly_id = ANY(%s)")
-                params.append(self.entity_ids)
-        elif self.table == LogTable.event_log:
-            if self.entity_ids:
-                conditions.append("event_id = ANY(%s)")
-                params.append(self.entity_ids)
-        elif self.table == LogTable.ml_log:
-            if self.entity_ids:
-                conditions.append("mailinglist_id = ANY(%s)")
-                params.append(self.entity_ids)
-        elif self.table == LogTable.past_event_log:
-            if self.entity_ids:
-                conditions.append("pevent_id = ANY(%s)")
-                params.append(self.entity_ids)
+        if self.assembly_ids():
+            conditions.append("assembly_id = ANY(%s)")
+            params.append(self.assembly_ids())
 
         return conditions, params
 
 
 @dataclasses.dataclass
-class LogFilterFinanceLog(LogFilter):
-    # finance only
-    # Change in balance of the affected user.
-    delta: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
-    # New balance of the affected user.
-    new_balance: tuple[Optional[decimal.Decimal],
-                       Optional[decimal.Decimal]] = (None, None)
-    # Range for the transaction date..
-    transaction_date: tuple[Optional[datetime.date],
-                            Optional[datetime.date]] = (None, None)
-    # New total balance across all members.
-    total: tuple[Optional[decimal.Decimal], Optional[decimal.Decimal]] = (None, None)
-    # New number of total members.
-    members: tuple[Optional[int], Optional[int]] = (None, None)
+class EventLogFilter(GenericLogFilter):
+    log_table = "event.log"
+    log_code_class = const.EventLogCodes
+    additional_columns = ("event_id",)
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if not self.table == LogTable.cde_finance_log:
-            raise ValueError("Table mismatch.")
+    event_id: Optional[int] = None
+    _event_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def event_ids(self) -> list[int]:
+        if self.event_id:
+            return [self.event_id]
+        return self._event_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
 
-        if self.table == LogTable.cde_finance_log:
-            if self.delta:
-                delta_from, delta_to = self.delta
-                if delta_from:
-                    conditions.append("delta >= %s")
-                    params.append(delta_from)
-                if delta_to:
-                    conditions.append("delta <= %s")
-                    params.append(delta_to)
-            if self.new_balance:
-                new_balance_from, new_balance_to = self.new_balance
-                if new_balance_from:
-                    conditions.append("new_balance >= %s")
-                    params.append(new_balance_from)
-                if new_balance_to:
-                    conditions.append("new_balance <= %s")
-                    params.append(new_balance_to)
-            if self.transaction_date:
-                transaction_date_from, transaction_date_to = self.transaction_date
-                if transaction_date_from:
-                    conditions.append("transaction_date >= %s")
-                    params.append(transaction_date_from)
-                if transaction_date_to:
-                    conditions.append("transaction_date <= %s")
-                    params.append(transaction_date_to)
-            if self.total:
-                total_from, total_to = self.total
-                if total_from:
-                    conditions.append("total >= %s")
-                    params.append(total_from)
-                if total_to:
-                    conditions.append("total <= %s")
-                    params.append(total_to)
-            if self.members:
-                members_from, members_to = self.members
-                if members_from:
-                    conditions.append("members >= %s")
-                    params.append(members_from)
-                if members_to:
-                    conditions.append("members <= %s")
-                    params.append(members_to)
+        if self.event_ids():
+            conditions.append("event_id = ANY(%s)")
+            params.append(self.event_ids())
 
         return conditions, params
+
+
+@dataclasses.dataclass
+class MlLogFilter(GenericLogFilter):
+    log_table = "ml.log"
+    log_code_class = const.MlLogCodes
+    additional_columns = ("mailinglist_id",)
+
+    mailinglist_id: Optional[int] = None
+    _mailinglist_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def mailinglist_ids(self) -> list[int]:
+        if self.mailinglist_id:
+            return [self.mailinglist_id]
+        return self._mailinglist_ids
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.mailinglist_ids():
+            conditions.append("mailinglist_id = ANY(%s)")
+            params.append(self.mailinglist_ids())
+
+        return conditions, params
+
+
+@dataclasses.dataclass
+class PastEventLogFilter(GenericLogFilter):
+    log_table = "past_event.log"
+    log_code_class = const.PastEventLogCodes
+    additional_columns = ("pevent_id",)
+
+    pevent_id: Optional[int] = None
+    _pevent_ids: list[int] = dataclasses.field(default_factory=list)
+
+    def pevent_ids(self) -> list[int]:
+        if self.pevent_id:
+            return [self.pevent_id]
+        return self._pevent_ids
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.pevent_ids():
+            conditions.append("pevent_id = ANY(%s)")
+            params.append(self.pevent_ids())
+
+        return conditions, params
+
+
+@dataclasses.dataclass
+class FinanceLogFilter(GenericLogFilter):
+    log_table = "cde.finance_log"
+    log_code_class = const.FinanceLogCodes
+    additional_columns = (
+        "delta", "new_balance", "transaction_date", "members", "total",
+    )
+
+    delta_from: Optional[decimal.Decimal] = None
+    delta_to: Optional[decimal.Decimal] = None
+
+    new_balance_from: Optional[decimal.Decimal] = None
+    new_balance_to: Optional[decimal.Decimal] = None
+
+    transaction_date_from: Optional[datetime.date] = None
+    transaction_date_to: Optional[datetime.date] = None
+
+    total_from: Optional[decimal.Decimal] = None
+    total_to: Optional[decimal.Decimal] = None
+
+    members_from: Optional[int] = None
+    members_to: Optional[int] = None
+
+    def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
+        conditions, params = super()._get_sql_conditions()
+
+        if self.delta_from:
+            conditions.append("delta >= %s")
+            params.append(self.delta_from)
+        if self.delta_to:
+            conditions.append("delta <= %s")
+            params.append(self.delta_to)
+
+        if self.new_balance_from:
+            conditions.append("new_balance >= %s")
+            params.append(self.new_balance_from)
+        if self.new_balance_to:
+            conditions.append("new_balance <= %s")
+            params.append(self.new_balance_to)
+
+        if self.transaction_date_from:
+            conditions.append("transaction_date >= %s")
+            params.append(self.transaction_date_from)
+        if self.transaction_date_to:
+            conditions.append("transaction_date <= %s")
+            params.append(self.transaction_date_to)
+
+        if self.total_from:
+            conditions.append("total >= %s")
+            params.append(self.total_from)
+        if self.total_to:
+            conditions.append("total <= %s")
+            params.append(self.total_to)
+
+        if self.members_from:
+            conditions.append("members >= %s")
+            params.append(self.members_from)
+        if self.members_to:
+            conditions.append("members <= %s")
+            params.append(self.members_to)
+
+        return conditions, params
+
+
+ALL_LOG_FILTERS: tuple[Type[GenericLogFilter], ...] = (
+    CoreLogFilter,
+    CdELogFilter,
+    ChangelogLogFilter,
+    FinanceLogFilter,
+    AssemblyLogFilter,
+    EventLogFilter,
+    MlLogFilter,
+    PastEventLogFilter,
+)

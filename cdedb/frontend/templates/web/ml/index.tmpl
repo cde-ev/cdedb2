@@ -42,13 +42,14 @@
         </div>
     {% endif %}
     <p>
-        {% trans %}
-            Here you can find the CdE’s Mailinglists; notably also those linked to events and assemblies.
+        {% trans infolink=util.href("https://www.cde-ev.de/vereinsleben/mailinglisten/", gettext("CdE website")) %}
+            Here you can find the CdE’s Mailinglists, notably also those linked to events and assemblies.
+            For further information on the general lists see the {{ infolink }}.
         {% endtrans %}
     </p>
     {% for group in groups %}
         {% if mailinglists[group] %}
-            <h3>{{ gettext(group|string) }}</h3>
+            {{ util.h(group|string) }}
             <div class="row">
                 {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
                     |slice(2 if mailinglists[group]|length > 5 else 1) %}

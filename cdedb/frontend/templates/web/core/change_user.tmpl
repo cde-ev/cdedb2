@@ -24,7 +24,7 @@
         {{ util.anti_csrf_token('core/change_user') }}
         {{ util.input_hidden(name="generation") }}
 
-        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
+        {{ util.h(n_("Personal Information"), level=4, underline=True) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -49,10 +49,11 @@
         {% endif %}
 
         {% if "paper_expuls" in shown_fields or "donation" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
+            {{ util.h(n_("Membership"), level=4, underline=True) }}
         {% endif %}
         {% if "donation" in shown_fields %}
-            {% if min_donation <= values["donation"] <= max_donation %}
+            {# Also display the form If user is changing their donation outside of the allowed range #}
+            {% if min_donation <= values["donation"] <= max_donation or errors.get("donation") %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
                                         attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
                                         info=gettext("You allow the CdE to withdraw this amount annually"
@@ -76,7 +77,7 @@
                                                                      gettext("Miscellaneous"))))|s) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
+        {{ util.h(n_("Contact Information"), level=4, underline=True) }}
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
         {% if "telephone" in shown_fields or "mobile" in shown_fields %}
@@ -88,7 +89,7 @@
         {% endif %}
 
         {% if "address" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            {{ util.h(n_("Address"), level=4, underline=True) }}
             {% if "paper_expuls" in shown_fields %}
                 <p>
                 {% trans %}
@@ -104,7 +105,7 @@
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if "address2" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
+            {{ util.h(n_("Second Address"), level=4, underline=True) }}
             <p>
             {% trans %}
                 This address is meant to be a “backup”, should the primary address not work. Please give an address where
@@ -119,7 +120,7 @@
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if "specialisation" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
+            {{ util.h(n_("Miscellaneous"), level=4, underline=True) }}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
             {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"), markdown=True) }}
