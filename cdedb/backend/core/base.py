@@ -793,6 +793,7 @@ class CoreBaseBackend(AbstractBackend):
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
         change_note = affirm(str, change_note)
+        ret = 1
         with Atomizer(rs):
             if data.get('is_cde_realm'):
                 # Fix balance
@@ -802,16 +803,12 @@ class CoreBaseBackend(AbstractBackend):
                 else:
                     data['balance'] = tmp['balance']
             if data.get('trial_member') or data.get('is_member'):
-                is_member = data.get('is_member')
-                trial_member = data.get('trial_member')
-                if is_member is not None:
-                    del data['is_member']
-                if trial_member is not None:
-                    del data['trial_member']
+                is_member = data.pop('is_member')
+                trial_member = data.pop('trial_member')
                 # Trial membership implied granting membership here
                 if trial_member:
                     is_member = True
-                ret = self.change_membership_easy_mode(
+                ret *= self.change_membership_easy_mode(
                     rs, data['id'], is_member=is_member, trial_member=trial_member)
             ret *= self.set_persona(
                 rs, data, may_wait=False, change_note=change_note,
@@ -1155,7 +1152,7 @@ class CoreBaseBackend(AbstractBackend):
                 return 0
 
             ret = 1
-            if is_member is not None or current['is_member'] != is_member:
+            if is_member is not None and current['is_member'] != is_member:
                 update: CdEDBObject = {
                     'id': persona_id,
                     'is_member': is_member,
@@ -1177,16 +1174,17 @@ class CoreBaseBackend(AbstractBackend):
                     delta = decimal.Decimal(0)
                     new_balance = current["balance"]
                     code = const.FinanceLogCodes.lose_membership
-                    # Loosing membership let you also loose trial membership
-                    trial_member = False
+                    # Losing membership also causes loss of trial membership.
+                    if current["trial_member"]:
+                        trial_member = False
                 ret *= self.set_persona(
                     rs, update, may_wait=False,
                     change_note="Mitgliedschaftsstatus geändert.",
                     allow_specials=("membership",))
                 self.finance_log(rs, code, persona_id, delta, new_balance)
 
-            if trial_member is not None or current['trial_member'] != trial_member:
-                update: CdEDBObject = {
+            if trial_member is not None and current['trial_member'] != trial_member:
+                update = {
                     'id': persona_id,
                     'trial_member': trial_member,
                 }
@@ -1202,7 +1200,7 @@ class CoreBaseBackend(AbstractBackend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft geändert.",
                     allow_specials=("membership",))
-                self.finance_log(rs, code, persona_id)
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
 
         return ret
 
