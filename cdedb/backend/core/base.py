@@ -1427,10 +1427,11 @@ class CoreBaseBackend(AbstractBackend):
             if lastschrift:
                 self.query_exec(rs, query, ("", "", "", persona_id))
             #
-            # 3. Remove complicated attributes (membership, foto and password)
+            # 3. Remove complicated attributes ([trial] membership, foto and password)
             #
             if persona['is_member']:
-                code = self.change_membership_easy_mode(rs, persona_id, is_member=False)
+                code = self.change_membership_easy_mode(
+                    rs, persona_id, is_member=False, trial_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
@@ -1504,7 +1505,7 @@ class CoreBaseBackend(AbstractBackend):
                 'balance': 0 if persona['balance'] is not None else None,
                 'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
-                'trial_member': False,
+                # 'trial_member' already adjusted
                 'bub_search': False,
                 'paper_expuls': True,
                 # 'foto' already adjusted
