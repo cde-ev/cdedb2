@@ -1144,63 +1144,61 @@ class CoreBaseBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.retrieve_persona(rs, persona_id, (
                 'is_member', 'balance', 'is_cde_realm', 'trial_member'))
+
+            # Determine the target state of (trial) membership
+            if trial_member is None:
+                trial_member = current['trial_member']
+            if is_member is None:
+                is_member = current['is_member']
+
+            # Do some sanity checks
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
+            if trial_member and not is_member:
+                raise ValueError(n_("Trial membership implies membership."))
+            if not is_member:
+                # Peek at the CdE-realm, this is somewhat of a transgression,
+                # but sadly necessary duct tape to keep the whole thing working.
+                query = ("SELECT id FROM cde.lastschrift"
+                         " WHERE persona_id = %s AND revoked_at IS NULL")
+                params = [persona_id]
+                if self.query_all(rs, query, params):
+                    raise RuntimeError(n_("Active lastschrift permit found."))
+
             # check if nothing changed at all
-            if ((trial_member is None or current['trial_member'] == trial_member)
-                    and (is_member is None or current['is_member'] == is_member)):
+            if (trial_member == current['trial_member']
+                    and is_member == current['is_member']):
                 return 0
 
-            ret = 1
-            if is_member is not None and current['is_member'] != is_member:
-                update: CdEDBObject = {
-                    'id': persona_id,
-                    'is_member': is_member,
-                }
+            # Determine the changes and perform logging
+            update: CdEDBObject = {'id': persona_id}
+            if is_member != current['is_member']:
+                update['is_member'] = is_member
                 if is_member:
                     delta = None
                     new_balance = None
                     code = const.FinanceLogCodes.gain_membership
                 else:
-                    # Peek at the CdE-realm, this is somewhat of a transgression,
-                    # but sadly necessary duct tape to keep the whole thing working.
-                    query = ("SELECT id FROM cde.lastschrift"
-                             " WHERE persona_id = %s AND revoked_at IS NULL")
-                    params = [persona_id]
-                    if self.query_all(rs, query, params):
-                        raise RuntimeError(n_("Active lastschrift permit found."))
                     # Display this to be not surprised if you look at the finance log
                     #  and observe the decreasing of the total balance
                     delta = decimal.Decimal(0)
                     new_balance = current["balance"]
                     code = const.FinanceLogCodes.lose_membership
-                    # Losing membership also causes loss of trial membership.
-                    if current["trial_member"]:
-                        trial_member = False
-                ret *= self.set_persona(
-                    rs, update, may_wait=False,
-                    change_note="Mitgliedschaftsstatus geändert.",
-                    allow_specials=("membership",))
                 self.finance_log(rs, code, persona_id, delta, new_balance)
-
-            if trial_member is not None and current['trial_member'] != trial_member:
-                update = {
-                    'id': persona_id,
-                    'trial_member': trial_member,
-                }
+            if trial_member != current['trial_member']:
+                update['trial_member'] = trial_member
                 if trial_member:
-                    if ((is_member is None and not current['is_member'])
-                            or is_member is False):
-                        raise ValueError(n_(
-                            "May not grant trial membership to non members."))
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
-                ret *= self.set_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft geändert.",
-                    allow_specials=("membership",))
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
+
+            # actually apply the changes to reach the target state
+            if 'is_member' in update or 'trial_member' in update:
+                ret = self.set_persona(
+                    rs, update, may_wait=False,
+                    change_note="Mitgliedschaftsstatus geändert.",
+                    allow_specials=("membership",))
 
         return ret
 
