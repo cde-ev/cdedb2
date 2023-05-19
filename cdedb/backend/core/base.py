@@ -795,6 +795,7 @@ class CoreBaseBackend(AbstractBackend):
         change_note = affirm(str, change_note)
         ret = 1
         with Atomizer(rs):
+            is_member = trial_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
                 tmp = self.get_total_persona(rs, data['id'])
@@ -802,20 +803,25 @@ class CoreBaseBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
-            if data.get('trial_member') or data.get('is_member'):
-                is_member = data.pop('is_member')
-                trial_member = data.pop('trial_member')
-                # Trial membership implied granting membership here
+                # We can not apply the desired state directly, since this would violate
+                #  our database integrity (but we also want to get the logs right), so
+                #  we stash the changes here and apply them later on.
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+            ret *= self.set_persona(
+                rs, data, may_wait=False, change_note=change_note,
+                allow_specials=("realms", "finance", "membership"))
+            self.core_log(
+                rs, const.CoreLogCodes.realm_change, data['id'],
+                change_note=change_note)
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                # TODO Trial membership implied granting membership here
                 if trial_member:
                     is_member = True
                 ret *= self.change_membership_easy_mode(
                     rs, data['id'], is_member=is_member, trial_member=trial_member)
-            ret *= self.set_persona(
-                rs, data, may_wait=False, change_note=change_note,
-                allow_specials=("realms", "finance"))
-            self.core_log(
-                rs, const.CoreLogCodes.realm_change, data['id'],
-                change_note=change_note)
         return ret
 
     @access("persona")
