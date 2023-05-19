@@ -53,7 +53,7 @@
             {% endif %}
         {% endif %}
 
-        <h4 class="heading-underline">Account & Membership</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         {% if 'cde' in admin_bits %}
             {% if "donation" in shown_fields %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
