@@ -726,7 +726,7 @@
             "balance": "50.00",
             "donation": "0.00",
             "decided_search": true,
-            "trial_member": true,
+            "trial_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
