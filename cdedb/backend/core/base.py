@@ -1176,10 +1176,20 @@ class CoreBaseBackend(AbstractBackend):
                     and is_member == current['is_member']):
                 return 0
 
-            # Determine the changes and perform logging
+            # Determine the changes and apply them to reach the target state
             update: CdEDBObject = {'id': persona_id}
             if is_member != current['is_member']:
                 update['is_member'] = is_member
+            if trial_member != current['trial_member']:
+                update['trial_member'] = trial_member
+            if 'is_member' in update or 'trial_member' in update:
+                ret = self.set_persona(
+                    rs, update, may_wait=False,
+                    change_note="Mitgliedschaftsstatus geändert.",
+                    allow_specials=("membership",))
+
+            # Perform logging
+            if is_member != current['is_member']:
                 if is_member:
                     delta = None
                     new_balance = None
@@ -1192,19 +1202,11 @@ class CoreBaseBackend(AbstractBackend):
                     code = const.FinanceLogCodes.lose_membership
                 self.finance_log(rs, code, persona_id, delta, new_balance)
             if trial_member != current['trial_member']:
-                update['trial_member'] = trial_member
                 if trial_member:
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-
-            # actually apply the changes to reach the target state
-            if 'is_member' in update or 'trial_member' in update:
-                ret = self.set_persona(
-                    rs, update, may_wait=False,
-                    change_note="Mitgliedschaftsstatus geändert.",
-                    allow_specials=("membership",))
 
         return ret
 
