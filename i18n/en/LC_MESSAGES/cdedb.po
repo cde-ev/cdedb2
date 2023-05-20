@@ -15033,6 +15033,9 @@ msgstr "Manual Balance Correction"
 msgid "FinanceLogCodes.remove_balance_on_archival"
 msgstr "Remove Balance on Archival"
 
+msgid "FinanceLogCodes.start_trial_membership"
+msgstr "Start of Trialmembership"
+
 #: cdedb/i18n_additional.py:137
 msgid "FinanceLogCodes.grant_lastschrift"
 msgstr "Direct Debit Authorization granted"

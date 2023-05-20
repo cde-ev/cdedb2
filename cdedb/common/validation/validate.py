@@ -1415,8 +1415,8 @@ def _persona(
     errs = ValidationSummary()
     if "is_member" in val and "trial_member" in val:
         if val["trial_member"] and not val["is_member"]:
-            errs.append(ValueError(("trial_member"), n_(
-                "May not gran trial membership without membership.")))
+            errs.append(ValueError("trial_member", n_(
+                "Trial membership implies membership.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:

@@ -712,6 +712,9 @@ msgstr "Guthabenänderung für Nicht-CdE-Person."
 msgid "Not a CdE account."
 msgstr "Account ist nicht im CdE-Bereich."
 
+msgid "Trial membership implies membership."
+msgstr "Probemitgliedschaft impliziert Mitgliedschaft."
+
 #: cdedb/backend/core/base.py:1160
 msgid "Active lastschrift permit found."
 msgstr "Eine aktive Lastschrift existiert."
@@ -15921,6 +15924,10 @@ msgstr "Manuelle Guthabenkorrektur"
 #: cdedb/i18n_additional.py:136
 msgid "FinanceLogCodes.remove_balance_on_archival"
 msgstr "Guthaben bei Archivierung gelöscht"
+
+#: cdedb/i18n_additional.py:136
+msgid "FinanceLogCodes.start_trial_membership"
+msgstr "Start der Probemitgliedschaft"
 
 #: cdedb/i18n_additional.py:137
 msgid "FinanceLogCodes.grant_lastschrift"
