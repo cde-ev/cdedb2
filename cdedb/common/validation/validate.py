@@ -1406,6 +1406,10 @@ def _persona(
             if val.get(key):
                 mandatory_fields.update(checkers)
         optional_fields = {key: bool for key in realm_checks}
+        # promoting to cde realm may be used to grant a trial membership.
+        #  since trial member implies is_member, we need to allow the latter here
+        if val.get("is_cde_realm"):
+            optional_fields["is_member"] = bool
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS

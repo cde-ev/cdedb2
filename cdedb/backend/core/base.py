@@ -817,9 +817,6 @@ class CoreBaseBackend(AbstractBackend):
                 change_note=change_note)
             # apply the previously stashed changes
             if is_member or trial_member:
-                # TODO Trial membership implied granting membership here
-                if trial_member:
-                    is_member = True
                 ret *= self.change_membership_easy_mode(
                     rs, data['id'], is_member=is_member, trial_member=trial_member)
         return ret

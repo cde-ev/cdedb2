@@ -1564,6 +1564,9 @@ class CoreBaseFrontend(AbstractFrontend):
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
+        # trial membership implies membership
+        if data.get("trial_member"):
+            data["is_member"] = True
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
