@@ -1605,23 +1605,29 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "modify_membership")
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        return self.render(rs, "modify_membership", {
+            "trial_member": persona["trial_member"]})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member")
+    @REQUESTdata("is_member", "trial_member")
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> Response:
+                          is_member: bool, trial_member: bool) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
+        if trial_member and not is_member:
+            rs.append_validation_error(("trial_member", ValueError(
+                n_("Trial membership implies membership."))))
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
-                self.cdeproxy.change_membership(rs, persona_id, is_member=is_member))
+                self.cdeproxy.change_membership(
+                    rs, persona_id, is_member=is_member, trial_member=trial_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))

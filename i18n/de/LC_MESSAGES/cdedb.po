@@ -9935,6 +9935,9 @@ msgstr ""
 msgid "termination of membership"
 msgstr "Beenden der Mitgliedschaft"
 
+msgid "termination of trial membership"
+msgstr "Beenden der Probemitgliedschaft"
+
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:28
 msgid ""
 "no longer able to search for/be found by other searchable members (if "
@@ -9951,9 +9954,15 @@ msgstr "Verlust des Mitgliedsbeitragguthabens (in spätestens 6 Monaten)"
 msgid "revocation of any active direct debit authorization"
 msgstr "Widerruf aller aktiven Einzugsermächtigungen."
 
+msgid "Instead, you can grant or terminate a trial membership. This does not affect the membership status."
+msgstr "Stattdessen kann eine Probemitgliedschaft gewährt oder terminiert werden. Dies hat keinen Einfluss auf den Status der Mitgliedschaft."
+
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:37
 msgid "Terminate Membership"
 msgstr "Mitgliedschaft terminieren"
+
+msgid "Terminate Trial Membership"
+msgstr "Probemitgliedschaft terminieren"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:47
 msgid "Make a Member"
