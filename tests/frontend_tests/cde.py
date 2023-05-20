@@ -1035,7 +1035,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
         self.assertPresence("Aktives Lastschriftmandat widerrufen", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
 
