@@ -126,9 +126,9 @@
             </div>
         </div>
         {% if values['code'] == enums['MemberChangeStati'].pending %}
-            {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, user.persona_id)) }}
+            {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, ambience['persona']['id'])) }}
         {% else %}
-            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, ambience['persona']['id'])) }}
         {% endif %}
     </form>
 {% endblock %}
