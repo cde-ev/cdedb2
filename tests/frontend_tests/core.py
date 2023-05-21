@@ -699,6 +699,11 @@ class TestCoreFrontend(FrontendTest):
         f['location2'] = "Hyrule"
         f['country2'] = "AR"
         f['specialisation'] = "Okarinas"
+        if self.user_in("daniel"):
+            self.submit(f, check_notification=False)
+            # Invalid postal code
+            f = self.response.forms['changedataform']
+            f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         self.assertPresence("Hyrule", div='address2')
