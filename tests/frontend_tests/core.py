@@ -690,7 +690,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Hades", div='query-result')
         f = self.response.forms['queryform']
 
-    @as_users("vera", "berta", "garcia")
+    @as_users("vera", "berta", "garcia", "daniel")
     def test_changedata(self) -> None:
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
