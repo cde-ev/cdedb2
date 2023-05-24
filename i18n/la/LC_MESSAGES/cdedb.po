@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-05-03 18:00+0200\n"
+"POT-Creation-Date: 2023-05-24 10:06+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5604,7 +5604,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:82
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:73
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:37
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:106
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:134
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:65
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:66
@@ -8648,6 +8648,14 @@ msgstr ""
 msgid "Show pronouns on profile"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:56
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:92
+#: cdedb/frontend/templates/web/core/show_history.tmpl:151
+#: cdedb/frontend/templates/web/core/show_user.tmpl:221
+#: cdedb/frontend/templates/web/generic.tmpl:60
+msgid "Account & Membership"
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:70
 msgid "Visible to all Admins."
 msgstr "omnibus administratoribus visibilis"
@@ -9437,13 +9445,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_history.tmpl:18
 #: cdedb/frontend/templates/web/core/show_user.tmpl:103
 msgid "Change History"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/inspect_change.tmpl:92
-#: cdedb/frontend/templates/web/core/show_history.tmpl:151
-#: cdedb/frontend/templates/web/core/show_user.tmpl:221
-#: cdedb/frontend/templates/web/generic.tmpl:60
-msgid "Account & Membership"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
@@ -10311,7 +10312,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:29
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:5
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:10
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:102
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:103
 msgid "Participant info"
 msgstr ""
 
@@ -10473,7 +10474,7 @@ msgid "Course Choice Sync"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:13
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:101
 msgid "Additional information for participants"
 msgstr ""
 
@@ -11363,108 +11364,109 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:63
 msgid ""
-"If checked, the event is shown as cancelled. This can be undone and has no "
-"further effects. Do not do this without consulting the chairmen of the CdE."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:65
-msgid "Registration Start"
+"If checked, the event is shown as cancelled. This can be undone and allows "
+"the event to be archived. There are no further effects. Do not do this "
+"without consulting the chairmen of the CdE."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:66
+msgid "Registration Start"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:67
 msgid "Registration Soft Limit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:68
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:69
 msgid ""
 "Is displayed initially. Changes to registration are only possible until "
 "then. If left empty, Changes will be possible indefinitely."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:70
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:71
 msgid "Registration Hard Limit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:72
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:73
 msgid ""
 "Final registration end. Until then late registrations are possible. If left "
 "empty, late registrations will be possible indefinitely."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:74
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:75
 msgid "Show Questionnaire"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:75
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:76
 msgid ""
 "If this is checked, all registrated users can fill out the Questionnaire. "
 "You can configure every part of the questionnaire individually in the "
 "questionnaire configuration."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:78
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:79
 msgid "Additional Information for Registration"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:79
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:80
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:38
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:112
 msgid "CdE-Account IBAN"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:80
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:81
 msgid ""
 "Only leave this empty if payment is going to be handled directly by the "
 "orgas."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:82
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:83
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:131
 msgid "Registration page free text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:84
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:85
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:138
 msgid "Registration mail free text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:86
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Special Purpose Custom Fields"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
 msgid "Field for Rooming Preferences"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:89
 msgid ""
 "The custom field in which the participants’ rooming preferences will be "
 "saved. It is used for the automatic detection of lodgement wishes and the "
 "lodgement graph. Fieldtype: Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:91
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:92
 msgid "Field for Camping Mat"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:92
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:93
 msgid ""
 "The custom field in which the participants’ willingness to sleep on a "
 "camping mat will be saved. It is displayed on lodgement and inhabitant "
 "pages. Fieldtype: Yes/No"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:95
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
 msgid "Field for Course Room"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:97
 msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
 "It is used for PDF participant lists and nametags. Fieldtype: Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:103
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:104
 msgid ""
 "This is only for event-internal information. Any public information should "
 "be placed on the website."

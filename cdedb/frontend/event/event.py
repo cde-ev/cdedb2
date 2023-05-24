@@ -1025,7 +1025,8 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        if rs.ambience['event']['end'] >= now().date():
+        if (not rs.ambience['event']['is_cancelled'] and
+                rs.ambience['event']['end'] >= now().date()):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
