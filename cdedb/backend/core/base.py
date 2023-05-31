@@ -1990,6 +1990,13 @@ class CoreBaseBackend(AbstractBackend):
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
         with Atomizer(rs):
+            is_member = trial_member = None
+            if data.get('is_cde_realm'):
+                # For the sake of correct logging, we stash this as changes
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
                 "submitted_by": submitted_by or rs.user.persona_id,
@@ -2003,6 +2010,11 @@ class CoreBaseBackend(AbstractBackend):
             del data['fulltext']
             self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
+
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                self.change_membership_easy_mode(
+                    rs, new_id, is_member=is_member, trial_member=trial_member)
         return new_id
 
     @access("anonymous")
