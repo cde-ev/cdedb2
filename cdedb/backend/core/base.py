@@ -1171,19 +1171,15 @@ class CoreBaseBackend(AbstractBackend):
             # check if nothing changed at all
             if (trial_member == current['trial_member']
                     and is_member == current['is_member']):
-                return 0
+                rs.notify('info', n_("Nothing changed."))
+                return 1
 
-            # Determine the changes and apply them to reach the target state
-            update: CdEDBObject = {'id': persona_id}
-            if is_member != current['is_member']:
-                update['is_member'] = is_member
-            if trial_member != current['trial_member']:
-                update['trial_member'] = trial_member
-            if 'is_member' in update or 'trial_member' in update:
-                ret = self.set_persona(
-                    rs, update, may_wait=False,
-                    change_note="Mitgliedschaftsstatus geändert.",
-                    allow_specials=("membership",))
+            update: CdEDBObject = {'id': persona_id, 'is_member': is_member,
+                                   'trial_member': trial_member}
+            ret = self.set_persona(
+                rs, update, may_wait=False,
+                change_note="Mitgliedschaftsstatus geändert.",
+                allow_specials=("membership",))
 
             # Perform logging
             if is_member != current['is_member']:
