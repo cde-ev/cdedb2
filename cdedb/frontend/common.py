@@ -1135,6 +1135,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
             #  be a way to input invalid filter values.
+            self.logger.debug(
+                f"Log filter validation failed: {rs.retrieve_validation_errors()}")
             log_filter = filter_class()
         else:
             log_filter = filter_class(**data)
