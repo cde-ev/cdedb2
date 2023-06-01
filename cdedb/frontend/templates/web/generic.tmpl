@@ -104,7 +104,7 @@
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ display_query_result(result, query) }}
+        {{ display_query_result(result, aggregates, query) }}
     {% endif %}
 {% endmacro %}
 
@@ -413,7 +413,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query) %}
+{% macro display_query_result(result, aggregates, query) %}
     {% if not result|length %}
         {% trans %}No search results!{% endtrans %}
     {% else %}
@@ -558,6 +558,34 @@
                 </tr>
             {% endfor %}
             </tbody>
+            <tfoot>
+                {% for aggregate_func, aggregate_title in [
+                        ("sum", "Sum"), ("min", "Minimum"), ("max", "Maximum"), ("avg", "Average"),
+                        ("stddev", "Standart Derivation"), ("null", "Entry is Null")] %}
+                    <tr>
+                        <td></td>
+                        <td>{{ gettext(aggregate_title) }}</td>
+                        {% for csvfield in query.fields_of_interest %}
+                            {% for field in csvfield.split(',') %}
+                                    {% set key = aggregate_func + "." + field %}
+                                    <td data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
+                                        {% set format_spec = query.get_field_format_spec(field) %}
+                                        {% set value = aggregates.get(key, "–") %}
+                                        {% if format_spec == ResultFormat.date and value != "–" and aggregate_func != "null" %}
+                                            {{ value|date(lang=lang) }}
+                                        {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
+                                            {{ value|datetime(lang=lang) }}
+                                        {% elif aggregate_func in ("avg", "stddev") and value != "–" %}
+                                            {{ value|float|decimal(lang=lang) }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </td>
+                            {% endfor %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tfoot>
         </table>
         </div>
     {% endif %}

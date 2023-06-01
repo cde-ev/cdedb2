@@ -848,6 +848,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return self.send_query_download(
                     rs, result, query, kind=download,
                     filename=scope.get_target() + "_result")
+            aggregates: CdEDBObject = {}
+            merge_dicts(aggregates, *(e for e in submit_general_query(
+                rs, query, aggregate=True)))  # type: ignore[call-arg]
+            params["aggregates"] = aggregates
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
