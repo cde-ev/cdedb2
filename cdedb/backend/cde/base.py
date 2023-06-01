@@ -500,12 +500,13 @@ class CdEBaseBackend(AbstractBackend):
         return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
@@ -544,4 +545,4 @@ class CdEBaseBackend(AbstractBackend):
                     query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
