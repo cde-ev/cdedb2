@@ -307,7 +307,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         query.fix_custom_columns()
         self.logger.debug(f"Performing general query {query} (aggregate={aggregate}).")
 
-        fields = {field: field.replace('"', '') for field in query.fields_of_interest}
+        fields = {column: column.replace('"', '') for field in query.fields_of_interest
+                  for column in field.split(",")}
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
