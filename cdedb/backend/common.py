@@ -324,6 +324,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     agg[f"SUM({field}::int)"] = f"sum.{field_as}"
                     # TODO should NULL be threaten as 0 or ignored?
                     agg[f"AVG({field}::int)"] = f"avg.{field_as}"
+                    agg[f"STDDEV_SAMP({field}::int)"] = f"stddev.{field_as}"
                 elif query.spec[field].type in ("date", "datetime"):
                     agg[f"MIN({field})"] = f"min.{field_as}"
                     agg[f"MAX({field})"] = f"max.{field_as}"
