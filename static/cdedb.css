@@ -116,6 +116,10 @@ table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
     border-top-style: none ;
 }
+.aggregate-footer {
+    background-color: #eeeeee;
+    border-top: solid 2px #999;
+}
 ul.slim {
     padding-left: 15px;
 }

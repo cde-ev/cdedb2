@@ -558,13 +558,14 @@
                 </tr>
             {% endfor %}
             </tbody>
-            <tfoot>
-                {% for aggregate_func, aggregate_title in [
-                        ("sum", "Sum"), ("min", "Minimum"), ("max", "Maximum"), ("avg", "Average"),
-                        ("stddev", "Standart Derivation"), ("null", "Entry is Null")] %}
+            <tfoot class="aggregate-footer">
+                {% for aggregate_func, aggregate_title, aggregate_symbol in [
+                        ("sum", "Sum, Bools count as 0/1", "∑"), ("min", "Minimum", "min"), ("max", "Maximum", "max"),
+                        ("avg", "Average, Bools count as 0/1", "Ø"), ("stddev", "Standart Derivation, Bools count as 0/1", "σ"),
+                        ("null", "Number of Null entries", "␀")] %}
                     <tr>
+                        <td title="{{ gettext(aggregate_title) }}">{{ aggregate_symbol }}</td>
                         <td></td>
-                        <td>{{ gettext(aggregate_title) }}</td>
                         {% for csvfield in query.fields_of_interest %}
                             {% for field in csvfield.split(',') %}
                                     {% set key = aggregate_func + "." + field %}
