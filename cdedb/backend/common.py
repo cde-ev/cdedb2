@@ -337,6 +337,10 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         q, params = self._construct_query(query, select, distinct=distinct, view=view)
         data = self.query_all(rs, q, params)
 
+        # we know that all keys are unique, so we put them in a single dict
+        if aggregate:
+            data = ({k: v for datum in data for k, v in datum.items()}, )
+
         return data
 
     @staticmethod
