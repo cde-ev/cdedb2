@@ -544,7 +544,7 @@
                                         {{ row.get(field, None)|datetime(lang=lang) }}
                                     {% elif format_spec == ResultFormat.bool %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
-                                                                                            gettext('true'))) }}
+                                                                                            gettext('true'), gettext('none'))) }}
                                     {% elif format_spec == ResultFormat.event_course and row[field] %}
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
