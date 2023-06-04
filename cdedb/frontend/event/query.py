@@ -13,9 +13,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, RequestState, determine_age_class, merge_dicts, unwrap,
-)
+from cdedb.common import CdEDBObject, RequestState, determine_age_class, unwrap
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import (

@@ -114,10 +114,10 @@
 {% macro deko_checkbox(checked, anid=none, titles=[]) %}
     {% if checked is false %}
         {% set title = titles[0] if titles else "" %}
-        <span class="far fa-times-circle" id="{{ anid }}" title="{{ title }}" data-checked="false" aria-hidden="true"></span>
+        <span class="far fa-times-circle" id="{{ anid }}" title="{{ title }}" data-checked="False" aria-hidden="true"></span>
     {% elif checked is true %}
         {% set title = titles[1] if titles else "" %}
-        <span class="fas fa-check-circle" id="{{ anid }}" title="{{ title }}" data-checked="true" aria-hidden="true"></span>
+        <span class="fas fa-check-circle" id="{{ anid }}" title="{{ title }}" data-checked="True" aria-hidden="true"></span>
     {% else %}
         {% set title = titles[2] if titles else "" %}
         <span class="far fa-circle" id="{{ anid }}" title="{{ title }}" aria-hidden="true"></span>
