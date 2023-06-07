@@ -128,6 +128,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
 # This does the following:
+# - pacify newer git versions concerned about unsafe directory permissions
 # - configure apache,
 # - add the mailman basic-auth password,
 # - put the localconfig at the default config path and
@@ -136,6 +137,8 @@ COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp
 # - create the cdedb user and enable passwordless sudo,
 # - create the magic file to signal that we are inside a container.
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+    \
+    && cp /tmp/autobuild/gitconfig /etc/gitconfig \
     \
     && a2enmod ssl wsgi headers authnz_ldap \
     && a2dissite 000-default \
