@@ -354,7 +354,8 @@ class LDAPsqlBackend:
                 # TODO find a better objectClass for duas then 'person'
                 b"objectClass": ["person", "simpleSecurityObject"],
                 b"cn": [self.dua_cn(name)],
-                b"userPassword": [self._dua_pwds[name]]
+                b"userPassword": [self._dua_pwds[name]],
+                b"ipaUniqueID": [f"dua/{name}"],
             }
             ret[dn] = self._to_bytes(dua)
         return ret
@@ -561,6 +562,7 @@ class LDAPsqlBackend:
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
                 b"memberOf": groups[persona_id],
+                b"ipaUniqueID": [f"persona/{persona_id}"],
             }
             ret[dn] = self._to_bytes(ldap_user)
         return ret
@@ -641,7 +643,8 @@ class LDAPsqlBackend:
             b"description": [self.STATUS_GROUPS[name]],
             b"uniqueMember": [
                 self.user_dn(e["id"]) async for e in self.query_all(query, ())
-            ]
+            ],
+            b"ipaUniqueID": [f"status_groups/{name}"],
         })
 
     async def get_status_groups(self, dns: List[DN]) -> LDAPObjectMap:
@@ -746,7 +749,8 @@ class LDAPsqlBackend:
                 b"cn": [self.presider_group_cn(assembly_id)],
                 b"description": [f"{assemblies[assembly_id]['title']}"
                                  f" ({assemblies[assembly_id]['shortname']})"],
-                b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]]
+                b"uniqueMember": [self.user_dn(e) for e in presiders[assembly_id]],
+                b"ipaUniqueID": [f"assembly_presider_groups/{assembly_id}"],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -828,7 +832,8 @@ class LDAPsqlBackend:
                 b"cn": [self.orga_group_cn(event_id)],
                 b"description": [f"{events[event_id]['title']}"
                                  f" ({events[event_id]['shortname']})"],
-                b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]]
+                b"uniqueMember": [self.user_dn(e) for e in orgas[event_id]],
+                b"ipaUniqueID": [f"event_orga_groups/{event_id}"],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -925,7 +930,8 @@ class LDAPsqlBackend:
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [cn],
                 b"description": [f"{mls[address]['title']} <{cn}>"],
-                b"uniqueMember": [self.user_dn(e) for e in moderators[address]]
+                b"uniqueMember": [self.user_dn(e) for e in moderators[address]],
+                b"ipaUniqueID": [f"ml_moderator_groups/{address}"],
             }
             ret[dn] = self._to_bytes(group)
         return ret
@@ -1007,7 +1013,8 @@ class LDAPsqlBackend:
                 b"objectClass": ["groupOfUniqueNames"],
                 b"cn": [cn],
                 b"description": [f"{mls[address]['title']} <{cn}>"],
-                b"uniqueMember": [self.user_dn(e) for e in subscribers[address]]
+                b"uniqueMember": [self.user_dn(e) for e in subscribers[address]],
+                b"ipaUniqueID": [f"ml/{address}"],
             }
             ret[dn] = self._to_bytes(group)
         return ret
