@@ -6886,6 +6886,24 @@ msgstr "(Version %(version)s, maßgeblich)"
 msgid "Details"
 msgstr "Details"
 
+msgid "Sum, Bools count as 0/1"
+msgstr "Summe, Wahrheitswerte zählen als 0/1."
+
+msgid "Minimum"
+msgstr "Minimum"
+
+msgid "Maximum"
+msgstr "Maximum"
+
+msgid "Average, Bools count as 0/1"
+msgstr "Durchschnitt, Wahrheitswerte zählen als 0/1"
+
+msgid "Standard Derivation"
+msgstr "Standardabweichung"
+
+msgid "Number of Null entries"
+msgstr "Anzahl leerer Einträge"
+
 #: cdedb/frontend/templates/web/assembly/view_assembly_log.tmpl:9
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:9
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:9
