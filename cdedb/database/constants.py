@@ -275,8 +275,8 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 @enum.unique
 class MailinglistRosterVisibility(enum.IntEnum):
     none = 1
-    subscribers = 2
-    viewers = 3
+    subscribable = 10
+    viewers = 20
 
 
 @enum.unique

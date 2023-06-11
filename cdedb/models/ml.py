@@ -356,7 +356,7 @@ class TeamMeta(GeneralMailinglist):
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
     available_roster_visibilities = [
-        MailinglistRosterVisibility.none, MailinglistRosterVisibility.subscribers,
+        MailinglistRosterVisibility.none, MailinglistRosterVisibility.subscribable,
         MailinglistRosterVisibility.viewers]
     maxsize_default = vtypes.PositiveInt(4096)
 

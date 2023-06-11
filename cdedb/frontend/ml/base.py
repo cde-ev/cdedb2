@@ -409,7 +409,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         mrv = const.MailinglistRosterVisibility
         subscriber_ids = set()
         if (ml.is_active
-                and (ml.roster_visibility == mrv.subscribers and state.is_subscribed()
+                and (ml.roster_visibility == mrv.subscribable and state.is_subscribed()
                      or ml.roster_visibility == mrv.viewers)):
             sub_states = const.SubscriptionState.subscribing_states()
             subscriber_ids = set(self.mlproxy.get_subscription_states(
