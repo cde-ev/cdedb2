@@ -176,11 +176,11 @@ I18N_STRINGS = (
     n_("LineResolutions.update"),
     n_("LineResolutions.renew_and_update"),
 
-    n_("MemberChangeStati.pending"),
-    n_("MemberChangeStati.committed"),
-    n_("MemberChangeStati.superseded"),
-    n_("MemberChangeStati.nacked"),
-    n_("MemberChangeStati.displaced"),
+    n_("PersonaChangeStati.pending"),
+    n_("PersonaChangeStati.committed"),
+    n_("PersonaChangeStati.superseded"),
+    n_("PersonaChangeStati.nacked"),
+    n_("PersonaChangeStati.displaced"),
 
     n_("MlLogCodes.email_trouble"),
     n_("MlLogCodes.list_created"),

@@ -1763,32 +1763,32 @@ class TestCoreFrontend(FrontendTest):
         with self.switch_user("paul"):
             changelog_expectation: Tuple[Dict[str, Union[int, str, None]], ...] = (
                 {
-                    'code': const.MemberChangeStati.superseded,
+                    'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
                     'submitted_by': 2,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.superseded,
+                    'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
                     'submitted_by': 2,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.committed.value,
+                    'code': const.PersonaChangeStati.committed.value,
                     'reviewed_by': 17,
                     'submitted_by': 2,
                 },

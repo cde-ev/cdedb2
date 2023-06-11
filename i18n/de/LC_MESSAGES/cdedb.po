@@ -16061,23 +16061,23 @@ msgid "LineResolutions.renew_and_update"
 msgstr "Probemitgliedschaft erneuern und Daten übernehmen"
 
 #: cdedb/i18n_additional.py:179
-msgid "MemberChangeStati.pending"
+msgid "PersonaChangeStati.pending"
 msgstr "Änderung wartet auf Bestätigung"
 
 #: cdedb/i18n_additional.py:180
-msgid "MemberChangeStati.committed"
+msgid "PersonaChangeStati.committed"
 msgstr "Änderung übernommen"
 
 #: cdedb/i18n_additional.py:181
-msgid "MemberChangeStati.superseded"
+msgid "PersonaChangeStati.superseded"
 msgstr "Änderung veraltet"
 
 #: cdedb/i18n_additional.py:182
-msgid "MemberChangeStati.nacked"
+msgid "PersonaChangeStati.nacked"
 msgstr "Änderung abgelehnt"
 
 #: cdedb/i18n_additional.py:183
-msgid "MemberChangeStati.displaced"
+msgid "PersonaChangeStati.displaced"
 msgstr "Änderung verdrängt"
 
 #: cdedb/i18n_additional.py:185

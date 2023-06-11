@@ -306,7 +306,7 @@ class CoreBaseBackend(AbstractBackend):
             # handle pending changes
             diff = None
             if (current_state['code']
-                    == const.MemberChangeStati.pending):
+                    == const.PersonaChangeStati.pending):
                 committed_state = unwrap(self.get_total_personas(
                     rs, (data['id'],)))
                 # stash pending change if we may not wait
@@ -317,8 +317,8 @@ class CoreBaseBackend(AbstractBackend):
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND code = %s")
                     self.query_exec(rs, query, (
-                        const.MemberChangeStati.displaced, data['id'],
-                        const.MemberChangeStati.pending))
+                        const.PersonaChangeStati.displaced, data['id'],
+                        const.PersonaChangeStati.pending))
             else:
                 committed_state = current_state
 
@@ -330,7 +330,7 @@ class CoreBaseBackend(AbstractBackend):
                     # reenable old change if we were going to displace it
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND generation = %s")
-                    self.query_exec(rs, query, (const.MemberChangeStati.pending,
+                    self.query_exec(rs, query, (const.PersonaChangeStati.pending,
                                                 data['id'], current_generation))
                 elif (current_state != committed_state
                         and {"core_admin", "cde_admin"} & rs.user.roles):
@@ -352,7 +352,7 @@ class CoreBaseBackend(AbstractBackend):
             requires_review = (
                     (all_changed_fields & fields_requiring_review
                      or (current_state['code']
-                         == const.MemberChangeStati.pending and not diff))
+                         == const.PersonaChangeStati.pending and not diff))
                     and current_state['is_cde_realm']
                     and not ({"core_admin", "cde_admin"} & rs.user.roles))
 
@@ -365,8 +365,8 @@ class CoreBaseBackend(AbstractBackend):
             query = glue("UPDATE core.changelog SET code = %s",
                          "WHERE persona_id = %s AND code = %s")
             self.query_exec(rs, query, (
-                const.MemberChangeStati.superseded, data['id'],
-                const.MemberChangeStati.pending))
+                const.PersonaChangeStati.superseded, data['id'],
+                const.PersonaChangeStati.pending))
 
             # insert new changelog entry
             insert = copy.deepcopy(current_state)
@@ -376,7 +376,7 @@ class CoreBaseBackend(AbstractBackend):
                 "reviewed_by": None,
                 "generation": next_generation,
                 "change_note": change_note,
-                "code": const.MemberChangeStati.pending,
+                "code": const.PersonaChangeStati.pending,
                 "persona_id": data['id'],
                 "automated_change": automated_change,
             })
@@ -407,7 +407,7 @@ class CoreBaseBackend(AbstractBackend):
                     "reviewed_by": None,
                     "generation": next_generation + 1,
                     "change_note": "Verdrängte Änderung.",
-                    "code": const.MemberChangeStati.pending,
+                    "code": const.PersonaChangeStati.pending,
                     "persona_id": data['id'],
                     "automated_change": automated_change,
                 })
@@ -434,18 +434,18 @@ class CoreBaseBackend(AbstractBackend):
                 "WHERE persona_id = %s AND code = %s",
                 "AND generation = %s")
             return self.query_exec(rs, query, (
-                rs.user.persona_id, const.MemberChangeStati.nacked, persona_id,
-                const.MemberChangeStati.pending, generation))
+                rs.user.persona_id, const.PersonaChangeStati.nacked, persona_id,
+                const.PersonaChangeStati.pending, generation))
         with Atomizer(rs):
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(rs, persona_id,
                                                  generations=(generation,))
             data = history[generation]
-            if data['code'] != const.MemberChangeStati.pending:
+            if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
             setters = ["code = %s"]
-            params: List[Any] = [const.MemberChangeStati.committed]
+            params: List[Any] = [const.PersonaChangeStati.committed]
             if reviewed:
                 setters.append("reviewed_by = %s")
                 params.append(rs.user.persona_id)
@@ -486,8 +486,8 @@ class CoreBaseBackend(AbstractBackend):
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM core.changelog WHERE persona_id = ANY(%s)",
                      "AND code = ANY(%s) GROUP BY persona_id")
-        valid_status = (const.MemberChangeStati.pending,
-                        const.MemberChangeStati.committed)
+        valid_status = (const.PersonaChangeStati.pending,
+                        const.PersonaChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
 
@@ -498,10 +498,10 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def changelog_get_changes(self, rs: RequestState,
-                              stati: Collection[const.MemberChangeStati]
+                              stati: Collection[const.PersonaChangeStati]
                               ) -> CdEDBObjectMap:
         """Retrieve changes in the changelog."""
-        stati = affirm_set(const.MemberChangeStati, stati)
+        stati = affirm_set(const.PersonaChangeStati, stati)
         query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
@@ -1964,7 +1964,7 @@ class CoreBaseBackend(AbstractBackend):
             data.update({
                 "submitted_by": submitted_by or rs.user.persona_id,
                 "generation": 1,
-                "code": const.MemberChangeStati.committed,
+                "code": const.PersonaChangeStati.committed,
                 "persona_id": new_id,
                 "change_note": "Account erstellt.",
             })

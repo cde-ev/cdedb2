@@ -21,7 +21,7 @@ from cdedb.common.query import QueryOperators, QueryScope
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.Genders,
-    const.MemberChangeStati,
+    const.PersonaChangeStati,
     const.RegistrationPartStati,
     const.PrivilegeChangeStati,
     const.GenesisStati,
