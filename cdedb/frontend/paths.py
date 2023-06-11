@@ -738,6 +738,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                                  redirect_to="assembly/assembly/<assembly_id>"
                                              "/attachment/<attachment_id>/version"
                                              "/<version_nr>"),
+                            rule("/change", methods=_GET,
+                                 endpoint="change_attachment_version_form"),
+                            rule("/change", methods=_POST,
+                                 endpoint="change_attachment_version"),
                             rule("/delete", methods=_POST,
                                  endpoint="delete_attachment_version"),
                         )),

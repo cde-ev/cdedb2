@@ -2083,6 +2083,21 @@ class AssemblyBackend(AbstractBackend):
         get_attachments_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
+    def get_attachment_version(self, rs: RequestState, attachment_id: int,
+                               version_nr: int) -> CdEDBObject:
+        """Retrieve a given attachment version."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        version_nr = affirm(vtypes.ID, version_nr)
+        if not self.may_access_attachments(rs, [attachment_id]):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = (f"SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}"
+                 f" FROM assembly.attachment_versions WHERE attachment_id = %s"
+                 f" AND version_nr = %s")
+        params = (attachment_id, version_nr)
+        return self.query_one(rs, query, params) or {}
+
+    @access("assembly")
     def get_latest_attachments_version(self, rs: RequestState,
                                        attachment_ids: Collection[int],
                                        ) -> CdEDBObjectMap:
@@ -2165,6 +2180,38 @@ class AssemblyBackend(AbstractBackend):
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
                 assembly_id, change_note=f"{data['title']}: Version {version_nr}")
+        return ret
+
+    @access("assembly")
+    def change_attachment_version(self, rs: RequestState, data: CdEDBObject
+                                  ) -> DefaultReturnCode:
+        """Change metadata of an attachment version."""
+        data = affirm(vtypes.AssemblyAttachmentVersion, data)
+        attachment_id = data['attachment_id']
+        with Atomizer(rs):
+            assembly_id = self.get_assembly_id(rs, attachment_id=data['attachment_id'])
+            if not self.is_presider(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Must have privileged access to add"
+                                        " attachment version."))
+            if not self.is_attachment_version_deletable(rs, attachment_id):
+                raise ValueError(n_(
+                    "Cannot remove attachment version once the assembly or"
+                    " any linked ballots have been locked."))
+            old_state = self.get_attachment_version(rs, data['attachment_id'],
+                                                    data['version_nr'])
+            if old_state['dtime']:
+                raise ValueError(n_("Deleted attachment version can not be changed."))
+            # Take care to include deleted attachment versions here
+            keys = data.keys()
+            query = (f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
+                     f" ROW({', '.join(('%s',) * len(keys))})"
+                     f" WHERE attachment_id = %s AND version_nr = %s")
+            params = tuple(data[key] for key in keys) + (
+                data['attachment_id'], data['version_nr'])
+            ret = self.query_exec(rs, query, params)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.attachment_version_changed, assembly_id,
+                change_note=f"{data['title']}: Version {data['version_nr']}")
         return ret
 
     @access("assembly")
