@@ -80,7 +80,7 @@ services:
     volumes:
       - redis:/data
   server:
-    image: ghcr.io/goauthentik/server:2023.5.3
+    image: ghcr.io/goauthentik/server:2023.1.2
     command: server
     environment: *authentik-envs-anchor
     # volumes:
@@ -90,7 +90,7 @@ services:
       - 127.0.0.1:9080:9000
       - 127.0.0.1:9443:9443
   worker:
-    image: ghcr.io/goauthentik/server:2023.5.3
+    image: ghcr.io/goauthentik/server:2023.1.2
     command: worker
     environment: *authentik-envs-anchor
     volumes:
