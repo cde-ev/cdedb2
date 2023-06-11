@@ -43,13 +43,12 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
+    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-
 
 class CoreBaseBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
@@ -353,15 +352,15 @@ class CoreBaseBackend(AbstractBackend):
                     (all_changed_fields & fields_requiring_review
                      or (current_state['code']
                          == const.PersonaChangeStati.pending and not diff))
-                    and current_state['is_cde_realm']
-                    and not ({"core_admin", "cde_admin"} & rs.user.roles))
+                    and current_state['is_event_realm']
+                    and not self.is_relative_admin(rs, data['id']))
 
             # prepare for inserting a new changelog entry
             query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
                          "WHERE persona_id = %s")
             max_gen = unwrap(self.query_one(rs, query, (data['id'],))) or 1
             next_generation = max_gen + 1
-            # the following is a nop, if there is no pending change
+            # the following is a nop if there is no pending change
             query = glue("UPDATE core.changelog SET code = %s",
                          "WHERE persona_id = %s AND code = %s")
             self.query_exec(rs, query, (
@@ -496,17 +495,30 @@ class CoreBaseBackend(AbstractBackend):
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def changelog_get_changes(self, rs: RequestState,
                               stati: Collection[const.PersonaChangeStati]
                               ) -> CdEDBObjectMap:
-        """Retrieve changes in the changelog."""
+        """Retrieve changes in the changelog.
+
+        Only show changes for realms the respective admin has access too."""
+        clearances = []
+        if 'core_admin' not in rs.user.roles:
+            for admin_role in {"cde_admin", "event_admin"}.intersection(rs.user.roles):
+                realm = admin_role.removesuffix("_admin")
+                higher_realms = implying_realms(realm)
+                clearance = f"is_{realm}_realm = TRUE"
+                for higher_realm in higher_realms:
+                    clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
+                clearances.append(clearance)
         stati = affirm_set(const.PersonaChangeStati, stati)
         query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
+        if clearances:
+            query = query + " AND (" + " OR ".join(clearances) + ")"
         data = self.query_all(rs, query, (stati,))
-        # TDOD what if there are multiple entries for one persona???
+        # TODO what if there are multiple entries for one persona???
         return {e['persona_id']: e for e in data}
 
     @access("persona")

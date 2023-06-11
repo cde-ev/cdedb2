@@ -106,7 +106,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if "core_user" in rs.user.admin_views:
+            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.PersonaChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
@@ -2066,7 +2066,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_changes(
