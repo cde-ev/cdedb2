@@ -646,7 +646,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         csv_data = csv_output(
             xsorted(output, key=lambda e: EntitySorter.persona(
                 personas[int(e["db_id"][3:-2])])),
-            columns)
+            columns, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename=f"{ml.id}_subscription_states.csv")
