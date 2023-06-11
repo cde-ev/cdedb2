@@ -123,30 +123,35 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
-        core_admin = {"Nutzer verwalten", "Änderungen prüfen", "Metadaten"}
+        pending = {"Änderungen prüfen"}
+        core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = genesis | core_admin | meta_admin | log
-        # admin of a realm with genesis cases
-        elif self.user_in('annika', 'nina'):
+            out = pending | genesis | core_admin | meta_admin | log
+        # event admin (genesis, review)
+        elif self.user_in('annika'):
             ins = everyone | genesis
-            out = core_admin | meta_admin | log
+            out = core_admin | pending | meta_admin | log
+        # ml admin (genesis)
+        elif self.user_in('nina'):
+            ins = everyone | genesis
+            out = pending | core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | genesis | core_admin | log
+            ins = everyone | pending | genesis | core_admin | log
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = genesis | core_admin | log
+            out = pending | genesis | core_admin | log
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = genesis | core_admin | meta_admin
+            out = pending | genesis | core_admin | meta_admin
         else:
             self.fail("Please adjust users for this tests.")
 
