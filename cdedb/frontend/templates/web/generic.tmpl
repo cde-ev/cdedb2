@@ -571,7 +571,8 @@
                                     {% set key = aggregate_func + "." + field %}
                                     <td title="{{ gettext(aggregate_title) }}" data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
                                         {% set format_spec = query.get_field_format_spec(field) %}
-                                        {% set value = aggregates.get(key, "–") %}
+                                        {# For enums etc., only show how many elements are null #}
+                                        {% set value = aggregates.get(key, "–") if (not query.spec[field].choices or aggregate_func == "null") else "–" %}
                                         {% if format_spec == ResultFormat.date and value != "–" and aggregate_func != "null" %}
                                             {{ value|date(lang=lang) }}
                                         {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
