@@ -7,7 +7,7 @@ There are several subclasses in separate files which provide additional function
 related to more specific aspects or user management.
 
 All parts are combined together in the `CoreBackend` class via multiple inheritance,
-together with a handful of high-level methods, that use functionalities of multple
+together with a handful of high-level methods, that use functionalities of multiple
 backend parts.
 """
 import collections
@@ -49,6 +49,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
+
 
 class CoreBaseBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
