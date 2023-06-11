@@ -278,6 +278,11 @@ class MailinglistRosterVisibility(enum.IntEnum):
     subscribable = 10
     viewers = 20
 
+    def may_be_visible(self):
+        """Whether the mailinglist is visible in principle."""
+        return self in {MailinglistRosterVisibility.subscribable,
+                        MailinglistRosterVisibility.viewers}
+
 
 @enum.unique
 class ModerationPolicy(enum.IntEnum):

@@ -1,0 +1,37 @@
+{% set sidenav_active='ml_roster' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title'] %}
+        {{ title }} – Roster
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {% if is_admin %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/show_roster"), gettext("Roster"), active=True) }}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Mailinglist Roster"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
+{% endblock %}
+
+{% block content %}
+    <p>
+        {% trans %}Currently, these people are subscribed to this mailinglist:{% endtrans %}
+    </p>
+    <div class="row" id="subscriber-list">
+        {% for list in subscribers | slice(2 if subscribers|length > 5 else 1) %}
+            <div class="col-sm-6">
+                <ul class="nosp slim">
+                    {% for subscriber in list %}
+                        <li>{{ util.persona_anchor(subscriber) }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -16,6 +16,10 @@
                 {{ util.href(cdedblink("ml/message_moderation", {'mailinglist_id': data['id']}), gettext("Message Moderation"),
                         aclass="list-group-item", icon="envelope", active=(sidenav_active == 'ml_moderation')) }}
             {% endif %}
+            {% if ambience['mailinglist'].roster_visibility.may_be_visible() and ambience['mailinglist'].is_active %}
+                {{ util.href(cdedblink("ml/show_roster", {'mailinglist_id': data['id']}), gettext("Roster"),
+                        aclass="list-group-item", icon="users", active=(sidenav_active == 'ml_roster')) }}
+            {% endif %}
             {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user)
                                                or ambience['mailinglist'].has_management_view(user) %}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),

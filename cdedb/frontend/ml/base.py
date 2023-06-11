@@ -406,29 +406,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
                 rs, assembly_id=assembly['id'])
 
-        mrv = const.MailinglistRosterVisibility
-        subscriber_ids = set()
-        if (ml.is_active
-                and (ml.roster_visibility == mrv.subscribable and state.is_subscribed()
-                     or ml.roster_visibility == mrv.viewers)):
-            sub_states = const.SubscriptionState.subscribing_states()
-            subscriber_ids = set(self.mlproxy.get_subscription_states(
-                rs, mailinglist_id, states=sub_states).keys())
-
         subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml)
-        personas = self.coreproxy.get_personas(rs, ml.moderators | subscriber_ids)
+        personas = self.coreproxy.get_personas(rs, ml.moderators)
         moderators = [
             personas[anid] for anid in xsorted(
-                personas, key=lambda anid: EntitySorter.persona(personas[anid]))
-            if anid in ml.moderators]
-        subscribers = [personas[anid] for anid in xsorted(
-                personas, key=lambda anid: EntitySorter.persona(personas[anid]))
-            if anid in subscriber_ids]
+                personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'subscription_policy': subscription_policy, 'subscribers': subscribers,
+            'subscription_policy': subscription_policy,
             'event': event, 'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
@@ -591,6 +578,37 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         return self.generic_view_log(
             rs, filter_params, "ml.log", "view_ml_log", download)
+
+    @access("ml")
+    def show_roster(self, rs: RequestState, mailinglist_id: int) -> Response:
+        assert rs.user.persona_id is not None
+        ml = rs.ambience['mailinglist']
+
+        mrv = const.MailinglistRosterVisibility
+
+        # Check if user is privileged to view the roster list
+        if (mailinglist_id not in rs.user.moderator
+                and not self.mlproxy.is_relevant_admin(rs, mailinglist=ml)):
+            if not ml.is_active:
+                rs.notify("info", n_("Roster of inactive mailinglist is hidden."))
+                return self.redirect(rs, "ml/show_mailinglist")
+            if ml.roster_visibility == mrv.viewers and not self.mlproxy.may_view(rs, ml):
+                raise werkzeug.exceptions.Forbidden
+            # TODO is there an easy way to determine if the persona may be subscribed?
+            if (ml.roster_visibility == mrv.subscribable
+                    and not self.mlproxy.is_subscribed(rs, rs.user.persona_id,
+                                                       mailinglist_id)):
+                raise werkzeug.exceptions.Forbidden
+
+        sub_states = const.SubscriptionState.subscribing_states()
+        subscriber_ids = set(self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=sub_states).keys())
+
+        personas = self.coreproxy.get_personas(rs, subscriber_ids)
+        subscribers = [personas[anid] for anid in xsorted(
+                personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
+
+        return self.render(rs, "roster", {'subscribers': subscribers})
 
     @access("ml")
     @mailinglist_guard()
