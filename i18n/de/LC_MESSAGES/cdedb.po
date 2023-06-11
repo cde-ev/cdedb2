@@ -6886,8 +6886,8 @@ msgstr "(Version %(version)s, maßgeblich)"
 msgid "Details"
 msgstr "Details"
 
-msgid "Sum, Bools count as 0/1"
-msgstr "Summe, Wahrheitswerte zählen als 0/1."
+msgid "Sum; Bools count as 0/1"
+msgstr "Summe; Wahrheitswerte zählen als 0/1."
 
 msgid "Minimum"
 msgstr "Minimum"
@@ -6895,10 +6895,10 @@ msgstr "Minimum"
 msgid "Maximum"
 msgstr "Maximum"
 
-msgid "Average, Bools count as 0/1"
-msgstr "Durchschnitt, Wahrheitswerte zählen als 0/1"
+msgid "Average; Bools count as 0/1"
+msgstr "Durchschnitt; Wahrheitswerte zählen als 0/1"
 
-msgid "Standard Derivation"
+msgid "Standard Deviation"
 msgstr "Standardabweichung"
 
 msgid "Number of Null entries"

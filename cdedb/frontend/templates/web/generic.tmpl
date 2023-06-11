@@ -560,16 +560,16 @@
             </tbody>
             <tfoot class="aggregate-footer">
                 {% for aggregate_func, aggregate_title, aggregate_symbol in [
-                        ("sum", gettext("Sum, Bools count as 0/1"), "∑"), ("min", gettext("Minimum"), "min"),
-                        ("max", gettext("Maximum"), "max"), ("avg", gettext("Average, Bools count as 0/1"), "Ø"),
-                        ("stddev", gettext("Standard Derivation"), "σ"), ("null", gettext("Number of Null entries"), "␀")] %}
+                        ("sum", gettext("Sum; Bools count as 0/1"), "∑"), ("min", gettext("Minimum"), "min"),
+                        ("max", gettext("Maximum"), "max"), ("avg", gettext("Average; Bools count as 0/1"), "Ø"),
+                        ("stddev", gettext("Standard Deviation"), "σ"), ("null", gettext("Number of Null entries"), "␀")] %}
                     <tr>
                         <td title="{{ gettext(aggregate_title) }}">{{ aggregate_symbol }}</td>
                         <td></td>
                         {% for csvfield in query.fields_of_interest %}
                             {% for field in csvfield.split(',') %}
                                     {% set key = aggregate_func + "." + field %}
-                                    <td data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
+                                    <td title="{{ gettext(aggregate_title) }}" data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
                                         {% set format_spec = query.get_field_format_spec(field) %}
                                         {% set value = aggregates.get(key, "–") %}
                                         {% if format_spec == ResultFormat.date and value != "–" and aggregate_func != "null" %}
