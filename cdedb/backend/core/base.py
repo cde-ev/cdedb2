@@ -333,8 +333,8 @@ class CoreBaseBackend(AbstractBackend):
                     self.query_exec(rs, query, (const.PersonaChangeStati.pending,
                                                 data['id'], current_generation))
                 elif (current_state != committed_state
-                        and {"core_admin", "cde_admin"} & rs.user.roles):
-                    # if user is admin, set pending change as reviewed
+                        and self.is_relative_admin(rs, data['id'])):
+                    # if user is relative admin, set pending change as reviewed
                     return self.changelog_resolve_change(
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
@@ -472,8 +472,13 @@ class CoreBaseBackend(AbstractBackend):
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
-    changelog_resolve_change = access("core_admin", "cde_admin")(
-        _changelog_resolve_change_unsafe)
+
+    @access("core_admin", "cde_admin", "event_admin")
+    def changelog_resolve_change(self, rs: RequestState, persona_id: int,
+                                 generation: int, ack: bool) -> DefaultReturnCode:
+        if not self.is_relative_admin(rs, persona_id):
+            raise PrivilegeError(n_("Not privileged."))
+        return self._changelog_resolve_change_unsafe(rs, persona_id, generation, ack)
 
     @access("persona")
     def changelog_get_generations(self, rs: RequestState,

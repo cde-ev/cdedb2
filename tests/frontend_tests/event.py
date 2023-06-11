@@ -112,18 +112,32 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
 
-    @as_users("emilia")
+    @as_users("annika", "ferdinand")
     def test_changeuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},
-                      {'description': 'Bearbeiten'})
-        f = self.response.forms['changedataform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
-        f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
-        f[IGNORE_WARNINGS_NAME].checked = True
+        with self.switch_user("emilia"):
+            self.traverse({'description': self.user['display_name']},
+                          {'description': 'Bearbeiten'})
+            f = self.response.forms['changedataform']
+            self.submit(f, check_notification=False)
+            self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+            f = self.response.forms['changedataform']
+            f['display_name'] = "Zelda"
+            f['location'] = "Hyrule"
+            f[IGNORE_WARNINGS_NAME].checked = True
+            self.submit(f, check_notification=False)
+            self.assertNotification("Änderung wartet auf Bestätigung", 'info')
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        if self.user_in("annika"):
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
+        else:
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
+        self.traverse({'href': '/core/persona/5/changelog/inspect'})
+        self.assertTitle("Änderungen prüfen für Emilia E. Eventis")
+        f = self.response.forms['ackchangeform']
         self.submit(f)
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        self.realm_admin_view_profile("emilia", "event")
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("(Zelda)", div='personal-information')
         self.assertPresence("Hyrule", div='address')

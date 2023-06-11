@@ -134,8 +134,8 @@ class TestCoreFrontend(FrontendTest):
             out = pending | genesis | core_admin | meta_admin | log
         # event admin (genesis, review)
         elif self.user_in('annika'):
-            ins = everyone | genesis
-            out = core_admin | pending | meta_admin | log
+            ins = everyone | genesis | pending
+            out = core_admin | meta_admin | log
         # ml admin (genesis)
         elif self.user_in('nina'):
             ins = everyone | genesis
