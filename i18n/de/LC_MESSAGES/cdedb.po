@@ -757,7 +757,7 @@ msgstr "Kann nicht still archiviert werden."
 msgid "User with this E-Mail exists already."
 msgstr "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
 
-msgid "Trial membership will automatically be granted if the persona is not a member. You can undo this by changing their profile afterward."
+msgid "Trial membership will automatically be granted if the persona is not a member. You can undo this by changing their profile afterwards."
 msgstr "Dieser Person wird automatisch eine Probemitgliedschaft gewährt, wenn sie aktuell kein Mitglied ist. Dies kann später durch Bearbeitung des Profils rückgängig gemacht werden."
 
 #: cdedb/backend/core/base.py:1610

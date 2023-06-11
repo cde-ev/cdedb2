@@ -1992,7 +1992,7 @@ class CoreBaseBackend(AbstractBackend):
         with Atomizer(rs):
             is_member = trial_member = None
             if data.get('is_cde_realm'):
-                # For the sake of correct logging, we stash this as changes
+                # For the sake of correct logging, we stash these as changes
                 is_member = data.get('is_member')
                 trial_member = data.get('trial_member')
                 data['is_member'] = data['trial_member'] = False
