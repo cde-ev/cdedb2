@@ -209,6 +209,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
                 ret[anid]['fees'] = {}
+                ret[anid]['institution'] =\
+                    const.PastInstitutions(ret[anid]['institution'])
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")

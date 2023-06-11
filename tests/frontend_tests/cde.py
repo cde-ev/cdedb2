@@ -147,8 +147,7 @@ class TestCdEFrontend(FrontendTest):
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
-                     "Semesterverwaltung"}
+        cde_admin = {"Nutzer verwalten", "Semesterverwaltung"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
         finance_admin = {"Einzugsermächtigungen", "Kontoauszug parsen",
                          "Überweisungen eintragen"}
@@ -2153,40 +2152,6 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Log [1–1 von 1]")
 
-    @as_users("vera")
-    def test_institutions(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Organisationen verwalten'})
-        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
-        self.assertEqual("Club der Ehemaligen", f['title_1'].value)
-        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
-        self.assertNotIn("title_3", f.fields)
-        f['create_-1'].checked = True
-        f['title_-1'] = "Bildung und Begabung"
-        f['shortname_-1'] = "BuB"
-        self.submit(f)
-        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
-        self.assertEqual("Club der Ehemaligen", f['title_1'].value)
-        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
-        self.assertEqual("Bildung und Begabung", f['title_1001'].value)
-        f['title_1'] = "Monster Academy"
-        f['shortname_1'] = "MA"
-        self.submit(f)
-        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
-        self.assertEqual("Monster Academy", f['title_1'].value)
-        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
-        self.assertEqual("Bildung und Begabung", f['title_1001'].value)
-        f['delete_1001'].checked = True
-        self.submit(f)
-        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
-        f = self.response.forms['institutionsummaryform']
-        self.assertEqual("Monster Academy", f['title_1'].value)
-        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
-        self.assertNotIn("title_1001", f.fields)
-
     @as_users("berta")
     def test_list_past_events(self) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -2648,29 +2613,14 @@ class TestCdEFrontend(FrontendTest):
         # First: generate data
         logs = []
 
-        # add new institution
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Organisationen verwalten'})
-        f = self.response.forms['institutionsummaryform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "East India Company advanced"
-        f['shortname_-1'] = "EIC"
-        self.submit(f)
-        logs.append((1001, const.PastEventLogCodes.institution_created))
-
-        # change institution
-        f = self.response.forms['institutionsummaryform']
-        f['title_1001'] = "East India Company"
-        self.submit(f)
-        logs.append((1002, const.PastEventLogCodes.institution_changed))
-
         # add new past event
-        self.traverse({'description': 'Verg. Veranstaltungen'},
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg. Veranstaltungen'},
                       {'description': 'Verg. Veranstaltung anlegen'})
         f = self.response.forms['createeventform']
         f['title'] = "Piraten Arrrkademie"
         f['shortname'] = "Arrr"
-        f['institution'] = 2
+        f['institution'] = const.PastInstitutions.van
         f['description'] = "Alle Mann an Deck!"
         f['participant_info'] = "<https://piraten:schiff@ahoi.cde>"
         f['tempus'] = "1.1.2000"
@@ -2737,13 +2687,6 @@ class TestCdEFrontend(FrontendTest):
         f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1013, const.PastEventLogCodes.event_deleted))
-
-        # delete institution
-        self.traverse({'description': 'Organisationen verwalten'})
-        f = self.response.forms['institutionsummaryform']
-        f['delete_1001'].checked = True
-        self.submit(f)
-        logs.append((1014, const.PastEventLogCodes.institution_deleted))
 
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})

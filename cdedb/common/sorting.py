@@ -230,10 +230,6 @@ class EntitySorter:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['shortname'], institution['id'])
-
-    @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 

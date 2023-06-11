@@ -4094,18 +4094,6 @@
         }
     ],
     "cde.log": [],
-    "past_event.institutions": [
-        {
-            "id": 1,
-            "title": "Club der Ehemaligen",
-            "shortname": "CdE"
-        },
-        {
-            "id": 2,
-            "title": "Disco des Ehemaligen",
-            "shortname": "DdE"
-        }
-    ],
     "past_event.events": [
         {
             "id": 1,
@@ -4120,7 +4108,7 @@
             "id": 2,
             "title": "Geburtstagsfete",
             "shortname": "gebi",
-            "institution": 2,
+            "institution": 200,
             "description": null,
             "tempus": "2019-07-26",
             "participant_info": null

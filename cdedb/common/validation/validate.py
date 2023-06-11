@@ -2190,37 +2190,10 @@ def _meta_info(
     return MetaInfo(val)
 
 
-INSTITUTION_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-}
-
-
-@_add_typed_validator
-def _institution(
-    val: Any, argname: str = "institution", *,
-    creation: bool = False, **kwargs: Any
-) -> Institution:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**INSTITUTION_COMMON_FIELDS}
-    return Institution(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Shortname,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
 }
@@ -2256,7 +2229,7 @@ def _past_event(
 
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,

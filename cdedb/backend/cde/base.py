@@ -299,23 +299,21 @@ class CdEBaseBackend(AbstractBackend):
             EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
-                past_event.institutions
-                LEFT OUTER JOIN (
-                    SELECT id, institution, tempus FROM past_event.events
-                ) AS events ON events.institution = institutions.id
+                past_event.events
                 LEFT OUTER JOIN (
                     SELECT persona_id, pevent_id FROM past_event.participants
                 ) AS participants ON participants.pevent_id = events.id
             )
         WHERE
-            shortname = 'CdE'
+            shortname = %s
         GROUP BY
             datum
         ORDER BY
             datum ASC
         """
         year_stats[n_("unique_participants_per_year")] = dict(
-            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+            (e['datum'], e['num']) for e in
+            self.query_all(rs, query, [int(const.PastInstitutions.main_insitution())]))
 
         return simple_stats, other_stats, year_stats
 
