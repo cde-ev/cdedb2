@@ -48,6 +48,9 @@ EOF
 mkdir -p /usr/local/lib/python3.9/dist-packages
 sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.9/dist-packages/cdedb
 
+# temporary hack to make things work
+sudo -u cdedb git checkout auto-build/bookworm
+
 echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
