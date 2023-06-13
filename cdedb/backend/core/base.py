@@ -1520,7 +1520,7 @@ class CoreBaseBackend(AbstractBackend):
                 "FROM event.registrations as reg ",
                 "JOIN event.events as event ON reg.event_id = event.id",
                 "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s"
+                "WHERE reg.persona_id = %s",
                 "GROUP BY persona_id")
             max_end = self.query_one(rs, query, (persona_id,))
             if max_end and max_end['m'] and max_end['m'] >= now().date():
