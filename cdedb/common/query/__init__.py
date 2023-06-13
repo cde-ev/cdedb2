@@ -683,7 +683,7 @@ class Query:
             params[f'qsel_{field}'] = True
         for field, op, value in self.constraints:
             params[f'qop_{field}'] = op.value
-            if (isinstance(value, collections.Iterable)
+            if (isinstance(value, collections.abc.Iterable)
                     and not isinstance(value, str)):
                 params[f'qval_{field}'] = QUERY_VALUE_SEPARATOR.join(
                     serialize_value(x) for x in value)
