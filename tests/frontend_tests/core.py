@@ -1661,6 +1661,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(self.user['family_name'], div='personal-information')
         self.assertPresence("Gemeinser", div='personal-information')
         self.assertNonPresence('Ganondorf')
+        with self.switch_user("annika"):
+            # event admin may not see cde user change
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.get('/core/persona/2/changelog/inspect', status=403)
+        with self.switch_user("ferdinand"):
+            # event+cde admin can see everything
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
         with self.switch_user("vera"):
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")

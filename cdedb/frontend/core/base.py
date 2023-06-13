@@ -2108,7 +2108,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
-        # Takes care of the privilege check
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
@@ -2128,9 +2129,10 @@ class CoreBaseFrontend(AbstractFrontend):
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
         """Make decision."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if rs.has_validation_errors():
             return self.list_pending_changes(rs)
-        # Takes care of the privilege check
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
                                                        generation, ack)
         message = n_("Change committed.") if ack else n_("Change dropped.")

@@ -112,7 +112,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
 
-    @as_users("annika", "ferdinand")
+    @as_users("annika")
     def test_changeuser(self) -> None:
         with self.switch_user("emilia"):
             self.traverse({'description': self.user['display_name']},
@@ -127,11 +127,14 @@ class TestEventFrontend(FrontendTest):
             self.submit(f, check_notification=False)
             self.assertNotification("Änderung wartet auf Bestätigung", 'info')
 
+        with self.switch_user("quintus"):
+            # cde admin may not see event user change
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.get('/core/persona/5/changelog/inspect', status=403)
+
         self.traverse({'description': 'Änderungen prüfen'})
-        if self.user_in("annika"):
-            self.assertTitle("Zu prüfende Profiländerungen [1]")
-        else:
-            self.assertTitle("Zu prüfende Profiländerungen [1]")
+        self.assertTitle("Zu prüfende Profiländerungen [1]")
         self.traverse({'href': '/core/persona/5/changelog/inspect'})
         self.assertTitle("Änderungen prüfen für Emilia E. Eventis")
         f = self.response.forms['ackchangeform']
