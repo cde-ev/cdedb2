@@ -35,6 +35,7 @@ from schulze_condorcet.types import Candidate
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
+from cdedb.common.intenum import CdEIntEnum
 from cdedb.database.connection import ConnectionContainer
 
 _LOGGER = logging.getLogger(__name__)
@@ -791,7 +792,7 @@ class LodgementsSortkeys(enum.Enum):
 
 
 @enum.unique
-class AgeClasses(enum.IntEnum):
+class AgeClasses(CdEIntEnum):
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
@@ -846,7 +847,7 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
 
 
 @enum.unique
-class LineResolutions(enum.IntEnum):
+class LineResolutions(CdEIntEnum):
     """Possible actions during batch admission
     """
     create = 1  #: Create a new account with this data.
@@ -876,7 +877,7 @@ class LineResolutions(enum.IntEnum):
 
 
 @enum.unique
-class GenesisDecision(enum.IntEnum):
+class GenesisDecision(CdEIntEnum):
     """Possible decisions during review of a genesis request."""
     approve = 1  #: Approve the request and create a new account.
     deny = 2  #: Deny the request. Do not create or update an account.
@@ -915,7 +916,7 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=enum.IntEnum)
+E = TypeVar("E", bound=CdEIntEnum)
 
 
 @functools.total_ordering
@@ -957,7 +958,7 @@ class InfiniteEnum(Generic[E]):
 
 @infinite_enum
 @enum.unique
-class CourseFilterPositions(enum.IntEnum):
+class CourseFilterPositions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     We want to find registrations which have a specific course as choice
@@ -974,7 +975,7 @@ class CourseFilterPositions(enum.IntEnum):
 
 @infinite_enum
 @enum.unique
-class CourseChoiceToolActions(enum.IntEnum):
+class CourseChoiceToolActions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
@@ -998,7 +999,7 @@ class Accounts(enum.Enum):
 
 
 @enum.unique
-class ConfidenceLevel(enum.IntEnum):
+class ConfidenceLevel(CdEIntEnum):
     """Store the different Levels of Confidence about the prediction."""
     Null = 0
     Low = 1
@@ -1027,7 +1028,7 @@ class ConfidenceLevel(enum.IntEnum):
 
 
 @enum.unique
-class TransactionType(enum.IntEnum):
+class TransactionType(CdEIntEnum):
     """Store the type of a Transactions."""
     MembershipFee = 1
     EventFee = 2

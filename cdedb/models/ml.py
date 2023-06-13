@@ -13,6 +13,7 @@ from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
@@ -42,7 +43,7 @@ class BackendContainer:
         self.assembly = cast("AssemblyBackend", assembly)
 
 
-class MailinglistGroup(enum.IntEnum):
+class MailinglistGroup(CdEIntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
     public = 1
     cde = 2

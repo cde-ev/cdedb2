@@ -21,6 +21,7 @@ from typing import (
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
+from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -31,7 +32,7 @@ _CONFIG = LazyConfig()
 
 
 @enum.unique
-class QueryOperators(enum.IntEnum):
+class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
     empty = 1
     nonempty = 2
@@ -142,7 +143,7 @@ class QuerySpecEntry(NamedTuple):
 QuerySpec = Dict[str, QuerySpecEntry]
 
 
-class QueryScope(enum.IntEnum):
+class QueryScope(CdEIntEnum):
     """Enum that contains the different kinds of generalized queries.
 
     This is used in conjunction with the `Query` class and bundles together a lot of
