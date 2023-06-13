@@ -246,8 +246,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         # Using idea from http://stackoverflow.com/a/8983196
         years: Dict[int, List[int]] = {}
         for anid in stats_sorter:
-            if institution \
-                    and stats[anid]['institution'] != institution:
+            if institution and stats[anid]['institution'] != institution:
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 

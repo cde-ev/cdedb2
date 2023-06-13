@@ -12,7 +12,7 @@ import cdedb.database.constants as const
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, read_conditional_write_composer,
+    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.backend.event import EventBackend

@@ -313,7 +313,7 @@ class CdEBaseBackend(AbstractBackend):
         """
         year_stats[n_("unique_participants_per_year")] = dict(
             (e['datum'], e['num']) for e in
-            self.query_all(rs, query, [int(const.PastInstitutions.main_insitution())]))
+            self.query_all(rs, query, [const.PastInstitutions.main_insitution()]))
 
         return simple_stats, other_stats, year_stats
 
