@@ -15,7 +15,7 @@ Here is a list of best practices to follow, so the code stays nice.
 * The database access is encapsulated as follows::
 
     with connection as conn:
-        with conn.cursor as cur():
+        with conn.cursor() as cur:
             ...
 
   This guarantees, that no transaction are left dangling and in case of
