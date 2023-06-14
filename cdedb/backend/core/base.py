@@ -502,10 +502,8 @@ class CoreBaseBackend(AbstractBackend):
         changelog_get_generations)
 
     @access("core_admin", "cde_admin", "event_admin")
-    def changelog_get_changes(self, rs: RequestState,
-                              stati: Collection[const.PersonaChangeStati]
-                              ) -> CdEDBObjectMap:
-        """Retrieve changes in the changelog.
+    def changelog_get_pending_changes(self, rs: RequestState) -> CdEDBObjectMap:
+        """Retrieve pending changes in the changelog.
 
         Only show changes for realms the respective admin has access too."""
         clearances = []
@@ -517,14 +515,11 @@ class CoreBaseBackend(AbstractBackend):
                 for higher_realm in higher_realms:
                     clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
                 clearances.append(clearance)
-        stati = affirm_set(const.PersonaChangeStati, stati)
-        query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
-                     "generation, ctime",
-                     "FROM core.changelog WHERE code = ANY(%s)")
+        query = ("SELECT id, persona_id, given_names, display_name, family_name,"
+                 " generation, ctime FROM core.changelog WHERE code = %s")
         if clearances:
             query = query + " AND (" + " OR ".join(clearances) + ")"
-        data = self.query_all(rs, query, (stati,))
-        # TODO what if there are multiple entries for one persona???
+        data = self.query_all(rs, query, (const.PersonaChangeStati.pending,))
         return {e['persona_id']: e for e in data}
 
     @access("persona")

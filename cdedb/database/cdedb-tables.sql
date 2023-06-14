@@ -362,7 +362,7 @@ CREATE TABLE core.changelog (
         -- Flag for whether this was an automated change.
         automated_change        boolean NOT NULL DEFAULT FALSE,
         -- enum for progress of change
-        -- see cdedb.database.constants.MemberChangeStati
+        -- see cdedb.database.constants.PersonaChangeStati
         code                    integer NOT NULL DEFAULT 0,
         --
         -- data fields
@@ -428,6 +428,7 @@ CREATE TABLE core.changelog (
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
 CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
+CREATE UNIQUE INDEX changelog_persona_id_pending ON core.changelog(persona_id) WHERE code = 1;
 -- SELECT can not be easily restricted here due to change displacement logic
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;

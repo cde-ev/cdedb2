@@ -107,8 +107,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 dashboard['genesis_cases'] = len(data)
             # pending changes
             if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
-                data = self.coreproxy.changelog_get_changes(
-                    rs, stati=(const.PersonaChangeStati.pending,))
+                data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
             if "meta_admin" in rs.user.admin_views:
@@ -2069,8 +2068,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.PersonaChangeStati.pending,))
+        pending = self.coreproxy.changelog_get_pending_changes(rs)
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
@@ -2081,8 +2079,7 @@ class CoreBaseFrontend(AbstractFrontend):
         Send a reminder after twelve hours and then daily.
         """
         current = now()
-        data = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.PersonaChangeStati.pending,))
+        data = self.coreproxy.changelog_get_pending_changes(rs)
         ids = {f"{anid}/{e['generation']}" for anid, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
