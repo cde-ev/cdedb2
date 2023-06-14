@@ -12,7 +12,7 @@ from typing import Dict, Optional, Set
 
 from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.submanshim import (  # pylint: disable=unused-import # noqa: F401
-    SubscriptionAction, SubscriptionState
+    SubscriptionAction, SubscriptionState,
 )
 
 

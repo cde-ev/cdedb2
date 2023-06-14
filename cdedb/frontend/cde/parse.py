@@ -173,7 +173,8 @@ class CdEParseMixin(CdEBaseFrontend):
     @REQUESTdata("count", "date", "validate", "event", "membership", "excel", "gnucash",
                  "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, date: datetime.date,
-                       validate: Optional[str] = None, event: Optional[vtypes.ID] = None,
+                       validate: Optional[str] = None,
+                       event: Optional[vtypes.ID] = None,
                        membership: Optional[str] = None, excel: Optional[str] = None,
                        gnucash: Optional[str] = None, ignore_warnings: bool = False
                        ) -> Response:

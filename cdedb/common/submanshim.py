@@ -2,11 +2,9 @@
 
 Splitting this off now necessitates some corrective action."""
 
-from cdedb.common.intenum import CdEIntEnum
+from subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
-from subman.machine import (
-    SubscriptionAction, SubscriptionPolicy, SubscriptionState,
-)
+from cdedb.common.intenum import CdEIntEnum
 
 SubscriptionAction.__str__ = CdEIntEnum.__str__
 SubscriptionAction.__format__ = CdEIntEnum.__format__

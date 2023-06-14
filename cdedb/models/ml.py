@@ -1,7 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import enum
 import itertools
 from dataclasses import dataclass, fields
 from typing import (
@@ -13,8 +12,8 @@ from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping

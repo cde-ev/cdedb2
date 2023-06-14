@@ -23,9 +23,9 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.submanshim import SubscriptionAction
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
-from cdedb.common.submanshim import SubscriptionAction
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
     cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
