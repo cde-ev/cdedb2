@@ -61,7 +61,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @REQUESTdata("attachment_filename")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
-                        attachment_filename: str = None) -> Response:
+                        attachment_filename: Optional[str] = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.

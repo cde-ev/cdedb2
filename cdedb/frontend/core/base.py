@@ -74,7 +74,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: str = None) -> Response:
+    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -1145,7 +1145,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    query: Query = None) -> Response:
+                    query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {

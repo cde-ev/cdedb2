@@ -552,7 +552,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                      fee_id: int = None) -> Response:
+                      fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
