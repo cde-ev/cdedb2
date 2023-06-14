@@ -12,8 +12,7 @@ import cdedb.database.constants as const
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
-    singularize,
+    affirm_validation_optional as affirm_optional, singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -166,7 +165,10 @@ class PastEventBackend(AbstractBackend):
             ) AS participant_counts ON participant_counts.pevent_id = events.id
         )"""
         data = self.query_all(rs, query, tuple())
-        ret = {e['pevent_id']: e for e in data}
+        ret = {}
+        for e in data:
+            e['institution'] = const.PastInstitutions(e['institution'])
+            ret[e['pevent_id']] = e
         return ret
 
     @access("cde", "event")

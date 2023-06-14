@@ -305,7 +305,7 @@ class CdEBaseBackend(AbstractBackend):
                 ) AS participants ON participants.pevent_id = events.id
             )
         WHERE
-            shortname = %s
+            institution = %s
         GROUP BY
             datum
         ORDER BY

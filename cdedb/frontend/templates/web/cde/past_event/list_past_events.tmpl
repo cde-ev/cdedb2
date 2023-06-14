@@ -21,7 +21,7 @@
             </li>
             {% for i in enums['PastInstitutions'] %}
                 <li role="presentation" {% if i|string == values['institution'] %}class="active" aria-current="page" {% endif %}>
-                    {{ util.href(cdedblink('cde/list_past_events', {'institution': i}), i['shortname']) }}
+                    {{ util.href(cdedblink('cde/list_past_events', {'institution': i}), i.shortname) }}
                 </li>
             {% endfor %}
         </ul>
@@ -34,7 +34,7 @@
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
                     {% if "past_event" in user.admin_views %}[{{ shortnames[pevent_id] }}]{% endif %}
-                    {% if 'institution' not in values %}({{ gettext(stats[pevent_id]['institution']) }}){% endif %}
+                    {% if not values.get('institution') %}({{ stats[pevent_id]['institution'].shortname }}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent_id]['courses'] %}

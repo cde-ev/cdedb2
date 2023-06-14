@@ -1,6 +1,7 @@
 import csv
 import pathlib
 
+import cdedb.database.constants as const
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
@@ -15,11 +16,7 @@ s = Script(persona_id=USER_ID, dbuser='cdb_admin')
 
 past_event: PastEventBackend = s.make_backend('past_event')
 
-institution_ids = past_event.list_institutions(s.rs())
-institution_map = {
-    e['shortname']: e['id']
-    for e in past_event.get_institutions(s.rs(), institution_ids).values()
-}
+institution_map = {e.shortname: e for e in const.PastInstitutions}
 
 with infile_events.open("r") as f:
     event_data = {
