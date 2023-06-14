@@ -17,7 +17,6 @@ import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
-from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -41,6 +40,7 @@ from cdedb.common.roles import (
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.submanshim import SubscriptionPolicy
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,

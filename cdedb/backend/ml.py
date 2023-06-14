@@ -7,7 +7,6 @@ import itertools
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
-from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -29,6 +28,7 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
+from cdedb.common.submanshim import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
     ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,

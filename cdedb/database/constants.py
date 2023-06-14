@@ -11,8 +11,8 @@ import enum
 from typing import Dict, Optional, Set
 
 from cdedb.common.intenum import CdEIntEnum
-from subman.machine import (  # pylint: disable=unused-import # noqa: F401
-    SubscriptionAction, SubscriptionState,
+from cdedb.common.submanshim import (  # pylint: disable=unused-import # noqa: F401
+    SubscriptionAction, SubscriptionState
 )
 
 

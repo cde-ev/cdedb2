@@ -7,7 +7,6 @@ from typing import Any, Collection, Dict, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -26,6 +25,7 @@ from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
+from cdedb.common.submanshim import SubscriptionAction
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access,
     cdedbid_filter as cdedbid, check_validation as check, csv_output, mailinglist_guard,
