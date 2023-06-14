@@ -18,7 +18,7 @@ import icu
 import jinja2
 
 try:
-    from jinja2 import pass_environment
+    from jinja2 import pass_environment  # type: ignore[attr-defined]
 except ImportError:
     # This compatibility shim can be removed once the migration to Debian
     # bookworm is complete

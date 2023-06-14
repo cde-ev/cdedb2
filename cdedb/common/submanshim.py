@@ -2,6 +2,8 @@
 
 Splitting this off now necessitates some corrective action."""
 
+# mypy: disable-error-code="assignment"
+
 from subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
 from cdedb.common.intenum import CdEIntEnum

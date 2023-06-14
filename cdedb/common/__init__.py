@@ -916,7 +916,7 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=CdEIntEnum)
+E = TypeVar("E", bound=enum.IntEnum)
 
 
 @functools.total_ordering
