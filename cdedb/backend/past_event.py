@@ -797,8 +797,8 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if any(now().date() < part['part_end']
-                   for part in event['parts'].values()):
+            if not event['is_cancelled'] and any(now().date() < part['part_end']
+                                                 for part in event['parts'].values()):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."

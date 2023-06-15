@@ -298,6 +298,25 @@ class CoreBaseBackend(AbstractBackend):
                                  f" {generation}) for {data['id']}")
                 return 0
 
+            # The following tries to summarize the logic of this function to
+            # facilitate better understanding
+            #
+            # - if a pending change exists (current_state != committed_state)
+            #     - if we may not wait
+            #       => stash pending change in `diff`
+            #          (current_state == committed_state as if no pending change)
+            # - if no actual change (data == current_state)
+            #     - if stashed pending change: reenable
+            #     - if unstashed pending change exists and is admin:
+            #          an admin tried to submit identical change => resolve it
+            #     - return
+            # - determine review requirements
+            # - supersede potential pending changes
+            # - insert new changelog entry
+            # - if not requiring review: resolve
+            # - if stashed pending change: reinstate
+            #      (this can only happen if the resolve action was taken)
+
             # get current state
             history = self.changelog_get_history(
                 rs, data['id'], generations=(current_generation,))
@@ -339,6 +358,14 @@ class CoreBaseBackend(AbstractBackend):
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
                 # values. It's not our fault, that we didn't have to do any work.
+                # The change however may still be pending and awaiting review.
+                #
+                # The one case that's awkward here is that if a normal user
+                # first tries to update multiple attributes some of which
+                # require review causing a pending change and then tries in a
+                # second attempt to only change uncritical attributes to
+                # achieve an immediate resolve they will be stuck with the
+                # pending change.
                 rs.notify('info', n_("Nothing changed."))
                 return 1
             # Determine if something requiring a review changed.

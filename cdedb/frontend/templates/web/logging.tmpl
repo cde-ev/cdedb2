@@ -138,7 +138,7 @@
             {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to(
-                'time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
+                'ctime_from', 'ctime_to', label=gettext("Timestamp"), type='datetime-local', small=True) }}
             <div class="form-group mosp">
                 <div class="col-sm-offset-2 col-sm-10">
                     {{ util.input_submit(label=gettext("Apply")) }}

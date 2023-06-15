@@ -32,7 +32,7 @@ from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import format_country_code
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
@@ -1155,6 +1155,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
+            'country': collections.OrderedDict(get_localized_country_codes(rs)),
         }
         if query and query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))

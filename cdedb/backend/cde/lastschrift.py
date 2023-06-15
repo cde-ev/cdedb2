@@ -76,7 +76,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 rs, persona_id, is_member=is_member, trial_member=trial_member)
         return code, revoked_permit, collateral_transaction
 
-    @access("member", "core_admin", "cde_admin")
+    @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
                          active: Optional[bool] = True) -> Dict[int, int]:

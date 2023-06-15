@@ -32,7 +32,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
+    ADDITIONAL_TYPE_FIELDS, AssemblyAssociatedMailinglist,
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
     MailinglistGroup, get_ml_type,
 )
@@ -197,19 +197,20 @@ class MlBaseFrontend(AbstractUserFrontend):
                                 ml_type: Optional[const.MailinglistTypes]) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
+        available_types = self.mlproxy.get_available_types(rs)
+        if not available_types:
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if ml_type is None:
-            available_types = self.mlproxy.get_available_types(rs)
             return self.render(
                 rs, "create_mailinglist", {
                     'available_types': available_types,
                     'ml_type': None,
                 })
         else:
-            atype = ML_TYPE_MAP[ml_type]
+            atype = get_ml_type(ml_type)
             if not atype.is_relevant_admin(rs.user):
-                rs.append_validation_error(
-                    ("ml_type", ValueError(n_(
-                        "May not create mailinglist of this type."))))
+                raise werkzeug.exceptions.Forbidden(n_(
+                        "May not create mailinglist of this type."))
             available_domains = atype.available_domains
             additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
@@ -239,6 +240,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data["whitelist"] = []
         ml_class = get_ml_type(ml_type)
+        if not ml_class.is_relevant_admin(rs.user):
+            raise werkzeug.exceptions.Forbidden(n_(
+                "May not create mailinglist of this type."))
         # silently discard superfluous fields
         for field in ADDITIONAL_TYPE_FIELDS:
             if field not in ml_class.get_additional_fields():
@@ -646,7 +650,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         csv_data = csv_output(
             xsorted(output, key=lambda e: EntitySorter.persona(
                 personas[int(e["db_id"][3:-2])])),
-            columns)
+            columns, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename=f"{ml.id}_subscription_states.csv")
