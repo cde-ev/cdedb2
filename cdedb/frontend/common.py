@@ -10,6 +10,7 @@ import collections
 import collections.abc
 import copy
 import csv
+import datetime
 import email
 import email.charset
 import email.encoders
@@ -659,7 +660,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
-            csv_data = csv_output(result, fields, substitutions=substitutions)
+            csv_data = csv_output(result, fields, substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
             return self.send_csv_file(
                 rs, data=csv_data, inline=False, filename=filename)
         elif kind == "json":
@@ -1176,7 +1178,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
             csv_data = csv_output(log, columns, replace_newlines=True,
-                                  substitutions=substitutions)
+                                  substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
             return self.send_csv_file(
                 rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
         else:
@@ -2448,7 +2451,8 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping[Any, Any]] = None) -> str:
+               substitutions: Mapping[str, Mapping[Any, Any]] = None,
+               tzinfo: datetime.timezone = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2457,6 +2461,7 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
     :param substitutions: Allow replacements of values with better
       representations for output. The key of the outer dict is the field
       name.
+    :param tzinfo: If given convert all datetimes to this timezone.
     """
     substitutions = substitutions or {}
     outfile = io.StringIO()
@@ -2472,6 +2477,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                 value = substitutions[field].get(value, value)
             if replace_newlines and isinstance(value, str):
                 value = value.replace('\n', 14 * ' ')
+            if tzinfo and isinstance(value, datetime.datetime):
+                value = value.astimezone(tzinfo)
             row[field] = value
         writer.writerow(row)
     return outfile.getvalue()
