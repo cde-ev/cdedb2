@@ -15,7 +15,7 @@ from cdedb.common import (
     TransactionType,
 )
 from cdedb.common.query import QueryOperators, QueryScope
-from cdedb.common.submanshim import SubscriptionAction, SubscriptionPolicy
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (

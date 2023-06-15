@@ -23,7 +23,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.submanshim import SubscriptionAction
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
     MailinglistGroup, get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction
 
 
 class MlBaseFrontend(AbstractUserFrontend):

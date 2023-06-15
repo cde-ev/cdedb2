@@ -10,8 +10,8 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict, Optional, Set
 
-from cdedb.common.intenum import CdEIntEnum
-from cdedb.common.submanshim import (  # pylint: disable=unused-import # noqa: F401
+from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.submanshim import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
 

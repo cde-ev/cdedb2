@@ -33,10 +33,10 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _LOGGER = logging.getLogger(__name__)
 
