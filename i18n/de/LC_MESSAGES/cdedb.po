@@ -10108,6 +10108,12 @@ msgstr "kompliziert"
 msgid "Gen"
 msgstr "Gen"
 
+msgid "Current"
+msgstr "Aktuell"
+
+msgid "Current dataset is inconsistent with latest committed changelog generation (Gen %s)!"
+msgstr "Der aktuelle Datensatz ist inkonsistent mit der letzten übernommenen Änderung der Änderungshistorie (Gen %s)!"
+
 #: cdedb/frontend/templates/web/core/show_history.tmpl:90
 msgid "Review Changes"
 msgstr "Änderungen prüfen"
