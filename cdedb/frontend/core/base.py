@@ -715,9 +715,6 @@ class CoreBaseFrontend(AbstractFrontend):
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.ambience['persona']['is_archived']:
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         current_generation = self.coreproxy.changelog_get_generation(
