@@ -18,6 +18,18 @@
     {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% elif not ambience['persona']['is_active'] %}
+        {% call util.notification('info', id='deactivated') %}
+            {% trans %}The user is deactivated.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','user-clock',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
                 enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
@@ -134,11 +146,6 @@
         <p>
             {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
                     icon="check-square", aclass="btn btn-sm btn-info") }}
-        </p>
-    {% endif %}
-    {% if not current['is_active'] %}
-        <p class="text-danger">
-            {% trans %}The user is deactivated.{% endtrans %}
         </p>
     {% endif %}
 
