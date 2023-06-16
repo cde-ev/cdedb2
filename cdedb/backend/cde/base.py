@@ -146,7 +146,8 @@ class CdEBaseBackend(AbstractBackend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note, transaction_date=date)
-                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                            and not personas[datum['persona_id']]['is_member']):
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)
                         memberships_gained += bool(code)
