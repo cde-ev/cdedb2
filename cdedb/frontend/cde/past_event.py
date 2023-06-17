@@ -9,19 +9,17 @@ administrative tasks, like creating and modifying past events and courses requir
 
 import copy
 import csv
-import datetime
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
-import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS,
@@ -241,7 +239,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         fields: List[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields)
+        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
@@ -530,31 +528,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
+    @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "pevent_id")
-    def view_past_log(self, rs: RequestState,
-                      codes: Collection[const.PastEventLogCodes],
-                      pevent_id: Optional[vtypes.ID],
-                      offset: Optional[int],
-                      length: Optional[vtypes.PositiveInt],
-                      persona_id: Optional[vtypes.CdedbID],
-                      submitted_by: Optional[vtypes.CdedbID],
-                      change_note: Optional[str],
-                      time_start: Optional[datetime.datetime],
-                      time_stop: Optional[datetime.datetime],
-                      download: bool = False) -> Response:
+    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                      ) -> Response:
         """View activities concerning concluded events."""
-
-        filter_params = {
-            'entity_ids': [pevent_id] if pevent_id else [],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         return self.generic_view_log(
-            rs, filter_params, "past_event.log", "past_event/view_past_log", download, {
-            'pevents': pevents
-        })
+            rs, data, PastEventLogFilter, self.pasteventproxy.retrieve_past_log,
+            download=download, template="past_event/view_past_log", template_kwargs={
+                'pevents': pevents,
+            },
+        )

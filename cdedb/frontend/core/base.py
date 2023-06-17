@@ -11,7 +11,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import magic
 import segno
@@ -28,19 +28,19 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
 from cdedb.common.fields import (
-    LOG_FIELDS_COMMON, META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import format_country_code
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import CdedbID
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
@@ -1155,6 +1155,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
+            'country': collections.OrderedDict(get_localized_country_codes(rs)),
         }
         if query and query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))
@@ -1663,7 +1664,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         if (persona['balance'] == new_balance
                 and persona['trial_member'] == trial_member):
-            rs.notify("warning", n_("Nothing changed."))
+            rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
@@ -2065,7 +2066,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_changes(
@@ -2104,7 +2105,7 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
         history = self.coreproxy.changelog_get_history(rs, persona_id,
@@ -2121,7 +2122,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
@@ -2198,50 +2199,26 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
+    @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "reviewed_by")
-    def view_changelog_meta(self, rs: RequestState,
-                            codes: Collection[const.MemberChangeStati],
-                            offset: Optional[int],
-                            length: Optional[vtypes.PositiveInt],
-                            persona_id: Optional[CdedbID],
-                            submitted_by: Optional[CdedbID],
-                            change_note: Optional[str],
-                            time_start: Optional[datetime.datetime],
-                            time_stop: Optional[datetime.datetime],
-                            reviewed_by: Optional[CdedbID],
-                            download: bool = False) -> Response:
+    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool
+                            ) -> Response:
         """View changelog activity."""
-
-        filter_params = {
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-            'reviewed_by': reviewed_by,
-        }
-
         return self.generic_view_log(
-            rs, filter_params, "core.changelog", "view_changelog_meta", download)
+            rs, data, ChangelogLogFilter, self.coreproxy.retrieve_changelog_meta,
+            download=download, template="view_changelog_meta",
+        )
 
+    @REQUESTdatadict(*CoreLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
-                 offset: Optional[int], length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime],
-                 download: bool = False) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activity."""
-
-        filter_params = {
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
         return self.generic_view_log(
-            rs, filter_params, "core.log", "view_log", download)
+            rs, data, CoreLogFilter, self.coreproxy.retrieve_log,
+            download=download, template="view_log",
+        )
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

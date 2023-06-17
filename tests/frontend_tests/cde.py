@@ -1863,7 +1863,6 @@ class TestCdEFrontend(FrontendTest):
         ]
         self.assertLogEqual(
             log_expectation, realm="finance",
-            log_retriever=self.cde.retrieve_finance_log,
             codes=[const.FinanceLogCodes.increase_balance,
                    const.FinanceLogCodes.gain_membership])
         self.admin_view_profile("daniel")

@@ -21,6 +21,7 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
 from cdedb.filter import iban_filter
@@ -1418,7 +1419,7 @@ etc;anything else""", f['entries_2'].value)
             },
         ]
         self.assertLogEqual(
-            ml_log_expectation, realm="ml", entity_ids={1001, 1002})
+            ml_log_expectation, realm="ml", _mailinglist_ids={1001, 1002})
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -4968,12 +4969,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         #
         # prepare dates
         #
-        self.traverse("Konfiguration")
-        f = self.response.forms["changeeventform"]
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
         self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -5040,19 +5035,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Veranstaltungen", "CdE-Party 2050")
         self.assertTitle("CdE-Party 2050")
 
-        # prepare dates
+        # cancel
         self.traverse("Konfiguration")
         f = self.response.forms["changeeventform"]
-        f['registration_start'] = "2000-10-30 00:00:00+0000"
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.traverse("Veranstaltungsteile")
-        # Party
-        self.traverse({"href": "/event/event/2/part/4/change"})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-02-02"
-        f['part_end'] = "2003-02-03"
+        f['is_cancelled'] = True
         self.submit(f)
 
         # do it
@@ -5063,7 +5049,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         self.assertTitle("CdE-Party 2050")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+        self.assertPresence("Diese Veranstaltung wurde abgesagt und archiviert.",
                             div="static-notifications")
 
         # check that there is no past event
@@ -5378,7 +5364,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event_id = 4
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
-        offset = self.event.retrieve_log(self.key, {'entity_ids': [event_id]})[0]
+        offset = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))[0]
 
         self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
                       "Gruppen")

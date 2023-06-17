@@ -43,9 +43,9 @@ from schulze_condorcet import schulze_evaluate
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    internal, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
@@ -58,7 +58,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -73,6 +73,15 @@ BallotConfiguration = NamedTuple(
         ('rel_quorum', int),
     ]
 )
+
+
+@dataclasses.dataclass
+class AssembyAttendees:
+    all: CdEDBObjectMap
+    early: CdEDBObjectMap
+    late: CdEDBObjectMap
+    undetermined: CdEDBObjectMap
+    cutoff: datetime.datetime
 
 
 @dataclasses.dataclass(frozen=True)
@@ -315,16 +324,14 @@ class AssemblyBackend(AbstractBackend):
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: AssemblyLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "assembly.log")
-        assembly_ids = log_filter.get('entity_ids', ())
-        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        log_filter = affirm_dataclass(AssemblyLogFilter, log_filter)
+        assembly_ids = log_filter.assembly_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
@@ -335,7 +342,7 @@ class AssemblyBackend(AbstractBackend):
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter, "assembly.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState,
@@ -504,6 +511,53 @@ class AssemblyBackend(AbstractBackend):
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
         return {e['persona_id'] for e in attendees}
+
+    @access("assembly")
+    def get_attendees(self, rs: RequestState, assembly_id: int,
+                      cutoff: datetime.datetime) -> AssembyAttendees:
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        cutoff = affirm(datetime.datetime, cutoff)
+
+        if not self.may_access(rs, assembly_id=assembly_id):
+            raise PrivilegeError()
+
+        all_attendees = {
+            e['persona_id'] for e in self.sql_select(
+                rs, "assembly.attendees", ("persona_id",), (assembly_id,),
+                entity_key="assembly_id")
+        }
+        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime < %s
+        """
+        early_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+        """
+        late_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
+            raise ValueError("Unexpected overlap in early and late attendees.")
+
+        return AssembyAttendees(
+            all=attendee_data, early=early_attendees, late=late_attendees,
+            undetermined={
+                persona_id: attendee_data[persona_id]
+                for persona_id in (all_attendees - early_attendees.keys()
+                                   - late_attendees.keys())
+            },
+            cutoff=cutoff
+        )
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,

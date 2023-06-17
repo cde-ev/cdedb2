@@ -633,13 +633,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertNonPresence("Download")
         else:
             self.assertPresence("Download")
-            self.traverse("TeX-Liste")
+            f = self.response.forms['downloadattendeesform']
+            self.submit(f)
             for attendee in attendees:
                 self.assertIn(attendee, self.response.text)
             self.get('/assembly/assembly/3/attendees')
             self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
             self.assertPresence("Insgesamt 0 Anwesende", div='attendees-count')
-            self.traverse("TeX-Liste")
+            f = self.response.forms['downloadattendeesform']
+            self.submit(f)
             self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
             self.assertNotification("Leere Datei.")
 
@@ -1850,16 +1852,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                             exact=True)
 
     @storage
+    @as_users('werner')
     def test_provide_secret(self) -> None:
         base_time = now()
         delta = datetime.timedelta(seconds=42)
+        # werner is no member, so he must signup external
+        self.traverse("Versammlungen", "Archiv-Sammlung")
+        secret = self._external_signup('werner')
         with freezegun.freeze_time(base_time,
                                    ignore=['cdedb.filter', 'icu']) as frozen_time:
-            self.login('werner')
-            self.traverse({'description': 'Versammlungen'},
-                          {'description': 'Archiv-Sammlung'})
-            # werner is no member, so he must signup external
-            secret = self._external_signup('werner')
             # Create new ballot.
             bdata = {
                 'title': 'Maximale Länge der Verfassung',

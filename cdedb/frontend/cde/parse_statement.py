@@ -17,44 +17,43 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
 
-# This is the specification of keys in the file exported from the bank. This is
-# configurable in the online banking interface, but changes will cause loss of
-# backwards compatibility.
-# The export contains these keys in the first row. This will be checked.
-STATEMENT_CSV_ACCOUNT_KEY = "Kontonummer"
-STATEMENT_CSV_STATEMENT_NR_KEY = "Auszugsnummer"
-STATEMENT_CSV_STATEMENT_DATE_KEY = "Buchungsdatum"
-STATEMENT_CSV_AMOUNT_KEY = "Betrag"
-STATEMENT_CSV_ACCOUNT_HOLDER_KEYS = [
-    "Auftraggeber-/Empfängername 1",
-    "Auftraggeber-/Empfängername 2",
-]
-STATEMENT_CSV_IBAN_KEY = "Auftraggeber-/Empfängerkonto"
-STATEMENT_CSV_BIC_KEY = "Auftraggeber-/Empfängerbank"
-STATEMENT_CSV_REFERENCE_KEYS = [
-    "Verwendungszweck " + str(i + 1) for i in range(14)
-]
-STATEMENT_CSV_OTHER_REFERENCE_KEYS = [
-    "Ende-zu-Ende-Referenz",
-]
-STATEMENT_CSV_KREF_KEY = "Kundenreferenz (KREF)"
-STATEMENT_CSV_POSTING_KEY = "Buchungstext"
-STATEMENT_CSV_GVC_KEY = "Geschäftsvorfallcode"
 
-STATEMENT_CSV_ALL_KEY = {
-    STATEMENT_CSV_ACCOUNT_KEY,
-    STATEMENT_CSV_STATEMENT_NR_KEY,
-    STATEMENT_CSV_STATEMENT_DATE_KEY,
-    STATEMENT_CSV_AMOUNT_KEY,
-    *STATEMENT_CSV_ACCOUNT_HOLDER_KEYS,
-    STATEMENT_CSV_IBAN_KEY,
-    STATEMENT_CSV_BIC_KEY,
-    STATEMENT_CSV_KREF_KEY,
-    STATEMENT_CSV_POSTING_KEY,
-    STATEMENT_CSV_GVC_KEY,
-    *STATEMENT_CSV_OTHER_REFERENCE_KEYS,
-    *STATEMENT_CSV_REFERENCE_KEYS,
-}
+class StatementCSVKeys:
+    """CSV keys present in the export from BFS.
+
+    As of the onlinebanking update in April 2023, these are no longer configurable.
+
+    Presence of all keys is checked, but additional keys are allowed.
+    """
+    # Information about our account.
+    cde_account = "Bezeichnung Auftragskonto"
+    cde_iban = "IBAN Auftragskonto"
+    cde_bic = "BIC Auftragskonto"
+    cde_bank = "Bankname Auftragskonto"
+    cde_saldo = "Saldo nach Buchung"
+
+    # Information about the transaction
+    transaction_date = "Buchungstag"
+    valuta = "Valutadatum"
+    posting = "Buchungstext"
+    reference = "Verwendungszweck"
+    amount = "Betrag"
+    currency = "Waehrung"
+    notes = "Bemerkung"
+    category = "Kategorie"
+    tax_relevant = "Steuerrelevant"
+
+    # Information about the other party.
+    account_holder = "Name Zahlungsbeteiligter"
+    iban = "IBAN Zahlungsbeteiligter"
+    bic = "BIC (SWIFT-Code) Zahlungsbeteiligter"
+    debitor_id = "Glaeubiger ID"
+    mandate_reference = "Mandatsreferenz"
+
+    @classmethod
+    def all_keys(cls) -> set[str]:
+        return {v for k, v in vars(cls).items()}
+
 
 # Map common GVCs to readable descriptions.
 GVC_DESCRIPTIONS = {
@@ -77,12 +76,10 @@ GVC_DESCRIPTIONS = {
 
 # Specification for how the date is formatted in the input.
 STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
-REFERENCE_SEPARATOR = ";"
-STATEMENT_REFERENCE_IGNORES = {"", "NOTPROVIDED"}
 
 # This specifies the export fields for the (eventual) use with GnuCash.
 # Since this is not yet currently in use this is very much subject to change.
-GNUCASH_EXPORT_FIELDS = ("statement_date", "amount", "account_nr", "t_id",
+GNUCASH_EXPORT_FIELDS = ("transaction_date", "amount", "account_nr", "t_id",
                          "posting", "category", "reference", "summary")
 
 # This is the specification for how the export for membership fees should look
@@ -90,40 +87,26 @@ GNUCASH_EXPORT_FIELDS = ("statement_date", "amount", "account_nr", "t_id",
 # `cdedb.frontend.cde::money_transfers`, everything after that is curretnly
 # ignored.
 MEMBERSHIP_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
-                            "statement_date")
+                            "transaction_date")
 
 # This is the specification for how the export for event fees should look like.
 # The first five fields are a requirement by the reimport funtionality in
 # `cdedb.frontend.event::batch_fees`, everything after that is currently
 # ignored.
 EVENT_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
-                       "statement_date")
+                       "transaction_date")
 
 # This is the specification for how the export to be used in our (old)
 # Excel-based bookkeeping should look like.
-EXCEL_EXPORT_FIELDS = ("statement_date", "amount_german", "cdedbid",
+EXCEL_EXPORT_FIELDS = ("transaction_date", "amount_german", "cdedbid",
                        "family_name", "given_names", "category_old", "account_nr",
-                       "reference", "account_holder", "iban", "bic")
-
-# These are the available delimiter available in a SEPA reference as per SEPA
-# specification.
-STATEMENT_REFERENCE_DELIMITERS = ["ABWE", "ABWA", "SVWZ", "OAMT", "COAM",
-                                  "DEBT", "CRED", "MREF", "KREF", "EREF"]
-
-# The are the parts of the reference, that we actually care about.
-# First the general free text reference (SVWZ) used in most cases.
-# Second we have the End-To-End reference, which would in theory be great for
-# including structured data like DB-IDs, but most bank don't actually allow
-# their users to specify this. Still we should check it, because some banks do.
-# Note that the order should be the same as in the above SEPA-specification
-# (which is reverse of the actual order in the reference).
-STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
+                       "reference", "account_holder", "iban")
 
 # The following are some regEx definitions to match some expected
 # postings and references:
 
 # Match the Posting for the Account fee special case.
-POSTING_ACCOUNT_FEE = re.compile(r"^Gebühren$", flags=re.I)
+POSTING_ACCOUNT_FEE = re.compile(r"Geb(ü|ue)hren$", flags=re.I)
 
 # Match the Posting for most (active) outgoing transactions.
 POSTING_REFUND = re.compile(r"^(Sammel)?überweisung$", flags=re.I)
@@ -179,28 +162,25 @@ STATEMENT_DB_ID_REMOVE = (
 AMOUNT_MIN_EVENT_FEE = 40
 
 
+STATEMENT_FILENAME_PATTERN = re.compile(
+    r"Umsaetze_DE(?:26|96)37020500000806890[01]_(\d{4}.\d{2}.\d{2})(?: \(\d+\))?.csv")
+
 BackendGetter = Callable[[int], CdEDBObject]
 
 
-def dates_from_filename(filename: str) -> Tuple[datetime.date,
-                                                Optional[datetime.date],
-                                                datetime.datetime]:
+def date_from_filename(filename: str) -> datetime.date:
     """
-    Use the known format of the inputfile name to find out the date range.
+    Use the known format of the inputfile name to find out the last transaction date.
 
-    Example filename from BSF: "20200223_bis_20200229_20200229160818.csv"
+    Example filename from BSF: "Umsaetze_DE26370205000008068900_2023.04.23.csv"
     """
     try:
-        start_str, sep, end_str, timestamp = filename.split("_", 3)
-        if sep != "bis" or timestamp[-4:] != ".csv":
-            raise ValueError()
-        start = datetime.datetime.strptime(start_str, "%Y%m%d").date()
-        end = datetime.datetime.strptime(end_str, "%Y%m%d").date()
-        time = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
+        if m := re.fullmatch(STATEMENT_FILENAME_PATTERN, filename):
+            date = datetime.datetime.strptime(m.group(1), "%Y.%m.%d").date()
+            return date
     except ValueError:
-        return now().date(), None, now()
-    else:
-        return start, end, time
+        pass
+    return now().date()
 
 
 def get_event_name_pattern(event: CdEDBObject) -> str:
@@ -266,10 +246,14 @@ def format_events(events: CdEDBObjectMap) -> List[Tuple[(CdEDBObject, str)]]:
     ]
 
 
+class ParseAmountError(Exception):
+    """Thrown if the amount string for a transaction could not be parsed."""
+
+
 def parse_amount(amount: str) -> decimal.Decimal:
     """Safely determine how to interpret a string as Decimal."""
     if not amount:
-        raise ValueError("Could not parse.")
+        raise ParseAmountError
     try:
         ret = decimal.Decimal(amount)
     except decimal.InvalidOperation:
@@ -277,7 +261,7 @@ def parse_amount(amount: str) -> decimal.Decimal:
         try:
             ret = decimal.Decimal(amount)
         except decimal.InvalidOperation as e:
-            raise ValueError("Could not parse.") from e
+            raise ParseAmountError from e
     return ret
 
 
@@ -339,12 +323,9 @@ class Transaction:
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
-        self.statement_nr = data["statement_nr"]
-        self.statement_date = data["statement_date"]
+        self.transaction_date = data["transaction_date"]
         self.amount = data["amount"]
         self.reference = data["reference"]
-        self.other_references = (data["other_references"] or "").split(
-            REFERENCE_SEPARATOR)
         self.account_holder = data["account_holder"]
         self.iban = data["iban"]
         self.bic = data["bic"]
@@ -393,41 +374,37 @@ class Transaction:
         errors = []
 
         try:
-            data["account"] = Accounts(int(raw[STATEMENT_CSV_ACCOUNT_KEY]))
+            data["account"] = Accounts(raw[StatementCSVKeys.cde_iban])
         except ValueError:
             errors.append(
-                ("account",
+                (StatementCSVKeys.cde_iban,
                  ValueError("Unknown Account %(acc)s in Transaction %(t_id)s",
-                            {"acc": raw[STATEMENT_CSV_ACCOUNT_KEY],
+                            {"acc": raw[StatementCSVKeys.cde_iban],
                              "t_id": data["t_id"]})))
             data["account"] = Accounts.Unknown
 
-        data["statement_nr"] = int(raw[STATEMENT_CSV_STATEMENT_NR_KEY])
         try:
-            data["statement_date"] = datetime.datetime.strptime(
-                raw[STATEMENT_CSV_STATEMENT_DATE_KEY], STATEMENT_INPUT_DATEFORMAT
+            data["transaction_date"] = datetime.datetime.strptime(
+                raw[StatementCSVKeys.transaction_date], STATEMENT_INPUT_DATEFORMAT
             ).date()
         except ValueError:
-            errors.append((STATEMENT_CSV_STATEMENT_DATE_KEY,
+            errors.append((StatementCSVKeys.transaction_date,
                            ValueError("Incorrect Date Format in Transaction %(t_id)s",
                                       {"t_id": t_id})))
             data["statement_date"] = datetime.datetime.now().date()
 
         try:
-            data["amount"] = parse_amount(raw[STATEMENT_CSV_AMOUNT_KEY])
-        except ValueError as e:
-            if "Could not parse." in e.args:
-                errors.append(
-                    (STATEMENT_CSV_AMOUNT_KEY,
-                     ValueError("Could not parse Transaction Amount (%(amt)s)"
-                                "for Transaction %(t_id)s",
-                                {"amt": raw[STATEMENT_CSV_AMOUNT_KEY], "t_id": t_id})))
-                data["amount"] = decimal.Decimal(0)
-            else:
-                raise
+            data["amount"] = parse_amount(raw[StatementCSVKeys.amount])
+        except ParseAmountError:
+            errors.append(
+                (StatementCSVKeys.amount,
+                 ValueError("Could not parse Transaction Amount (%(amt)s)"
+                            "for Transaction %(t_id)s",
+                            {"amt": raw[StatementCSVKeys.amount], "t_id": t_id})))
+            data["amount"] = decimal.Decimal(0)
         else:
             # Check whether the original input can be reconstructed
-            raw_amount = raw[STATEMENT_CSV_AMOUNT_KEY]
+            raw_amount = raw[StatementCSVKeys.amount]
             reconstructed_amount = number_to_german(data["amount"])
             if raw_amount != reconstructed_amount:
                 errors.append(
@@ -439,32 +416,18 @@ class Transaction:
                                  "amt_p": reconstructed_amount,
                                  })))
 
-        data["reference"] = "".join(
-            raw[k].strip("'") for k in STATEMENT_CSV_REFERENCE_KEYS)
-        data["other_references"] = REFERENCE_SEPARATOR.join(
-            raw[k].strip("'") for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS
-            if raw[k] not in STATEMENT_REFERENCE_IGNORES)
+        data["reference"] = raw[StatementCSVKeys.reference]
 
-        data["account_holder"] = "".join(
-            raw[k] for k in STATEMENT_CSV_ACCOUNT_HOLDER_KEYS)
-        data["iban"] = raw[STATEMENT_CSV_IBAN_KEY]
-        data["bic"] = raw[STATEMENT_CSV_BIC_KEY]
+        data["account_holder"] = raw[StatementCSVKeys.account_holder]
+        data["iban"] = raw[StatementCSVKeys.iban]
+        data["bic"] = raw[StatementCSVKeys.bic]
 
-        data["posting"] = GVC_DESCRIPTIONS.get(
-            raw[STATEMENT_CSV_GVC_KEY], raw[STATEMENT_CSV_POSTING_KEY])
+        data["posting"] = raw[StatementCSVKeys.posting]
 
         data["errors"] = errors
         data["warnings"] = []
 
         return Transaction(data)
-
-    @property
-    def all_references(self) -> List[str]:
-        return [self.reference, *self.other_references]
-
-    @property
-    def full_reference(self) -> str:
-        return REFERENCE_SEPARATOR.join(self.all_references)
 
     @staticmethod
     def get_request_params(index: int = None, *, hidden_only: bool = False
@@ -482,11 +445,9 @@ class Transaction:
         ret: vtypes.TypeMapping = {
             f"t_id{suffix}": vtypes.ID,
             f"account{suffix}": Accounts,
-            f"statement_nr{suffix}": vtypes.ID,
-            f"statement_date{suffix}": datetime.date,
+            f"transaction_date{suffix}": datetime.date,
             f"amount{suffix}": decimal.Decimal,
             f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"other_references{suffix}": Optional[str],  # type: ignore[dict-item]
             f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
             f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
             f"bic{suffix}": Optional[str],  # type: ignore[dict-item]
@@ -516,16 +477,12 @@ class Transaction:
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
-            for ref in self.all_references:
-                if result := re.findall(pattern, ref):
-                    for db_id in result:
-                        p_id, p = _reconstruct_cdedbid(db_id)
-                        if not p:
-                            assert p_id is not None
-                            if p_id not in ret:
-                                ret[p_id] = confidence
-
-                confidence = confidence.decrease(1)
+            if result := re.findall(pattern, self.reference):
+                for db_id in result:
+                    p_id, p = _reconstruct_cdedbid(db_id)
+                    if p_id and not p:
+                        if p_id not in ret:
+                            ret[p_id] = confidence
 
             confidence = orig_confidence.decrease(1)
 
@@ -570,21 +527,21 @@ class Transaction:
             if re.search(POSTING_REFUND, self.posting):
 
                 # Special case for incoming (or outgoing) donations.
-                if re.search(REFERENCE_DONATION, self.full_reference):
+                if re.search(REFERENCE_DONATION, self.reference):
                     self.type = TransactionType.Donation
                     self.type_confidence = ConfidenceLevel.Full
                     return
 
                 # Check for refund of participant fee:
-                if re.search(REFERENCE_REFUND_EVENT_FEE, self.full_reference):
+                if re.search(REFERENCE_REFUND_EVENT_FEE, self.reference):
                     self.type = TransactionType.EventFeeRefund
                     self.type_confidence = confidence
                 # Check for refund of instructor fee:
-                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.full_reference):
+                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.reference):
                     self.type = TransactionType.InstructorRefund
                     self.type_confidence = confidence
 
-                elif re.search(REFERENCE_REFUND_EXPENSES, self.full_reference):
+                elif re.search(REFERENCE_REFUND_EXPENSES, self.reference):
                     if self.event:
                         self.type = TransactionType.EventExpenses
                     else:
@@ -614,13 +571,13 @@ class Transaction:
                 self.type_confidence = confidence
 
             # Special case for incoming (or outgoing) donations.
-            elif re.search(REFERENCE_DONATION, self.full_reference):
+            elif re.search(REFERENCE_DONATION, self.reference):
                 self.type = TransactionType.Donation
                 self.type_confidence = ConfidenceLevel.Full
                 return
 
             # Look for Membership fees.
-            elif re.search(REFERENCE_MEMBERSHIP, self.full_reference):
+            elif re.search(REFERENCE_MEMBERSHIP, self.reference):
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
 
@@ -630,7 +587,7 @@ class Transaction:
 
             # Look for event fee without event match.
             elif self.amount > AMOUNT_MIN_EVENT_FEE and re.search(REFERENCE_EVENT_FEE,
-                                                                  self.full_reference):
+                                                                  self.reference):
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence.decrease()
 
@@ -710,7 +667,7 @@ class Transaction:
             given_names = persona['given_names']
             gn_pattern = d_p(re.escape(given_names), two_way_replace=True)
             try:
-                if not re.search(gn_pattern, self.full_reference, flags=re.I):
+                if not re.search(gn_pattern, self.reference, flags=re.I):
                     self.warnings.append(
                         ("given_names", KeyError(n_("(%(p)s) not found in reference."),
                                                  {"p": given_names})))
@@ -725,7 +682,7 @@ class Transaction:
             family_name = persona['family_name']
             fn_pattern = d_p(re.escape(family_name), two_way_replace=True)
             try:
-                if not re.search(fn_pattern, self.full_reference, flags=re.I):
+                if not re.search(fn_pattern, self.reference, flags=re.I):
                     self.warnings.append(
                         ("family_name", KeyError(n_("(%(p)s) not found in reference."),
                                                  {"p": family_name})))
@@ -882,11 +839,10 @@ class Transaction:
 
         ret = {
             "reference": self.reference,
-            "other_references": REFERENCE_SEPARATOR.join(self.other_references),
-            "account": self.account,
-            "account_nr": self.account.value,
-            "statement_nr": self.statement_nr,
-            "statement_date": self.statement_date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            "account": str(self.account),
+            "account_nr": self.account.display_str(),
+            "account_iban": self.account.value,
+            "transaction_date": self.transaction_date.strftime(PARSE_OUTPUT_DATEFORMAT),
             "amount": self.amount_english,
             "amount_german": self.amount_german,
             "account_holder": self.account_holder,

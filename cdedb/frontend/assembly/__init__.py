@@ -30,9 +30,9 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
     abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
@@ -107,57 +107,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, download, is_search, QueryScope.all_assembly_users,
             self.assemblyproxy.submit_general_query)
 
+    @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("assembly_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
-    def view_log(self, rs: RequestState,
-                 codes: Collection[const.AssemblyLogCodes],
-                 assembly_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt], persona_id: Optional[CdedbID],
-                 submitted_by: Optional[CdedbID], change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime],
-                 download: bool = False,) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
-
-        filter_params = {
-            'entity_ids': [assembly_id] if assembly_id else [],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
         return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_log", download, {
-            'may_view': may_view, 'all_assemblies': all_assemblies,
-        })
+            rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
+            download=download, template="view_log", template_kwargs={
+                'may_view': may_view, 'all_assemblies': all_assemblies,
+            },
+        )
 
+    @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("assembly")
     @assembly_guard
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_assembly_log(self, rs: RequestState,
-                          codes: Optional[Collection[const.AssemblyLogCodes]],
-                          assembly_id: int, offset: Optional[int],
-                          length: Optional[vtypes.PositiveInt],
-                          persona_id: Optional[CdedbID],
-                          submitted_by: Optional[CdedbID],
-                          change_note: Optional[str],
-                          time_start: Optional[datetime.datetime],
-                          time_stop: Optional[datetime.datetime],
-                          download: bool = False) -> Response:
+    def view_assembly_log(self, rs: RequestState, assembly_id: int, data: CdEDBObject,
+                          download: bool) -> Response:
         """View activities."""
-
-        filter_params = {
-            'entity_ids': [assembly_id],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
+        rs.values['assembly_id'] = data['assembly_id'] = assembly_id
         return self.generic_view_log(
-            rs, filter_params, "assembly.log", "view_assembly_log", download)
+            rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
+            download=download, template="view_assembly_log",
+        )
 
     @access("assembly")
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
@@ -541,39 +517,37 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
 
-    def _get_list_attendees_data(self, rs: RequestState,
-                                 assembly_id: int) -> Dict[int, Dict[str, Any]]:
-        """This lists all attendees of an assembly.
-
-        This is un-inlined to provide a download file too."""
-        attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
-        attendees = collections.OrderedDict(
-            (e['id'], e) for e in xsorted(
-                self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
-                key=EntitySorter.persona))
-        return attendees
-
     @access("assembly")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> Response:
         """Provide a online list of who is/was present."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        attendees = self._get_list_attendees_data(rs, assembly_id)
+        attendees = self.assemblyproxy.get_attendees(rs, assembly_id, cutoff=now())
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        if ballots:
+            rs.values['cutoff'] = max(b['vote_begin'] for b in ballots.values())
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly")
     @assembly_guard
-    def download_list_attendees(self, rs: RequestState,
-                                assembly_id: int) -> Response:
+    @REQUESTdata("cutoff")
+    def download_list_attendees(self, rs: RequestState, assembly_id: int,
+                                cutoff: datetime.datetime) -> Response:
         """Provides a tex-snipped with all attendes of an assembly."""
-        attendees = self._get_list_attendees_data(rs, assembly_id)
-        if not attendees:
+        if rs.has_validation_errors() or not cutoff:
+            return self.list_attendees(rs, assembly_id)
+
+        attendees = self.assemblyproxy.get_attendees(rs, assembly_id, cutoff=cutoff)
+        if not attendees.all:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "assembly/list_attendees")
+
         tex = self.fill_template(
             rs, "tex", "list_attendees", {'attendees': attendees})
         return self.send_file(
-            rs, data=tex, inline=False, filename="Anwesenheitsliste-Export.tex")
+            rs, data=tex, inline=False,
+            filename=f"Anwesenheitsliste ({rs.ambience['assembly']['shortname']}).tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("ack_conclude")

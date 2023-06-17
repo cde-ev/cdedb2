@@ -10,9 +10,10 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    read_conditional_write_composer, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, read_conditional_write_composer,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -25,7 +26,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -107,14 +108,15 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter
                           ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "past_event.log")
+        log_filter = affirm_dataclass(PastEventLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("cde", "event")
     def list_institutions(self, rs: RequestState) -> Dict[int, str]:
@@ -795,8 +797,8 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if any(now().date() < part['part_end']
-                   for part in event['parts'].values()):
+            if not event['is_cancelled'] and any(now().date() < part['part_end']
+                                                 for part in event['parts'].values()):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."

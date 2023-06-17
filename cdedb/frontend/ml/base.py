@@ -3,7 +3,6 @@
 """Base class providing fundamental ml services."""
 
 import collections
-from datetime import datetime
 from typing import Any, Collection, Dict, Optional
 
 import werkzeug
@@ -19,11 +18,11 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
-    RESTRICTED_MOD_ALLOWED_FIELDS,
+    FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
@@ -33,7 +32,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
+    ADDITIONAL_TYPE_FIELDS, AssemblyAssociatedMailinglist,
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
     MailinglistGroup, get_ml_type,
 )
@@ -198,19 +197,20 @@ class MlBaseFrontend(AbstractUserFrontend):
                                 ml_type: Optional[const.MailinglistTypes]) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
+        available_types = self.mlproxy.get_available_types(rs)
+        if not available_types:
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if ml_type is None:
-            available_types = self.mlproxy.get_available_types(rs)
             return self.render(
                 rs, "create_mailinglist", {
                     'available_types': available_types,
                     'ml_type': None,
                 })
         else:
-            atype = ML_TYPE_MAP[ml_type]
+            atype = get_ml_type(ml_type)
             if not atype.is_relevant_admin(rs.user):
-                rs.append_validation_error(
-                    ("ml_type", ValueError(n_(
-                        "May not create mailinglist of this type."))))
+                raise werkzeug.exceptions.Forbidden(n_(
+                        "May not create mailinglist of this type."))
             available_domains = atype.available_domains
             additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
@@ -240,6 +240,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         data["moderators"] = moderators
         data["whitelist"] = []
         ml_class = get_ml_type(ml_type)
+        if not ml_class.is_relevant_admin(rs.user):
+            raise werkzeug.exceptions.Forbidden(n_(
+                "May not create mailinglist of this type."))
         # silently discard superfluous fields
         for field in ADDITIONAL_TYPE_FIELDS:
             if field not in ml_class.get_additional_fields():
@@ -322,46 +325,22 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/merge_accounts")
 
+    @REQUESTdatadict(*MlLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("ml")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "mailinglist_id")
-    def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
-                 mailinglist_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[vtypes.CdedbID],
-                 submitted_by: Optional[vtypes.CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime],
-                 time_stop: Optional[datetime],
-                 download: bool = False) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
-
-        db_mailinglist_ids = {mailinglist_id} if mailinglist_id else set()
-
-        relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
-                                                      managed='managed')
-        relevant_set = set(relevant_mls)
-        if not self.is_admin(rs):
-            if not db_mailinglist_ids:
-                db_mailinglist_ids = relevant_set
-            elif not db_mailinglist_ids <= relevant_set:
-                db_mailinglist_ids = db_mailinglist_ids | relevant_set
-                rs.notify("warning", n_(
-                    "Not privileged to view log for all these mailinglists."))
-
-        filter_params = {
-            'entity_ids': db_mailinglist_ids,
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
+        relevant_mls = self.mlproxy.list_mailinglists(
+            rs, active_only=False, managed='managed')
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
-        self.logger.debug(mailinglists)
+
         return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_log", download, {
-            'all_mailinglists': mailinglists,
-            'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
-        })
+            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
+            download=download, template="view_log", template_kwargs={
+                'all_mailinglists': mailinglists,
+                'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
+            },
+        )
 
     @access("ml")
     def show_mailinglist(self, rs: RequestState,
@@ -546,29 +525,18 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/list_mailinglists")
 
+    @REQUESTdatadict(*MlLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("ml")
     @mailinglist_guard()
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_ml_log(self, rs: RequestState, mailinglist_id: int,
-                    codes: Collection[const.MlLogCodes], offset: Optional[int],
-                    length: Optional[vtypes.PositiveInt],
-                    persona_id: Optional[vtypes.CdedbID],
-                    submitted_by: Optional[vtypes.CdedbID],
-                    change_note: Optional[str],
-                    time_start: Optional[datetime],
-                    time_stop: Optional[datetime],
-                    download: bool = False) -> Response:
+    def view_ml_log(self, rs: RequestState, mailinglist_id: int, data: CdEDBObject,
+                    download: bool) -> Response:
         """View activities pertaining to one list."""
-
-        filter_params = {
-            'entity_ids': [mailinglist_id],
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-        }
-
+        rs.values['mailinglist_id'] = data['mailinglist_id'] = mailinglist_id
         return self.generic_view_log(
-            rs, filter_params, "ml.log", "view_ml_log", download)
+            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
+            download=download, template="view_ml_log",
+        )
 
     @access("ml")
     @mailinglist_guard()
@@ -682,7 +650,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         csv_data = csv_output(
             xsorted(output, key=lambda e: EntitySorter.persona(
                 personas[int(e["db_id"][3:-2])])),
-            columns)
+            columns, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename=f"{ml.id}_subscription_states.csv")
