@@ -235,7 +235,7 @@ class TestCdEFrontend(FrontendTest):
         f['free_form'] = "Spiele gerne Okarina."
         self.submit(f)
         self.assertPresence("Link", div='personal-information')
-        self.assertTitle("Olafson Olaf")
+        self.assertTitle("Olaf Olafson")
         self.assertPresence("21.11.1998", div='personal-information')
         self.assertPresence("Spiele gerne Okarina.", div='additional')
 
