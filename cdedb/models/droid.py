@@ -97,6 +97,7 @@ from typing import Any, ClassVar, Optional, Pattern, Type, Union
 import cdedb.common.validation.types as vtypes
 from cdedb.common import User
 from cdedb.common.roles import droid_roles
+from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.models.common import CdEDataclass
 
@@ -241,7 +242,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     Fields of dynamic tokens which should not be changeable after creation can be
     specified as `fixed_fields` in the form of a tuple of string.
     """
-    #: Name of the static droid. Also serves as namespace for droid names.
+    #: Name of the dynamic droid. Also serves as namespace for droid names.
     name: ClassVar[str]
 
     # Regular fields.
@@ -311,6 +312,14 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self.id=}, {self.title=})"
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.name, self.title, self.ctime, self.id)
+
+    def __lt__(self, other: "DynamicAPIToken") -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.get_sortkey() < other.get_sortkey()
 
 
 @dataclass
