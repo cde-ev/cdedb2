@@ -561,7 +561,7 @@
             <tfoot class="aggregate-footer">
                 {% for aggregate_func, aggregate_title, aggregate_symbol in [
                         ("sum", gettext("Sum; Bools count as 0/1"), "∑"), ("min", gettext("Minimum"), "min"),
-                        ("max", gettext("Maximum"), "max"), ("avg", gettext("Average; Bools count as 0/1"), "Ø"),
+                        ("max", gettext("Maximum"), "max"), ("avg", gettext("Average"), "Ø"),
                         ("stddev", gettext("Standard Deviation"), "σ"), ("null", gettext("Number of Null entries"), "␀")] %}
                     {# Skip the aggregation row if it does not contain any interesting information #}
                     {% if not aggregates[aggregate_func] %}

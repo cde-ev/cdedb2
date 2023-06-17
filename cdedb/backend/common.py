@@ -320,15 +320,11 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     agg[f"AVG({field})"] = f"avg.{field_as}"
                     agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
-                    # agg[f"COUNT(*) FILTER (WHERE {field})"] = f"sum.{field_as}"
                     agg[f"SUM({field}::int)"] = f"sum.{field_as}"
-                    # TODO should NULL be threaten as 0 or ignored?
-                    agg[f"AVG({field}::int)"] = f"avg.{field_as}"
                 elif query.spec[field].type in ("date", "datetime"):
                     agg[f"MIN({field})"] = f"min.{field_as}"
                     agg[f"MAX({field})"] = f"max.{field_as}"
-                    # TODO this is a bit more complicated
-                    # agg[f"AVG(AGE(NOW(), {field}))"] = f"avg.{field_as}"
+                    # TODO add avg for dates
             select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
         else:

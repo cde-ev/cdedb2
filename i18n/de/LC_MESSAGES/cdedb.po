@@ -6895,8 +6895,8 @@ msgstr "Minimum"
 msgid "Maximum"
 msgstr "Maximum"
 
-msgid "Average; Bools count as 0/1"
-msgstr "Durchschnitt; Wahrheitswerte zählen als 0/1"
+msgid "Average"
+msgstr "Durchschnitt"
 
 msgid "Standard Deviation"
 msgstr "Standardabweichung"
