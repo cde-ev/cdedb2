@@ -338,7 +338,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             datum = {k: v for datum in data for k, v in datum.items()}
             # store if the respective aggregation function has an interesting value
             datum.update(
-                {agg: any(datum.get(f"{agg}.{field_as}") is not None for field_as in fields.values())
+                {agg: any(datum.get(f"{agg}.{field_as}") is not None
+                          for field_as in fields.values())
                  for agg in ['null', 'sum', 'min', 'max', 'avg', 'stddev']})
             data = (datum, )
 
