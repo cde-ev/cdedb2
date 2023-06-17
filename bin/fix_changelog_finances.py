@@ -83,8 +83,8 @@ with s:
     )
     data = core.query_all(s.rs(), q, p)
 
-    print(f"Fixing changelog for {len(data)} missing transactions, by appending"
-          f" skipped transactions.")
+    print(f"Fixing changelog and persona for {len(data)} missing transactions,"
+          f" by appending skipped transactions and updateing persona.")
 
     note_template = ("Guthabenänderung um {amount} auf {new_balance} "
                      "(Überwiesen am {date})")
@@ -101,6 +101,14 @@ with s:
             amount=d['delta'], new_balance=d['delta'], date=d['transaction_date'])
 
         core.sql_insert(s.rs(), "core.changelog", generation_data)
+
+        persona_data = {
+            'id': d['persona_id'],
+            'balance': d['delta'],
+        }
+        core.sql_update(s.rs(), "core.personas", persona_data)
+
+    # TODO add consistency check for 1.c here?
 
     # 2.a Find those users where there were changes since the error. (14 users)
     # It is hard to determine these algorithmically.
