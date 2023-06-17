@@ -51,8 +51,10 @@ DEFAULTS = {
         'trial_member': False,
         'decided_search': True,
         'bub_search': False,
+        'paper_expuls': True,
         'foto': None,
         'fulltext': '',
+        'notes': 'This is just a copy, changes to profiles will not be persisted.'
     }
 }
 
@@ -228,8 +230,6 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 del datum['id']
                 del datum['password_hash']
                 del datum['fulltext']
-                datum['notes'] = ('This is just a copy, changes to profiles'
-                                  ' will not be persisted.')
                 datum['submitted_by'] = persona['id']
                 datum['generation'] = 1
                 datum['change_note'] = 'Create surrogate changelog.'
