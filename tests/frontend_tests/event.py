@@ -4974,12 +4974,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         #
         # prepare dates
         #
-        self.traverse("Konfiguration")
-        f = self.response.forms["changeeventform"]
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
         self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -5046,19 +5040,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Veranstaltungen", "CdE-Party 2050")
         self.assertTitle("CdE-Party 2050")
 
-        # prepare dates
+        # cancel
         self.traverse("Konfiguration")
         f = self.response.forms["changeeventform"]
-        f['registration_start'] = "2000-10-30 00:00:00+0000"
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.traverse("Veranstaltungsteile")
-        # Party
-        self.traverse({"href": "/event/event/2/part/4/change"})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-02-02"
-        f['part_end'] = "2003-02-03"
+        f['is_cancelled'] = True
         self.submit(f)
 
         # do it
@@ -5069,7 +5054,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         self.assertTitle("CdE-Party 2050")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+        self.assertPresence("Diese Veranstaltung wurde abgesagt und archiviert.",
                             div="static-notifications")
 
         # check that there is no past event

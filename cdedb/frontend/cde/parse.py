@@ -234,7 +234,8 @@ class CdEParseMixin(CdEBaseFrontend):
             return self.parse_statement_form(rs, data, params)
         filename += f"_{date}.csv"
         csv_data = [t.to_dict() for t in transactions]
-        csv_data = csv_output(csv_data, fields, write_header)
+        csv_data = csv_output(csv_data, fields, write_header,
+                              tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")

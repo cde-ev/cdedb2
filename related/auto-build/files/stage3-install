@@ -16,6 +16,12 @@ apt-get -y upgrade
 apt-get -y clean
 
 echo ""
+echo "Pacify git paranoia..."
+echo "--------------------------------------------"
+
+cp /media/cdrom0/gitconfig /etc/gitconfig
+
+echo ""
 echo "Getting a copy of the cdedb sources..."
 echo "--------------------------------------------"
 
