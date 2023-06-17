@@ -323,10 +323,10 @@ class CoreBaseBackend(AbstractBackend):
             committed_state = unwrap(self.get_total_personas(rs, (data['id'],)))
 
             # Die when changelog and current state are inconsistent.
-            for generation in xsorted(history.values(), key=lambda x: x['generation'],
-                                      reverse=True):
-                if generation['code'] == const.MemberChangeStati.committed:
-                    if any(current_state[k] != generation[k] for k in current_state):
+            for gen in xsorted(history.values(), key=lambda x: x['generation'],
+                               reverse=True):
+                if gen['code'] == const.MemberChangeStati.committed:
+                    if any(current_state[k] != gen[k] for k in current_state):
                         raise RuntimeError(n_("Persona and Changelog inconsistent."))
                     break
             else:
