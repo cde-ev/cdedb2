@@ -1015,7 +1015,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertIn("Cannot remove the last remaining version of an attachment.",
                       e.exception.args)
 
-        # Add more versions and check that the correct content is returned.
+        # Add and Change more versions and check that the correct content is returned.
         data = {
             "attachment_id": new_id,
             "title": "Rechenschaftsbericht",
@@ -1023,9 +1023,22 @@ class TestAssemblyBackend(BackendTest):
             "filename": "rechen_v2.pdf",
         }
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'1234'))
+        update = {
+            "attachment_id": new_id,
+            "version_nr": 2,
+            "title": "Verrechnungsbericht",
+            "authors": "Farina",
+            "filename": "alles_falsch.pdf"
+        }
+        self.assertTrue(self.assembly.change_attachment_version(self.key, update))
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 2",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_changed,
             "assembly_id": assembly_id,
             "change_note": f"{data['title']}: Version 2",
         })
@@ -1112,6 +1125,8 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": get_hash(b'1234'),
         })
+        updated_data = data.copy()
+        updated_data.update(update)
         deleted_version = {
             "attachment_id": new_id,
             "version_nr": 1,
@@ -1124,10 +1139,11 @@ class TestAssemblyBackend(BackendTest):
         }
         history_expectation: CdEDBObjectMap = {
             1: deleted_version,
-            2: data,
+            2: updated_data,
             3: deleted_version.copy(),
-            4: data.copy(),
+            4: data,
         }
+        print(data.copy().update(update))
         history_expectation[3]['version_nr'] = 3
         history_expectation[3]['file_hash'] = get_hash(b'12345')
         history_expectation[4]['version_nr'] = 4
@@ -1242,12 +1258,12 @@ class TestAssemblyBackend(BackendTest):
                 },
                 2: {
                     'attachment_id': attachment_ids[0],
-                    'authors': 'Farin',
+                    'authors': 'Farina',
                     'ctime': nearly_now(),
                     'dtime': None,
                     'file_hash': get_hash(b'1234'),
-                    'filename': 'rechen_v2.pdf',
-                    'title': 'Rechenschaftsbericht',
+                    'filename': 'alles_falsch.pdf',
+                    'title': 'Verrechnungsbericht',
                     'version_nr': 2,
                 },
                 3: {

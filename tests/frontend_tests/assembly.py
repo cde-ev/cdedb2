@@ -291,8 +291,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # check attachments in Archiv-Versammlung
         self.traverse("Versammlungs-Übersicht", "Archiv-Sammlung", "Dateien")
         self.assertNotIn('deleteattachmentform1', self.response.forms)
+        self.assertNoLink('/assembly/assembly/3/attachment/1/version/3/change',
+                          self.response.forms)
         self.assertNotIn('removeattachmentversionform2_3', self.response.forms)
-        self.assertNoLink('/assembly/assembly/3/attachment/add')
+        self.assertNoLink('/assembly/assembly/3/attachment/2/')
         self.assertNoLink('/assembly/assembly/3/attachment/1/add')
 
         self._click_admin_view_button(re.compile(r"Versammlungs-Administration"),
@@ -305,7 +307,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertIn('removeattachmentversionform2_3', self.response.forms)
         self.traverse({'href': '/assembly/assembly/3/attachment/add'},
                       {'href': '/assembly/assembly/3/attachments'},
-                      {'href': '/assembly/assembly/3/attachment/1/add'})
+                      {'href': '/assembly/assembly/3/attachment/1/add'},
+                      {'href': '/assembly/assembly/3/attachments'},
+                      {'href': '/assembly/assembly/3/attachments/1/version/3/change'})
 
         # go back to Internationaler Kongress
         self.traverse("Versammlungs-Übersicht", "Internationaler Kongress")
@@ -1103,7 +1107,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.post(base_link + 'version/2/delete', {'attachment_ack_delete': True})
         self.assertNotification("Diese Version der Datei wurde bereits gelöscht.",
                                 'error')
-        # version 3 can be deleted
+        # version 1 can be changed (and deleted)
+        self.get(base_link + 'version/1/change')
+        f = self.response.forms["configureattachmentversionform"]
+        f['title'] = "Diebstahlsbericht"
+        f['filename'] = "diebe.pdf"
+        self.assertNotIn('attachment', f.fields)
+        self.submit(f)
+        # version 3 can be changed and deleted
+        self.get(base_link + 'version/3/change')
+        f = self.response.forms["configureattachmentversionform"]
+        f['filename'] = "korr.pdf"
+        self.assertNotIn('attachment', f.fields)
+        self.submit(f)
         f = self.response.forms["removeattachmentversionform2_3"]
         self.submit(f, check_notification=False)
         # TODO: there is no validation error near the checkbox
@@ -1130,10 +1146,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # check log
         self.traverse("Log")
-        self.assertPresence("Anhangsversion entfernt", div="1-1001")
-        self.assertPresence("Kassenprüferbericht 2: Version 3", div="1-1001")
-        self.assertPresence("Anhang entfernt", div="2-1002")
-        self.assertPresence("Kassenprüferbericht", div="2-1002")
+        self.assertPresence("Anhangsversion geändert", div="1-1001")
+        self.assertPresence("Kassenprüferbericht", div="1-1001")
+        self.assertPresence("Anhangsversion geändert", div="2-1002")
+        self.assertPresence("Kassenprüferbericht 2: Version 3", div="2-1002")
+        self.assertPresence("Anhangsversion entfernt", div="3-1003")
+        self.assertPresence("Anhang entfernt", div="4-1004")
+        self.assertPresence("Diebstahlsbericht", div="4-1004")
 
     @storage
     @as_users("werner")
@@ -1234,12 +1253,18 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("Maßgebliche Beschlussvorlage (Version 2, maßgeblich)",
                                 div="attachments")
 
-            # check that the attachment can not be deleted anymore
+            # check that the attachment can not be changed deleted anymore
             self.traverse(
                 {"href": "/assembly/assembly/1/attachments#attachment1001_version2"})
             self.assertTitle("Dateien (Internationaler Kongress)")
+            self.assertNoLink("/assembly/assembly/1/attachment/1001/version/1/change")
+            self.assertNoLink("/assembly/assembly/1/attachment/1001/version/2/change")
             self.assertNotIn("removeattachmentversionform1001_1", self.response.forms)
             self.assertNotIn("removeattachmentversionform1001_2", self.response.forms)
+            self.get("/assembly/assembly/1/attachment/1001/version/2/change")
+            self.assertTitle("Dateien (Internationaler Kongress)")
+            self.assertNotification("Dateiversion kann nicht bearbeitet werden.",
+                                    'error')
 
             # add a new version
             self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
@@ -1264,6 +1289,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['ack_creation'] = True
             self.submit(f)
 
+            # this version can not be changed or deleted
             self.assertTitle("Dateien (Internationaler Kongress)")
             self.assertPresence(
                 "Vorläufige Beschlussvorlage", div="attachment1001_version1")
@@ -1272,6 +1298,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence(
                 "Formal geänderte Beschlussvorlage", div="attachment1001_version3")
             self.assertNotIn("removeattachmentversionform1001_3", self.response.forms)
+            self.assertNoLink("/assembly/assembly/1/attachment/1001/version/3/change")
+            self.get("/assembly/assembly/1/attachment/1001/version/3/change")
+            self.assertTitle("Dateien (Internationaler Kongress)")
+            self.assertNotification("Dateiversion kann nicht bearbeitet werden.",
+                                    'error')
 
             # check the definitive version is still correct and the new version is shown
             self.traverse("Abstimmungen", "Farbe des Logos")
