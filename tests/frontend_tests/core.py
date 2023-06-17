@@ -690,7 +690,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Hades", div='query-result')
         f = self.response.forms['queryform']
 
-    @as_users("vera", "berta", "garcia")
+    @as_users("vera", "berta", "garcia", "daniel")
     def test_changedata(self) -> None:
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
@@ -699,6 +699,11 @@ class TestCoreFrontend(FrontendTest):
         f['location2'] = "Hyrule"
         f['country2'] = "AR"
         f['specialisation'] = "Okarinas"
+        if self.user_in("daniel"):
+            self.submit(f, check_notification=False)
+            # Invalid postal code
+            f = self.response.forms['changedataform']
+            f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         self.assertPresence("Hyrule", div='address2')

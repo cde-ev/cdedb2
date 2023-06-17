@@ -239,7 +239,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         fields: List[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields)
+        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))

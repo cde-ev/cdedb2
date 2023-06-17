@@ -72,7 +72,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
         return code, revoked_permit, collateral_transaction
 
-    @access("member", "core_admin", "cde_admin")
+    @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
                          active: Optional[bool] = True) -> Dict[int, int]:

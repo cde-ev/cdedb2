@@ -751,7 +751,6 @@ CREATE TABLE event.event_parts (
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
-        -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
