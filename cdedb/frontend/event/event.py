@@ -1031,7 +1031,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.list_registrations(rs, registration_ids)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
         if not any(rpart['status'] == const.RegistrationPartStati.participant
                    for reg in registrations.values()
                    for rpart in reg['parts'].values()):

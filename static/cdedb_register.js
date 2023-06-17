@@ -108,42 +108,33 @@
             }
 
             /**
+             * Build params for sending to precompute endpoint.
+             * Only send `is_orga` and `is_member` if the checkboxes exist.
+             */
+
+            params = {
+                persona_id: constants['persona_id'],
+                part_ids: part_ids.join(","),
+                is_orga: constants['is_orga'],
+                is_member: constants['is_member'],
+            }
+
+            /**
              *  Gather field ids of bool field inputs.
              *
              * Note that these might be either checkboxes or selects.
              * They are wrapped in a div, which has the field id as a data attribute.
              */
-            var field_ids_true = [];
-            var field_ids_false = [];
+
             field_checkboxes.each(function() {
                 field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
-                if ($(this).prop('checked')) {
-                    field_ids_true.push(field_id);
-                } else {
-                    field_ids_false.push(field_id);
-                }
+                params[`field.${field_id}`] = $(this).prop('checked');
             });
             field_selects.each(function() {
                 field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
-                if ($(this).val() == 'True') {
-                    field_ids_true.push(field_id);
-                } else {
-                    field_ids_false.push(field_id);
-                }
+                params[`field.${field_id}`] = $(this).val() == 'True';
             });
 
-            /**
-             * Build params for sending to precompute endpoint.
-             * Only send `is_orga` and `is_member` if the checkboxes exist.
-             */
-            params = {
-                persona_id: constants['persona_id'],
-                part_ids: part_ids.join(","),
-                field_ids_true: field_ids_true.join(","),
-                field_ids_false: field_ids_false.join(","),
-                is_orga: constants['is_orga'],
-                is_member: constants['is_member'],
-            }
             if (is_orga_checkbox.length) {
                 params['is_orga'] = is_orga_checkbox.prop('checked');
             }

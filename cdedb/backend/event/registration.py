@@ -9,6 +9,7 @@ registrations at once for the mailinglist realm.
 import copy
 import dataclasses
 import decimal
+import typing
 from typing import (
     Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
     Tuple, TypeVar,
@@ -1265,26 +1266,23 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
-                       part_ids: Collection[int], field_ids_true: Collection[int],
-                       field_ids_false: Collection[int], is_member: Optional[bool],
-                       is_orga: Optional[bool],
+                       part_ids: Collection[int], is_member: Optional[bool],
+                       is_orga: Optional[bool], field_values: dict[str, bool]
                        ) -> RegistrationFeeData:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
         :param part_ids: Collection of part ids the user is (supposedly) registered for.
-        :param field_ids_true: Collection of fields, which have a truthy value.
-        :param field_ids_true: Collection of fields, which have a falsy value.
         :param is_member: Optional override for membership status in fee calculation.
+        :param field_values: Mapping of `f"field.{field_id}"` to value of the field.
         :param is_orga: Optional override for orga status in fee calculation.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm_optional(vtypes.ID, persona_id)
         part_ids = affirm_set(vtypes.ID, part_ids)
-        field_ids_true = affirm_set(vtypes.ID, field_ids_true)
-        field_ids_false = affirm_set(vtypes.ID, field_ids_false)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
+        field_values = affirm(typing.Mapping, field_values)  # type: ignore[misc]
 
         event = self.get_event(rs, event_id)
 
@@ -1305,14 +1303,12 @@ class EventRegistrationBackend(EventBaseBackend):
         if registration_id:
             reg = self.get_registration(rs, registration_id)
 
+
         fields = {}
         for field_id, field in event['fields'].items():
             fn = field['field_name']
-            if field_id in field_ids_true:
-                fields[fn] = True
-            elif field_id in field_ids_false:
-                fields[fn] = False
-            elif reg:
+            fields[fn] = field_values.get(f"field.{field_id}")
+            if fields[fn] is None and reg:
                 fields[fn] = bool(reg['fields'].get(fn, False))
             else:
                 field[fn] = False
