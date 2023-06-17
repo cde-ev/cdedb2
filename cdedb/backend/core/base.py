@@ -334,8 +334,7 @@ class CoreBaseBackend(AbstractBackend):
 
             # handle pending changes
             diff = None
-            if (current_state['code']
-                    == const.MemberChangeStati.pending):
+            if current_state['code'] == const.MemberChangeStati.pending:
                 # stash pending change if we may not wait
                 if not may_wait:
                     diff = {key: current_state[key] for key in committed_state
