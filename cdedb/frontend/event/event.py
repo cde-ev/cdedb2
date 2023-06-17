@@ -1035,8 +1035,9 @@ class EventEventMixin(EventBaseFrontend):
         if not any(rpart['status'] == const.RegistrationPartStati.participant
                    for reg in registrations.values()
                    for rpart in reg['parts'].values()):
-            rs.notify("error", n_("No event parts have any participants."))
-            return self.redirect(rs, "event/show_event")
+            if create_past_event:
+                rs.notify("error", n_("No event parts have any participants."))
+                return self.redirect(rs, "event/show_event")
 
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)

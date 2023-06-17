@@ -1303,7 +1303,6 @@ class EventRegistrationBackend(EventBaseBackend):
         if registration_id:
             reg = self.get_registration(rs, registration_id)
 
-
         fields = {}
         for field_id, field in event['fields'].items():
             fn = field['field_name']
