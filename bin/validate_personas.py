@@ -5,7 +5,7 @@ from typing import Optional
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import unwrap
+from cdedb.common.sorting import xsorted
 from cdedb.script import Script
 
 # Prepare stuff
@@ -67,19 +67,18 @@ with script:
             continue
 
         # Validate consistency of changelog with persona state
-        current_generation = unwrap(core.changelog_get_generations(rs, (persona_id,)))
         history = core.changelog_get_history(rs, persona_id, generations=None)
-        changelog_state = history[current_generation]
 
-        for i in range(current_generation, 0, -1):
-            if history[i]['code'] == const.MemberChangeStati.committed:
-                for key in persona:
-                    if persona[key] != history[i][key]:
-                        print("-" * 80, file=sys.stderr)
-                        print(f"Error for persona {persona_id}:", file=sys.stderr)
+        for generation in xsorted(history.values(), key=lambda x: x['generation'],
+                                  reverse=True):
+            if generation['code'] == const.MemberChangeStati.committed:
+                if diff := [key for key in persona if persona[key] != generation[key]]:
+                    print("-" * 80, file=sys.stderr)
+                    print(f"Error for persona {persona_id}:", file=sys.stderr)
+                    errors += 1
+                    for key in diff:
                         print(f"Changelog inconsistent for field {key}: {persona[key]}"
-                              f" != {changelog_state[key]}", file=sys.stderr)
-                        errors += 1
+                              f" != {generation[key]}", file=sys.stderr)
                 break
         else:
             print("-" * 80, file=sys.stderr)
