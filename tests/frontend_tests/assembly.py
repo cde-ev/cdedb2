@@ -754,7 +754,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # attachments can no longer be changed
             self.traverse("Dateien")
             self.assertNotIn('addattachmentform', self.response.forms)
-            self.assertNotIn('addattachmentversionform', self.response.forms)
+            self.assertNotIn('configureattachmentversionform', self.response.forms)
             base_link = '/assembly/assembly/1001/attachment/'
             for suffix, atype in (('add', "Datei"), ('1001/add', "Dateiversion")):
                 url = base_link + suffix
@@ -1175,7 +1175,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
         self.assertNonPresence("Eine verknüpfte Abstimmung wurde bereits gesperrt",
                                div='static-notifications', check_div=True)
-        f = self.response.forms['addattachmentversionform']
+        f = self.response.forms['configureattachmentversionform']
         self.assertEqual(f['title'].value, "Vorläufige Beschlussvorlage")
         f['title'] = ""
         f['filename'] = "//"
@@ -1251,13 +1251,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 ntype='warning',
                 static=True
             )
-            f = self.response.forms['addattachmentversionform']
+            f = self.response.forms['configureattachmentversionform']
             f['title'] = "Formal geänderte Beschlussvorlage"
             f['attachment'] = webtest.Upload("form.pdf", data,
                                              "application/octet-stream")
             self.submit(f, check_notification=False)
             self.assertValidationError("ack_creation", "Muss markiert sein.")
-            f = self.response.forms['addattachmentversionform']
+            f = self.response.forms['configureattachmentversionform']
             f['title'] = "Formal geänderte Beschlussvorlage"
             f['attachment'] = webtest.Upload("form.pdf", data,
                                              "application/octet-stream")

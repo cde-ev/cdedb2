@@ -2150,7 +2150,7 @@ class AssemblyBackend(AbstractBackend):
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                content: bytes) -> DefaultReturnCode:
         """Add a new version of an attachment."""
-        data = affirm(vtypes.AssemblyAttachmentVersion, data)
+        data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
         content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
@@ -2237,8 +2237,6 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("Cannot remove the last remaining version"
                                     " of an attachment."))
             deletor: Dict[str, Union[int, datetime.datetime, None]] = {
-                'attachment_id': attachment_id,
-                'version_nr': version_nr,
                 'dtime': now(),
                 'title': None,
                 'authors': None,
