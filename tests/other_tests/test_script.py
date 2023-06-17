@@ -217,17 +217,17 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             self.check_buffer(buffer, self.assertIn, "Success!")
 
             insertion_query = (
-                "INSERT INTO assembly.presiders"  # arbitrary, small table
-                " (assembly_id, persona_id) VALUES (2, 1)"
+                "INSERT INTO core.cron_store"  # arbitrary, small table
+                " (title, store) VALUES ('Test', '{}')"
             )
-            selection_query = ("SELECT assembly_id FROM assembly.presiders"
-                               " WHERE persona_id = 1")
+            selection_query = ("SELECT title FROM core.cron_store"
+                               " WHERE title = 'Test'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
                     cur.execute(insertion_query)
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), 2)
+                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
@@ -237,4 +237,4 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), 2)
+                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")

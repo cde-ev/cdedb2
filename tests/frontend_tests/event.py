@@ -1211,7 +1211,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
@@ -1284,7 +1284,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Veranstaltung anlegen'})
         f = self.response.forms['createeventform']
         f['title'] = "Alternative Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['shortname'] = ""
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"

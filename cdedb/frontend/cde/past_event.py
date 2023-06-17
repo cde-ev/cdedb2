@@ -12,7 +12,6 @@ import csv
 from collections import OrderedDict
 from typing import Dict, List, Optional, Sequence, Tuple
 
-import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -28,7 +27,7 @@ from cdedb.common.validation.validate import (
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
-    check_validation as check, csv_output, drow_name, process_dynamic_input,
+    check_validation as check, csv_output,
 )
 
 COURSESEARCH_DEFAULTS = {
