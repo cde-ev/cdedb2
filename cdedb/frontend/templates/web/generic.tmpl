@@ -569,7 +569,7 @@
                         {% continue %}
                     {% endif %}
                     <tr>
-                        <td title="{{ gettext(aggregate_title) }}">{{ aggregate_symbol }}</td>
+                        <td title="{{ gettext(aggregate_title) }}"><b>{{ aggregate_symbol }}</b></td>
                         <td></td>
                         {% for csvfield in query.fields_of_interest %}
                             {% for field in csvfield.split(',') %}
