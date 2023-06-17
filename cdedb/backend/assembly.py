@@ -2189,19 +2189,18 @@ class AssemblyBackend(AbstractBackend):
         data = affirm(vtypes.AssemblyAttachmentVersion, data)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
-            assembly_id = self.get_assembly_id(rs, attachment_id=data['attachment_id'])
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_("Must have privileged access to add"
+                raise PrivilegeError(n_("Must have privileged access to change"
                                         " attachment version."))
             if not self.is_attachment_version_deletable(rs, attachment_id):
                 raise ValueError(n_(
-                    "Cannot remove attachment version once the assembly or"
+                    "Cannot change attachment version once the assembly or"
                     " any linked ballots have been locked."))
-            old_state = self.get_attachment_version(rs, data['attachment_id'],
+            old_state = self.get_attachment_version(rs, attachment_id,
                                                     data['version_nr'])
             if old_state['dtime']:
                 raise ValueError(n_("Deleted attachment version can not be changed."))
-            # Take care to include deleted attachment versions here
             keys = data.keys()
             query = (f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
                      f" ROW({', '.join(('%s',) * len(keys))})"

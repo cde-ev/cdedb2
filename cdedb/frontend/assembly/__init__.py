@@ -932,13 +932,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/list_attachments")
         latest_version = self.assemblyproxy.get_latest_attachment_version(
             rs, attachment_id)
-        is_deletable = self.assemblyproxy.is_attachment_version_deletable(
-            rs, attachment_id)
         merge_dicts(rs.values, rs.ambience['attachment_version'])
         return self.render(
             rs, "configure_attachment_version", {
                 'latest_version': latest_version,
-                'is_deletable': is_deletable
+                'is_deletable': True
             })
 
     @access("assembly", modi={"POST"})
