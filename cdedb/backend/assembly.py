@@ -2201,16 +2201,20 @@ class AssemblyBackend(AbstractBackend):
                                                     data['version_nr'])
             if old_state['dtime']:
                 raise ValueError(n_("Deleted attachment version can not be changed."))
+            attachment_id = data.pop('attachment_id')
+            version_nr = data.pop('version_nr')
             keys = data.keys()
             query = (f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
                      f" ROW({', '.join(('%s',) * len(keys))})"
                      f" WHERE attachment_id = %s AND version_nr = %s")
-            params = tuple(data[key] for key in keys) + (
-                data['attachment_id'], data['version_nr'])
+            params = tuple(data[key] for key in keys) + (attachment_id, version_nr)
             ret = self.query_exec(rs, query, params)
+
+            # Use title from current verstion
+            latest_version = self.get_latest_attachment_version(rs, attachment_id)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_changed, assembly_id,
-                change_note=f"{data['title']}: Version {data['version_nr']}")
+                change_note=f"{latest_version['title']}: Version {version_nr}")
         return ret
 
     @access("assembly")
