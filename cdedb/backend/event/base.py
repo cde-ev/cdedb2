@@ -500,6 +500,10 @@ class EventBaseBackend(EventLowLevelBackend):
             if not self.is_orga(rs, event_id=current.event_id):
                 raise PrivilegeError
 
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not change orga token in offline instance."))
+
             ret = 1
             if any(data[k] != current_data[k] for k in data):
                 ret *= self.sql_update(rs, OrgaToken.database_table, data)
@@ -592,9 +596,17 @@ class EventBaseBackend(EventLowLevelBackend):
                                  'block': blockers.keys() - cascade,
                              })
 
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            raise ValueError(n_(
+                "May not revoke orga token in offline instance."))
+
         ret = 1
         with Atomizer(rs):
             orga_token = self.get_orga_token(rs, orga_token_id)
+
+            if not self.is_orga(rs, event_id=orga_token.event_id):
+                raise PrivilegeError
+
             if cascade:
                 if 'atime' in cascade:
                     update = {
