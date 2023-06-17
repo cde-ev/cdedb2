@@ -330,7 +330,7 @@ class CoreBaseBackend(AbstractBackend):
                         raise RuntimeError(n_("Persona and Changelog inconsistent."))
                     break
             else:
-                raise RuntimeError(n_("No commited state found."))
+                raise RuntimeError(n_("No committed state found."))
 
             # handle pending changes
             diff = None

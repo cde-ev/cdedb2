@@ -593,6 +593,12 @@ msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Methode %(method)s."
 msgid "No contamination!"
 msgstr "Keine Kontaminierung!"
 
+msgid "Persona and Changelog inconsistent."
+msgstr "Nutzer und Änderungshistorie sind inkonsistent."
+
+msgid "No committed state found."
+msgstr "Keine bestätigte Version gefunden."
+
 #: cdedb/backend/core/base.py:342 cdedb/frontend/core/base.py:1666
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
