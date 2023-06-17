@@ -214,7 +214,6 @@ class TestCoreFrontend(FrontendTest):
         _check_redirected_profile()
         # The history is available
         self.get('/core/persona/8/history')
-        self.follow()
         self.assertTitle("Änderungshistorie von Hades Hell")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
