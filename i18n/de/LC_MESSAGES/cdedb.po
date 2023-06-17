@@ -12011,6 +12011,9 @@ msgstr "Notizen zu Datenfeldern"
 msgid "This will be shown on the '%(field_summary)s' page."
 msgstr "Wird auf der '%(field_summary)s'-Seite angezeigt."
 
+msgid "No event parts have any participants."
+msgstr "Keine Veranstaltungsteile haben Teilnehmende."
+
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Field for Rooming Preferences"
 msgstr "Feld für Hauswünsche"
