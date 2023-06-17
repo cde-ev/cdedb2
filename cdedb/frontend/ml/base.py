@@ -592,12 +592,12 @@ class MlBaseFrontend(AbstractUserFrontend):
             if not ml.is_active:
                 rs.notify("info", n_("Roster of inactive mailinglist is hidden."))
                 return self.redirect(rs, "ml/show_mailinglist")
-            if ml.roster_visibility == mrv.viewers and not self.mlproxy.may_view(rs, ml):
+            if (ml.roster_visibility == mrv.viewers
+                    and not self.mlproxy.may_view(rs, ml)):
                 raise werkzeug.exceptions.Forbidden
-            # TODO is there an easy way to determine if the persona may be subscribed?
             if (ml.roster_visibility == mrv.subscribable
-                    and not self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                       mailinglist_id)):
+                    and not self.mlproxy.get_subscription_policy(
+                    rs, rs.user.persona_id, mailinglist=ml).may_subscribe()):
                 raise werkzeug.exceptions.Forbidden
 
         sub_states = const.SubscriptionState.subscribing_states()
