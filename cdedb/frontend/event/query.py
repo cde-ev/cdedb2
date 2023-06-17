@@ -195,6 +195,8 @@ class EventQueryMixin(EventBaseFrontend):
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            params["aggregates"] = unwrap(self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id, aggregate=True))
             return self._send_query_result(
                 rs, download, "registration_result", scope, query, params)
         else:
@@ -307,6 +309,8 @@ class EventQueryMixin(EventBaseFrontend):
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            params["aggregates"] = unwrap(self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id, aggregate=True))
             return self._send_query_result(
                 rs, download, "course_result", scope, query, params)
         else:
@@ -362,6 +366,8 @@ class EventQueryMixin(EventBaseFrontend):
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
+            params["aggregates"] = unwrap(self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id, aggregate=True))
             return self._send_query_result(
                 rs, download, "lodgement_result", scope, query, params)
         else:
