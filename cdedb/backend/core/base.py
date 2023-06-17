@@ -318,16 +318,26 @@ class CoreBaseBackend(AbstractBackend):
             #      (this can only happen if the resolve action was taken)
 
             # get current state
-            history = self.changelog_get_history(
-                rs, data['id'], generations=(current_generation,))
+            history = self.changelog_get_history(rs, data['id'], generations=None)
             current_state = history[current_generation]
+            committed_state = unwrap(self.get_total_personas(
+                rs, (data['id'],)))
+
+            # Die when changelog and current state are inconsistent.
+            for i in range(current_generation,0,-1):
+                if history[i]['code'] == const.MemberChangeStati.committed:
+                    for key in committed_state:
+                        if committed_state[key] != history[i][key]:
+                            raise RuntimeError(n_(
+                                "Persona and Changelog inconsistent."))
+                    break
+            else:
+                raise RuntimeError(n_("No commited state found."))
 
             # handle pending changes
             diff = None
             if (current_state['code']
                     == const.MemberChangeStati.pending):
-                committed_state = unwrap(self.get_total_personas(
-                    rs, (data['id'],)))
                 # stash pending change if we may not wait
                 if not may_wait:
                     diff = {key: current_state[key] for key in committed_state
