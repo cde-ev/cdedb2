@@ -563,6 +563,10 @@
                         ("sum", gettext("Sum; Bools count as 0/1"), "∑"), ("min", gettext("Minimum"), "min"),
                         ("max", gettext("Maximum"), "max"), ("avg", gettext("Average; Bools count as 0/1"), "Ø"),
                         ("stddev", gettext("Standard Deviation"), "σ"), ("null", gettext("Number of Null entries"), "␀")] %}
+                    {# Skip the aggregation row if it does not contain any interesting information #}
+                    {% if not aggregates[aggregate_func] %}
+                        {% continue %}
+                    {% endif %}
                     <tr>
                         <td title="{{ gettext(aggregate_title) }}">{{ aggregate_symbol }}</td>
                         <td></td>

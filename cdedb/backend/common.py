@@ -337,9 +337,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         q, params = self._construct_query(query, select, distinct=distinct, view=view)
         data = self.query_all(rs, q, params)
 
-        # we know that all keys are unique, so we put them in a single dict
         if aggregate:
-            data = ({k: v for datum in data for k, v in datum.items()}, )
+            # we know that all keys are unique, so we put them in a single dict
+            datum = {k: v for datum in data for k, v in datum.items()}
+            # store if the respective aggregation function has an interesting value
+            datum.update(
+                {agg: any(datum.get(f"{agg}.{field_as}") is not None for field_as in fields.values())
+                 for agg in ['null', 'sum', 'min', 'max', 'avg']})
+            data = (datum, )
 
         return data
 
