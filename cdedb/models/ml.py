@@ -658,8 +658,6 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
 
 @dataclass
 class GeneralOptInMailinglist(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
@@ -667,8 +665,6 @@ class GeneralOptInMailinglist(GeneralMailinglist):
 
 @dataclass
 class GeneralModeratedOptInMailinglist(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
@@ -676,8 +672,6 @@ class GeneralModeratedOptInMailinglist(GeneralMailinglist):
 
 @dataclass
 class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
-
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.invitation_only)
     ])
