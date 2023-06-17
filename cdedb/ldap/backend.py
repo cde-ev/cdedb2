@@ -355,7 +355,7 @@ class LDAPsqlBackend:
                 b"objectClass": ["person", "simpleSecurityObject"],
                 b"cn": [self.dua_cn(name)],
                 b"userPassword": [self._dua_pwds[name]],
-                b"ipaUniqueID": [f"dua/{name}"],
+                b"ipaUniqueID": [f"duas/{name}"],
             }
             ret[dn] = self._to_bytes(dua)
         return ret
@@ -562,7 +562,7 @@ class LDAPsqlBackend:
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
                 b"memberOf": groups[persona_id],
-                b"ipaUniqueID": [f"persona/{persona_id}"],
+                b"ipaUniqueID": [f"personas/{persona_id}"],
             }
             ret[dn] = self._to_bytes(ldap_user)
         return ret
@@ -1014,7 +1014,7 @@ class LDAPsqlBackend:
                 b"cn": [cn],
                 b"description": [f"{mls[address]['title']} <{cn}>"],
                 b"uniqueMember": [self.user_dn(e) for e in subscribers[address]],
-                b"ipaUniqueID": [f"ml/{address}"],
+                b"ipaUniqueID": [f"mls/{address}"],
             }
             ret[dn] = self._to_bytes(group)
         return ret
