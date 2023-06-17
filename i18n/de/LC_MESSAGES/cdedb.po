@@ -979,6 +979,10 @@ msgstr "Alle Orga-Tokens müssen zur gleichen Veranstaltung gehören."
 msgid "May not create new orga token in offline instance."
 msgstr "Im Offlinemodus können keine neuen Orga-Tokens erstellt werden."
 
+#: cdedb/backend/event/base.py:504
+msgid "May not change orga token in offline instance."
+msgstr "Im Offlinemodus können Orga-Tokens nicht verändert werden."
+
 #: cdedb/backend/event/base.py:489 cdedb/backend/event/base.py:698
 #: cdedb/backend/event/lowlevel.py:562
 msgid "At least one event part required."
