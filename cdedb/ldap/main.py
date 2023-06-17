@@ -49,7 +49,7 @@ async def main() -> None:
         certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"])
     server = await loop.create_server(lambda: LdapServer(root), port=conf["LDAP_PORT"],
                                       ssl=context)
-    loop.add_signal_handler(signal.SIGTERM, lambda: server.close())
+    loop.add_signal_handler(signal.SIGTERM, server.close)
     logger.warning("Startup completed")
 
     async with server:
