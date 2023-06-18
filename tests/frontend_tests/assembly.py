@@ -294,7 +294,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNoLink('/assembly/assembly/3/attachment/1/version/3/change',
                           self.response.forms)
         self.assertNotIn('removeattachmentversionform2_3', self.response.forms)
-        self.assertNoLink('/assembly/assembly/3/attachment/2/')
+        self.assertNoLink('/assembly/assembly/3/attachment/2/version/3/change')
         self.assertNoLink('/assembly/assembly/3/attachment/1/add')
 
         self._click_admin_view_button(re.compile(r"Versammlungs-Administration"),
@@ -309,7 +309,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'href': '/assembly/assembly/3/attachments'},
                       {'href': '/assembly/assembly/3/attachment/1/add'},
                       {'href': '/assembly/assembly/3/attachments'},
-                      {'href': '/assembly/assembly/3/attachments/1/version/3/change'})
+                      {'href': '/assembly/assembly/3/attachment/2/version/3/change'})
 
         # go back to Internationaler Kongress
         self.traverse("Versammlungs-Übersicht", "Internationaler Kongress")

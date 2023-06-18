@@ -1040,7 +1040,7 @@ class TestAssemblyBackend(BackendTest):
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_changed,
             "assembly_id": assembly_id,
-            "change_note": f"{data['title']}: Version 2",
+            "change_note": f"{update['title']}: Version 2",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
@@ -1143,7 +1143,6 @@ class TestAssemblyBackend(BackendTest):
             3: deleted_version.copy(),
             4: data,
         }
-        print(data.copy().update(update))
         history_expectation[3]['version_nr'] = 3
         history_expectation[3]['file_hash'] = get_hash(b'12345')
         history_expectation[4]['version_nr'] = 4
