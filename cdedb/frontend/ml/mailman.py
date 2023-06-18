@@ -156,6 +156,10 @@ going again).
 The triggering DSN if available is attached.
 """.strip(),
         }
+        if db_list.additional_footer:
+            desired_templates['list:member:regular:footer'] = (
+                "--\n" + db_list.additional_footer + "\n" +
+                desired_templates['list:member:regular:footer'])
         desired_header_matches = {
             ('x-spam-flag', 'YES', 'hold'),
         }

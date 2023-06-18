@@ -116,6 +116,7 @@
                              " as there are actors causing problems with malformed emails.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                 defaultvalue=maxsize_default) }}
+        {{ util.form_input_textarea(name="additional_footer", label=gettext("Additional Footer"), rows="5") }}
         {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('ml/index')) }}
     </form>
     {% endif %}
