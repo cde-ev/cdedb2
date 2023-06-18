@@ -5043,8 +5043,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['is_cancelled'] = True
         self.submit(f)
 
-        # do it
+        # try with past event even though there are no participants
         self.traverse(r"\sÜbersicht")
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Veranstaltungsteile haben Teilnehmende.",
+                                'error')
+
+        # do it
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         f['create_past_event'].checked = False
