@@ -1288,7 +1288,7 @@ CREATE TABLE ml.mailinglists (
         notes                   varchar,
         additional_footer       varchar,
         -- mailinglist awareness
-        -- mailinglist_id is not NULL if associated to another mailinglist
+        -- gateway is not NULL if associated to another mailinglist
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event
