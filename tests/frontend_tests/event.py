@@ -942,6 +942,8 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
         # fields
+        self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
+                            div="field-definition-notes", exact=True)
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -5041,8 +5043,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['is_cancelled'] = True
         self.submit(f)
 
-        # do it
+        # try with past event even though there are no participants
         self.traverse(r"\sÜbersicht")
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Veranstaltungsteile haben Teilnehmende.",
+                                'error')
+
+        # do it
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         f['create_past_event'].checked = False

@@ -368,6 +368,18 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("anton")
     def test_archive(self) -> None:
+        # First, an event without participants
+        update = {
+            'id': 2,
+            'is_cancelled': True
+        }
+        self.event.set_event(self.key, update)
+        with self.assertRaises(ValueError):
+            self.pastevent.archive_event(self.key, 2)
+        new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+        self.assertEqual(None, new_ids)
+
+        # Event with participants
         update = {
             'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
@@ -399,7 +411,7 @@ class TestPastEventBackend(BackendTest):
             key=lambda d: d['tempus'])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1001,
+            'id': 1002,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
@@ -408,7 +420,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1002,
+            'id': 1003,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
@@ -417,7 +429,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1003,
+            'id': 1004,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
