@@ -1191,7 +1191,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
-        "lodgement_group.title": QuerySpecEntry("int", n_("Lodgement Group Title")),
+        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.
     }
 

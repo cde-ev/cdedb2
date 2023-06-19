@@ -196,7 +196,7 @@ class EventLodgementMxin(EventBaseFrontend):
                     lodgement_id: lodgements[lodgement_id]
                     for lodgement_id in group['lodgement_ids']
                 },
-                sortkey=sort_lodgement
+                sortkey=sort_lodgement, reverse=reverse,
             ))
             for group_id, group in keydictsort_filter(
                 groups, EntitySorter.lodgement_group)

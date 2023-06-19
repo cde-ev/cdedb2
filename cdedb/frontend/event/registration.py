@@ -239,7 +239,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                                        csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
@@ -402,7 +402,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
                        is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
                        ) -> Response:
@@ -428,8 +428,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return Response("{}", mimetype='application/json', status=400)
 
+        field_params = {f"field.{field_id}": bool
+                        for field_id in rs.ambience['event']['fields']}
+        field_values = request_extractor(rs, field_params, omit_missing=True)
+
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, field_ids, is_member, is_orga)
+            rs, event_id, persona_id, part_ids, is_member, is_orga, field_values)
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"

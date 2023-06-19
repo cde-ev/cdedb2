@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-05-24 10:06+0200\n"
+"POT-Creation-Date: 2023-05-03 18:00+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "No event parts have any participants."
+msgstr "Keine Veranstaltungsteile haben Teilnehmende."
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -5793,6 +5796,7 @@ msgstr "Kandidaten hinzufügen"
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:82
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:73
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:37
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:106
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:134
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:65
@@ -6885,6 +6889,24 @@ msgstr "(Version %(version)s, maßgeblich)"
 #: cdedb/frontend/templates/web/generic.tmpl:518
 msgid "Details"
 msgstr "Details"
+
+msgid "Sum; Bools count as 0/1"
+msgstr "Summe; Wahrheitswerte zählen als 0/1."
+
+msgid "Minimum"
+msgstr "Minimum"
+
+msgid "Maximum"
+msgstr "Maximum"
+
+msgid "Average"
+msgstr "Durchschnitt"
+
+msgid "Standard Deviation"
+msgstr "Standardabweichung"
+
+msgid "Number of Null entries"
+msgstr "Anzahl leerer Einträge"
 
 #: cdedb/frontend/templates/web/assembly/view_assembly_log.tmpl:9
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:9
@@ -10816,6 +10838,7 @@ msgstr "Meine Anmeldung"
 #: cdedb/frontend/templates/web/event/base.tmpl:29
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:5
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:10
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:102
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:103
 msgid "Participant info"
 msgstr "Teilnehmer-Infos"
@@ -10977,6 +11000,7 @@ msgid "Course Choice Sync"
 msgstr "Kurswahlsynchronisierung"
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:13
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:101
 msgid "Additional information for participants"
 msgstr "Zusätzliche Informationen für Teilnehmer"
@@ -11930,14 +11954,26 @@ msgstr ""
 "der Veranstaltung. Es gibt keine weiteren Auswirkungen. Berate dich mit dem "
 "Vorstand, ehe du diese Option setzt."
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:63
+msgid ""
+"If checked, the event is shown as cancelled. This can be undone and has no "
+"further effects. Do not do this without consulting the chairmen of the CdE."
+msgstr ""
+"Wenn dies ausgewählt ist, wird die Veranstaltung als abgesagt angezeigt. "
+"Dies kann jederzeit rückgängig gemacht werden und hat keine weiteren "
+"Auswirkungen. Berate dich mit dem Vorstand, ehe du diese Option setzt."
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:65
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:66
 msgid "Registration Start"
 msgstr "Anmeldebeginn"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:66
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:67
 msgid "Registration Soft Limit"
 msgstr "Anmeldeschluss"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:68
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:69
 msgid ""
 "Is displayed initially. Changes to registration are only possible until "
@@ -11946,10 +11982,12 @@ msgstr ""
 "Wird zunächst angezeigt. Änderungen an Anmeldungen sind nur bis dahin "
 "möglich. Falls leer, sind Anmeldungen unbegrenzt möglich."
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:70
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:71
 msgid "Registration Hard Limit"
 msgstr "Anmeldeschluss für Nachmeldungen"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:72
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:73
 msgid ""
 "Final registration end. Until then late registrations are possible. If left "
@@ -11958,10 +11996,12 @@ msgstr ""
 "Endgültiger Anmeldeschluss. Bis dahin sind Nachmeldungen möglich. Falls "
 "leer, bleibt die Anmeldung für Nachmeldungen offen."
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:74
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:75
 msgid "Show Questionnaire"
 msgstr "Fragebogen anzeigen"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:75
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:76
 msgid ""
 "If this is checked, all registrated users can fill out the Questionnaire. "
@@ -11972,16 +12012,19 @@ msgstr ""
 "ausfüllen. Jeder Teil des Fragebogens kann in der Fragenbogen-Konfiguration "
 "einzeln konfiguriert werden."
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:78
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:79
 msgid "Additional Information for Registration"
 msgstr "Zusätzliche Informationen bei der Anmeldung"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:79
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:80
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:38
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:112
 msgid "CdE-Account IBAN"
 msgstr "CdE-Konto IBAN"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:80
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:81
 msgid ""
 "Only leave this empty if payment is going to be handled directly by the "
@@ -11990,24 +12033,34 @@ msgstr ""
 "Diese Feld nur leerlassen, wenn die Bezahlung direkt von den Orgas "
 "abgehandelt werden soll."
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:82
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:83
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:131
 msgid "Registration page free text"
 msgstr "Freitext Anmeldeseite"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:84
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:85
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:138
 msgid "Registration mail free text"
 msgstr "Freitext Anmeldebestätigung"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:86
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Special Purpose Custom Fields"
 msgstr "Datenfelder mit besonderem Zweck"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
+#: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:113
+msgid "Custom Fields Notes"
+msgstr "Notizen zu Datenfeldern"
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
 msgid "Field for Rooming Preferences"
 msgstr "Feld für Hauswünsche"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:89
 msgid ""
 "The custom field in which the participants’ rooming preferences will be "
@@ -12018,10 +12071,17 @@ msgstr ""
 "für die automatische Erkennung von Hauswünschen und den Hauswünsche-Graphen "
 "verwendet. Feldtyp: Text"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
+#, python-format
+msgid "This will be shown on the '%(field_summary)s' page."
+msgstr "Wird auf der '%(field_summary)s'-Seite angezeigt."
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:91
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:92
 msgid "Field for Camping Mat"
 msgstr "Feld für Isomatte"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:92
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:93
 msgid ""
 "The custom field in which the participants’ willingness to sleep on a "
@@ -12032,10 +12092,12 @@ msgstr ""
 "abgefragt wird. Es wird auf Unterkunfts- und Bewohner-Seiten angezeigt. "
 "Feldtyp: Ja/Nein"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:95
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
 msgid "Field for Course Room"
 msgstr "Feld für Kursraum"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:97
 msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
@@ -12044,6 +12106,7 @@ msgstr ""
 "Das Datenfeld, in dem der dem Kurs zugewiesene Raum gespeichert wird. Es "
 "wird für PDF-Teilnehmerlisten und -Namensschilder verwendet. Feldtyp: Text"
 
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:103
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:104
 msgid ""
 "This is only for event-internal information. Any public information should "
@@ -15003,6 +15066,18 @@ msgstr ""
 "Hier findest Du die Mailinglisten des CdE, insbesondere auch zu Akademien "
 "und Versammlungen. Für weitere Informationen zu den allgemeinen "
 "Mailinglisten siehe die %(infolink)s."
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:45
+#, python-format
+msgid ""
+"Here you can find the CdE’s Mailinglists; notably also those linked to "
+"events and assemblies. For further information on the general lists see the "
+"%(infolink)s."
+msgstr ""
+"Hier findest Du die Mailinglisten des CdE; insbesondere auch zu Akademien "
+"und Versammlungen assoziierte.\n"
+"Für weitere Informationen zu den allgemeinen Mailinglisten siehe die "
+"%(infolink)s."
 
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:24
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:16

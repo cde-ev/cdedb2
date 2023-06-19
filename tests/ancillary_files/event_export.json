@@ -1445,6 +1445,7 @@
             "is_course_state_visible": false,
             "is_cancelled": false,
             "notes": "Todoliste ... just kidding ;)",
+            "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
             "title": "Gro\u00dfe Testakademie 2222"
         }
     },
