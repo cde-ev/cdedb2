@@ -11,6 +11,7 @@ import enum
 from typing import Dict, Optional, Set
 
 from cdedb.uncommon.intenum import CdEIntEnum
+# these are stored in the database, so provide them here for consistency
 from cdedb.uncommon.submanshim import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
