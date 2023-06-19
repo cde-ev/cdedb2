@@ -1,10 +1,12 @@
 import datetime
 import decimal
+import re
 from pprint import pprint
 
 import cdedb.database.constants as const
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, unwrap
+from cdedb.filter import money_filter
 from cdedb.script import Script
 
 s = Script(dbuser="cdb")
@@ -167,6 +169,9 @@ with s:
 
     print(f"Inserting {len(data)} new changelog entries.")
 
+    note_template_escaped = ("Guthabenänderung um {amount} auf {new_balance}"
+                             " \(Überwiesen am {date}\)")
+
     # 2.d Insert fake changelog entry associated with the update
     for d in data:
         persona_id = d['persona_id']
@@ -177,6 +182,20 @@ with s:
         print(f"Inserting changelog generation into freed up position"
               f" ({generation_data['generation']}) for user {persona_id}.")
         core.sql_insert(s.rs(), "core.changelog", generation_data)
+
+
+        next_generation = unwrap(core.changelog_get_history(
+            s.rs(), persona_id, [d['before_gen'] + 2]))
+        balance = next_generation['balance']
+        expected_note = note_template_escaped.format(
+            amount=money_filter(balance), new_balance=money_filter(balance),
+            date=r"\d\d\.\d\d\.\d\d\d\d"
+        )
+        if balance != 0 and not re.fullmatch(
+                expected_note, next_generation['change_note']):
+            raise ValueError(
+                f"Unexpected balance in first shifted generation"
+                f" (prev. {generation_data['generation']}) for user {persona_id}.")
 
     print("Summary of removed balances:")
     pprint(persona_balances)
