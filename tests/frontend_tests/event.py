@@ -10,12 +10,13 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence, cast
 
 import lxml.etree
 import segno.helpers
 import webtest
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
@@ -6210,3 +6211,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
         f['fields.test2'] = False
         self.submit(f)
+
+    @as_users("garcia")
+    def test_orga_droid(self) -> None:
+        event_id = 1
+        new_token = OrgaToken(
+            id=cast(vtypes.ProtoID, -1),
+            event_id=cast(vtypes.ID, event_id),
+            title="New Token!",
+            notes=None,
+            ctime=now(),
+            etime=now().replace(year=3000),
+            rtime=None,
+            atime=None,
+        )
+        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        orga_token = self.event.get_orga_token(self.key, new_token_id)
+        self.get(f"/event/event/{event_id}/download/partial")
+        orga_export = self.response.json
+
+        self.get("/")
+        self.logout()
+
+        self.get(
+            f'/event/event/{event_id}/droid/partial',
+            headers={
+                orga_token.request_header_key:
+                    orga_token.get_token_string(secret),
+            },
+        )
+        droid_export = self.response.json
+
+        droid_export['timestamp'] = orga_export['timestamp']
+        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        self.assertEqual(orga_export, droid_export)
