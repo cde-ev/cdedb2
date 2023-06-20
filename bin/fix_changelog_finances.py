@@ -130,9 +130,20 @@ with s:
         raise ValueError("Not all personas were fixed during 1c.")
 
     # 2.a Find those users where there were changes since the error. (14 users)
-    # It is hard to determine these algorithmically.
-    affected_changed = [9138, 14454, 16451, 16705, 17473, 21530, 21792, 23831, 25122,
-                        25262, 25761, 25769, 26625, 29722]
+    q_2a = """
+        SELECT DISTINCT persona_id
+        FROM core.changelog
+        WHERE is_cde_realm = True AND is_member = False AND balance != 0
+            AND ctime > '2023-03-12T23:00:00' AND ctime < '2023-03-13T00:00:00'
+
+        INTERSECT
+
+        SELECT DISTINCT persona_id
+        FROM core.changelog
+        WHERE is_cde_realm = True AND is_member = False AND ctime > %s
+    """
+    p_2a = (error_time,)
+    affected_changed = [d['persona_id'] for d in core.query_all(s.rs(), q_2a, p_2a)]
     if not affected_count == len(affected_changed) + easy_affected:
         raise RuntimeError("More accounts have broken.")
 
