@@ -39,3 +39,5 @@ Currently one dynamic API exists:
 .. autoclass:: cdedb.models.droid.OrgaToken
     :members: name, event_id, fixed_fields, database_table
     :member-order: bysource
+
+This class implements the :doc:`API_Orga`.
