@@ -4155,8 +4155,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # export
         # partial event export
         self.response = save.click(href='/event/event/1/download/partial')
-        self.assertPresence('"kind": "partial",')
-        self.assertPresence('"title": "Langer Kurs",')
+        self.assertEqual("partial", self.response.json['kind'])
+        self.assertEqual(
+            "Planetenretten für Anfänger", self.response.json['courses']['1']['title'])
         # registrations
         self.response = save.click(href='/event/event/1/download/csv_registrations')
         self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
