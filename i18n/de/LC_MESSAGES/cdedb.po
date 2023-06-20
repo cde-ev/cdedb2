@@ -18,6 +18,27 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Average"
+msgstr "Durchschnitt"
+
+msgid "Maximum"
+msgstr "Maximum"
+
+msgid "Minimum"
+msgstr "Minimum"
+
+msgid "No event parts have any participants."
+msgstr "Keine Veranstaltungsteile haben Teilnehmende."
+
+msgid "Number of Null entries"
+msgstr "Anzahl leerer Einträge"
+
+msgid "Standard Deviation"
+msgstr "Standardabweichung"
+
+msgid "Sum; Bools count as 0/1"
+msgstr "Summe; Wahrheitswerte zählen als 0/1."
+
 msgid "This API is not available in offline mode."
 msgstr "Diese API ist in der Offline-Instanz nicht verfügbar."
 
@@ -979,14 +1000,14 @@ msgstr "Alle Orga-Tokens müssen zur gleichen Veranstaltung gehören."
 msgid "May not create new orga token in offline instance."
 msgstr "Im Offlinemodus können keine neuen Orga-Tokens erstellt werden."
 
-#: cdedb/backend/event/base.py:504
-msgid "May not change orga token in offline instance."
-msgstr "Im Offlinemodus können Orga-Tokens nicht verändert werden."
-
 #: cdedb/backend/event/base.py:489 cdedb/backend/event/base.py:698
 #: cdedb/backend/event/lowlevel.py:562
 msgid "At least one event part required."
 msgstr "Mindestens ein Veranstaltungsteil muss angegeben werden."
+
+#: cdedb/backend/event/base.py:504
+msgid "May not change orga token in offline instance."
+msgstr "Im Offlinemodus können Orga-Tokens nicht verändert werden."
 
 #: cdedb/backend/event/base.py:525
 msgid "This orga token has already been revoked."
@@ -12263,6 +12284,11 @@ msgid "Special Purpose Custom Fields"
 msgstr "Datenfelder mit besonderem Zweck"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
+#: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:113
+msgid "Custom Fields Notes"
+msgstr "Notizen zu Datenfeldern"
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
 msgid "Field for Rooming Preferences"
 msgstr "Feld für Hauswünsche"
@@ -12277,6 +12303,11 @@ msgstr ""
 "Das Feld, in das die Hauswünsche der Teilnehmer eingetragen werden. Es wird "
 "für die automatische Erkennung von Hauswünschen und den Hauswünsche-Graphen "
 "verwendet. Feldtyp: Text"
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:88
+#, python-format
+msgid "This will be shown on the '%(field_summary)s' page."
+msgstr "Wird auf der '%(field_summary)s'-Seite angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:91
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:92

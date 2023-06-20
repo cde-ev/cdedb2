@@ -672,6 +672,7 @@
         "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
         "use_additional_questionnaire": false,
         "notes": "Todoliste ... just kidding ;)",
+        "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
         "offline_lock": false,
         "is_visible": true,
         "is_course_list_visible": true,

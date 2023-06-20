@@ -1030,6 +1030,15 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        if not any(rpart['status'] == const.RegistrationPartStati.participant
+                   for reg in registrations.values()
+                   for rpart in reg['parts'].values()):
+            if create_past_event:
+                rs.notify("error", n_("No event parts have any participants."))
+                return self.redirect(rs, "event/show_event")
+
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
 

@@ -2316,6 +2316,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_soft_limit': Optional[datetime.datetime],
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
+    'field_definition_notes': Optional[str],
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
