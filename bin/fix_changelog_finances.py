@@ -14,6 +14,7 @@ s = Script(dbuser="cdb")
 core: CoreBackend = s.make_backend("core", proxy=False)
 
 affected_count = 351
+balance_total = decimal.Decimal("862,04")
 error_time = datetime.datetime.fromisoformat("2023-04-12 10:28:35+02:00")
 persona_balances = {}
 
@@ -211,4 +212,8 @@ with s:
     print("Summary of removed balances:")
     pprint(persona_balances)
 
-    print(f"Total: {sum(persona_balances.values(), start=decimal.Decimal(0))}")
+    total = sum(persona_balances.values(), start=decimal.Decimal(0))
+    print(f"Total: {total}")
+
+    if total != balance_total:
+        raise ValueError(f"Not all consistencies were fixed, expected {balance_total}.")
