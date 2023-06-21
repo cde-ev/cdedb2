@@ -21,6 +21,7 @@ from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
 )
+from cdedb.models.droid import OrgaToken
 from cdedb.script import Script
 
 # This is 'secret' the hashed
@@ -195,6 +196,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        OrgaToken.database_table,
     )
 
     print("Connect to database")
