@@ -31,6 +31,8 @@ from cdedb.database.connection import Atomizer
 
 __all__ = ['EventBackend']
 
+from cdedb.models.droid import OrgaToken
+
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                    EventRegistrationBackend, EventBaseBackend, EventLowLevelBackend):
@@ -41,6 +43,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         Possible blockers:
 
+        * orga_tokens: An orga token granting API access to the event.
         * field_definitions: A custom datafield associated with the event.
         * courses: A course associated with the event. This can have it's own
                    blockers.
@@ -70,6 +73,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         """
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
+
+        orga_tokens = self.sql_select(
+            rs, OrgaToken.database_table, ("id",), (event_id,), entity_key="event_id")
+        if orga_tokens:
+            blockers["orga_tokens"] = [e["id"] for e in orga_tokens]
 
         field_definitions = self.sql_select(
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
@@ -241,6 +249,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             ret *= self._delete_event_field(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "orga_tokens" in cascade:
+                    orga_token_cascade = ("atime", "log")
+                    with Silencer(rs):
+                        for anid in blockers["orga_tokens"]:
+                            ret *= self.delete_orga_token(rs, anid, orga_token_cascade)
                 if "stored_queries" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.stored_queries", blockers["stored_queries"])

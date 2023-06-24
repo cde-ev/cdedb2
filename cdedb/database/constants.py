@@ -434,6 +434,10 @@ class EventLogCodes(CdEIntEnum):
     track_group_deleted = 112  #:
     track_group_link_created = 113  #:
     track_group_link_deleted = 114  #:
+    orga_token_created = 200  #:
+    orga_token_changed = 201  #:
+    orga_token_revoked = 202  #:
+    orga_token_deleted = 203  #:
 
 
 @enum.unique

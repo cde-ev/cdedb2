@@ -14,7 +14,7 @@ import requests
 
 def do_work(args):
     response = requests.get('https://localhost/db/event/offline/partial',
-                            headers={'X-CdEDB-API-Token': "y1f2i3d4x5b6"},
+                            headers={'X-CdEDB-API-Token': "CdEDB-static/quick_partial_export/y1f2i3d4x5b6/"},
                             verify='/etc/ssl/apache2/server.pem')
     if response.status_code != requests.codes.ok:
         print("Failed to communicate with local db instance. Aborting.")
@@ -29,12 +29,12 @@ def do_work(args):
                    / 'partial_export_event.json')
     with open(output_path, 'w') as f:
         json.dump(export, f, indent=4)
-        
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Refresh template renderer dataset.')
     args = parser.parse_args()
 
-    args.basepath = pathlib.Path(__file__).parent 
+    args.basepath = pathlib.Path(__file__).parent
     do_work(args)

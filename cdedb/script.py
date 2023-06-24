@@ -112,6 +112,7 @@ class Script:
         "ml": "MlBackend",
         "assembly": "AssemblyBackend",
         "event": "EventBackend",
+        "session": "SessionBackend",
     }
     frontend_map = {
         "core": "CoreFrontend",

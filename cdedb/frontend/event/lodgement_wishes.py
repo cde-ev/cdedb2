@@ -215,12 +215,10 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     ]
     patterns.append(inverse_diacritic_patterns(re.escape(
         f"{persona['display_name']} {persona['family_name']}")))
-    patterns.append(inverse_diacritic_patterns(re.escape(
-        f"{persona['family_name']}, {persona['display_name']}")))
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
         patterns.append(re.escape(persona['username']))
-    return re.compile('|'.join(patterns), flags=re.I)
+    return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati
