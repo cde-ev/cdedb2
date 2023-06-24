@@ -26,12 +26,13 @@ from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
 
 
 @enum.unique
-class QueryOperators(enum.IntEnum):
+class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
     empty = 1
     nonempty = 2
@@ -142,7 +143,7 @@ class QuerySpecEntry(NamedTuple):
 QuerySpec = Dict[str, QuerySpecEntry]
 
 
-class QueryScope(enum.IntEnum):
+class QueryScope(CdEIntEnum):
     """Enum that contains the different kinds of generalized queries.
 
     This is used in conjunction with the `Query` class and bundles together a lot of
@@ -683,7 +684,7 @@ class Query:
             params[f'qsel_{field}'] = True
         for field, op, value in self.constraints:
             params[f'qop_{field}'] = op.value
-            if (isinstance(value, collections.Iterable)
+            if (isinstance(value, collections.abc.Iterable)
                     and not isinstance(value, str)):
                 params[f'qval_{field}'] = QUERY_VALUE_SEPARATOR.join(
                     serialize_value(x) for x in value)

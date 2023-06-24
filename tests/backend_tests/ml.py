@@ -4,7 +4,6 @@
 from typing import Collection, cast
 
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction as SA
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -13,6 +12,7 @@ from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.database.constants import SubscriptionState as SS
+from cdedb.uncommon.submanshim import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 

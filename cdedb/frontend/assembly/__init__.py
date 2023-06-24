@@ -667,7 +667,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
     def create_ballot_form(self, rs: RequestState, assembly_id: int,
-                           source_id: int = None) -> Response:
+                           source_id: Optional[int] = None) -> Response:
         """Render form.
 
         :param source_id: Can be the ID of an existing ballot, prefilling it's data.

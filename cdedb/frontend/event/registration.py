@@ -401,10 +401,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @REQUESTdata("persona_id", "part_ids", "is_member", "is_orga")
+    @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
-                       part_ids: vtypes.IntCSVList, is_member: bool = None,
-                       is_orga: bool = None,
+                       part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
+                       is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -1257,7 +1257,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Collection[int] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -1298,7 +1298,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Collection[int] = None) -> Response:
+                part_ids: Optional[Collection[int]] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)

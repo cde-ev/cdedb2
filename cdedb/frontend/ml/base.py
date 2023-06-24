@@ -7,7 +7,6 @@ from typing import Any, Collection, Dict, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
     MailinglistGroup, get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction
 
 
 class MlBaseFrontend(AbstractUserFrontend):
