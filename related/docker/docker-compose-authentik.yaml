@@ -1,0 +1,57 @@
+version: '3.4'
+
+x-authentik-default-envs: &authentik-envs-anchor
+  AUTHENTIK_SECRET_KEY: authentiksecretkey
+  AUTHENTIK_BOOTSTRAP_PASSWORD: akadminpass
+  AUTHENTIK_BOOTSTRAP_TOKEN: akadmintoken
+  AUTHENTIK_POSTGRESQL__HOST: authentikpostgres
+  AUTHENTIK_POSTGRESQL__USER: authentik
+  AUTHENTIK_POSTGRESQL__NAME: authentik
+  AUTHENTIK_POSTGRESQL__PASSWORD: authentikdbpass
+  AUTHENTIK_REDIS__HOST: redis
+  AUTHENTIK_DISABLE_UPDATE_CHECK: true
+  AUTHENTIK_ERROR_REPORTING__ENABLED: false
+  AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+  AUTHENTIK_AVATARS: none
+
+services:
+  authentikpostgres:
+    # keep in sync with cdepostgres image base such that only a single image is used
+    image: postgres:13.3
+    volumes:
+      - authentik_database:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=authentikdbpass
+      - POSTGRES_USER=authentik
+      - POSTGRES_DB=authentik
+  redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - authentik_redis:/data
+  server:
+    image: ghcr.io/goauthentik/server:2023.1.2
+    command: server
+    environment: *authentik-envs-anchor
+    volumes:
+      - authentik_media:/media
+      - authentik_templates:/templates
+    ports:
+      - 127.0.0.1:9080:9000
+      - 127.0.0.1:9443:9443
+  worker:
+    image: ghcr.io/goauthentik/server:2023.1.2
+    command: worker
+    environment: *authentik-envs-anchor
+    volumes:
+      - ldap:/certs/ldap:ro # dynamic self-signed ldap certificate
+      - authentik_certs:/certs # dynamic self-signed certificate for dashboard
+      - authentik_media:/media
+      - authentik_templates:/templates
+
+volumes:
+  authentik_database:
+  authentik_redis:
+  authentik_certs:
+  authentik_media:
+  authentik_templates:

@@ -40,7 +40,6 @@ from cdedb.common.roles import (
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.submanshim import SubscriptionPolicy
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
@@ -53,6 +52,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
 USER_REALM_NAMES = {

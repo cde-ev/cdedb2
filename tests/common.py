@@ -72,6 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -182,12 +183,12 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, ip)
-        if user.roles == {'anonymous'}:
+        if key and APIToken.token_string_pattern.fullmatch(key):
+            user = sessionproxy.lookuptoken(key, ip)
+            apitoken = key
+        else:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
-        else:
-            apitoken = key
 
         rs = RequestState(
             sessionkey=sessionkey,
@@ -497,6 +498,9 @@ class BackendTest(CdEDBTest):
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
+                    exp[k] = None
+            for k in ('droid_id',):
+                if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):

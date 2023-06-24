@@ -21,12 +21,12 @@ from typing import (
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
-from cdedb.common.intenum import CdEIntEnum
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
 
@@ -1191,7 +1191,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
-        "lodgement_group.title": QuerySpecEntry("int", n_("Lodgement Group Title")),
+        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.
     }
 

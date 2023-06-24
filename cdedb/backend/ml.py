@@ -28,7 +28,6 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
-from cdedb.common.submanshim import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
     ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
     get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -284,12 +284,13 @@ class MlBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
             # Potentially restrict to non-archived users.
             if not query.scope.includes_archived:
@@ -306,7 +307,7 @@ class MlBackend(AbstractBackend):
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,

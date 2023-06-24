@@ -35,8 +35,8 @@ from schulze_condorcet.types import Candidate
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
-from cdedb.common.intenum import CdEIntEnum
 from cdedb.database.connection import ConnectionContainer
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 CdEDBObject = Dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
 
@@ -98,13 +99,19 @@ T = TypeVar("T")
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id: Optional[int] = None,
+    def __init__(self, *, persona_id: Optional[int] = None,
+                 droid_class: Optional[Type["APIToken"]] = None,
+                 droid_token_id: Optional[int] = None,
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
+        self.droid_class = droid_class
+        self.droid_token_id = droid_token_id
+        if self.persona_id and (self.droid_class or self.droid_token_id):
+            raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name
@@ -916,7 +923,7 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=CdEIntEnum)
+E = TypeVar("E", bound=enum.IntEnum)
 
 
 @functools.total_ordering

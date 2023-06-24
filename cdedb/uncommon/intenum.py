@@ -3,10 +3,12 @@
 Segregated into its own file to break cyclic imports.
 """
 
+
 import enum
 
+
 class CdEIntEnum(enum.IntEnum):
-    def __str__(self):
+    def __str__(self: "CdEIntEnum") -> str:
         """Restore old (<python-3.11) behaviour for IntEnums.
 
         Previously `str(e)` would produce something like 'MyEnum.member' but
@@ -15,7 +17,7 @@ class CdEIntEnum(enum.IntEnum):
         """
         return repr(self).removeprefix('<').split(':')[0]
 
-    def __format__(self, format_spec):
+    def __format__(self: "CdEIntEnum", format_spec: str) -> str:
         """Clean up ripple effects of the above change.
 
         __format__ shall still produce the integer representation as before.

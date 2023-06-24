@@ -40,6 +40,7 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 
 
 class Application(BaseApp):
@@ -179,7 +180,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            apitoken = request.headers.get("X-CdEDB-API-Token")
+            apitoken = request.headers.get(APIToken.request_header_key)
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:
@@ -271,26 +272,26 @@ class Application(BaseApp):
             # It will be made accessible for the backends by the make_proxy.
             rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
-            # Insert orga and moderator status context
-            orga: Set[int] = set()
-            if "event" in user.roles:
-                assert user.persona_id is not None
-                orga = self.eventproxy.orga_info(rs, user.persona_id)
-            moderator: Set[int] = set()
-            if "ml" in user.roles:
-                assert user.persona_id is not None
-                moderator = self.mlproxy.moderator_info(
-                    rs, user.persona_id)
-            presider: Set[int] = set()
-            if "assembly" in user.roles:
-                assert user.persona_id is not None
-                presider = self.assemblyproxy.presider_info(
-                    rs, user.persona_id)
-            user.orga = orga
-            user.moderator = moderator
-            user.presider = presider
-            user.init_admin_views_from_cookie(
-                request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
+            # Retrieve entity related privileges for personas.
+            # The session backend takes care of this for droids.
+            if user.persona_id:
+                # Insert orga and moderator status context
+                orga: Set[int] = set()
+                if "event" in user.roles:
+                    orga = self.eventproxy.orga_info(rs, user.persona_id)
+                moderator: Set[int] = set()
+                if "ml" in user.roles:
+                    moderator = self.mlproxy.moderator_info(
+                        rs, user.persona_id)
+                presider: Set[int] = set()
+                if "assembly" in user.roles:
+                    presider = self.assemblyproxy.presider_info(
+                        rs, user.persona_id)
+                user.orga = orga
+                user.moderator = moderator
+                user.presider = presider
+                user.init_admin_views_from_cookie(
+                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 
             try:
                 ret = handler(rs, **args)
