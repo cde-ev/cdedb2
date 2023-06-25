@@ -66,7 +66,7 @@ class TestCdEFrontend(FrontendTest):
         def _calculate_ejection_deadline(persona_data: CdEDBObject,
                                          period: CdEDBObject) -> datetime.datetime:
             """Clone of `CdEFrontend._calculate_ejection_deadline`."""
-            periods_left = persona_data['balance'] // decimal.Decimal("2.50")
+            periods_left = int(persona_data['balance'] // decimal.Decimal("2.50"))
             if persona_data['trial_member']:
                 periods_left += 1
             if period['balance_done']:

@@ -1,7 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import enum
 import itertools
 from dataclasses import dataclass, fields
 from typing import (
@@ -19,6 +18,7 @@ from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import MailinglistDomain, MailinglistTypes
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
+from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
@@ -42,7 +42,7 @@ class BackendContainer:
         self.assembly = cast("AssemblyBackend", assembly)
 
 
-class MailinglistGroup(enum.IntEnum):
+class MailinglistGroup(CdEIntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
     public = 1
     cde = 2
