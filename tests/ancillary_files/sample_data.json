@@ -4257,6 +4257,7 @@
             "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "use_additional_questionnaire": false,
             "notes": "Todoliste ... just kidding ;)",
+            "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
             "offline_lock": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -4285,6 +4286,7 @@
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": "Wird anstrengend …",
+            "field_definition_notes": null,
             "offline_lock": false,
             "is_visible": false,
             "is_course_list_visible": true,
@@ -4313,6 +4315,7 @@
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": null,
+            "field_definition_notes": null,
             "offline_lock": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -4341,6 +4344,7 @@
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": null,
+            "field_definition_notes": null,
             "offline_lock": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -5444,6 +5448,19 @@
             "event_id": 4
         }
     ],
+    "event.orga_apitokens": [
+        {
+            "id": 1,
+            "event_id": 1,
+            "secret_hash": "$6$rounds=656000$QsRRW/SF0E/XS5cw$1eB.sENB2Rj2YfiorDgsvEYetMneDhUHQlHOZK0j.wBDwB2obAi8e2HOV/3tIpwsa3I9rKFhed4ayxnJLMQgM1",
+            "ctime": "---now---",
+            "etime": "2222-12-31T23:59:59+00:00",
+            "rtime": null,
+            "atime": null,
+            "title": "Garcias technische Spielerei",
+            "notes": "Mal probieren, was diese API so alles kann."
+        }
+    ],
     "event.lodgement_groups": [
         {
             "event_id": 1,
@@ -6496,6 +6513,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 1,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 1,
             "change_note": null
@@ -6504,6 +6522,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 5,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 5,
             "change_note": null
@@ -6512,6 +6531,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 7,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 7,
             "change_note": null
@@ -6520,6 +6540,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 9,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 9,
             "change_note": null
@@ -6528,6 +6549,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 100,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 100,
             "change_note": null
@@ -6536,6 +6558,7 @@
             "ctime": "---now---",
             "code": 50,
             "submitted_by": 2,
+            "droid_id": null,
             "event_id": 1,
             "persona_id": 2,
             "change_note": null

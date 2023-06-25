@@ -10,12 +10,13 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence, cast
 
 import lxml.etree
 import segno.helpers
 import webtest
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
@@ -31,6 +32,7 @@ from cdedb.frontend.event.query_stats import (
     PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
+from cdedb.models.droid import OrgaToken
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
     storage,
@@ -942,6 +944,8 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
         # fields
+        self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
+                            div="field-definition-notes", exact=True)
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -4151,8 +4155,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # export
         # partial event export
         self.response = save.click(href='/event/event/1/download/partial')
-        self.assertPresence('"kind": "partial",')
-        self.assertPresence('"title": "Langer Kurs",')
+        self.assertEqual("partial", self.response.json['kind'])
+        self.assertEqual(
+            "Planetenretten für Anfänger", self.response.json['courses']['1']['title'])
         # registrations
         self.response = save.click(href='/event/event/1/download/csv_registrations')
         self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
@@ -4196,6 +4201,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             del log_entry['ctime']
         for log_entry in expectation['event.log'].values():
             del log_entry['ctime']
+        for token_id, token in expectation[OrgaToken.database_table].items():
+            token['ctime'] = result[OrgaToken.database_table][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -4922,6 +4929,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for reg_id, reg in result['registrations'].items():
             expectation['registrations'][reg_id]['ctime'] = reg['ctime']
             expectation['registrations'][reg_id]['mtime'] = reg['mtime']
+        for token_id, token in expectation['event']['orga_tokens'].items():
+            token['ctime'] = result['event']['orga_tokens'][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @event_keeper
@@ -4969,12 +4978,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         #
         # prepare dates
         #
-        self.traverse("Konfiguration")
-        f = self.response.forms["changeeventform"]
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
         self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -5041,30 +5044,29 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Veranstaltungen", "CdE-Party 2050")
         self.assertTitle("CdE-Party 2050")
 
-        # prepare dates
+        # cancel
         self.traverse("Konfiguration")
         f = self.response.forms["changeeventform"]
-        f['registration_start'] = "2000-10-30 00:00:00+0000"
-        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
-        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
-        self.submit(f)
-        self.traverse("Veranstaltungsteile")
-        # Party
-        self.traverse({"href": "/event/event/2/part/4/change"})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-02-02"
-        f['part_end'] = "2003-02-03"
+        f['is_cancelled'] = True
         self.submit(f)
 
-        # do it
+        # try with past event even though there are no participants
         self.traverse(r"\sÜbersicht")
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Veranstaltungsteile haben Teilnehmende.",
+                                'error')
+
+        # do it
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         f['create_past_event'].checked = False
         self.submit(f)
 
         self.assertTitle("CdE-Party 2050")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+        self.assertPresence("Diese Veranstaltung wurde abgesagt und archiviert.",
                             div="static-notifications")
 
         # check that there is no past event
@@ -6210,3 +6212,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
         f['fields.test2'] = False
         self.submit(f)
+
+    @as_users("garcia")
+    def test_orga_droid(self) -> None:
+        event_id = 1
+        new_token = OrgaToken(
+            id=cast(vtypes.ProtoID, -1),
+            event_id=cast(vtypes.ID, event_id),
+            title="New Token!",
+            notes=None,
+            ctime=now(),
+            etime=now().replace(year=3000),
+            rtime=None,
+            atime=None,
+        )
+        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        orga_token = self.event.get_orga_token(self.key, new_token_id)
+        self.get(f"/event/event/{event_id}/download/partial")
+        orga_export = self.response.json
+
+        self.get("/")
+        self.logout()
+
+        self.get(
+            f'/event/event/{event_id}/droid/partial',
+            headers={
+                orga_token.request_header_key:
+                    orga_token.get_token_string(secret),
+            },
+        )
+        droid_export = self.response.json
+
+        droid_export['timestamp'] = orga_export['timestamp']
+        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        self.assertEqual(orga_export, droid_export)

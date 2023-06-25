@@ -60,8 +60,9 @@
                                 "In particular, it is shown to each participant on the registration status and on the "
                                 "Participant List.")) }}
         {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
-                                info=gettext("If checked, the event is shown as cancelled. This can be undone and has no "
-                                "further effects. Do not do this without consulting the chairmen of the CdE.")) }}
+                                info=gettext("If checked, the event is shown as cancelled. This can be undone and "
+                                "allows the event to be archived. There are no further effects. Do not do this without "
+                                "consulting the chairmen of the CdE.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local') }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
                                 type="datetime-local",
@@ -84,6 +85,9 @@
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
+        {{ util.form_input_textarea(name="field_definition_notes", label=gettext("Custom Fields Notes"),
+                                    info=gettext("This will be shown on the '%(field_summary)s' page.")|format(
+                                        field_summary=gettext("Configure Custom Fields")))  }}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the automatic detection "

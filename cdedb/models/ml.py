@@ -99,6 +99,8 @@ class Mailinglist(CdEDataclass):
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
 
+    database_table = "ml.mailinglists"
+
     def __post_init__(self) -> None:
         if self.__class__ not in ML_TYPE_MAP_INV:
             raise TypeError("Cannot instantiate abstract class.")
@@ -418,6 +420,8 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
@@ -654,24 +658,31 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
-class GeneralOptInMailinglist(GeneralMailinglist):
+class GeneralMeta(GeneralMailinglist):
+    relevant_admins = {"core_admin"}
+
+
+@dataclass
+class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
 
 
 @dataclass
-class GeneralModeratedOptInMailinglist(GeneralMailinglist):
+class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
 @dataclass
-class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
+class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.invitation_only)
     ])

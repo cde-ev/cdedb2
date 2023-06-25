@@ -840,6 +840,14 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Clown")
         self.assertPresence("Garcia Generalis")
 
+    @as_users("janis")
+    def test_create_mailinglist_unprivileged(self) -> None:
+        self.get("/ml/mailinglist/create", status=403)
+        self.get("/ml/mailinglist/create?ml_type=MailinglistTypes.general_opt_in",
+                 status=403)
+        self.post("/ml/mailinglist/create",
+                  {'ml_type': "MailinglistTypes.general_opt_in"}, status=403)
+
     @as_users("nina")
     def test_change_mailinglist(self) -> None:
         self.traverse({'description': 'Mailinglisten'},

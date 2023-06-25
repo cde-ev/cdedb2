@@ -295,7 +295,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             pass
 
     def general_query(self, rs: RequestState, query: Query,
-                      distinct: bool = True, view: str = None
+                      distinct: bool = True, view: str = None, aggregate: bool = False
                       ) -> Tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
@@ -303,13 +303,53 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         :param distinct: whether only unique rows should be returned
         :param view: Override parameter to specify the target of the FROM
           clause. This is necessary for event stuff and should be used seldom.
+        :param aggregate: Perform an aggregation query instead.
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug(f"Performing general query {query}.")
-        select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
-                           for field in query.fields_of_interest
-                           for column in field.split(','))
+        self.logger.debug(f"Performing general query {query} (aggregate={aggregate}).")
+
+        fields = {column: column.replace('"', '') for field in query.fields_of_interest
+                  for column in field.split(",")}
+        if aggregate:
+            agg = {}
+            for field, field_as in fields.items():
+                agg[f"COUNT(*) FILTER (WHERE {field} IS NULL)"] = f"null.{field_as}"
+                if query.spec[field].type in ("int", "float"):
+                    agg[f"SUM({field})"] = f"sum.{field_as}"
+                    agg[f"MIN({field})"] = f"min.{field_as}"
+                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    agg[f"AVG({field})"] = f"avg.{field_as}"
+                    agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
+                elif query.spec[field].type == "bool":
+                    agg[f"SUM({field}::int)"] = f"sum.{field_as}"
+                elif query.spec[field].type in ("date", "datetime"):
+                    agg[f"MIN({field})"] = f"min.{field_as}"
+                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    # TODO add avg for dates
+            select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
+            query.order = []
+        else:
+            select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
+            select += ', ' + query.scope.get_primary_key()
+        q, params = self._construct_query(query, select, distinct=distinct, view=view)
+        data = self.query_all(rs, q, params)
+
+        if aggregate:
+            # we know that all keys are unique, so we put them in a single dict
+            datum = {k: v for datum in data for k, v in datum.items()}
+            # store if the respective aggregation function has an interesting value
+            datum.update(
+                {agg: any(datum.get(f"{agg}.{field_as}") is not None
+                          for field_as in fields.values())
+                 for agg in ['null', 'sum', 'min', 'max', 'avg', 'stddev']})
+            data = (datum, )
+
+        return data
+
+    @staticmethod
+    def _construct_query(query: Query, select: str, distinct: bool,
+                         view: Optional[str]) -> Tuple[str, List[DatabaseValue]]:
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -319,7 +359,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 else:
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
-        select += ', ' + query.scope.get_primary_key()
         view = view or query.scope.get_view()
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[DatabaseValue] = []
@@ -440,7 +479,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                         f'{entry.split(",")[0]} '
                         f'{"ASC" if ascending else "DESC"}')
             q = glue(q, "ORDER BY", ", ".join(orders))
-        return self.query_all(rs, q, params)
+        return q, params
 
     def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter
                              ) -> CdEDBLog:

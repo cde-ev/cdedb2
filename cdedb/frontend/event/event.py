@@ -1025,9 +1025,19 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        if rs.ambience['event']['end'] >= now().date():
+        if (not rs.ambience['event']['is_cancelled'] and
+                rs.ambience['event']['end'] >= now().date()):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        if not any(rpart['status'] == const.RegistrationPartStati.participant
+                   for reg in registrations.values()
+                   for rpart in reg['parts'].values()):
+            if create_past_event:
+                rs.notify("error", n_("No event parts have any participants."))
+                return self.redirect(rs, "event/show_event")
 
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
@@ -1072,7 +1082,7 @@ class EventEventMixin(EventBaseFrontend):
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups"
+            "part_groups", "orga_tokens",
         }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())

@@ -361,14 +361,17 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_id = unwrap(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id).keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
-            wish_data = self._get_participant_list_data(rs, event_id)
+            data = self._get_participant_list_data(rs, event_id)
             wish_data['field'] = rs.ambience['event']['fields'][field_id]
             wishes, problems = detect_lodgement_wishes(
-                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
+                data['registrations'], data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
                 check_edges=False)
             if registration['list_consent']:
-                wish_data['wishes'] = wishes
+                # Ordered list of wished personas
+                wish_data['wished_personas'] = xsorted(
+                    (data['personas'][data['registrations'][wish.wished]['persona_id']]
+                     for wish in wishes), key=EntitySorter.persona)
                 wish_data['problems'] = problems
             else:
                 msg = n_(

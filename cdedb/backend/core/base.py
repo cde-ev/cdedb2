@@ -298,6 +298,25 @@ class CoreBaseBackend(AbstractBackend):
                                  f" {generation}) for {data['id']}")
                 return 0
 
+            # The following tries to summarize the logic of this function to
+            # facilitate better understanding
+            #
+            # - if a pending change exists (current_state != committed_state)
+            #     - if we may not wait
+            #       => stash pending change in `diff`
+            #          (current_state == committed_state as if no pending change)
+            # - if no actual change (data == current_state)
+            #     - if stashed pending change: reenable
+            #     - if unstashed pending change exists and is admin:
+            #          an admin tried to submit identical change => resolve it
+            #     - return
+            # - determine review requirements
+            # - supersede potential pending changes
+            # - insert new changelog entry
+            # - if not requiring review: resolve
+            # - if stashed pending change: reinstate
+            #      (this can only happen if the resolve action was taken)
+
             # get current state
             history = self.changelog_get_history(
                 rs, data['id'], generations=(current_generation,))
@@ -339,6 +358,14 @@ class CoreBaseBackend(AbstractBackend):
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
                 # values. It's not our fault, that we didn't have to do any work.
+                # The change however may still be pending and awaiting review.
+                #
+                # The one case that's awkward here is that if a normal user
+                # first tries to update multiple attributes some of which
+                # require review causing a pending change and then tries in a
+                # second attempt to only change uncritical attributes to
+                # achieve an immediate resolve they will be stuck with the
+                # pending change.
                 rs.notify('info', n_("Nothing changed."))
                 return 1
             # Determine if something requiring a review changed.
@@ -1714,7 +1741,7 @@ class CoreBaseBackend(AbstractBackend):
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
@@ -2553,19 +2580,20 @@ class CoreBaseBackend(AbstractBackend):
                 ret = self.sql_insert(rs, "core.cron_store", update)
         return ret
 
-    def _submit_general_query(self, rs: RequestState,
-                              query: Query) -> Tuple[CdEDBObject, ...]:
+    def _submit_general_query(self, rs: RequestState, query: Query,
+                              aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))
         elif query.scope == QueryScope.all_core_users:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
     submit_general_query = access("core_admin")(_submit_general_query)
 
     @access("persona")

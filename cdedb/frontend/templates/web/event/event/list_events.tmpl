@@ -70,7 +70,7 @@
 
     {{ util.h(n_("Archived Events")) }}
     <div class="list-group list-group-hover list-group-condensed" id="archived-events">
-        {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
+        {% for event_id, entry in events|keydictsort(EntitySorter.event, reverse=True) %}
             {% if entry['is_archived'] and
                     ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}

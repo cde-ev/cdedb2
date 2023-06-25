@@ -710,6 +710,7 @@ CREATE TABLE event.events (
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
+        field_definition_notes       varchar,
         offline_lock                 boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -750,7 +751,6 @@ CREATE TABLE event.event_parts (
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
-        -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
@@ -909,6 +909,29 @@ GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.orga_apitokens (
+        id                      serial PRIMARY KEY,
+        -- Event which this token grants access to.
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The api tokens consists of two parts. The id and a secret that will be compared to the stored hash.
+        -- Upon revocation the stored hash is deleted.
+        secret_hash             varchar,
+        -- Creation, expiration, revocation and last access time of the token.
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        etime                   timestamp WITH TIME ZONE NOT NULL,
+        rtime                   timestamp WITH TIME ZONE,
+        atime                   timestamp WITH TIME ZONE,
+        -- Descriptive title and addional notes about the token.
+        title                   varchar NOT NULL,
+        notes                   varchar
+);
+CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
+GRANT SELECT ON event.orga_apitokens TO cdb_anonymous;
+GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
+GRANT UPDATE (secret_hash, rtime, title, notes) ON event.orga_apitokens TO cdb_persona;
+GRANT SELECT, UPDATE ON event.orga_apitokens_id_seq TO cdb_persona;
+
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -1052,6 +1075,9 @@ CREATE TABLE event.log (
         -- see cdedb.database.constants.EventLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
+        droid_id                integer REFERENCES event.orga_apitokens(id),
+        CONSTRAINT event_log_submitted_by_droid
+            CHECK (submitted_by is NULL or droid_id is NULL),
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
