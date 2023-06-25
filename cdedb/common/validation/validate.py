@@ -450,7 +450,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
+                **{"allow_superfluous": True, **kwargs})
         except ValidationSummary as e:
             errs.extend(e)
 
