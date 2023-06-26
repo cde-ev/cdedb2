@@ -1,0 +1,75 @@
+{% set sidenav_active='orga_tokens' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Orga Tokens ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Tokens") }}
+    {{ util.context_heading(gettext("Orga Tokens"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <p>
+        {{ util.href(cdedblink('event/create_orga_token_form'), gettext("Create Orga Token"),
+                               icon='plus', aclass='btn btn-success btn-sm') }}
+    </p>
+    <table id="orga-token-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                <th>{% trans %}Creation{% endtrans %}</th>
+                <th>{% trans %}Expiration{% endtrans %}</th>
+                <th>{% trans %}Last Used{% endtrans %}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for token in orga_tokens.values()|sort %}
+                <tr id="orga_token_{{ token.id }}" class="{{ "list-group-item-muted" if token.rtime else "" }}">
+                    <td>{{ token.title }}</td>
+                    <td>{{ token.notes }}</td>
+                    <td>{{ token.ctime|datetime(lang=lang) }}</td>
+                    <td>{{ token.etime|datetime(lang=lang) }}</td>
+                    <td>{{ token.atime|datetime(lang=lang) if token.atime else "–" }}</td>
+                    <td class="text-nowrap">
+                        {{ util.href(
+                            cdedblink("event/change_orga_token", {'orga_token_id': token.id}),
+                            title=gettext("Change orga token '%(title)s'")|format(title=token.title),
+                            label=util.make_icon("pen"),
+                            anid="orga_token_{}_change".format(token.id),
+                            aclass="btn btn-sm btn-warning") }}
+                        <form action="{{ cdedblink("event/delete_orga_token", {'orga_token_id': token.id}) }}"
+                              method="POST" id="deleteorgatokenform{{ token.id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token("event/delete_orga_token") }}
+                            {{ util.input_submit(
+                                title=gettext("Delete orga token '%(title)s'")|format(title=token.title),
+                                label=util.make_icon("trash-alt"), icon=none, readonly=token.atime,
+                                aclass="btn btn-sm btn-danger") }}
+                        </form>
+                        {% if not token.rtime %}
+                            <form action="{{ cdedblink("event/revoke_orga_token", {'orga_token_id': token.id}) }}"
+                                  method="POST" id="revokeorgatokenform{{ token.id }}"
+                                  class="display-inline">
+                                {{ util.anti_csrf_token("event/revoke_orga_token") }}
+                                {{ util.input_submit(
+                                    title=gettext("Revoke orga token '%(title)s'")|format(title=token.title),
+                                    label=util.make_icon("fire"), icon=none,
+                                    aclass="btn btn-sm btn-danger") }}
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

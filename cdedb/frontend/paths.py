@@ -395,8 +395,26 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/checkin", methods=_POST,
                      endpoint="checkin"),
                 sub('/droid', (
+                    # API-functionality:
                     rule("/partial", methods=_GET,
                          endpoint="droid_partial_export"),
+                    # Token management:
+                    rule("/summary", methods=_GET,
+                         endpoint="orga_token_summary"),
+                    rule("/create", methods=_GET,
+                         endpoint="create_orga_token_form"),
+                    rule("/create", methods=_POST,
+                         endpoint="create_orga_token"),
+                    sub("/<int:orga_token_id>", (
+                        rule("/change", methods=_GET,
+                             endpoint="change_orga_token_form"),
+                        rule("/change", methods=_POST,
+                             endpoint="change_orga_token"),
+                        rule("/delete", methods=_POST,
+                             endpoint="delete_orga_token"),
+                        rule("/revoke", methods=_POST,
+                             endpoint="revoke_orga_token"),
+                    )),
                 )),
                 sub('/minorform', (
                     rule("/get", methods=_GET,

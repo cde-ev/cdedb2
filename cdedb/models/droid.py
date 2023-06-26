@@ -92,7 +92,7 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 from secrets import token_hex
-from typing import Any, ClassVar, Optional, Pattern, Type, Union
+from typing import Any, ClassVar, Literal, Optional, Pattern, Type, Union
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import User
@@ -282,7 +282,18 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         for key in cls.fixed_fields:
             if key in optional:
                 del optional[key]
+        if 'ctime' in mandatory:
+            optional['ctime'] = mandatory['ctime']
+            del mandatory['ctime']
         return mandatory, optional
+
+    @classmethod
+    def requestdict_fields(cls) -> list[tuple[str, Literal["str", "[str]"]]]:
+        ret = dict(super().requestdict_fields())
+        del ret['ctime']
+        del ret['rtime']
+        del ret['atime']
+        return list(ret.items())
 
     # Implementations of inherited methods.
 
