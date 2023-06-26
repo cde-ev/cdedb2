@@ -207,13 +207,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
+            rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
+            rs.user.presider = backend.presider_info(
                 rs, rs.user.persona_id)
         return rs
 
@@ -912,7 +912,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[str]"
+    gettext: "staticmethod[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse

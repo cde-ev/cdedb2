@@ -45,7 +45,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class ConstraintViolation:
     @property
     @abc.abstractmethod
@@ -59,7 +59,7 @@ class ConstraintViolation:
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class PartGroupConstraintViolation(ConstraintViolation):
     part_group_id: int  # ID of the part group whose constraint is being violated.
 
@@ -69,7 +69,7 @@ class PartGroupConstraintViolation(ConstraintViolation):
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class TrackGroupConstraintViolation(ConstraintViolation):
     track_group_id: int  # ID of the track group whose constraint is being violated.
 

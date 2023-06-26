@@ -1282,7 +1282,7 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
-        field_values = affirm(typing.Mapping, field_values)  # type: ignore[misc]
+        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
