@@ -1520,7 +1520,7 @@ class CoreBaseBackend(AbstractBackend):
                 "FROM event.registrations as reg ",
                 "JOIN event.events as event ON reg.event_id = event.id",
                 "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s"
+                "WHERE reg.persona_id = %s",
                 "GROUP BY persona_id")
             max_end = self.query_one(rs, query, (persona_id,))
             if max_end and max_end['m'] and max_end['m'] >= now().date():
@@ -1741,7 +1741,7 @@ class CoreBaseBackend(AbstractBackend):
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.

@@ -7,7 +7,6 @@ import itertools
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
-from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
     get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 

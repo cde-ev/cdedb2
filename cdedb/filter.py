@@ -16,6 +16,14 @@ from typing import (
 import bleach
 import icu
 import jinja2
+
+try:
+    from jinja2 import pass_environment  # type: ignore[attr-defined]
+except ImportError:
+    # This compatibility shim can be removed once the migration to Debian
+    # bookworm is complete
+    from jinja2 import environmentfilter as pass_environment
+
 import markdown
 import markdown.extensions.toc
 import markupsafe
@@ -527,7 +535,7 @@ def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
     return Counter(value.values())
 
 
-@jinja2.environmentfilter
+@pass_environment
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
                 reverse: bool = False, attribute: Any = None) -> List[T]:
     """Sort an iterable using `xsorted`, using correct collation.

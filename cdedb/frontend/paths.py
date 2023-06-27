@@ -394,6 +394,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="checkin_form"),
                 rule("/checkin", methods=_POST,
                      endpoint="checkin"),
+                sub('/droid', (
+                    rule("/partial", methods=_GET,
+                         endpoint="droid_partial_export"),
+                )),
                 sub('/minorform', (
                     rule("/get", methods=_GET,
                          endpoint="get_minor_form"),

@@ -939,6 +939,16 @@
                     "field_name": "lodge"
                 }
             ]
+        },
+        "orga_tokens": {
+            "1": {
+                "title": "Garcias technische Spielerei",
+                "notes": "Mal probieren, was diese API so alles kann.",
+                "ctime": "2023-04-30T00:00:00+00:00",
+                "etime": "2222-12-31T23:59:59+00:00",
+                "rtime": null,
+                "atime": null
+            }
         }
     }
 }

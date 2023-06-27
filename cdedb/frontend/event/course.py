@@ -34,7 +34,7 @@ class EventCourseMixin(EventBaseFrontend):
     @access("anonymous")
     @REQUESTdata("track_ids", "active_only")
     def course_list(self, rs: RequestState, event_id: int,
-                    track_ids: Collection[int] = None,
+                    track_ids: Optional[Collection[int]] = None,
                     active_only: bool = False) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']

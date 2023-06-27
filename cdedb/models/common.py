@@ -2,7 +2,7 @@
 import dataclasses
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING, Any, List, Literal, Tuple, Type, TypeVar, Union, get_args,
+    TYPE_CHECKING, Any, ClassVar, List, Literal, Tuple, Type, TypeVar, Union, get_args,
     get_origin,
 )
 
@@ -32,6 +32,8 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
 @dataclass
 class CdEDataclass:
     id: vtypes.ProtoID
+
+    database_table: ClassVar[str]
 
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""

@@ -546,8 +546,8 @@ class TestCoreBackend(BackendTest):
         }
         # Create the request anonymously.
         case_id = self.core.genesis_request(ANONYMOUS, case_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
 
         # Deletion is blocked, because link has not timed out yet.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -612,8 +612,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
@@ -709,8 +709,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
@@ -809,8 +809,8 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
@@ -910,8 +910,8 @@ class TestCoreBackend(BackendTest):
             "notes": "Max möchte Mails mitbekommen.",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
