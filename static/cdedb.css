@@ -83,6 +83,9 @@ body{
 .table-log {
     margin-bottom: 0;
 }
+.col-boarder-right {
+    border-right: 2px solid #ddd
+}
 .crosstable {
     width: unset;
 }
