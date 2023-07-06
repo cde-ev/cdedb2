@@ -31,7 +31,8 @@ class CdESemesterMixin(CdEBaseFrontend):
                      or allowed_semester_steps.archival_notification)
         in_step_2 = (allowed_semester_steps.ejection
                      or allowed_semester_steps.automated_archival)
-        in_step_3 = allowed_semester_steps.balance
+        in_step_3 = (allowed_semester_steps.balance
+                     or allowed_semester_steps.exmember_balance)
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -221,13 +222,6 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
-        period = self.cdeproxy.get_period(rs, period_id)
-        # Make sure to perform this step only once, so the amount of balance removed
-        #  in this way is not overwritten by later calls.
-        if not period["exmember_balance"]:
-            ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
-            rs.notify_return_code(ret, success=n_("Balance of Exmembers removed."))
-
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
@@ -236,8 +230,16 @@ class CdESemesterMixin(CdEBaseFrontend):
                 rrs, period_id)
             return proceed
 
-        Worker.create(rs, "semester_balance_update", update_balance, self.conf)
+        def update_exmember_balance(rrs: RequestState, rs: None = None) -> bool:
+            """Update one exmembers balance and advance state."""
+            proceed, persona = self.cdeproxy.process_for_exmember_balance(
+                rrs, period_id)
+            return proceed
+
+        Worker.create(rs, "semester_balance_update",
+                      (update_balance, update_exmember_balance), self.conf)
         rs.notify("success", n_("Started updating balance."))
+        rs.notify("success", n_("Started updating exmember balance."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
