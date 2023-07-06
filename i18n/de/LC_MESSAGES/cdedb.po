@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-04-30 02:29+0000\n"
-"PO-Revision-Date: 2020-12-06 11:30+0100\n"
+"POT-Creation-Date: 2023-05-03 18:00+0200\n"
+"PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
@@ -20,6 +20,13 @@ msgstr ""
 
 msgid "Average"
 msgstr "Durchschnitt"
+
+msgid ""
+"Instead, you can grant or terminate a trial membership. This does not affect "
+"the membership status."
+msgstr ""
+"Stattdessen kann eine Probemitgliedschaft gewährt oder terminiert werden. "
+"Dies hat keinen Einfluss auf den Status der Mitgliedschaft."
 
 msgid "Maximum"
 msgstr "Maximum"
@@ -39,8 +46,25 @@ msgstr "Standardabweichung"
 msgid "Sum; Bools count as 0/1"
 msgstr "Summe; Wahrheitswerte zählen als 0/1."
 
+msgid "Terminate Trial Membership"
+msgstr "Probemitgliedschaft terminieren"
+
 msgid "This API is not available in offline mode."
 msgstr "Diese API ist in der Offline-Instanz nicht verfügbar."
+
+msgid "Trial membership implies membership."
+msgstr "Probemitgliedschaft impliziert Mitgliedschaft."
+
+msgid ""
+"Trial membership will automatically be granted if the persona is not a "
+"member. You can undo this by changing their profile afterwards."
+msgstr ""
+"Dieser Person wird automatisch eine Probemitgliedschaft gewährt, wenn sie "
+"aktuell kein Mitglied ist. Dies kann später durch Bearbeitung des Profils "
+"rückgängig gemacht werden."
+
+msgid "termination of trial membership"
+msgstr "Beenden der Probemitgliedschaft"
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -16247,6 +16271,10 @@ msgstr "Manuelle Guthabenkorrektur"
 #: cdedb/i18n_additional.py:136 cdedb/i18n_additional.py:140
 msgid "FinanceLogCodes.remove_balance_on_archival"
 msgstr "Guthaben bei Archivierung gelöscht"
+
+#: cdedb/i18n_additional.py:136
+msgid "FinanceLogCodes.start_trial_membership"
+msgstr "Start der Probemitgliedschaft"
 
 #: cdedb/i18n_additional.py:137 cdedb/i18n_additional.py:141
 msgid "FinanceLogCodes.grant_lastschrift"

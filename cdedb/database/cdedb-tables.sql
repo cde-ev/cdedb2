@@ -171,6 +171,8 @@ CREATE TABLE core.personas (
         trial_member            boolean,
         CONSTRAINT personas_cde_trial
             CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_trial_member_implicits
+            CHECK (NOT trial_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub

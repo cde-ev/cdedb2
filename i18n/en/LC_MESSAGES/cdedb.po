@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-04-30 02:29+0000\n"
+"POT-Creation-Date: 2023-05-03 18:00+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "FinanceLogCodes.start_trial_membership"
+msgstr "Start of Trial Membership"
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -15304,7 +15307,7 @@ msgstr "Membership fee deducted"
 
 #: cdedb/i18n_additional.py:134 cdedb/i18n_additional.py:138
 msgid "FinanceLogCodes.end_trial_membership"
-msgstr "End of Trialmembership"
+msgstr "End of Trial Membership"
 
 #: cdedb/i18n_additional.py:135 cdedb/i18n_additional.py:139
 msgid "FinanceLogCodes.manual_balance_correction"
@@ -15448,7 +15451,7 @@ msgstr "Skip Entry"
 
 #: cdedb/i18n_additional.py:175 cdedb/i18n_additional.py:179
 msgid "LineResolutions.renew_trial"
-msgstr "Renew Trialmembership"
+msgstr "Renew Trial Membership"
 
 #: cdedb/i18n_additional.py:176 cdedb/i18n_additional.py:180
 msgid "LineResolutions.update"
@@ -15456,7 +15459,7 @@ msgstr "Update Data"
 
 #: cdedb/i18n_additional.py:177 cdedb/i18n_additional.py:181
 msgid "LineResolutions.renew_and_update"
-msgstr "Renew Trialmembership and Update Data"
+msgstr "Renew Trial Membership and Update Data"
 
 #: cdedb/i18n_additional.py:179 cdedb/i18n_additional.py:183
 msgid "MemberChangeStati.pending"
