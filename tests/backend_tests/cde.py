@@ -448,11 +448,23 @@ class TestCdEBackend(BackendTest):
             self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
-        self.assertEqual(AllowedSemesterSteps(balance=True),
+        self.assertEqual(AllowedSemesterSteps(balance=True, exmember_balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
-        self.cde.finish_semester_balance_update(self.key)
+        if self.user_in("anton"):
+            self.cde.finish_semester_balance_update(self.key)
+            self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                             self.cde.allowed_semester_steps(self.key))
+        elif self.user_in("farin"):
+            self.cde.finish_semester_exmember_update(self.key)
+            self.assertEqual(AllowedSemesterSteps(balance=True),
+                             self.cde.allowed_semester_steps(self.key))
+
+        if self.user_in("anton"):
+            self.cde.finish_semester_exmember_update(self.key)
+        elif self.user_in("farin"):
+            self.cde.finish_semester_balance_update(self.key)
         self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
 

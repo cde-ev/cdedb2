@@ -641,11 +641,13 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
                      is_member: Optional[bool],
-                     is_archived: Optional[bool]) -> Optional[int]:
+                     is_archived: Optional[bool],
+                     is_cde_realm: Optional[bool] = None) -> Optional[int]:
         """Look up the following persona.
 
         :param is_member: If not None, only consider personas with a matching flag.
         :param is_archived: If not None, only consider personas with a matching flag.
+        :param is_cde_realm: If not None, only consider personas with a matching flag.
 
         :returns: Next valid id in table core.personas
         """
@@ -661,6 +663,9 @@ class CoreBaseBackend(AbstractBackend):
         if is_member is not None:
             constraints.append("is_member = %s")
             params.append(is_member)
+        if is_cde_realm is not None:
+            constraints.append("is_cde_realm = %s")
+            params.append(is_cde_realm)
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
