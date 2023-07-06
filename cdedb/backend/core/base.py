@@ -1142,14 +1142,13 @@ class CoreBaseBackend(AbstractBackend):
                     n_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
                 update['balance'] = balance
-            if 'balance' in update or 'trial_member' in update:
+            if 'balance' in update:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
-                if 'balance' in update:
-                    self.finance_log(
-                        rs, log_code, persona_id, balance - current['balance'], balance,
-                        transaction_date=transaction_date)
+                self.finance_log(
+                    rs, log_code, persona_id, balance - current['balance'], balance,
+                    transaction_date=transaction_date)
                 return ret
             else:
                 return 0
