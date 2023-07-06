@@ -40,14 +40,15 @@ def _get_field_select_columns(fields: CdEDBObjectMap,
 
 class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event", "core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState, query: Query,
-                             event_id: int = None) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query, event_id: int = None,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
         :param event_id: For registration queries, specify the event.
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         view = None
         if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
@@ -580,7 +581,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             view = lodgement_view()
         else:
             raise RuntimeError(n_("Bad scope."), query.scope)
-        return self.general_query(rs, query, view=view)
+        return self.general_query(rs, query, view=view, aggregate=aggregate)
 
     @access("event")
     def get_event_queries(self, rs: RequestState, event_id: int,

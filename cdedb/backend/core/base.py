@@ -1527,7 +1527,7 @@ class CoreBaseBackend(AbstractBackend):
                 "FROM event.registrations as reg ",
                 "JOIN event.events as event ON reg.event_id = event.id",
                 "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s"
+                "WHERE reg.persona_id = %s",
                 "GROUP BY persona_id")
             max_end = self.query_one(rs, query, (persona_id,))
             if max_end and max_end['m'] and max_end['m'] >= now().date():
@@ -1748,7 +1748,7 @@ class CoreBaseBackend(AbstractBackend):
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
@@ -2587,19 +2587,20 @@ class CoreBaseBackend(AbstractBackend):
                 ret = self.sql_insert(rs, "core.cron_store", update)
         return ret
 
-    def _submit_general_query(self, rs: RequestState,
-                              query: Query) -> Tuple[CdEDBObject, ...]:
+    def _submit_general_query(self, rs: RequestState, query: Query,
+                              aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))
         elif query.scope == QueryScope.all_core_users:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
     submit_general_query = access("core_admin")(_submit_general_query)
 
     @access("persona")
