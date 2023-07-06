@@ -3,8 +3,7 @@ import sys
 from typing import List, Optional, Tuple
 
 import cdedb.common.validation.types as vtypes
-import cdedb.database.constants as const
-from cdedb.common.sorting import xsorted
+from cdedb.backend.core import CoreBackend
 from cdedb.common.validation.validate import validate_check as check
 from cdedb.script import Script
 
@@ -12,7 +11,7 @@ from cdedb.script import Script
 
 script = Script(dbuser="cdb_persona")
 rs = script.rs()
-core = script.make_backend("core")
+core: CoreBackend = script.make_backend("core")
 
 # Execution
 
@@ -45,20 +44,15 @@ with script:
             _, errs = check(vtypes.Persona, persona, ignore_warnings=True)
             errors.extend(errs)
 
-        # Validate consistency of changelog with persona state
-        history = core.changelog_get_history(rs, persona_id, generations=None)
-        for generation in xsorted(history.values(), key=lambda x: x['generation'],
-                                  reverse=True):
-            if generation['code'] == const.MemberChangeStati.committed:
-                if diff := [key for key in persona if persona[key] != generation[key]]:
-                    for key in diff:
-                        errors.append(("Changelog", RuntimeError(
-                            f"Changelog inconsistent for field {key}: {persona[key]}"
-                            f" != {generation[key]}")))
-                break
-        else:
+        # Validate consistency of changelog with core.persona
+        inconsistencies = core.get_changelog_inconsistencies(rs, persona_id)
+        if inconsistencies is None:
             errors.append(("Changelog", RuntimeError(
-                f"No committed state found for persona {persona_id}.")))
+                f"No committed state found.")))
+        elif inconsistencies is not []:
+            for key in inconsistencies:
+                errors.append(("Changelog", RuntimeError(
+                    f"Changelog inconsistent for field {key}")))
 
         # Print all errors for this persona
         if errors:

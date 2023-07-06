@@ -264,6 +264,43 @@ class CoreBaseBackend(AbstractBackend):
         log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
+    @staticmethod
+    @internal
+    def _get_changelog_inconsistencies(
+            persona: CdEDBObject, generation: CdEDBObject) -> List[str]:
+        """Helper to get actual inconsistencies between changelog and core.personas.
+
+        This is outlined to avoid duplicated calls to changelog_get_history and
+        get_total_persona in changelog_submit_change.
+
+        :returns: A list of inconsistent field names.
+        """
+        if generation['code'] != const.MemberChangeStati.committed:
+            raise RuntimeError(n_("Given changelog generation must be committed."))
+        return [key for key in persona if persona[key] != generation[key]]
+
+    @access("persona")
+    def get_changelog_inconsistencies(self, rs: RequestState,
+                                      persona_id: int) -> Optional[List[str]]:
+        """Get inconsistencies between latest committed changelog entry and
+        core.personas.
+
+        If None is returned, there was no committed state in the changelog (which is
+        an error by itself).
+        If an empty list is returned, changelog and core.personas are consistent.
+
+        :returns: A list of inconsistent field names, an empty list or None.
+        """
+        with Atomizer(rs):
+            committed_generation = self.changelog_get_generation(
+                rs, persona_id, committed_only=True)
+            committed_state = unwrap(self.changelog_get_history(
+                rs, persona_id, generations=(committed_generation,)))
+            if not committed_state:
+                return None
+            persona = self.get_total_persona(rs, persona_id)
+        return self._get_changelog_inconsistencies(persona, committed_state)
+
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
                                 change_note: str, force_review: bool = False,
@@ -291,8 +328,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         with Atomizer(rs):
             # check for race
-            current_generation = unwrap(self.changelog_get_generations(
-                rs, (data['id'],)))
+            current_generation = self.changelog_get_generation(rs, data['id'])
             if generation is not None and current_generation != generation:
                 self.logger.info(f"Generation mismatch ({current_generation} !="
                                  f" {generation}) for {data['id']}")
@@ -317,36 +353,36 @@ class CoreBaseBackend(AbstractBackend):
             # - if stashed pending change: reinstate
             #      (this can only happen if the resolve action was taken)
 
-            # get current state
-            history = self.changelog_get_history(rs, data['id'], generations=None)
-            current_state = history[current_generation]
-            committed_state = unwrap(self.get_total_personas(rs, (data['id'],)))
+            # latest state of the changelog which is either committed or pending
+            current_state = unwrap(self.changelog_get_history(
+                rs, data['id'], generations=(current_generation, )))
+            # latest state of the changelog which is committed
+            committed_generation = self.changelog_get_generation(
+                rs, data['id'], committed_only=True)
+            committed_state = unwrap(self.changelog_get_history(
+                rs, data['id'], generations=(committed_generation, )))
+            # state of the persona in core.personas
+            persona = self.get_total_persona(rs, data['id'])
 
-            # Die when changelog and current state are inconsistent.
-            for gen in xsorted(history.values(), key=lambda x: x['generation'],
-                               reverse=True):
-                if gen['code'] == const.MemberChangeStati.committed:
-                    if any(committed_state[k] != gen[k] for k in committed_state):
-                        raise RuntimeError(n_("Persona and Changelog inconsistent."))
-                    break
-            else:
+            # Die when committed_state and core.personas are inconsistent.
+            if not committed_state:
                 raise RuntimeError(n_("No committed state found."))
+            if self._get_changelog_inconsistencies(persona, committed_state):
+                raise RuntimeError(n_("Persona and Changelog are inconsistent."))
 
             # handle pending changes
             diff = None
             if current_state['code'] == const.MemberChangeStati.pending:
                 # stash pending change if we may not wait
                 if not may_wait:
-                    diff = {key: current_state[key] for key in committed_state
-                            if committed_state[key] != current_state[key]}
-                    current_state.update(committed_state)
+                    diff = {key: current_state[key] for key in persona
+                            if persona[key] != current_state[key]}
+                    current_state.update(persona)
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND code = %s")
                     self.query_exec(rs, query, (
                         const.MemberChangeStati.displaced, data['id'],
                         const.MemberChangeStati.pending))
-            else:
-                committed_state = current_state
 
             # determine if something changed
             newly_changed_fields = {key for key, value in data.items()
@@ -522,6 +558,7 @@ class CoreBaseBackend(AbstractBackend):
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM core.changelog WHERE persona_id = ANY(%s)",
                      "AND code = ANY(%s) GROUP BY persona_id")
+        valid_status: Tuple[const.MemberChangeStati, ...]
         if committed_only:
             valid_status = (const.MemberChangeStati.committed, )
         else:

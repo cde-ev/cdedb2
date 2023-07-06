@@ -36,7 +36,10 @@ msgstr "Keine Veranstaltungsteile haben Teilnehmende."
 msgid "Number of Null entries"
 msgstr "Anzahl leerer Einträge"
 
-msgid "Persona and Changelog inconsistent."
+msgid "Given changelog generation must be committed."
+msgstr "Die übergebene Generation der Änderungshistorie muss bestätigt sein."
+
+msgid "Persona and Changelog are inconsistent."
 msgstr "Nutzer und Änderungshistorie sind inkonsistent."
 
 msgid "Standard Deviation"
