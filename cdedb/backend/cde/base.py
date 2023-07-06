@@ -341,6 +341,7 @@ class CdEBaseBackend(AbstractBackend):
             return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
+            # We set membership separately to ensure correct logging.
             new_persona.update({
                 'is_member': False,
                 'trial_member': False,
