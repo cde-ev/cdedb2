@@ -510,23 +510,29 @@ class CoreBaseBackend(AbstractBackend):
         _changelog_resolve_change_unsafe)
 
     @access("persona")
-    def changelog_get_generations(self, rs: RequestState,
-                                  ids: Collection[int]) -> Dict[int, int]:
+    def changelog_get_generations(
+            self, rs: RequestState, ids: Collection[int], committed_only: bool = False
+    ) -> Dict[int, int]:
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
 
+        :param committed_only: Include only committed entries of the changelog.
         :returns: dict mapping ids to generations
         """
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM core.changelog WHERE persona_id = ANY(%s)",
                      "AND code = ANY(%s) GROUP BY persona_id")
-        valid_status = (const.MemberChangeStati.pending,
-                        const.MemberChangeStati.committed)
+        if committed_only:
+            valid_status = (const.MemberChangeStati.committed, )
+        else:
+            valid_status = (const.MemberChangeStati.pending,
+                            const.MemberChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
 
     class _ChangelogGetGenerationProtocol(Protocol):
-        def __call__(self, rs: RequestState, anid: int) -> int: ...
+        def __call__(self, rs: RequestState, anid: int,
+                     committed_only: bool = False) -> int: ...
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
