@@ -632,8 +632,8 @@ class TestCoreBackend(BackendTest):
         }
         # Create the request anonymously.
         case_id = self.core.genesis_request(ANONYMOUS, case_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
 
         # Deletion is blocked, because link has not timed out yet.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -698,8 +698,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
@@ -795,8 +795,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
@@ -895,8 +895,8 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
@@ -996,8 +996,8 @@ class TestCoreBackend(BackendTest):
             "notes": "Max möchte Mails mitbekommen.",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
@@ -1171,8 +1171,9 @@ class TestCoreBackend(BackendTest):
                                     new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
-        self.ml.add_moderators(self.key, 2, {persona_id})
-        self.ml.remove_moderator(self.key, 2, 10)
+        with self.switch_user("nina"):
+            self.ml.add_moderators(self.key, 2, {persona_id})
+            self.ml.remove_moderator(self.key, 2, 10)
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])

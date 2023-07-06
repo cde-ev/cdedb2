@@ -17,7 +17,6 @@ import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
-from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -53,6 +52,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -74,7 +74,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: str = None) -> Response:
+    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -1145,7 +1145,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    query: Query = None) -> Response:
+                    query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
