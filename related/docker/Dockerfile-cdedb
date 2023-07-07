@@ -107,7 +107,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/* \
     \
-    && python3 -m pip --no-cache-dir --break-system-packages install \
+    && python3 -m pip --no-cache-dir install --break-system-packages \
     ldaptor==21.2.0 \
     mailmanclient==3.3.3 \
     psycopg[binary]==3.0.15 \
