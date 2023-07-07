@@ -1,4 +1,4 @@
-FROM debian:bullseye-20210816
+FROM debian:bookworm-20230703
 
 # TODO this should be obsolete, since we generate the certificates with a first run script.
 #  however, this does not work for the ci (which becomes visible for the offline vm test)
@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # mostly python packages and some dev tools
+# * the large lib* block is mostly for the web driver
+# * pycoverage is installed without suppressing recommendations
+#   as jQuery is otherwise not pulled in - this can be changed in newer version
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-psycopg2 \
     python3-dateutil \
@@ -61,6 +64,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-graphviz \
     python3-phonenumbers \
     python3-tabulate \
+    python3-mailmanclient \
+    python3-pyparsing \
+    python3-psycopg \
+    python3-psycopg-pool \
     \
     python3-pip \
     python3-click \
@@ -71,7 +78,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     wget \
     unzip \
     \
-    && apt-get install --yes --no-install-recommends \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -101,7 +107,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/* \
     \
-    && python3 -m pip --no-cache-dir install \
+    && python3 -m pip --no-cache-dir --break-system-packages install \
     ldaptor==21.2.0 \
     mailmanclient==3.3.3 \
     psycopg[binary]==3.0.15 \
@@ -111,7 +117,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     subman==0.1.0 \
     segno==1.5.2 \
     \
-    && python3 -m pip --no-cache-dir install \
     mypy==1.4.0 \
     types-werkzeug \
     types-pytz \
