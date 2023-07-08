@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+
+"""
+The `EventDroidMixin` subclasses the `EventBaseFrontend` and provides all the frontend
+endpoints related to managing orga apitokens.
+"""
+
 from typing import Optional
 
 from werkzeug import Response
