@@ -1,4 +1,4 @@
-{% set sidenav_active='event_parts' %}
+{% set sidenav_active='orga_tokens' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
@@ -15,12 +15,12 @@
 {% endblock %}
 
 {% block heading %}
-    {% if ambience['part_group'] %}
-        {{ util.context_heading(gettext("Change part group"),
-                                ambience['part_group']['title'], 'bullseye', gettext('Part Group'),
+    {% if ambience['orga_token'] %}
+        {{ util.context_heading(gettext("Change Orga Token"),
+                                ambience['orga_token']['title'], 'robot', gettext('Orga Token'),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% else %}
-        {{ util.context_heading(gettext("Add part group"),
+        {{ util.context_heading(gettext("Create Orga Token"),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% endif %}
 {% endblock %}

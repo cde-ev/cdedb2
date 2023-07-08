@@ -17,6 +17,15 @@
 {% endblock %}
 
 {% block content %}
+    {% if new_token %}
+        {% call util.bootstrap_panel(title=gettext("Your New Orga Token"), icon="robot", aclass="panel-success") %}
+            <p class="text-danger">
+                {{ util.make_icon("exclamation-triangle") }}
+                {% trans %}The token cannot be shown again later. Write it down somewhere safe now!{% endtrans %}
+            </p>
+            <pre>{{ new_token }}</pre>
+        {% endcall %}
+    {% endif %}
     <p>
         {{ util.href(cdedblink('event/create_orga_token_form'), gettext("Create Orga Token"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
@@ -47,16 +56,17 @@
                             label=util.make_icon("pen"),
                             anid="orga_token_{}_change".format(token.id),
                             aclass="btn btn-sm btn-warning") }}
-                        <form action="{{ cdedblink("event/delete_orga_token", {'orga_token_id': token.id}) }}"
-                              method="POST" id="deleteorgatokenform{{ token.id }}"
-                              class="display-inline">
-                            {{ util.anti_csrf_token("event/delete_orga_token") }}
-                            {{ util.input_submit(
-                                title=gettext("Delete orga token '%(title)s'")|format(title=token.title),
-                                label=util.make_icon("trash-alt"), icon=none, readonly=token.atime,
-                                aclass="btn btn-sm btn-danger") }}
-                        </form>
-                        {% if not token.rtime %}
+                        {% if not token.atime %}
+                            <form action="{{ cdedblink("event/delete_orga_token", {'orga_token_id': token.id}) }}"
+                                  method="POST" id="deleteorgatokenform{{ token.id }}"
+                                  class="display-inline">
+                                {{ util.anti_csrf_token("event/delete_orga_token") }}
+                                {{ util.input_submit(
+                                    title=gettext("Delete orga token '%(title)s'")|format(title=token.title),
+                                    label=util.make_icon("trash-alt"), icon=none, readonly=token.atime,
+                                    aclass="btn btn-sm btn-danger") }}
+                            </form>
+                        {% elif not token.rtime %}
                             <form action="{{ cdedblink("event/revoke_orga_token", {'orga_token_id': token.id}) }}"
                                   method="POST" id="revokeorgatokenform{{ token.id }}"
                                   class="display-inline">

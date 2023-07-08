@@ -1,3 +1,5 @@
+from typing import Optional
+
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -12,14 +14,26 @@ from cdedb.models.droid import OrgaToken
 class EventDroidMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
-    def orga_token_summary(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("new_token")
+    def orga_token_summary(self, rs: RequestState, event_id: int,
+                           new_token: Optional[str]) -> Response:
+        """
+        Show an overview of existing orga tokens.
+
+        :param new_token: Given upon redirect after creating a new token.
+            Used to display the newly created token string.
+        """
+        rs.ignore_validation_errors()
         orga_token_ids = self.eventproxy.list_orga_tokens(rs, event_id)
         orga_tokens = self.eventproxy.get_orga_tokens(rs, orga_token_ids)
-        return self.render(rs, "event/droid/summary", {'orga_tokens': orga_tokens})
+        return self.render(rs, "event/droid/summary", {
+            'orga_tokens': orga_tokens, 'new_token': new_token,
+        })
 
     @access("event")
     @event_guard()
     def create_orga_token_form(self, rs: RequestState, event_id: int) -> Response:
+        """Display the form for creating a new orga token."""
         return self.render(rs, "event/droid/configure", {})
 
     @access("event", modi={"POST"})
@@ -27,25 +41,18 @@ class EventDroidMixin(EventBaseFrontend):
     @REQUESTdatadict(*OrgaToken.requestdict_fields())
     def create_orga_token(self, rs: RequestState, event_id: int, data: CdEDBObject
                           ) -> Response:
+        """Create a new orga token. The new token will be displayed after a redirect."""
         data['id'] = -1
         data['event_id'] = event_id
         data = check(rs, vtypes.OrgaToken, data, creation=True)
         if rs.has_validation_errors() or not data:
             return self.create_orga_token_form(rs, event_id)
-        data['ctime'] = data['rtime'] = data['atime'] = "2000-01-01"
 
         new_id, secret = self.eventproxy.create_orga_token(rs, OrgaToken(**data))
         orga_token = self.eventproxy.get_orga_token(rs, new_id)
-        api_token = orga_token.get_token_string(secret)
+        new_token = orga_token.get_token_string(secret)
 
-        rs.notify(
-            "success",
-            n_("Your new API-token is: '%(token_str)s'. Write this down"
-               " now, it cannot be shown again later."),
-            {'token_str': api_token}
-        )
-
-        return self.redirect(rs, "event/orga_token_summary")
+        return self.redirect(rs, "event/orga_token_summary", {'new_token': new_token})
 
     @access("event")
     @event_guard()
@@ -60,6 +67,7 @@ class EventDroidMixin(EventBaseFrontend):
     def change_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int,
                           data: CdEDBObject) -> Response:
         data['id'] = orga_token_id
+        # These are only needed for creation and are empty here.
         del data['event_id']
         del data['etime']
         data = check(rs, vtypes.OrgaToken, data)
@@ -76,7 +84,7 @@ class EventDroidMixin(EventBaseFrontend):
     def delete_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int
                           ) -> Response:
         blockers = self.eventproxy.delete_orga_token_blockers(rs, orga_token_id)
-        orga_token_cascade = set()
+        orga_token_cascade: set[str] = set()
         if blockers.keys() - orga_token_cascade:
             rs.notify("error", n_("Cannot delete orga token after it has been used."))
             return self.redirect(rs, "event/orga_token_summary")
