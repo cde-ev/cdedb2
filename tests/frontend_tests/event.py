@@ -6221,10 +6221,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             event_id=cast(vtypes.ID, event_id),
             title="New Token!",
             notes=None,
-            ctime=now(),
             etime=now().replace(year=3000),
-            rtime=None,
-            atime=None,
         )
         new_token_id, secret = self.event.create_orga_token(self.key, new_token)
         orga_token = self.event.get_orga_token(self.key, new_token_id)

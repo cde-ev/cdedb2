@@ -89,17 +89,22 @@ dynamic droid
 import abc
 import datetime
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from secrets import token_hex
-from typing import Any, ClassVar, Literal, Optional, Pattern, Type, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Pattern, Type, Union
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import User
+from cdedb.common import User, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.models.common import CdEDataclass
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+    from cdedb.common import CdEDBObject
 
 
 class APIToken(abc.ABC):
@@ -254,26 +259,29 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
-    ctime: datetime.datetime
+    ctime: datetime.datetime = field(default_factory=now, init=False)
     #: Revocation time. Automatically set by event backend on revocation.
-    rtime: Optional[datetime.datetime]
+    rtime: Optional[datetime.datetime] = field(default=None, init=False)
     #: Last access time. Automatically updated by session backend on every request.
-    atime: Optional[datetime.datetime]
+    atime: Optional[datetime.datetime] = field(default=None, init=False)
 
-    # Sepcial fields and methods for datacase storage using `CdEDataclass` interface.
+    # Special fields and methods for datacase storage using `CdEDataclass` interface.
 
     #: Subclasses may define unchangeable fields.
     fixed_fields: ClassVar[tuple[str, ...]] = ('etime',)
 
-    def to_database(self) -> dict[str, Any]:
-        """Exclude special fields from being set manually."""
-        ret = super().to_database()
-        # Creation time is written behind the scenes upon creation.
-        del ret['ctime']
-        # Revocation time is written behind the scenes upon revocation.
-        del ret['rtime']
-        # Last access time is written by the session backend on every droid request.
-        del ret['atime']
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        ctime = data.pop('ctime')
+        rtime = data.pop('rtime')
+        atime = data.pop('atime')
+
+        ret = super().from_database(data)
+
+        ret.ctime = ctime
+        ret.rtime = rtime
+        ret.atime = atime
+
         return ret
 
     @classmethod
@@ -286,14 +294,6 @@ class DynamicAPIToken(CdEDataclass, APIToken):
             optional['ctime'] = mandatory['ctime']
             del mandatory['ctime']
         return mandatory, optional
-
-    @classmethod
-    def requestdict_fields(cls) -> list[tuple[str, Literal["str", "[str]"]]]:
-        ret = dict(super().requestdict_fields())
-        del ret['ctime']
-        del ret['rtime']
-        del ret['atime']
-        return list(ret.items())
 
     # Implementations of inherited methods.
 

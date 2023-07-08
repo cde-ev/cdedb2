@@ -4518,12 +4518,11 @@ class TestEventBackend(BackendTest):
                 event_id=cast(vtypes.ID, event_id),
                 title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
-                ctime=nearly_now(),
                 etime=datetime.datetime(2222, 12, 31, 23, 59, 59, tzinfo=pytz.utc),
-                rtime=None,
-                atime=None,
             )
         }
+        for token in expectation.values():
+            token.ctime = nearly_now()
         self.assertEqual(expectation, orga_tokens)
 
         base_time = now()
@@ -4534,10 +4533,7 @@ class TestEventBackend(BackendTest):
                 event_id=cast(vtypes.ID, event_id),
                 title="New Token!",
                 notes=None,
-                ctime=now(),
                 etime=base_time + delta,
-                rtime=None,
-                atime=None,
             )
             new_id, secret = self.event.create_orga_token(self.key, new_token)
             new_token.id = vtypes.ProtoID(new_id)
