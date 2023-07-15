@@ -46,7 +46,7 @@
 {% block content %}
     {% if courses_exist %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
-            {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
+            {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary pull-right-responsive') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
                       aria-label="{% trans %}Filter{% endtrans %}">
                     {% if show_course_state %}
@@ -56,7 +56,7 @@
                     {% if ambience['event']['tracks']|length > 1 %}
                         {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
                             entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
-                            slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
+                            horizontal=False) }}
                     {% endif %}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
