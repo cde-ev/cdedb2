@@ -4311,6 +4311,10 @@ msgstr "Keine Änderung erforderlich."
 msgid "Revoked active permit."
 msgstr "Aktives Lastschriftmandat widerrufen."
 
+#: cdedb/frontend/core/base.py:1691
+msgid "File does not exist."
+msgstr "Datei existiert nicht."
+
 #: cdedb/frontend/core/base.py:1712
 msgid "Foto updated."
 msgstr "Bild aktualisiert."

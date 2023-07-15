@@ -1651,7 +1651,7 @@ def _phone(
     # handle the phone number as normalized string internally
     phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
-    return phone_str
+    return Phone(phone_str)
 
 
 @_add_typed_validator
