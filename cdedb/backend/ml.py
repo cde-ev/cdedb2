@@ -400,6 +400,7 @@ class MlBackend(AbstractBackend):
                     description=e["description"],
                     subject_prefix=e["subject_prefix"],
                     maxsize=e["maxsize"],
+                    additional_footer=e["additional_footer"],
                     notes=e["notes"],
                 )
                 if isinstance(ml, EventAssociatedMetaMailinglist):
