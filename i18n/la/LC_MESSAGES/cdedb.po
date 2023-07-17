@@ -4975,7 +4975,7 @@ msgstr ""
 
 #: cdedb/frontend/core/genesis.py:153
 msgid ""
-"We just sent you an email. To complete your account reqest, please follow "
+"We just sent you an email. To complete your account request, please follow "
 "the link contained in the email."
 msgstr ""
 
