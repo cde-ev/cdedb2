@@ -1254,7 +1254,8 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL,
         UNIQUE (attachment_id, version_nr)
 );
-GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
