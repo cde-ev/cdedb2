@@ -17,7 +17,6 @@ import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
-from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -53,6 +52,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -74,7 +74,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: str = None) -> Response:
+    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -1145,7 +1145,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    query: Query = None) -> Response:
+                    query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
@@ -1565,6 +1565,9 @@ class CoreBaseFrontend(AbstractFrontend):
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
+        # trial membership implies membership
+        if data.get("trial_member"):
+            data["is_member"] = True
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
@@ -1606,23 +1609,29 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "modify_membership")
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        return self.render(rs, "modify_membership", {
+            "trial_member": persona["trial_member"]})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member")
+    @REQUESTdata("is_member", "trial_member")
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> Response:
+                          is_member: bool, trial_member: bool) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
+        if trial_member and not is_member:
+            rs.append_validation_error(("trial_member", ValueError(
+                n_("Trial membership implies membership."))))
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
-                self.cdeproxy.change_membership(rs, persona_id, is_member))
+                self.cdeproxy.change_membership(
+                    rs, persona_id, is_member=is_member, trial_member=trial_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))
@@ -1654,16 +1663,15 @@ class CoreBaseFrontend(AbstractFrontend):
             {'old_balance': old_balance, 'trial_member': trial_member})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata("new_balance", "trial_member", "change_note")
+    @REQUESTdata("new_balance", "change_note")
     def modify_balance(self, rs: RequestState, persona_id: int,
-                       new_balance: vtypes.NonNegativeDecimal, trial_member: bool,
+                       new_balance: vtypes.NonNegativeDecimal,
                        change_note: str) -> Response:
         """Set the new balance."""
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (persona['balance'] == new_balance
-                and persona['trial_member'] == trial_member):
+        if persona['balance'] == new_balance:
             rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
@@ -1671,8 +1679,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
-            const.FinanceLogCodes.manual_balance_correction,
-            change_note=change_note, trial_member=trial_member)
+            const.FinanceLogCodes.manual_balance_correction, change_note=change_note)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
