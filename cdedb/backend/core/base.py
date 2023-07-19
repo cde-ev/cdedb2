@@ -790,7 +790,7 @@ class CoreBaseBackend(AbstractBackend):
             if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
-        if ("is_member" in data
+        if (("is_member" in data or "trial_member" in data)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):
             raise PrivilegeError(n_("Membership modification prevented."))
@@ -870,7 +870,9 @@ class CoreBaseBackend(AbstractBackend):
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
         change_note = affirm(str, change_note)
+        ret = 1
         with Atomizer(rs):
+            is_member = trial_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
                 tmp = self.get_total_persona(rs, data['id'])
@@ -878,14 +880,22 @@ class CoreBaseBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
-            ret = self.set_persona(
+                # We can not apply the desired state directly, since this would violate
+                #  our database integrity (but we also want to get the logs right), so
+                #  we stash the changes here and apply them later on.
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+            ret *= self.set_persona(
                 rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
-            if data.get('trial_member'):
-                ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note=change_note)
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                ret *= self.change_membership_easy_mode(
+                    rs, data['id'], is_member=is_member, trial_member=trial_member)
         return ret
 
     @access("persona")
@@ -1162,17 +1172,13 @@ class CoreBaseBackend(AbstractBackend):
     def change_persona_balance(self, rs: RequestState, persona_id: int,
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
-                               change_note: str = None, trial_member: bool = None,
+                               change_note: str = None,
                                transaction_date: datetime.date = None
                                ) -> DefaultReturnCode:
-        """Special modification function for monetary aspects.
-
-        :param trial_member: If not None, set trial membership to this.
-        """
+        """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
         balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
-        trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
         transaction_date = affirm_optional(datetime.date, transaction_date)
         update: CdEDBObject = {
@@ -1186,24 +1192,21 @@ class CoreBaseBackend(AbstractBackend):
                     n_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
                 update['balance'] = balance
-            if trial_member is not None:
-                if current['trial_member'] != trial_member:
-                    update['trial_member'] = trial_member
-            if 'balance' in update or 'trial_member' in update:
+            if 'balance' in update:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
-                if 'balance' in update:
-                    self.finance_log(
-                        rs, log_code, persona_id, balance - current['balance'], balance,
-                        transaction_date=transaction_date)
+                self.finance_log(
+                    rs, log_code, persona_id, balance - current['balance'], balance,
+                    transaction_date=transaction_date)
                 return ret
             else:
                 return 0
 
     @access("core_admin", "cde_admin")
-    def change_membership_easy_mode(self, rs: RequestState, persona_id: int,
-                                    is_member: bool) -> DefaultReturnCode:
+    def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
+                                    is_member: bool = None, trial_member: bool = None
+                                    ) -> DefaultReturnCode:
         """Special modification function for membership.
 
         This variant only works for easy cases, that is for gaining membership
@@ -1211,22 +1214,27 @@ class CoreBaseBackend(AbstractBackend):
         general case) the change_membership function from the cde-backend
         has to be used.
 
-        :param is_member: Desired target state of membership.
+        :param is_member: Desired target state of membership or None.
+        :param trial_member: Desired target state of trial membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm(bool, is_member)
-        update: CdEDBObject = {
-            'id': persona_id,
-            'is_member': is_member,
-        }
+        is_member = affirm_optional(bool, is_member)
+        trial_member = affirm_optional(bool, trial_member)
         with Atomizer(rs):
-            current = self.retrieve_persona(
-                rs, persona_id, ('is_member', 'balance', 'is_cde_realm'))
+            current = self.retrieve_persona(rs, persona_id, (
+                'is_member', 'balance', 'is_cde_realm', 'trial_member'))
+
+            # Determine the target state of (trial) membership
+            if trial_member is None:
+                trial_member = current['trial_member']
+            if is_member is None:
+                is_member = current['is_member']
+
+            # Do some sanity checks
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
-            if current['is_member'] == is_member:
-                return 0
-
+            if trial_member and not is_member:
+                raise ValueError(n_("Trial membership implies membership."))
             if not is_member:
                 # Peek at the CdE-realm, this is somewhat of a transgression,
                 # but sadly necessary duct tape to keep the whole thing working.
@@ -1235,20 +1243,40 @@ class CoreBaseBackend(AbstractBackend):
                 params = [persona_id]
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
-                # Display this to be not surprised if you look at the finance log and
-                #  observe the decreasing of the total balance
-                delta = decimal.Decimal(0)
-                new_balance = current["balance"]
-                code = const.FinanceLogCodes.lose_membership
-            else:
-                delta = None
-                new_balance = None
-                code = const.FinanceLogCodes.gain_membership
+
+            # check if nothing changed at all
+            if (trial_member == current['trial_member']
+                    and is_member == current['is_member']):
+                rs.notify('info', n_("Nothing changed."))
+                return 1
+
+            update: CdEDBObject = {'id': persona_id, 'is_member': is_member,
+                                   'trial_member': trial_member}
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
                 allow_specials=("membership",))
-            self.finance_log(rs, code, persona_id, delta, new_balance)
+
+            # Perform logging
+            if is_member != current['is_member']:
+                if is_member:
+                    delta = None
+                    new_balance = None
+                    code = const.FinanceLogCodes.gain_membership
+                else:
+                    # Display this to be not surprised if you look at the finance log
+                    #  and observe the decreasing of the total balance
+                    delta = decimal.Decimal(0)
+                    new_balance = current["balance"]
+                    code = const.FinanceLogCodes.lose_membership
+                self.finance_log(rs, code, persona_id, delta, new_balance)
+            if trial_member != current['trial_member']:
+                if trial_member:
+                    code = const.FinanceLogCodes.start_trial_membership
+                else:
+                    code = const.FinanceLogCodes.end_trial_membership
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
+
         return ret
 
     @access("core_admin", "meta_admin")
@@ -1470,10 +1498,11 @@ class CoreBaseBackend(AbstractBackend):
             if lastschrift:
                 self.query_exec(rs, query, ("", "", "", persona_id))
             #
-            # 3. Remove complicated attributes (membership, foto and password)
+            # 3. Remove complicated attributes ([trial] membership, foto and password)
             #
             if persona['is_member']:
-                code = self.change_membership_easy_mode(rs, persona_id, is_member=False)
+                code = self.change_membership_easy_mode(
+                    rs, persona_id, is_member=False, trial_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
@@ -1547,7 +1576,7 @@ class CoreBaseBackend(AbstractBackend):
                 'balance': 0 if persona['balance'] is not None else None,
                 'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
-                'trial_member': False,
+                # 'trial_member' already adjusted
                 'bub_search': False,
                 'paper_expuls': True,
                 # 'foto' already adjusted
@@ -2037,6 +2066,13 @@ class CoreBaseBackend(AbstractBackend):
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
         with Atomizer(rs):
+            is_member = trial_member = None
+            if data.get('is_cde_realm'):
+                # For the sake of correct logging, we stash these as changes
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
                 "submitted_by": submitted_by or rs.user.persona_id,
@@ -2050,6 +2086,11 @@ class CoreBaseBackend(AbstractBackend):
             del data['fulltext']
             self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
+
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                self.change_membership_easy_mode(
+                    rs, new_id, is_member=is_member, trial_member=trial_member)
         return new_id
 
     @access("anonymous")

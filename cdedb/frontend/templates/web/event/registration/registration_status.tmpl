@@ -16,6 +16,10 @@
     {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {{ util.href(cdedblink('event/show_registration', {'registration_id': registration['id']}),
+                     gettext("View as Orga"), icon='eye', aclass='btn btn-default pull-right') }}
+    {% endif %}
     {{ util.context_heading(gettext("Your Registration"), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}

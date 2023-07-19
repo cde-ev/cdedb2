@@ -257,7 +257,7 @@
     {%- endif -%}
 {% endmacro %}
 
-{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
+{# Helper macro to create a large, right-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink_(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">

@@ -171,6 +171,8 @@ CREATE TABLE core.personas (
         trial_member            boolean,
         CONSTRAINT personas_cde_trial
             CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_trial_member_implicits
+            CHECK (NOT trial_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub
@@ -1312,9 +1314,9 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         -- administrative comments
         notes                   varchar,
-        -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only useful with a
-        -- restrictive subscription policy).
+        additional_footer       varchar,
+        -- mailinglist awareness
+        -- gateway is not NULL if associated to another mailinglist
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event

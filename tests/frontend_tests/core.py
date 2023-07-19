@@ -1596,7 +1596,6 @@ class TestCoreFrontend(FrontendTest):
         # Test form default values
         f = self.response.forms['modifybalanceform']
         self.assertEqual(f['new_balance'].value, "22.20")
-        self.assertFalse(f['trial_member'].checked)
         f['change_note'] = 'nop'
         # Test 'Nothing changed!' info
         self.submit(f, check_notification=False)
@@ -1614,24 +1613,6 @@ class TestCoreFrontend(FrontendTest):
         f['change_note'] = 'deduct stolen cookies'
         self.submit(f)
         self.assertPresence("15,66 €", div='balance')
-        # Test changing trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        f['trial_member'].checked = True
-        f['change_note'] = "deduct lost cookies"
-        self.submit(f)
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div='membership')
-        # Test changing balance and trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        self.assertTrue(f['trial_member'].checked)
-        f['new_balance'] = 22.22
-        f['trial_member'].checked = False
-        f['change_note'] = "deduct eaten cookies"
-        self.submit(f)
-        self.assertPresence("22,22 €", div='balance')
-        self.assertNonPresence("Probemitgliedschaft")
 
     @as_users("vera")
     def test_meta_info(self) -> None:

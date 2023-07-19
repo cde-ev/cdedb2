@@ -1688,6 +1688,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
+        self.traverse("Als Orga ansehen")  # shorthand link shown for orga/event admin
+        self.assertTitle("Anmeldung von Anton Administrator (Große Testakademie 2222)")
+        self.traverse("Meine Anmeldung")
+        with self.switch_user('berta'):  # but not for unprivileged users
+            self.traverse("angemeldet")
+            self.assertNoLink("/event/event/1/registration/.*/show")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
