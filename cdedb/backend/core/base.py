@@ -547,7 +547,7 @@ class CoreBaseBackend(AbstractBackend):
     def changelog_resolve_change(self, rs: RequestState, persona_id: int,
                                  generation: int, ack: bool) -> DefaultReturnCode:
         if not self.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise PrivilegeError(n_("Not a relative admin."))
         return self._changelog_resolve_change_unsafe(rs, persona_id, generation, ack)
 
     @access("persona")
