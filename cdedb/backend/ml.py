@@ -7,7 +7,6 @@ import itertools
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
-from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
     get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -284,12 +284,13 @@ class MlBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
             # Potentially restrict to non-archived users.
             if not query.scope.includes_archived:
@@ -306,7 +307,7 @@ class MlBackend(AbstractBackend):
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
@@ -399,6 +400,7 @@ class MlBackend(AbstractBackend):
                     description=e["description"],
                     subject_prefix=e["subject_prefix"],
                     maxsize=e["maxsize"],
+                    additional_footer=e["additional_footer"],
                     notes=e["notes"],
                 )
                 if isinstance(ml, EventAssociatedMetaMailinglist):

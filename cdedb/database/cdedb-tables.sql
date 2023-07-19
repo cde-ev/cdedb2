@@ -171,6 +171,8 @@ CREATE TABLE core.personas (
         trial_member            boolean,
         CONSTRAINT personas_cde_trial
             CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_trial_member_implicits
+            CHECK (NOT trial_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub
@@ -711,6 +713,7 @@ CREATE TABLE event.events (
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
+        field_definition_notes       varchar,
         offline_lock                 boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -909,6 +912,29 @@ GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.orga_apitokens (
+        id                      serial PRIMARY KEY,
+        -- Event which this token grants access to.
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The api tokens consists of two parts. The id and a secret that will be compared to the stored hash.
+        -- Upon revocation the stored hash is deleted.
+        secret_hash             varchar,
+        -- Creation, expiration, revocation and last access time of the token.
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        etime                   timestamp WITH TIME ZONE NOT NULL,
+        rtime                   timestamp WITH TIME ZONE,
+        atime                   timestamp WITH TIME ZONE,
+        -- Descriptive title and addional notes about the token.
+        title                   varchar NOT NULL,
+        notes                   varchar
+);
+CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
+GRANT SELECT ON event.orga_apitokens TO cdb_anonymous;
+GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
+GRANT UPDATE (secret_hash, rtime, title, notes) ON event.orga_apitokens TO cdb_persona;
+GRANT SELECT, UPDATE ON event.orga_apitokens_id_seq TO cdb_persona;
+
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -1052,6 +1078,9 @@ CREATE TABLE event.log (
         -- see cdedb.database.constants.EventLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
+        droid_id                integer REFERENCES event.orga_apitokens(id),
+        CONSTRAINT event_log_submitted_by_droid
+            CHECK (submitted_by is NULL or droid_id is NULL),
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
@@ -1286,9 +1315,9 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         -- administrative comments
         notes                   varchar,
-        -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only useful with a
-        -- restrictive subscription policy).
+        additional_footer       varchar,
+        -- mailinglist awareness
+        -- gateway is not NULL if associated to another mailinglist
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event

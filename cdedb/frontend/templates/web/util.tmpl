@@ -104,22 +104,24 @@
 
 {# Macro to visually represent an immutable boolean value
 
-   checked    The actual boolean value to show
+   checked    The actual boolean value to show, or none.
    anid       The HTML id to add to the element. Useful for testing purposes.
-   titles     An optional list/tuple of two elements: The HTML `title` attribute (hover text) for the False state and
-              the title attribute for the True state. The title is also used as an screenreader-readable hidden text.
+   titles     An optional list/tuple of two or three elements: The HTML `title` attribute (hover text) for the False
+              state and the title attribute for the True state. If the value is nullable, there also must be a third
+              attribute for the null state. The title is also used as an screenreader-readable hidden text.
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid=none, titles=[]) %}
-    {% set title = titles[checked | int] %}
-    <span{{ dict(
-        class="fas fa-check-circle" if checked else "far fa-times-circle",
-        id=anid,
-        title=title,
-        **{
-            "data-checked": checked,
-            "aria-hidden": "true"
-        })|xmlattr }}></span>
+    {% if checked is false %}
+        {% set title = titles[0] if titles else "" %}
+        <span class="far fa-times-circle" id="{{ anid }}" title="{{ title }}" data-checked="False" aria-hidden="true"></span>
+    {% elif checked is true %}
+        {% set title = titles[1] if titles else "" %}
+        <span class="fas fa-check-circle" id="{{ anid }}" title="{{ title }}" data-checked="True" aria-hidden="true"></span>
+    {% else %}
+        {% set title = titles[2] if titles else "" %}
+        <span class="far fa-circle" id="{{ anid }}" title="{{ title }}" aria-hidden="true"></span>
+    {% endif %}
     {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
@@ -255,7 +257,7 @@
     {%- endif -%}
 {% endmacro %}
 
-{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
+{# Helper macro to create a large, right-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink_(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">

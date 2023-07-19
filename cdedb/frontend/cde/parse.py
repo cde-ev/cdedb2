@@ -173,9 +173,11 @@ class CdEParseMixin(CdEBaseFrontend):
     @REQUESTdata("count", "date", "validate", "event", "membership", "excel", "gnucash",
                  "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, date: datetime.date,
-                       validate: str = None, event: vtypes.ID = None,
-                       membership: str = None, excel: str = None, gnucash: str = None,
-                       ignore_warnings: bool = False) -> Response:
+                       validate: Optional[str] = None,
+                       event: Optional[vtypes.ID] = None,
+                       membership: Optional[str] = None, excel: Optional[str] = None,
+                       gnucash: Optional[str] = None, ignore_warnings: bool = False
+                       ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
 
@@ -234,7 +236,8 @@ class CdEParseMixin(CdEBaseFrontend):
             return self.parse_statement_form(rs, data, params)
         filename += f"_{date}.csv"
         csv_data = [t.to_dict() for t in transactions]
-        csv_data = csv_output(csv_data, fields, write_header)
+        csv_data = csv_output(csv_data, fields, write_header,
+                              tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")

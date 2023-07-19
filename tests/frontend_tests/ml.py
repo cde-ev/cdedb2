@@ -804,6 +804,7 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = "Noch mehr Gemunkel."
         f['domain'] = const.MailinglistDomain.lists
         f['local_part'] = 'munkelwand'
+        f['additional_footer'] = "Man munklelt, dass…"
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
@@ -839,6 +840,14 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Munkelwand")
         self.assertPresence("Clown")
         self.assertPresence("Garcia Generalis")
+
+    @as_users("janis")
+    def test_create_mailinglist_unprivileged(self) -> None:
+        self.get("/ml/mailinglist/create", status=403)
+        self.get("/ml/mailinglist/create?ml_type=MailinglistTypes.general_opt_in",
+                 status=403)
+        self.post("/ml/mailinglist/create",
+                  {'ml_type': "MailinglistTypes.general_opt_in"}, status=403)
 
     @as_users("nina")
     def test_change_mailinglist(self) -> None:
@@ -1205,6 +1214,7 @@ class TestMlFrontend(FrontendTest):
         # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
+        f['additional_footer'] = "Disco, Disco."
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow
@@ -1239,6 +1249,7 @@ class TestMlFrontend(FrontendTest):
                          f['attachment_policy'].value)
         self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
+        self.assertEqual("Disco, Disco.", f['additional_footer'].value)
 
     @as_users("janis")
     # add Janis as restricted moderator

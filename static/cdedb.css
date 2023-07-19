@@ -116,6 +116,15 @@ table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
     border-top-style: none ;
 }
+.aggregate-footer {
+    border-top: solid 2px #999;
+}
+.aggregate-footer>tr {
+    background-color: #f5f5f5;
+}
+.aggregate-footer>tr:hover {
+    background-color: #ffffff;
+}
 ul.slim {
     padding-left: 15px;
 }
@@ -427,9 +436,6 @@ h1.title {
 .float-along {
     display: block;
     overflow: hidden;
-}
-.float-right {
-    float: right;
 }
 .text-right-responsive {
     text-align: center;

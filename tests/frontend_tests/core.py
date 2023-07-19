@@ -8,6 +8,7 @@ from typing import Dict, Optional, Tuple, Union
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
 )
@@ -1600,7 +1601,6 @@ class TestCoreFrontend(FrontendTest):
         # Test form default values
         f = self.response.forms['modifybalanceform']
         self.assertEqual(f['new_balance'].value, "22.20")
-        self.assertFalse(f['trial_member'].checked)
         f['change_note'] = 'nop'
         # Test 'Nothing changed!' info
         self.submit(f, check_notification=False)
@@ -1618,24 +1618,6 @@ class TestCoreFrontend(FrontendTest):
         f['change_note'] = 'deduct stolen cookies'
         self.submit(f)
         self.assertPresence("15,66 €", div='balance')
-        # Test changing trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        f['trial_member'].checked = True
-        f['change_note'] = "deduct lost cookies"
-        self.submit(f)
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div='membership')
-        # Test changing balance and trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        self.assertTrue(f['trial_member'].checked)
-        f['new_balance'] = 22.22
-        f['trial_member'].checked = False
-        f['change_note'] = "deduct eaten cookies"
-        self.submit(f)
-        self.assertPresence("22,22 €", div='balance')
-        self.assertNonPresence("Probemitgliedschaft")
 
     @as_users("vera")
     def test_meta_info(self) -> None:
@@ -2920,9 +2902,12 @@ class TestCoreFrontend(FrontendTest):
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
+        token_key = model_droid.APIToken.request_header_key
+        resolve_token = model_droid.ResolveToken.get_token_string(
+            self.secrets['API_TOKENS']['resolve'])
         self.get(
             '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
@@ -2932,7 +2917,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=anton{}example.cde'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
@@ -2942,7 +2927,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=antonatexample.cde',
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             'error':  ["('username', ValueError('Must be a valid email address.'))"]
         })

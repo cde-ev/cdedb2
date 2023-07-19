@@ -61,7 +61,7 @@
                         Full name (any given name plus family name), forename/display name plus family name, email address or CdEDB-ID ("DB-0000-X")
                     {% endtrans %}
                 </div>
-                {% if lodgement_wishes['wishes'] %}
+                {% if lodgement_wishes['wished_personas'] %}
                     <div class="p">
                         {% trans %}
                             The following lodgement wishes were detected from your input.
@@ -72,10 +72,10 @@
                         {% endtrans %}
                     </div>
                     <ul id="lodgement-wishes-list">
-                        {% for wish in lodgement_wishes['wishes'] %}
-                            {% set persona_id = lodgement_wishes['registrations'][wish.wished]['persona_id'] %}
+                        {# Already sorted list of wished personas #}
+                        {% for persona in lodgement_wishes['wished_personas'] %}
                             <li class="text-info">
-                                {{ util.persona_name(lodgement_wishes['personas'][persona_id]) }}
+                                {{ util.persona_name(persona) }}
                             </li>
                         {% endfor %}
                     </ul>

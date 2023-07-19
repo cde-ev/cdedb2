@@ -239,7 +239,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         fields: List[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields)
+        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
@@ -286,8 +286,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("member", "cde_admin")
     @REQUESTdata("institution_id")
-    def list_past_events(self, rs: RequestState, institution_id: vtypes.ID = None
-                         ) -> Response:
+    def list_past_events(self, rs: RequestState,
+                         institution_id: Optional[vtypes.ID] = None) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))

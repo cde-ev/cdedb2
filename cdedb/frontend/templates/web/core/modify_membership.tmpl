@@ -25,23 +25,35 @@
         </p>
         <ul>
             <li>{% trans %}termination of membership{% endtrans %}</li>
+            {% if trial_member %}
+                <li>{% trans %}termination of trial membership{% endtrans %}</li>
+            {% endif %}
             <li>{% trans %}no longer able to search for/be found by other searchable members (if applicable){% endtrans %}</li>
             <li>{% trans %}loss of membership fee balance (in up to 6 months){% endtrans %}</li>
             <li>{% trans %}revocation of any active direct debit authorization{% endtrans %}</li>
         </ul>
 
-        <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
-            {{ util.anti_csrf_token('core/modify_membership') }}
-            <div>
-                {{ util.input_hidden(name="is_member", value=False) }}
-                {{ util.input_submit(label=gettext("Terminate Membership"), aclass="btn btn-primary") }}&emsp;
+       <p>
+            {% trans %}Instead, you can grant or terminate a trial membership. This does not affect the membership status.{% endtrans %}
+       </p>
+
+       <div>
+            <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform" class="form-group">
+                {{ util.anti_csrf_token('core/modify_membership') }}
+                {{ util.input_submit(name="is_member", value=False, label=gettext("Terminate Membership"), aclass="btn btn-primary") }}&emsp;
+                {# Since empty variables are casted to False, we need to state here that is_member stays True.
+                   The first value in the request multi dict is taken into account, so the submit button above "overwrites" this. #}
+                {{ util.input_hidden(name="is_member", value=True) }}
+                {{ util.input_submit(name="trial_member", value=not trial_member, aclass="btn btn-primary",
+                                     label=gettext("Terminate Trial Membership") if trial_member else gettext("Grant Trial Membership")) }}&emsp;
                 {{ util.href(show_user_link(user, ambience['persona']['id']), gettext("Cancel"), icon="times-circle",
                         aclass="btn btn-default") }}
-            </div>
-        </form>
+            </form>
+       </div>
    {% else %}
         <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
             {{ util.anti_csrf_token('core/modify_membership') }}
+            {{ util.input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.input_submit(label=gettext("Make a Member")) }}&emsp;

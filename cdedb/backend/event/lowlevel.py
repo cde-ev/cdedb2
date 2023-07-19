@@ -1291,7 +1291,7 @@ class EventLowLevelBackend(AbstractBackend):
             if x in translations or x in extra_translations:
                 target = extra_translations.get(x, x)
                 ret[x] = translations[target].get(ret[x], ret[x])
-            if isinstance(ret[x], collections.Mapping):
+            if isinstance(ret[x], collections.abc.Mapping):
                 # All mappings have to be JSON columns in the database
                 # (nothing else should be possible).
                 ret[x] = PsycoJson(

@@ -68,7 +68,8 @@
 
     {% if ambience['mailinglist']['notes']
             and (ambience['mailinglist']['id'] in user.moderator
-                 or ambience['mailinglist'].has_moderator_view(user)) %}
+                 or ambience['mailinglist'].has_moderator_view(user)
+                 or ambience['mailinglist'].has_management_view(user)) %}
         {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed",
                                      anid="adminnotes") %}
             {{ ambience['mailinglist']['notes']|md }}
