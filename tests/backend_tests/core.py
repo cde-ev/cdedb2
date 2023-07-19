@@ -1281,7 +1281,7 @@ class TestCoreBackend(BackendTest):
             {
                 'id': 1001,
                 'change_note': data["notes"],
-                'code': const.MemberChangeStati.committed.value,
+                'code': const.PersonaChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],

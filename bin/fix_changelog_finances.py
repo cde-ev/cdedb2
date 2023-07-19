@@ -22,7 +22,7 @@ def get_clean_history(persona_id: int, generation: int) -> CdEDBObject:
     generation_data = unwrap(
         core.changelog_get_history(s.rs(), persona_id, [generation]))
 
-    if generation_data['code'] != const.MemberChangeStati.committed:
+    if generation_data['code'] != const.PersonaChangeStati.committed:
         raise ValueError(
             f"Unexpectedly encountered non-committed generation"
             f" ({generation}, {generation_data['generation_data']['code']}"
@@ -37,7 +37,7 @@ def get_clean_history(persona_id: int, generation: int) -> CdEDBObject:
     generation_data['ctime'] = None
     generation_data['change_note'] = None
     generation_data['automated_change'] = True
-    generation_data['code'] = const.MemberChangeStati.committed
+    generation_data['code'] = const.PersonaChangeStati.committed
 
     generation_data['ctime'] = error_time
     generation_data['change_note'] = "Restguthaben von Nicht-Mitglied entfernt."
@@ -81,7 +81,7 @@ with s:
     # 1.c Add skipped transactions from the finance log to changelog and persona
     # (17 users (subset of 337))
     q_1c = """
-        SELECT fl.ctime AS fl_ctime, fl.persona_id, fl.submitted_by, fl.transaction_date, fl.delta, clmax.max_gen, cl2.ctime AS max_gen_ctime 
+        SELECT fl.ctime AS fl_ctime, fl.persona_id, fl.submitted_by, fl.transaction_date, fl.delta, clmax.max_gen, cl2.ctime AS max_gen_ctime
         FROM cde.finance_log fl
             LEFT JOIN core.changelog cl ON fl.persona_id = cl.persona_id AND fl.ctime = cl.ctime
             JOIN (

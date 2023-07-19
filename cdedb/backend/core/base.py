@@ -7,7 +7,7 @@ There are several subclasses in separate files which provide additional function
 related to more specific aspects or user management.
 
 All parts are combined together in the `CoreBackend` class via multiple inheritance,
-together with a handful of high-level methods, that use functionalities of multple
+together with a handful of high-level methods, that use functionalities of multiple
 backend parts.
 """
 import collections
@@ -43,7 +43,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
+    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
@@ -275,7 +275,7 @@ class CoreBaseBackend(AbstractBackend):
 
         :returns: A list of inconsistent field names.
         """
-        if generation['code'] != const.MemberChangeStati.committed:
+        if generation['code'] != const.PersonaChangeStati.committed:
             raise RuntimeError(n_("Given changelog generation must be committed."))
         return [key for key in persona if persona[key] != generation[key]]
 
@@ -372,7 +372,7 @@ class CoreBaseBackend(AbstractBackend):
 
             # handle pending changes
             diff = None
-            if current_state['code'] == const.MemberChangeStati.pending:
+            if current_state['code'] == const.PersonaChangeStati.pending:
                 # stash pending change if we may not wait
                 if not may_wait:
                     diff = {key: current_state[key] for key in persona
@@ -381,8 +381,8 @@ class CoreBaseBackend(AbstractBackend):
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND code = %s")
                     self.query_exec(rs, query, (
-                        const.MemberChangeStati.displaced, data['id'],
-                        const.MemberChangeStati.pending))
+                        const.PersonaChangeStati.displaced, data['id'],
+                        const.PersonaChangeStati.pending))
 
             # determine if something changed
             newly_changed_fields = {key for key, value in data.items()
@@ -392,11 +392,11 @@ class CoreBaseBackend(AbstractBackend):
                     # reenable old change if we were going to displace it
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND generation = %s")
-                    self.query_exec(rs, query, (const.MemberChangeStati.pending,
+                    self.query_exec(rs, query, (const.PersonaChangeStati.pending,
                                                 data['id'], current_generation))
                 elif (current_state != committed_state
-                        and {"core_admin", "cde_admin"} & rs.user.roles):
-                    # if user is admin, set pending change as reviewed
+                        and self.is_relative_admin(rs, data['id'])):
+                    # if user is relative admin, set pending change as reviewed
                     return self.changelog_resolve_change(
                         rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
@@ -422,21 +422,21 @@ class CoreBaseBackend(AbstractBackend):
             requires_review = (
                     (all_changed_fields & fields_requiring_review
                      or (current_state['code']
-                         == const.MemberChangeStati.pending and not diff))
-                    and current_state['is_cde_realm']
-                    and not ({"core_admin", "cde_admin"} & rs.user.roles))
+                         == const.PersonaChangeStati.pending and not diff))
+                    and current_state['is_event_realm']
+                    and not self.is_relative_admin(rs, data['id']))
 
             # prepare for inserting a new changelog entry
             query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
                          "WHERE persona_id = %s")
             max_gen = unwrap(self.query_one(rs, query, (data['id'],))) or 1
             next_generation = max_gen + 1
-            # the following is a nop, if there is no pending change
+            # the following is a nop if there is no pending change
             query = glue("UPDATE core.changelog SET code = %s",
                          "WHERE persona_id = %s AND code = %s")
             self.query_exec(rs, query, (
-                const.MemberChangeStati.superseded, data['id'],
-                const.MemberChangeStati.pending))
+                const.PersonaChangeStati.superseded, data['id'],
+                const.PersonaChangeStati.pending))
 
             # insert new changelog entry
             insert = copy.deepcopy(current_state)
@@ -446,7 +446,7 @@ class CoreBaseBackend(AbstractBackend):
                 "reviewed_by": None,
                 "generation": next_generation,
                 "change_note": change_note,
-                "code": const.MemberChangeStati.pending,
+                "code": const.PersonaChangeStati.pending,
                 "persona_id": data['id'],
                 "automated_change": automated_change,
             })
@@ -477,7 +477,7 @@ class CoreBaseBackend(AbstractBackend):
                     "reviewed_by": None,
                     "generation": next_generation + 1,
                     "change_note": "Verdrängte Änderung.",
-                    "code": const.MemberChangeStati.pending,
+                    "code": const.PersonaChangeStati.pending,
                     "persona_id": data['id'],
                     "automated_change": automated_change,
                 })
@@ -504,18 +504,18 @@ class CoreBaseBackend(AbstractBackend):
                 "WHERE persona_id = %s AND code = %s",
                 "AND generation = %s")
             return self.query_exec(rs, query, (
-                rs.user.persona_id, const.MemberChangeStati.nacked, persona_id,
-                const.MemberChangeStati.pending, generation))
+                rs.user.persona_id, const.PersonaChangeStati.nacked, persona_id,
+                const.PersonaChangeStati.pending, generation))
         with Atomizer(rs):
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(rs, persona_id,
                                                  generations=(generation,))
             data = history[generation]
-            if data['code'] != const.MemberChangeStati.pending:
+            if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
             setters = ["code = %s"]
-            params: List[Any] = [const.MemberChangeStati.committed]
+            params: List[Any] = [const.PersonaChangeStati.committed]
             if reviewed:
                 setters.append("reviewed_by = %s")
                 params.append(rs.user.persona_id)
@@ -542,8 +542,13 @@ class CoreBaseBackend(AbstractBackend):
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
-    changelog_resolve_change = access("core_admin", "cde_admin")(
-        _changelog_resolve_change_unsafe)
+
+    @access("core_admin", "cde_admin", "event_admin")
+    def changelog_resolve_change(self, rs: RequestState, persona_id: int,
+                                 generation: int, ack: bool) -> DefaultReturnCode:
+        if not self.is_relative_admin(rs, persona_id):
+            raise PrivilegeError(n_("Not a relative admin."))
+        return self._changelog_resolve_change_unsafe(rs, persona_id, generation, ack)
 
     @access("persona")
     def changelog_get_generations(
@@ -558,12 +563,12 @@ class CoreBaseBackend(AbstractBackend):
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM core.changelog WHERE persona_id = ANY(%s)",
                      "AND code = ANY(%s) GROUP BY persona_id")
-        valid_status: Tuple[const.MemberChangeStati, ...]
+        valid_status: Tuple[const.PersonaChangeStati, ...]
         if committed_only:
-            valid_status = (const.MemberChangeStati.committed, )
+            valid_status = (const.PersonaChangeStati.committed, )
         else:
-            valid_status = (const.MemberChangeStati.pending,
-                            const.MemberChangeStati.committed)
+            valid_status = (const.PersonaChangeStati.pending,
+                            const.PersonaChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
 
@@ -573,17 +578,25 @@ class CoreBaseBackend(AbstractBackend):
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
-    @access("core_admin", "cde_admin")
-    def changelog_get_changes(self, rs: RequestState,
-                              stati: Collection[const.MemberChangeStati]
-                              ) -> CdEDBObjectMap:
-        """Retrieve changes in the changelog."""
-        stati = affirm_set(const.MemberChangeStati, stati)
-        query = glue("SELECT persona_id, given_names, display_name, family_name,",
-                     "generation, ctime",
-                     "FROM core.changelog WHERE code = ANY(%s)")
-        data = self.query_all(rs, query, (stati,))
-        # TDOD what if there are multiple entries for one persona???
+    @access("core_admin", "cde_admin", "event_admin")
+    def changelog_get_pending_changes(self, rs: RequestState) -> CdEDBObjectMap:
+        """Retrieve pending changes in the changelog.
+
+        Only show changes for realms the respective admin has access too."""
+        clearances = []
+        if 'core_admin' not in rs.user.roles:
+            for admin_role in {"cde_admin", "event_admin"}.intersection(rs.user.roles):
+                realm = admin_role.removesuffix("_admin")
+                higher_realms = implying_realms(realm)
+                clearance = f"is_{realm}_realm = TRUE"
+                for higher_realm in higher_realms:
+                    clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
+                clearances.append(clearance)
+        query = ("SELECT persona_id, given_names, display_name, family_name,"
+                 " generation, ctime FROM core.changelog WHERE code = %s")
+        if clearances:
+            query = query + " AND (" + " OR ".join(clearances) + ")"
+        data = self.query_all(rs, query, (const.PersonaChangeStati.pending,))
         return {e['persona_id']: e for e in data}
 
     @access("persona")
@@ -2077,7 +2090,7 @@ class CoreBaseBackend(AbstractBackend):
             data.update({
                 "submitted_by": submitted_by or rs.user.persona_id,
                 "generation": 1,
-                "code": const.MemberChangeStati.committed,
+                "code": const.PersonaChangeStati.committed,
                 "persona_id": new_id,
                 "change_note": "Account erstellt.",
             })
