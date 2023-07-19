@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-07-14 23:35+0000\n"
+"POT-Creation-Date: 2023-05-24 10:06+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -16598,9 +16598,17 @@ msgstr ""
 msgid "MemberChangeStati.pending"
 msgstr ""
 
+#: cdedb/i18n_additional.py:179
+msgid "PersonaChangeStati.pending"
+msgstr ""
+
 #: cdedb/i18n_additional.py:180 cdedb/i18n_additional.py:184
 #: cdedb/i18n_additional.py:185
 msgid "MemberChangeStati.committed"
+msgstr ""
+
+#: cdedb/i18n_additional.py:180
+msgid "PersonaChangeStati.committed"
 msgstr ""
 
 #: cdedb/i18n_additional.py:181 cdedb/i18n_additional.py:185
@@ -16608,14 +16616,26 @@ msgstr ""
 msgid "MemberChangeStati.superseded"
 msgstr ""
 
+#: cdedb/i18n_additional.py:181
+msgid "PersonaChangeStati.superseded"
+msgstr ""
+
 #: cdedb/i18n_additional.py:182 cdedb/i18n_additional.py:186
 #: cdedb/i18n_additional.py:187
 msgid "MemberChangeStati.nacked"
 msgstr ""
 
+#: cdedb/i18n_additional.py:182
+msgid "PersonaChangeStati.nacked"
+msgstr ""
+
 #: cdedb/i18n_additional.py:183 cdedb/i18n_additional.py:187
 #: cdedb/i18n_additional.py:188
 msgid "MemberChangeStati.displaced"
+msgstr ""
+
+#: cdedb/i18n_additional.py:183
+msgid "PersonaChangeStati.displaced"
 msgstr ""
 
 #: cdedb/i18n_additional.py:185 cdedb/i18n_additional.py:189
