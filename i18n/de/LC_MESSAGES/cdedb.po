@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-07-14 23:35+0000\n"
+"POT-Creation-Date: 2023-05-24 10:06+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "Given changelog generation must be committed."
+msgstr "Die übergebene Generation der Änderungshistorie muss bestätigt sein."
+
+msgid "No committed state found."
+msgstr "Keine bestätigte Version gefunden."
+
+msgid "Persona and Changelog are inconsistent."
+msgstr "Nutzer und Änderungshistorie sind inkonsistent."
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
