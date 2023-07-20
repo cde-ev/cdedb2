@@ -15727,6 +15727,9 @@ msgstr "Inaktive Mitglieder gestrichen"
 msgid "CdeLogCodes.semester_balance_update"
 msgstr "Guthaben aktualisiert"
 
+msgid "CdeLogCodes.semester_exmember_balance"
+msgstr "Guthaben von Exmitgliedern entfernt"
+
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.semester_advance"
 msgstr "Nächstes Semester"
@@ -16090,6 +16093,9 @@ msgstr "Guthaben bei Archivierung gelöscht"
 #: cdedb/i18n_additional.py:141
 msgid "FinanceLogCodes.start_trial_membership"
 msgstr "Start der Probemitgliedschaft"
+
+msgid "FinanceLogCodes.remove_exmember_balance"
+msgstr "Guthaben von Exmitglied entfernt"
 
 #: cdedb/i18n_additional.py:142
 msgid "FinanceLogCodes.grant_lastschrift"

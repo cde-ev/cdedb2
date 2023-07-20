@@ -14841,6 +14841,9 @@ msgstr "Inactive members removed"
 msgid "CdeLogCodes.semester_balance_update"
 msgstr "Balance updated"
 
+msgid "CdeLogCodes.semester_exmember_balance"
+msgstr "Balance from exmembers removed"
+
 #: cdedb/i18n_additional.py:48
 msgid "CdeLogCodes.semester_advance"
 msgstr "Semester advanced"
@@ -15204,6 +15207,9 @@ msgstr "Remove Balance on Archival"
 #: cdedb/i18n_additional.py:141
 msgid "FinanceLogCodes.start_trial_membership"
 msgstr "Start of Trial Membership"
+
+msgid "FinanceLogCodes.remove_exmember_balance"
+msgstr "Remove Balance of Exmember"
 
 #: cdedb/i18n_additional.py:142
 msgid "FinanceLogCodes.grant_lastschrift"
