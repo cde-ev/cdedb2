@@ -2078,32 +2078,69 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Semester Nummer 45", div='current-semester')
 
         # Verify Log
-        self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–14 von 14]")
-        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="1-1001")
-        self.assertPresence("1 Accounts archiviert.", div="2-1002")
-        self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="4-1004")
-        self.assertPresence("Nächstes Semester", div="5-1005")
-        self.assertPresence("44", div="5-1005")
-
-        self.assertPresence("Zahlungsaufforderung mit Addresscheck", div="6-1006")
-        self.assertPresence("6 E-Mails versandt", div="6-1006")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="7-1007")
-        self.assertPresence("0 E-Mails versandt", div="7-1007")
-        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="8-1008")
-        self.assertPresence("0 Accounts archiviert.", div="9-1009")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="10-1010")
-        self.assertPresence("20,00 € Guthaben abgebucht.", div="10-1010")
-        self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="11-1011")
-        self.assertPresence("Nächstes Semester", div="12-1012")
-        self.assertPresence("45", div="12-1012")
-
-        self.assertPresence("Zahlungsaufforderung versendet", div="13-1013")
-        self.assertPresence("5 E-Mails versandt", div="13-1013")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="14-1014")
-        self.assertPresence("0 E-Mails versandt", div="14-1014")
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.CdeLogCodes.semester_ejection,
+                'change_note': "2 inaktive Mitglieder gestrichen.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_done,
+                'change_note': "1 Accounts archiviert.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_balance_update,
+                'change_note': "2 Probemitgliedschaften beendet."
+                               " 16,00\xa0€ Guthaben abgebucht.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "567,55\xa0€ Guthaben von 11 Exmitgliedern aufgelöst.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_advance,
+                'change_note': "44",
+            },
+            # Semester 44
+            {
+                'code': const.CdeLogCodes.semester_bill_with_addresscheck,
+                'change_note': "6 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_notification_done,
+                'change_note': "0 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_ejection,
+                'change_note': "1 inaktive Mitglieder gestrichen.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_done,
+                'change_note': "0 Accounts archiviert.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_balance_update,
+                'change_note': "0 Probemitgliedschaften beendet."
+                               " 20,00\xa0€ Guthaben abgebucht.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "1,00\xa0€ Guthaben von 1 Exmitgliedern aufgelöst.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_advance,
+                'change_note': "45",
+            },
+            # Semester 45
+            {
+                'code': const.CdeLogCodes.semester_bill,
+                'change_note': "5 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_notification_done,
+                'change_note': "0 E-Mails versandt.",
+            },
+        ]
+        self.assertLogEqual(log_expectation, realm="cde")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
@@ -2807,6 +2844,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
         logs.append((1003, const.CdeLogCodes.semester_balance_update))
+        logs.append((1004, const.CdeLogCodes.semester_exmember_balance))
 
         # Payment Request with addresscheck
         # (the variant without addresscheck is tested in test_semester)
@@ -2814,30 +2852,30 @@ class TestCdEFrontend(FrontendTest):
         f['addresscheck'].checked = True
         self.submit(f)
         self.join_worker_thread('semester_bill', link)
-        logs.append((1004, const.CdeLogCodes.semester_advance))
-        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
-        logs.append((1006, const.CdeLogCodes.automated_archival_notification_done))
+        logs.append((1005, const.CdeLogCodes.semester_advance))
+        logs.append((1006, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1007, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         f = self.response.forms['addresscheckform']
         self.submit(f)
         self.join_worker_thread('expuls_addresscheck', link)
-        logs.append((1007, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1008, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1008, const.CdeLogCodes.expuls_advance))
+        logs.append((1009, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append((1009, const.CdeLogCodes.expuls_addresscheck_skipped))
+        logs.append((1010, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1010, const.CdeLogCodes.expuls_advance))
+        logs.append((1011, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
