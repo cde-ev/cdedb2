@@ -319,10 +319,11 @@ def check_sample_data_consistency() -> None:
         f.write("\n")
 
     # compare the fresh one with the current one
-    ret = subprocess.run(["diff", "-u", str(current_data), str(clean_data)])
+    ret = subprocess.run(["diff", "-u", str(current_data), str(clean_data)],
+                         check=False)
     if ret.returncode == 1:
         print("Inconsistent", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
     else:
         print("Consistent", file=sys.stdout)
 
