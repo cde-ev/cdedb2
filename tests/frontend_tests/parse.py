@@ -4,7 +4,7 @@ import collections
 import csv
 import re
 from datetime import datetime
-from typing import Any, List
+from typing import Any
 
 import webtest
 
@@ -45,42 +45,28 @@ class TestParseFrontend(FrontendTest):
                     self.assertTrue(bool(errs))
 
     @staticmethod
-    def get_transaction_with_references(
-        reference: str, other_references: List[str] = None
-    ) -> parse.Transaction:
+    def get_transaction_with_reference(reference: str) -> parse.Transaction:
         transaction_data: CdEDBObject = collections.defaultdict(str)
         transaction_data.update({
             "reference": reference,
-            "other_references": parse.REFERENCE_SEPARATOR.join(other_references or []),
         })
         return parse.Transaction(transaction_data)
 
     def test_find_cdedbids(self) -> None:
         # pylint: disable=protected-access
         cl = parse.ConfidenceLevel
-        t = self.get_transaction_with_references(
-            "DB-2-7 DB-35",
-            ["DB-1-9 DB-2-7 DB-43"]
-        )
+        t = self.get_transaction_with_reference("DB-2-7 DB-35")
         # All confidence values are reduced by two, because multiple ids were found.
         expectation = {
-            2: parse.ConfidenceLevel.Medium,  # good match in primary reference.
-            3: parse.ConfidenceLevel.Low,  # close match in primary reference.
-            1: parse.ConfidenceLevel.Low,  # good match in secondary reference.
-            4: parse.ConfidenceLevel.Null,  # close match in secondary reference.
+            2: parse.ConfidenceLevel.Medium,  # good match.
+            3: parse.ConfidenceLevel.Low,  # close match.
         }
         self.assertEqual(t._find_cdedbids(cl.Full), expectation)  # pylint: disable=protected-access
 
-        t = self.get_transaction_with_references("DB-1000-6")
+        t = self.get_transaction_with_reference("DB-1000-6")
         self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Full})
-        t = self.get_transaction_with_references("", ["DB-1000-6"])
-        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.High})
-        t = self.get_transaction_with_references("DB-1000-6", ["DB-1000-6"])
-        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Full})
-        t = self.get_transaction_with_references("DB-1000-6", ["DB-100-7"])
-        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Medium, 100: cl.Low})
-        t = self.get_transaction_with_references("DB-10 00-6", ["DB-100-7"])
-        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Low, 100: cl.Low})
+        t = self.get_transaction_with_reference("DB-10 00-6 DB-100-7")
+        self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Low, 100: cl.Medium})
 
     def test_parse_statement_additional(self) -> None:
         pseudo_winter = {"title": "CdE Pseudo-WinterAkademie",
@@ -243,7 +229,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
-            statement_date="28.12.2018",
+            transaction_date="28.12.2018",
         )
         self.check_dict(
             result[1],
@@ -251,7 +237,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
-            statement_date="27.12.2018",
+            transaction_date="27.12.2018",
         )
         self.check_dict(
             result[2],
@@ -259,7 +245,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-5-1",
             family_name="Eventis",
             given_names="Emilia E.",
-            statement_date="20.12.2018",
+            transaction_date="20.12.2018",
         )
 
         # check membership_fees.csv
@@ -274,7 +260,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
-            statement_date="26.12.2018",
+            transaction_date="26.12.2018",
         )
         self.check_dict(
             result[1],
@@ -282,7 +268,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-2-7",
             family_name="Beispiel",
             given_names="Bertålotta",
-            statement_date="25.12.2018",
+            transaction_date="25.12.2018",
         )
         self.check_dict(
             result[2],
@@ -290,7 +276,7 @@ class TestParseFrontend(FrontendTest):
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
-            statement_date="24.12.2018",
+            transaction_date="24.12.2018",
         )
 
         # check transactions files
@@ -301,7 +287,7 @@ class TestParseFrontend(FrontendTest):
                                      dialect=CustomCSVDialect))
         self.check_dict(
             result[0],
-            statement_date="26.12.2018",
+            transaction_date="26.12.2018",
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -311,7 +297,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[1],
-            statement_date="25.12.2018",
+            transaction_date="25.12.2018",
             amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
@@ -321,7 +307,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[2],
-            statement_date="24.12.2018",
+            transaction_date="24.12.2018",
             amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
@@ -331,7 +317,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[3],
-            statement_date="23.12.2018",
+            transaction_date="23.12.2018",
             amount_german="2,50",
             cdedbid="DB-4-3",
             family_name="Dino",
@@ -343,7 +329,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[4],
-            statement_date="22.12.2018",
+            transaction_date="22.12.2018",
             amount_german="50,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -354,7 +340,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[5],
-            statement_date="21.12.2018",
+            transaction_date="21.12.2018",
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -364,7 +350,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[6],
-            statement_date="20.12.2018",
+            transaction_date="20.12.2018",
             amount_german="100,00",
             cdedbid="DB-5-1",
             family_name="Eventis",
@@ -374,7 +360,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[7],
-            statement_date="19.12.2018",
+            transaction_date="19.12.2018",
             amount_german="1234,50",
             cdedbid="",
             family_name="",
@@ -391,7 +377,7 @@ class TestParseFrontend(FrontendTest):
 
         self.check_dict(
             result[0],
-            statement_date="31.12.2018",
+            transaction_date="31.12.2018",
             amount_german="-18,54",
             cdedbid="",
             family_name="",
@@ -402,7 +388,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[1],
-            statement_date="30.12.2018",
+            transaction_date="30.12.2018",
             amount_german="-52,50",
             cdedbid="",
             family_name="",
@@ -413,7 +399,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[2],
-            statement_date="29.12.2018",
+            transaction_date="29.12.2018",
             amount_german="-584,49",
             cdedbid="",
             family_name="",
@@ -425,7 +411,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[3],
-            statement_date="28.12.2018",
+            transaction_date="28.12.2018",
             amount_german="584,49",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -435,7 +421,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[4],
-            statement_date="27.12.2018",
+            transaction_date="27.12.2018",
             amount_german="584,49",
             cdedbid="DB-7-8",
             family_name="Generalis",

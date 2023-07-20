@@ -10,6 +10,7 @@ import collections
 import collections.abc
 import copy
 import csv
+import datetime
 import email
 import email.charset
 import email.encoders
@@ -71,11 +72,11 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
-    CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
-    RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_persona_name, make_proxy, merge_dicts, now, setup_logger,
-    unwrap,
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
+    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
+    NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
+    decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
+    make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -83,9 +84,7 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
-from cdedb.common.query.log_filter import (
-    LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
-)
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
@@ -517,6 +516,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
+            'n_': n_,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
@@ -660,7 +660,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
-            csv_data = csv_output(result, fields, substitutions=substitutions)
+            csv_data = csv_output(result, fields, substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
             return self.send_csv_file(
                 rs, data=csv_data, inline=False, filename=filename)
         elif kind == "json":
@@ -798,7 +799,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
-                            default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             choices: Mapping[str, Mapping[Any, str]] = None,
@@ -810,8 +810,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param scope: The query scope of the search.
-        :param default_scope: Use the default queries associated with this scope.
+        :param scope: The query scope of the search. Source for default queries.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
@@ -830,7 +829,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = DEFAULT_QUERIES[default_scope]
+        default_queries = DEFAULT_QUERIES[scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -851,10 +850,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return self.send_query_download(
                     rs, result, query, kind=download,
                     filename=scope.get_target() + "_result")
+            params["aggregates"] = unwrap(submit_general_query(
+                rs, query, aggregate=True))  # type: ignore[call-arg]
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
-                rs.values['qval_is_archived'] = True
+                rs.values['qval_is_archived'] = False
             rs.values['is_search'] = False
         return self.render(rs, scope.get_target(redirect=False), params)
 
@@ -1121,63 +1122,39 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
-    def generic_view_log(self, rs: RequestState, filter_params: CdEDBObject,
-                         table: str, template: str, download: bool = False,
-                         template_kwargs: CdEDBObject = None) -> werkzeug.Response:
-        """Generic helper to retrieve log data and render the result."""
-        table = LogTable(table)
-        # Convert filter params into LogFilter.
-        log_filter = check_validation(
-            rs, table.get_filter_class(), filter_params, log_table=table)
-        if rs.has_validation_errors() or log_filter is None:
+    def generic_view_log(self, rs: RequestState, data: CdEDBObject,
+                         filter_class: Type[GenericLogFilter],
+                         log_retriever: Callable[..., CdEDBLog],
+                         *, download: bool, template: str,
+                         template_kwargs: CdEDBObject = None
+                         ) -> werkzeug.Response:
+        """Generic helper to retrieve log data and render the result.
+
+        This takes care of validating the filter input and retrieving log entries via
+        the passed backend method.
+        """
+        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
+        if rs.has_validation_errors() or data is None:
             # If validation fails, there is no good way to get a partial filter
             #  that is valid, so we use an empty filter instead. This should not
             #  matter much in practice because, with regular usage there should not
             #  be a way to input invalid filter values.
-            log_filter = check_validation(
-                rs, table.get_filter_class(), {}, log_table=table)
-            rs.ignore_validation_errors()
-            assert log_filter is not None
+            self.logger.debug(
+                f"Log filter validation failed: {rs.retrieve_validation_errors()}")
+            log_filter = filter_class()
+        else:
+            log_filter = filter_class(**data)
 
         # Retrieve entry count and log entries.
-        if table == LogTable.core_log:
-            total, log = self.coreproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.core_changelog:
-            assert isinstance(log_filter, LogFilterChangelog)
-            total, log = self.coreproxy.retrieve_changelog_meta(rs, log_filter)
-        elif table == LogTable.cde_finance_log:
-            assert isinstance(log_filter, LogFilterFinanceLog)
-            total, log = self.cdeproxy.retrieve_finance_log(rs, log_filter)
-        elif table == LogTable.cde_log:
-            total, log = self.cdeproxy.retrieve_cde_log(rs, log_filter)
-        elif table == LogTable.past_event_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
-            total, log = self.pasteventproxy.retrieve_past_log(rs, log_filter)
-        elif table == LogTable.event_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
-            total, log = self.eventproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.assembly_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
-            total, log = self.assemblyproxy.retrieve_log(rs, log_filter)
-        elif table == LogTable.ml_log:
-            assert isinstance(log_filter, LogFilterEntityLog)
-            total, log = self.mlproxy.retrieve_log(rs, log_filter)
-        else:
-            raise RuntimeError(n_("Impossible."))
+        total, log = log_retriever(rs, log_filter)
 
         # Retrieve linked personas.
-        persona_ids = (
-                set(e['submitted_by'] for e in log if e['submitted_by'])
-                | set(e['persona_id'] for e in log if e['persona_id'])
-                | set(e['reviewed_by'] for e in log if e.get('reviewed_by'))
-        )
+        persona_ids = log_filter.get_persona_ids(log)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         if download:
             # Postprocess persona information: Add names and cdedb id.
-            persona_fields = {'submitted_by', 'persona_id', 'reviewed_by'}.intersection(
-                log_filter.get_columns()
-            )
+            persona_fields = log_filter.get_persona_columns()
             cdedbids = {persona_id: cdedbid_filter(persona_id)
                         for persona_id in persona_ids}
             substitutions = {persona_field: cdedbids
@@ -1201,9 +1178,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
             csv_data = csv_output(log, columns, replace_newlines=True,
-                                  substitutions=substitutions)
-            return self.send_csv_file(rs, "text/csv", f"{table.value}.csv",
-                                      data=csv_data)
+                                  substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
+            return self.send_csv_file(
+                rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
         else:
             # Create pagination.
             loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
@@ -1500,6 +1478,7 @@ AmbienceDict = typing.TypedDict(
         'track_group': CdEDBObject,
         'fee': CdEDBObject,
         'attachment': CdEDBObject,
+        'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
         'mailinglist': Mailinglist,
@@ -1586,6 +1565,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
                                     == rs.requestargs['assembly_id'])),)),
+        Scout(lambda version: obj.assemblyproxy.get_attachment_version(
+                    rs, rs.requestargs['attachment_id'], version),
+              'version_nr', 'attachment_version', ()),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
@@ -1841,7 +1823,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1887,6 +1870,10 @@ def REQUESTdata(
                     else:
                         type_ = hints[name]
                         optional = False
+
+                    # Optionally skip items that are not given.
+                    if _omit_missing and name not in rs.request.values:
+                        continue
 
                     val = rs.request.values.get(name, "")
 
@@ -1943,7 +1930,7 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
+def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
                     ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
@@ -1990,7 +1977,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
         constraints: Collection[RequestConstraint] = None,
-        postpone_validation: bool = False) -> CdEDBObject:
+        postpone_validation: bool = False,
+        omit_missing: bool = False,
+) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -2013,7 +2002,8 @@ def request_extractor(
     :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation,
+                 _omit_missing=omit_missing)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -2025,7 +2015,7 @@ def request_extractor(
 
 
 def request_dict_extractor(
-        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]]
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]],
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -2465,7 +2455,8 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping[Any, Any]] = None) -> str:
+               substitutions: Mapping[str, Mapping[Any, Any]] = None,
+               tzinfo: datetime.timezone = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2474,6 +2465,7 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
     :param substitutions: Allow replacements of values with better
       representations for output. The key of the outer dict is the field
       name.
+    :param tzinfo: If given convert all datetimes to this timezone.
     """
     substitutions = substitutions or {}
     outfile = io.StringIO()
@@ -2489,6 +2481,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                 value = substitutions[field].get(value, value)
             if replace_newlines and isinstance(value, str):
                 value = value.replace('\n', 14 * ' ')
+            if tzinfo and isinstance(value, datetime.datetime):
+                value = value.astimezone(tzinfo)
             row[field] = value
         writer.writerow(row)
     return outfile.getvalue()

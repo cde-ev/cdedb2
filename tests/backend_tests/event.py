@@ -7,7 +7,7 @@ import datetime
 import decimal
 import json
 import unittest
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 import freezegun
 import psycopg2
@@ -20,10 +20,12 @@ import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    nearly_now, now, unwrap,
+    RequestState, nearly_now, now, unwrap,
 )
-from cdedb.common.exceptions import PartialImportError, PrivilegeError
+from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.models.droid import OrgaToken
 from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
     storage,
@@ -77,6 +79,7 @@ class TestEventBackend(BackendTest):
             academy! :)""",
             'use_additional_questionnaire': False,
             'notes': None,
+            'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
             'parts': {
                 -1: {
@@ -682,9 +685,10 @@ class TestEventBackend(BackendTest):
         self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
         count, log = self.event.retrieve_log(
-            self.key, {'codes': {const.EventLogCodes.minor_form_updated,
-                                 const.EventLogCodes.minor_form_removed},
-                       'entity_ids': [event_id]}
+            self.key, EventLogFilter(
+                codes=[const.EventLogCodes.minor_form_updated,
+                       const.EventLogCodes.minor_form_removed],
+                event_id=event_id)
         )
         expectation = [
             {
@@ -2348,7 +2352,7 @@ class TestEventBackend(BackendTest):
                     ret[k] = datetime.date.fromisoformat(v)
                 elif k in {"ctime", "mtime", "timestamp", "registration_start",
                            "registration_soft_limit", "registration_hard_limit",
-                           }:
+                           "etime", "rtime", "atime"}:
                     ret[k] = datetime.datetime.fromisoformat(v)
 
         return ret
@@ -2362,6 +2366,8 @@ class TestEventBackend(BackendTest):
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         for log_entry in expectation['event.log'].values():
             log_entry['ctime'] = nearly_now()
+        for token in expectation[OrgaToken.database_table].values():
+            token['ctime'] = nearly_now()
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
     @event_keeper
@@ -2840,6 +2846,8 @@ class TestEventBackend(BackendTest):
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
+        for token in expectation['event']['orga_tokens'].values():
+            token['ctime'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
@@ -2959,169 +2967,104 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
         # Test logging
-        log_expectation = (
-            {'change_note': 'Geheime Etage',
-             'code': 70,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1023,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Warme Stube',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1024,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kalte Kammer',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1025,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kellerverlies',
-             'code': 27,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1026,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Einzelzelle',
-             'code': 25,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1027,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Geheimkabinett',
-             'code': 26,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1028,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Handtuchraum',
-             'code': 26,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1029,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 41,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1030,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1031,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Planetenretten für Anfänger',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1032,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Lustigsein für Fortgeschrittene',
-             'code': 41,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1033,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Kurzer Kurs',
-             'code': 44,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1034,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Langer Kurs',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1035,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Backup-Kurs',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1036,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 42,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1037,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 43,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1038,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Blitzkurs',
-             'code': 40,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1039,
-             'persona_id': None,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1040,
-             'persona_id': 1,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1041,
-             'persona_id': 5,
-             'submitted_by': 27},
-            {'change_note': 'Partieller Import: Sehr wichtiger Import',
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1042,
-             'persona_id': 7,
-             'submitted_by': 27},
-            {'change_note': None,
-             'code': 52,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1043,
-             'persona_id': 9,
-             'submitted_by': 27},
-            {'change_note': None,
-             'code': 50,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1044,
-             'persona_id': 3,
-             'submitted_by': 27},
-            {'change_note': 'Sehr wichtiger Import',
-             'code': 62,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'id': 1045,
-             'persona_id': None,
-             'submitted_by': 27})
-        self.assertLogEqual(log_expectation, realm="event", offset=6)
+        log_expectation: list[CdEDBObject] = [
+            {
+                'change_note': 'Geheime Etage',
+                'code': const.EventLogCodes.lodgement_group_created,
+            },
+            {
+                'change_note': 'Warme Stube',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Kalte Kammer',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Kellerverlies',
+                'code': const.EventLogCodes.lodgement_deleted,
+            },
+            {
+                'change_note': 'Einzelzelle',
+                'code': const.EventLogCodes.lodgement_changed,
+            },
+            {
+                'change_note': 'Geheimkabinett',
+                'code': const.EventLogCodes.lodgement_created,
+            },
+            {
+                'change_note': 'Handtuchraum',
+                'code': const.EventLogCodes.lodgement_created,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_changed,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Planetenretten für Anfänger',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Lustigsein für Fortgeschrittene',
+                'code': const.EventLogCodes.course_changed,
+            },
+            {
+                'change_note': 'Kurzer Kurs',
+                'code': const.EventLogCodes.course_deleted,
+            },
+            {
+                'change_note': 'Langer Kurs',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Backup-Kurs',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_created,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_segments_changed,
+            },
+            {
+                'change_note': 'Blitzkurs',
+                'code': const.EventLogCodes.course_segment_activity_changed,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 1,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 5,
+            },
+            {
+                'change_note': 'Partieller Import: Sehr wichtiger Import',
+                'code': const.EventLogCodes.registration_changed,
+                'persona_id': 7,
+            },
+            {
+                'code': const.EventLogCodes.registration_deleted,
+                'persona_id': 9,
+            },
+            {
+                'code': const.EventLogCodes.registration_created,
+                'persona_id': 3,
+            },
+            {
+                'change_note': 'Sehr wichtiger Import',
+                'code': const.EventLogCodes.event_partial_import,
+            },
+        ]
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=6)
 
     @storage
     @event_keeper
@@ -4040,12 +3983,12 @@ class TestEventBackend(BackendTest):
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_segments_changed,
+                'code': const.EventLogCodes.course_created,
                 'event_id': 1,
             },
             {
                 'change_note': 'Topos theory for the kindergarden',
-                'code': const.EventLogCodes.course_created,
+                'code': const.EventLogCodes.course_segments_changed,
                 'event_id': 1,
             },
             {
@@ -4560,3 +4503,101 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
             "part.2.H. and not part.1.H.", event['fees'][1001]['condition'])
+
+    @as_users("garcia")
+    def test_orga_apitokens(self) -> None:
+        event_id = 1
+        event_log_offset, _ = self.event.retrieve_log(
+            self.key, EventLogFilter(event_id=1))
+
+        orga_token_ids = self.event.list_orga_tokens(self.key, event_id)
+        orga_tokens = self.event.get_orga_tokens(self.key, orga_token_ids)
+        expectation = {
+            1: OrgaToken(
+                id=cast(vtypes.ID, 1),
+                event_id=cast(vtypes.ID, event_id),
+                title="Garcias technische Spielerei",
+                notes="Mal probieren, was diese API so alles kann.",
+                ctime=nearly_now(),
+                etime=datetime.datetime(2222, 12, 31, 23, 59, 59, tzinfo=pytz.utc),
+                rtime=None,
+                atime=None,
+            )
+        }
+        self.assertEqual(expectation, orga_tokens)
+
+        base_time = now()
+        delta = datetime.timedelta(minutes=1)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            new_token = OrgaToken(
+                id=cast(vtypes.ProtoID, -1),
+                event_id=cast(vtypes.ID, event_id),
+                title="New Token!",
+                notes=None,
+                ctime=now(),
+                etime=base_time + delta,
+                rtime=None,
+                atime=None,
+            )
+            new_id, secret = self.event.create_orga_token(self.key, new_token)
+            new_token.id = vtypes.ProtoID(new_id)
+            apitoken = cast(RequestState, new_token.get_token_string(secret))
+
+            log_expectation = [
+                {
+                    'code': const.EventLogCodes.orga_token_created,
+                    'change_note': new_token.title,
+                    'ctime': now(),
+                }
+            ]
+            self.assertEqual(
+                {}, self.event.delete_orga_token_blockers(self.key, new_id))
+
+            droid_export = self.event.partial_export_event(apitoken, event_id)
+            partial_export = self.event.partial_export_event(self.key, event_id)
+            self.assertEqual(droid_export, partial_export)
+
+            blockers = self.event.delete_orga_token_blockers(self.key, new_id)
+            self.assertEqual({'atime': [True]}, blockers)
+
+            frozen_time.tick(2*delta)
+
+            with self.assertRaisesRegex(APITokenError, "This .+ token has expired."):
+                self.event.partial_export_event(apitoken, event_id)
+
+            self.assertTrue(self.event.revoke_orga_token(self.key, new_id))
+            log_expectation.append({
+                'code': const.EventLogCodes.orga_token_revoked,
+                'change_note': new_token.title,
+            })
+
+            changed_token = {'id': new_id, 'notes': "For testing only."}
+            self.assertTrue(self.event.change_orga_token(self.key, changed_token))
+
+            changed_token = {'id': new_id, 'title': "New Name"}
+            self.assertTrue(self.event.change_orga_token(self.key, changed_token))
+
+            log_expectation.extend([
+                {
+                    'code': const.EventLogCodes.orga_token_changed,
+                    'change_note': new_token.title,
+                },
+                {
+                    'code': const.EventLogCodes.orga_token_changed,
+                    'change_note': f"'{new_token.title}' -> '{changed_token['title']}'",
+                }
+            ])
+
+            with self.assertRaisesRegex(
+                    APITokenError, "This .+ token has been revoked."):
+                self.event.partial_export_event(apitoken, event_id)
+
+            self.assertTrue(self.event.delete_orga_token(self.key, new_id, ("atime",)))
+            self.assertNotIn(new_id, self.event.list_orga_tokens(self.key, event_id))
+            log_expectation.append({
+                'code': const.EventLogCodes.orga_token_deleted,
+                'change_note': changed_token['title'],
+            })
+
+            self.assertLogEqual(log_expectation, realm='event', event_id=event_id,
+                                offset=event_log_offset)

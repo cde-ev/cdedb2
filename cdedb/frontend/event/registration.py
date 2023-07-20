@@ -27,7 +27,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import keydictsort_filter, money_filter
+from cdedb.filter import date_filter, keydictsort_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
@@ -239,7 +239,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                                        csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
@@ -378,6 +378,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
+        # display the date for part choices
+        part_options = None
+        if len(event['parts']) > 1:
+            part_options = [
+                # narrow non-breaking space below, the string is purely user-facing
+                (part_id,
+                 f"{part['title']}"
+                 f" ({date_filter(part['part_begin'], lang=rs.lang)}\u202f–\u202f"
+                 f"{date_filter(part['part_end'], lang=rs.lang)})")
+                for part_id, part
+                in keydictsort_filter(event['parts'], EntitySorter.event_part)]
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
@@ -386,14 +397,14 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(rs, "registration/register", {
             'persona': persona, 'age': age, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview,
-            **course_choice_params,
+            'part_options': part_options, **course_choice_params,
         })
 
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
-                       is_member: bool = None, is_orga: bool = None,
+                       is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -417,8 +428,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return Response("{}", mimetype='application/json', status=400)
 
+        field_params = {f"field.{field_id}": bool
+                        for field_id in rs.ambience['event']['fields']}
+        field_values = request_extractor(rs, field_params, omit_missing=True)
+
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, field_ids, is_member, is_orga)
+            rs, event_id, persona_id, part_ids, is_member, is_orga, field_values)
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"
@@ -1242,7 +1257,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Collection[int] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -1283,7 +1298,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Collection[int] = None) -> Response:
+                part_ids: Optional[Collection[int]] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)

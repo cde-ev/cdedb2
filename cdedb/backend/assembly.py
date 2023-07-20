@@ -43,9 +43,9 @@ from schulze_condorcet import schulze_evaluate
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    internal, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
@@ -58,7 +58,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -73,6 +73,15 @@ BallotConfiguration = NamedTuple(
         ('rel_quorum', int),
     ]
 )
+
+
+@dataclasses.dataclass
+class AssembyAttendees:
+    all: CdEDBObjectMap
+    early: CdEDBObjectMap
+    late: CdEDBObjectMap
+    undetermined: CdEDBObjectMap
+    cutoff: datetime.datetime
 
 
 @dataclasses.dataclass(frozen=True)
@@ -315,16 +324,14 @@ class AssemblyBackend(AbstractBackend):
         return self.query_exec(rs, query, params)
 
     @access("assembly", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: AssemblyLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "assembly.log")
-        assembly_ids = log_filter.get('entity_ids', ())
-        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        log_filter = affirm_dataclass(AssemblyLogFilter, log_filter)
+        assembly_ids = log_filter.assembly_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
@@ -335,15 +342,16 @@ class AssemblyBackend(AbstractBackend):
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter, "assembly.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "assembly_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
             # Potentially restrict to non-archived users.
             if not query.scope.includes_archived:
@@ -362,7 +370,7 @@ class AssemblyBackend(AbstractBackend):
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
 
     @internal
     @access("persona")
@@ -504,6 +512,53 @@ class AssemblyBackend(AbstractBackend):
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
         return {e['persona_id'] for e in attendees}
+
+    @access("assembly")
+    def get_attendees(self, rs: RequestState, assembly_id: int,
+                      cutoff: datetime.datetime) -> AssembyAttendees:
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        cutoff = affirm(datetime.datetime, cutoff)
+
+        if not self.may_access(rs, assembly_id=assembly_id):
+            raise PrivilegeError()
+
+        all_attendees = {
+            e['persona_id'] for e in self.sql_select(
+                rs, "assembly.attendees", ("persona_id",), (assembly_id,),
+                entity_key="assembly_id")
+        }
+        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime < %s
+        """
+        early_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        q = """
+            SELECT persona_id FROM assembly.log
+            WHERE assembly_id = %s AND code = %s AND ctime >= %s
+        """
+        late_attendees = {
+            e['persona_id']: attendee_data[e['persona_id']]
+            for e in self.query_all(
+                rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
+        }
+        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
+            raise ValueError("Unexpected overlap in early and late attendees.")
+
+        return AssembyAttendees(
+            all=attendee_data, early=early_attendees, late=late_attendees,
+            undetermined={
+                persona_id: attendee_data[persona_id]
+                for persona_id in (all_attendees - early_attendees.keys()
+                                   - late_attendees.keys())
+            },
+            cutoff=cutoff
+        )
 
     @access("persona")
     def list_assemblies(self, rs: RequestState,
@@ -2029,6 +2084,21 @@ class AssemblyBackend(AbstractBackend):
         get_attachments_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
+    def get_attachment_version(self, rs: RequestState, attachment_id: int,
+                               version_nr: int) -> CdEDBObject:
+        """Retrieve a given attachment version."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        version_nr = affirm(vtypes.ID, version_nr)
+        if not self.may_access_attachments(rs, [attachment_id]):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = (f"SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}"
+                 f" FROM assembly.attachment_versions WHERE attachment_id = %s"
+                 f" AND version_nr = %s")
+        params = (attachment_id, version_nr)
+        return self.query_one(rs, query, params) or {}
+
+    @access("assembly")
     def get_latest_attachments_version(self, rs: RequestState,
                                        attachment_ids: Collection[int],
                                        ) -> CdEDBObjectMap:
@@ -2081,7 +2151,7 @@ class AssemblyBackend(AbstractBackend):
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                content: bytes) -> DefaultReturnCode:
         """Add a new version of an attachment."""
-        data = affirm(vtypes.AssemblyAttachmentVersion, data)
+        data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
         content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
@@ -2114,6 +2184,41 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
+    def change_attachment_version(self, rs: RequestState, data: CdEDBObject
+                                  ) -> DefaultReturnCode:
+        """Change metadata of an attachment version."""
+        data = affirm(vtypes.AssemblyAttachmentVersion, data)
+        attachment_id = data['attachment_id']
+        with Atomizer(rs):
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            if not self.is_presider(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Must have privileged access to change"
+                                        " attachment version."))
+            if not self.is_attachment_version_deletable(rs, attachment_id):
+                raise ValueError(n_(
+                    "Cannot change attachment version once the assembly or"
+                    " any linked ballots have been locked."))
+            old_state = self.get_attachment_version(rs, attachment_id,
+                                                    data['version_nr'])
+            if old_state['dtime']:
+                raise ValueError(n_("Deleted attachment version can not be changed."))
+            attachment_id = data.pop('attachment_id')
+            version_nr = data.pop('version_nr')
+            keys = data.keys()
+            query = (f"UPDATE assembly.attachment_versions SET ({', '.join(keys)}) ="
+                     f" ROW({', '.join(('%s',) * len(keys))})"
+                     f" WHERE attachment_id = %s AND version_nr = %s")
+            params = tuple(data[key] for key in keys) + (attachment_id, version_nr)
+            ret = self.query_exec(rs, query, params)
+
+            # Use title from current verstion
+            latest_version = self.get_latest_attachment_version(rs, attachment_id)
+            self.assembly_log(
+                rs, const.AssemblyLogCodes.attachment_version_changed, assembly_id,
+                change_note=f"{latest_version['title']}: Version {version_nr}")
+        return ret
+
+    @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
                                   version_nr: int) -> DefaultReturnCode:
         """Remove a version of an attachment. Leaves other versions intact."""
@@ -2137,8 +2242,6 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("Cannot remove the last remaining version"
                                     " of an attachment."))
             deletor: Dict[str, Union[int, datetime.datetime, None]] = {
-                'attachment_id': attachment_id,
-                'version_nr': version_nr,
                 'dtime': now(),
                 'title': None,
                 'authors': None,

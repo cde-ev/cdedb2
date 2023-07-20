@@ -66,6 +66,8 @@ NonRegex = _NewType("NonRegex", str)
 IntCSVList = _NewType("IntCSVList", List[int])
 CdedbIDList = _NewType("CdedbIDList", List[CdedbID])
 
+OrgaToken = _NewType("OrgaToken", CdEDBObject)
+APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", datetime.date)
 
@@ -149,7 +151,7 @@ BallotCandidate = _NewType("BallotCandidate", CdEDBObject)
 AssemblyAttachment = _NewType("AssemblyAttachment", CdEDBObject)
 AssemblyAttachmentVersion = _NewType("AssemblyAttachmentVersion", CdEDBObject)
 QueryInput = _NewType("QueryInput", Query)
-
+LogFilter = _NewType("LogFilter", CdEDBObject)
 
 # This is used for places where transitioning to the new API is not yet feasible
 # e.g. query specifications

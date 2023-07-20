@@ -38,7 +38,7 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
             tmp[key] = "'{}'".format(value)
         elif isinstance(value, numbers.Number):
             tmp[key] = "{}".format(value)
-        elif isinstance(value, collections.Mapping):
+        elif isinstance(value, collections.abc.Mapping):
             tmp[key] = "'{}'::jsonb".format(json.dumps(value))
         else:
             raise ValueError("Unknown datum {} -> {}".format(key, value))
@@ -85,7 +85,7 @@ def changelog_template(**kwargs: Any) -> str:
         'birthday': datetime.date(1980, 2, 11),
         'bub_search': True,
         'change_note': 'Radical change.',
-        'code': const.MemberChangeStati.pending.value,
+        'code': const.PersonaChangeStati.pending.value,
         'country': None,
         'country2': 'US',
         'ctime': now(),

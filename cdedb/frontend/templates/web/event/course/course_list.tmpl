@@ -46,7 +46,7 @@
 {% block content %}
     {% if courses_exist %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
-            {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
+            {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary pull-right-responsive') %}
                 <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
                       aria-label="{% trans %}Filter{% endtrans %}">
                     {% if show_course_state %}
@@ -56,7 +56,7 @@
                     {% if ambience['event']['tracks']|length > 1 %}
                         {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
                             entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
-                            slice=(2 if ambience['event']['tracks']|length < 7 else 3), horizontal=False) }}
+                            horizontal=False) }}
                     {% endif %}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
@@ -82,13 +82,10 @@
         <div id="list-courses">
         {% for anid, entry in courses %}
             <div class="hide-hover-container" id="course-{{ entry['id'] }}">
-                <h3>
-                    {{ entry['nr'] }}. {{ entry['title'] }}&nbsp;{# prevent linebreak before the (invisible) headerlink -#}
-                    <a class="headerlink" href="#course-{{ entry['id'] }}"
-                       title="{% trans %}Permanent link{% endtrans %}">&para;</a>
-                </h3>
+                {{ util.h(entry['nr'] + ". " + entry['title'], anchor="course-" + entry['id']|string,
+                          translate=False) }}
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
-                    <div class="pull-right">
+                    <div class="pull-right heading-supplement">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
                                      readonly=is_locked, icon='list', aclass='btn btn-xs btn-info hide-hover') }}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), gettext("Edit"),

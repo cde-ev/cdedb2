@@ -22,7 +22,7 @@ import psycopg2.extensions
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.past_event import PastEventBackend
@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterFinanceLogLike, LogFilterLike
+from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -79,24 +79,25 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState, log_filter: LogFilterLike
-                         ) -> CdEDBLog:
+    def retrieve_cde_log(self, rs: RequestState, log_filter: CdELogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "cde.log")
+        log_filter = affirm_dataclass(CdELogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: LogFilterFinanceLogLike
+    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter
                              ) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "cde.finance_log")
+        log_filter = affirm_dataclass(FinanceLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
     def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
@@ -145,7 +146,8 @@ class CdEBaseBackend(AbstractBackend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note, transaction_date=date)
-                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                            and not personas[datum['persona_id']]['is_member']):
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)
                         memberships_gained += bool(code)
@@ -339,14 +341,17 @@ class CdEBaseBackend(AbstractBackend):
             return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
+            # We set membership separately to ensure correct logging.
             new_persona.update({
-                'is_member': True,
-                'trial_member': trial_membership,
+                'is_member': False,
+                'trial_member': False,
                 'paper_expuls': True,
                 'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
+            self.core.change_membership_easy_mode(
+                rs, persona_id, is_member=True, trial_member=trial_membership)
             ret = True
         elif datum['resolution'].is_modification():
             ret = False
@@ -417,16 +422,9 @@ class CdEBaseBackend(AbstractBackend):
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 code = self.core.change_membership_easy_mode(
-                    rs, datum['doppelganger_id'], is_member=True)
+                    rs, datum['doppelganger_id'], is_member=True, trial_member=True)
                 # This will be true if the user was not a member before.
                 ret = bool(code)
-                update = {
-                    'id': datum['doppelganger_id'],
-                    'trial_member': True,
-                }
-                self.core.change_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
@@ -499,12 +497,13 @@ class CdEBaseBackend(AbstractBackend):
         return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
@@ -543,4 +542,4 @@ class CdEBaseBackend(AbstractBackend):
                     query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

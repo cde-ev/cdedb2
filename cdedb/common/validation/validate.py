@@ -50,7 +50,7 @@ Instead, we provide some convenient wrappers around them for frontend and backen
 Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
-
+import collections
 import copy
 import dataclasses
 import distutils.util
@@ -83,6 +83,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.droid as models_droid
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -96,9 +97,7 @@ from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
     QueryOrder, QueryScope, QuerySpec,
 )
-from cdedb.common.query.log_filter import (
-    LogFilter, LogFilterChangelog, LogFilterEntityLog, LogFilterFinanceLog, LogTable,
-)
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import (
@@ -108,6 +107,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.models.common import CdEDataclass
 
 NoneType = type(None)
 
@@ -119,6 +119,7 @@ _CONFIG = LazyConfig()
 T = TypeVar('T')
 T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -185,13 +186,15 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
-    models_ml.Mailinglist: Mailinglist
+DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
+    models_ml.Mailinglist: Mailinglist,
+    models_droid.OrgaToken: OrgaToken,
+    GenericLogFilter: LogFilter,
 }
 
 
-def _validate_dataclass_preprocess(type_: Type[T], value: Any
-                                   ) -> Tuple[Type[T], Type[T]]:
+def _validate_dataclass_preprocess(type_: Type[DC], value: Any
+                                   ) -> Tuple[Type[DC], Type[CdEDBObject]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -211,21 +214,24 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+def _validate_dataclass_postprocess(subtype: Type[DC], validated: CdEDBObject) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
-    return subtype(**validated)
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
+    return cast(DC, subtype(**validated))
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
+def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> DC:
     """Wrapper of validate_assert that accepts dataclasses.
 
     Allows for subclasses, and figures out the appropriate superclass, for which
     a validator exists, dynamically."""
     subtype, validator = _validate_dataclass_preprocess(type_, value)
-    val = dataclasses.asdict(value)
+    if hasattr(value, 'to_validation'):
+        val = value.to_validation()
+    else:
+        val = dataclasses.asdict(value)
     validated = validate_assert(
         validator, val, ignore_warnings=ignore_warnings, subtype=subtype, **kwargs)
     return _validate_dataclass_postprocess(subtype, validated)
@@ -444,7 +450,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
+                **{"allow_superfluous": True, **kwargs})
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -1153,6 +1159,49 @@ def _password_strength(
 
 
 @_add_typed_validator
+def _api_token_string(
+        val: Any, argname: str = "api_token_string", **kwargs: Any
+) -> APITokenString:
+    """Check if a string has the correct format to be a valid api token.
+
+    Split the token into the droid name and the secret.
+    """
+    val = _printable_ascii(val, argname, **kwargs)
+    if m := models_droid.APIToken.token_string_pattern.fullmatch(val):
+        droid_name = m.group(1)
+        secret = m.group(2)
+        return APITokenString((droid_name, secret))
+    raise ValidationSummary(ValueError(
+        argname, n_("Wrong format for api token.")))
+
+
+@_add_typed_validator
+def _orga_token(
+        val: Any, argname: str = "orga_token", *, creation: bool = False,
+        **kwargs: Any
+) -> OrgaToken:
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
+    val = _examine_dictionary_fields(
+        val, mandatory, optional, argname=argname, **kwargs)
+
+    errs = ValidationSummary()
+
+    timestamp = now()
+    if 'etime' in val:
+        if val['etime'] and val['etime'] <= timestamp:
+            with errs:
+                raise ValidationSummary(ValueError(
+                    'etime', n_("Expiration time must be in the future.")))
+
+    if errs:
+        raise errs
+
+    return OrgaToken(val)
+
+
+@_add_typed_validator
 def _email(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Email:
@@ -1404,6 +1453,10 @@ def _persona(
             if val.get(key):
                 mandatory_fields.update(checkers)
         optional_fields = {key: bool for key in realm_checks}
+        # promoting to cde realm may be used to grant a trial membership.
+        #  since trial member implies is_member, we need to allow the latter here
+        if val.get("is_cde_realm"):
+            optional_fields["is_member"] = bool
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -1411,6 +1464,10 @@ def _persona(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
+    if "is_member" in val and "trial_member" in val:
+        if val["trial_member"] and not val["is_member"]:
+            errs.append(ValueError("trial_member", n_(
+                "Trial membership implies membership.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
@@ -2269,6 +2326,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_soft_limit': Optional[datetime.datetime],
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
+    'field_definition_notes': Optional[str],
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
@@ -3391,6 +3449,8 @@ def _serialized_event(
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
+    }
+    mandatory_tables: TypeMapping = {
         'event.events': Mapping,
         'event.event_parts': Mapping,
         'event.course_tracks': Mapping,
@@ -3409,15 +3469,17 @@ def _serialized_event(
         'event.event_fees': Mapping,
         'event.stored_queries': Mapping,
     }
-    optional_fields: TypeMapping = {
+    optional_tables: TypeMapping = {
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
         'event.track_groups': Mapping,
         'event.track_group_tracks': Mapping,
+        models_droid.OrgaToken.database_table: Mapping,
     }
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, dict(collections.ChainMap(mandatory_fields, mandatory_tables)),
+        optional_tables, **kwargs)
 
     if val['EVENT_SCHEMA_VERSION'] != EVENT_SCHEMA_VERSION:
         raise ValidationSummary(ValueError(
@@ -3489,7 +3551,10 @@ def _serialized_event(
             _event_track_group, {'id': ID, 'event_id': ID}),
         'event.track_group_tracks': _augment_dict_validator(
             _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
+        # Ignore models_droid.OrgaToken. Do not validate and do not import.
     }
+
+    new_val = {k: val[k] for k in mandatory_fields}
 
     errs = ValidationSummary()
     for table, validator in table_validators.items():
@@ -3499,7 +3564,7 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     for table, validator in optional_table_validators.items():
         if table not in val:
@@ -3510,28 +3575,29 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     if errs:
         raise errs
 
     # Third a consistency check
-    if len(val['event.events']) != 1:
+    if len(new_val['event.events']) != 1:
         errs.append(ValueError('event.events', n_(
             "Only a single event is supported.")))
-    if val['event.events'] and val['id'] != val['event.events'][val['id']]['id']:
+    event_id = new_val['id']
+    if new_val['event.events'] and event_id != new_val['event.events'][event_id]['id']:
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
-    for k, v in val.items():
-        if k not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
-            for event in v.values():
-                if event.get('event_id') and event['event_id'] != val['id']:
-                    errs.append(ValueError(k, n_("Mismatched event.")))
+    for table, entity_dict in new_val.items():
+        if table not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
+            for entity in entity_dict.values():
+                if entity.get('event_id') and entity['event_id'] != event_id:
+                    errs.append(ValueError(table, n_("Mismatched event.")))
 
     if errs:
         raise errs
 
-    return SerializedEvent(val)
+    return SerializedEvent(new_val)
 
 
 @_add_typed_validator
@@ -4322,12 +4388,17 @@ def _assembly_attachment(
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", creation: bool = False,
+    **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
-    optional_fields: TypeMapping = {}
+    if creation:
+        mandatory_fields = {'attachment_id': ID, **ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {'attachment_id': ID, 'version_nr': ID}
+        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -4692,7 +4763,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, misc]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4748,61 +4819,22 @@ def _range(
 
 @_add_typed_validator
 def _log_filter(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilter:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilter)
-
-
-@_add_typed_validator
-def _log_filter_changelog(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterChangelog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterChangelog)
-
-
-@_add_typed_validator
-def _log_filter_entity_log(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterEntityLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterEntityLog)
-
-
-@_add_typed_validator
-def _log_filter_finance(
-    val: Any, argname: str = None, *, log_table: LogTable, **kwargs: Any
-) -> LogFilterFinanceLog:
-    return _log_filter_common(
-        val, argname, log_table=log_table, filter_class=LogFilterFinanceLog)
-
-
-LF = TypeVar("LF", bound=LogFilter)
-
-
-def _log_filter_common(
     val: Any, argname: str = None,
-    *, log_table: LogTable, filter_class: Type[LF],
+    *, subtype: Type[GenericLogFilter],
     **kwargs: Any
-) -> LF:
+) -> LogFilter:
 
-    if isinstance(val, filter_class):
-        val_dict = val.__dict__
-    else:
-        val_dict = dict(_mapping(val, argname, **kwargs))
+    if isinstance(val, GenericLogFilter):
+        val = val.to_validation()
+    val = dict(_mapping(val, argname, **kwargs))
 
-    if not val_dict.get('length'):
-        val_dict['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
-    if val_dict.get('table', log_table) != log_table:
-        raise ValidationSummary(ValueError(n_("Table mismatch.")))
-    # Ensure this is an enum member, not just a string.
-    val_dict['table'] = LogTable(log_table)
+    if not val.get('length'):
+        val['length'] = _CONFIG['DEFAULT_LOG_LENGTH']
 
-    val_dict = _examine_dictionary_fields(
-        val_dict, {}, typing.get_type_hints(filter_class))
+    mandatory, optional = subtype.validation_fields()
+    val = _examine_dictionary_fields(val, mandatory, optional)
 
-    return filter_class(**val_dict)
+    return LogFilter(val)
 
 
 E = TypeVar('E', bound=Enum)

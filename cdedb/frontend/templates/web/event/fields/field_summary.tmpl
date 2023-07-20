@@ -109,6 +109,12 @@
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
     </div>
+    {% if ambience['event']['field_definition_notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Custom Fields Notes"), icon="tag",
+                                     aclass="panel-default panel-condensed") %}
+            <div id="field-definition-notes">{{ ambience['event']['field_definition_notes']|md }}</div>
+        {% endcall %}
+    {% endif %}
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/field_summary') }}
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">

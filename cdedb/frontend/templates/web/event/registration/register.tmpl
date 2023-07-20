@@ -67,7 +67,7 @@
             {% endcall %}
         {% endif %}
 
-        <h3 class="heading-underline">{% trans %}My Data{% endtrans %}</h3>
+        {{ util.h(n_("My Data"), underline=true) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
@@ -104,14 +104,12 @@
         </p>
 
         {% if ambience['event']['parts']|length > 1 %}
-            <h3 class="heading-underline">{% trans %}Registration{% endtrans %}</h3>
+            {{ util.h(n_("Registration"), underline=true) }}
         {% endif %}
 
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
-                                          entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                              |dict_entries('id', 'title')) }}
-
+                                          entries=part_options) }}
             <div class="panel panel-primary">
                 <div class="panel-body">
                     {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
@@ -142,11 +140,11 @@
         {% endif %}
 
         {% if choice_objects %}
-            <h3 class="">{% trans %}Course Choices{% endtrans %}</h3>
+            {{ util.h(n_("Course Choices"), underline=true) }}
             {{ generic_event.select_all_course_choices() }}
         {% endif %}
 
-        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
+        {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
@@ -215,7 +213,7 @@
 
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ user.persona_id }},
+            'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',

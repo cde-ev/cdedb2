@@ -10,9 +10,10 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    read_conditional_write_composer, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, read_conditional_write_composer,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -25,7 +26,7 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -107,14 +108,15 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
+    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter
                           ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(rs, log_filter, "past_event.log")
+        log_filter = affirm_dataclass(PastEventLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("cde", "event")
     def list_institutions(self, rs: RequestState) -> Dict[int, str]:
@@ -729,6 +731,8 @@ class PastEventBackend(AbstractBackend):
             course_map[course_id] = pcourse_id
         reg_ids = self.event.list_registrations(rs, event['id'])
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
+        # Remember if there were registrations for this part.
+        registrations_seen = False
         # we want to later delete empty courses
         courses_seen = set()
         # we want to add each participant/course combination at
@@ -738,6 +742,7 @@ class PastEventBackend(AbstractBackend):
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
+            registrations_seen = True
             is_orga = reg['persona_id'] in event['orgas']
             for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
@@ -758,6 +763,10 @@ class PastEventBackend(AbstractBackend):
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
                     is_instructor=False, is_orga=is_orga)
+        # Delete past event if it has no participants.
+        if not registrations_seen:
+            self.delete_past_event(rs, new_id, cascade=("log",))
+            return 0
         # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
@@ -770,7 +779,7 @@ class PastEventBackend(AbstractBackend):
     def archive_event(self, rs: RequestState, event_id: int,
                       create_past_event: bool = True
                       ) -> Union[Tuple[None, str],
-                                 Tuple[Optional[Tuple[int, ...]], None]]:
+                                 Tuple[Optional[List[int]], None]]:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -795,8 +804,8 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if any(now().date() < part['part_end']
-                   for part in event['parts'].values()):
+            if not event['is_cancelled'] and any(now().date() < part['part_end']
+                                                 for part in event['parts'].values()):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."
@@ -804,19 +813,25 @@ class PastEventBackend(AbstractBackend):
                                                'is_archived': True})
             new_ids = None
             if create_past_event:
-                new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                                for part_id in xsorted(event['parts']))
+                new_ids = []
+                for part_id in xsorted(event['parts']):
+                    new_id = self.archive_one_part(rs, event, part_id)
+                    if new_id:
+                        new_ids.append(new_id)
+                if not new_ids:
+                    raise ValueError(n_("No event parts have any participants."))
         return new_ids, None
 
     @access("member", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

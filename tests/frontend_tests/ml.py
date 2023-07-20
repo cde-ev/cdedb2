@@ -61,47 +61,45 @@ class TestMlFrontend(FrontendTest):
         if self.user_in('martin'):
             ins = {"Übersicht"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten",
-                   "Log"}
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
         # Users with core admin privileges for some mailinglists:
         elif self.user_in('vera'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif self.user_in('viktor'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif self.user_in('annika'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Moderierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten",
-                   "Alle Nutzer verwalten"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif self.user_in('berta'):
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Nutzer verwalten"}
         # Users with full ml-admin privileges.
         elif self.user_in('nina'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Nutzer verwalten", "Alle Nutzer verwalten",
+                   "Accounts verschmelzen", "Nutzer verwalten",
                    "Log", "Moderierte Mailinglisten"}
             out = {"Übersicht"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif self.user_in('anton'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Alle Nutzer verwalten", "Log"}
+                   "Nutzer verwalten", "Log"}
             out = {"Übersicht"}
         # Auditors
         elif self.user_in('katarina'):
             ins = {"Übersicht", "Log"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Alle Nutzer verwalten"}
+                   "Aktive Mailinglisten", "Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -806,6 +804,7 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = "Noch mehr Gemunkel."
         f['domain'] = const.MailinglistDomain.lists
         f['local_part'] = 'munkelwand'
+        f['additional_footer'] = "Man munklelt, dass…"
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
@@ -841,6 +840,14 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Munkelwand")
         self.assertPresence("Clown")
         self.assertPresence("Garcia Generalis")
+
+    @as_users("janis")
+    def test_create_mailinglist_unprivileged(self) -> None:
+        self.get("/ml/mailinglist/create", status=403)
+        self.get("/ml/mailinglist/create?ml_type=MailinglistTypes.general_opt_in",
+                 status=403)
+        self.post("/ml/mailinglist/create",
+                  {'ml_type': "MailinglistTypes.general_opt_in"}, status=403)
 
     @as_users("nina")
     def test_change_mailinglist(self) -> None:
@@ -1207,6 +1214,7 @@ class TestMlFrontend(FrontendTest):
         # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
+        f['additional_footer'] = "Disco, Disco."
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow
@@ -1241,6 +1249,7 @@ class TestMlFrontend(FrontendTest):
                          f['attachment_policy'].value)
         self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
+        self.assertEqual("Disco, Disco.", f['additional_footer'].value)
 
     @as_users("janis")
     # add Janis as restricted moderator
@@ -1315,7 +1324,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
 
-    @as_users("inga")
+    @as_users("ludwig")
     def test_cdelokal_admin(self) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})

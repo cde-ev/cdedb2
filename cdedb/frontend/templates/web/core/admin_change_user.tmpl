@@ -53,7 +53,7 @@
             {% endif %}
         {% endif %}
 
-        <h4 class="heading-underline">Account & Membership</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         {% if 'cde' in admin_bits %}
             {% if "donation" in shown_fields %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
@@ -125,6 +125,10 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id'])) }}
+        {% if values['code'] == enums['PersonaChangeStati'].pending %}
+            {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, ambience['persona']['id'])) }}
+        {% else %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, ambience['persona']['id'])) }}
+        {% endif %}
     </form>
 {% endblock %}

@@ -94,6 +94,11 @@ Die möglichen Operationen sind wie folgt.
 Ein Beispiel mit allen möglichen Operationen findet sich am Ende
 :ref:`handbuch-partieller-import-beispiel`.
 
+.. note:: Eine Reihe von vorgefertigten Templates existiert im
+          `Import-Daten-Repo
+          <https://tracker.cde-ev.de/gitea/orgas/cdedb_data_imports>`_. Mit
+          diesen ist es bspw. möglich alle Höfe in Kirchheim anzulegen.
+
 Hinweise
 --------
 

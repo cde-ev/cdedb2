@@ -22,15 +22,16 @@ from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Se
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
+    Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    cast_fields, encrypt_password, internal, singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, RequestState, glue, json_serialize, make_persona_name, now,
-    unwrap,
+    DefaultReturnCode, DeletionBlockers, RequestState, glue, json_serialize,
+    make_persona_name, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -42,10 +43,11 @@ from cdedb.common.fields import (
     TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
+from cdedb.models.droid import OrgaToken
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
@@ -117,16 +119,14 @@ class EventBaseBackend(EventLowLevelBackend):
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: EventLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "event.log")
-        event_ids = log_filter.get('entity_ids', ())
-        event_ids = affirm_set(vtypes.ID, event_ids)
+        log_filter = affirm_dataclass(EventLogFilter, log_filter)
+        event_ids = log_filter.event_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
@@ -137,7 +137,7 @@ class EventBaseBackend(EventLowLevelBackend):
         else:
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.generic_retrieve_log(rs, log_filter, "event.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
@@ -377,8 +377,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': event_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "event.orgas", new_orga,
-                                    drop_on_conflict=True)
+                r = self.sql_insert(rs, "event.orgas", new_orga, drop_on_conflict=True)
                 if r:
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
@@ -406,6 +405,233 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
+    def list_orga_tokens(self, rs: RequestState, event_id: int) -> dict[int, str]:
+        """List all orga tokens belonging to one event.
+
+        :returns: Mapping of token ids to titles.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        if not self.is_orga(rs, event_id=event_id):
+            raise PrivilegeError
+        data = self.sql_select(rs, OrgaToken.database_table, ("id", "title",),
+                               (event_id,), entity_key="event_id")
+        return {e['id']: e['title'] for e in data}
+
+    @access("event")
+    def get_orga_tokens(self, rs: RequestState, orga_token_ids: Collection[int]
+                        ) -> dict[int, OrgaToken]:
+        """Retrieve information about orga tokens."""
+        orga_token_ids = affirm_set(vtypes.ID, orga_token_ids)
+        if not orga_token_ids:
+            return {}
+
+        with Atomizer(rs):
+            data = self.sql_select(
+                rs, OrgaToken.database_table, OrgaToken.database_fields(),
+                orga_token_ids)
+
+            event_ids = {e['event_id'] for e in data}
+            if not len(event_ids) == 1:
+                raise ValueError(n_("Only orga tokens from one event allowed."))
+            if not self.is_orga(rs, event_id=unwrap(event_ids)):
+                raise PrivilegeError
+
+            ret: dict[int, OrgaToken] = {}
+            for e in data:
+                ret[e['id']] = OrgaToken(
+                    id=e['id'],
+                    event_id=e['event_id'],
+                    title=e['title'],
+                    notes=e['notes'],
+                    ctime=e['ctime'],
+                    etime=e['etime'],
+                    rtime=e['rtime'],
+                    atime=e['atime'],
+                )
+        return ret
+
+    class _GetOrgaAPITokenProtocol(Protocol):
+        def __call__(self, rs: RequestState, orga_token_id: int) -> OrgaToken: ...
+    get_orga_token: _GetOrgaAPITokenProtocol = singularize(
+        get_orga_tokens, "orga_token_ids", "orga_token_id")
+
+    @access("event")
+    def create_orga_token(self, rs: RequestState, data: OrgaToken
+                          ) -> tuple[int, str]:
+        """Create a new orga token for the given event.
+
+        :returns: A tuple of the new token id and it's secret. The secret is only
+            stored as a hash and thus cannot be retrieved again.
+        """
+        data = affirm_dataclass(OrgaToken, data, creation=True)
+
+        with Atomizer(rs):
+            if not self.is_orga(rs, event_id=data.event_id):
+                raise PrivilegeError
+
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not create new orga token in offline instance."))
+
+            secret = OrgaToken.create_secret()
+            tdata = data.to_database()
+            tdata['secret_hash'] = encrypt_password(secret)
+            # Expiration time is not set automatically.
+            tdata['etime'] = data.etime
+
+            new_id = self.sql_insert(rs, OrgaToken.database_table, tdata)
+            self.event_log(rs, const.EventLogCodes.orga_token_created,
+                           data.event_id, change_note=data.title)
+        return new_id, secret
+
+    @access("event")
+    def change_orga_token(self, rs: RequestState, data: CdEDBObject
+                          ) -> DefaultReturnCode:
+        """Change some keys of an existing orga token.
+
+        Note that only a small subset of token attributes may be changed.
+        """
+        data = affirm(vtypes.OrgaToken, data)
+
+        with Atomizer(rs):
+            current = self.get_orga_token(rs, data['id'])
+            current_data = current.to_database()
+
+            if not self.is_orga(rs, event_id=current.event_id):
+                raise PrivilegeError
+
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not change orga token in offline instance."))
+
+            ret = 1
+            if any(data[k] != current_data[k] for k in data):
+                ret *= self.sql_update(rs, OrgaToken.database_table, data)
+
+                if 'title' in data and data['title'] != current.title:
+                    change_note = f"'{current.title}' -> '{data['title']}'"
+                else:
+                    change_note = current.title
+                self.event_log(
+                    rs, const.EventLogCodes.orga_token_changed, current.event_id,
+                    change_note=change_note)
+        return ret
+
+    @access("event")
+    def revoke_orga_token(self, rs: RequestState, orga_token_id: int
+                          ) -> DefaultReturnCode:
+        """Revoke an existing orga token and delete its hashed secret."""
+        orga_token_id = affirm(vtypes.ID, orga_token_id)
+
+        with Atomizer(rs):
+            current = self.get_orga_token(rs, orga_token_id)
+
+            if not self.is_orga(rs, event_id=current.event_id):
+                raise PrivilegeError
+
+            if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+                raise ValueError(n_(
+                    "May not revoke orga token in offline instance."))
+
+            if current.rtime:
+                raise ValueError(n_("This orga token has already been revoked."))
+
+            data = {
+                'id': orga_token_id,
+                'secret_hash': None,
+                'rtime': now(),
+            }
+            ret = self.sql_update(rs, OrgaToken.database_table, data)
+            self.event_log(rs, const.EventLogCodes.orga_token_revoked,
+                           event_id=current.event_id, change_note=current.title)
+
+        return ret
+
+    @access("event")
+    def delete_orga_token_blockers(self, rs: RequestState, orga_token_id: int
+                                   ) -> DeletionBlockers:
+        """Determine what keeps an orga  token from being deleted.
+
+        Possible blockers:
+
+        * atime: Block deletion if the token has ever been used.
+        * log: Log entries linked to the token.
+
+        Blockers should only be cascaded during event deletion.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        orga_token_id = affirm(vtypes.ID, orga_token_id)
+        blockers: DeletionBlockers = {}
+
+        orga_token = self.sql_select_one(
+            rs, OrgaToken.database_table, ("atime",), orga_token_id)
+        if orga_token and orga_token['atime']:
+            blockers['atime'] = [True]
+
+        log = self.sql_select(
+            rs, "event.log", ("id",), (orga_token_id,), entity_key="droid_id")
+        if log:
+            blockers['log'] = [e['id'] for e in log]
+
+        return blockers
+
+    @access("event")
+    def delete_orga_token(self, rs: RequestState, orga_token_id: int,
+                          cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Delete an orga  token.
+
+        :param cascade: Specify which deletion blockers to cascadingly remove or ignore.
+            If None or empty, cascade none.
+        """
+        orga_token_id = affirm(vtypes.ID, orga_token_id)
+        blockers = self.delete_orga_token_blockers(rs, orga_token_id)
+        cascade = affirm_set(str, cascade or ()) & blockers.keys()
+
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 'type': "orga token",
+                                 'block': blockers.keys() - cascade,
+                             })
+
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            raise ValueError(n_(
+                "May not revoke orga token in offline instance."))
+
+        ret = 1
+        with Atomizer(rs):
+            orga_token = self.get_orga_token(rs, orga_token_id)
+
+            if not self.is_orga(rs, event_id=orga_token.event_id):
+                raise PrivilegeError
+
+            if cascade:
+                if 'atime' in cascade:
+                    update = {
+                        'id': orga_token_id,
+                        'atime': None,
+                    }
+                    ret *= self.sql_update(rs, OrgaToken.database_table, update)
+                if 'log' in cascade:
+                    ret *= self.sql_delete(rs, "event.log", blockers['log'])
+
+                blockers = self.delete_orga_token_blockers(rs, orga_token_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(
+                    rs, OrgaToken.database_table, orga_token_id)
+                self.event_log(rs, const.EventLogCodes.orga_token_deleted,
+                               orga_token.event_id, change_note=orga_token.title)
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {'type': "orga token", 'block': blockers.keys()})
+
+        return ret
+
+    @access("event", "droid_orga")
     def set_event(self, rs: RequestState, data: CdEDBObject,
                   change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
@@ -450,7 +676,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
                     edata[f] for f in ("lodge_field", "camping_mat_field",
-                                       "course_room_field") if f in edata)
+                                       "course_room_field") if f in edata
+                )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
                         rs, "event.field_definitions",
@@ -816,7 +1043,7 @@ class EventBaseBackend(EventLowLevelBackend):
         num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_questionnaire(self, rs: RequestState, event_id: int,
                           kinds: Collection[const.QuestionnaireUsages] = None
                           ) -> CdEDBQuestionnaire:
@@ -957,6 +1184,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
+                (OrgaToken.database_table, "event_id", tuple(
+                    OrgaToken.database_fields())),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
                 ('event.log', "event_id", (
@@ -987,7 +1216,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
         return ret
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def partial_export_event(self, rs: RequestState,
                              event_id: int) -> CdEDBObject:
         """Export an event for third-party applications.
@@ -1036,6 +1265,9 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            tokens = list_to_dict(self.sql_select(
+                rs, OrgaToken.database_table, OrgaToken.database_fields(),
+                (event_id,), entity_key="event_id"))
             questionnaire = self.get_questionnaire(rs, event_id)
             persona_ids = tuple(reg['persona_id']
                                 for reg in registrations.values())
@@ -1105,6 +1337,12 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['fields'] = cast_fields(registration['fields'],
                                                  event['fields'])
         ret['registrations'] = registrations
+
+        for token_id, orga_token in tokens.items():
+            del orga_token['id']
+            del orga_token['event_id']
+        event['orga_tokens'] = tokens
+
         # now we add additional information that is only auxillary and
         # does not correspond to changeable entries
         #
@@ -1274,7 +1512,7 @@ class EventBaseBackend(EventLowLevelBackend):
             # timestamp to not include log entries from the latest commit.
             timestamp += datetime.timedelta(seconds=1)
             _, entries = self.retrieve_log(
-                rs, {'entity_ids': [event_id], 'ctime': (timestamp, None)})
+                rs, EventLogFilter(event_id=event_id, ctime_from=timestamp))
             # short circuit if there are no new log entries
             if not entries:
                 return None

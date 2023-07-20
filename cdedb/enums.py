@@ -8,8 +8,6 @@ one list instead of two.
 from enum import Enum, IntEnum
 from typing import Tuple, Type
 
-from subman.machine import SubscriptionAction, SubscriptionPolicy
-
 import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
@@ -17,12 +15,12 @@ from cdedb.common import (
     TransactionType,
 )
 from cdedb.common.query import QueryOperators, QueryScope
-from cdedb.common.query.log_filter import LogTable
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.Genders,
-    const.MemberChangeStati,
+    const.PersonaChangeStati,
     const.RegistrationPartStati,
     const.PrivilegeChangeStati,
     const.GenesisStati,
@@ -47,7 +45,6 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.CourseTrackGroupType,
     QueryOperators,
     QueryScope,
-    LogTable,
     AgeClasses,
     LineResolutions,
     GenesisDecision,

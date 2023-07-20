@@ -396,6 +396,10 @@ class CoreGenesisBackend(CoreBaseBackend):
                 }
                 update['display_name'] = update['given_names']
                 update['id'] = persona_id
+                # we grant trial membership by default for cde genesis cases
+                if "cde" in roles and not persona["is_member"]:
+                    self.change_membership_easy_mode(
+                        rs, persona_id, is_member=True, trial_member=True)
                 # Set force_review, so that all changes can be reviewed and adjusted
                 # manually and we don't just overwrite existing data blindly.
                 self.change_persona(

@@ -104,22 +104,24 @@
 
 {# Macro to visually represent an immutable boolean value
 
-   checked    The actual boolean value to show
+   checked    The actual boolean value to show, or none.
    anid       The HTML id to add to the element. Useful for testing purposes.
-   titles     An optional list/tuple of two elements: The HTML `title` attribute (hover text) for the False state and
-              the title attribute for the True state. The title is also used as an screenreader-readable hidden text.
+   titles     An optional list/tuple of two or three elements: The HTML `title` attribute (hover text) for the False
+              state and the title attribute for the True state. If the value is nullable, there also must be a third
+              attribute for the null state. The title is also used as an screenreader-readable hidden text.
               If you don't provide `titles` and the icon is semantically important, please make sure to make the value
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid=none, titles=[]) %}
-    {% set title = titles[checked | int] %}
-    <span{{ dict(
-        class="fas fa-check-circle" if checked else "far fa-times-circle",
-        id=anid,
-        title=title,
-        **{
-            "data-checked": checked,
-            "aria-hidden": "true"
-        })|xmlattr }}></span>
+    {% if checked is false %}
+        {% set title = titles[0] if titles else "" %}
+        <span class="far fa-times-circle" id="{{ anid }}" title="{{ title }}" data-checked="False" aria-hidden="true"></span>
+    {% elif checked is true %}
+        {% set title = titles[1] if titles else "" %}
+        <span class="fas fa-check-circle" id="{{ anid }}" title="{{ title }}" data-checked="True" aria-hidden="true"></span>
+    {% else %}
+        {% set title = titles[2] if titles else "" %}
+        <span class="far fa-circle" id="{{ anid }}" title="{{ title }}" aria-hidden="true"></span>
+    {% endif %}
     {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
@@ -255,7 +257,7 @@
     {%- endif -%}
 {% endmacro %}
 
-{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
+{# Helper macro to create a large, right-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink_(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
@@ -885,12 +887,45 @@ mailto:
 {%- endmacro %}
 
 
-{# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
+{# Macro to handle headings in a uniform way.
+    Adds an anchor (for everything smaller than h1) to make it linkable as well as a hoverable link referring to it.
+    Take care to put the title in n_() to do postpone localization to this macro (we need the english variant
+    for uniform IDs). For headings not to be localized, just set translate=False.
+#}
+{% macro h(title, level=3, underline=False, translate=True, anchor=none, aclass=none) %}
+    {% if anchor is none and level != 1 %}
+        {% set anchor = title %}
+    {% endif %}
+    {# ids must not contain any whitespace #}
+    {% if anchor %}
+        {% set anchor='_'.join((anchor|string).split()) %}
+    {% endif %}
+    <h{{ level }} class="
+            {%- if level == 1 %}title {% endif -%}
+            {%- if underline %}heading-underline {% endif -%}
+            {%- if aclass %}{{ aclass }}{% endif -%}"
+        {%- if anchor %} id="{{ anchor }}"{% endif -%}
+    >
+        {%- if translate %}
+            {{- gettext(title) -}}
+        {% else %}
+            {{- title -}}
+        {% endif -%}
+        {%- if caller -%}
+            {{ caller() }}
+        {%- endif -%}
+        {%- if anchor -%}
+            {{- nbsp }}<a class="headerlink" href="#{{ anchor|urlencode }}"
+               title="{% trans %}Permanent link{% endtrans %}">&para;</a>
+        {%- endif %}
+    </h{{ level }}>
+{% endmacro %}
+
+{# Macro to unify the style of primary headings with context (events, personas, assemblies, ...) #}
 {% macro context_heading(title,
                          subtitle=none, icon=none, icon_arialabel=none,
                          subtitle2=none, icon2=none, icon_arialabel2=none) %}
-    <h1 class="title">
-        {{ title }}
+    {% call h(title, level=1) -%}
         {% if subtitle and subtitle2 %}<div>{% endif %}
         {% if subtitle %}
             <small>
@@ -903,7 +938,7 @@ mailto:
             </small>
         {% endif %}
         {% if subtitle and subtitle2 %}</div>{% endif %}
-    </h1>
+    {%- endcall %}
 {% endmacro %}
 
 

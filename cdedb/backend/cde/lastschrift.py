@@ -30,7 +30,8 @@ from cdedb.database.connection import Atomizer
 class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
-            self, rs: RequestState, persona_id: int, is_member: bool
+            self, rs: RequestState, persona_id: int, is_member: bool = None,
+            trial_member: bool = None
     ) -> Tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
@@ -39,18 +40,20 @@ class CdELastschriftBackend(CdEBaseBackend):
 
         In the general situation this variant should be used.
 
-        :param is_member: Desired target state of membership.
+        :param is_member: Desired target state of membership or None.
+        :param trial_member: Desired target state of trial membership or None.
         :returns: A tuple containing the return code, the id of the
             revoked lastschrift permit or None, and whether any in-flight
             transactions are affected and if yes, which one.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm(bool, is_member)
+        is_member = affirm_optional(bool, is_member)
+        trial_member = affirm_optional(bool, trial_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
         with Atomizer(rs):
-            if not is_member:
+            if is_member is False:
                 lastschrift_ids = self.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 # at most one active lastschrift per user is allowed
@@ -69,10 +72,11 @@ class CdELastschriftBackend(CdEBaseBackend):
                         raise ValueError(n_(
                             "Failed to revoke active lastschrift permit"))
                     revoked_permit = lastschrift_id
-            code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
+            code = self.core.change_membership_easy_mode(
+                rs, persona_id, is_member=is_member, trial_member=trial_member)
         return code, revoked_permit, collateral_transaction
 
-    @access("member", "core_admin", "cde_admin")
+    @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
                          active: Optional[bool] = True) -> Dict[int, int]:

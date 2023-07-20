@@ -469,14 +469,14 @@ class TestPrivacyFrontend(FrontendTest):
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
 
-    @as_users("annika", "inga", "nina", "quintus", "viktor")
+    @as_users("annika", "ludwig", "nina", "quintus", "viktor")
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
             (64, 'janis', 'nina'),  # public
-            (65, 'janis', 'inga'),  # cdelokal
+            (65, 'janis', 'ludwig'),  # cdelokal
             (56, 'garcia', 'quintus'),  # team
             (9, 'garcia', 'annika'),  # event
             (5, 'kalif', 'viktor'),  # assembly
@@ -578,9 +578,6 @@ class TestPrivacyFrontend(FrontendTest):
         core = {
             USER_DICT['farin']['id'], USER_DICT['paul']['id']
         }
-        archive = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
-        }
         cde = {
             USER_DICT['farin']['id'], USER_DICT['quintus']['id']
         }
@@ -603,14 +600,6 @@ class TestPrivacyFrontend(FrontendTest):
                     self.assertTitle("Allgemeine Nutzerverwaltung")
                 else:
                     self.get('/core/search/user',
-                             status="403 Zugriff auf CoreFrontend/* verweigert.")
-                    self.assertTitle("403: Forbidden")
-
-                if self.user_in(*archive):
-                    self.get('/core/search/fulluser')
-                    self.assertTitle("Vollständige Nutzerverwaltung")
-                else:
-                    self.get('/core/search/fulluser',
                              status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
@@ -680,7 +669,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... and then non-member
         self.traverse({'href': '/core/persona/2/membership/change'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
 
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']

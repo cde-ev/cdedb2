@@ -215,7 +215,7 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                          util.persona_name(persona, only_given_names=True)) }}
                             {{ util.href(show_user_link(user, lastschrift['persona_id']),
-                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default float-right") }}
+                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
                         </li>
                     {% endfor %}
                 </ul>

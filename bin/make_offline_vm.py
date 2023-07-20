@@ -21,6 +21,7 @@ from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
 )
+from cdedb.models.droid import OrgaToken
 from cdedb.script import Script
 
 # This is 'secret' the hashed
@@ -51,8 +52,10 @@ DEFAULTS = {
         'trial_member': False,
         'decided_search': True,
         'bub_search': False,
+        'paper_expuls': True,
         'foto': None,
         'fulltext': '',
+        'notes': 'This is just a copy, changes to profiles will not be persisted.'
     }
 }
 
@@ -195,6 +198,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        OrgaToken.database_table,
     )
 
     print("Connect to database")
@@ -228,12 +232,10 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 del datum['id']
                 del datum['password_hash']
                 del datum['fulltext']
-                datum['notes'] = ('This is just a copy, changes to profiles'
-                                  ' will not be persisted.')
                 datum['submitted_by'] = persona['id']
                 datum['generation'] = 1
                 datum['change_note'] = 'Create surrogate changelog.'
-                datum['code'] = 2  # MemberChangeStati.committed
+                datum['code'] = 2  # PersonaChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
                 query = (f"INSERT INTO core.changelog ({', '.join(keys)})"

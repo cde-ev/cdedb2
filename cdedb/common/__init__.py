@@ -36,6 +36,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 CdEDBObject = Dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
 
@@ -97,13 +99,19 @@ T = TypeVar("T")
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id: Optional[int] = None,
+    def __init__(self, *, persona_id: Optional[int] = None,
+                 droid_class: Optional[Type["APIToken"]] = None,
+                 droid_token_id: Optional[int] = None,
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
+        self.droid_class = droid_class
+        self.droid_token_id = droid_token_id
+        if self.persona_id and (self.droid_class or self.droid_token_id):
+            raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name
@@ -209,7 +217,7 @@ class RequestState(ConnectionContainer):
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_return_code(self, code: Union[DefaultReturnCode, bool, None],
+    def notify_return_code(self, code: Union[DefaultReturnCode, bool], *,
                            success: str = n_("Change committed."),
                            info: str = n_("Change pending."),
                            error: str = n_("Change failed.")) -> None:
@@ -218,7 +226,7 @@ class RequestState(ConnectionContainer):
         We allow some flexibility in what type of return code we accept. It
         may be a boolean (with the obvious meanings), an integer (specifying
         the number of changed entries, and negative numbers for entries with
-        pending review) or None (signalling failure to acquire something).
+        pending review).
 
         :param success: Affirmative message for positive return codes.
         :param info: Message for negative return codes signalling review.
@@ -791,7 +799,7 @@ class LodgementsSortkeys(enum.Enum):
 
 
 @enum.unique
-class AgeClasses(enum.IntEnum):
+class AgeClasses(CdEIntEnum):
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
@@ -846,7 +854,7 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
 
 
 @enum.unique
-class LineResolutions(enum.IntEnum):
+class LineResolutions(CdEIntEnum):
     """Possible actions during batch admission
     """
     create = 1  #: Create a new account with this data.
@@ -876,7 +884,7 @@ class LineResolutions(enum.IntEnum):
 
 
 @enum.unique
-class GenesisDecision(enum.IntEnum):
+class GenesisDecision(CdEIntEnum):
     """Possible decisions during review of a genesis request."""
     approve = 1  #: Approve the request and create a new account.
     deny = 2  #: Deny the request. Do not create or update an account.
@@ -957,7 +965,7 @@ class InfiniteEnum(Generic[E]):
 
 @infinite_enum
 @enum.unique
-class CourseFilterPositions(enum.IntEnum):
+class CourseFilterPositions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     We want to find registrations which have a specific course as choice
@@ -974,7 +982,7 @@ class CourseFilterPositions(enum.IntEnum):
 
 @infinite_enum
 @enum.unique
-class CourseChoiceToolActions(enum.IntEnum):
+class CourseChoiceToolActions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
@@ -986,20 +994,19 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.IntEnum):
+class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
-    Account0 = 8068900
-    Account1 = 8068901
-    Account2 = 8068902
+    Account0 = "DE26370205000008068900"
+    Account1 = "DE96370205000008068901"
     # Fallback if Account is none of the above
-    Unknown = 0
+    Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return str(self.value)
+        return self.value[-7:]
 
 
 @enum.unique
-class ConfidenceLevel(enum.IntEnum):
+class ConfidenceLevel(CdEIntEnum):
     """Store the different Levels of Confidence about the prediction."""
     Null = 0
     Low = 1
@@ -1028,7 +1035,7 @@ class ConfidenceLevel(enum.IntEnum):
 
 
 @enum.unique
-class TransactionType(enum.IntEnum):
+class TransactionType(CdEIntEnum):
     """Store the type of a Transactions."""
     MembershipFee = 1
     EventFee = 2

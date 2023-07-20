@@ -25,10 +25,10 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
 )
-from cdedb.common.fields import FINANCE_LOG_FIELDS, LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import FinanceLogFilter
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
@@ -288,30 +288,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
-            self.cdeproxy.submit_general_query, choices=choices)
-
-    @access("core_admin", "cde_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_cde_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_cde_users,
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
@@ -781,40 +758,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
         cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
+    @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, *FINANCE_LOG_FIELDS)
-    def view_finance_log(self, rs: RequestState,
-                         codes: Collection[const.FinanceLogCodes],
-                         offset: Optional[int],
-                         length: Optional[vtypes.PositiveInt],
-                         persona_id: Optional[vtypes.CdedbID],
-                         submitted_by: Optional[vtypes.CdedbID],
-                         change_note: Optional[str],
-                         time_start: Optional[datetime.datetime],
-                         time_stop: Optional[datetime.datetime],
-                         delta_from: Optional[decimal.Decimal],
-                         delta_to: Optional[decimal.Decimal],
-                         new_balance_from: Optional[decimal.Decimal],
-                         new_balance_to: Optional[decimal.Decimal],
-                         transaction_date_from: Optional[datetime.date],
-                         transaction_date_to: Optional[datetime.date],
-                         total_from: Optional[decimal.Decimal],
-                         total_to: Optional[decimal.Decimal],
-                         members_from: Optional[int],
-                         members_to: Optional[int],
-                         download: bool = False,
+    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool
                          ) -> Response:
         """View financial activity."""
-
-        filter_params = {
-            'codes': codes, 'offset': offset, 'length': length,
-            'persona_id': persona_id, 'submitted_by': submitted_by,
-            'change_note': change_note, 'ctime': (time_start, time_stop),
-            'delta': (delta_from, delta_to),
-            'new_balance': (new_balance_from, new_balance_to),
-            'transaction_date': (transaction_date_from, transaction_date_to),
-            'total': (total_from, total_to), 'members': (members_from, members_to),
-        }
-
         return self.generic_view_log(
-            rs, filter_params, "cde.finance_log", "view_finance_log", download)
+            rs, data, FinanceLogFilter, self.cdeproxy.retrieve_finance_log,
+            download=download, template="view_finance_log",
+        )

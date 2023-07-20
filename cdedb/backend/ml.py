@@ -7,7 +7,6 @@ import itertools
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
-from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -25,7 +24,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.query.log_filter import LogFilterEntityLogLike
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
@@ -35,6 +34,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
     get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -257,8 +257,7 @@ class MlBackend(AbstractBackend):
         return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml", "auditor")
-    def retrieve_log(self, rs: RequestState, log_filter: LogFilterEntityLogLike
-                     ) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: MlLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         To support relative admins, this is the only retrieve_log function
@@ -267,27 +266,30 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        log_filter = self.generic_affirm_log_filter(log_filter, "ml.log")
-        ml_ids = log_filter.get('entity_ids', ())
-        ml_ids = affirm_set(vtypes.ID, ml_ids)
+        log_filter = affirm_dataclass(MlLogFilter, log_filter)
+        ml_ids = log_filter.mailinglist_ids()
 
         if self.is_admin(rs) or "auditor" in rs.user.roles:
             pass
         elif not ml_ids:
-            raise PrivilegeError(n_("Must be admin to access global log."))
+            # Limit global log to managed lists for non-admins/non-auditors.
+            log_filter._mailinglist_ids = list(  # pylint: disable=protected-access
+                self.list_mailinglists(rs, active_only=False, managed='managed'))
+            log_filter = affirm_dataclass(MlLogFilter, log_filter)
         elif all(self.may_manage(rs, ml_id) for ml_id in ml_ids):
             pass
         else:
             raise PrivilegeError(n_("Not privileged."))
-        return self.generic_retrieve_log(rs, log_filter, "ml.log")
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
             # Potentially restrict to non-archived users.
             if not query.scope.includes_archived:
@@ -304,7 +306,7 @@ class MlBackend(AbstractBackend):
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
@@ -399,6 +401,7 @@ class MlBackend(AbstractBackend):
                     description=e["description"],
                     subject_prefix=e["subject_prefix"],
                     maxsize=e["maxsize"],
+                    additional_footer=e["additional_footer"],
                     notes=e["notes"],
                 )
                 if isinstance(ml, EventAssociatedMetaMailinglist):

@@ -46,19 +46,18 @@
                     "{{ gettext("The user will be added as a participant. This cannot be undone.") }}");
                 $('#input-add-attendee').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'pure_assembly_user'},
-                    {{ attendees|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    {{ attendees.all|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
         {% endcall %}
     {% endif %}
 
     <p id="attendees-count">
-        {{ gettext("%(count)s participants total.")|format(count=attendees|length) }}
+        {{ gettext("%(count)s participants total.")|format(count=attendees.all|length) }}
     </p>
     <div class="row" id="attendees-list">
         {# This is already sorted. #}
-        {% for list in attendees.values() | slice((3 if attendees|length > 20 else 2)
-                                                     if attendees|length > 10 else 1) %}
+        {% for list in attendees.all.values() | slice((3 if attendees.all|length > 20 else 2) if attendees.all|length > 10 else 1) %}
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona in list %}
@@ -71,20 +70,15 @@
 
     {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
         {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="p">
-                        {{ util.href(cdedblink('assembly/download_list_attendees'), gettext("TeX-List"), icon='download', aclass='btn btn-default') }}
-                    </div>
-                </div>
-                <div class="col-sm-8">
-                    <p class="text-muted">
-                        {% trans %}
-                            A download TeX-Snipped to generate a participant list in the protocol.
-                        {% endtrans %}
-                    </p>
-                </div>
-            </div>
+            <p class="text-muted">
+                {% trans %}
+                    A download TeX-Snipped to generate a participant list in the protocol.
+                {% endtrans %}
+            </p>
+            <form action="{{ cdedblink('assembly/download_list_attendees') }}" method="GET" id="downloadattendeesform" class="form-horizontal">
+                {{ util.form_input_text(name='cutoff', label=gettext("Cutoff"), type='datetime-local', small=False) }}
+                {{ util.form_input_submit(label=gettext("TeX-List"), icon="download", aclass="btn btn-default btn-sm", small=False) }}
+            </form>
         {% endcall %}
     {% endif %}
 {% endblock %}

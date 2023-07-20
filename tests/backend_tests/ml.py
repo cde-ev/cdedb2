@@ -4,14 +4,15 @@
 from typing import Collection, cast
 
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction as SA
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.ml as models_ml
 from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.database.constants import SubscriptionState as SS
+from cdedb.uncommon.submanshim import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
@@ -214,6 +215,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(3),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(2048),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(3), self.as_id(10)},
                 subject_prefix='witz',
@@ -231,6 +233,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(5),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(23)},
                 subject_prefix='kampf',
@@ -247,6 +250,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(7),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(10)},
                 subject_prefix='aktivenforum',
@@ -306,6 +310,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),
@@ -337,6 +342,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2), self.as_id(9)},
             whitelist=set(),
@@ -594,7 +600,7 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
             }
             _, log_entries = self.ml.retrieve_log(
-                self.key, {'entity_ids': [mailinglist_id]})
+                self.key, MlLogFilter(mailinglist_id=mailinglist_id))
             # its a bit annoying to check always the correct log id
             log_entries = [{k: v for k, v in log.items()
                             if k not in {'id', 'submitted_by'}}
@@ -1205,7 +1211,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, {'entity_ids': [mailinglist_id]})
+            self.key, MlLogFilter(mailinglist_id=mailinglist_id))
         expected_log = {
             'id': 1001,
             'change_note': None,
@@ -1314,6 +1320,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2)},
             subject_prefix='viva la revolution',
@@ -1417,6 +1424,7 @@ class TestMlBackend(BackendTest):
             event_id=self.as_id(2),
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2)},
             whitelist=set(),
@@ -1891,6 +1899,7 @@ class TestMlBackend(BackendTest):
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="cyber",
@@ -1953,6 +1962,7 @@ class TestMlBackend(BackendTest):
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="mgv-ag",
@@ -2002,6 +2012,7 @@ class TestMlBackend(BackendTest):
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="literatur",
@@ -2059,6 +2070,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),
@@ -2134,11 +2146,12 @@ class TestMlBackend(BackendTest):
         self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(
             (len(expectation), expectation[2:5]),
-            self.ml.retrieve_log(self.key, {'offset': 2, 'length': 3}))
+            self.ml.retrieve_log(self.key, MlLogFilter(offset=2, length=3)))
+
         self.assertEqual(
             (4, expectation[3:7]),
-            self.ml.retrieve_log(self.key, {'entity_ids': [new_id]}))
+            self.ml.retrieve_log(self.key, MlLogFilter(mailinglist_id=new_id)))
         self.assertEqual(
             (2, expectation[4:6]),
             self.ml.retrieve_log(
-                self.key, {'codes': (const.MlLogCodes.moderator_added,)}))
+                self.key, MlLogFilter(codes=[const.MlLogCodes.moderator_added])))

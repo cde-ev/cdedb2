@@ -29,9 +29,9 @@
         </thead>
         <tbody>
             {% for entry in log %}
-                <tr>
+                <tr id="{{ loop.index }}-{{ entry['id'] }}">
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
-                    <td>{{ gettext(enums['MemberChangeStati'](entry['code'])|string) }}</td>
+                    <td>{{ gettext(enums['PersonaChangeStati'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.persona_anchor(personas[entry['submitted_by']]) }}
@@ -66,5 +66,5 @@
     </table>
 
     {{ logging.navigation('core/view_changelog_meta', total, length, loglinks) }}
-    {{ logging.filter('core/view_changelog_meta', enums['MemberChangeStati'], 'admin_persona', 'changelog') }}
+    {{ logging.filter('core/view_changelog_meta', enums['PersonaChangeStati'], 'admin_persona', 'changelog') }}
 {% endblock %}

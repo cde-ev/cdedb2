@@ -141,6 +141,9 @@ _DEFAULTS = {
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
 
+    # droids which are allowed access during lockdown.
+    "INFRASTRUCTURE_DROIDS": {"resolve"},
+
     ##################
     # Frontend stuff #
     ##################

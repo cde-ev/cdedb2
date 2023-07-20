@@ -24,6 +24,7 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import (
@@ -55,6 +56,10 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import (
+    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
+    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
+)
 from cdedb.common.roles import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
 )
@@ -67,6 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -177,12 +183,12 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, ip)
-        if user.roles == {'anonymous'}:
+        if key and APIToken.token_string_pattern.fullmatch(key):
+            user = sessionproxy.lookuptoken(key, ip)
+            apitoken = key
+        else:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
-        else:
-            apitoken = key
 
         rs = RequestState(
             sessionkey=sessionkey,
@@ -201,13 +207,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
+            rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
+            rs.user.presider = backend.presider_info(
                 rs, rs.user.persona_id)
         return rs
 
@@ -464,22 +470,21 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None,
-                       log_retriever: Callable[..., CdEDBLog] = None,
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        if realm and not log_retriever:
-            log_retriever = getattr(self, realm).retrieve_log
-        if log_retriever:
-            new_kwargs = dict(kwargs)
-            for k in ('assembly_id', 'event_id', 'mailinglist_id'):
-                if k in kwargs:
-                    new_kwargs['entity_ids'] = [kwargs[k]]
-                    del new_kwargs[k]
-            _, log = log_retriever(self.key, new_kwargs)
-        else:
-            raise ValueError("No method of log retrieval provided.")
+        logs: dict[str, tuple[Callable[..., CdEDBLog], Type[GenericLogFilter]]] = {
+            'core': (self.core.retrieve_log, CoreLogFilter),
+            'changelog': (self.core.retrieve_changelog_meta, ChangelogLogFilter),
+            'cde': (self.cde.retrieve_cde_log, CdELogFilter),
+            'finance': (self.cde.retrieve_finance_log, FinanceLogFilter),
+            'assembly': (self.assembly.retrieve_log, AssemblyLogFilter),
+            'event': (self.event.retrieve_log, EventLogFilter),
+            'ml': (self.ml.retrieve_log, MlLogFilter),
+            'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+        }
+        log_retriever, log_filter_class = logs[realm]
+        _, log = log_retriever(self.key, log_filter_class(**kwargs))
 
         for real, exp in zip(log, log_expectation):
             if 'id' not in exp:
@@ -493,6 +498,9 @@ class BackendTest(CdEDBTest):
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
+                    exp[k] = None
+            for k in ('droid_id',):
+                if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
@@ -782,6 +790,16 @@ USER_DICT: Dict[str, UserObject] = {
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
     },
+    "ludwig": {
+        'id': 38,
+        'DB-ID': "DB-38-8",
+        'username': "ludwig@example.cde",
+        'password': "secret",
+        'diplay_name': "Ludwig",
+        'given_names': "Ludwig",
+        'family_name': "Lokus",
+        'default_name_format': "Ludwig Lokus",
+    },
     "viktor": {
         'id': 48,
         'DB-ID': "DB-48-5",
@@ -894,7 +912,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[str]"
+    gettext: "staticmethod[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -1214,17 +1232,21 @@ class FrontendTest(BackendTest):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
-    def assertTitle(self, title: str) -> None:
+    def assertTitle(self, title: str, exact: bool = True) -> None:
         """
         Assert that the tilte of the current page equals the given string.
 
         The actual title has a prefix, which is checked automatically.
+        :param exact: If False, presence as substring suffices.
         """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
-        self.assertEqual(title.strip(), normalized)
+        if exact:
+            self.assertEqual(title.strip(), normalized)
+        else:
+            self.assertIn(title.strip(), normalized)
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
@@ -1470,11 +1492,9 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None, **kwargs: Any) -> None:
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+                       **kwargs: Any) -> None:
         saved_response = self.response
-        if not realm:
-            raise RuntimeError("Need to specify realm.")
 
         # Check raw log.
         super().assertLogEqual(log_expectation, realm=realm, **kwargs)
@@ -1508,6 +1528,9 @@ class FrontendTest(BackendTest):
                 self.get("/ml/log")
         elif realm == "finance":
             self.get("/cde/finances")
+            entities = {}
+        elif realm == "changelog":
+            self.get("/core/changelog/view")
             entities = {}
         else:
             self.get(f"/{realm}/log")
@@ -1726,13 +1749,14 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.traverse("Nutzer verwalten")
+        self.assertTitle("utzerverwaltung", exact=False)
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("utzerverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
