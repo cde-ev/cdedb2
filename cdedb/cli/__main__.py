@@ -5,6 +5,8 @@ and should not be called directly.
 """
 import json
 import pathlib
+import subprocess
+import sys
 from typing import Any, Dict, List
 
 import click
@@ -295,6 +297,34 @@ def describe_database(config: TestConfig, secrets: SecretsConfig,
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
     with redirect_to_file(outfile, append=False):
         execute_sql_script(config, secrets, description_file.read_text(), verbose=2)
+
+
+@development.command(name="check-sample-data-consistency")
+def check_sample_data_consistency() -> None:
+    """Ensure json2sql() -> sql2json() leaves sample_data.json invariant."""
+    clean_data = pathlib.Path("/tmp/sample_data.json")
+    current_data = pathlib.Path("/cdedb2/tests/ancillary_files/sample_data.json")
+
+    # setup fresh database
+    set_configpath("/cdedb2/tests/config/test_ldap.py")
+    config = TestConfig()
+    secrets = SecretsConfig()
+    create_database(config, secrets)
+    populate_database(config, secrets)
+
+    # get a fresh sample_data.json from this database
+    data = sql2json(config, secrets, silent=True)
+    with open(clean_data, "w", encoding='UTF-8') as f:
+        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
+        f.write("\n")
+
+    # compare the fresh one with the current one
+    ret = subprocess.run(["diff", "-u", str(current_data), str(clean_data)])
+    if ret.returncode == 1:
+        print("Inconsistent", file=sys.stderr)
+        exit(1)
+    else:
+        print("Consistent", file=sys.stdout)
 
 
 def main() -> None:
