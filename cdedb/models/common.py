@@ -12,7 +12,7 @@ from cdedb.common.validation.types import TypeMapping
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.common import CdEDBObject
+    from cdedb.common import CdEDBObject  # pylint:disable=ungrouped-imports
 
 NoneType = type(None)
 T = TypeVar("T")

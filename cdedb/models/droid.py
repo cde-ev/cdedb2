@@ -104,7 +104,7 @@ from cdedb.models.common import CdEDataclass
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.common import CdEDBObject
+    from cdedb.common import CdEDBObject  # pylint:disable=ungrouped-imports
 
 
 class APIToken(abc.ABC):
