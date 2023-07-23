@@ -50,7 +50,7 @@ MEMBERSEARCH_DEFAULTS = {
     'qop_given_names,display_name': QueryOperators.match,
     'qsel_username': True,
     'qop_username': QueryOperators.match,
-    'qop_telephone,mobile': QueryOperators.match,
+    'qop_telephone,mobile': QueryOperators.containsall,
     'qop_address,address_supplement,address2,address_supplement2':
         QueryOperators.match,
     'qop_postal_code,postal_code2': QueryOperators.between,
@@ -188,6 +188,18 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.ignore_validation_errors()
             return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
+        # our query facility does not allow + signs, thus special-case it here
+        phone = rs.values['phone'] = rs.request.values.get('phone')
+        if phone:
+            phone = "".join(char for char in phone if char in '0123456789')
+            # remove leading zeroes as in database, numbers are stored starting with '+'
+            if phone.startswith('00'):
+                phone = phone[2:]
+            elif phone.startswith('0'):
+                phone = phone[1:]
+            defaults['qval_telephone,mobile'] = phone
+        else:
+            defaults['qop_telephone,mobile'] = QueryOperators.match
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
