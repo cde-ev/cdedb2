@@ -191,14 +191,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
         # our query facility does not allow + signs, thus special-case it here
         phone = rs.values['phone'] = rs.request.values.get('phone')
         if phone:
-            phone = "".join(char for char in phone if char in '0123456789')
-            # remove leading zeroes as in database, numbers are stored starting with '+'
-            if phone.startswith('00'):
-                phone = phone[2:]
-            elif phone.startswith('0'):
-                phone = phone[1:]
-            defaults['qval_telephone,mobile'] = phone
-        else:
+            # remove leading zeroes - in database, numbers are stored starting with '+'
+            phone = ("".join(char for char in phone if char in '0123456789')
+                .removeprefix("0").removeprefix("0"))
+            if phone:
+                defaults['qval_telephone,mobile'] = phone
+            else:
+                rs.append_validation_error(
+                        ('phone', ValueError(n_("Wrong formatting."))))
+        if not phone:
             defaults['qop_telephone,mobile'] = QueryOperators.match
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
@@ -277,7 +278,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """
         current = tuple(rs.retrieve_validation_errors())
         rs.replace_validation_errors(
-            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
+            [('qval_' + k, v) if k != 'phone' else (k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
