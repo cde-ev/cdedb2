@@ -721,6 +721,17 @@ class TestCdEFrontend(FrontendTest):
             "2",
             self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
         self.assertPresence("Vereinigtes Königreich")
+        # check that null aggregate counts correctly
+        self.traverse("Nutzer verwalten")
+        f = self.response.forms['queryform']
+        f['qsel_address_supplement'].checked = True
+        self.submit(f)
+        self.assertPresence("Ergebnis [19]", div='query-results')
+        self.assertEqual(
+            "17",
+            self.response.lxml.xpath("//*[@id='query-result']/tfoot/tr/td[@data-col="
+                                     "'null.address_supplement']")[0].text.strip()
+        )
 
     @as_users("vera")
     def test_user_search_csv(self) -> None:
