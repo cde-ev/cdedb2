@@ -1,14 +1,11 @@
 Hallo {{ persona['display_name'] }},
 
+== Mitgliedsbeitrag per Lastschrift: Jetzt neu ab 10 Euro ==
 
-== Flexibilisierung von Lastschriften ==
+Wie angekündigt wurde vor einigen Monaten erweiterte Möglichkeiten eingeführt, seinen Mitgliedsbeitrag per Lastschrift zu zahlen.
+Nun kann ein beliebiger Betrag ab {{ 10|money }} angegeben werden, der jährlich eingezogen wird.
+Der den Mitgliedsbeitrag übersteigende Anteil kommt dem CdE dabei als Spende zugute.
 
-Im Rahmen der Erhöhung des Mitgliedsbeitrags wird auch das
-aktuelle Lastschriftensystem (bisher Lastschriftinitiative) überarbeitet.
-In Zukunft soll insbesondere jeder Betrag, der oberhalb von
-{{ 10|money }} im Jahr liegt, als Lastschrifteinzug möglich sein.
-Die entsprechende Möglichkeit wird in den nächsten Monaten
-in die Datenbank integriert.
 {% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 
 
