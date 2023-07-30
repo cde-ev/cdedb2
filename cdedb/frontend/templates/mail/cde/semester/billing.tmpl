@@ -6,6 +6,8 @@ Hallo {{ persona['display_name'] }},
 Wie angekündigt wurden vor einigen Monaten erweiterte Möglichkeiten eingeführt, seinen Mitgliedsbeitrag per Lastschrift zu zahlen.
 Nun kann ein beliebiger Betrag ab {{ 10|money }} angegeben werden, der jährlich eingezogen wird.
 Der den Mitgliedsbeitrag übersteigende Anteil kommt dem CdE dabei als Spende zugute.
+Weitere Informationen findet ihr unter
+{{ cdedblink("cde/i25p_index") }}
 
 {% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 
