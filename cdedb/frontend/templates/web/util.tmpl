@@ -528,7 +528,7 @@
             <div class="col-sm-{{ col_width }}">
                 {%- for entry_value, entry_label in column %}
                     {% if not inline -%}
-                        <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}
+                        <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly or actualreadonly }}
                                     {{ " " + checkboxclass if checkboxclass }}">
                     {%- endif -%}
                         {{ input_checkbox(name, entry_label, entry_value, defaultvalue,
@@ -551,7 +551,7 @@
         <div{% if horizontal %} class="
             {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
         "{% endif %}>
-            <div class="checkbox{{ " disabled" if readonly }}">
+            <div class="checkbox{% if readonly or actualreadonly %} disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
                                   attributes=attributes, aclass=aclass) }}
             </div>
