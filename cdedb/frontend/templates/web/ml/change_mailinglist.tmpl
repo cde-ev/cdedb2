@@ -133,6 +133,7 @@
                              " as there are actors causing problems with malformed emails.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                 info=gettext("Larger messages will be held for moderation.")) }}
+        {{ util.form_input_textarea(name="additional_footer", label=gettext("Additional Footer"), rows="5") }}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
 {% endblock %}

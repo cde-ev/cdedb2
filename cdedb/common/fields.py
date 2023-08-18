@@ -185,7 +185,7 @@ STORED_EVENT_QUERY_FIELDS = (
 #: Fields of a mailinglist which may be changed by all moderators, even restricted ones
 RESTRICTED_MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "convert_html",
-    "subject_prefix", "maxsize"}
+    "subject_prefix", "maxsize", "additional_footer"}
 
 #: Fields of a mailinglist which require full moderator access to be changed
 FULL_MOD_REQUIRING_FIELDS = {

@@ -20,7 +20,7 @@ from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.Genders,
-    const.MemberChangeStati,
+    const.PersonaChangeStati,
     const.RegistrationPartStati,
     const.PrivilegeChangeStati,
     const.GenesisStati,

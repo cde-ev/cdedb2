@@ -852,6 +852,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
+        "reg.remaining_owed": QuerySpecEntry("float", n_("Remaining Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
