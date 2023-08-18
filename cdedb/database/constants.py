@@ -348,7 +348,7 @@ class CdeLogCodes(CdEIntEnum):
     semester_bill_with_addresscheck = 11
     semester_ejection = 12
     semester_balance_update = 13
-    semester_exmember_balance = 14
+    semester_exmember_balance = 16
     semester_advance = 1
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
@@ -369,7 +369,7 @@ class FinanceLogCodes(CdEIntEnum):
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
     start_trial_membership = 15  #:
-    remove_exmember_balance = 16  #:
+    remove_exmember_balance = 17  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
