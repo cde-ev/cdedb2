@@ -64,11 +64,14 @@
                                 {% for action, label, icon, coloring in (
                                         ('whitelist', gettext('Whitelist_[[verb]]'), 'plus', 'success'),
                                         ('accept', gettext('Accept'), 'check', 'success'),
-                                        ('reject', gettext('Reject'), 'reply', 'warning'),
                                         ('discard', gettext('Discard'), 'trash-alt', 'danger')) %}
-                                    {{ util.input_submit(label=label, icon=icon, value=action,name="action",
+                                    {{ util.input_submit(label=label, icon=icon, value=action, name="action",
                                                          aclass=("btn btn-xs btn-" + coloring)) }}
                                 {% endfor %}
+                                <br />
+                                {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject', name="action",
+                                                     aclass=("btn btn-xs btn-warning")) }}
+                                {{ util.input_text('reason', placeholder=gettext('Rejection reason')) }}
                             </div>
                         </form>
                         {{ email.sender }} / {{ email.subject }}
