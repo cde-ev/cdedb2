@@ -53,6 +53,8 @@
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">
+                        {{ email.sender }} / {{ email.subject }}
+                        <br />
                         <form action="{{ cdedblink('ml/message_moderation') }}"
                                   method="POST"
                                   id="msg{{ email.request_id }}"
@@ -60,7 +62,7 @@
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
                             {{ util.input_hidden(name="sender", value=email.sender) }}
-                            <div class="pull-right button-par">
+                            <div class="button-par">
                                 {% for action, label, icon, coloring in (
                                         ('whitelist', gettext('Whitelist_[[verb]]'), 'plus', 'success'),
                                         ('accept', gettext('Accept'), 'check', 'success'),
@@ -68,14 +70,12 @@
                                     {{ util.input_submit(label=label, icon=icon, value=action, name="action",
                                                          aclass=("btn btn-xs btn-" + coloring)) }}
                                 {% endfor %}
-                                <br />
+                                {{ util.input_text('reason', placeholder=gettext('Rejection reason'), aclass='form-control input-slim input-sm') }}
                                 {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject', name="action",
                                                      aclass=("btn btn-xs btn-warning")) }}
-                                {{ util.input_text('reason', placeholder=gettext('Rejection reason')) }}
                             </div>
                         </form>
-                        {{ email.sender }} / {{ email.subject }}
-                        <br />
+
                         <details>
                             <summary>{% trans %}Message details{% endtrans %}</summary>
                             <pre>{{ email.msg }}</pre>
