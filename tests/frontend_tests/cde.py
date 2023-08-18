@@ -2090,7 +2090,7 @@ class TestCdEFrontend(FrontendTest):
             {
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "2 Probemitgliedschaften beendet."
-                               " 16,00\xa0€ Guthaben abgebucht.",
+                               " 16,00\xa0€ Guthaben von Mitgliedern abgebucht.",
             },
             {
                 'code': const.CdeLogCodes.semester_exmember_balance,
@@ -2120,7 +2120,7 @@ class TestCdEFrontend(FrontendTest):
             {
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "0 Probemitgliedschaften beendet."
-                               " 20,00\xa0€ Guthaben abgebucht.",
+                               " 20,00\xa0€ Guthaben von Mitgliedern abgebucht.",
             },
             {
                 'code': const.CdeLogCodes.semester_exmember_balance,

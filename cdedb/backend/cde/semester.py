@@ -262,7 +262,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret = self.set_period(rs, period_update)
             total = money_filter(period["balance_total"], lang="de")
             msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
-                   f" {total} Guthaben abgebucht.")
+                   f" {total} Guthaben von Mitgliedern abgebucht.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
                 change_note=msg)
