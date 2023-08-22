@@ -739,6 +739,8 @@ GRANT SELECT ON event.events to cdb_anonymous;
 CREATE TABLE event.event_fees (
         id                           serial PRIMARY KEY,
         event_id                     integer NOT NULL REFERENCES event.events (id),
+        -- see cdedb.database.constants.EventFeeType
+        kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
         amount                       numeric(8, 2) NOT NULL,
         condition                    varchar NOT NULL,

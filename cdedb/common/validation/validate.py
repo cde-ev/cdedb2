@@ -2788,6 +2788,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
     "condition": EventFeeCondition,
+    "kind": const.EventFeeType,
 }
 
 
