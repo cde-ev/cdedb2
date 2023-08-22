@@ -13,15 +13,17 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees"), icon="coins", active=True) }}
 {% endblock %}
 
 {% block content %}
     <p>
         {{ util.href(cdedblink('event/configure_fee_form'), gettext("Add Fee"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
+        {{ util.href(cdedblink('event/fee_stats'), gettext("Fee Stats"),
+                               icon='chart-bar', aclass='btn btn-info btn-sm') }}
     </p>
-    <table id="part-group-summary" class="table table-stats">
+    <table id="event-fee-summary" class="table table-stats">
         <thead>
             <tr>
                 <th>{% trans %}Type{% endtrans %}</th>

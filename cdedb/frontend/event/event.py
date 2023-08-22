@@ -537,6 +537,15 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
+    def fee_stats(self, rs: RequestState, event_id: int) -> Response:
+        """Show stats for existing fees."""
+        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+        return self.render(rs, "event/fee/fee_stats", {
+            'fee_stats': fee_stats,
+        })
+
+    @access("event")
+    @event_guard()
     def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None
                            ) -> Response:
         """Render form to change or create one event fee."""

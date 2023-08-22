@@ -10,6 +10,7 @@ import copy
 import dataclasses
 import decimal
 import typing
+from collections import defaultdict
 from typing import (
     Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
     Tuple, TypeVar,
@@ -57,6 +58,7 @@ class RegistrationFee:
     amount: decimal.Decimal
     active_fees: set[int]
     visual_debug: dict[int, str]
+    by_kind: dict[const.EventFeeType, decimal.Decimal]
 
 
 @dataclasses.dataclass
@@ -1241,6 +1243,7 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
+            fees_by_kind = defaultdict(decimal.Decimal)
             visual_debug_data: Dict[int, str] = {}
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
@@ -1249,12 +1252,14 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools):
                     amount += fee['amount']
                     active_fees.add(fee['id'])
+                    fees_by_kind[fee['kind']] += fee['amount']
                 if visual_debug:
                     visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
                         parse_result, reg_bool_fields, reg_part_involvement,
                         other_bools
                     )[1]
-            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug_data)
+            ret[tmp_is_member] = RegistrationFee(
+                amount, active_fees, visual_debug_data, fees_by_kind)
 
         if is_member is None:
             is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
@@ -1376,6 +1381,26 @@ class EventRegistrationBackend(EventBaseBackend):
                      ) -> decimal.Decimal: ...
     calculate_fee: _CalculateFeeProtocol = singularize(
         calculate_fees, "registration_ids", "registration_id")
+
+    @access("event")
+    def get_fee_stats(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        event = self.get_event(rs, event_id)
+        reg_ids = self.list_registrations(rs, event_id)
+
+        ret = {
+            'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
+            'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
+        }
+
+        for reg in self.get_registrations(rs, reg_ids).values():
+            reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
+            paid = reg['amount_owed'] == reg['amount_paid']
+            for kind, amount in reg_fee.by_kind.items():
+                ret['owed'][kind] += amount
+                if paid:
+                    ret['paid'][kind] += amount
+
+        return ret
 
     @access("event")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
