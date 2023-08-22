@@ -272,6 +272,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
+        """Add special treatment for non-init attributes."""
         ctime = data.pop('ctime')
         rtime = data.pop('rtime')
         atime = data.pop('atime')
