@@ -1480,6 +1480,7 @@ AmbienceDict = typing.TypedDict(
         'fee': CdEDBObject,
         'orga_token': OrgaToken,
         'attachment': CdEDBObject,
+        'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
         'mailinglist': Mailinglist,
@@ -1569,6 +1570,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
                                     == rs.requestargs['assembly_id'])),)),
+        Scout(lambda version: obj.assemblyproxy.get_attachment_version(
+                    rs, rs.requestargs['attachment_id'], version),
+              'version_nr', 'attachment_version', ()),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),

@@ -669,7 +669,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... and then non-member
         self.traverse({'href': '/core/persona/2/membership/change'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
 
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']

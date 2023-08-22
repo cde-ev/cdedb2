@@ -54,7 +54,7 @@
             var $box = $(this);
             var $li = $(this).closest('li,tr');
             var $button = $('<button></button>', {
-                'class': 'btn btn-xs btn-danger float-right',
+                'class': 'btn btn-xs btn-danger pull-right',
                 'type': 'button',
                 'aria-pressed': 'false',
                 'aria-label': title,

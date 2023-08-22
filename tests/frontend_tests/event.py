@@ -114,18 +114,35 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
 
-    @as_users("emilia")
+    @as_users("annika")
     def test_changeuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},
-                      {'description': 'Bearbeiten'})
-        f = self.response.forms['changedataform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
-        f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
-        f[IGNORE_WARNINGS_NAME].checked = True
+        with self.switch_user("emilia"):
+            self.traverse({'description': self.user['display_name']},
+                          {'description': 'Bearbeiten'})
+            f = self.response.forms['changedataform']
+            self.submit(f, check_notification=False)
+            self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+            f = self.response.forms['changedataform']
+            f['display_name'] = "Zelda"
+            f['location'] = "Hyrule"
+            f[IGNORE_WARNINGS_NAME].checked = True
+            self.submit(f, check_notification=False)
+            self.assertNotification("Änderung wartet auf Bestätigung", 'info')
+
+        with self.switch_user("quintus"):
+            # cde admin may not see event user change
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.get('/core/persona/5/changelog/inspect', status=403)
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [1]")
+        self.traverse({'href': '/core/persona/5/changelog/inspect'})
+        self.assertTitle("Änderungen prüfen für Emilia E. Eventis")
+        f = self.response.forms['ackchangeform']
         self.submit(f)
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        self.realm_admin_view_profile("emilia", "event")
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("(Zelda)", div='personal-information')
         self.assertPresence("Hyrule", div='address')
@@ -1688,6 +1705,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
+        self.traverse("Als Orga ansehen")  # shorthand link shown for orga/event admin
+        self.assertTitle("Anmeldung von Anton Administrator (Große Testakademie 2222)")
+        self.traverse("Meine Anmeldung")
+        with self.switch_user('berta'):  # but not for unprivileged users
+            self.traverse("angemeldet")
+            self.assertNoLink("/event/event/1/registration/.*/show")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
