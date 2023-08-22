@@ -226,6 +226,7 @@ _DEFAULTS = {
     "MAILMAN_BASIC_AUTH_USER": "mailman",
     # aliases which are recognized for mailinglists
     "MAILMAN_ACCEPTABLE_ALIASES": {
+        "verwaltung@lists.cde-ev.de": ["datanbank@cde-ev.de"],
         "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
