@@ -153,6 +153,7 @@ class EventFeeType(CdEIntEnum):
     """Different kinds of event fees, to be displayed and/or treated differently."""
     common = 1
     storno = 2
+    external = 3
     solidarity = 10
     donation = 11
 
@@ -160,9 +161,11 @@ class EventFeeType(CdEIntEnum):
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
+            EventFeeType.external: "external-link-alt",
             EventFeeType.solidarity: "hands-helping",
             EventFeeType.donation: "donate",
         }[self]
+
 
 @enum.unique
 class GenesisStati(CdEIntEnum):
