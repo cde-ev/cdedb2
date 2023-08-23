@@ -34,7 +34,7 @@ class Genders(CdEIntEnum):
 
 
 @enum.unique
-class PersonaChangeStati(enum.IntEnum):
+class PersonaChangeStati(CdEIntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
