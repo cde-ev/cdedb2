@@ -57,7 +57,7 @@ class EventDroidMixin(EventBaseFrontend):
 
         resp = self.redirect(rs, "event/orga_token_summary")
         resp.set_cookie(OrgaToken._get_droid_name(-1), new_token, max_age=60,  # pylint: disable=protected-access
-                        secure=True)
+                        secure=True, httponly=True)
         return resp
 
     @access("event")
