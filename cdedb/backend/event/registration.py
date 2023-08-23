@@ -1243,7 +1243,8 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
-            fees_by_kind = defaultdict(decimal.Decimal)
+            fees_by_kind: Dict[const.EventFeeType, decimal.Decimal] = defaultdict(
+                decimal.Decimal)
             visual_debug_data: Dict[int, str] = {}
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
