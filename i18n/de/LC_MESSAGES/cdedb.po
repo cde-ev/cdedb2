@@ -13793,6 +13793,9 @@ msgstr "Orga-Token '%(title)s' löschen"
 msgid "Revoke orga token '%(title)s'"
 msgstr "Orga-Token '%(title)s' widerrufen"
 
+msgid "No orga tokens exist yet."
+msgstr "Es existieren noch keine Orga-Tokens"
+
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:11
 #, python-format
 msgid "Edit fee %(fee_title)s (%(event_title)s)"

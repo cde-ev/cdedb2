@@ -7,7 +7,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    {{ util.doclink_("Handbuch_Orga_Tokens") }}
+{#    {{ util.doclink_("Handbuch_Orga_Tokens") }}#}
+    {{ util.doclink_("API_Orga") }}
     {{ util.context_heading(gettext("Orga Tokens"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
@@ -30,6 +31,7 @@
         {{ util.href(cdedblink('event/create_orga_token_form'), gettext("Create Orga Token"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
     </p>
+    {% if orga_tokens %}
     <table id="orga-token-summary" class="table table-stats">
         <thead>
             <tr>
@@ -82,4 +84,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <p><em>{% trans %}No orga tokens exist yet.{% endtrans %}</em></p>
+    {% endif %}
 {% endblock %}

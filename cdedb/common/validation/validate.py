@@ -1184,7 +1184,7 @@ def _orga_token(
 
     mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
     val = _examine_dictionary_fields(
-        val, mandatory, optional, argname=argname, **kwargs)
+        val, mandatory, optional, **kwargs)
 
     errs = ValidationSummary()
 

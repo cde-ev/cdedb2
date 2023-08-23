@@ -28,7 +28,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens")) }}
     {% if ambience['orga_token'] %}
         {{ util.breadcrumb_link("", ambience['orga_token']['title'], icon="robot", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/change_orga_token"), gettext("Change"), active=True) }}
