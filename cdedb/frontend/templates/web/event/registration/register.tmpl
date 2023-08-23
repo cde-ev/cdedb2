@@ -187,11 +187,13 @@
                         <tbody>
                         {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
                             <tr id="active-fee" data-fee_id="{{ fee_id }}">
-                                <th class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</th>
-                                <th class="{{ 'text-success' if fee['amount'] < 0 }}" style="text-align: right;">
-                                    {{ fee['amount']|money(lang=lang) }}
-                                </th>
-                                <th id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></th>
+                                <td class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</td>
+                                <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
+                                    <strong>
+                                        {{ fee['amount']|money(lang=lang) }}
+                                    </strong>
+                                </td>
+                                <td id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></td>
                             </tr>
                         {% endfor %}
                         </tbody>
