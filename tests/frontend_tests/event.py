@@ -403,7 +403,7 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin", "Orga Tokens"}
+            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
