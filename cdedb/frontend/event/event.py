@@ -154,13 +154,14 @@ class EventEventMixin(EventBaseFrontend):
         """Modify an event organized via DB."""
         data['id'] = event_id
         data = check(rs, vtypes.Event, data)
-        if data['shortname'] != rs.ambience['event']['shortname']:
-            if self.eventproxy.check_unique_shortname(rs, data['shortname']):
-                rs.append_validation_error(
-                    ('shortname', ValueError(
-                        n_("Shortname already in use for another event.")
-                    ))
-                )
+        if (data and data['shortname']
+                and data['shortname'] != rs.ambience['event']['shortname']
+                and self.eventproxy.check_unique_shortname(rs, data['shortname'])):
+            rs.append_validation_error(
+                ('shortname', ValueError(
+                    n_("Shortname already in use for another event.")
+                ))
+            )
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
         assert data is not None
@@ -921,7 +922,8 @@ class EventEventMixin(EventBaseFrontend):
                 }
             },
         })
-        if data and self.eventproxy.check_unique_shortname(rs, data['shortname']):
+        if (data and data['shortname']
+                and self.eventproxy.check_unique_shortname(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
                     n_("Shortname already in use for another event.")

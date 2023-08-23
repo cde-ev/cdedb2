@@ -295,7 +295,6 @@ class EventBaseBackend(EventLowLevelBackend):
         return bool(self.query_all(
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
-
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: Optional[bytes]) -> DefaultReturnCode:
