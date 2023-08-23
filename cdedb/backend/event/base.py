@@ -289,6 +289,14 @@ class EventBaseBackend(EventLowLevelBackend):
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
+    def check_unique_shortname(self, rs: RequestState, shortname: str) -> bool:
+        """Return True if the given shortname already exists for some event."""
+        shortname = affirm(str, shortname)
+        return bool(self.query_all(
+            rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
+
+
+    @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: Optional[bytes]) -> DefaultReturnCode:
         """Change or remove an event's minor form.
