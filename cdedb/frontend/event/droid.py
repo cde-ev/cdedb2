@@ -5,14 +5,12 @@ The `EventDroidMixin` subclasses the `EventBaseFrontend` and provides all the fr
 endpoints related to managing orga apitokens.
 """
 
-from typing import Optional
-
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
+    REQUESTdatadict, access, check_validation as check, event_guard,
 )
 from cdedb.frontend.event import EventBaseFrontend
 from cdedb.models.droid import OrgaToken
@@ -29,8 +27,7 @@ class EventDroidMixin(EventBaseFrontend):
         orga_token_ids = self.eventproxy.list_orga_tokens(rs, event_id)
         orga_tokens = self.eventproxy.get_orga_tokens(rs, orga_token_ids)
 
-        token_cookie = OrgaToken._get_droid_name(-1)
-        new_token = rs.request.cookies.get(token_cookie)
+        new_token = rs.request.cookies.get(OrgaToken._get_droid_name(-1))  # pylint: disable=protected-access
         resp = self.render(rs, "event/droid/summary", {
             'orga_tokens': orga_tokens, 'new_token': new_token,
         })
@@ -59,7 +56,7 @@ class EventDroidMixin(EventBaseFrontend):
         new_token = orga_token.get_token_string(secret)
 
         resp = self.redirect(rs, "event/orga_token_summary")
-        resp.set_cookie(OrgaToken._get_droid_name(-1), new_token, max_age=60,
+        resp.set_cookie(OrgaToken._get_droid_name(-1), new_token, max_age=60,  # pylint: disable=protected-access
                         secure=True)
         return resp
 
