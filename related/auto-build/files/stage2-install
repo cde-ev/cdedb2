@@ -120,7 +120,7 @@ python3 -m pip install --no-cache-dir \
     types-Markdown \
     types-click \
     types-tabulate \
-    playwright
+    playwright>=1.37.0
 
 for file in /var/cache/apt/archives/*.deb
 do
