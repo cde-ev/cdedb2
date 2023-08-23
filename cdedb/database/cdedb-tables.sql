@@ -691,7 +691,7 @@ GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous, cdb_ldap;
 CREATE TABLE event.events (
         id                           serial PRIMARY KEY,
         title                        varchar NOT NULL,
-        shortname                    varchar NOT NULL,
+        shortname                    varchar UNIQUE NOT NULL,
         -- BuB,  JGW, CdE, ...
         institution                  integer NOT NULL REFERENCES past_event.institutions(id),
         description                  varchar,
