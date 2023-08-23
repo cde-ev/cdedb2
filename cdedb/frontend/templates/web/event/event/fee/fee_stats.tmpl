@@ -12,7 +12,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees"), icon="coins") }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
     {{ util.breadcrumb_link(cdedblink("event/fee_stats"), gettext("Fee Stats"), active=True) }}
 {% endblock %}
 
