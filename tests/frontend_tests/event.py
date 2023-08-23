@@ -3055,6 +3055,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
+        self.assertPresence("Insgesamt zu zahlender Betrag 466,49 €")
 
     @event_keeper
     @as_users("garcia")
