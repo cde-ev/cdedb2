@@ -1945,7 +1945,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_queries_without_fields(self) -> None:
         # Check that the query views work if there are no custom fields.
-        event = self.event.get_event(self.key, 2)
+        event = self.event.get_event(self.key, 3)
         self.assertFalse(event["fields"])
         query = Query(
             scope=QueryScope.registration,

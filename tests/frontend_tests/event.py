@@ -6275,7 +6275,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_event_fee_stats(self) -> None:
         event_id = 2
         reg_ids = []
-        reg_data = {
+        reg_data: CdEDBObject = {
             "event_id": event_id,
             "persona_id": 1,
             "mixed_lodging": True,
