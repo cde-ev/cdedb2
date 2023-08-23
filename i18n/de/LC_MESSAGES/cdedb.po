@@ -18015,6 +18015,24 @@ msgstr "Mitglieder (Opt-out), Öffentlich (Opt-in)"
 msgid "MailinglistTypes.cdelokal"
 msgstr "CdElokal ([Moderiertes] Opt-in)"
 
+msgid "EventFeeType.common"
+msgstr "Regulärer Beitrag"
+
+msgid "EventFeeType.storno"
+msgstr "Stornokosten"
+
+msgid "EventFeeType.external"
+msgstr "Externenbeitrag"
+
+msgid "EventFeeType.solidarity"
+msgstr "Solidarische Reduktion"
+
+msgid "EventFeeType.donation"
+msgstr "Spende"
+
+msgid "Owed"
+msgstr "Zu Zahlen"
+
 #: cdedb/i18n_additional.py:309 cdedb/i18n_additional.py:313
 #: cdedb/i18n_additional.py:314
 msgid "day is out of range for month"
@@ -19509,3 +19527,9 @@ msgstr "Sambia"
 #: cdedb/i18n_additional.py:628
 msgid "CountryCodes.ZW"
 msgstr "Simbabwe"
+
+msgid "Fee Stats (%(title)s)"
+msgstr "Beitrags-Statistik (%(title)s)"
+
+msgid "Fee Stats"
+msgstr "Beitrags-Statistik"

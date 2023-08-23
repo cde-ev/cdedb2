@@ -37,7 +37,7 @@
         <tbody>
             {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
                 <tr id="eventfee_{{ fee_id }}">
-                    <td>{{ util.make_icon(fee['kind'].get_icon(), title=gettext(fee['kind'])) }}</td>
+                    <td>{{ util.make_icon(fee['kind'].get_icon(), title=gettext(fee['kind']|string)) }}</td>
                     <td>{{ fee['title'] }}</td>
                     <td>{{ fee['notes'] }}</td>
                     <td>{{ fee['amount']|money(lang=lang) }}</td>

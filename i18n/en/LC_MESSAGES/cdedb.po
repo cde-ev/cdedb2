@@ -15858,6 +15858,21 @@ msgstr "Members (Opt-out), Public (Opt-in)"
 msgid "MailinglistTypes.cdelokal"
 msgstr "CdElokal ([Moderated] Opt-in)"
 
+msgid "EventFeeType.common"
+msgstr "Regular Fee"
+
+msgid "EventFeeType.storno"
+msgstr "Storno Fee"
+
+msgid "EventFeeType.external"
+msgstr "External Fee"
+
+msgid "EventFeeType.solidarity"
+msgstr "Solidarity Reduction"
+
+msgid "EventFeeType.donation"
+msgstr "Donation"
+
 #: cdedb/i18n_additional.py:314
 msgid "day is out of range for month"
 msgstr ""

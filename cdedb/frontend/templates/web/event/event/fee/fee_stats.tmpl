@@ -28,7 +28,7 @@
         <tbody>
             {% for fee_kind in enums['EventFeeType'] %}
                 <tr>
-                    <td>{{ util.make_icon(fee_kind.get_icon()) + nbsp }}{{ gettext(fee_kind) }}</td>
+                    <td>{{ util.make_icon(fee_kind.get_icon()) + nbsp }}{{ gettext(fee_kind|string) }}</td>
                     <td class="text-right {{ 'text-danger' if fee_stats['owed'][fee_kind] < 0 }}">
                         <strong>
                             {{ fee_stats['owed'][fee_kind]|money(lang=lang) }}

@@ -308,6 +308,12 @@ I18N_STRINGS = (
     n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
 
+    n_("EventFeeType.common"),
+    n_("EventFeeType.storno"),
+    n_("EventFeeType.external"),
+    n_("EventFeeType.solidarity"),
+    n_("EventFeeType.donation"),
+
     #
     # Validation errors
     #
