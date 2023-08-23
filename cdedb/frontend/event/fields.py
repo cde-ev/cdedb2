@@ -197,7 +197,7 @@ class EventFieldMixin(EventBaseFrontend):
                          kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
-            return self.render(rs, "fields/field_set_select")
+            return self.redirect(rs, "event/show_event")
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
