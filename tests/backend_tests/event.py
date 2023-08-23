@@ -113,24 +113,28 @@ class TestEventBackend(BackendTest):
             },
             'fees': {
                 -1: {
+                    "kind": const.EventFeeType.common,
                     "title": "first",
                     "notes": None,
                     "amount": decimal.Decimal("234.56"),
                     "condition": "part.first",
                 },
                 -2: {
+                    "kind": const.EventFeeType.common,
                     "title": "second",
                     "notes": None,
                     "amount": decimal.Decimal("0.00"),
                     "condition": "part.second",
                 },
                 -3: {
+                    "kind": const.EventFeeType.solidarity,
                     "title": "Is Child",
                     "notes": None,
                     "amount": decimal.Decimal("-7.00"),
                     "condition": "part.second and field.is_child",
                 },
                 -4: {
+                    "kind": const.EventFeeType.external,
                     "title": "Externenzusatzbeitrag",
                     "notes": None,
                     "amount": decimal.Decimal("6.66"),
@@ -268,6 +272,7 @@ class TestEventBackend(BackendTest):
         }
         updated_fees: CdEDBOptionalMap = {
             -1: {
+                'kind': const.EventFeeType.common,
                 'title': "third",
                 'notes': None,
                 'amount': decimal.Decimal("123.40"),
@@ -2586,6 +2591,7 @@ class TestEventBackend(BackendTest):
         new_data['event.event_fees'][13000] = {
             'id': 13000,
             'event_id': 1,
+            'kind': const.EventFeeType.common,
             'title': 'Aftershowparty',
             'notes': None,
             'amount': decimal.Decimal("666.66"),
@@ -2802,6 +2808,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_fees'][1001] = {
             'id': 1001,
             'event_id': 1,
+            'kind': const.EventFeeType.common,
             'title': 'Aftershowparty',
             'notes': None,
             'amount': decimal.Decimal("666.66"),
@@ -4339,60 +4346,70 @@ class TestEventBackend(BackendTest):
 
         fee_data: CdEDBOptionalMap = {
             -1: {
+                "kind": const.EventFeeType.common,
                 "title": "A",
                 "notes": None,
                 "amount": "1",
                 "condition": "part.A",
             },
             -2: {
+                "kind": const.EventFeeType.common,
                 "title": "B",
                 "notes": None,
                 "amount": "2",
                 "condition": "part.B",
             },
             -3: {
+                "kind": const.EventFeeType.common,
                 "title": "C",
                 "notes": None,
                 "amount": "3",
                 "condition": "part.C",
             },
             -4: {
+                "kind": const.EventFeeType.common,
                 "title": "D",
                 "notes": None,
                 "amount": "4",
                 "condition": "part.D",
             },
             -5: {
+                "kind": const.EventFeeType.common,
                 "title": "A und B",
                 "notes": None,
                 "amount": "-1",
                 "condition": "part.A AND part.B",
             },
             -6: {
+                "kind": const.EventFeeType.common,
                 "title": "B und C",
                 "notes": None,
                 "amount": "-2",
                 "condition": "part.B AND part.C",
             },
             -7: {
+                "kind": const.EventFeeType.common,
                 "title": "C und D",
                 "notes": None,
                 "amount": "-3",
                 "condition": "part.C AND part.D",
             },
             -8: {
+                "kind": const.EventFeeType.common,
                 "title": "A und B und C",
                 "notes": None,
                 "amount": "1",
                 "condition": "part.A AND part.B AND part.C",
             },
             -9: {
+                "kind": const.EventFeeType.common,
                 "title": "B und C und D",
                 "notes": None,
                 "amount": "2",
                 "condition": "part.B AND part.C AND part.D",
             },
             -10: {
+                "kind": const.EventFeeType.common,
                 "title": "A und B und C und D",
                 "notes": None,
                 "amount": "-1",
@@ -4482,6 +4499,7 @@ class TestEventBackend(BackendTest):
     def test_part_shortname_change(self) -> None:
         event_id = 1
         new_fee = {
+            'kind': const.EventFeeType.common,
             'title': "Test",
             'amount': "1",
             'condition': "part.1.H. and not part.2.H.",

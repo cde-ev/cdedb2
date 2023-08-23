@@ -4361,6 +4361,7 @@
     "event.event_fees": [
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag Warmup",
             "amount": "10.50",
             "condition": "part.Wu",
@@ -4368,6 +4369,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag 1. Hälfte",
             "amount": "123.00",
             "condition": "part.1.H.",
@@ -4375,6 +4377,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag 2. Hälfte",
             "amount": "450.99",
             "condition": "part.2.H.",
@@ -4382,6 +4385,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis Warmup",
             "amount": "-5.00",
             "condition": "part.Wu and field.is_child",
@@ -4389,6 +4393,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis 1. Hälfte",
             "amount": "-12.00",
             "condition": "part.1.H. and field.is_child",
@@ -4396,6 +4401,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis 2. Hälfte",
             "amount": "-19.00",
             "condition": "part.2.H. and field.is_child",
@@ -4403,6 +4409,7 @@
         },
         {
             "event_id": 1,
+            "kind": 3,
             "title": "Externenzusatzbeitrag",
             "amount": "5.00",
             "condition": "any_part and not (is_member or field.is_child)",
@@ -4410,6 +4417,7 @@
         },
         {
             "event_id": 1,
+            "kind": 10,
             "title": "Mengenrabatt",
             "amount": "-0.01",
             "condition": "all_parts",
@@ -4417,6 +4425,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Orgarabatt",
             "amount": "-50.00",
             "condition": "part.1.H. and part.2.H. and is_orga",
@@ -4424,6 +4433,7 @@
         },
         {
             "event_id": 2,
+            "kind": 1,
             "title": "Teilnahmebeitrag Party",
             "amount": "15.00",
             "condition": "part.Party",
@@ -4431,6 +4441,7 @@
         },
         {
             "event_id": 2,
+            "kind": 1,
             "title": "Externenzusatzbeitrag",
             "amount": "2.00",
             "condition": "any_part and not is_member",
@@ -4438,6 +4449,7 @@
         },
         {
             "event_id": 4,
+            "kind": 1,
             "title": "Unkostenbeitrag Silvesterfeier",
             "amount": "4.20",
             "condition": "part.Feier",
