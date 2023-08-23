@@ -1,0 +1,53 @@
+{% set sidenav_active='event_config' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Custom Filters ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Custom Filters"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
+    {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), active=True) }}
+{% endblock %}
+{% block content %}
+    <p>
+        {{ util.href(cdedblink("event/configure_custom_filter"), gettext("Add Custom Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+    </p>
+    <table id="custom-filter-summary" class="table table-stats">
+        <thead>
+            <th>{% trans %}Title{% endtrans %}</th>
+            <th>{% trans %}Notes{% endtrans %}</th>
+            <th>{% trans %}Custom Field{% endtrans %}</th>
+            <th></th>
+        </thead>
+        <tbody>
+            {% for custom_filter in ambience['event']['custom_query_filters'].values()|sort %}
+                <tr>
+                    <td>
+                        {{ util.make_icon(custom_filter.scope.get_icon(), title=gettext(custom_filter.scope|string))}}
+                        {{ custom_filter.title }}
+                    </td>
+                    <td>
+                        {{ custom_filter.notes }}
+                    </td>
+                    <td>
+                        {% for f in custom_filter.split_fields %}
+                            {{ query_specs[custom_filter.scope][f].get_title(gettext) }}
+                            {%- if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="text-right text-nowrap">
+                        {{ util.href(cdedblink("event/configure_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning") }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

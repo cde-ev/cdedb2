@@ -1064,13 +1064,27 @@ CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events,
         query_name              varchar NOT NULL,
-        -- See cdedb.query.QueryScope:
+        -- See cdedb.common.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
         UNIQUE(event_id, query_name)
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.stored_queries TO cdb_persona;
 GRANT SELECT, UPDATE ON event.stored_queries_id_seq TO cdb_persona;
+
+CREATE TABLE event.custom_query_filters (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events,
+        -- See cdedb.common.query.QueryScope:
+        scope                   integer NOT NULL,
+        field                   varchar NOT NULL,
+        title                   varchar NOT NULL,
+        notes                   varchar,
+        UNIQUE (event_id, title),
+        UNIQUE (event_id, field)
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.custom_query_filters TO cdb_persona;
+GRANT SELECT, UPDATE ON event.custom_query_filters_id_seq TO cdb_persona;
 
 CREATE TABLE event.log (
         id                      bigserial PRIMARY KEY,

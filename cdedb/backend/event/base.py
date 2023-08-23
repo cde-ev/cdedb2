@@ -48,6 +48,7 @@ from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
+from cdedb.models.event import CustomQueryFilter
 
 # type alias for questionnaire specification.
 CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
@@ -271,6 +272,15 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
+            data = self.sql_select(
+                rs, CustomQueryFilter.database_table,
+                CustomQueryFilter.database_fields(),
+                entities=event_ids, entity_key='event_id')
+            for anid in event_ids:
+                ret[anid]['custom_query_filters'] = {}
+            for d in data:
+                ret[d['event_id']]['custom_query_filters'][
+                    d['id']] = CustomQueryFilter.from_database(d)
         for anid in event_ids:
             reference_time = now()
             ret[anid]['begin'] = min((p['part_begin']

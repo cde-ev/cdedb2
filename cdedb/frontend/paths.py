@@ -411,6 +411,20 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="remove_orga"),
                 )),
                 sub('/query', (
+                    sub('/filter', (
+                        rule("/", methods=_GET,
+                             endpoint="custom_filter_summary"),
+                        rule("/create", methods=_GET,
+                             endpoint="configure_custom_filter_form"),
+                        rule("/create", methods=_POST,
+                             endpoint="configure_custom_filter"),
+                        sub('/<int:custom_filter_id>',(
+                            rule("/change", methods=_GET,
+                                 endpoint="configure_custom_filter_form"),
+                            rule("/change", methods=_POST,
+                                 endpoint="configure_custom_filter"),
+                        )),
+                    )),
                     rule("/store", methods=_POST,
                          endpoint="store_event_query"),
                     rule("/delete", methods=_POST,

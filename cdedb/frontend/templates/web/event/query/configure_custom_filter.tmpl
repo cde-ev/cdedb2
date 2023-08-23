@@ -1,0 +1,86 @@
+{% set sidenav_active='event_configure' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+
+{% block title %}
+    {% if ambience['custom_filter'] %}
+        {% trans filter_title=ambience['custom_filter']['title'], event_title=ambience['event']['title'] %}
+            Edit Custom Filter {{ filter_title }} ({{ event_title }})
+        {% endtrans %}
+    {% else %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add Custom Filter ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {% if ambience['custom_filter'] %}
+        {{ util.context_heading(gettext("Change Custom Filter %(filter_title)s")|format(filter_title=ambience['custom_filter']['title']),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% else %}
+        {{ util.context_heading(gettext("Add Custom Filter"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
+    {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters")) }}
+    {% if ambience['custom_filter'] %}
+        {{ util.breadcrumb_link("", ambience['custom_filter']['title'], icon="filter", readonly=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_custom_filter"), gettext("Change"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_custom_filter"), gettext("Add Custom Filter"), active=True) }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if not scope %}
+        <form action="{{ cdedblink('event/configure_custom_filter_form') }}" method="GET" id="selectcustomfilterscopeform" class="form-horizontal">
+            {{ util.form_input_select(name="scope", label=gettext("Scope"), displayerrors=False,
+                    entries=available_scopes|enum_entries(processing=gettext)) }}
+            {{ util.form_input_submit(name="", label=gettext("Continue"), cancellink=cdedblink("event/custom_filter_summary")) }}
+        </form>
+    {% else %}
+
+    <form action="{{ cdedblink('event/configure_custom_filter') }}" method="POST" id="configurecustomfilterform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/configure_custom_filter') }}
+        {{ util.form_input_text(name="title", label=gettext("Title"), horizontal=False) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True, horizontal=False) }}
+        {{ util.input_hidden('scope', scope) }}
+        <hr />
+
+        {% call util.output_errors('field', wrapper=True) %}
+        <div class="row">
+            {% for list in spec|slice(2) %}
+                <div class="col-sm-6">
+                    {% for field in list %}
+                        <div class="row">
+                            <div class="col-sm-1">
+                                {{ util.input_checkbox(name="cf_{}".format(field)) }}
+                            </div>
+                            <div class="col-sm-11">
+                                {{ spec[field].get_title(gettext) }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endcall %}
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/custom_filter_summary"), horizontal=False) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configurecustomfilterform').cdedbProtectChanges();
+    </script>
+    {% endif %}
+{% endblock %}

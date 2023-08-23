@@ -84,6 +84,7 @@ import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.droid as models_droid
+import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -190,6 +191,7 @@ DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
+    models_event.CustomQueryFilter: CustomQueryFilter,
 }
 
 
@@ -4486,6 +4488,42 @@ def _non_regex(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
 
+
+@_add_typed_validator
+def _custom_query_filter(
+        val: Any, argname: str = "custom_query_filter", *, creation: bool = False,
+        query_spec: QuerySpec, **kwargs: Any
+) -> CustomQueryFilter:
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory, optional = models_event.CustomQueryFilter.validation_fields(
+        creation=creation)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+
+    errs = ValidationSummary()
+
+    split_fields = val['field'].split(',')
+    if len(split_fields) < 2:
+        with errs:
+            raise ValidationSummary(ValueError('field', n_(
+                "Combine a minimum of two fields.")))
+    if any(field not in query_spec for field in split_fields):
+        with errs:
+            raise ValidationSummary(KeyError('field', n_(
+                "Unknown field(s): %(fields)s."), {
+                'fields': ", ".join(set(split_fields) - set(query_spec)),
+            }))
+    elif len({query_spec[f].type for f in split_fields}) != 1:
+        with errs:
+            raise ValidationSummary(TypeError('field', n_(
+                "Incompatible field types.")))
+
+    val['field'] = ",".join(xsorted(split_fields))
+
+    if errs:
+        raise errs
+
+    return CustomQueryFilter(val)
 
 @_add_typed_validator
 def _query_input(

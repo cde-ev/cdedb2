@@ -20,7 +20,7 @@ from typing import (
 )
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
+from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -301,6 +301,13 @@ class QueryScope(CdEIntEnum):
             if key not in params:
                 params[key] = rs.values[key] = value
         return params
+
+    def get_icon(self) -> str:
+        return {
+            QueryScope.registration: "user",
+            QueryScope.lodgement: "home",
+            QueryScope.event_course: "book",
+        }.get(self, "")
 
 
 # See `QueryScope.get_view().
@@ -1041,6 +1048,10 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
+
+    for custom_filter in event['custom_query_filters'].values():
+        custom_filter.add_to_spec(spec, QueryScope.registration)
+
     return spec
 
 
@@ -1159,6 +1170,9 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
         for field in sorted_course_fields
     })
 
+    for custom_filter in event['custom_query_filters'].values():
+        custom_filter.add_to_spec(spec, QueryScope.event_course)
+
     return spec
 
 
@@ -1238,5 +1252,8 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
             f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_lodgement_fields
     })
+
+    for custom_filter in event['custom_query_filters'].values():
+        custom_filter.add_to_spec(spec, QueryScope.lodgement)
 
     return spec
