@@ -76,6 +76,10 @@ class RegistrationFeeData:
         return self.fee.amount
 
     @property
+    def donation(self) -> decimal.Decimal:
+        return self.fee.by_kind[const.EventFeeType.donation]
+
+    @property
     def nonmember_surcharge_amount(self) -> decimal.Decimal:
         return self.nonmember_fee.amount - self.member_fee.amount
 
