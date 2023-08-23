@@ -106,9 +106,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if "core_user" in rs.user.admin_views:
-                data = self.coreproxy.changelog_get_changes(
-                    rs, stati=(const.MemberChangeStati.pending,))
+            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
+                data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
             if "meta_admin" in rs.user.admin_views:
@@ -724,7 +723,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id)
         current = history[current_generation]
         fields = current.keys()
-        stati = const.MemberChangeStati
+        stati = const.PersonaChangeStati
         constants = {}
         for f in fields:
             total_const: List[int] = []
@@ -1082,7 +1081,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
-        if data['code'] == const.MemberChangeStati.pending:
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
@@ -1215,7 +1214,7 @@ class CoreBaseFrontend(AbstractFrontend):
         #  error. This is a bit hacky, but ensures that donation is always a decimal.
         if rs.values.get("donation") is not None:
             rs.values["donation"] = decimal.Decimal(rs.values["donation"])
-        if data['code'] == const.MemberChangeStati.pending:
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         user = User(persona_id=persona_id, roles=roles)
@@ -2075,11 +2074,10 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        pending = self.coreproxy.changelog_get_pending_changes(rs)
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
@@ -2090,8 +2088,7 @@ class CoreBaseFrontend(AbstractFrontend):
         Send a reminder after twelve hours and then daily.
         """
         current = now()
-        data = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        data = self.coreproxy.changelog_get_pending_changes(rs)
         ids = {f"{anid}/{e['generation']}" for anid, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
@@ -2114,28 +2111,32 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
-        if pending['code'] != const.MemberChangeStati.pending:
+        if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
             if (history[key]['code']
-                == const.MemberChangeStati.committed))]
+                == const.PersonaChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
         """Make decision."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if rs.has_validation_errors():
             return self.list_pending_changes(rs)
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,

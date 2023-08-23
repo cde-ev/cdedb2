@@ -1099,9 +1099,11 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("paul", "quintus")
-    @prepsql("UPDATE core.personas SET balance = 5 WHERE id = 3")
     def test_archive(self) -> None:
         persona_id = 3
+        with self.switch_user("anton"):
+            self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
+                                  allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
         self.assertEqual(True, data['is_cde_realm'])
@@ -1279,7 +1281,7 @@ class TestCoreBackend(BackendTest):
             {
                 'id': 1001,
                 'change_note': data["notes"],
-                'code': const.MemberChangeStati.committed.value,
+                'code': const.PersonaChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],

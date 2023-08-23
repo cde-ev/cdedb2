@@ -1289,7 +1289,7 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_id = None
         if persona_id:
             registration_id = unwrap(
-                self.list_registrations(rs, event_id, persona_id) or None)
+                self.list_registrations(rs, event_id, persona_id).keys() or None)
 
         if self.is_orga(rs, event_id=event_id):
             pass

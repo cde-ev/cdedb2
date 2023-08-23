@@ -314,7 +314,10 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
-                agg[f"COUNT(*) FILTER (WHERE {field} IS NULL)"] = f"null.{field_as}"
+                # distinct count for primary keys is necessary for queries that
+                # duplicate rows due to JOIN, e.g. cde user search
+                agg[(f"COUNT(DISTINCT {query.scope.get_primary_key()})"
+                     f" FILTER (WHERE {field} IS NULL)")] = f"null.{field_as}"
                 if query.spec[field].type in ("int", "float"):
                     agg[f"SUM({field})"] = f"sum.{field_as}"
                     agg[f"MIN({field})"] = f"min.{field_as}"

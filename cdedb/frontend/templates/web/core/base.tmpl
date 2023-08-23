@@ -15,13 +15,13 @@
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="wrench", active=(sidenav_active=='core_admins')) }}
         </div>
-        {% if user.admin_views.intersection(("core_user", "cde_user", "genesis", "meta_admin", "auditor")) %}
+        {% if user.admin_views.intersection(("core_user", "cde_user", "event_user", "genesis", "meta_admin", "auditor")) %}
             <div class="list-group tear-down">
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
                         icon="users", active=(sidenav_active=='core_manage_users')) }}
             {% endif %}
-            {% if user.admin_views.intersection(('core_user', 'cde_user')) %}
+            {% if user.admin_views.intersection(('core_user', 'cde_user', 'event_user')) %}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}

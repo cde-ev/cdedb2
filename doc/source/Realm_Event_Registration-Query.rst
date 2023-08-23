@@ -19,7 +19,8 @@ The final view will be constructed as follows. ::
   event.registrations as reg
   LEFT OUTER JOIN (
       SELECT
-          registration_field_columns, id
+          registration_field_columns, id,
+          amount_owed - amount_paid AS remaining_owed
       FROM
           event.registrations
       WHERE
@@ -328,4 +329,3 @@ The final view for regisration queries looks something like this: ::
       GROUP BY
           persona_id
   ) AS mtime ON reg.persona_id = mtime.persona_id
-

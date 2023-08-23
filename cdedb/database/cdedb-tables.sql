@@ -364,7 +364,7 @@ CREATE TABLE core.changelog (
         -- Flag for whether this was an automated change.
         automated_change        boolean NOT NULL DEFAULT FALSE,
         -- enum for progress of change
-        -- see cdedb.database.constants.MemberChangeStati
+        -- see cdedb.database.constants.PersonaChangeStati
         code                    integer NOT NULL DEFAULT 0,
         --
         -- data fields
@@ -430,6 +430,7 @@ CREATE TABLE core.changelog (
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
 CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
+CREATE UNIQUE INDEX changelog_persona_id_pending ON core.changelog(persona_id) WHERE code = 1;
 -- SELECT can not be easily restricted here due to change displacement logic
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
@@ -1253,7 +1254,8 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL,
         UNIQUE (attachment_id, version_nr)
 );
-GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
@@ -1314,9 +1316,9 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         -- administrative comments
         notes                   varchar,
-        -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only useful with a
-        -- restrictive subscription policy).
+        additional_footer       varchar,
+        -- mailinglist awareness
+        -- gateway is not NULL if associated to another mailinglist
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event
