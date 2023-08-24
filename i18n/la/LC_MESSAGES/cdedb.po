@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-08-18 19:33+0200\n"
+"POT-Creation-Date: 2023-08-24 14:43+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5750,6 +5750,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:228
 #: cdedb/frontend/templates/web/generic.tmpl:315
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:137
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:135
 #: cdedb/i18n_additional.py:374
 msgid "Save"
 msgstr ""
@@ -9345,7 +9346,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:219
 #: cdedb/frontend/templates/web/ml/management.tmpl:121
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:72
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
 msgid "Reject"
 msgstr ""
 
@@ -9361,6 +9362,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:74
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:86
 #: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:36
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:132
 #: cdedb/i18n_additional.py:373
 msgid "Cancel"
 msgstr "Desine"
@@ -14480,7 +14482,7 @@ msgid "Subscription Requests of other users to this mailinglist."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:120
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:66
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:69
 msgid "Accept"
 msgstr ""
 
@@ -14572,24 +14574,28 @@ msgstr ""
 msgid "Discard All"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:65
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:66
 msgid "Whitelist_[[verb]]"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67
-msgid "Discard"
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:71
 msgid "Rejection reason"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:80
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:76
+msgid "Discard"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:85
 msgid "Message details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:87
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:92
 msgid "No held messages."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:123
+msgid "Longform rejection reason"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:25

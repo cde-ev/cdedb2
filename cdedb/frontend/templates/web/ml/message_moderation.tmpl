@@ -96,8 +96,10 @@
         function mlmod_bind_modal(request_id) {
             const button = `
                 <button type="button" id="mlmod-button-expand-${ request_id }" class="btn btn-xs btn-neutral">
-                    <span class="fas fa-maximize fa-fw" aria-hidden="true"></span>
-                    <span class="fas fa-check fa-fw" aria-hidden="true"></span>
+                    <!-- <span class="fas fa-maximize fa-fw" aria-hidden="true"></span>
+                         This icon somehow does not work, so we use the one below. :/
+                         -->
+                    <span class="fas fa-expand fa-fw" aria-hidden="true"></span>
                 </button>
             `;
             if (!$("#mlmod-button-expand-" + request_id).length) {
@@ -114,23 +116,20 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
                     <h4 class="modal-title">
-                        {{ gettext('Longform reason') }}
+                        {{ gettext('Longform rejection reason') }}
                     </h4>
                 </div>
                 <div class="modal-body" id="mlmod-modal-content">
-                    <textarea id="mlmod-textarea-reason-${ request_id }">
+                    <textarea id="mlmod-textarea-reason-${ request_id }" class="form-control" rows="7">
                     </textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" id="mlmod-modal-cancel-${ request_id }">
-                        {{ gettext('cancel') }}
+                        {{ gettext('Cancel') }}
                     </button>
                     <button type="button" class="btn btn-primary" id="mlmod-modal-save-${ request_id }">
-                        {{ gettext('save') }}
+                        {{ gettext('Save') }}
                     </button>
                 </div>
             </div>
