@@ -150,7 +150,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
                      })
         rs.notify(
             "success",
-            n_("Email sent. Please follow the link contained in the email."))
+            n_("We just sent you an email. To complete your account request, please"
+               " follow the link contained in the email."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")

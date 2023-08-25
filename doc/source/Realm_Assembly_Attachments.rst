@@ -34,21 +34,18 @@ An attachment_ballot_link may be created if the ballot it links to is before its
 
 An attachment_version may be created at any time during an assembly (independently of any voting stuff).
 
-Deletion
---------
-An attachment can only be deleted if:
+Changing and Deletion
+---------------------
+After creation, an attachment can be deleted by removing all its attachment_versions.
+However, this is only possible under the following condition:
 
 - it has no attachment_ballot_links or only attachment_ballot_links which may be deleted.
-- the assembly is not archived. (Unless the entire assembly is being deleted cascadingly).
+- the assembly is not archived. (Unless the entire assembly is being deleted).
 
 An attachment_ballot_link can only be deleted if the ballot it links to is before its voting phase.
 
-An attachment_version must not be deleted if its attachment has at least one attachment_ballot_link which voting phase had started.
+An attachment_version must not be removed and its metadata must not be changed if its attachment has at least one attachment_ballot_link which voting phase had started.
 Deletion of an attachment_version does not actually remove the entry, only the authors, filename and title attributes are deleted, as well as the file itself.
-
-Changing
---------
-Attachments, attachment_ballot_links and attachment_versions can not be changed.
 
 Definitive Version
 ------------------

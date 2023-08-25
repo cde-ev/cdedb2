@@ -107,6 +107,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.models.common import CdEDataclass
 
 NoneType = type(None)
 
@@ -118,6 +119,7 @@ _CONFIG = LazyConfig()
 T = TypeVar('T')
 T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -184,15 +186,15 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
+DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
 }
 
 
-def _validate_dataclass_preprocess(type_: Type[T], value: Any
-                                   ) -> Tuple[Type[T], Type[T]]:
+def _validate_dataclass_preprocess(type_: Type[DC], value: Any
+                                   ) -> Tuple[Type[DC], Type[CdEDBObject]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -212,15 +214,15 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+def _validate_dataclass_postprocess(subtype: Type[DC], validated: CdEDBObject) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
-    return subtype(**validated)
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
+    return cast(DC, subtype(**validated))
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
+def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> DC:
     """Wrapper of validate_assert that accepts dataclasses.
 
     Allows for subclasses, and figures out the appropriate superclass, for which
@@ -448,7 +450,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
+                **{"allow_superfluous": True, **kwargs})
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -1451,6 +1453,10 @@ def _persona(
             if val.get(key):
                 mandatory_fields.update(checkers)
         optional_fields = {key: bool for key in realm_checks}
+        # promoting to cde realm may be used to grant a trial membership.
+        #  since trial member implies is_member, we need to allow the latter here
+        if val.get("is_cde_realm"):
+            optional_fields["is_member"] = bool
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -1458,6 +1464,10 @@ def _persona(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
+    if "is_member" in val and "trial_member" in val:
+        if val["trial_member"] and not val["is_member"]:
+            errs.append(ValueError("trial_member", n_(
+                "Trial membership implies membership.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
@@ -4375,12 +4385,17 @@ def _assembly_attachment(
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", creation: bool = False,
+    **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
-    optional_fields: TypeMapping = {}
+    if creation:
+        mandatory_fields = {'attachment_id': ID, **ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {'attachment_id': ID, 'version_nr': ID}
+        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -4745,7 +4760,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, misc]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
         except ValidationSummary as e:
             errs.extend(e)
             continue

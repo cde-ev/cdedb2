@@ -252,13 +252,13 @@ class TestValidation(unittest.TestCase):
                 bytes, "no encoding", ignore_warnings=True, encoding=None)
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (  # type: ignore[misc]
+        self.do_validator_test(Mapping, (  # type: ignore[type-abstract]
             ({"a": "dict"}, {"a": "dict"}, None),
             ("something else", "", TypeError),
         ))
 
     def test_sequence(self) -> None:
-        self.do_validator_test(Sequence, (  # type: ignore[misc]
+        self.do_validator_test(Sequence, (  # type: ignore[type-abstract]
             (("a", "b"), ("a", "b"), None),
         ))
 

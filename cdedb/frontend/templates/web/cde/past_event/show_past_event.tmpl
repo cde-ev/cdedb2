@@ -29,6 +29,8 @@
         {% if "past_event" in user.admin_views %}
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
+            <dt title="{% trans %}Cutoff date{% endtrans %}">{% trans %}Cutoff date{% endtrans %}</dt>
+            <dd id="cutoff">{{ ambience['pevent']['tempus']|date(lang=lang) }}</dd>
         {% endif %}
         <dt title="{% trans %}Institution{% endtrans %}">
             {% trans %}Institution{% endtrans %}

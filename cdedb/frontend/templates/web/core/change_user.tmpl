@@ -39,8 +39,10 @@
                "most other places in the CdE Datenbank.")) }}
 
         {% if 'gender' in shown_fields %}
-            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender")) }}
+            {{ util.form_input_select(
+                name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
+                info=gettext("Needed for lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
+                    orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
         {% if "pronouns" in shown_fields %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}

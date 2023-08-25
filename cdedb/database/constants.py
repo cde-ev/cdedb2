@@ -34,7 +34,7 @@ class Genders(CdEIntEnum):
 
 
 @enum.unique
-class MemberChangeStati(CdEIntEnum):
+class PersonaChangeStati(enum.IntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
@@ -367,6 +367,7 @@ class FinanceLogCodes(CdEIntEnum):
     end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
+    start_trial_membership = 15  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:

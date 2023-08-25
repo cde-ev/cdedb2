@@ -102,7 +102,7 @@ python3 -m pip install --no-cache-dir --break-system-packages \
 
 # devtools
 python3 -m pip install --no-cache-dir --break-system-packages \
-    mypy==0.971 \
+    mypy==1.4.0 \
     flake8==3.8.4 \
     pylint==2.7.2 \
     types-werkzeug \

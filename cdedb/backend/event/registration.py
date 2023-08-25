@@ -1282,14 +1282,14 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
-        field_values = affirm(typing.Mapping, field_values)  # type: ignore[misc]
+        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
         registration_id = None
         if persona_id:
             registration_id = unwrap(
-                self.list_registrations(rs, event_id, persona_id) or None)
+                self.list_registrations(rs, event_id, persona_id).keys() or None)
 
         if self.is_orga(rs, event_id=event_id):
             pass

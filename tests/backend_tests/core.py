@@ -490,6 +490,103 @@ class TestCoreBackend(BackendTest):
         self.assertIn(log_entry, expected_log)
 
     @as_users("vera")
+    def test_change_persona_membership(self) -> None:
+        # Test persona without cde realm
+        with self.assertRaises(RuntimeError) as cm:
+            self.core.change_membership_easy_mode(
+                self.key, persona_id=5, is_member=False, trial_member=False)
+        self.assertEqual(str(cm.exception), "Not a CdE account.")
+
+        # Test membership changing is forbidden if user has an active lastschrift
+        with self.assertRaises(RuntimeError) as cm:
+            self.core.change_membership_easy_mode(
+                self.key, persona_id=2, is_member=False, trial_member=False)
+        self.assertEqual(str(cm.exception), "Active lastschrift permit found.")
+
+        def persona_membership(rs: RequestState, persona_id: int) -> CdEDBObject:
+            return self.core.retrieve_persona(
+                rs, persona_id, ("is_member", "trial_member"))
+
+        def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
+            if members == 7:
+                total = "113.76"
+            elif members == 8:
+                total = "114.76"
+            else:
+                raise RuntimeError("Test needs adjustment.")
+            data = {'persona_id': persona_id, 'code': code, 'total': total,
+                    'delta': None, 'new_balance': None, 'transaction_date': None,
+                    'members': members}
+            if code == const.FinanceLogCodes.lose_membership:
+                data["delta"] = "0.00"
+                data["new_balance"] = "1.00"
+                data["total"] = "113.76"
+            return data
+
+        persona_id = 3
+        expectation = {"id": persona_id, "is_member": True, "trial_member": True}
+        self.assertEqual(expectation, persona_membership(self.key, persona_id))
+        logs = []
+
+        # Test revoking membership without trial membership
+        with self.assertRaises(ValueError) as ccm:
+            self.core.change_membership_easy_mode(
+                self.key, persona_id=persona_id, is_member=False)
+        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+
+        # Test revoking trial membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, trial_member=False), 0)
+        expectation["trial_member"] = False
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 8))
+
+        # Test revoking membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, is_member=False), 0)
+        expectation["is_member"] = False
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
+
+        # Test granting trial membership
+        with self.assertRaises(ValueError) as ccm:
+            self.core.change_membership_easy_mode(
+                self.key, persona_id=persona_id, trial_member=True)
+        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+
+        # Test granting membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, is_member=True), 0)
+        expectation["is_member"] = True
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
+
+        # Test granting trial membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, trial_member=True), 0)
+        expectation["trial_member"] = True
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+
+        # Test revoking membership and trial membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, is_member=False, trial_member=False), 0)
+        expectation["is_member"] = expectation["trial_member"] = False
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 7))
+
+        # Test granting trial membership and membership
+        self.assertGreater(self.core.change_membership_easy_mode(
+            self.key, persona_id, is_member=True, trial_member=True), 0)
+        expectation["is_member"] = expectation["trial_member"] = True
+        self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+
+        self.assertLogEqual(logs, realm="finance", offset=3)
+
+    @as_users("vera")
     def test_change_persona_balance(self) -> None:
         log_code = const.FinanceLogCodes.manual_balance_correction
         # Test non-members
@@ -511,17 +608,6 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(self.core.change_persona_balance(
             self.key, persona_id, '23.45', log_code), 0)
         persona['balance'] = decimal.Decimal('23.45')
-        self.assertDictEqual(persona_finances(self.key, persona_id), persona)
-        # Test change trial membership
-        self.assertGreater(self.core.change_persona_balance(
-            self.key, persona_id, '23.45', log_code, trial_member=True), 0)
-        persona['trial_member'] = True
-        self.assertDictEqual(persona_finances(self.key, persona_id), persona)
-        # Test change balance and trial membership
-        self.assertGreater(self.core.change_persona_balance(
-            self.key, persona_id, '34.56', log_code, trial_member=False), 0)
-        persona['balance'] = decimal.Decimal('34.56')
-        persona['trial_member'] = False
         self.assertDictEqual(persona_finances(self.key, persona_id), persona)
 
     @as_users("vera")
@@ -546,8 +632,8 @@ class TestCoreBackend(BackendTest):
         }
         # Create the request anonymously.
         case_id = self.core.genesis_request(ANONYMOUS, case_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
 
         # Deletion is blocked, because link has not timed out yet.
         blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
@@ -612,8 +698,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["event"], stati=(const.GenesisStati.to_review,))))
@@ -709,8 +795,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertGreater(case_id, 0)
         assert case_id is not None
+        self.assertGreater(case_id, 0)
         self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["ml"], stati=(const.GenesisStati.to_review,))))
@@ -809,8 +895,8 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertTrue(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(2, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
@@ -910,8 +996,8 @@ class TestCoreBackend(BackendTest):
             "notes": "Max möchte Mails mitbekommen.",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
-        self.assertLess(0, case_id)
         assert case_id is not None
+        self.assertLess(0, case_id)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
         ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
@@ -1013,9 +1099,11 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("paul", "quintus")
-    @prepsql("UPDATE core.personas SET balance = 5 WHERE id = 3")
     def test_archive(self) -> None:
         persona_id = 3
+        with self.switch_user("anton"):
+            self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
+                                  allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
         self.assertEqual(True, data['is_cde_realm'])
@@ -1193,7 +1281,7 @@ class TestCoreBackend(BackendTest):
             {
                 'id': 1001,
                 'change_note': data["notes"],
-                'code': const.MemberChangeStati.committed.value,
+                'code': const.PersonaChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],

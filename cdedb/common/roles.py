@@ -163,7 +163,7 @@ def privilege_tier(roles: Set[Role], conjunctive: bool = False
     is controlled by the conjunctive parameter, if it is True the operation
     lies in the intersection of all realms.
 
-    Note that core admins and meta admins are always allowed access.
+    Note that core admins and are always allowed access.
 
     :returns: List of sets of admin roles. Any of these sets is sufficient.
     """

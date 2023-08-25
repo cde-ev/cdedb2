@@ -87,6 +87,7 @@ class Mailinglist(CdEDataclass):
     whitelist: Set[vtypes.Email]
 
     description: Optional[str]
+    additional_footer: Optional[str]
     subject_prefix: Optional[str]
     maxsize: Optional[vtypes.PositiveInt]
     notes: Optional[str]
