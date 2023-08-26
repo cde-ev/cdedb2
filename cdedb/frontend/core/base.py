@@ -197,7 +197,8 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info", {"meta_info": info})
+        return self.render(rs, "meta_info",
+                           {"meta_info": info, "hard_lockdown": self.conf["LOCKDOWN"]})
 
     @access("core_admin", modi={"POST"})
     def change_meta_info(self, rs: RequestState) -> Response:

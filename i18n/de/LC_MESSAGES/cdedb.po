@@ -1751,6 +1751,10 @@ msgstr "Banner bei Accountanfrage"
 msgid "cde_misc"
 msgstr "Linksammlung Mitgliederbereich"
 
+#: cdedb/common/fields.py:24
+msgid "lockdown_web"
+msgstr "Lockdown"
+
 #: cdedb/common/query/__init__.py:229 cdedb/common/query/__init__.py:230
 #, python-format
 msgid ""
@@ -10960,6 +10964,21 @@ msgstr "Zu prüfende Profiländerungen [%(count)s]"
 #, python-format
 msgid "Pending Privilege Changes [%(count)s]"
 msgstr "Ausstehende Änderungen der Admin-Privilegien [%(count)s]"
+
+#: cdedb/frontend/templates/web/core/meta_info.tmpl:31
+msgid ""
+"The CdEDB is currently locked down via configuration file. To disable, "
+"change the config file on the server."
+msgstr ""
+"Die CdEDB ist aktuell über die Konfigurationsdatei gesperrt. Um sie zu "
+"entsperren, bearbeite die Konfigurationsdatei auf dem Server."
+
+#: cdedb/frontend/templates/web/core/meta_info.tmpl:35
+msgid ""
+"Puts the CdEDB into maintenance mode, i.e. only core- and meta-admins may log in."
+msgstr ""
+"Versetzt die CdEDB in einen Wartungsmodus, d.h. nur Admins können sich noch "
+"einloggen."
 
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:4
 #, python-format

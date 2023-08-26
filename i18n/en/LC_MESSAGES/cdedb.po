@@ -1498,6 +1498,10 @@ msgstr "Banner at account request"
 msgid "cde_misc"
 msgstr "Link Collection Memberarea"
 
+#: cdedb/common/fields.py:24
+msgid "lockdown_web"
+msgstr "Lockdown"
+
 #: cdedb/common/query/__init__.py:230
 #, python-format
 msgid ""
