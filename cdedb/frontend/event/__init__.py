@@ -27,7 +27,7 @@ class EventFrontend(
     EventRegistrationMixin,
     EventQuestionnaireMixin,
     EventQueryMixin,
-    EventLodgementMxin,
+    EventLodgementMixin,
     EventFieldMixin,
     EventImportMixin,
     EventEventMixin,
