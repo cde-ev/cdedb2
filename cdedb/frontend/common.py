@@ -696,7 +696,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify_validation()
         if self.coreproxy.is_lockdown(rs):
             rs.notify("info", n_("The database currently undergoes"
-                                       " maintenance and is unavailable."))
+                                 " maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce

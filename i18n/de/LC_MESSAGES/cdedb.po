@@ -10975,10 +10975,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:35
 msgid ""
-"Puts the CdEDB into maintenance mode, i.e. only core- and meta-admins may log in."
+"Puts the CdEDB into maintenance mode, i.e. only core- and meta-admins may "
+"log in."
 msgstr ""
-"Versetzt die CdEDB in einen Wartungsmodus, d.h. nur Admins können sich noch "
-"einloggen."
+"Versetzt die CdEDB in einen Wartungsmodus, d.h. nur Core- und Meta-Admins "
+"können sich noch einloggen."
 
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:4
 #, python-format

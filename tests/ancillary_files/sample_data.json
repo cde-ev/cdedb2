@@ -1698,6 +1698,7 @@
             "info": {
                 "Vorstand": "Anton und Berta",
                 "cde_misc": null,
+                "lockdown_web": null,
                 "CdE_Konto_BIC": "BFSWDE33XXX",
                 "CdE_Konto_IBAN": "DE26370205000008068900",
                 "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
