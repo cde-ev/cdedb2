@@ -12330,6 +12330,10 @@ msgstr "Filter: Kurs"
 msgid "— no Filter —"
 msgstr "— kein Filter —"
 
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:80
+msgid "— no Course —"
+msgstr "— kein Kurs —"
+
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:81
 msgid "Filter: Course Operator"
 msgstr "Filter Kursoperator"
