@@ -4610,11 +4610,20 @@ msgstr "Ungültiger Eingabetyp."
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
-#: cdedb/frontend/common.py:696 cdedb/frontend/common.py:698
-msgid "The database currently undergoes maintenance and is unavailable."
+#: cdedb/frontend/common.py:701
+msgid ""
+"The CdEDB is curently locked for maintenance. You can still access it as "
+"admin. Only use the CdEDB if you know why it was locked!"
 msgstr ""
-"Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese "
-"ist daher leider nicht verfügbar."
+"Die CdEDB ist aktuell für Wartungsarbeiten gesperrt. Du kannst sie als Admin "
+"weiterhin nutzen. Benutze die CdEDB nur, wenn du weißt, warum sie gesperrt "
+"wurde!"
+
+#: cdedb/frontend/common.py:705
+msgid "The CdE database currently undergoes maintenance and is unavailable."
+msgstr ""
+"Es werden derzeit Wartungsarbeiten an der CdE-Datenbank vorgenommen und "
+"diese ist daher leider nicht verfügbar."
 
 #: cdedb/frontend/common.py:743 cdedb/frontend/common.py:745
 #, python-format
