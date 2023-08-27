@@ -4506,51 +4506,48 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_rcw_mechanism(self) -> None:
-        # TODO The output of get_lodgement_group is no valid input to
-        # rcw_lodgement_group. Is this a problem?
+        # Cull readonly attributes
+        def _get_lodgement_group(rs: RequestState, group_id: int) -> CdEDBObject:
+            ret = self.event.get_lodgement_group(rs, group_id=group_id)
+            del ret['lodgement_ids']
+            del ret['camping_mat_capacity']
+            del ret['regular_capacity']
+            return ret
+
         group_id = 1
-        data = self.event.get_lodgement_group(self.key, group_id=group_id)
+        data = _get_lodgement_group(self.key, group_id=group_id)
         self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
         # positional argument
         data['title'] = "Stavromula Beta"
         self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         self.event.rcw_lodgement_group(
             self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         data['title'] = "Stavromula Gamma"
         self.event.rcw_lodgement_group(self.key, data)
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         data['title'] = "Stavromula Delta"
         self.event.rcw_lodgement_group(
             self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
         # keyword argument
         data['title'] = "Stavromula Epsilon"
         self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         self.event.rcw_lodgement_group(
             self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         data['title'] = "Stavromula Zeta"
         self.event.rcw_lodgement_group(self.key, data=data)
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
         data['title'] = "Stavromula Eta"
         self.event.rcw_lodgement_group(
             self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.event.get_lodgement_group(
-            self.key, group_id=group_id))
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
     @as_users("garcia")
     def test_orga_apitokens(self) -> None:

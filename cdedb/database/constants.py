@@ -316,6 +316,7 @@ class LastschriftTransactionStati(CdEIntEnum):
 
 @enum.unique
 class PastInstitutions(CdEIntEnum):
+    """Insitutions for (primarily past) events, used for sorting into categories."""
     cde = 1  #:
     dsa = 20  #:
     dja = 40  #:
