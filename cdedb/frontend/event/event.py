@@ -409,7 +409,7 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
         readonly_synced_tracks = set()
         for track_id, track in xsorted(part['tracks'].items()):
-            for k in EVENT_TRACK_COMMON_FIELDS.keys():
+            for k in EVENT_TRACK_COMMON_FIELDS:
                 current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
             for tg_id, tg in track['track_groups'].items():
                 if tg['constraint_type'].is_sync():
@@ -488,7 +488,7 @@ class EventEventMixin(EventBaseFrontend):
         for track_id, track in xsorted(track_data.items()):
             for key in ('course_room_field',):
                 field_ids = [field[0] for field in fields[key]]
-                if track[key] and track[key] not in field_ids:
+                if track and track[key] and track[key] not in field_ids:
                     rs.append_validation_error((key, ValueError(
                         n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
