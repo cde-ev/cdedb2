@@ -146,7 +146,8 @@ class CdEBaseBackend(AbstractBackend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note, transaction_date=date)
-                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                            and not personas[datum['persona_id']]['is_member']):
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)
                         memberships_gained += bool(code)
@@ -338,14 +339,17 @@ class CdEBaseBackend(AbstractBackend):
             return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
+            # We set membership separately to ensure correct logging.
             new_persona.update({
-                'is_member': True,
-                'trial_member': trial_membership,
+                'is_member': False,
+                'trial_member': False,
                 'paper_expuls': True,
                 'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
+            self.core.change_membership_easy_mode(
+                rs, persona_id, is_member=True, trial_member=trial_membership)
             ret = True
         elif datum['resolution'].is_modification():
             ret = False
@@ -416,16 +420,9 @@ class CdEBaseBackend(AbstractBackend):
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 code = self.core.change_membership_easy_mode(
-                    rs, datum['doppelganger_id'], is_member=True)
+                    rs, datum['doppelganger_id'], is_member=True, trial_member=True)
                 # This will be true if the user was not a member before.
                 ret = bool(code)
-                update = {
-                    'id': datum['doppelganger_id'],
-                    'trial_member': True,
-                }
-                self.core.change_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
@@ -498,12 +495,13 @@ class CdEBaseBackend(AbstractBackend):
         return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
@@ -542,4 +540,4 @@ class CdEBaseBackend(AbstractBackend):
                     query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

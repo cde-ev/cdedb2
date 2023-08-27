@@ -390,6 +390,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="checkin_form"),
                 rule("/checkin", methods=_POST,
                      endpoint="checkin"),
+                sub('/droid', (
+                    rule("/partial", methods=_GET,
+                         endpoint="droid_partial_export"),
+                )),
                 sub('/minorform', (
                     rule("/get", methods=_GET,
                          endpoint="get_minor_form"),
@@ -734,6 +738,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                                  redirect_to="assembly/assembly/<assembly_id>"
                                              "/attachment/<attachment_id>/version"
                                              "/<version_nr>"),
+                            rule("/change", methods=_GET,
+                                 endpoint="change_attachment_version_form"),
+                            rule("/change", methods=_POST,
+                                 endpoint="change_attachment_version"),
                             rule("/delete", methods=_POST,
                                  endpoint="delete_attachment_version"),
                         )),

@@ -66,7 +66,7 @@ class TestCdEFrontend(FrontendTest):
         def _calculate_ejection_deadline(persona_data: CdEDBObject,
                                          period: CdEDBObject) -> datetime.datetime:
             """Clone of `CdEFrontend._calculate_ejection_deadline`."""
-            periods_left = persona_data['balance'] // decimal.Decimal("2.50")
+            periods_left = int(persona_data['balance'] // decimal.Decimal("2.50"))
             if persona_data['trial_member']:
                 periods_left += 1
             if period['balance_done']:
@@ -234,7 +234,7 @@ class TestCdEFrontend(FrontendTest):
         f['free_form'] = "Spiele gerne Okarina."
         self.submit(f)
         self.assertPresence("Link", div='personal-information')
-        self.assertTitle("Olafson Olaf")
+        self.assertTitle("Olaf Olafson")
         self.assertPresence("21.11.1998", div='personal-information')
         self.assertPresence("Spiele gerne Okarina.", div='additional')
 
@@ -720,6 +720,17 @@ class TestCdEFrontend(FrontendTest):
             "2",
             self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
         self.assertPresence("Vereinigtes Königreich")
+        # check that null aggregate counts correctly
+        self.traverse("Nutzer verwalten")
+        f = self.response.forms['queryform']
+        f['qsel_address_supplement'].checked = True
+        self.submit(f)
+        self.assertPresence("Ergebnis [19]", div='query-results')
+        self.assertEqual(
+            "17",
+            self.response.lxml.xpath("//*[@id='query-result']/tfoot/tr/td[@data-col="
+                                     "'null.address_supplement']")[0].text.strip()
+        )
 
     @as_users("vera")
     def test_user_search_csv(self) -> None:
@@ -806,23 +817,59 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_modify_membership(self) -> None:
         self.admin_view_profile('berta')
+        # revoke membership
         self.assertPresence("CdE-Mitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.traverse({'description': 'Status ändern'})
         self.assertTitle("Mitgliedsstatus von Bertå Beispiel bearbeiten")
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
         self.assertTitle("Bertå Beispiel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
         self.assertNonPresence("Daten sind für andere Mitglieder sichtbar.")
+
+        # grant membership
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied", div='membership')
+        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
+
+        # grant trial membership
+        self.traverse({'description': 'Status ändern'})
+        self.assertPresence("Probemitgliedschaft gewähren")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Bertå Beispiel")
+        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
+
+        # revoke membership and trial membership
+        self.traverse({'description': 'Status ändern'})
+        self.assertPresence("Mitgliedschaft terminieren")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f, button="is_member")
+        self.assertTitle("Bertå Beispiel")
+        self.assertNonPresence("CdE-Mitglied", div='membership')
+
+        # grant membership and trial membership
+        self.traverse({'description': 'Status ändern'})
+        self.assertPresence("Zum Mitglied machen")
+        f = self.response.forms['modifymembershipform']
+        f['trial_member'].checked = True
+        self.submit(f)
+        self.assertTitle("Bertå Beispiel")
+        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
+
+        # revoke trial membership
+        self.traverse({'description': 'Status ändern'})
+        self.assertPresence("Probemitgliedschaft terminieren")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Bertå Beispiel")
+        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
 
     @as_users("farin")
     def test_iban_visibility(self) -> None:
@@ -998,7 +1045,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Neue Einzugsermächtigung", div="balance")
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
         self.assertPresence("Aktives Lastschriftmandat widerrufen", div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
 

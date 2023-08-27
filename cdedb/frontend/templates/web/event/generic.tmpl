@@ -177,7 +177,7 @@
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {%- if field['kind'] == datatypes.bool %}
-            <div class="checkbox">
+            <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>

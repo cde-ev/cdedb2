@@ -272,6 +272,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 convert_html=True,
                 subject_prefix=f"{assembly['shortname']}-leitung",
                 maxsize=AssemblyPresiderMailinglist.maxsize_default,
+                additional_footer=None,
                 is_active=True,
                 assembly_id=assembly['id'],
                 notes=None,
@@ -295,6 +296,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 convert_html=True,
                 subject_prefix=assembly['shortname'],
                 maxsize=AssemblyAssociatedMailinglist.maxsize_default,
+                additional_footer=None,
                 is_active=True,
                 assembly_id=assembly["id"],
                 notes=None,
@@ -667,7 +669,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
     def create_ballot_form(self, rs: RequestState, assembly_id: int,
-                           source_id: int = None) -> Response:
+                           source_id: Optional[int] = None) -> Response:
         """Render form.
 
         :param source_id: Can be the ID of an existing ballot, prefilling it's data.
@@ -862,7 +864,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.values[metadatum] = latest_version[metadatum]
 
         return self.render(
-            rs, "add_attachment_version", {
+            rs, "configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': is_deletable
             })
@@ -918,6 +920,53 @@ class AssemblyFrontend(AbstractUserFrontend):
         data['attachment_id'] = attachment_id
         code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
         rs.notify_return_code(code, success=n_("Attachment added."))
+        return self.redirect(rs, "assembly/list_attachments")
+
+    @access("assembly")
+    @assembly_guard
+    def change_attachment_version_form(self, rs: RequestState, assembly_id: int,
+                                       attachment_id: int, version_nr: int) -> Response:
+        """Render form."""
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be changed."))
+            return self.redirect(rs, "assembly/list_attachments")
+        latest_version = self.assemblyproxy.get_latest_attachment_version(
+            rs, attachment_id)
+        merge_dicts(rs.values, rs.ambience['attachment_version'])
+        return self.render(
+            rs, "configure_attachment_version", {
+                'latest_version': latest_version,
+                'is_deletable': True
+            })
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("title", "authors", "filename")
+    def change_attachment_version(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int, version_nr: int,
+                               title: str, filename: Optional[vtypes.Identifier],
+                               authors: Optional[str]) -> Response:
+        """Change the metadata of a new version of an existing attachment."""
+        # the check that the attachment belongs to the assembly is already done in
+        # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be changed."))
+            return self.redirect(rs, "assembly/list_attachments")
+        if rs.has_validation_errors():
+            return self.change_attachment_version_form(
+                rs, assembly_id=assembly_id, attachment_id=attachment_id,
+                version_nr=version_nr)
+        data: CdEDBObject = {
+            'attachment_id': attachment_id,
+            'version_nr': version_nr,
+            'title': title,
+            'filename': filename,
+            'authors': authors,
+        }
+        code = self.assemblyproxy.change_attachment_version(rs, data)
+        rs.notify_return_code(code, success=n_("Attachment changed."))
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})

@@ -10,12 +10,13 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence, cast
 
 import lxml.etree
 import segno.helpers
 import webtest
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
@@ -31,6 +32,7 @@ from cdedb.frontend.event.query_stats import (
     PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
     StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
 )
+from cdedb.models.droid import OrgaToken
 from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
     storage,
@@ -112,18 +114,35 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
 
-    @as_users("emilia")
+    @as_users("annika")
     def test_changeuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},
-                      {'description': 'Bearbeiten'})
-        f = self.response.forms['changedataform']
-        self.submit(f, check_notification=False)
-        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
-        f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
-        f[IGNORE_WARNINGS_NAME].checked = True
+        with self.switch_user("emilia"):
+            self.traverse({'description': self.user['display_name']},
+                          {'description': 'Bearbeiten'})
+            f = self.response.forms['changedataform']
+            self.submit(f, check_notification=False)
+            self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+            f = self.response.forms['changedataform']
+            f['display_name'] = "Zelda"
+            f['location'] = "Hyrule"
+            f[IGNORE_WARNINGS_NAME].checked = True
+            self.submit(f, check_notification=False)
+            self.assertNotification("Änderung wartet auf Bestätigung", 'info')
+
+        with self.switch_user("quintus"):
+            # cde admin may not see event user change
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.get('/core/persona/5/changelog/inspect', status=403)
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [1]")
+        self.traverse({'href': '/core/persona/5/changelog/inspect'})
+        self.assertTitle("Änderungen prüfen für Emilia E. Eventis")
+        f = self.response.forms['ackchangeform']
         self.submit(f)
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        self.realm_admin_view_profile("emilia", "event")
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("(Zelda)", div='personal-information')
         self.assertPresence("Hyrule", div='address')
@@ -942,6 +961,8 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
         # fields
+        self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
+                            div="field-definition-notes", exact=True)
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -1684,6 +1705,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
 
+        self.traverse("Als Orga ansehen")  # shorthand link shown for orga/event admin
+        self.assertTitle("Anmeldung von Anton Administrator (Große Testakademie 2222)")
+        self.traverse("Meine Anmeldung")
+        with self.switch_user('berta'):  # but not for unprivileged users
+            self.traverse("angemeldet")
+            self.assertNoLink("/event/event/1/registration/.*/show")
         self.assertNonPresence("Warteliste")
         self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
@@ -3028,6 +3055,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
+        self.assertPresence("Insgesamt zu zahlender Betrag 466,49 €")
 
     @event_keeper
     @as_users("garcia")
@@ -4151,8 +4179,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # export
         # partial event export
         self.response = save.click(href='/event/event/1/download/partial')
-        self.assertPresence('"kind": "partial",')
-        self.assertPresence('"title": "Langer Kurs",')
+        self.assertEqual("partial", self.response.json['kind'])
+        self.assertEqual(
+            "Planetenretten für Anfänger", self.response.json['courses']['1']['title'])
         # registrations
         self.response = save.click(href='/event/event/1/download/csv_registrations')
         self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
@@ -4196,6 +4225,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             del log_entry['ctime']
         for log_entry in expectation['event.log'].values():
             del log_entry['ctime']
+        for token_id, token in expectation[OrgaToken.database_table].items():
+            token['ctime'] = result[OrgaToken.database_table][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -4922,6 +4953,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for reg_id, reg in result['registrations'].items():
             expectation['registrations'][reg_id]['ctime'] = reg['ctime']
             expectation['registrations'][reg_id]['mtime'] = reg['mtime']
+        for token_id, token in expectation['event']['orga_tokens'].items():
+            token['ctime'] = result['event']['orga_tokens'][token_id]['ctime']
         self.assertEqual(expectation, result)
 
     @event_keeper
@@ -5041,8 +5074,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['is_cancelled'] = True
         self.submit(f)
 
-        # do it
+        # try with past event even though there are no participants
         self.traverse(r"\sÜbersicht")
+        f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
+        f['create_past_event'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertNotification("Keine Veranstaltungsteile haben Teilnehmende.",
+                                'error')
+
+        # do it
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         f['create_past_event'].checked = False
@@ -6195,3 +6236,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
         f['fields.test2'] = False
         self.submit(f)
+
+    @as_users("garcia")
+    def test_orga_droid(self) -> None:
+        event_id = 1
+        new_token = OrgaToken(
+            id=cast(vtypes.ProtoID, -1),
+            event_id=cast(vtypes.ID, event_id),
+            title="New Token!",
+            notes=None,
+            ctime=now(),
+            etime=now().replace(year=3000),
+            rtime=None,
+            atime=None,
+        )
+        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        orga_token = self.event.get_orga_token(self.key, new_token_id)
+        self.get(f"/event/event/{event_id}/download/partial")
+        orga_export = self.response.json
+
+        self.get("/")
+        self.logout()
+
+        self.get(
+            f'/event/event/{event_id}/droid/partial',
+            headers={
+                orga_token.request_header_key:
+                    orga_token.get_token_string(secret),
+            },
+        )
+        droid_export = self.response.json
+
+        droid_export['timestamp'] = orga_export['timestamp']
+        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
+        self.assertEqual(orga_export, droid_export)

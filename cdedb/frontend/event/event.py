@@ -548,7 +548,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                      fee_id: int = None) -> Response:
+                      fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
@@ -814,6 +814,7 @@ class EventEventMixin(EventBaseFrontend):
                 convert_html=True,
                 subject_prefix=event['shortname'],
                 maxsize=EventOrgaMailinglist.maxsize_default,
+                additional_footer=None,
                 is_active=True,
                 event_id=event['id'],
                 notes=None,
@@ -839,6 +840,7 @@ class EventEventMixin(EventBaseFrontend):
                 convert_html=True,
                 subject_prefix=event['shortname'],
                 maxsize=EventAssociatedMailinglist.maxsize_default,
+                additional_footer=None,
                 is_active=True,
                 event_id=event["id"],
                 registration_stati=[const.RegistrationPartStati.participant],
@@ -1023,6 +1025,15 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        if not any(rpart['status'] == const.RegistrationPartStati.participant
+                   for reg in registrations.values()
+                   for rpart in reg['parts'].values()):
+            if create_past_event:
+                rs.notify("error", n_("No event parts have any participants."))
+                return self.redirect(rs, "event/show_event")
+
         new_ids, message = self.pasteventproxy.archive_event(
             rs, event_id, create_past_event=create_past_event)
 
@@ -1066,7 +1077,7 @@ class EventEventMixin(EventBaseFrontend):
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups"
+            "part_groups", "orga_tokens",
         }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())

@@ -113,7 +113,8 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
-    "camping_mat_field", "course_room_field")
+    "camping_mat_field", "course_room_field", "field_definition_notes",
+)
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
@@ -181,7 +182,7 @@ STORED_EVENT_QUERY_FIELDS = (
 #: Fields of a mailinglist which may be changed by all moderators, even restricted ones
 RESTRICTED_MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "convert_html",
-    "subject_prefix", "maxsize"}
+    "subject_prefix", "maxsize", "additional_footer"}
 
 #: Fields of a mailinglist which require full moderator access to be changed
 FULL_MOD_REQUIRING_FIELDS = {

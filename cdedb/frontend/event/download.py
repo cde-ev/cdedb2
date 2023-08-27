@@ -12,6 +12,7 @@ import tempfile
 from collections import OrderedDict
 from typing import Collection, Optional
 
+import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -519,9 +520,18 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
         json = json_serialize(data)
         return self.send_file(
-            rs, data=json, inline=False,
+            rs, mimetype="application/json", data=json, inline=False,
             filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
+
+    @access("droid_orga")
+    @event_guard()
+    def droid_partial_export(self, rs: RequestState, event_id: int) -> Response:
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
+        return self.send_file(
+            rs, mimetype="application/json", data=json_serialize(data))
 
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:

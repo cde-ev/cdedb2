@@ -61,7 +61,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @REQUESTdata("attachment_filename")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
-                        attachment_filename: str = None) -> Response:
+                        attachment_filename: Optional[str] = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
@@ -150,7 +150,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
                      })
         rs.notify(
             "success",
-            n_("Email sent. Please follow the link contained in the email."))
+            n_("We just sent you an email. To complete your account request, please"
+               " follow the link contained in the email."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")

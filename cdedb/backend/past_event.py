@@ -654,6 +654,8 @@ class PastEventBackend(AbstractBackend):
             course_map[course_id] = pcourse_id
         reg_ids = self.event.list_registrations(rs, event['id'])
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
+        # Remember if there were registrations for this part.
+        registrations_seen = False
         # we want to later delete empty courses
         courses_seen = set()
         # we want to add each participant/course combination at
@@ -663,6 +665,7 @@ class PastEventBackend(AbstractBackend):
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
+            registrations_seen = True
             is_orga = reg['persona_id'] in event['orgas']
             for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
@@ -683,6 +686,10 @@ class PastEventBackend(AbstractBackend):
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
                     is_instructor=False, is_orga=is_orga)
+        # Delete past event if it has no participants.
+        if not registrations_seen:
+            self.delete_past_event(rs, new_id, cascade=("log",))
+            return 0
         # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
@@ -695,7 +702,7 @@ class PastEventBackend(AbstractBackend):
     def archive_event(self, rs: RequestState, event_id: int,
                       create_past_event: bool = True
                       ) -> Union[Tuple[None, str],
-                                 Tuple[Optional[Tuple[int, ...]], None]]:
+                                 Tuple[Optional[List[int]], None]]:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -729,19 +736,25 @@ class PastEventBackend(AbstractBackend):
                                                'is_archived': True})
             new_ids = None
             if create_past_event:
-                new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                                for part_id in xsorted(event['parts']))
+                new_ids = []
+                for part_id in xsorted(event['parts']):
+                    new_id = self.archive_one_part(rs, event, part_id)
+                    if new_id:
+                        new_ids.append(new_id)
+                if not new_ids:
+                    raise ValueError(n_("No event parts have any participants."))
         return new_ids, None
 
     @access("member", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

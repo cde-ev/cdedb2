@@ -239,7 +239,8 @@ class EntitySorter:
 
     @staticmethod
     def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (changelog_entry['ctime'], changelog_entry['id'])
+        return (changelog_entry['ctime'], changelog_entry['generation'],
+                changelog_entry['persona_id'])
 
     @staticmethod
     def mailinglist(mailinglist: CdEDBObject) -> Sortkey:

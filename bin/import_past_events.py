@@ -1,5 +1,6 @@
 import csv
 import pathlib
+import sys
 
 import cdedb.database.constants as const
 from cdedb.backend.past_event import PastEventBackend
@@ -7,28 +8,26 @@ from cdedb.common import CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.script import Script
 
-USER_ID = -1
+infile_events = pathlib.Path(sys.argv[1])
+infile_courses = pathlib.Path(sys.argv[2])
 
-infile_events = pathlib.Path("/cdedb2/DSA_DJA_Akademien_2022.csv")
-infile_courses = pathlib.Path("/cdedb2/DSA_DJA_Kurse_2022.csv")
-
-s = Script(persona_id=USER_ID, dbuser='cdb_admin')
+s = Script(dbuser='cdb_admin')
 
 past_event: PastEventBackend = s.make_backend('past_event')
 
 institution_map = {e.shortname: e for e in const.PastInstitutions}
+institution_map['AT'] = institution_map['DSA']
 
 with infile_events.open("r") as f:
     event_data = {
-        event_line['ID_GLStandorte']: {
-            'title': event_line['title'],
+        event_line['ID']: {
+            'title': event_line['Standort_Langbez'],
             'shortname': event_line['shortname'],
-            'institution': institution_map[event_line['institution']],
+            'institution': institution_map[event_line['Programm']],
             'description': None,
             'tempus': event_line['Termin_Aka_von'],
         }
         for event_line in csv.DictReader(f, dialect=CustomCSVDialect)
-        if event_line['title']
     }
 
 with infile_courses.open("r") as f:

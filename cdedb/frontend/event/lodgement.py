@@ -37,7 +37,7 @@ LodgementProblem = NamedTuple(
                          ("severeness", int)])
 
 
-class EventLodgementMxin(EventBaseFrontend):
+class EventLodgementMixin(EventBaseFrontend):
     @staticmethod
     def check_lodgement_problems(
             event: CdEDBObject, lodgements: CdEDBObjectMap,
@@ -104,7 +104,8 @@ class EventLodgementMxin(EventBaseFrontend):
     @event_guard()
     @REQUESTdata("sort_part_id", "sortkey", "reverse")
     def lodgements(self, rs: RequestState, event_id: int,
-                   sort_part_id: vtypes.ID = None, sortkey: LodgementsSortkeys = None,
+                   sort_part_id: Optional[vtypes.ID] = None,
+                   sortkey: Optional[LodgementsSortkeys] = None,
                    reverse: bool = False) -> Response:
         """Overview of the lodgements of an event.
 
@@ -195,7 +196,7 @@ class EventLodgementMxin(EventBaseFrontend):
                     lodgement_id: lodgements[lodgement_id]
                     for lodgement_id in group['lodgement_ids']
                 },
-                sortkey=sort_lodgement
+                sortkey=sort_lodgement, reverse=reverse,
             ))
             for group_id, group in keydictsort_filter(
                 groups, EntitySorter.lodgement_group)
@@ -404,7 +405,7 @@ class EventLodgementMxin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("group_id")
     def create_lodgement_form(self, rs: RequestState, event_id: int,
-                              group_id: int = None) -> Response:
+                              group_id: Optional[int] = None) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
