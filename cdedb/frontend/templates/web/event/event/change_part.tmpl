@@ -58,11 +58,12 @@
         <table class="table table-condensed" id="track-drow-table">
             <thead>
                 <tr>
-                    <th>{% trans %}Coursetrack{% endtrans %}</th>
-                    <th>{% trans %}Shortname{% endtrans %}</th>
-                    <th>{% trans %}Course Choices{% endtrans %}</th>
-                    <th>{% trans %}Req. Choices{% endtrans %}</th>
-                    <th>{% trans %}Sortkey{% endtrans %}</th>
+                    <th class="col-sm-4">{% trans %}Coursetrack{% endtrans %}</th>
+                    <th class="col-sm-2">{% trans %}Shortname{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Course Choices{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Req. Choices{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Sortkey{% endtrans %}</th>
+                    <th class="col-sm-3">{% trans %}Course Room Field{% endtrans %}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -110,7 +111,13 @@
                                     defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
-                        {# TODO: Add course room field back in #}
+                        <td class={{ util.has_errors(drow_name("course_room_field", id, prefix="track")) }}>
+                            {{ util.input_select(drow_name("course_room_field", id, prefix="track"),
+                                    aclass='drow-input form-control', entries=fields['course_room_field'],
+                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field", prefix="track"),
+                                    arialabel=gettext("Course Room Field")) }}
+                            {{ util.output_errors(drow_name("course_room_field", id, prefix="track")) }}
+                        </td>
                         <td>
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}
@@ -127,6 +134,16 @@
                     </tr>
                 {% endcall %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="7" class="text-muted">
+                        {{ util.make_icon('info-circle') }}
+                        {{ gettext("The course room field is the custom field in which the course’s assigned course"
+                                   " room will be saved. It is used for PDF participant lists and nametags."
+                                   " Fieldtype: Text") }}
+                    </td>
+                </tr>
+            </tfoot>
         </table>
 
         {% if not has_registrations %}

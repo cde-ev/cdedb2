@@ -27,7 +27,7 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
-    EVENT_TRACK_GROUP_COMMON_FIELDS,
+    EVENT_TRACK_COMMON_FIELDS, EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -409,7 +409,7 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
         readonly_synced_tracks = set()
         for track_id, track in xsorted(part['tracks'].items()):
-            for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
+            for k in EVENT_TRACK_COMMON_FIELDS.keys():
                 current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
             for tg_id, tg in track['track_groups'].items():
                 if tg['constraint_type'].is_sync():
@@ -462,14 +462,7 @@ class EventEventMixin(EventBaseFrontend):
         # process the dynamic track input
         #
         track_existing = rs.ambience['event']['parts'][part_id]['tracks']
-        track_spec = {
-            'title': str,
-            'shortname': vtypes.Shortname,
-            'num_choices': vtypes.NonNegativeInt,
-            'min_choices': vtypes.NonNegativeInt,
-            'sortkey': int,
-            'course_room_field': int,
-        }
+        track_spec = EVENT_TRACK_COMMON_FIELDS
         track_data = process_dynamic_input(
             rs, vtypes.EventTrack, track_existing, track_spec, prefix="track")
 
@@ -493,10 +486,11 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
 
         for track_id, track in xsorted(track_data.items()):
-            # for key in ('course_room_field',):
-            #    if data[key] and data[key] not in field_ids:
-            #        rs.append_validation_error((key, ValueError(
-            #            n_("Linked to non-fitting field."))))
+            for key in ('course_room_field',):
+                field_ids = [field[0] for field in fields[key]]
+                if track[key] and track[key] not in field_ids:
+                    rs.append_validation_error((key, ValueError(
+                        n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
             if track and track_id in track_existing:
                 for tg_id, tg in track_existing[track_id]['track_groups'].items():
