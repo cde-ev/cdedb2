@@ -106,7 +106,7 @@
                                                         ['persona_id']])) }}
                                     {{ generic_event.camping_mat_icon(
                                         registrations[registration_id]['parts'][part_id]['is_camping_mat'],
-                                        registrations[registration_id]['fields'].get(camping_mat_field_name)) }}
+                                        registrations[registration_id]['fields'].get(camping_mat_field_names[part_id])) }}
                                 </li>
                             {% endfor %}
                         </ul>

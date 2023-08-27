@@ -11429,7 +11429,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:32
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:46
 #, python-format
-msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
+msgid "Field to store the %(link)s ranking of this part. Datentyp: Integer"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:35
@@ -11646,7 +11646,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
 msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
-"It is used for PDF participant lists and nametags. Fieldtype: Text"
+"It is used for PDF participant lists and nametags. Datentyp: Text"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:107

@@ -41,13 +41,18 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
+        {{ util.form_input_select(name="waitlist_field", entries=fields['waitlist_field'],
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
                                                               gettext("Waitlist")))|s
                                   ) }}
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"),
+                                  entries=fields['camping_mat_field'], nulloption=nbsp,
+                                  info=gettext("The custom field in which the participants’ "
+                                  "willingness to sleep on a camping mat will be saved. It is displayed on "
+                                  "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
 
         <h3 class="mosp heading-underline clear-both">{% trans %}Coursetracks{% endtrans %}</h3>
         <table class="table table-condensed" id="track-drow-table">
@@ -105,6 +110,7 @@
                                     defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
+                        {# TODO: Add course room field back in #}
                         <td>
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}

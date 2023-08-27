@@ -675,8 +675,7 @@ class EventBaseBackend(EventLowLevelBackend):
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
-                    edata[f] for f in ("lodge_field", "camping_mat_field",
-                                       "course_room_field") if f in edata
+                    edata[f] for f in ("lodge_field",) if f in edata
                 )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
@@ -686,14 +685,6 @@ class EventBaseBackend(EventLowLevelBackend):
                         self._validate_special_event_field(
                             rs, data['id'], "lodge_field",
                             indirect_data[edata['lodge_field']])
-                    if edata.get('camping_mat_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "camping_mat_field",
-                            indirect_data[edata['camping_mat_field']])
-                    if edata.get('course_room_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "course_room_field",
-                            indirect_data[edata['course_room_field']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'], change_note=change_note)
@@ -1364,13 +1355,16 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['id']
             del part['event_id']
             del part['part_groups']
-            for f in ('waitlist_field',):
+            for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
                     part[f] = event['fields'][part[f]]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
                 del track['track_groups']
+                for f in ('course_room_field',):
+                    if track[f]:
+                        track[f] = event['fields'][track[f]]['field_name']
         for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']
@@ -1381,7 +1375,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del tg['event_id']
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
             tg['track_ids'] = xsorted(tg['track_ids'])
-        for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
+        for f in ('lodge_field',):
             if event[f]:
                 event[f] = event['fields'][event[f]]['field_name']
         # Fields and questionnaire

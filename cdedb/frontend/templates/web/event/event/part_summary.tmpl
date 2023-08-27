@@ -86,6 +86,16 @@
                                 —
                             {% endif %}
                         </dd>
+                        <dt title="{% trans %}Camping mat field{% endtrans %}">
+                            {% trans %}Camping mat field{% endtrans %}
+                        </dt>
+                        <dd>
+                            {% if part['camping_mat_field'] %}
+                                {{ ambience['event']['fields'][part['camping_mat_field']]['field_name'] }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
                     </dl>
 
                     <dl class="dl-horizontal col-md-6">

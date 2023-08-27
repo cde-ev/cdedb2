@@ -58,13 +58,14 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event']['lodge_field']:
             referenced.add(rs.ambience['event']['lodge_field'])
-        if rs.ambience['event']['camping_mat_field']:
-            referenced.add(rs.ambience['event']['camping_mat_field'])
-        if rs.ambience['event']['course_room_field']:
-            referenced.add(rs.ambience['event']['course_room_field'])
         for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
+            if part['camping_mat_field']:
+                referenced.add(part['camping_mat_field'])
+        for track in rs.ambience['event']['tracks'].values():
+            if track['course_room_field']:
+                referenced.add(track['course_room_field'])
         return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'locked': locked})
 

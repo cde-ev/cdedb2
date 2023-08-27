@@ -129,22 +129,10 @@ class EventEventMixin(EventBaseFrontend):
             if field['association'] == const.FieldAssociations.registration
             and field['kind'] == const.FieldDatatypes.str
         ]
-        camping_mat_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] == const.FieldAssociations.registration
-            and field['kind'] == const.FieldDatatypes.bool
-        ]
-        course_room_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] == const.FieldAssociations.course
-            and field['kind'] == const.FieldDatatypes.str
-        ]
         return self.render(rs, "event/change_event", {
             'institutions': institutions,
             'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
-            'lodge_fields': lodge_fields,
-            'camping_mat_fields': camping_mat_fields,
-            'course_room_fields': course_room_fields})
+            'lodge_fields': lodge_fields})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -340,22 +328,29 @@ class EventEventMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/part_summary")
 
+    @staticmethod
+    def _valid_event_part_fields(fields: CdEDBObject
+                                 ) -> dict[str, list[tuple[int, str]]]:
+        sorted_fields = xsorted(fields.values(), key=EntitySorter.event_field)
+        fields = {}
+        for field in ('waitlist', 'camping_mat', 'course_room'):
+            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC[field]
+            fields[f"{field}_field"] = [
+                (field['id'], field['field_name']) for field in sorted_fields
+                if field['association'] in legal_assocs
+                   and field['kind'] in legal_datatypes
+            ]
+        return fields
+
     @access("event")
     @event_guard()
     def add_part_form(self, rs: RequestState, event_id: int) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
-        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
-                                key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
-        waitlist_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
-        ]
+        fields = self._valid_event_part_fields(rs.ambience['event']['fields'])
         return self.render(rs, "event/add_part", {
-            'waitlist_fields': waitlist_fields,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+            'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @access("event", modi={"POST"})
     @event_guard()
@@ -372,13 +367,12 @@ class EventEventMixin(EventBaseFrontend):
         assert data is not None
 
         # check non-static dependencies
-        if data["waitlist_field"]:
-            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
-            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
-            if (waitlist_field['association'] not in allowed_associations
-                    or waitlist_field['kind'] not in allowed_datatypes):
-                rs.append_validation_error(("waitlist_field", ValueError(
-                    n_("Waitlist linked to non-fitting field."))))
+        fields = self._valid_event_part_fields(rs.ambience['event']['fields'])
+        for key in ('waitlist_field', 'camping_mat_field',):
+            field_ids = [field[0] for field in fields[key]]
+            if data[key] and data[key] not in field_ids:
+                rs.append_validation_error((key, ValueError(
+                    n_("Linked to non-fitting field."))))
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
@@ -428,17 +422,11 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
-        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
-                                key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
-        waitlist_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
-        ]
+        fields = self._valid_event_part_fields(rs.ambience['event']['fields'])
         return self.render(rs, "event/change_part", {
             'part_id': part_id,
             'sorted_track_ids': sorted_track_ids,
-            'waitlist_fields': waitlist_fields,
+            'fields': fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES,
@@ -463,13 +451,12 @@ class EventEventMixin(EventBaseFrontend):
         #
         # Check part specific stuff which can not be checked statically
         #
-        if data["waitlist_field"]:
-            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
-            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
-            if (waitlist_field['association'] not in allowed_associations
-                    or waitlist_field['kind'] not in allowed_datatypes):
-                rs.append_validation_error(("waitlist_field", ValueError(
-                    n_("Waitlist linked to non-fitting field."))))
+        fields = self._valid_event_part_fields(rs.ambience['event']['fields'])
+        for key in ('waitlist_field', 'camping_mat_field',):
+            field_ids = [field[0] for field in fields[key]]
+            if data[key] and data[key] not in field_ids:
+                rs.append_validation_error((key, ValueError(
+                    n_("Linked to non-fitting field."))))
 
         #
         # process the dynamic track input
@@ -480,10 +467,12 @@ class EventEventMixin(EventBaseFrontend):
             'shortname': vtypes.Shortname,
             'num_choices': vtypes.NonNegativeInt,
             'min_choices': vtypes.NonNegativeInt,
-            'sortkey': int
+            'sortkey': int,
+            'course_room_field': int,
         }
         track_data = process_dynamic_input(
             rs, vtypes.EventTrack, track_existing, track_spec, prefix="track")
+
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
 
@@ -504,6 +493,10 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
 
         for track_id, track in xsorted(track_data.items()):
+            # for key in ('course_room_field',):
+            #    if data[key] and data[key] not in field_ids:
+            #        rs.append_validation_error((key, ValueError(
+            #            n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
             if track and track_id in track_existing:
                 for tg_id, tg in track_existing[track_id]['track_groups'].items():
@@ -886,6 +879,7 @@ class EventEventMixin(EventBaseFrontend):
                     'part_begin': part_begin,
                     'part_end': part_end,
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                     'tracks': (
                         {
                             -1: {
@@ -894,6 +888,7 @@ class EventEventMixin(EventBaseFrontend):
                                 'num_choices': DEFAULT_NUM_COURSE_CHOICES,
                                 'min_choices': DEFAULT_NUM_COURSE_CHOICES,
                                 'sortkey': 0,
+                                'course_room_field': None,
                             },
                         } if create_track else {}
                     ),

@@ -12206,7 +12206,7 @@ msgid ""
 msgstr ""
 "Das Feld, in das die Hauswünsche der Teilnehmer eingetragen werden. Es wird "
 "für die automatische Erkennung von Hauswünschen und den Hauswünsche-Graphen "
-"verwendet. Feldtyp: Text"
+"verwendet. Datentyp: Text"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:95
 msgid "Field for Camping Mat"
@@ -12220,7 +12220,7 @@ msgid ""
 msgstr ""
 "Das Datenfeld, in dem die Bereitschaft, auf einer Isomatte zu schlafen, "
 "abgefragt wird. Es wird auf Unterkunfts- und Bewohner-Seiten angezeigt. "
-"Feldtyp: Ja/Nein"
+"Datentyp: Ja/Nein"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:99
 msgid "Field for Course Room"
@@ -12232,7 +12232,7 @@ msgid ""
 "It is used for PDF participant lists and nametags. Fieldtype: Text"
 msgstr ""
 "Das Datenfeld, in dem der dem Kurs zugewiesene Raum gespeichert wird. Es "
-"wird für PDF-Teilnehmerlisten und -Namensschilder verwendet. Feldtyp: Text"
+"wird für PDF-Teilnehmerlisten und -Namensschilder verwendet. Datentyp: Text"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
 msgid ""

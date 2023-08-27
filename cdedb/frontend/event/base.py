@@ -664,6 +664,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         )
 
+    @staticmethod
+    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, str]:
+        field_names = {}
+        for part_id, part in event["parts"].items():
+            if f_id := part["camping_mat_field"]:
+                field_names[part_id] = event["fields"][f_id]["field_name"]
+            else:
+                field_names[part_id] = None
+        return field_names
+
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         """Regularly backup any event that got changed.

@@ -99,18 +99,22 @@ def make_meta_info(cur: DictCursor) -> None:
 
 
 def update_event(cur: DictCursor, event: CdEDBObject) -> None:
-    query = """UPDATE event.events
-               SET (lodge_field, camping_mat_field, course_room_field)
-               = (%s, %s, %s)"""
-    params = (event['lodge_field'], event['camping_mat_field'],
-              event['course_room_field'])
-    cur.execute(query, params)
+    query = """UPDATE event.events SET lodge_field = %s"""
+    cur.execute(query, [event['lodge_field']])
 
 
 def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
-    query = "UPDATE event.event_parts SET waitlist_field = %s WHERE id = %s"
+    query = """UPDATE event.event_parts
+               SET (waitlist_field, camping_mat_field) = (%s, %s) WHERE id = %s"""
     for part in parts:
-        cur.execute(query, (part['waitlist_field'], part['id']))
+        params = (part['waitlist_field'], part['camping_mat_field'], part['id'])
+        cur.execute(query, params)
+
+
+def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
+    query = "UPDATE event.course_tracks SET course_room_field = %s WHERE id = %s"
+    for track in tracks:
+        cur.execute(query, (track['course_room_field'], track['id']))
 
 
 def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
@@ -212,17 +216,21 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field', 'camping_mat_field',
-                                'course_room_field'):
+                    for key in ('lodge_field',):
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:
-                        for key in ('waitlist_field',):
+                        for key in ('waitlist_field', 'camping_mat_field'):
                             values[part_id][key] = None
+                if table == 'event.course_tracks':
+                    for track_id in data[table]:
+                        for key in ('course_room_field',):
+                            values[track_id][key] = None
                 populate_table(cur, table, values)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
             update_parts(cur, data['event.event_parts'].values())
+            update_tracks(cur, data['event.course_tracks'].values())
 
             # Create a surrogate changelog that can be used for the
             # duration of the offline deployment

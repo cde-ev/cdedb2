@@ -44,9 +44,9 @@ class LodgementProblem:
 
 
 class EventLodgementMixin(EventBaseFrontend):
-    @staticmethod
+    @classmethod
     def check_lodgement_problems(
-            event: CdEDBObject, lodgements: CdEDBObjectMap,
+            cls, event: CdEDBObject, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
             all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:
@@ -57,11 +57,7 @@ class EventLodgementMixin(EventBaseFrontend):
           id, part id, affected registrations, severeness).
         """
         ret: List[LodgementProblem] = []
-
-        if f_id := event["camping_mat_field"]:
-            camping_mat_field_name = event["fields"][f_id]["field_name"]
-        else:
-            camping_mat_field_name = None
+        camping_mat_field_names = cls._get_camping_mat_field_names(event)
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
@@ -94,11 +90,11 @@ class EventLodgementMixin(EventBaseFrontend):
                     ret.append(LodgementProblem(
                         n_("Too many camping mats used."),
                         lodgement_id, part_id, cm, 1))
-                if camping_mat_field_name:
+                if camping_mat_field_names:
                     for reg_id in cm:
                         unhappy_campers = set()
                         if not registrations[reg_id]['fields'].get(
-                                camping_mat_field_name):
+                                camping_mat_field_names[part_id]):
                             unhappy_campers.add(reg_id)
                         ret.append(LodgementProblem(
                             n_("Participants assigned to sleep on, but may not sleep"
@@ -310,10 +306,8 @@ class EventLodgementMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
-        if f_id := rs.ambience["event"]["camping_mat_field"]:
-            camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
-        else:
-            camping_mat_field_name = None
+        camping_mat_field_names = self._get_camping_mat_field_names(
+            rs.ambience['event'])
 
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
@@ -356,7 +350,7 @@ class EventLodgementMixin(EventBaseFrontend):
             'groups': groups, 'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
             'make_inhabitants_query': make_inhabitants_query,
-            'camping_mat_field_name': camping_mat_field_name,
+            'camping_mat_field_names': camping_mat_field_names,
             'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
         })
 
