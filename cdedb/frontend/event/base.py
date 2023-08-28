@@ -665,7 +665,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @staticmethod
-    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, str]:
+    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, Optional[str]]:
         field_names = {}
         for part_id, part in event["parts"].items():
             if f_id := part["camping_mat_field"]:

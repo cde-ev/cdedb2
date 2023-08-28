@@ -755,7 +755,7 @@
                         "num_choices": 4,
                         "min_choices": 4,
                         "sortkey": 1,
-                        "course_room_field": "transportation"
+                        "course_room_field": "room"
                     },
                     "2": {
                         "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
@@ -763,7 +763,7 @@
                         "num_choices": 1,
                         "min_choices": 1,
                         "sortkey": 2,
-                        "course_room_field": "transportation"
+                        "course_room_field": "room"
                     }
                 }
             },
@@ -781,7 +781,7 @@
                         "num_choices": 3,
                         "min_choices": 2,
                         "sortkey": 3,
-                        "course_room_field": "transportation"
+                        "course_room_field": "room"
                     }
                 }
             }
