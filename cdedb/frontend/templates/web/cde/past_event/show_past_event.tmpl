@@ -35,7 +35,7 @@
         <dt title="{% trans %}Institution{% endtrans %}">
             {% trans %}Institution{% endtrans %}
         </dt>
-        <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
+        <dd id="institution">{{ gettext(ambience['pevent']['institution']|string) }}</dd>
         {% if orgas %}
         <dt title="{% trans %}Orgas{% endtrans %}">
             {% trans %}Orgas{% endtrans %}
