@@ -1491,6 +1491,9 @@ class TestEventBackend(BackendTest):
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(
             expectation, self.event.registrations_by_course(self.key, event_id))
+        self.assertEqual({}, self.event.registrations_by_course(
+            self.key, event_id, position=InfiniteEnum(
+                CourseFilterPositions.specific_rank, 1)))
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, track_id=3))

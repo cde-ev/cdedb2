@@ -640,15 +640,25 @@ class EventRegistrationBackend(EventBaseBackend):
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
-                sub_conditions.append(
-                    "(choices.course_id = %s AND "
-                    " choices.rank < course_tracks.num_choices)")
-                params.append(course_id)
-            if position.enum == cfp.specific_rank and course_id:
-                sub_conditions.append(
-                    "(choices.course_id = %s AND choices.rank = %s)")
-                params.extend((course_id, position.int))
+            if position.enum in (cfp.any_choice, cfp.anywhere):
+                if course_id:
+                    sub_conditions.append(
+                        "(choices.course_id = %s AND "
+                        " choices.rank < course_tracks.num_choices)")
+                    params.append(course_id)
+                else:
+                    sub_conditions.append(
+                        "(choices.course_id IS NULL AND "
+                        " choices.rank < course_tracks.num_choices)")
+            if position.enum == cfp.specific_rank:
+                if course_id:
+                    sub_conditions.append(
+                        "(choices.course_id = %s AND choices.rank = %s)")
+                    params.extend((course_id, position.int))
+                else:
+                    sub_conditions.append(
+                        "(choices.course_id IS NULL AND choices.rank = %s)")
+                    params.append(position.int)
             if position.enum in (cfp.assigned, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
