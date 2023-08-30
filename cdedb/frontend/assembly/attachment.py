@@ -57,7 +57,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             attachment_id: (attachment["num_versions"] <= 1
                             and are_attachment_versions_deletable[attachment_id])
             for attachment_id, attachment in attachments.items()}
-        return self.render(rs, "list_attachments", {
+        return self.render(rs, "attachment/list_attachments", {
             "attachments": sorted_attachments,
             "attachments_versions": attachments_versions,
             "are_attachment_versions_creatable": are_attachment_versions_creatable,
@@ -100,7 +100,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.notify('error',
                       n_("Cannot add attachment once the assembly has been locked."))
             return self.redirect(rs, 'assembly/list_attachments')
-        return self.render(rs, "add_attachment")
+        return self.render(rs, "attachment/add_attachment")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -185,7 +185,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                 rs.values[metadatum] = latest_version[metadatum]
 
         return self.render(
-            rs, "configure_attachment_version", {
+            rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': is_deletable
             })
@@ -257,7 +257,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, attachment_id)
         merge_dicts(rs.values, rs.ambience['attachment_version'])
         return self.render(
-            rs, "configure_attachment_version", {
+            rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
                 'is_deletable': True
             })
@@ -274,7 +274,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
             rs.notify("error", n_("Attachment version can not be changed."))
-            return self.redirect(rs, "assembly/list_attachments")
+            return self.redirect(rs, "assembly/attachment/list_attachments")
         if rs.has_validation_errors():
             return self.change_attachment_version_form(
                 rs, assembly_id=assembly_id, attachment_id=attachment_id,

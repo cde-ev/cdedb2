@@ -89,7 +89,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                 votes[ballot_id] = self.assemblyproxy.get_vote(
                     rs, ballot_id, secret=None)
 
-        return self.render(rs, "list_ballots", {
+        return self.render(rs, "ballot/list_ballots", {
             'ballots': ballots, 'grouped_ballots': grouped, 'votes': votes,
         })
 
@@ -114,7 +114,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/create_ballot", {
                 'assembly_id': assembly_entries[0][0], 'source_id': ballot_id,
             })
-        return self.render(rs, "ballot_template", {
+        return self.render(rs, "ballot/ballot_template", {
             'assembly_entries': assembly_entries,
         })
 
@@ -172,7 +172,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                 key=EntitySorter.attachment)
         ]
 
-        return self.render(rs, "configure_ballot", {
+        return self.render(rs, "ballot/configure_ballot", {
             'attachment_entries': attachment_entries,
             'selectize_data': selectize_data,
         })
@@ -291,7 +291,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         if "assembly_presider" not in rs.user.admin_views:
             assembly_ids &= rs.user.presider
 
-        return self.render(rs, "show_ballot", {
+        return self.render(rs, "ballot/show_ballot", {
             "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
             'definitive_versions': definitive_versions,
@@ -388,7 +388,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         prev_ballot = ballots[ballot_list[i - 1]] if i > 0 else None
         next_ballot = ballots[ballot_list[i + 1]] if i + 1 < length else None
 
-        return self.render(rs, "show_ballot_result", {
+        return self.render(rs, "ballot/show_ballot_result", {
             'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
@@ -614,7 +614,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
 
-        return self.render(rs, "summary_ballots", {
+        return self.render(rs, "ballot/summary_ballots", {
             'grouped_ballots': grouped, 'config_grouped': config_grouped,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME, 'result': result,
         })
@@ -647,7 +647,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
-        return self.render(rs, "configure_ballot", {
+        return self.render(rs, "ballot/configure_ballot", {
             "attachment_entries": attachment_entries,
             "selectize_data": selectize_data,
         })
@@ -682,7 +682,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs.notify("error", n_("Comments are only allowed for concluded ballots."))
             return self.redirect(rs, "assembly/show_ballot")
         merge_dicts(rs.values, rs.ambience['ballot'])
-        return self.render(rs, "comment_ballot")
+        return self.render(rs, "ballot/comment_ballot")
 
     @access("assembly", modi={"POST"})
     @assembly_guard

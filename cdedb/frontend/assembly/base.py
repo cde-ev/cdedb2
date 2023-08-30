@@ -58,8 +58,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         attendees_count = {assembly_id: len(
                            self.assemblyproxy.list_attendees(rs, assembly_id))
                            for assembly_id in rs.user.presider}
-        return self.render(rs, "index", {'assemblies': assemblies,
-                                         'attendees_count': attendees_count})
+        return self.render(rs, "base/index", {
+            'assemblies': assemblies, 'attendees_count': attendees_count})
 
     @access("core_admin", "assembly_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -68,7 +68,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return super().create_user_form(rs)
+        return self.render(rs, "base/create_user")
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
@@ -102,7 +102,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
 
         return self.generic_view_log(
             rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
-            download=download, template="view_log", template_kwargs={
+            download=download, template="base/view_log", template_kwargs={
                 'may_view': may_view, 'all_assemblies': all_assemblies,
             },
         )
@@ -117,7 +117,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         rs.values['assembly_id'] = data['assembly_id'] = assembly_id
         return self.generic_view_log(
             rs, data, AssemblyLogFilter, self.assemblyproxy.retrieve_log,
-            download=download, template="view_assembly_log",
+            download=download, template="base/view_assembly_log",
         )
 
     @access("assembly")
@@ -158,7 +158,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             params['attendee_list_exists'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
 
-        return self.render(rs, "show_assembly", params)
+        return self.render(rs, "base/show_assembly", params)
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("presider_ids")
@@ -210,7 +210,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "configure_assembly")
+        return self.render(rs, "base/configure_assembly")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -237,7 +237,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "configure_assembly")
+        return self.render(rs, "base/configure_assembly")
 
     @staticmethod
     def _get_mailinglist_setter(rs: RequestState, assembly: CdEDBObject,
@@ -478,7 +478,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         if ballots:
             rs.values['cutoff'] = max(b['vote_begin'] for b in ballots.values())
-        return self.render(rs, "list_attendees", {"attendees": attendees})
+        return self.render(rs, "base/list_attendees", {"attendees": attendees})
 
     @access("assembly")
     @assembly_guard
