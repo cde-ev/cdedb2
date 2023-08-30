@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-07-31 18:33+0000\n"
+"POT-Creation-Date: 2023-08-27 00:00+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -1295,7 +1295,7 @@ msgid "Only lodgement groups from exactly one event allowed!"
 msgstr "Nur Unterkunftsgruppen eines einzelnen Events sind erlaubt!"
 
 #: cdedb/backend/event/lodgement.py:217 cdedb/frontend/event/lodgement.py:743
-#: cdedb/frontend/event/lodgement.py:744
+#: cdedb/frontend/event/lodgement.py:744 cdedb/frontend/event/lodgement.py:774
 msgid "Invalid lodgement group."
 msgstr "Ungültige Unterkunftsgruppe"
 
@@ -2711,6 +2711,7 @@ msgstr "Orga-Notizen"
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:13
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:18
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:131
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:135
 msgid "Checkin"
 msgstr "Checkin"
 
@@ -4238,7 +4239,7 @@ msgstr "Versammlung angelegt."
 #: cdedb/frontend/event/event.py:1024 cdedb/frontend/event/event.py:1026
 #: cdedb/frontend/event/event.py:1062 cdedb/frontend/event/event.py:1067
 #: cdedb/frontend/event/event.py:1074 cdedb/frontend/event/lodgement.py:510
-#: cdedb/frontend/event/lodgement.py:511
+#: cdedb/frontend/event/lodgement.py:511 cdedb/frontend/event/lodgement.py:541
 #: cdedb/frontend/event/registration.py:1097
 #: cdedb/frontend/event/registration.py:1101 cdedb/frontend/ml/base.py:513
 #: cdedb/frontend/ml/base.py:517
@@ -5258,6 +5259,7 @@ msgstr "Die Teilnehmerliste ist noch nicht veröffentlicht."
 
 #: cdedb/frontend/event/base.py:285 cdedb/frontend/event/base.py:286
 #: cdedb/frontend/event/lodgement.py:170 cdedb/frontend/event/lodgement.py:171
+#: cdedb/frontend/event/lodgement.py:201
 msgid "Invalid part id."
 msgstr "Nicht-existenter Veranstaltungsteil."
 
@@ -5534,6 +5536,7 @@ msgstr "Feldname nicht eindeutig."
 
 #: cdedb/frontend/event/fields.py:182 cdedb/frontend/event/registration.py:1303
 #: cdedb/frontend/event/registration.py:1307
+#: cdedb/frontend/event/registration.py:1313
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
@@ -5545,27 +5548,33 @@ msgstr "Feld einer anderen Veranstaltung angegeben."
 msgid "change_note only supported for registrations."
 msgstr "Änderungskommentare werden nur für Anmeldungen unterstützt."
 
-#: cdedb/frontend/event/lodgement.py:76
+#: cdedb/frontend/event/lodgement.py:76 cdedb/frontend/event/lodgement.py:87
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
-#: cdedb/frontend/event/lodgement.py:80
+#: cdedb/frontend/event/lodgement.py:80 cdedb/frontend/event/lodgement.py:91
 msgid "Too few camping mats used."
 msgstr "Zu wenige Isomattenplätze genutzt."
 
-#: cdedb/frontend/event/lodgement.py:84
+#: cdedb/frontend/event/lodgement.py:84 cdedb/frontend/event/lodgement.py:95
 msgid "Too many camping mats used."
 msgstr "Zu viele Isomattenplätze genutzt."
 
-#: cdedb/frontend/event/lodgement.py:91
+#: cdedb/frontend/event/lodgement.py:91 cdedb/frontend/event/lodgement.py:112
 msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
-#: cdedb/frontend/event/lodgement.py:99
+#: cdedb/frontend/event/lodgement.py:99 cdedb/frontend/event/lodgement.py:120
 msgid "Non-Binary Participant."
 msgstr "nicht-binärer Teilnehmer"
 
+#: cdedb/frontend/event/lodgement.py:104
+msgid "Participants assigned to, but may not sleep on a camping mat."
+msgstr ""
+"Teilnehmer ist auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
+
 #: cdedb/frontend/event/lodgement.py:365 cdedb/frontend/event/lodgement.py:366
+#: cdedb/frontend/event/lodgement.py:396
 msgid ""
 "Lodgement wishes graph is only available if the Field for Rooming "
 "Preferences is set in event configuration."
@@ -5574,6 +5583,7 @@ msgstr ""
 "Konfiguration ein Feld für Hauswünsche festgelegt wurde."
 
 #: cdedb/frontend/event/lodgement.py:370 cdedb/frontend/event/lodgement.py:371
+#: cdedb/frontend/event/lodgement.py:401
 msgid ""
 "Clusters can only be displayed if the graph is restricted to a specific part."
 msgstr ""
@@ -5581,6 +5591,7 @@ msgstr ""
 "Veranstaltungsteil eingeschränkt wird."
 
 #: cdedb/frontend/event/lodgement.py:378 cdedb/frontend/event/lodgement.py:379
+#: cdedb/frontend/event/lodgement.py:409
 msgid ""
 "Edges between participants who are both assigned to a lodgement can only be "
 "hidden if the graph is restricted to a specific part."
@@ -5590,10 +5601,12 @@ msgstr ""
 "Veranstaltungsteil eingeschränkt wird."
 
 #: cdedb/frontend/event/lodgement.py:745 cdedb/frontend/event/lodgement.py:746
+#: cdedb/frontend/event/lodgement.py:776
 msgid "Nothing to do."
 msgstr "Nichts zu tun."
 
 #: cdedb/frontend/event/lodgement.py:748 cdedb/frontend/event/lodgement.py:749
+#: cdedb/frontend/event/lodgement.py:779
 msgid "Lodgements in this group changed in the meantime."
 msgstr ""
 "Die Unterkünfte in dieser Gruppe haben sich in der Zwischenzeit verändert."
@@ -6079,6 +6092,7 @@ msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
 #: cdedb/frontend/event/registration.py:1305
 #: cdedb/frontend/event/registration.py:1309
+#: cdedb/frontend/event/registration.py:1315
 msgid "Already checked in."
 msgstr "Bereits eingecheckt."
 
@@ -6284,6 +6298,7 @@ msgstr "Postleitzahl, Stadt"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:585
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:175
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:384
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:130
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:133
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:288
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:292
@@ -6301,6 +6316,7 @@ msgstr "Aktionen"
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:471
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:477
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:137
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:140
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:295
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:299
@@ -6330,6 +6346,7 @@ msgstr "Löschen"
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:453
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:474
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:480
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:139
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:142
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:297
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:301
@@ -7399,11 +7416,13 @@ msgstr "Abstimmung anlegen"
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:32
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:17
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:142
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:143
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:75
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:17
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:16
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:119
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:123
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
 msgid "Edit"
 msgstr "Bearbeiten"
@@ -8100,6 +8119,7 @@ msgstr "(Version %(version)s, maßgeblich)"
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:44
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:89
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:122
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:126
 #: cdedb/frontend/templates/web/generic.tmpl:512
 #: cdedb/frontend/templates/web/generic.tmpl:515
 #: cdedb/frontend/templates/web/generic.tmpl:518
@@ -8455,6 +8475,7 @@ msgstr "Fehler"
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:182
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:192
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:177
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:178
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:92
 msgid "Warning"
 msgstr "Warnung"
@@ -12676,6 +12697,7 @@ msgstr "%s auswählen"
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:282
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:170
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:176
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:177
 msgid "Color Guide"
 msgstr "Farb-Legende"
 
@@ -12922,6 +12944,7 @@ msgid "All Course Choices"
 msgstr "Alle Kurswahlen"
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:158
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:118
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:121
 msgid "View Registrations"
 msgstr "In Anmeldungsliste anzeigen"
@@ -14494,6 +14517,18 @@ msgstr ""
 "%(reg_link)s verstößt gegen die Kursschienensynchronisierung "
 "%(constraint_shortname)s."
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:422
+msgid "Assigned to sleep on a camping mat."
+msgstr "Auf eine Isomatte eingeteilt."
+
+#: cdedb/frontend/templates/web/event/generic.tmpl:427
+msgid "May sleep on a camping mat."
+msgstr "Kann auf einer Isomatte schlafen."
+
+#: cdedb/frontend/templates/web/event/generic.tmpl:429
+msgid "Assigned to sleep on, but may not sleep on a camping mat."
+msgstr "Auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
+
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:5
 #, python-format
 msgid "Partial Import for Event %(title)s"
@@ -14916,24 +14951,29 @@ msgid "Move or delete lodgements from this group"
 msgstr "Bewege oder lösche Unterkünfte aus dieser Gruppe"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:145
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:146
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:16
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:27
 msgid "Manage Inhabitants"
 msgstr "Bewohner verwalten"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:178
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:179
 msgid "Overfull"
 msgstr "Überfüllt"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:179
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:180
 msgid "Illegal Gendermix"
 msgstr "unzulässige Geschlechtermischung"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:182
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:183
 msgid "Sorting:"
 msgstr "Sortierung:"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:183
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:184
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
@@ -14941,6 +14981,7 @@ msgstr ""
 "Die Unterkünfte können innerhalb der Unterkunftsgruppen sortiert werden."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:188
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:189
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
@@ -14949,6 +14990,7 @@ msgstr ""
 "genutzten regulären Plätzen in diesem Veranstaltungsteil."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:193
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:194
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
@@ -14957,6 +14999,7 @@ msgstr ""
 "zugehörigen Veranstaltungsteil."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:198
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
@@ -15041,10 +15084,12 @@ msgstr "Auf eine Isomatte eingeteilt."
 msgid "May sleep on a Camping Mat."
 msgstr "Kann auf einer Isomatte schlafen."
 
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:143
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:146
 msgid "The Lodgement will be permanently deleted."
 msgstr "Die Unterkunft wird irreversibel gelöscht."
 
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:150
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:153
 msgid ""
 "Deletes the Lodgement with all assosiated information and leaves the "
@@ -15497,6 +15542,7 @@ msgid "Show only participants in parts:"
 msgstr "Zeige nur Teilnehmer in Veranstaltungsteilen:"
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:153
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:157
 msgid "The Participant will be checked in."
 msgstr "Der Teilnehmer wird eingecheckt."
 

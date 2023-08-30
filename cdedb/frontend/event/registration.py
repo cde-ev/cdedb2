@@ -1288,10 +1288,16 @@ class EventRegistrationMixin(EventBaseFrontend):
             field_id: f for field_id, f in rs.ambience['event']['fields'].items()
             if f['checkin'] and f['association'] == const.FieldAssociations.registration
         }
+
+        if f_id := rs.ambience["event"]["camping_mat_field"]:
+            camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
+        else:
+            camping_mat_field_name = None
+
         return self.render(rs, "registration/checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids': part_ids
+            'part_ids': part_ids, 'camping_mat_field_name': camping_mat_field_name,
         })
 
     @access("event", modi={"POST"})
