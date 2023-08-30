@@ -1496,6 +1496,9 @@ class TestEventBackend(BackendTest):
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(
             expectation, self.event.registrations_by_course(self.key, event_id))
+        self.assertEqual({}, self.event.registrations_by_course(
+            self.key, event_id, position=InfiniteEnum(
+                CourseFilterPositions.specific_rank, 1)))
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, track_id=3))
@@ -4521,6 +4524,51 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
             "part.2.H. and not part.1.H.", event['fees'][1001]['condition'])
+
+    @as_users("garcia")
+    def test_rcw_mechanism(self) -> None:
+        # Cull readonly attributes
+        def _get_lodgement_group(rs: RequestState, group_id: int) -> CdEDBObject:
+            ret = self.event.get_lodgement_group(rs, group_id=group_id)
+            del ret['lodgement_ids']
+            del ret['camping_mat_capacity']
+            del ret['regular_capacity']
+            return ret
+
+        group_id = 1
+        data = _get_lodgement_group(self.key, group_id=group_id)
+        self.event.rcw_lodgement_group(self.key, data)
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+
+        # positional argument
+        data['title'] = "Stavromula Beta"
+        self.event.rcw_lodgement_group(self.key, data)
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        self.event.rcw_lodgement_group(
+            self.key, {'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        data['title'] = "Stavromula Gamma"
+        self.event.rcw_lodgement_group(self.key, data)
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        data['title'] = "Stavromula Delta"
+        self.event.rcw_lodgement_group(
+            self.key, {'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+
+        # keyword argument
+        data['title'] = "Stavromula Epsilon"
+        self.event.rcw_lodgement_group(self.key, data=data)
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        self.event.rcw_lodgement_group(
+            self.key, data={'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        data['title'] = "Stavromula Zeta"
+        self.event.rcw_lodgement_group(self.key, data=data)
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
+        data['title'] = "Stavromula Eta"
+        self.event.rcw_lodgement_group(
+            self.key, data={'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, _get_lodgement_group(self.key, group_id=group_id))
 
     @as_users("garcia")
     def test_orga_apitokens(self) -> None:

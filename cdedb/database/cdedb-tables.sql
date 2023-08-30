@@ -601,21 +601,12 @@ DROP SCHEMA IF EXISTS past_event CASCADE;
 CREATE SCHEMA past_event;
 GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 
-CREATE TABLE past_event.institutions (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        shortname               varchar NOT NULL
-);
-GRANT SELECT ON past_event.institutions TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
-
 CREATE TABLE past_event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES past_event.institutions(id),
+        institution             integer NOT NULL,
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in
@@ -693,7 +684,7 @@ CREATE TABLE event.events (
         title                        varchar NOT NULL,
         shortname                    varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution                  integer NOT NULL REFERENCES past_event.institutions(id),
+        institution                  integer NOT NULL,
         description                  varchar,
         --
         -- cut for past_event.events (modulo column tempus)

@@ -254,10 +254,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/transaction/finalize", methods=_POST,
                      endpoint="lastschrift_finalize_transactions"),)),
             sub('/past/', (
-                rule("/institution/summary", methods=_GET,
-                     endpoint="institution_summary_form"),
-                rule("/institution/summary", methods=_POST,
-                     endpoint="institution_summary"),
                 rule("/event/list", methods=_GET,
                      endpoint="list_past_events"),
                 rule("/event/create", methods=_GET,

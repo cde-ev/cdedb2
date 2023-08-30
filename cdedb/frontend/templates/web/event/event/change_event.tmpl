@@ -31,7 +31,8 @@
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
                                              "Event” is set.")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"),
+                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
 
         <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),

@@ -14,7 +14,7 @@ from cdedb.frontend.event.course import EventCourseMixin
 from cdedb.frontend.event.download import EventDownloadMixin
 from cdedb.frontend.event.event import EventEventMixin
 from cdedb.frontend.event.fields import EventFieldMixin
-from cdedb.frontend.event.lodgement import EventLodgementMxin
+from cdedb.frontend.event.lodgement import EventLodgementMixin
 from cdedb.frontend.event.partial_import import EventImportMixin
 from cdedb.frontend.event.query import EventQueryMixin
 from cdedb.frontend.event.questionnaire import EventQuestionnaireMixin
@@ -27,7 +27,7 @@ class EventFrontend(
     EventRegistrationMixin,
     EventQuestionnaireMixin,
     EventQueryMixin,
-    EventLodgementMxin,
+    EventLodgementMixin,
     EventFieldMixin,
     EventImportMixin,
     EventEventMixin,
