@@ -21,7 +21,7 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
+                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="tempus", label=gettext("Cutoff date"), type="date", placeholder="YYYY-MM-DD") }}
         {{ util.form_input_textarea(name="participant_info", label=gettext("Photo gallery"), rows="3", markdown=True,

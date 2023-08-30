@@ -1,0 +1,46 @@
+{% set sidenav_active='event_fees' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Fee Stats ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Fee Stats"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_stats"), gettext("Fee Stats"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <table id="event-fee-stats" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th class="text-right">{% trans %}Owed{% endtrans %}</th>
+                <th class="text-right">{% trans %}Paid{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fee_kind in enums['EventFeeType'] %}
+                <tr>
+                    <td>{{ util.make_icon(fee_kind.get_icon()) + nbsp }}{{ gettext(fee_kind|string) }}</td>
+                    <td class="text-right {{ 'text-danger' if fee_stats['owed'][fee_kind] < 0 }}">
+                        <strong>
+                            {{ fee_stats['owed'][fee_kind]|money(lang=lang) }}
+                        </strong>
+                    </td>
+                    <td class="text-right {{ 'text-danger' if fee_stats['paid'][fee_kind] < 0 }}">
+                        <strong>
+                            {{ fee_stats['paid'][fee_kind]|money(lang=lang) }}
+                        </strong>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

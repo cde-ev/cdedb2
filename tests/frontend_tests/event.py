@@ -1232,7 +1232,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
@@ -1305,7 +1305,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Veranstaltung anlegen'})
         f = self.response.forms['createeventform']
         f['title'] = "Alternative Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['shortname'] = ""
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"
@@ -6287,3 +6287,60 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
         orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
         self.assertEqual(orga_export, droid_export)
+
+    @as_users("anton")
+    def test_event_fee_stats(self) -> None:
+        event_id = 2
+        reg_ids = []
+        reg_data: CdEDBObject = {
+            "event_id": event_id,
+            "persona_id": 1,
+            "mixed_lodging": True,
+            "list_consent": True,
+            "notes": None,
+            "parts": {
+                4: {
+                    "status": const.RegistrationPartStati.participant,
+                },
+            },
+            "tracks": {},
+            "fields": {
+                "solidarity": True,
+                "donation": False,
+            },
+        }
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 5
+        reg_data['fields'] = {
+            "solidarity": False,
+            "donation": True,
+        }
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 2
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        registrations = self.event.get_registrations(self.key, reg_ids)
+        self.assertEqual(
+            decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("437.00"), registrations[reg_ids[1]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
+        reg_update = [
+            {
+                'id': reg_ids[0],
+                'amount_paid': registrations[reg_ids[0]]['amount_owed'],
+            },
+            {
+                'id': reg_ids[1],
+                'amount_paid': registrations[reg_ids[1]]['amount_owed'],
+            },
+        ]
+        self.event.set_registrations(self.key, reg_update)
+        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
+                      "Beitrags-Statistik")
+        self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
+        self.assertPresence("Regulärer Beitrag 25,00 € 20,00 €")
+        self.assertPresence("Stornokosten 0,00 € 0,00 €")
+        self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
+        self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
+        self.assertPresence("Spende 840,00 € 420,00 €")
