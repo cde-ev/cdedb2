@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-08-27 00:00+0200\n"
+"POT-Creation-Date: 2023-08-27 20:12+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -55,18 +55,24 @@ msgstr ""
 #: cdedb/backend/core/base.py:614 cdedb/backend/core/base.py:837
 #: cdedb/backend/core/genesis.py:254 cdedb/backend/core/genesis.py:257
 #: cdedb/backend/core/genesis.py:285 cdedb/backend/core/genesis.py:308
-#: cdedb/backend/core/genesis.py:374 cdedb/backend/event/__init__.py:298
+#: cdedb/backend/core/genesis.py:374 cdedb/backend/event/__init__.py:296
+#: cdedb/backend/event/__init__.py:298 cdedb/backend/event/__init__.py:386
 #: cdedb/backend/event/__init__.py:388 cdedb/backend/event/base.py:138
 #: cdedb/backend/event/base.py:668 cdedb/backend/event/base.py:670
-#: cdedb/backend/event/base.py:754 cdedb/backend/event/base.py:756
+#: cdedb/backend/event/base.py:745 cdedb/backend/event/base.py:754
+#: cdedb/backend/event/base.py:756 cdedb/backend/event/base.py:762
 #: cdedb/backend/event/base.py:771 cdedb/backend/event/base.py:773
-#: cdedb/backend/event/base.py:861 cdedb/backend/event/base.py:863
+#: cdedb/backend/event/base.py:852 cdedb/backend/event/base.py:861
+#: cdedb/backend/event/base.py:863 cdedb/backend/event/base.py:953
 #: cdedb/backend/event/base.py:962 cdedb/backend/event/base.py:964
-#: cdedb/backend/event/base.py:1034 cdedb/backend/event/base.py:1036
+#: cdedb/backend/event/base.py:1025 cdedb/backend/event/base.py:1034
+#: cdedb/backend/event/base.py:1036 cdedb/backend/event/base.py:1087
 #: cdedb/backend/event/base.py:1096 cdedb/backend/event/base.py:1098
-#: cdedb/backend/event/base.py:1127 cdedb/backend/event/base.py:1129
+#: cdedb/backend/event/base.py:1118 cdedb/backend/event/base.py:1127
+#: cdedb/backend/event/base.py:1129 cdedb/backend/event/base.py:1143
 #: cdedb/backend/event/base.py:1152 cdedb/backend/event/base.py:1154
-#: cdedb/backend/event/base.py:1234 cdedb/backend/event/base.py:1236
+#: cdedb/backend/event/base.py:1225 cdedb/backend/event/base.py:1234
+#: cdedb/backend/event/base.py:1236 cdedb/backend/event/base.py:1430
 #: cdedb/backend/event/base.py:1436 cdedb/backend/event/base.py:1438
 #: cdedb/backend/event/course.py:93 cdedb/backend/event/course.py:205
 #: cdedb/backend/event/course.py:286 cdedb/backend/event/lodgement.py:61
@@ -74,7 +80,8 @@ msgstr ""
 #: cdedb/backend/event/lodgement.py:212 cdedb/backend/event/lodgement.py:248
 #: cdedb/backend/event/lodgement.py:272 cdedb/backend/event/lodgement.py:314
 #: cdedb/backend/event/lodgement.py:360 cdedb/backend/event/lowlevel.py:992
-#: cdedb/backend/event/lowlevel.py:1241 cdedb/backend/event/query.py:61
+#: cdedb/backend/event/lowlevel.py:1012 cdedb/backend/event/lowlevel.py:1241
+#: cdedb/backend/event/lowlevel.py:1261 cdedb/backend/event/query.py:61
 #: cdedb/backend/event/query.py:255 cdedb/backend/event/query.py:256
 #: cdedb/backend/event/query.py:281 cdedb/backend/event/query.py:282
 #: cdedb/backend/event/query.py:429 cdedb/backend/event/query.py:430
@@ -173,9 +180,10 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:664 cdedb/backend/ml.py:447
 #: cdedb/frontend/assembly/__init__.py:189
-#: cdedb/frontend/assembly/__init__.py:357 cdedb/frontend/event/event.py:915
-#: cdedb/frontend/event/event.py:922 cdedb/frontend/ml/base.py:258
-#: cdedb/frontend/ml/base.py:669 cdedb/frontend/ml/base.py:757
+#: cdedb/frontend/assembly/__init__.py:357 cdedb/frontend/event/event.py:911
+#: cdedb/frontend/event/event.py:915 cdedb/frontend/event/event.py:922
+#: cdedb/frontend/ml/base.py:258 cdedb/frontend/ml/base.py:669
+#: cdedb/frontend/ml/base.py:757
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
@@ -193,17 +201,22 @@ msgstr ""
 #: cdedb/backend/assembly.py:1833 cdedb/backend/assembly.py:1869
 #: cdedb/backend/cde/lastschrift.py:225 cdedb/backend/cde/lastschrift.py:251
 #: cdedb/backend/core/genesis.py:159 cdedb/backend/core/genesis.py:182
-#: cdedb/backend/event/__init__.py:187 cdedb/backend/event/__init__.py:285
-#: cdedb/backend/event/base.py:593 cdedb/backend/event/base.py:595
-#: cdedb/backend/event/base.py:629 cdedb/backend/event/base.py:631
-#: cdedb/backend/event/course.py:295 cdedb/backend/event/course.py:378
-#: cdedb/backend/event/lodgement.py:173 cdedb/backend/event/lodgement.py:198
-#: cdedb/backend/event/lodgement.py:369 cdedb/backend/event/lodgement.py:393
-#: cdedb/backend/event/lowlevel.py:202 cdedb/backend/event/lowlevel.py:241
-#: cdedb/backend/event/lowlevel.py:495 cdedb/backend/event/lowlevel.py:534
-#: cdedb/backend/event/lowlevel.py:683 cdedb/backend/event/lowlevel.py:710
-#: cdedb/backend/event/lowlevel.py:782 cdedb/backend/event/lowlevel.py:809
-#: cdedb/backend/event/lowlevel.py:1085 cdedb/backend/event/lowlevel.py:1145
+#: cdedb/backend/event/__init__.py:187 cdedb/backend/event/__init__.py:283
+#: cdedb/backend/event/__init__.py:285 cdedb/backend/event/base.py:593
+#: cdedb/backend/event/base.py:595 cdedb/backend/event/base.py:629
+#: cdedb/backend/event/base.py:631 cdedb/backend/event/course.py:295
+#: cdedb/backend/event/course.py:378 cdedb/backend/event/lodgement.py:173
+#: cdedb/backend/event/lodgement.py:198 cdedb/backend/event/lodgement.py:369
+#: cdedb/backend/event/lodgement.py:393 cdedb/backend/event/lowlevel.py:202
+#: cdedb/backend/event/lowlevel.py:241 cdedb/backend/event/lowlevel.py:495
+#: cdedb/backend/event/lowlevel.py:506 cdedb/backend/event/lowlevel.py:534
+#: cdedb/backend/event/lowlevel.py:545 cdedb/backend/event/lowlevel.py:683
+#: cdedb/backend/event/lowlevel.py:703 cdedb/backend/event/lowlevel.py:710
+#: cdedb/backend/event/lowlevel.py:730 cdedb/backend/event/lowlevel.py:782
+#: cdedb/backend/event/lowlevel.py:802 cdedb/backend/event/lowlevel.py:809
+#: cdedb/backend/event/lowlevel.py:829 cdedb/backend/event/lowlevel.py:1085
+#: cdedb/backend/event/lowlevel.py:1105 cdedb/backend/event/lowlevel.py:1145
+#: cdedb/backend/event/lowlevel.py:1165
 #: cdedb/backend/event/registration.py:1133
 #: cdedb/backend/event/registration.py:1164 cdedb/backend/ml.py:760
 #: cdedb/backend/ml.py:796 cdedb/backend/past_event.py:268
@@ -420,9 +433,10 @@ msgstr ""
 #: cdedb/backend/assembly.py:2435 cdedb/backend/cde/base.py:434
 #: cdedb/backend/cde/base.py:436 cdedb/backend/cde/lastschrift.py:451
 #: cdedb/backend/common.py:468 cdedb/backend/core/base.py:2187
-#: cdedb/backend/event/base.py:1204 cdedb/backend/event/base.py:1206
-#: cdedb/common/__init__.py:242 cdedb/frontend/assembly/__init__.py:1317
-#: cdedb/frontend/cde/base.py:682 cdedb/frontend/cde/lastschrift.py:512
+#: cdedb/backend/event/base.py:1195 cdedb/backend/event/base.py:1204
+#: cdedb/backend/event/base.py:1206 cdedb/common/__init__.py:242
+#: cdedb/frontend/assembly/__init__.py:1317 cdedb/frontend/cde/base.py:682
+#: cdedb/frontend/cde/lastschrift.py:512
 #: cdedb/frontend/cde/parse_statement.py:609 cdedb/frontend/common.py:612
 #: cdedb/frontend/event/base.py:469 cdedb/frontend/event/query_stats.py:431
 #: cdedb/frontend/event/query_stats.py:580
@@ -967,23 +981,24 @@ msgstr ""
 msgid "Wrong target realm."
 msgstr ""
 
-#: cdedb/backend/event/__init__.py:300
+#: cdedb/backend/event/__init__.py:298 cdedb/backend/event/__init__.py:300
 msgid "Imports into an offline instance must happen via shell scripts."
 msgstr ""
 
-#: cdedb/backend/event/__init__.py:303
+#: cdedb/backend/event/__init__.py:301 cdedb/backend/event/__init__.py:303
 msgid "Not locked."
 msgstr ""
 
-#: cdedb/backend/event/__init__.py:305 cdedb/backend/event/__init__.py:392
+#: cdedb/backend/event/__init__.py:303 cdedb/backend/event/__init__.py:305
+#: cdedb/backend/event/__init__.py:390 cdedb/backend/event/__init__.py:392
 msgid "Version mismatch – aborting."
 msgstr ""
 
-#: cdedb/backend/event/__init__.py:315
+#: cdedb/backend/event/__init__.py:313 cdedb/backend/event/__init__.py:315
 msgid "Non-transferred persona found"
 msgstr ""
 
-#: cdedb/backend/event/__init__.py:455
+#: cdedb/backend/event/__init__.py:453 cdedb/backend/event/__init__.py:455
 msgid "Referential integrity of lodgement groups violated."
 msgstr ""
 
@@ -1028,40 +1043,48 @@ msgstr ""
 msgid "This orga token has already been revoked."
 msgstr ""
 
-#: cdedb/backend/event/base.py:718 cdedb/backend/event/base.py:720
-#: cdedb/backend/event/lowlevel.py:562
+#: cdedb/backend/event/base.py:709 cdedb/backend/event/base.py:718
+#: cdedb/backend/event/base.py:720 cdedb/backend/event/lowlevel.py:562
+#: cdedb/backend/event/lowlevel.py:573
 msgid "At least one event part required."
 msgstr ""
 
-#: cdedb/backend/event/base.py:790 cdedb/backend/event/base.py:792
+#: cdedb/backend/event/base.py:781 cdedb/backend/event/base.py:790
+#: cdedb/backend/event/base.py:792
 msgid "Unknown part group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:812 cdedb/backend/event/base.py:814
+#: cdedb/backend/event/base.py:803 cdedb/backend/event/base.py:812
+#: cdedb/backend/event/base.py:814 cdedb/backend/event/base.py:832
 #: cdedb/backend/event/base.py:841 cdedb/backend/event/base.py:843
 #: cdedb/backend/event/registration.py:522
 msgid "Unknown part for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:829 cdedb/backend/event/base.py:831
+#: cdedb/backend/event/base.py:820 cdedb/backend/event/base.py:829
+#: cdedb/backend/event/base.py:831 cdedb/backend/event/base.py:917
 #: cdedb/backend/event/base.py:926 cdedb/backend/event/base.py:928
 msgid "May not change constraint type."
 msgstr ""
 
-#: cdedb/backend/event/base.py:885 cdedb/backend/event/base.py:887
+#: cdedb/backend/event/base.py:876 cdedb/backend/event/base.py:885
+#: cdedb/backend/event/base.py:887
 msgid "Unknown track group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:907 cdedb/backend/event/base.py:909
+#: cdedb/backend/event/base.py:898 cdedb/backend/event/base.py:907
+#: cdedb/backend/event/base.py:909 cdedb/backend/event/base.py:929
 #: cdedb/backend/event/base.py:938 cdedb/backend/event/base.py:940
 msgid "Unknown track for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:980 cdedb/backend/event/base.py:982
+#: cdedb/backend/event/base.py:971 cdedb/backend/event/base.py:980
+#: cdedb/backend/event/base.py:982
 msgid "Non-existing event fee specified."
 msgstr ""
 
-#: cdedb/backend/event/base.py:1433 cdedb/backend/event/base.py:1435
+#: cdedb/backend/event/base.py:1427 cdedb/backend/event/base.py:1433
+#: cdedb/backend/event/base.py:1435
 msgid "Cannot use questionnaire import to delete questionnaire."
 msgstr ""
 
@@ -1087,7 +1110,7 @@ msgid "Only lodgement groups from exactly one event allowed!"
 msgstr ""
 
 #: cdedb/backend/event/lodgement.py:217 cdedb/frontend/event/lodgement.py:744
-#: cdedb/frontend/event/lodgement.py:774
+#: cdedb/frontend/event/lodgement.py:768 cdedb/frontend/event/lodgement.py:774
 msgid "Invalid lodgement group."
 msgstr ""
 
@@ -1103,44 +1126,46 @@ msgstr ""
 msgid "Non-existing tracks specified."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:328 cdedb/backend/event/lowlevel.py:356
-msgid "This should not happen."
-msgstr ""
-
-#: cdedb/backend/event/lowlevel.py:560
-msgid "Registrations exist, modifications only."
-msgstr ""
-
-#: cdedb/backend/event/lowlevel.py:569
+#: cdedb/backend/event/lowlevel.py:276 cdedb/backend/event/lowlevel.py:569
+#: cdedb/backend/event/lowlevel.py:580 cdedb/backend/event/lowlevel.py:589
 msgid "Unknown field."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:871
+#: cdedb/backend/event/lowlevel.py:328 cdedb/backend/event/lowlevel.py:339
+#: cdedb/backend/event/lowlevel.py:356 cdedb/backend/event/lowlevel.py:367
+msgid "This should not happen."
+msgstr ""
+
+#: cdedb/backend/event/lowlevel.py:560 cdedb/backend/event/lowlevel.py:571
+msgid "Registrations exist, modifications only."
+msgstr ""
+
+#: cdedb/backend/event/lowlevel.py:871 cdedb/backend/event/lowlevel.py:891
 msgid "Synced tracks must have same number of choices."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:885
+#: cdedb/backend/event/lowlevel.py:885 cdedb/backend/event/lowlevel.py:905
 msgid "Track synced to more than one ccs track group."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:907
+#: cdedb/backend/event/lowlevel.py:907 cdedb/backend/event/lowlevel.py:927
 msgid "Incompatible course choices present."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:989
+#: cdedb/backend/event/lowlevel.py:989 cdedb/backend/event/lowlevel.py:1009
 msgid "Only tracks from one event allowed."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:1170
+#: cdedb/backend/event/lowlevel.py:1170 cdedb/backend/event/lowlevel.py:1190
 msgid "Non-existing fields specified."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:1203
+#: cdedb/backend/event/lowlevel.py:1203 cdedb/backend/event/lowlevel.py:1223
 msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:1230
+#: cdedb/backend/event/lowlevel.py:1230 cdedb/backend/event/lowlevel.py:1250
 #, python-format
 msgid "Unfit field for %(field)s."
 msgstr ""
@@ -1214,13 +1239,15 @@ msgid "This is not useful."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1027
-#: cdedb/frontend/assembly/__init__.py:510 cdedb/frontend/event/event.py:210
-#: cdedb/frontend/event/event.py:214 cdedb/frontend/event/registration.py:1068
+#: cdedb/frontend/assembly/__init__.py:510 cdedb/frontend/event/event.py:202
+#: cdedb/frontend/event/event.py:210 cdedb/frontend/event/event.py:214
+#: cdedb/frontend/event/registration.py:1068
 msgid "This user does not exist or is archived."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1029 cdedb/frontend/event/event.py:213
-#: cdedb/frontend/event/event.py:217 cdedb/frontend/event/registration.py:1072
+#: cdedb/backend/event/registration.py:1029 cdedb/frontend/event/event.py:205
+#: cdedb/frontend/event/event.py:213 cdedb/frontend/event/event.py:217
+#: cdedb/frontend/event/registration.py:1072
 msgid "This user is not an event user."
 msgstr ""
 
@@ -1370,7 +1397,8 @@ msgid "Needs both admin privileges."
 msgstr ""
 
 #: cdedb/backend/past_event.py:745 cdedb/backend/past_event.py:822
-#: cdedb/frontend/event/event.py:1034 cdedb/frontend/event/event.py:1041
+#: cdedb/frontend/event/event.py:1030 cdedb/frontend/event/event.py:1034
+#: cdedb/frontend/event/event.py:1041
 msgid "No event parts have any participants."
 msgstr ""
 
@@ -2322,6 +2350,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:18
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:131
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:135
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:136
 msgid "Checkin"
 msgstr ""
 
@@ -2756,8 +2785,9 @@ msgstr ""
 #: cdedb/common/validation/validate.py:4069
 #: cdedb/common/validation/validate.py:4682
 #: cdedb/common/validation/validate.py:4709 cdedb/frontend/core/base.py:1134
-#: cdedb/frontend/core/genesis.py:112 cdedb/frontend/event/event.py:189
-#: cdedb/frontend/event/event.py:193 cdedb/frontend/event/registration.py:706
+#: cdedb/frontend/core/genesis.py:112 cdedb/frontend/event/event.py:181
+#: cdedb/frontend/event/event.py:189 cdedb/frontend/event/event.py:193
+#: cdedb/frontend/event/registration.py:706
 msgid "Must not be empty."
 msgstr ""
 
@@ -3056,21 +3086,25 @@ msgid "Forbidden characters (%(chars)s)."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2355
+#: cdedb/common/validation/validate.py:2380
 #: cdedb/common/validation/validate.py:2382
 msgid "Only creation allowed."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2394
+#: cdedb/common/validation/validate.py:2419
 #: cdedb/common/validation/validate.py:2421
 msgid "Must be before or equal to hard limit."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2401
+#: cdedb/common/validation/validate.py:2426
 #: cdedb/common/validation/validate.py:2428
 msgid "Must be before hard and soft limit."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2489
+#: cdedb/common/validation/validate.py:2515
 #: cdedb/common/validation/validate.py:2516
 msgid "Must be later than begin."
 msgstr ""
@@ -3386,8 +3420,9 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:198
-#: cdedb/frontend/assembly/__init__.py:216 cdedb/frontend/event/event.py:217
-#: cdedb/frontend/event/event.py:221 cdedb/frontend/event/event.py:232
+#: cdedb/frontend/assembly/__init__.py:216 cdedb/frontend/event/event.py:209
+#: cdedb/frontend/event/event.py:217 cdedb/frontend/event/event.py:221
+#: cdedb/frontend/event/event.py:224 cdedb/frontend/event/event.py:232
 #: cdedb/frontend/event/event.py:236 cdedb/frontend/ml/base.py:679
 #: cdedb/frontend/ml/base.py:717 cdedb/frontend/ml/base.py:785
 msgid "Action had no effect."
@@ -3415,16 +3450,17 @@ msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:330
 #: cdedb/frontend/assembly/__init__.py:381
-#: cdedb/frontend/assembly/__init__.py:396 cdedb/frontend/event/event.py:257
-#: cdedb/frontend/event/event.py:261 cdedb/frontend/event/event.py:942
-#: cdedb/frontend/event/event.py:949 cdedb/frontend/event/event.py:958
-#: cdedb/frontend/event/event.py:965
+#: cdedb/frontend/assembly/__init__.py:396 cdedb/frontend/event/event.py:249
+#: cdedb/frontend/event/event.py:257 cdedb/frontend/event/event.py:261
+#: cdedb/frontend/event/event.py:938 cdedb/frontend/event/event.py:942
+#: cdedb/frontend/event/event.py:949 cdedb/frontend/event/event.py:954
+#: cdedb/frontend/event/event.py:958 cdedb/frontend/event/event.py:965
 #, python-format
 msgid "Mailinglist %(address)s already exists."
 msgstr ""
 
-#: cdedb/frontend/assembly/__init__.py:366 cdedb/frontend/event/event.py:929
-#: cdedb/frontend/event/event.py:936
+#: cdedb/frontend/assembly/__init__.py:366 cdedb/frontend/event/event.py:925
+#: cdedb/frontend/event/event.py:929 cdedb/frontend/event/event.py:936
 msgid "Must not be empty in order to create a mailinglist."
 msgstr ""
 
@@ -3445,12 +3481,14 @@ msgstr ""
 #: cdedb/frontend/cde/past_event.py:330 cdedb/frontend/cde/past_event.py:390
 #: cdedb/frontend/cde/past_event.py:405 cdedb/frontend/cde/past_event.py:465
 #: cdedb/frontend/core/base.py:2155 cdedb/frontend/core/base.py:2202
-#: cdedb/frontend/event/course.py:240 cdedb/frontend/event/event.py:320
-#: cdedb/frontend/event/event.py:324 cdedb/frontend/event/event.py:747
-#: cdedb/frontend/event/event.py:751 cdedb/frontend/event/event.py:1019
-#: cdedb/frontend/event/event.py:1026 cdedb/frontend/event/event.py:1067
+#: cdedb/frontend/event/course.py:240 cdedb/frontend/event/event.py:312
+#: cdedb/frontend/event/event.py:320 cdedb/frontend/event/event.py:324
+#: cdedb/frontend/event/event.py:738 cdedb/frontend/event/event.py:747
+#: cdedb/frontend/event/event.py:751 cdedb/frontend/event/event.py:1015
+#: cdedb/frontend/event/event.py:1019 cdedb/frontend/event/event.py:1026
+#: cdedb/frontend/event/event.py:1063 cdedb/frontend/event/event.py:1067
 #: cdedb/frontend/event/event.py:1074 cdedb/frontend/event/lodgement.py:511
-#: cdedb/frontend/event/lodgement.py:541
+#: cdedb/frontend/event/lodgement.py:535 cdedb/frontend/event/lodgement.py:541
 #: cdedb/frontend/event/registration.py:1101 cdedb/frontend/ml/base.py:517
 msgid "Must be checked."
 msgstr ""
@@ -3480,10 +3518,13 @@ msgid "Members must sign up themselves."
 msgstr ""
 
 #: cdedb/frontend/assembly/__init__.py:545 cdedb/frontend/event/download.py:355
-#: cdedb/frontend/event/download.py:432 cdedb/frontend/event/download.py:455
-#: cdedb/frontend/event/download.py:482 cdedb/frontend/event/download.py:505
-#: cdedb/frontend/event/download.py:519 cdedb/frontend/event/download.py:532
-#: cdedb/frontend/ml/base.py:625
+#: cdedb/frontend/event/download.py:357 cdedb/frontend/event/download.py:432
+#: cdedb/frontend/event/download.py:434 cdedb/frontend/event/download.py:455
+#: cdedb/frontend/event/download.py:457 cdedb/frontend/event/download.py:482
+#: cdedb/frontend/event/download.py:484 cdedb/frontend/event/download.py:505
+#: cdedb/frontend/event/download.py:507 cdedb/frontend/event/download.py:519
+#: cdedb/frontend/event/download.py:521 cdedb/frontend/event/download.py:532
+#: cdedb/frontend/event/download.py:534 cdedb/frontend/ml/base.py:625
 msgid "Empty File."
 msgstr ""
 
@@ -3862,7 +3903,8 @@ msgid "Line %(lineno)s is faulty."
 msgstr ""
 
 #: cdedb/frontend/cde/past_event.py:320 cdedb/frontend/cde/past_event.py:395
-#: cdedb/frontend/event/event.py:960 cdedb/frontend/event/event.py:967
+#: cdedb/frontend/event/event.py:956 cdedb/frontend/event/event.py:960
+#: cdedb/frontend/event/event.py:967
 msgid "Event created."
 msgstr ""
 
@@ -3876,7 +3918,8 @@ msgid "Some of these users do not exist."
 msgstr ""
 
 #: cdedb/frontend/cde/past_event.py:420 cdedb/frontend/cde/past_event.py:495
-#: cdedb/frontend/event/event.py:921 cdedb/frontend/event/event.py:928
+#: cdedb/frontend/event/event.py:917 cdedb/frontend/event/event.py:921
+#: cdedb/frontend/event/event.py:928
 msgid "Some of these users are not event users."
 msgstr ""
 
@@ -4361,7 +4404,7 @@ msgid "Participant list not published yet."
 msgstr ""
 
 #: cdedb/frontend/event/base.py:286 cdedb/frontend/event/lodgement.py:171
-#: cdedb/frontend/event/lodgement.py:201
+#: cdedb/frontend/event/lodgement.py:197 cdedb/frontend/event/lodgement.py:201
 msgid "Invalid part id."
 msgstr ""
 
@@ -4454,59 +4497,76 @@ msgstr ""
 
 #: cdedb/frontend/event/download.py:92 cdedb/frontend/event/download.py:145
 #: cdedb/frontend/event/download.py:206 cdedb/frontend/event/download.py:279
-#: cdedb/frontend/event/download.py:319 cdedb/frontend/event/download.py:334
-#: cdedb/frontend/event/download.py:346
+#: cdedb/frontend/event/download.py:281 cdedb/frontend/event/download.py:319
+#: cdedb/frontend/event/download.py:321 cdedb/frontend/event/download.py:334
+#: cdedb/frontend/event/download.py:336 cdedb/frontend/event/download.py:346
+#: cdedb/frontend/event/download.py:348
 msgid "Empty PDF."
 msgstr ""
 
-#: cdedb/frontend/event/download.py:500
+#: cdedb/frontend/event/download.py:500 cdedb/frontend/event/download.py:502
 msgid "Please confirm to download a full export of an unlocked event."
 msgstr ""
 
 #: cdedb/frontend/event/event.py:113 cdedb/frontend/event/event.py:114
-#: cdedb/frontend/event/event.py:167 cdedb/frontend/event/event.py:171
+#: cdedb/frontend/event/event.py:159 cdedb/frontend/event/event.py:167
+#: cdedb/frontend/event/event.py:171
 msgid "The event is not published yet."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:193 cdedb/frontend/event/event.py:197
+#: cdedb/frontend/event/event.py:185 cdedb/frontend/event/event.py:193
+#: cdedb/frontend/event/event.py:197
 msgid "Minor form updated."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:194 cdedb/frontend/event/event.py:198
+#: cdedb/frontend/event/event.py:186 cdedb/frontend/event/event.py:194
+#: cdedb/frontend/event/event.py:198
 msgid "Minor form has been removed."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:195 cdedb/frontend/event/event.py:199
+#: cdedb/frontend/event/event.py:187 cdedb/frontend/event/event.py:195
+#: cdedb/frontend/event/event.py:199
 msgid "Nothing to remove."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:244 cdedb/frontend/event/event.py:248
+#: cdedb/frontend/event/event.py:236 cdedb/frontend/event/event.py:244
+#: cdedb/frontend/event/event.py:248
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:397
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:422
 msgid "Must have orgas in order to create a mailinglist."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:250 cdedb/frontend/event/event.py:254
+#: cdedb/frontend/event/event.py:242 cdedb/frontend/event/event.py:250
+#: cdedb/frontend/event/event.py:254 cdedb/frontend/event/event.py:942
 #: cdedb/frontend/event/event.py:946 cdedb/frontend/event/event.py:953
 msgid "Orga mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:251 cdedb/frontend/event/event.py:255
+#: cdedb/frontend/event/event.py:243 cdedb/frontend/event/event.py:251
+#: cdedb/frontend/event/event.py:255 cdedb/frontend/event/event.py:952
 #: cdedb/frontend/event/event.py:956 cdedb/frontend/event/event.py:963
 msgid "Participant mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:324 cdedb/frontend/event/event.py:328
+#: cdedb/frontend/event/event.py:316 cdedb/frontend/event/event.py:324
+#: cdedb/frontend/event/event.py:328
 msgid "Registrations exist, no deletion."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:327 cdedb/frontend/event/event.py:331
+#: cdedb/frontend/event/event.py:319 cdedb/frontend/event/event.py:327
+#: cdedb/frontend/event/event.py:331
 msgid "This part can not be deleted."
 msgstr ""
 
 #: cdedb/frontend/event/event.py:343 cdedb/frontend/event/event.py:347
+#: cdedb/frontend/event/event.py:349 cdedb/frontend/event/event.py:362
 #: cdedb/frontend/event/event.py:363 cdedb/frontend/event/event.py:367
 msgid "Registrations exist, no part creation possible."
+msgstr ""
+
+#: cdedb/frontend/event/event.py:375 cdedb/frontend/event/event.py:459
+#: cdedb/frontend/event/event.py:493
+msgid "Linked to non-fitting field."
 msgstr ""
 
 #: cdedb/frontend/event/event.py:377 cdedb/frontend/event/event.py:381
@@ -4514,161 +4574,192 @@ msgstr ""
 msgid "Waitlist linked to non-fitting field."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:489 cdedb/frontend/event/event.py:493
+#: cdedb/frontend/event/event.py:475 cdedb/frontend/event/event.py:489
+#: cdedb/frontend/event/event.py:493
 msgid "Registrations exist, no track deletion possible."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:491 cdedb/frontend/event/event.py:495
+#: cdedb/frontend/event/event.py:477 cdedb/frontend/event/event.py:491
+#: cdedb/frontend/event/event.py:495
 msgid "Some tracks can not be deleted."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:493 cdedb/frontend/event/event.py:497
+#: cdedb/frontend/event/event.py:479 cdedb/frontend/event/event.py:493
+#: cdedb/frontend/event/event.py:497
 msgid "Registrations exist, no track creation possible."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:541 cdedb/frontend/event/event.py:545
+#: cdedb/frontend/event/event.py:532 cdedb/frontend/event/event.py:541
+#: cdedb/frontend/event/event.py:545 cdedb/frontend/event/event.py:558
 #: cdedb/frontend/event/event.py:567 cdedb/frontend/event/event.py:571
 msgid "Unknown fee."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:591 cdedb/frontend/event/event.py:595
+#: cdedb/frontend/event/event.py:582 cdedb/frontend/event/event.py:591
+#: cdedb/frontend/event/event.py:595
 msgid "Unknown part."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:602 cdedb/frontend/event/event.py:606
+#: cdedb/frontend/event/event.py:593 cdedb/frontend/event/event.py:602
+#: cdedb/frontend/event/event.py:606 cdedb/frontend/event/event.py:623
 #: cdedb/frontend/event/event.py:632 cdedb/frontend/event/event.py:636
 msgid "A part group with this name already exists."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:664 cdedb/frontend/event/event.py:668
+#: cdedb/frontend/event/event.py:655 cdedb/frontend/event/event.py:664
+#: cdedb/frontend/event/event.py:668
 msgid "Unknown track."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:676 cdedb/frontend/event/event.py:680
+#: cdedb/frontend/event/event.py:667 cdedb/frontend/event/event.py:676
+#: cdedb/frontend/event/event.py:680 cdedb/frontend/event/event.py:722
 #: cdedb/frontend/event/event.py:731 cdedb/frontend/event/event.py:735
 msgid "A track group with this name already exists."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:689 cdedb/frontend/event/event.py:693
+#: cdedb/frontend/event/event.py:680 cdedb/frontend/event/event.py:689
+#: cdedb/frontend/event/event.py:693
 msgid "Cannot have more than one course choice sync track group per track."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:697 cdedb/frontend/event/event.py:701
+#: cdedb/frontend/event/event.py:688 cdedb/frontend/event/event.py:697
+#: cdedb/frontend/event/event.py:701
 msgid "Incompatible tracks."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:701 cdedb/frontend/event/event.py:705
+#: cdedb/frontend/event/event.py:692 cdedb/frontend/event/event.py:701
+#: cdedb/frontend/event/event.py:705
 msgid "Cannot create CCS group due to incompatible choices."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:989 cdedb/frontend/event/event.py:996
-#: cdedb/frontend/event/partial_import.py:108
+#: cdedb/frontend/event/event.py:985 cdedb/frontend/event/event.py:989
+#: cdedb/frontend/event/event.py:996 cdedb/frontend/event/partial_import.py:108
 msgid "Data from wrong event."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:996 cdedb/frontend/event/event.py:1003
+#: cdedb/frontend/event/event.py:992 cdedb/frontend/event/event.py:996
+#: cdedb/frontend/event/event.py:1003
 msgid "There exist unmigrated personas."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1015 cdedb/frontend/event/event.py:1022
+#: cdedb/frontend/event/event.py:1011 cdedb/frontend/event/event.py:1015
+#: cdedb/frontend/event/event.py:1022
 msgid "Event already archived."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1025 cdedb/frontend/event/event.py:1032
+#: cdedb/frontend/event/event.py:1021 cdedb/frontend/event/event.py:1025
+#: cdedb/frontend/event/event.py:1032 cdedb/frontend/event/event.py:1068
 #: cdedb/frontend/event/event.py:1072 cdedb/frontend/event/event.py:1079
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:446
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:479
 msgid "Event is not concluded yet."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1048 cdedb/frontend/event/event.py:1055
+#: cdedb/frontend/event/event.py:1044 cdedb/frontend/event/event.py:1048
+#: cdedb/frontend/event/event.py:1055
 msgid "Event archived."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1052 cdedb/frontend/event/event.py:1059
+#: cdedb/frontend/event/event.py:1048 cdedb/frontend/event/event.py:1052
+#: cdedb/frontend/event/event.py:1059
 msgid "Created past event."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1056 cdedb/frontend/event/event.py:1063
+#: cdedb/frontend/event/event.py:1052 cdedb/frontend/event/event.py:1056
+#: cdedb/frontend/event/event.py:1063
 msgid "Created multiple past events."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1087 cdedb/frontend/event/event.py:1094
+#: cdedb/frontend/event/event.py:1083 cdedb/frontend/event/event.py:1087
+#: cdedb/frontend/event/event.py:1094
 msgid "Event deleted."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1129 cdedb/frontend/event/event.py:1136
+#: cdedb/frontend/event/event.py:1125 cdedb/frontend/event/event.py:1129
+#: cdedb/frontend/event/event.py:1136
 msgid "Active characters found in search."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1176 cdedb/frontend/event/event.py:1183
-#: cdedb/frontend/event/registration.py:132
+#: cdedb/frontend/event/event.py:1172 cdedb/frontend/event/event.py:1176
+#: cdedb/frontend/event/event.py:1183 cdedb/frontend/event/registration.py:132
 msgid "No registration found."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:94
+#: cdedb/frontend/event/fields.py:94 cdedb/frontend/event/fields.py:95
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:182 cdedb/frontend/event/registration.py:1307
+#: cdedb/frontend/event/fields.py:182 cdedb/frontend/event/fields.py:183
+#: cdedb/frontend/event/registration.py:1307
+#: cdedb/frontend/event/registration.py:1309
 #: cdedb/frontend/event/registration.py:1313
 msgid "Wrong associated event."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:185
+#: cdedb/frontend/event/fields.py:185 cdedb/frontend/event/fields.py:186
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:275
+#: cdedb/frontend/event/fields.py:275 cdedb/frontend/event/fields.py:276
 msgid "change_note only supported for registrations."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:76 cdedb/frontend/event/lodgement.py:87
+#: cdedb/frontend/event/lodgement.py:76 cdedb/frontend/event/lodgement.py:83
+#: cdedb/frontend/event/lodgement.py:87
 msgid "Overful lodgement."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:80 cdedb/frontend/event/lodgement.py:91
+#: cdedb/frontend/event/lodgement.py:80 cdedb/frontend/event/lodgement.py:87
+#: cdedb/frontend/event/lodgement.py:91
 msgid "Too few camping mats used."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:84 cdedb/frontend/event/lodgement.py:95
+#: cdedb/frontend/event/lodgement.py:84 cdedb/frontend/event/lodgement.py:91
+#: cdedb/frontend/event/lodgement.py:95
 msgid "Too many camping mats used."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:91 cdedb/frontend/event/lodgement.py:112
+#: cdedb/frontend/event/lodgement.py:91 cdedb/frontend/event/lodgement.py:108
+#: cdedb/frontend/event/lodgement.py:112
 msgid "Mixed lodgement with non-mixing participants."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:99 cdedb/frontend/event/lodgement.py:120
+#: cdedb/frontend/event/lodgement.py:99 cdedb/frontend/event/lodgement.py:116
+#: cdedb/frontend/event/lodgement.py:120
 msgid "Non-Binary Participant."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:104
+#: cdedb/frontend/event/lodgement.py:100 cdedb/frontend/event/lodgement.py:104
 msgid "Participants assigned to sleep on, but may not sleep on a camping mat."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:366 cdedb/frontend/event/lodgement.py:396
+#: cdedb/frontend/event/lodgement.py:366 cdedb/frontend/event/lodgement.py:390
+#: cdedb/frontend/event/lodgement.py:396
 msgid ""
 "Lodgement wishes graph is only available if the Field for Rooming "
 "Preferences is set in event configuration."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:371 cdedb/frontend/event/lodgement.py:401
+#: cdedb/frontend/event/lodgement.py:371 cdedb/frontend/event/lodgement.py:395
+#: cdedb/frontend/event/lodgement.py:401
 msgid ""
 "Clusters can only be displayed if the graph is restricted to a specific part."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:379 cdedb/frontend/event/lodgement.py:409
+#: cdedb/frontend/event/lodgement.py:379 cdedb/frontend/event/lodgement.py:403
+#: cdedb/frontend/event/lodgement.py:409
 msgid ""
 "Edges between participants who are both assigned to a lodgement can only be "
 "hidden if the graph is restricted to a specific part."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:746 cdedb/frontend/event/lodgement.py:776
+#: cdedb/frontend/event/lodgement.py:746 cdedb/frontend/event/lodgement.py:770
+#: cdedb/frontend/event/lodgement.py:776
 msgid "Nothing to do."
 msgstr ""
 
-#: cdedb/frontend/event/lodgement.py:749 cdedb/frontend/event/lodgement.py:779
+#: cdedb/frontend/event/lodgement.py:749 cdedb/frontend/event/lodgement.py:773
+#: cdedb/frontend/event/lodgement.py:779
 msgid "Lodgements in this group changed in the meantime."
 msgstr ""
 
@@ -4774,8 +4865,11 @@ msgstr ""
 #: cdedb/frontend/event/partial_import.py:337
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:58
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:63
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:89
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:95
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:107
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:117
 #: cdedb/frontend/templates/web/event/generic.tmpl:17
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:41
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:143
@@ -5101,6 +5195,7 @@ msgid "No participants found to edit."
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:1309
+#: cdedb/frontend/event/registration.py:1311
 #: cdedb/frontend/event/registration.py:1315
 msgid "Already checked in."
 msgstr ""
@@ -5307,6 +5402,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/institution_summary.tmpl:47
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:182
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:115
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:128
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:477
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:137
@@ -5800,7 +5896,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:30
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:41
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:57
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:62
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:80
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:86
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:50
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:50
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:23
@@ -5808,6 +5906,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:108
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:76
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:106
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:116
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:107
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:70
 msgid "Shortname"
@@ -5838,6 +5937,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:131
 #: cdedb/frontend/templates/web/event/course/create_course.tmpl:53
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:111
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:124
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:209
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:93
 #: cdedb/frontend/templates/web/event/generic.tmpl:325
@@ -5872,9 +5972,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:82
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:73
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:37
+#: cdedb/frontend/templates/web/event/event/add_part.tmpl:42
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:102
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:110
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:111
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:134
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:157
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:65
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:66
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:54
@@ -5899,6 +6002,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:374
 #: cdedb/frontend/templates/web/cde/past_event/institution_summary.tmpl:69
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:142
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:165
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:70
 msgid "Delete line"
 msgstr ""
@@ -6280,6 +6384,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:16
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:119
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:123
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:124
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
 msgid "Edit"
 msgstr ""
@@ -6906,6 +7011,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:89
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:122
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:126
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:127
 #: cdedb/frontend/templates/web/generic.tmpl:512
 #: cdedb/frontend/templates/web/generic.tmpl:515
 #: cdedb/frontend/templates/web/generic.tmpl:518
@@ -9476,6 +9582,7 @@ msgstr "Update"
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:49
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:74
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:135
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:158
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:74
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:86
 #: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:36
@@ -10592,6 +10699,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:29
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:5
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:10
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:98
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:106
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
 msgid "Participant info"
@@ -10756,6 +10864,7 @@ msgid "Course Choice Sync"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:13
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:104
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:105
 msgid "Additional information for participants"
@@ -11018,6 +11127,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:115
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:52
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:57
 msgid "Coursetracks"
 msgstr ""
 
@@ -11513,12 +11623,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:42
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:92
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:102
 msgid "Begin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:28
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:43
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:95
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:105
 msgid "End"
 msgstr ""
 
@@ -11546,6 +11658,23 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:35
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:49
 msgid "Waitlist"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/add_part.tmpl:37
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:95
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:51
+msgid "Field for Camping Mat"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/add_part.tmpl:39
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:97
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:53
+msgid ""
+"The custom field in which the participants’ willingness to sleep on a "
+"camping mat will be saved. It is displayed on lodgement and inhabitant "
+"pages. Fieldtype: Yes/No"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:7
@@ -11770,22 +11899,17 @@ msgid ""
 "lodgement graph. Fieldtype: Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:95
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
-msgid "Field for Camping Mat"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:96
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:97
-msgid ""
-"The custom field in which the participants’ willingness to sleep on a "
-"camping mat will be saved. It is displayed on lodgement and inhabitant "
-"pages. Fieldtype: Yes/No"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:99
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
 msgid "Field for Course Room"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:99
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:108
+msgid ""
+"This is only for event-internal information. Any public information should "
+"be placed on the website."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:100
@@ -11793,13 +11917,6 @@ msgstr ""
 msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
 "It is used for PDF participant lists and nametags. Fieldtype: Text"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:107
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:108
-msgid ""
-"This is only for event-internal information. Any public information should "
-"be placed on the website."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:11
@@ -11830,28 +11947,51 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:56
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:61
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:73
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:79
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:105
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:115
 msgid "Coursetrack"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:59
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:64
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:98
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:104
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:108
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:118
 msgid "Req. Choices"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:60
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:65
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:105
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:111
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:52
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:110
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:109
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:119
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:51
 msgid "Sortkey"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:66
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:118
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:120
+msgid "Course Room Field"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:129
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:152
 msgid "Add Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:141
+msgid ""
+"The course room field is the custom field in which the course’s assigned "
+"course room will be saved. It is used for PDF participant lists and "
+"nametags. Fieldtype: Text"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:7
@@ -12047,6 +12187,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:91
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:111
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:122
 msgid "Track Groups"
 msgstr ""
 
@@ -12192,6 +12333,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:71
 msgid "Change Part"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:89
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:90
+msgid "Camping mat field"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:26
@@ -13643,6 +13789,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:153
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:157
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:158
 msgid "The Participant will be checked in."
 msgstr ""
 

@@ -88,13 +88,15 @@ class TestEventBackend(BackendTest):
                              'shortname': "First",
                              'num_choices': 3,
                              'min_choices': 3,
-                             'sortkey': 1}
+                             'sortkey': 1,
+                             'course_room_field': None}
                     },
                     'title': "First coming",
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -102,13 +104,15 @@ class TestEventBackend(BackendTest):
                              'shortname': "Second",
                              'num_choices': 3,
                              'min_choices': 1,
-                             'sortkey': 1}
+                             'sortkey': 1,
+                             'course_room_field': None}
                     },
                     'title': "Second coming",
                     'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                 },
             },
             'fees': {
@@ -185,8 +189,6 @@ class TestEventBackend(BackendTest):
         data['is_cancelled'] = False
         data['is_visible'] = False
         data['lodge_field'] = None
-        data['camping_mat_field'] = None
-        data['course_room_field'] = None
         data['orga_address'] = None
         data['begin'] = datetime.date(2109, 8, 7)
         data['end'] = datetime.date(2110, 8, 20)
@@ -247,19 +249,22 @@ class TestEventBackend(BackendTest):
                      'shortname': "Third",
                      'num_choices': 2,
                      'min_choices': 2,
-                     'sortkey': 2}
+                     'sortkey': 2,
+                     'course_room_field': None}
             },
             'title': "Third coming",
             'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'waitlist_field': None,
+            'camping_mat_field': 1003,
         }
         changed_part: CdEDBObject = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'waitlist_field': None,
+            'camping_mat_field': None,
             'tracks': {
                 1002: {
                     'title': "Second lecture v2",
@@ -267,6 +272,7 @@ class TestEventBackend(BackendTest):
                     'num_choices': 5,
                     'min_choices': 4,
                     'sortkey': 3,
+                    'course_room_field': None,
                 }
             },
         }
@@ -366,6 +372,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 5,
                 'min_choices': 4,
                 'sortkey': 3,
+                'course_room_field': None,
                 'track_groups': {},
             },
             1003: {
@@ -376,6 +383,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 2,
                 'min_choices': 2,
                 'sortkey': 2,
+                'course_room_field': None,
                 'track_groups': {},
             },
         }
@@ -521,6 +529,7 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(3000, 1, 1),
             'part_end': datetime.date(3000, 2, 1),
             'waitlist_field': None,
+            'camping_mat_field': None,
             'tracks': {
                 6: {
                     'id': 6,
@@ -530,6 +539,7 @@ class TestEventBackend(BackendTest):
                     'num_choices': 4,
                     'min_choices': 2,
                     'sortkey': 1,
+                    'course_room_field': None,
                     'track_groups': {
                         1: {
                             'id': 1,
@@ -737,6 +747,7 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 1,
             'sortkey': 1,
+            'course_room_field': None,
         }
         update_event = {
             'id': event_id,
@@ -1627,6 +1638,7 @@ class TestEventBackend(BackendTest):
                     'title': "KreativAkademie",
                     'shortname': "KreAka",
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                 },
             },
         }
@@ -2393,6 +2405,7 @@ class TestEventBackend(BackendTest):
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'waitlist_field': None,
+            'camping_mat_field': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2406,8 +2419,9 @@ class TestEventBackend(BackendTest):
             'shortname': 'Enlightnment',
             'num_choices': 3,
             'min_choices': 2,
-            'sortkey': 1}
-        # lodgemnet groups
+            'sortkey': 1,
+            'course_room_field': None}
+        # lodgement groups
         new_data['event.lodgement_groups'][5000] = {
             'id': 5000,
             'event_id': 1,
@@ -2623,6 +2637,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
             'waitlist_field': None,
+            'camping_mat_field': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2635,7 +2650,8 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1,
-            'title': 'Enlightnment'}
+            'title': 'Enlightnment',
+            'course_room_field': None}
         stored_data['event.lodgement_groups'][1001] = {
             'id': 1001,
             'event_id': 1,
@@ -3592,12 +3608,14 @@ class TestEventBackend(BackendTest):
                              'shortname': "First",
                              'num_choices': 3,
                              'min_choices': 3,
-                             'sortkey': 1}},
+                             'sortkey': 1,
+                             'course_room_field': None}},
                     'title': "First coming",
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                 },
                 -2: {
                     'tracks': {
@@ -3605,12 +3623,14 @@ class TestEventBackend(BackendTest):
                              'shortname': "Second",
                              'num_choices': 3,
                              'min_choices': 3,
-                             'sortkey': 1}},
+                             'sortkey': 1,
+                             'course_room_field': None}},
                     'title': "Second coming",
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'waitlist_field': None,
+                    'camping_mat_field': None,
                 },
             },
             'fields': {
@@ -3671,12 +3691,14 @@ class TestEventBackend(BackendTest):
                      'shortname': "Third",
                      'num_choices': 2,
                      'min_choices': 2,
-                     'sortkey': 2}},
+                     'sortkey': 2,
+                     'course_room_field': None}},
             'title': "Third coming",
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'waitlist_field': None,
+            'camping_mat_field': None,
         }
         changed_part = {
             'title': "Second coming",
@@ -4293,6 +4315,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
+                    "camping_mat_field": None,
                 },
                 -2: {
                     "title": "B",
@@ -4300,6 +4323,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
+                    "camping_mat_field": None,
                 },
                 -3: {
                     "title": "C",
@@ -4307,6 +4331,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
+                    "camping_mat_field": None,
                 },
                 -4: {
                     "title": "D",
@@ -4314,6 +4339,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
+                    "camping_mat_field": None,
                 },
             },
         }

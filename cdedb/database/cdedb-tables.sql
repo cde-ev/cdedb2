@@ -715,9 +715,7 @@ CREATE TABLE event.events (
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- reference to special purpose custom data fields
-        lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        lodge_field                  integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
@@ -750,7 +748,9 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
-        waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        waitlist_field          integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
 CREATE INDEX event_parts_partial_waitlist_field_idx ON event.event_parts(waitlist_field) WHERE waitlist_field IS NOT NULL;
@@ -791,7 +791,9 @@ CREATE TABLE event.course_tracks (
         shortname               varchar NOT NULL,
         num_choices             integer NOT NULL,
         min_choices             integer NOT NULL, -- required number of distinct course choices
-        sortkey                 integer NOT NULL
+        sortkey                 integer NOT NULL,
+        course_room_field       integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
@@ -853,9 +855,9 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,

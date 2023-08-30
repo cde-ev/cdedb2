@@ -50,8 +50,9 @@
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
-                <<% if course_room_field -%>>
-                    <<% trans %>> Course room <<% endtrans %>>: <<< course['fields'].get(course_room_field, "")|te >>>
+                <<% if course_room_fields[track_id] -%>>
+                    <<% trans %>> Course room <<% endtrans %>>:
+                    <<< course['fields'].get(course_room_fields[track_id], "")|te >>>
                 <<%- endif %>>
             \end{minipage}
             \clearpage

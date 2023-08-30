@@ -230,10 +230,12 @@ class EventDownloadMixin(EventBaseFrontend):
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
         instructors = {}
-        # Look for the field name of the course_room_field.
-        cr_field_id = rs.ambience['event']['course_room_field']
-        cr_field = rs.ambience['event']['fields'].get(cr_field_id, {})
-        cr_field_name = cr_field.get('field_name')
+        # Look for the field name of the course_room_fields.
+        cr_field_names = {}
+        for track_id, track in rs.ambience['event']['tracks'].items():
+            cr_field_id = track['course_room_field']
+            cr_field = rs.ambience['event']['fields'].get(cr_field_id, {})
+            cr_field_names[track_id] = cr_field.get('field_name')
         for c_id, course in courses.items():
             for t_id in course['active_segments']:
                 instructors[(c_id, t_id)] = [
@@ -251,7 +253,7 @@ class EventDownloadMixin(EventBaseFrontend):
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
-            'instructors': instructors, 'course_room_field': cr_field_name,
+            'instructors': instructors, 'course_room_fields': cr_field_names,
             'tracks_sorted': tracks_sorted, })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])

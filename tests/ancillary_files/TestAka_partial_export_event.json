@@ -682,8 +682,6 @@
         "is_cancelled": false,
         "is_archived": false,
         "lodge_field": "lodge",
-        "camping_mat_field": "may_reserve",
-        "course_room_field": "transportation",
         "part_groups": {},
         "track_groups": {},
         "fees": {
@@ -749,6 +747,7 @@
                 "part_begin": "2222-02-02",
                 "part_end": "2222-02-02",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {}
             },
             "2": {
@@ -757,20 +756,23 @@
                 "part_begin": "2222-11-01",
                 "part_end": "2222-11-11",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {
                     "1": {
                         "title": "Morgenkreis (Erste H\u00e4lfte)",
                         "shortname": "Morgenkreis",
                         "num_choices": 4,
                         "min_choices": 4,
-                        "sortkey": 1
+                        "sortkey": 1,
+                        "course_room_field": "room"
                     },
                     "2": {
                         "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
                         "shortname": "Kaffee",
                         "num_choices": 1,
                         "min_choices": 1,
-                        "sortkey": 2
+                        "sortkey": 2,
+                        "course_room_field": "room"
                     }
                 }
             },
@@ -780,13 +782,15 @@
                 "part_begin": "2222-11-11",
                 "part_end": "2222-11-30",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {
                     "3": {
                         "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
                         "shortname": "Sitzung",
                         "num_choices": 3,
                         "min_choices": 2,
-                        "sortkey": 3
+                        "sortkey": 3,
+                        "course_room_field": "room"
                     }
                 }
             }
