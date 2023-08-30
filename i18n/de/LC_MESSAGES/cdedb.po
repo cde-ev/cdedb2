@@ -4597,7 +4597,7 @@ msgid "Too many camping mats used."
 msgstr "Zu viele Isomattenplätze genutzt."
 
 #: cdedb/frontend/event/lodgement.py:104
-msgid "Participants assigned to sleep on, but may not sleep on a camping mat."
+msgid "Participants assigned to, but may not sleep on a camping mat."
 msgstr ""
 "Teilnehmer ist auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
 

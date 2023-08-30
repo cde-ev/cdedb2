@@ -101,7 +101,7 @@ class EventLodgementMixin(EventBaseFrontend):
                                 camping_mat_field_name):
                             unhappy_campers.add(reg_id)
                         ret.append(LodgementProblem(
-                            n_("Participants assigned to sleep on, but may not sleep"
+                            n_("Participants assigned to, but may not sleep"
                                " on a camping mat."),
                             lodgement_id, part_id, unhappy_campers, 1, True))
                 non_mixed_lodging_people = tuple(
