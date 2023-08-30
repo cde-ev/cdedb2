@@ -3287,7 +3287,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
         self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
-        self.assertPresence("Isomatte eingeteilt, hat dem aber nicht zugestimmt.")
+        self.assertNonPresence("Isomatte eingeteilt, hat dem aber nicht zugestimmt.")
         self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
