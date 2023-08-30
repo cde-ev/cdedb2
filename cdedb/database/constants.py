@@ -149,6 +149,25 @@ class CourseTrackGroupType(CdEIntEnum):
 
 
 @enum.unique
+class EventFeeType(CdEIntEnum):
+    """Different kinds of event fees, to be displayed and/or treated differently."""
+    common = 1
+    storno = 2
+    external = 3
+    solidarity = 10
+    donation = 11
+
+    def get_icon(self) -> str:
+        return {
+            EventFeeType.common: "coins",
+            EventFeeType.storno: "ban",
+            EventFeeType.external: "external-link-alt",
+            EventFeeType.solidarity: "hands-helping",
+            EventFeeType.donation: "donate",
+        }[self]
+
+
+@enum.unique
 class GenesisStati(CdEIntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
@@ -315,6 +334,33 @@ class LastschriftTransactionStati(CdEIntEnum):
 
 
 @enum.unique
+class PastInstitutions(CdEIntEnum):
+    """Insitutions for (primarily past) events, used for sorting into categories."""
+    cde = 1  #:
+    dsa = 20  #:
+    dja = 40  #:
+    jgw = 60  #:
+    basf = 80  #:
+    van = 200  #:
+
+    @classmethod
+    def main_insitution(cls) -> "PastInstitutions":
+        return PastInstitutions.cde
+
+    @property
+    def shortname(self) -> str:
+        shortnames = {
+            self.cde: "CdE",
+            self.dsa: "DSA",
+            self.dja: "DJA",
+            self.jgw: "JGW",
+            self.basf: "BASF",
+            self.van: "VAN",
+        }
+        return shortnames[self]
+
+
+@enum.unique
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:
@@ -452,9 +498,10 @@ class PastEventLogCodes(CdEIntEnum):
     course_deleted = 12  #:
     participant_added = 20  #:
     participant_removed = 21  #:
-    institution_created = 30  #:
-    institution_changed = 31  #:
-    institution_deleted = 32  #:
+    # The following log codes used to exist. To avoid conflicts, do not reuse:
+    # institution_created = 30  #:
+    # institution_changed = 31  #:
+    # institution_deleted = 32  #:
 
 
 @enum.unique

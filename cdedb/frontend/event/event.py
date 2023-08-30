@@ -101,7 +101,6 @@ class EventEventMixin(EventBaseFrontend):
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
-            params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (
                     self.eventproxy.get_minor_form(rs, event_id) is not None)
             constraint_violations = self.get_constraint_violations(
@@ -118,8 +117,6 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
-        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['event'])
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
@@ -130,7 +127,6 @@ class EventEventMixin(EventBaseFrontend):
             and field['kind'] == const.FieldDatatypes.str
         ]
         return self.render(rs, "event/change_event", {
-            'institutions': institutions,
             'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
             'lodge_fields': lodge_fields})
 
@@ -380,6 +376,7 @@ class EventEventMixin(EventBaseFrontend):
         code = self.eventproxy.set_event(rs, event)
         if code:
             new_fee = {
+                'kind': const.EventFeeType.common,
                 'title': data['title'],
                 'notes': "Automatisch erstellt.",
                 'amount': fee,
@@ -521,6 +518,15 @@ class EventEventMixin(EventBaseFrontend):
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
         return self.render(rs, "event/fee/fee_summary")
+
+    @access("event")
+    @event_guard()
+    def fee_stats(self, rs: RequestState, event_id: int) -> Response:
+        """Show stats for existing fees."""
+        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+        return self.render(rs, "event/fee/fee_stats", {
+            'fee_stats': fee_stats,
+        })
 
     @access("event")
     @event_guard()
@@ -844,11 +850,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin")
     def create_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         return self.render(rs, "event/create_event",
-                           {'institutions': institutions,
-                            'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
+                           {'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
@@ -890,12 +893,14 @@ class EventEventMixin(EventBaseFrontend):
             },
             'fees': {
                 -1: {
+                    'kind': const.EventFeeType.common,
                     'title': data['title'],
                     'notes': "Automatisch erstellt.",
                     'amount': fee,
                     'condition': f"part.{data['shortname']}",
                 },
                 -2: {
+                    'kind': const.EventFeeType.external,
                     'title': "Externenzusatzbeitrag",
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,

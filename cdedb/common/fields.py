@@ -101,9 +101,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "shortname")
-
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
                      "tempus", "participant_info")
@@ -140,7 +137,7 @@ FIELD_DEFINITION_FIELDS = (
 )
 
 #: Fields of a conditional event fee.
-EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
+EVENT_FEE_FIELDS = ("id", "event_id", "kind", "title", "amount", "condition", "notes")
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")

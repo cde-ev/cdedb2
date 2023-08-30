@@ -210,6 +210,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
                 ret[anid]['fees'] = {}
+                ret[anid]['institution'] =\
+                    const.PastInstitutions(ret[anid]['institution'])
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")
@@ -268,6 +270,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
             for d in fee_data:
+                d['kind'] = const.EventFeeType(d['kind'])
                 ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields

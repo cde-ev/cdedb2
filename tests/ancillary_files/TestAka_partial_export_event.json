@@ -688,46 +688,55 @@
             "Teilnahmebeitrag Warmup": {
                 "amount": "10.50",
                 "condition": "part.Wu",
+                "kind": 1,
                 "notes": null
             },
             "Teilnahmebeitrag 1. Hälfte": {
                 "amount": "123.00",
                 "condition": "part.1.H.",
+                "kind": 1,
                 "notes": null
             },
             "Teilnahmebeitrag 2. Hälfte": {
                 "amount": "450.99",
                 "condition": "part.2.H.",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis Warmup": {
                 "amount": "-5.00",
                 "condition": "part.Wu and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis 1. Hälfte": {
                 "amount": "-12.00",
                 "condition": "part.1.H. and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis 2. Hälfte": {
                 "amount": "-19.00",
                 "condition": "part.2.H. and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Externenzusatzbeitrag": {
                 "amount": "5.00",
                 "condition": "any_part and not (is_member or field.is_child)",
+                "kind": 3,
                 "notes": null
             },
             "Mengenrabatt": {
                 "amount": "-0.01",
                 "condition": "all_parts",
+                "kind": 10,
                 "notes": null
             },
             "Orgarabatt": {
                 "amount": "-50.00",
                 "condition": "part.1.H. and part.2.H. and is_orga",
+                "kind": 1,
                 "notes": null
             }
         },
