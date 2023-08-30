@@ -37,7 +37,7 @@ LodgementProblem = NamedTuple(
                          ("severeness", int)])
 
 
-class EventLodgementMxin(EventBaseFrontend):
+class EventLodgementMixin(EventBaseFrontend):
     @staticmethod
     def check_lodgement_problems(
             event: CdEDBObject, lodgements: CdEDBObjectMap,

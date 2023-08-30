@@ -101,9 +101,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "shortname")
-
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
                      "tempus", "participant_info")

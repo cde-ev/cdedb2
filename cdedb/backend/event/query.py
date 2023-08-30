@@ -370,7 +370,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
                 Construct a table to gather registration track information.
 
-                :param instructor: If True, count instrcutors, otherwise attendees.
+                :param instructor: If True, count instructors, otherwise attendees.
                 :param strict: If True, only count instructors that are assigned to
                     their course.
                 """

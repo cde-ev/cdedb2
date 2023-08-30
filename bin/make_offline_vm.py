@@ -86,13 +86,6 @@ def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
         print("No data for table found")
 
 
-def make_institution(cur: DictCursor, institution_id: int) -> None:
-    query = """INSERT INTO past_event.institutions (id, title, shortname)
-               VALUES (%s, %s, %s)"""
-    params = (institution_id, 'Veranstaltungsservice', 'CdE')
-    cur.execute(query, params)
-
-
 def make_meta_info(cur: DictCursor) -> None:
     query = """INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb)"""
     cur.execute(query, tuple())
@@ -204,8 +197,6 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     print("Connect to database")
     with connection as conn:
         with conn.cursor() as cur:
-            make_institution(
-                cur, data['event.events'][str(data['id'])]['institution'])
             make_meta_info(cur)
             for table in tables:
                 print("Populating table {}".format(table))
