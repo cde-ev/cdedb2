@@ -497,6 +497,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 )),
                 sub('/fee', (
                     rule("/summary", methods=_GET, endpoint="fee_summary"),
+                    rule("/stats", methods=_GET, endpoint="fee_stats"),
                     rule("/add", methods=_GET, endpoint="configure_fee_form"),
                     rule("/add", methods=_POST, endpoint="configure_fee"),
                     sub('/<int:fee_id>', (

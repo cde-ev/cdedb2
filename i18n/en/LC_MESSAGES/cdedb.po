@@ -18,6 +18,21 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "EventFeeType.common"
+msgstr "Regular Fee"
+
+msgid "EventFeeType.donation"
+msgstr "Donation"
+
+msgid "EventFeeType.external"
+msgstr "External Fee"
+
+msgid "EventFeeType.solidarity"
+msgstr "Solidarity Reduction"
+
+msgid "EventFeeType.storno"
+msgstr "Storno Fee"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr ""

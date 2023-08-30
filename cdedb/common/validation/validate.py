@@ -2761,6 +2761,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
     "condition": EventFeeCondition,
+    "kind": const.EventFeeType,
 }
 
 
@@ -3508,7 +3509,8 @@ def _serialized_event(
                           'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
                           'pos': int}),
         'event.event_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
+            _empty_dict, {'id': ID, 'event_id': ID,
+                          'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
                           'condition': str, 'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(

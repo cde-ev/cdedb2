@@ -18,8 +18,32 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "EventFeeType.common"
+msgstr "Regulärer Beitrag"
+
+msgid "EventFeeType.donation"
+msgstr "Spende"
+
+msgid "EventFeeType.external"
+msgstr "Externenbeitrag"
+
+msgid "EventFeeType.solidarity"
+msgstr "Solidarische Reduktion"
+
+msgid "EventFeeType.storno"
+msgstr "Stornokosten"
+
+msgid "Fee Stats"
+msgstr "Beitrags-Statistik"
+
+msgid "Fee Stats (%(title)s)"
+msgstr "Beitrags-Statistik (%(title)s)"
+
 msgid "No orga tokens exist yet."
 msgstr "Es existieren noch keine Orga-Tokens"
+
+msgid "Owed"
+msgstr "Zu Zahlen"
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
