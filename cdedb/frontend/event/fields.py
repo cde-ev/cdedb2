@@ -197,6 +197,8 @@ class EventFieldMixin(EventBaseFrontend):
                          kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
+            # If the kind is invalid, we do not know where to redirect to.
+            # This should never happen without HTML manipulation, anyway.
             return self.redirect(rs, "event/show_event")
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
