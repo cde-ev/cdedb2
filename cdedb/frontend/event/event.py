@@ -382,6 +382,7 @@ class EventEventMixin(EventBaseFrontend):
         code = self.eventproxy.set_event(rs, event)
         if code:
             new_fee = {
+                'kind': const.EventFeeType.common,
                 'title': data['title'],
                 'notes': "Automatisch erstellt.",
                 'amount': fee,
@@ -530,6 +531,15 @@ class EventEventMixin(EventBaseFrontend):
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
         return self.render(rs, "event/fee/fee_summary")
+
+    @access("event")
+    @event_guard()
+    def fee_stats(self, rs: RequestState, event_id: int) -> Response:
+        """Show stats for existing fees."""
+        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+        return self.render(rs, "event/fee/fee_stats", {
+            'fee_stats': fee_stats,
+        })
 
     @access("event")
     @event_guard()
@@ -894,12 +904,14 @@ class EventEventMixin(EventBaseFrontend):
             },
             'fees': {
                 -1: {
+                    'kind': const.EventFeeType.common,
                     'title': data['title'],
                     'notes': "Automatisch erstellt.",
                     'amount': fee,
                     'condition': f"part.{data['shortname']}",
                 },
                 -2: {
+                    'kind': const.EventFeeType.external,
                     'title': "Externenzusatzbeitrag",
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
