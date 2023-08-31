@@ -751,8 +751,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
                                              creation=True)
-            new_id = self.sql_insert(
-                rs, CustomQueryFilter.database_table, custom_filter.to_database())
+            new_id = self.sql_insert_dataclass(rs, custom_filter)
             # TODO logging
         return new_id
 
