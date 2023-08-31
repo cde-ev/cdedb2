@@ -243,6 +243,16 @@ class CoreBaseBackend(AbstractBackend):
                 data.update(members=0, total=0)
             return self.sql_insert(rs, "cde.finance_log", data)
 
+    @access(*REALM_ADMINS)
+    def redact_log(self, rs: RequestState, log_table: str, log_id: int,
+                   change_note: str = None) -> DefaultReturnCode:
+        update = {
+            "id": log_id,
+            "change_note": change_note or None,
+        }
+        self.logger.warning(f"Redacted log message {log_id} in {log_table},")
+        return self.sql_update(rs, log_table, update)
+
     @access("core_admin", "auditor")
     def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
         """Get recorded activity.

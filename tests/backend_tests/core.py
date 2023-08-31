@@ -1465,6 +1465,9 @@ class TestCoreBackend(BackendTest):
         ]
 
         self.assertLogEqual(log_expectation, realm="core")
+        self.core.redact_log(self.key, "core.log", 1002)
+        log_expectation[1]['change_note'] = None
+        self.assertLogEqual(log_expectation, realm="core")
 
     @as_users("vera")
     def test_changelog_meta(self) -> None:

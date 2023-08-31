@@ -346,7 +346,7 @@ CREATE TABLE core.log (
 CREATE INDEX core_log_code_idx ON core.log(code);
 CREATE INDEX core_log_persona_id_idx ON core.log(persona_id);
 GRANT SELECT ON core.log TO cdb_member;
-GRANT DELETE ON core.log TO cdb_admin;
+GRANT UPDATE (change_note), DELETE ON core.log TO cdb_admin;
 GRANT INSERT ON core.log TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.log_id_seq TO cdb_anonymous;
 
@@ -588,7 +588,7 @@ CREATE TABLE cde.log (
 CREATE INDEX cde_log_code_idx ON cde.log(code);
 CREATE INDEX cde_log_persona_id_idx ON cde.log(persona_id);
 GRANT SELECT ON cde.log TO cdb_member;
-GRANT INSERT, DELETE ON cde.log TO cdb_admin;
+GRANT INSERT, UPDATE (change_note), DELETE ON cde.log TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 
 ---
@@ -667,7 +667,7 @@ CREATE TABLE past_event.log (
 CREATE INDEX past_event_log_code_idx ON past_event.log(code);
 CREATE INDEX past_event_log_event_id_idx ON past_event.log(pevent_id);
 GRANT SELECT ON past_event.log TO cdb_member;
-GRANT INSERT, DELETE ON past_event.log TO cdb_admin;
+GRANT INSERT, UPDATE (change_note), DELETE ON past_event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 
 ---
@@ -1085,7 +1085,7 @@ CREATE INDEX event_log_code_idx ON event.log(code);
 CREATE INDEX event_log_event_id_idx ON event.log(event_id);
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
-GRANT DELETE ON event.log TO cdb_admin;
+GRANT UPDATE (change_note), DELETE ON event.log TO cdb_admin;
 
 ---
 --- SCHEMA assembly
@@ -1276,7 +1276,7 @@ CREATE TABLE assembly.log (
 );
 CREATE INDEX assembly_log_code_idx ON assembly.log(code);
 CREATE INDEX assembly_log_assembly_id_idx ON assembly.log(assembly_id);
-GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT UPDATE (change_note), DELETE ON assembly.log TO cdb_admin;
 GRANT SELECT, INSERT ON assembly.log TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
@@ -1399,5 +1399,5 @@ CREATE TABLE ml.log (
 CREATE INDEX ml_log_code_idx ON ml.log(code);
 CREATE INDEX ml_log_mailinglist_id_idx ON ml.log(mailinglist_id);
 GRANT SELECT, INSERT ON ml.log TO cdb_persona;
-GRANT DELETE ON ml.log TO cdb_admin;
+GRANT UPDATE (change_note), DELETE ON ml.log TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;
