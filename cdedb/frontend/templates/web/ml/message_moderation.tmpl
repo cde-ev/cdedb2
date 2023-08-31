@@ -152,8 +152,15 @@
                 $("#mlmod-modal-cancel-" + request_id).on("click", function() {
                     $("#mlmod-modal-" + request_id).modal("hide");
                 });
+                $("#mlmod-textarea-reason-" + request_id).on("keydown", function(event) {
+                    if (event.key == "Enter" && event.ctrlKey) {
+                        $("#mlmod-modal-reject-" + request_id).click();
+                        return true;
+                    }
+                });
             }
             $("#mlmod-modal-" + request_id).modal("show");
+            $("#mlmod-textarea-reason-" + request_id).focus();
         }
     </script>
 {% endblock %}
