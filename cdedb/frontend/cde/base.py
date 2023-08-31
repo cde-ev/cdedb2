@@ -50,7 +50,7 @@ MEMBERSEARCH_DEFAULTS = {
     'qop_given_names,display_name': QueryOperators.match,
     'qsel_username': True,
     'qop_username': QueryOperators.match,
-    'qop_telephone,mobile': QueryOperators.containsall,
+    'qop_telephone,mobile': QueryOperators.match,
     'qop_address,address_supplement,address2,address_supplement2':
         QueryOperators.match,
     'qop_postal_code,postal_code2': QueryOperators.between,
@@ -193,14 +193,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if phone:
             # remove leading zeroes - in database, numbers are stored starting with '+'
             phone = ("".join(char for char in phone if char in '0123456789')
-                .removeprefix("0").removeprefix("0"))
+                     .removeprefix("0").removeprefix("0"))
             if phone:
                 defaults['qval_telephone,mobile'] = phone
             else:
                 rs.append_validation_error(
                         ('phone', ValueError(n_("Wrong formatting."))))
-        if not phone:
-            defaults['qop_telephone,mobile'] = QueryOperators.match
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
