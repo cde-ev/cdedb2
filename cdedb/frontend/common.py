@@ -98,6 +98,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.event import CustomQueryFilter
 from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
@@ -1477,6 +1478,7 @@ AmbienceDict = typing.TypedDict(
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
         'fee': CdEDBObject,
+        'custom_filter': CustomQueryFilter,
         'attachment': CdEDBObject,
         'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
@@ -1561,6 +1563,11 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
               'fee_id', 'fee',
               ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['custom_query_filters'][anid],  # type: ignore[has-type]
+              'custom_filter_id', 'custom_filter',
+              ((lambda a: do_assert(a['custom_filter'].event_id
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
