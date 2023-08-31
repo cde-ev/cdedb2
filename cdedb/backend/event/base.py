@@ -237,6 +237,11 @@ class EventBaseBackend(EventLowLevelBackend):
             orga_data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), event_ids,
                 entity_key="event_id")
+            event_fields_data = self._get_events_fields(rs, event_ids)
+            custom_filters_data = self.sql_select(
+                rs, CustomQueryFilter.database_table,
+                CustomQueryFilter.database_fields(),
+                entities=event_ids, entity_key='event_id')
             for d in orga_data:
                 ret[d['event_id']]['orgas'].add(d['persona_id'])
             for d in part_data:
@@ -270,15 +275,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 track['track_groups'][d['track_group_id']] = track_group
             for d in fee_data:
                 ret[d['event_id']]['fees'][d['id']] = d
-            for event_id, fields in self._get_events_fields(rs, event_ids).items():
+            for event_id, fields in event_fields_data.items():
                 ret[event_id]['fields'] = fields
-            data = self.sql_select(
-                rs, CustomQueryFilter.database_table,
-                CustomQueryFilter.database_fields(),
-                entities=event_ids, entity_key='event_id')
             for anid in event_ids:
                 ret[anid]['custom_query_filters'] = {}
-            for d in data:
+            for d in custom_filters_data:
                 ret[d['event_id']]['custom_query_filters'][
                     d['id']] = CustomQueryFilter.from_database(d)
         for anid in event_ids:
