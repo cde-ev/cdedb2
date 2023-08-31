@@ -20,7 +20,7 @@ from typing import (
 )
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, unwrap
+from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted

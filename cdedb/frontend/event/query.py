@@ -305,13 +305,12 @@ class EventQueryMixin(EventBaseFrontend):
             if custom_filter_id not in rs.ambience['event']['custom_query_filters']:
                 rs.notify("error", "Unknown custom filter.")
                 return self.redirect(rs, "event/custom_filter_summary")
-            filter: CustomQueryFilter = rs.ambience['event']['custom_query_filters'][
-                custom_filter_id]
-            scope = filter.scope
-            values = filter.to_database()
+            custom_filter = rs.ambience['custom_filter']
+            scope = custom_filter.scope
+            values = custom_filter.to_database()
             del values['field']
             values.update({
-                f"cf_{f}": True for f in filter.split_fields
+                f"cf_{f}": True for f in custom_filter.split_fields
             })
             merge_dicts(rs.values, values)
 
@@ -321,7 +320,8 @@ class EventQueryMixin(EventBaseFrontend):
             lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
             lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
             lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-            lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+            lodgement_groups = self.eventproxy.get_lodgement_groups(
+                rs, lodgement_group_ids)
             spec = scope.get_spec(
                 event=rs.ambience['event'], courses=courses,
                 lodgements=lodgements, lodgement_groups=lodgement_groups)
