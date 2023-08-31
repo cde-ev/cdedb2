@@ -217,7 +217,7 @@ The original message as received by Mailman is attached.
             if not file_path.exists():
                 todo = True
             else:
-                with open(file_path) as f:
+                with open(file_path, encoding='UTF-8') as f:
                     current_text = f.read()
                 if current_text != text:
                     todo = True

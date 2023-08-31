@@ -221,11 +221,11 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             self.check_buffer(buffer, self.assertIn, "Success!")
 
             insertion_query = (
-                "INSERT INTO past_event.institutions"  # arbitrary, small table
-                " (title, shortname) VALUES ('Dummy', 'Test')"
+                "INSERT INTO core.cron_store"  # arbitrary, small table
+                " (title, store) VALUES ('Test', '{}')"
             )
-            selection_query = ("SELECT shortname FROM past_event.institutions"
-                               " WHERE title = 'Dummy'")
+            selection_query = ("SELECT title FROM core.cron_store"
+                               " WHERE title = 'Test'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:

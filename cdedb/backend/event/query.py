@@ -104,7 +104,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 )
                 return f"""
                     (
-                        SELECT {', '.join(REGISTRATION_FIELDS)}
+                        SELECT {', '.join(REGISTRATION_FIELDS)},
+                            amount_owed - amount_paid AS remaining_owed
                         FROM event.registrations
                         WHERE event_id = {event_id}
                     ) AS reg
@@ -369,7 +370,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
                 Construct a table to gather registration track information.
 
-                :param instructor: If True, count instrcutors, otherwise attendees.
+                :param instructor: If True, count instructors, otherwise attendees.
                 :param strict: If True, only count instructors that are assigned to
                     their course.
                 """

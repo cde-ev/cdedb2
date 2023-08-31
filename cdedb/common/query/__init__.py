@@ -250,8 +250,9 @@ class QueryScope(CdEIntEnum):
             prefix, target = "query", "course_query"
         elif self in {QueryScope.event_user, QueryScope.all_event_users}:
             prefix, target = "user", "user_search"
+        elif self in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
+            prefix, target = "base", "user_search"
         elif self in {QueryScope.core_user, QueryScope.all_core_users,
-                      QueryScope.assembly_user, QueryScope.all_assembly_users,
                       QueryScope.cde_user, QueryScope.all_cde_users,
                       QueryScope.ml_user, QueryScope.all_ml_users}:
             target = "user_search"
@@ -852,6 +853,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
+        "reg.remaining_owed": QuerySpecEntry("float", n_("Remaining Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),

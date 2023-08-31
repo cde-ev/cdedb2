@@ -119,12 +119,13 @@
                                          lodgement['title']) }}</td>
                         {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                            {% set problem = problems[(lodgement_id, part_id)] %}
+                            {% set problem = problems[(lodgement_id, part_id, False)] %}
                             <td class="text-right {% if loop.first %} b-left{% endif %}
                                     {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
                                     id="lodge_inhabitants_{{ part_id }}_{{ lodgement_id }}">
                                 {{ inhabitants[lodgement_id][part_id].regular|length }}
                             </td>
+                            {% set problem = problems[(lodgement_id, part_id, True)] %}
                             <td class="text-right {{ colors[problem[0]] }}"
                                     {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
                                     id="lodge_camping_mat_inhabitants_{{ part_id }}_{{ lodgement_id }}">

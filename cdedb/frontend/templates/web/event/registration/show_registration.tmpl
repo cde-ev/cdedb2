@@ -101,6 +101,10 @@
                 <em>{% trans %}Pending{% endtrans %}</em>
             {% endif %}
         </dd>
+        <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+        </dd>
         <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
