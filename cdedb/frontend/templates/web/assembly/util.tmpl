@@ -43,6 +43,10 @@
                             '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                     </script>
                 {% elif delete %}
+                    {{ util.href(cdedblink("assembly/change_attachment_version_form",
+                                           {'attachment_id': version['attachment_id'], 'version_nr': version['version_nr']}),
+                                label=util.make_icon("pen"), aclass="btn btn-warning btn-xs hide-hover",
+                                title=gettext("Change Version")) }}
                     <form action="{{ cdedblink('assembly/delete_attachment_version',
                                                {'attachment_id': version["attachment_id"],
                                                 'version_nr': version['version_nr']}) }}"

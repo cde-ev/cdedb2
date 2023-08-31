@@ -15,7 +15,6 @@ The base aswell as all its subclasses (the event frontend mixins) combine togeth
 become the full `EventFrontend` in this modules `__init__.py`.
 """
 import abc
-import datetime
 import itertools
 import operator
 from collections import OrderedDict
@@ -33,21 +32,20 @@ from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
     unwrap,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation import PERSONA_FULL_EVENT_CREATION, filter_none
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, event_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class ConstraintViolation:
     @property
     @abc.abstractmethod
@@ -61,7 +59,7 @@ class ConstraintViolation:
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class PartGroupConstraintViolation(ConstraintViolation):
     part_group_id: int  # ID of the part group whose constraint is being violated.
 
@@ -71,7 +69,7 @@ class PartGroupConstraintViolation(ConstraintViolation):
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class TrackGroupConstraintViolation(ConstraintViolation):
     track_group_id: int  # ID of the track group whose constraint is being violated.
 
@@ -168,6 +166,14 @@ class EventBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    def is_orga(self, rs: RequestState, event_id: int) -> bool:
+        """Whether the user has orga access to the given event.
+
+        Note that this includes admins who are not orgas.
+        If necessary, this distinction should get a keyword argument.
+        """
+        return event_id in rs.user.orga or self.is_admin(rs)
+
     def is_locked(self, event: CdEDBObject) -> bool:
         """Shorthand to determine locking state of an event."""
         return event['offline_lock'] != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
@@ -182,7 +188,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "user/create_user")
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
@@ -210,36 +216,14 @@ class EventBaseFrontend(AbstractUserFrontend):
             'country': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices)
-
-    @access("core_admin", "event_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_event_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_event_users,
             self.eventproxy.submit_general_query, choices=choices)
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
-                         part_id: vtypes.ID = None, sortkey: Optional[str] = "persona",
+                         part_id: Optional[vtypes.ID] = None,
+                         sortkey: Optional[str] = "persona",
                          reverse: bool = False) -> Response:
         """List participants of an event"""
         if rs.has_validation_errors():
@@ -267,7 +251,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey=sortkey or "persona", reverse=reverse)
+            rs, event_id, part_ids, include_total_count=True,
+            sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -279,8 +264,11 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
             part_ids: Collection[int] = (), orga_list: bool = False,
-            sortkey: str = "persona", reverse: bool = False) -> CdEDBObject:
+            include_total_count: bool = False, sortkey: str = "persona",
+            reverse: bool = False) -> CdEDBObject:
         """This provides data for download and online participant list.
+
+        It filters out the participants which have not given list_consent.
 
         This is un-inlined so download_participant_list can use this
         as well."""
@@ -289,7 +277,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         reg_counts = self.eventproxy.get_num_registrations_by_part(
-            rs, event_id, (const.RegistrationPartStati.participant,))
+            rs, event_id, (const.RegistrationPartStati.participant,),
+            include_total=include_total_count)
 
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
@@ -373,14 +362,17 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_id = unwrap(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id).keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
-            wish_data = self._get_participant_list_data(rs, event_id)
+            data = self._get_participant_list_data(rs, event_id)
             wish_data['field'] = rs.ambience['event']['fields'][field_id]
             wishes, problems = detect_lodgement_wishes(
-                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
+                data['registrations'], data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
                 check_edges=False)
             if registration['list_consent']:
-                wish_data['wishes'] = wishes
+                # Ordered list of wished personas
+                wish_data['wished_personas'] = xsorted(
+                    (data['personas'][data['registrations'][wish.wished]['persona_id']]
+                     for wish in wishes), key=EntitySorter.persona)
                 wish_data['problems'] = problems
             else:
                 msg = n_(
@@ -578,6 +570,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         for reg_id, reg in registrations.items():
             for tg_id, tg in tgs_by_type[ccs]:
                 if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
+                       or reg['tracks'][t1]['course_instructor']
+                       != reg['tracks'][t2]['course_instructor']
                        for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
                     ccs_violations.append(
                         CCSViolation(tg_id, reg_id, reg['persona_id']))
@@ -636,82 +630,49 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event_id, registration_id=None, course_id=None)
         return self.render(rs, "base/constraint_violations", params)
 
+    @REQUESTdatadict(*EventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("event_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
-    def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
-                 event_id: Optional[vtypes.ID], offset: Optional[int],
-                 length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[vtypes.CdedbID],
-                 submitted_by: Optional[vtypes.CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
-
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        event_ids = {entry['event_id'] for entry in log if entry['event_id']}
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
         if self.is_admin(rs):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
             registration_map = {}
-        events = self.eventproxy.get_events(rs, event_ids)
-        all_events = self.eventproxy.list_events(rs)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'events': events, 'all_events': all_events,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, data, EventLogFilter, self.eventproxy.retrieve_log,
+            download=download, template="base/view_log", template_kwargs={
+                'all_events': events, 'registration_map': registration_map,
+            },
+        )
 
+    @REQUESTdatadict(*EventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("event")
     @event_guard()
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_event_log(self, rs: RequestState,
-                       codes: Collection[const.EventLogCodes],
-                       event_id: int, offset: Optional[int],
-                       length: Optional[vtypes.PositiveInt],
-                       persona_id: Optional[vtypes.CdedbID],
-                       submitted_by: Optional[vtypes.CdedbID],
-                       change_note: Optional[str],
-                       time_start: Optional[datetime.datetime],
-                       time_stop: Optional[datetime.datetime]) -> Response:
+    def view_event_log(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                       download: bool) -> Response:
         """View activities concerning one event organized via DB."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
-
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        rs.values['event_id'] = data['event_id'] = event_id
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "base/view_event_log", {
-            'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'registration_map': registration_map, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, data, EventLogFilter, self.eventproxy.retrieve_log,
+            download=download, template="base/view_event_log", template_kwargs={
+                'registration_map': registration_map,
+            },
+        )
+
+    @staticmethod
+    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, Optional[str]]:
+        field_names = {}
+        for part_id, part in event["parts"].items():
+            if f_id := part["camping_mat_field"]:
+                field_names[part_id] = event["fields"][f_id]["field_name"]
+            else:
+                field_names[part_id] = None
+        return field_names
 
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:

@@ -7,12 +7,12 @@ from typing import (
 
 from psycopg2.extensions import connection
 
-from cdedb.backend.common import DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.conversions import to_db_input
+from cdedb.database.query import DatabaseValue_s
 
 
 class AuxData(TypedDict):
@@ -47,7 +47,9 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: Dict[str, Tuple[str, ...]] = {
-        "event.events": ("lodge_field", "course_room_field", "camping_mat_field"),
+        "event.events": ("lodge_field",),
+        "event.event_parts": ("camping_mat_field",),
+        "event.course_tracks": ("course_room_field",),
     }
 
     # This contains a list of replacements performed on the resulting SQL
@@ -74,11 +76,12 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
         "ctime", "atime", "dtime", "foto", "amount", "iban", "granted_at", "revoked_at",
         "issued_at", "processed_at", "tally", "total", "delta", "shortname", "tempus",
         "registration_start", "registration_soft_limit", "registration_hard_limit",
-        "nonmember_surcharge", "part_begin", "part_end", "fee", "field_name",
+        "part_begin", "part_end", "fee", "field_name",
         "amount_paid", "amount_owed", "payment", "presider_address", "signup_end",
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
-        "modifier_name",
+        "modifier_name", "transaction_date", "condition", "donation", "payment_date",
+        'etime', 'rtime', 'secret_hash',
     }
     xss_table_excludes = {
         "cde.org_period", "cde.expuls_period",

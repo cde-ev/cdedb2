@@ -15,14 +15,13 @@ import subprocess
 import sys
 from typing import Collection
 
-import psycopg2.extensions
 from psycopg2.extras import DictCursor, Json
 
-from cdedb.cli.storage import populate_event_keeper
 from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
 )
+from cdedb.models.droid import OrgaToken
 from cdedb.script import Script
 
 # This is 'secret' the hashed
@@ -37,6 +36,7 @@ DEFAULTS = {
         'is_searchable': False,
         'is_active': True,
         'balance': 0,
+        'donation': 0,
         'birth_name': None,
         'address_supplement2': None,
         'address2': None,
@@ -52,8 +52,10 @@ DEFAULTS = {
         'trial_member': False,
         'decided_search': True,
         'bub_search': False,
+        'paper_expuls': True,
         'foto': None,
         'fulltext': '',
+        'notes': 'This is just a copy, changes to profiles will not be persisted.'
     }
 }
 
@@ -84,46 +86,41 @@ def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
         print("No data for table found")
 
 
-def make_institution(cur: DictCursor, institution_id: int) -> None:
-    query = """INSERT INTO past_event.institutions (id, title, shortname)
-               VALUES (%s, %s, %s)"""
-    params = (institution_id, 'Veranstaltungsservice', 'CdE')
-    cur.execute(query, params)
-
-
 def make_meta_info(cur: DictCursor) -> None:
     query = """INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb)"""
     cur.execute(query, tuple())
 
 
 def update_event(cur: DictCursor, event: CdEDBObject) -> None:
-    query = """UPDATE event.events
-               SET (lodge_field, camping_mat_field, course_room_field)
-               = (%s, %s, %s)"""
-    params = (event['lodge_field'], event['camping_mat_field'],
-              event['course_room_field'])
-    cur.execute(query, params)
+    query = """UPDATE event.events SET lodge_field = %s"""
+    cur.execute(query, [event['lodge_field']])
 
 
 def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
-    query = "UPDATE event.event_parts SET waitlist_field = %s WHERE id = %s"
+    query = """UPDATE event.event_parts
+               SET (waitlist_field, camping_mat_field) = (%s, %s) WHERE id = %s"""
     for part in parts:
-        cur.execute(query, (part['waitlist_field'], part['id']))
+        params = (part['waitlist_field'], part['camping_mat_field'], part['id'])
+        cur.execute(query, params)
+
+
+def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
+    query = "UPDATE event.course_tracks SET course_room_field = %s WHERE id = %s"
+    for track in tracks:
+        cur.execute(query, (track['course_room_field'], track['id']))
 
 
 def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
          extra_packages: bool = False, no_extra_packages: bool = False) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
-    connection = Script(
-        dbuser="cdb", dbname=conf["CDB_DATABASE_NAME"], check_system_user=False
-    ).rs().conn
+    connection = Script(dbuser="cdb", check_system_user=False).rs().conn
 
     print("Loading exported event")
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [15, 7]:
+    if data.get("EVENT_SCHEMA_VERSION") != [16, 0]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -193,35 +190,38 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         'core.personas', 'event.events', 'event.event_parts',
         'event.part_groups', 'event.part_group_parts',
         'event.courses', 'event.course_tracks', 'event.course_segments',
-        'event.orgas', 'event.field_definitions', 'event.fee_modifiers',
+        'event.orgas', 'event.field_definitions', 'event.event_fees',
         'event.lodgement_groups', 'event.lodgements', 'event.registrations',
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        OrgaToken.database_table,
     )
 
     print("Connect to database")
     with connection as conn:
         with conn.cursor() as cur:
-            make_institution(
-                cur, data['event.events'][str(data['id'])]['institution'])
             make_meta_info(cur)
             for table in tables:
                 print("Populating table {}".format(table))
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field', 'camping_mat_field',
-                                'course_room_field'):
+                    for key in ('lodge_field',):
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:
-                        for key in ('waitlist_field',):
+                        for key in ('waitlist_field', 'camping_mat_field'):
                             values[part_id][key] = None
+                if table == 'event.course_tracks':
+                    for track_id in data[table]:
+                        for key in ('course_room_field',):
+                            values[track_id][key] = None
                 populate_table(cur, table, values)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
             update_parts(cur, data['event.event_parts'].values())
+            update_tracks(cur, data['event.course_tracks'].values())
 
             # Create a surrogate changelog that can be used for the
             # duration of the offline deployment
@@ -231,12 +231,10 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 del datum['id']
                 del datum['password_hash']
                 del datum['fulltext']
-                datum['notes'] = ('This is just a copy, changes to profiles'
-                                  ' will not be persisted.')
                 datum['submitted_by'] = persona['id']
                 datum['generation'] = 1
                 datum['change_note'] = 'Create surrogate changelog.'
-                datum['code'] = 2  # MemberChangeStati.committed
+                datum['code'] = 2  # PersonaChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
                 query = (f"INSERT INTO core.changelog ({', '.join(keys)})"

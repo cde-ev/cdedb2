@@ -1,0 +1,116 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/ballot/_ballot_meta.tmpl" as ballot_meta with context %}
+{% import "web/assembly/ballot/_ballot_tallied.tmpl" as ballot_tallied with context %}
+{% import "web/assembly/ballot/_ballot_voting.tmpl" as ballot_voting with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_voting.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+
+{% set jshint = 'weak' %}
+
+{% block title %}
+    {{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }})
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(ambience["ballot"]["title"], ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
+                            active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% set is_privileged = ("assembly_presider" in user.admin_views
+                            or ambience['assembly']['id'] in user.presider) %}
+    {% set edit_mode = now() < ambience['ballot']['vote_begin'] and is_privileged %}
+    {% set is_classical = ambience['ballot']['votes'] %}
+    {% set is_preferential = not ambience['ballot']['votes'] %}
+
+    {# Privileged modification options (delete and edit) #}
+    {% if is_privileged or user.presider %}
+        <div class="p">
+            {% if edit_mode %}
+                {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pen",
+                        aclass="btn btn-sm btn-warning") }}
+                {% if CDEDB_DEV %}
+                    <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
+                          id="startvotingform" style="display: inline;">
+                        {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
+                        {{ util.input_submit(label=gettext("Start Voting"), aclass="btn btn-sm btn-primary",
+                                icon="check-square") }}
+                    </form>
+                {% endif %}
+            {% endif %}
+            {% if managed_assembly_ids %}
+                {{ util.href(cdedblink("assembly/ballot_template"), gettext("Use as Template"), icon="clone",
+                        aclass="btn btn-sm btn-success") }}
+            {% endif %}
+            {% if is_privileged and ambience['ballot']['is_tallied'] %}
+                {{ util.href(cdedblink("assembly/comment_concluded_ballot_form"), gettext("Comment_[[verb]]"), icon="comment",
+                        aclass="btn btn-sm btn-warning") }}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# General information about ballot and personalized state info #}
+    {{ ambience['ballot']['description']|md }}
+    {{ ballot_meta.show_status() }}
+
+    {# Display of result #}
+    {% if ambience['ballot']['is_tallied'] %}
+        <h3>
+            {% trans %}Result{% endtrans %}
+            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"),
+                         aclass="btn btn-info btn-sm pull-right", icon="book") }}
+        </h3>
+        {{ ballot_tallied.show_result(ambience['ballot'], result) }}
+        {% if ambience['ballot']['comment'] %}
+            {% call util.bootstrap_panel(title=gettext("Ballot Comment"), icon="tag",
+                                         aclass="panel-warning panel-condensed", anid='comment') %}
+                {{ ambience['ballot']['comment']|md }}
+            {% endcall %}
+        {% endif %}
+        {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
+                                        use_bar=ambience['ballot']['use_bar']) }}
+    {% else %}
+        {% if edit_mode %}
+            {{ ballot_voting.add_candidate_form() }}
+        {% else %}
+            {# Classical voting, not tallied #}
+            {% if is_classical %}
+                {% if ambience['ballot']['is_voting'] and attends %}
+                    {{ ballot_voting.show_classical_voting() }}
+                {% else %}
+                    {{ ballot_voting.show_classical_candidates() }}
+                {% endif %}
+            {# Preferential voting, not tallied #}
+            {% else %}
+                {{ ballot_voting.show_preferential_candidates() }}
+                {% if ambience['ballot']['is_voting'] and attends %}
+                    {{ ballot_voting.show_preferential_voting() }}
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+
+    {{ ballot_meta.show_attachments() }}
+
+    {{ util.pager('assembly/show_ballot', 'ballot_id', prev_ballot, next_ballot) }}
+
+    {% if edit_mode %}
+        {{ ballot_meta.ballot_action_panel() }}
+    {% endif %}
+
+{% endblock %}

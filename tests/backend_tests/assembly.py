@@ -11,6 +11,7 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.assembly import BallotConfiguration
 from cdedb.common import CdEDBObject, CdEDBObjectMap, get_hash, nearly_now, now
+from cdedb.common.query.log_filter import AssemblyLogFilter
 from tests.common import (
     USER_DICT, BackendTest, UserIdentifier, as_users, prepsql, storage,
 )
@@ -65,7 +66,7 @@ class TestAssemblyBackend(BackendTest):
         presider_id = 23
         log = []
         self.login("anton")
-        log_offset, _ = self.assembly.retrieve_log(self.key)
+        log_offset, _ = self.assembly.retrieve_log(self.key, AssemblyLogFilter())
         self.login("werner")
 
         expectation = {
@@ -208,7 +209,8 @@ class TestAssemblyBackend(BackendTest):
     @as_users("werner")
     def test_entity_ballot(self) -> None:
         assembly_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, AssemblyLogFilter(assembly_id=assembly_id))
         log: List[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
@@ -920,7 +922,8 @@ class TestAssemblyBackend(BackendTest):
         assembly_id = 1
         ballot_id = 2
         attachment_id = 1
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, AssemblyLogFilter(assembly_id=assembly_id))
         log = []
 
         # Check the default entities.
@@ -1012,7 +1015,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertIn("Cannot remove the last remaining version of an attachment.",
                       e.exception.args)
 
-        # Add more versions and check that the correct content is returned.
+        # Add and Change more versions and check that the correct content is returned.
         data = {
             "attachment_id": new_id,
             "title": "Rechenschaftsbericht",
@@ -1020,11 +1023,24 @@ class TestAssemblyBackend(BackendTest):
             "filename": "rechen_v2.pdf",
         }
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'1234'))
+        update = {
+            "attachment_id": new_id,
+            "version_nr": 2,
+            "title": "Verrechnungsbericht",
+            "authors": "Farina",
+            "filename": "alles_falsch.pdf"
+        }
+        self.assertTrue(self.assembly.change_attachment_version(self.key, update))
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
             "assembly_id": assembly_id,
             "change_note": f"{data['title']}: Version 2",
+        })
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_changed,
+            "assembly_id": assembly_id,
+            "change_note": f"{update['title']}: Version 2",
         })
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
@@ -1109,6 +1125,8 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": get_hash(b'1234'),
         })
+        updated_data = data.copy()
+        updated_data.update(update)
         deleted_version = {
             "attachment_id": new_id,
             "version_nr": 1,
@@ -1121,9 +1139,9 @@ class TestAssemblyBackend(BackendTest):
         }
         history_expectation: CdEDBObjectMap = {
             1: deleted_version,
-            2: data,
+            2: updated_data,
             3: deleted_version.copy(),
-            4: data.copy(),
+            4: data,
         }
         history_expectation[3]['version_nr'] = 3
         history_expectation[3]['file_hash'] = get_hash(b'12345')
@@ -1239,12 +1257,12 @@ class TestAssemblyBackend(BackendTest):
                 },
                 2: {
                     'attachment_id': attachment_ids[0],
-                    'authors': 'Farin',
+                    'authors': 'Farina',
                     'ctime': nearly_now(),
                     'dtime': None,
                     'file_hash': get_hash(b'1234'),
-                    'filename': 'rechen_v2.pdf',
-                    'title': 'Rechenschaftsbericht',
+                    'filename': 'alles_falsch.pdf',
+                    'title': 'Verrechnungsbericht',
                     'version_nr': 2,
                 },
                 3: {
@@ -1316,7 +1334,8 @@ class TestAssemblyBackend(BackendTest):
     def test_ballot_attachment_links(self) -> None:
         assembly_id = 3
         n = 3
-        log_offset, _ = self.assembly.retrieve_log(self.key, assembly_id=assembly_id)
+        log_offset, _ = self.assembly.retrieve_log(
+            self.key, AssemblyLogFilter(assembly_id=assembly_id))
         log = []
         base_time = now()
         delta = datetime.timedelta(seconds=10)

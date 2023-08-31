@@ -141,6 +141,9 @@ _DEFAULTS = {
     # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
 
+    # droids which are allowed access during lockdown.
+    "INFRASTRUCTURE_DROIDS": {"resolve"},
+
     ##################
     # Frontend stuff #
     ##################
@@ -221,6 +224,13 @@ _DEFAULTS = {
     "MAILMAN_USER": "restadmin",
     # user for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_USER": "mailman",
+    # aliases which are recognized for mailinglists
+    "MAILMAN_ACCEPTABLE_ALIASES": {
+        "verwaltung@lists.cde-ev.de": ["datenbank@cde-ev.de"],
+        "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
+        "doku@lists.cde-ev.de": ["team@dokuforge.de"],
+        "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
+    },
 
     #################
     # Backend stuff #
@@ -259,6 +269,11 @@ _DEFAULTS = {
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2
     "PERIODS_PER_YEAR": 2,
+    # the minimal and maximal donation we accept per annual lastschrifts
+    "MINIMAL_LASTSCHRIFT_DONATION": decimal.Decimal('2.00'),
+    "MAXIMAL_LASTSCHRIFT_DONATION": decimal.Decimal('1000.00'),
+    # the predefined donation amount of a lastschrift, if the user didn't specified one
+    "TYPICAL_LASTSCHRIFT_DONATION": decimal.Decimal('20.00'),
 
     # Name of the organization where the SEPA transaction originated
     "SEPA_SENDER_NAME": "CdE e.V.",
@@ -399,6 +414,10 @@ class Config(Mapping[str, Any]):
     def __len__(self) -> int:
         return self._configchain.__len__()
 
+    def __repr__(self) -> str:
+        name = self.__class__.__name__
+        return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
+
 
 class LazyConfig(Config):
     """Lazy config object for usage global namespace.
@@ -441,6 +460,10 @@ class LazyConfig(Config):
         self.__init()
         return super().__len__()
 
+    def __repr__(self) -> str:
+        self.__init()
+        return super().__repr__()
+
 
 class TestConfig(Config):
     """Main configuration for tests.
@@ -482,7 +505,11 @@ class SecretsConfig(Mapping[str, Any]):
         override = {
             key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
 
-        self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
+        # for security reasons, do not use the _SECRETS_DEFAULT in production
+        if pathlib.Path("/PRODUCTIONVM").is_file():
+            self._configchain = collections.ChainMap(override)
+        else:
+            self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)

@@ -67,15 +67,60 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera")
     def test_delete_past_course_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
+        # add the past course to a genesis case
+        genesis_case = self.core.genesis_get_case(self.key, 3)
+        genesis_case.update({
+            'pevent_id': 1,
+            'pcourse_id': 1,
+            'reviewer': self.user['id']})
+        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("genesis_cases",))
+        self.assertIn("participants", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("participants",))
+        self.assertIn("genesis_cases", e.exception.args[1].get('block'))
         self.pastevent.delete_past_course(
-            self.key, 1, cascade=("participants",))
+            self.key, 1, cascade=("participants", "genesis_cases"))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
     def test_delete_past_event_cascade(self) -> None:
-        self.assertIn(1, self.pastevent.list_past_events(self.key))
+        # create a log entry for this past event
+        pevent = self.pastevent.get_past_event(self.key, 1)
+        pevent['description'] = "changed"
+        self.assertTrue(self.pastevent.set_past_event(self.key, pevent))
+        # add the past event to a genesis case
+        genesis_case = self.core.genesis_get_case(self.key, 3)
+        genesis_case.update({
+            'pevent_id': 1,
+            'reviewer': self.user['id']})
+        self.assertTrue(self.core.genesis_modify_case(self.key, genesis_case))
+
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1, cascade=("participants", "log", "genesis_cases"))
+        self.assertIn("courses", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "log", "genesis_cases"))
+        self.assertIn("participants", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "participants", "genesis_cases"))
+        self.assertIn("log", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_event(
+                self.key, 1,
+                cascade=("courses", "participants", "log"))
+        self.assertIn("genesis_cases", e.exception.args[1].get('block'))
         self.pastevent.delete_past_event(
-            self.key, 1, cascade=("courses", "participants", "log"))
+            self.key, 1, cascade=("courses", "participants", "log", "genesis_cases"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("vera")
@@ -192,53 +237,6 @@ class TestPastEventBackend(BackendTest):
         self.assertIn((3, 2), participants)
 
     @as_users("vera")
-    def test_rcw_mechanism(self) -> None:
-        institution_id = 1
-        data = self.pastevent.get_institution(
-            self.key, institution_id=institution_id)
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-        # positional argument
-        data['title'] = "Stavromula Beta"
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        self.pastevent.rcw_institution(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Gamma"
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Delta"
-        self.pastevent.rcw_institution(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-        # keyword argument
-        data['title'] = "Stavromula Epsilon"
-        self.pastevent.rcw_institution(self.key, data=data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        self.pastevent.rcw_institution(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Zeta"
-        self.pastevent.rcw_institution(self.key, data=data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Eta"
-        self.pastevent.rcw_institution(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-    @as_users("vera")
     def test_past_log(self) -> None:
         # first generate some data
         data = {
@@ -269,7 +267,7 @@ class TestPastEventBackend(BackendTest):
         self.pastevent.remove_participant(self.key, 1, None, 5)
 
         # now check it
-        expectation = (7, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.PastEventLogCodes.event_created,
@@ -318,11 +316,23 @@ class TestPastEventBackend(BackendTest):
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': 5,
-             'submitted_by': self.user['id']}))
-        self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
+             'submitted_by': self.user['id']})
+        self.assertLogEqual(expectation, 'past_event')
 
     @as_users("anton")
     def test_archive(self) -> None:
+        # First, an event without participants
+        update = {
+            'id': 2,
+            'is_cancelled': True
+        }
+        self.event.set_event(self.key, update)
+        with self.assertRaises(ValueError):
+            self.pastevent.archive_event(self.key, 2)
+        new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+        self.assertEqual(None, new_ids)
+
+        # Event with participants
         update = {
             'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
@@ -354,7 +364,7 @@ class TestPastEventBackend(BackendTest):
             key=lambda d: d['tempus'])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1001,
+            'id': 1002,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
@@ -363,7 +373,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1002,
+            'id': 1003,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
@@ -372,7 +382,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
-            'id': 1003,
+            'id': 1004,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
@@ -394,13 +404,13 @@ class TestPastEventBackend(BackendTest):
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[2]['id']).values()))
         expectation = {
-            (7, 1007): {'pcourse_id': 1007,
+            (7, 1008): {'pcourse_id': 1008,
                         'is_instructor': False,
                         'is_orga': True,
                         'persona_id': 7},
-            (100, 1007): {'is_instructor': False,
+            (100, 1008): {'is_instructor': False,
                           'is_orga': False,
-                          'pcourse_id': 1007,
+                          'pcourse_id': 1008,
                           'persona_id': 100}}
         self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=1007))
+                         self.pastevent.list_participants(self.key, pcourse_id=1008))

@@ -1,0 +1,84 @@
+{% set sidenav_active='assembly_attendees' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block scripts %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='strong' %}
+{% block title %}
+    {% trans title=ambience['assembly']['title'] %}
+        Participantlist ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Participantlist"), ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), gettext("Participants"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% if now() < ambience['assembly']['signup_end'] and ("assembly_presider" in user.admin_views
+                                                          or ambience['assembly']['id'] in user.presider) %}
+        {% call util.bootstrap_panel(title=gettext("Add external participants"), aclass='panel-success panel-condensed',
+                icon='plus') %}
+            <p class="text-muted">
+                {{ util.make_icon('info-circle') }}
+                {{ gettext("Current CdE-Members must register for the assembly themselves. "
+                           "Only external participants can be added with this form. "
+                           "This is only possible within the application deadline.") }}
+            </p>
+            <form action="{{ cdedblink('assembly/external_signup') }}" method="POST" id="addattendeeform">
+                {{ util.anti_csrf_token('assembly/external_signup') }}
+                <div class="row">
+                    <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
+                        {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
+                                anid="input-add-attendee", aclass="form-control input-sm",
+                                arialabel=gettext("User-ID of the new participant")) }}
+                        {{ util.output_errors('persona_id') }}
+                    </div>
+                    <div class="col-sm-3">
+                        {{ util.input_submit(label=gettext("Add"), icon="plus", aclass="btn btn-primary btn-sm") }}
+                    </div>
+                </div>
+            </form>
+            <script nonce="{{ csp_nonce }}">
+                $('#addattendeeform').cdedbProtectAction(
+                    "{{ gettext("The user will be added as a participant. This cannot be undone.") }}");
+                $('#input-add-attendee').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') }}', {'kind' : 'pure_assembly_user'},
+                    {{ attendees.all|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                );
+            </script>
+        {% endcall %}
+    {% endif %}
+
+    <p id="attendees-count">
+        {{ gettext("%(count)s participants total.")|format(count=attendees.all|length) }}
+    </p>
+    <div class="row" id="attendees-list">
+        {# This is already sorted. #}
+        {% for list in attendees.all.values() | slice((3 if attendees.all|length > 20 else 2) if attendees.all|length > 10 else 1) %}
+            <div class="col-sm-4">
+                <ul class="slim nosp">
+                    {% for persona in list %}
+                        <li>{{ util.persona_name(persona, only_given_names=True, with_titles=True) }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
+        {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
+            <p class="text-muted">
+                {% trans %}
+                    A download TeX-Snipped to generate a participant list in the protocol.
+                {% endtrans %}
+            </p>
+            <form action="{{ cdedblink('assembly/download_list_attendees') }}" method="GET" id="downloadattendeesform" class="form-horizontal">
+                {{ util.form_input_text(name='cutoff', label=gettext("Cutoff"), type='datetime-local', small=False) }}
+                {{ util.form_input_submit(label=gettext("TeX-List"), icon="download", aclass="btn btn-default btn-sm", small=False) }}
+            </form>
+        {% endcall %}
+    {% endif %}
+{% endblock %}

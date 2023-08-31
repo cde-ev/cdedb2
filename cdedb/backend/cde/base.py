@@ -15,14 +15,14 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.past_event import PastEventBackend
@@ -33,8 +33,9 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
 )
 from cdedb.database.connection import Atomizer
@@ -78,44 +79,25 @@ class CdEBaseBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin", "auditor")
-    def retrieve_cde_log(self, rs: RequestState,
-                         codes: Collection[const.CdeLogCodes] = None,
-                         offset: int = None, length: int = None,
-                         persona_id: int = None, submitted_by: int = None,
-                         change_note: str = None,
-                         time_start: datetime.datetime = None,
-                         time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_cde_log(self, rs: RequestState, log_filter: CdELogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CdeLogCodes, "persona", "cde.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        log_filter = affirm_dataclass(CdELogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState,
-                             codes: Collection[const.FinanceLogCodes] = None,
-                             offset: int = None, length: int = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             change_note: str = None,
-                             time_start: datetime.datetime = None,
-                             time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter
+                             ) -> CdEDBLog:
         """Get financial activity.
 
         Similar to
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        additional_columns = ["delta", "new_balance", "members", "total"]
-        return self.generic_retrieve_log(
-            rs, const.FinanceLogCodes, "persona", "cde.finance_log",
-            codes=codes, offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_columns=additional_columns,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        log_filter = affirm_dataclass(FinanceLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
     def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
@@ -147,6 +129,7 @@ class CdEBaseBackend(AbstractBackend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
+                    date = None
                     if note:
                         try:
                             date = datetime.datetime.strptime(
@@ -162,8 +145,9 @@ class CdEBaseBackend(AbstractBackend):
                     count += self.core.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
-                        change_note=note)
-                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                        change_note=note, transaction_date=date)
+                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                            and not personas[datum['persona_id']]['is_member']):
                         code = self.core.change_membership_easy_mode(
                             rs, datum['persona_id'], is_member=True)
                         memberships_gained += bool(code)
@@ -316,23 +300,21 @@ class CdEBaseBackend(AbstractBackend):
             EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
-                past_event.institutions
-                LEFT OUTER JOIN (
-                    SELECT id, institution, tempus FROM past_event.events
-                ) AS events ON events.institution = institutions.id
+                past_event.events
                 LEFT OUTER JOIN (
                     SELECT persona_id, pevent_id FROM past_event.participants
                 ) AS participants ON participants.pevent_id = events.id
             )
         WHERE
-            shortname = 'CdE'
+            institution = %s
         GROUP BY
             datum
         ORDER BY
             datum ASC
         """
         year_stats[n_("unique_participants_per_year")] = dict(
-            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+            (e['datum'], e['num']) for e in
+            self.query_all(rs, query, [const.PastInstitutions.main_insitution()]))
 
         return simple_stats, other_stats, year_stats
 
@@ -357,13 +339,17 @@ class CdEBaseBackend(AbstractBackend):
             return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
+            # We set membership separately to ensure correct logging.
             new_persona.update({
-                'is_member': True,
-                'trial_member': trial_membership,
+                'is_member': False,
+                'trial_member': False,
                 'paper_expuls': True,
+                'donation': decimal.Decimal(0),
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
+            self.core.change_membership_easy_mode(
+                rs, persona_id, is_member=True, trial_member=trial_membership)
             ret = True
         elif datum['resolution'].is_modification():
             ret = False
@@ -393,6 +379,7 @@ class CdEBaseBackend(AbstractBackend):
                     'decided_search': False,
                     'trial_member': False,
                     'paper_expuls': True,
+                    'donation': decimal.Decimal(0),
                     'bub_search': False,
                     'pronouns_nametag': False,
                     'pronouns_profile': False,
@@ -433,16 +420,9 @@ class CdEBaseBackend(AbstractBackend):
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 code = self.core.change_membership_easy_mode(
-                    rs, datum['doppelganger_id'], is_member=True)
+                    rs, datum['doppelganger_id'], is_member=True, trial_member=True)
                 # This will be true if the user was not a member before.
                 ret = bool(code)
-                update = {
-                    'id': datum['doppelganger_id'],
-                    'trial_member': True,
-                }
-                self.core.change_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
@@ -515,12 +495,13 @@ class CdEBaseBackend(AbstractBackend):
         return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
@@ -559,4 +540,4 @@ class CdEBaseBackend(AbstractBackend):
                     query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

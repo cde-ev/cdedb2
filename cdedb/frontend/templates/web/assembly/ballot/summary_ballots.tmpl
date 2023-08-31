@@ -1,0 +1,57 @@
+{% set sidenav_active='assembly_summary' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/assembly/ballot/_ballot_tallied.tmpl" as ballot_tallied with context %}
+{% import "web/assembly/ballot/_ballot_meta.tmpl" as ballot_meta with context %}
+{% block title %}{{ gettext("Summary") }} ({{ ambience['assembly']['title'] }}){% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Summary"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/summary_ballots"), gettext("Summary"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% if grouped_ballots.running %}
+        {{ util.h(n_("Current Ballots")) }}
+        <ul class="slim" id="running-ballots">
+            {{ ballot_meta.details_list(config_grouped, grouped_ballots.running) }}
+        </ul>
+
+    {% endif %}
+
+    {% if grouped_ballots.upcoming %}
+        {{ util.h(n_("Upcoming Ballots")) }}
+        <ul class="slim" id="upcoming-ballots">
+            {{ ballot_meta.details_list(config_grouped, grouped_ballots.upcoming) }}
+        </ul>
+    {% endif %}
+
+    {{ util.h(n_("Concluded Ballots")) }}
+    {% for ballot_id, ballot in grouped_ballots.concluded|keydictsort(EntitySorter.ballot) %}
+        {% set title = util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
+                                 ballot['title']) %}
+        {% call util.bootstrap_panel(title=title, icon='thumbs-up') %}
+        <div class="row">
+            <div class="col-md-7">
+                {{ ballot['description']|md }}
+                {% if ballot['comment'] %}
+                    <strong>{{ gettext("Comment:") }}</strong>
+                    {{ ballot['comment']|md }}
+                {% endif %}
+            </div>
+            <div class="col-md-5">{{ ballot_tallied.show_result(ballot, result[ballot_id], short=True) }}</div>
+        </div>
+        {% endcall %}
+    {% else %}
+        <p class="text-muted">
+            {% trans %}No ballots have been tallied yet.{% endtrans %}
+        </p>
+    {% endfor %}
+
+    {% if grouped_ballots.concluded %}
+        {{ ballot_tallied.explain_result(classical=True, preferential=True, use_bar=True) }}
+    {% endif %}
+
+{% endblock %}

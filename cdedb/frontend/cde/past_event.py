@@ -9,26 +9,25 @@ administrative tasks, like creating and modifying past events and courses requir
 
 import copy
 import csv
-import datetime
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
-import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
+from cdedb.common.validation.validate import (
+    PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS,
+)
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
-    calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
-    drow_name, process_dynamic_input,
+    check_validation as check, csv_output,
 )
 
 COURSESEARCH_DEFAULTS = {
@@ -78,65 +77,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         return self.render(rs, "past_event/past_course_search", {
             'spec': spec, 'result': result, 'count': count})
-
-    @access("cde_admin")
-    def institution_summary_form(self, rs: RequestState) -> Response:
-        """Render form."""
-        institution_ids = self.pasteventproxy.list_institutions(rs)
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids.keys())
-        sorted_institution_ids = [
-            e["id"] for e in xsorted(institutions.values(),
-                                     key=EntitySorter.institution)]
-        current = {
-            drow_name(field_name=key, entity_id=institution_id): value
-            for institution_id, institution in institutions.items()
-            for key, value in institution.items() if key != 'id'}
-        merge_dicts(rs.values, current)
-
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids.keys())
-        pevent_ids = self.pasteventproxy.list_past_events(rs)
-        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
-        referenced_institutions = {e['institution'] for e in events.values()}
-        referenced_institutions |= {p['institution'] for p in pevents.values()}
-
-        return self.render(rs, "past_event/institution_summary", {
-            "sorted_institution_ids": sorted_institution_ids,
-            "referenced_institutions": referenced_institutions})
-
-    @access("cde_admin", modi={"POST"})
-    def institution_summary(self, rs: RequestState) -> Response:
-        """Manipulate organisations which are behind events."""
-        institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': str, 'shortname': vtypes.Shortname}
-        institutions = process_dynamic_input(
-            rs, vtypes.Institution, institution_ids.keys(), spec)
-
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids.keys())
-        pevent_ids = self.pasteventproxy.list_past_events(rs)
-        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
-        referenced_institutions = {e['institution'] for e in events.values()}
-        referenced_institutions |= {p['institution'] for p in pevents.values()}
-
-        msg = n_("Institution is referenced and can not be deleted.")
-        for anid in referenced_institutions:
-            if institutions[anid] is None:
-                rs.append_validation_error((drow_name("title", anid), ValueError(msg)))
-        if rs.has_validation_errors():
-            return self.institution_summary_form(rs)
-
-        code = 1
-        for institution_id, institution in institutions.items():
-            if institution is None:
-                code *= self.pasteventproxy.delete_institution(
-                    rs, institution_id)
-            elif institution_id < 0:
-                code *= self.pasteventproxy.create_institution(rs, institution)
-            else:
-                code *= self.pasteventproxy.rcw_institution(rs, institution)
-        rs.notify_return_code(code)
-        return self.redirect(rs, "cde/institution_summary_form")
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
                               pcourse_id: int = None, orgas_only: bool = False
@@ -240,7 +180,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         fields: List[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields)
+        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
@@ -250,7 +190,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
-        institutions = self.pasteventproxy.list_institutions(rs)
         participants, personas, extra_participants = self._process_participants(
             rs, pevent_id)
         orgas, _, extra_orgas = self._process_participants(rs, pevent_id,
@@ -269,10 +208,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
         return self.render(rs, "past_event/show_past_event", {
-            'courses': courses, 'personas': personas, 'institutions': institutions,
-            'participants': participants, 'extra_participants': extra_participants,
-            'orgas': orgas, 'extra_orgas': extra_orgas,
-            'is_participant': is_participant,
+            'courses': courses, 'personas': personas, 'participants': participants,
+            'extra_participants': extra_participants, 'orgas': orgas,
+            'extra_orgas': extra_orgas, 'is_participant': is_participant,
         })
 
     @access("member", "cde_admin")
@@ -286,9 +224,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'extra_participants': extra_participants})
 
     @access("member", "cde_admin")
-    @REQUESTdata("institution_id")
-    def list_past_events(self, rs: RequestState, institution_id: vtypes.ID = None
-                         ) -> Response:
+    @REQUESTdata("institution")
+    def list_past_events(self, rs: RequestState,
+                         institution: const.PastInstitutions = None) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
@@ -299,11 +237,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
             self.pasteventproxy.get_past_events(rs, events).items()
         }
         stats = self.pasteventproxy.past_event_stats(rs)
-        institution_ids = self.pasteventproxy.list_institutions(rs)
-        if institution_id and institution_id not in institution_ids:
-            raise werkzeug.exceptions.NotFound(n_("Invalid institution id."))
-
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
 
         # Generate (reverse) chronologically sorted list of past event ids
         stats_sorter = xsorted(stats, key=lambda x: events[x])
@@ -312,8 +245,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         # Using idea from http://stackoverflow.com/a/8983196
         years: Dict[int, List[int]] = {}
         for anid in stats_sorter:
-            if institution_id \
-                    and stats[anid]['institution_id'] != institution_id:
+            if institution and stats[anid]['institution'] != institution:
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 
@@ -321,8 +253,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'events': events,
             'stats': stats,
             'years': years,
-            'institutions': institutions,
-            'institution_id': institution_id,
             'shortnames': shortnames,
         })
 
@@ -330,11 +260,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def change_past_event_form(self, rs: RequestState, pevent_id: int
                                ) -> Response:
         """Render form."""
-        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['pevent'])
-        return self.render(rs, "past_event/change_past_event", {
-            'institutions': institutions})
+        return self.render(rs, "past_event/change_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -353,10 +280,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
-        institution_ids = self.pasteventproxy.list_institutions(rs).keys()
-        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
-        return self.render(rs, "past_event/create_past_event", {
-            'institutions': institutions})
+        return self.render(rs, "past_event/create_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_EVENT_FIELDS)
@@ -408,7 +332,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
-            rs, pevent_id, cascade=("courses", "participants", "log"))
+            rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
@@ -468,7 +392,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
-            rs, pcourse_id, cascade=("participants",))
+            rs, pcourse_id, cascade=("participants", "genesis_cases"))
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
@@ -529,39 +453,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
+    @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "pevent_id")
-    def view_past_log(self, rs: RequestState,
-                      codes: Collection[const.PastEventLogCodes],
-                      pevent_id: Optional[vtypes.ID],
-                      offset: Optional[int],
-                      length: Optional[vtypes.PositiveInt],
-                      persona_id: Optional[vtypes.CdedbID],
-                      submitted_by: Optional[vtypes.CdedbID],
-                      change_note: Optional[str],
-                      time_start: Optional[datetime.datetime],
-                      time_stop: Optional[datetime.datetime]) -> Response:
+    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                      ) -> Response:
         """View activities concerning concluded events."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
-
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "past_event/view_past_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'pevents': pevents, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, data, PastEventLogFilter, self.pasteventproxy.retrieve_past_log,
+            download=download, template="past_event/view_past_log", template_kwargs={
+                'pevents': pevents,
+            },
+        )

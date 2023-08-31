@@ -21,7 +21,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Enter Money Transfers"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Enter Money Transfers"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}
@@ -29,7 +30,7 @@
         {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
-        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications")) }}
+        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications"), defaultvalue="True") }}
         {{ util.form_input_checkbox(name="full_payment", horizontal=False,
                 label=gettext("Set payment date for full payments only."), defaultvalue="True") }}
         {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers"),
@@ -141,7 +142,7 @@
             </p>
             {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate"), icon="chevron-right", horizontal=False) }}
         {% endif %}
     </form>
 {% endblock %}

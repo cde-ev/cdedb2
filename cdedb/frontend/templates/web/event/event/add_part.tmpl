@@ -26,14 +26,19 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname"), info=gettext("e.g. \"1.H\" or \"O1\".")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="fee", label=gettext("Event Part Fee"), anid="input-text-fee", addon='€') }}
-        {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
+        {{ util.form_input_text(name="fee", label=gettext("Fee"), type="number", addon='€') }}
+        {{ util.form_input_select(name="waitlist_field", entries=fields['waitlist_field'],
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
                                                               gettext("Waitlist")))|s
                                   ) }}
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"),
+                                  entries=fields['camping_mat_field'], nulloption=nbsp,
+                                  info=gettext("The custom field in which the participants’ "
+                                  "willingness to sleep on a camping mat will be saved. It is displayed on "
+                                  "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/part_summary")) }}
     </form>
 

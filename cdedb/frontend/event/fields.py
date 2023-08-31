@@ -20,8 +20,8 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import EVENT_FIELD_ALL_FIELDS
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import EVENT_FIELD_ALL_FIELDS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata, access, drow_name, event_guard, process_dynamic_input,
@@ -44,8 +44,13 @@ class EventFieldMixin(EventBaseFrontend):
             for field_id, field in rs.ambience['event']['fields'].items()
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
+        event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
+            rs, event_id).fields
+        locked = {
+            field_id
+            for field_id, fee_ids in event_fees_per_field.items() if fee_ids
+        }
         referenced = set()
-        fee_modifiers = set()
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
@@ -53,18 +58,16 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event']['lodge_field']:
             referenced.add(rs.ambience['event']['lodge_field'])
-        if rs.ambience['event']['camping_mat_field']:
-            referenced.add(rs.ambience['event']['camping_mat_field'])
-        if rs.ambience['event']['course_room_field']:
-            referenced.add(rs.ambience['event']['course_room_field'])
-        for mod in rs.ambience['event']['fee_modifiers'].values():
-            referenced.add(mod['field_id'])
-            fee_modifiers.add(mod['field_id'])
         for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
+            if part['camping_mat_field']:
+                referenced.add(part['camping_mat_field'])
+        for track in rs.ambience['event']['tracks'].values():
+            if track['course_room_field']:
+                referenced.add(track['course_room_field'])
         return self.render(rs, "fields/field_summary", {
-            'referenced': referenced, 'fee_modifiers': fee_modifiers})
+            'referenced': referenced, 'locked': locked})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -195,7 +198,9 @@ class EventFieldMixin(EventBaseFrontend):
                          kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
-            return self.render(rs, "fields/field_set_select")
+            # If the kind is invalid, we do not know where to redirect to.
+            # This should never happen without HTML manipulation, anyway.
+            return self.redirect(rs, "event/show_event")
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 

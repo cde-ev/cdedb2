@@ -16,20 +16,35 @@ from tests.common import (
 class TestPrivacyFrontend(FrontendTest):
 
     FIELD_TO_DIV = {
-        "Name": 'personal-information', "Geburtsname": 'personal-information',
+        "Name": 'personal-information',
+        "Geburtsname": 'personal-information',
         "Geburtsdatum": 'personal-information',
-        "Geschlecht": 'personal-information', "CdEDB-ID": 'account',
-        "Account aktiv": 'account', "Bereiche": 'account',
-        "Admin-Privilegien": 'account', "Admin-Notizen": 'account',
+        "Geschlecht": 'personal-information',
+        "Pronomen": 'personal-information',
+        "Pronomen auf Namensschild": 'personal-information',
+        "CdEDB-ID": 'account',
+        "Account aktiv": 'account',
+        "Bereiche": 'account',
+        "Admin-Privilegien": 'account',
+        "Admin-Notizen": 'account',
         "Gedruckter exPuls": 'paper-expuls',
-        "Mitgliedschaft": 'cde-membership', "Guthaben": 'cde-membership',
-        "Sichtbarkeit": 'cde-membership', "E-Mail": 'contact-information',
-        "Telefon": 'contact-information', "Mobiltelefon": 'contact-information',
-        "WWW": 'contact-information', "Adresse": 'address-information',
+        "Jährliche Spende": 'cde-membership',
+        "Mitgliedschaft": 'cde-membership',
+        "Guthaben": 'cde-membership',
+        "Zahlungsmethode": 'cde-membership',
+        "Sichtbarkeit": 'cde-membership',
+        "E-Mail": 'contact-information',
+        "Telefon": 'contact-information',
+        "Mobiltelefon": 'contact-information',
+        "WWW": 'contact-information',
+        "Adresse": 'address-information',
         "Zweitadresse": 'address-information',
-        "Fachgebiet": 'additional', "Schule, Uni, …": 'additional',
-        "Jahrgang, Matrikel, …": 'additional', "Interessen": 'additional',
-        "Sonstiges": 'additional', "Verg. Veranstaltungen": 'past-events',
+        "Fachgebiet": 'additional',
+        "Schule, Uni, …": 'additional',
+        "Jahrgang, Matrikel, …": 'additional',
+        "Interessen": 'additional',
+        "Verschiedenes": 'additional',
+        "Verg. Veranstaltungen": 'past-events',
         "VCard": 'vcard'
     }
 
@@ -64,7 +79,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_event_context_view(self, inspected: UserObject) -> Set[str]:
         expected = {
-            "Geburtsdatum", "Geschlecht", "Telefon", "Mobiltelefon", "Adresse"
+            "Geburtsdatum", "Geschlecht", "Pronomen", "Pronomen auf Namensschild",
+            "Telefon", "Mobiltelefon", "Adresse"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -85,7 +101,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
-            "Jahrgang, Matrikel, …", "Interessen", "Sonstiges",
+            "Jahrgang, Matrikel, …", "Interessen", "Verschiedenes",
             "Verg. Veranstaltungen", "VCard"
         }
         for field in expected:
@@ -97,8 +113,9 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
-            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
-            "Gedruckter exPuls"
+            "Geschlecht", "Pronomen", "Pronomen auf Namensschild", "Mitgliedschaft",
+            "Guthaben", "Sichtbarkeit", "Gedruckter exPuls", "Jährliche Spende",
+            "Zahlungsmethode"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -154,7 +171,8 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum", "VCard"
+            "Geschlecht", "Geburtsdatum", "VCard", "Pronomen",
+            "Pronomen auf Namensschild",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -451,14 +469,14 @@ class TestPrivacyFrontend(FrontendTest):
         #     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
         #                                        check_div=False)
 
-    @as_users("annika", "inga", "nina", "quintus", "viktor")
+    @as_users("annika", "ludwig", "nina", "quintus", "viktor")
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
             (64, 'janis', 'nina'),  # public
-            (65, 'janis', 'inga'),  # cdelokal
+            (65, 'janis', 'ludwig'),  # cdelokal
             (56, 'garcia', 'quintus'),  # team
             (9, 'garcia', 'annika'),  # event
             (5, 'kalif', 'viktor'),  # assembly
@@ -560,9 +578,6 @@ class TestPrivacyFrontend(FrontendTest):
         core = {
             USER_DICT['farin']['id'], USER_DICT['paul']['id']
         }
-        archive = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
-        }
         cde = {
             USER_DICT['farin']['id'], USER_DICT['quintus']['id']
         }
@@ -584,42 +599,40 @@ class TestPrivacyFrontend(FrontendTest):
                     self.get('/core/search/user')
                     self.assertTitle("Allgemeine Nutzerverwaltung")
                 else:
-                    self.get('/core/search/user', status="403 FORBIDDEN")
-                    self.assertTitle("403: Forbidden")
-
-                if self.user_in(*archive):
-                    self.get('/core/search/fulluser')
-                    self.assertTitle("Vollständige Nutzerverwaltung")
-                else:
-                    self.get('/core/search/fulluser', status="403 FORBIDDEN")
+                    self.get('/core/search/user',
+                             status="403 Zugriff auf CoreFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
                     self.assertTitle("CdE-Nutzerverwaltung")
                 else:
-                    self.get('/cde/search/user', status="403 FORBIDDEN")
+                    self.get('/cde/search/user',
+                             status="403 Zugriff auf CdeFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | event)):
                     self.get('/event/search/user')
                     self.assertTitle("Veranstaltungsnutzerverwaltung")
                 else:
-                    self.get('/event/search/user', status="403 FORBIDDEN")
+                    self.get('/event/search/user',
+                             status="403 Zugriff auf EventFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
                     self.assertTitle("Mailinglistennutzerverwaltung")
                 else:
-                    self.get('/ml/search/user', status="403 FORBIDDEN")
+                    self.get('/ml/search/user',
+                             status="403 Zugriff auf MlFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
                 if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
                     self.assertTitle("Versammlungsnutzerverwaltung")
                 else:
-                    self.get('/assembly/search/user', status="403 FORBIDDEN")
+                    self.get('/assembly/search/user',
+                             status="403 Zugriff auf AssemblyFrontend/* verweigert.")
                     self.assertTitle("403: Forbidden")
 
             if self.user:
@@ -656,7 +669,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... and then non-member
         self.traverse({'href': '/core/persona/2/membership/change'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
 
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']
@@ -674,7 +687,8 @@ class TestPrivacyFrontend(FrontendTest):
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
-            self.get('/cde/past/event/list', status="403 FORBIDDEN")
+            self.get('/cde/past/event/list',
+                     status="403 Zugriff auf CdEFrontend/* verweigert.")
         else:
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'Verg. Veranstaltungen'},
@@ -710,7 +724,8 @@ class TestPrivacyFrontend(FrontendTest):
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
-            self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")
+            self.get('/cde/past/event/1/course/2/show',
+                     status="403 Zugriff auf CdEFrontend/* verweigert.")
         else:
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'Verg. Veranstaltungen'},

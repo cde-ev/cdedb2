@@ -116,6 +116,15 @@ table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
     border-top-style: none ;
 }
+.aggregate-footer {
+    border-top: solid 2px #999;
+}
+.aggregate-footer>tr {
+    background-color: #f5f5f5;
+}
+.aggregate-footer>tr:hover {
+    background-color: #ffffff;
+}
 ul.slim {
     padding-left: 15px;
 }
@@ -156,6 +165,10 @@ ul.slim {
     border-left: solid 4px #3c763d;
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
+}
+.form-control-nosp {
+    /* negative help-block margin */
+    margin-bottom: -5px;
 }
 .help-block {
     margin-bottom: 6px;
@@ -522,7 +535,7 @@ body.development {
    and also used on the event course list */
 a.headerlink {
     margin-left: 10px;
-    display: inline-block;
+    display: inline;
     color: #777;
     text-decoration: none;
     opacity: 0;
@@ -587,7 +600,7 @@ span.result-separator, code.result-separator {
 }
 
 /* <details> are clickable, show a cursor */
-details {
+details summary {
     cursor: pointer;
 }
 
@@ -1082,7 +1095,7 @@ span.color-legend {
 }
 .heading-supplement {
     /* Subheading without to much space above */
-    margin-top: -10px;
+    margin-top: -9px;
 }
 .nowrap {
     white-space: nowrap;
@@ -1109,6 +1122,16 @@ span.color-legend {
 .btn-wrap {
     white-space: normal;
 }
+.btn-wrap.btn-icon {
+    position: relative;
+    padding-left: 31px;
+}
+.btn-wrap.btn-icon>.fa-fw {
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    left: 10px;
+}
 .clickable {
     cursor: pointer;
 }
@@ -1130,6 +1153,7 @@ ul.styleless {
 
 .list-button-float {
     float: right;
+    margin-left: 1em;
 }
 
 .clearfix-after::after {
@@ -1148,6 +1172,10 @@ ul.styleless {
 
 .clear-both {
     clear: both;
+}
+
+.flex-width {
+    width: fit-content;
 }
 
 /* Display icons in light gray. */

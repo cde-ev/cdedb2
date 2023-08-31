@@ -7,7 +7,7 @@ There are several subclasses in separate files which provide additional function
 related to more specific aspects or user management.
 
 All parts are combined together in the `CoreBackend` class via multiple inheritance,
-together with a handful of high-level methods, that use functionalities of multple
+together with a handful of high-level methods, that use functionalities of multiple
 backend parts.
 """
 import collections
@@ -20,14 +20,13 @@ from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, overload,
 )
 
-from passlib.hash import sha512_crypt
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
+    AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    inspect_validation as inspect, internal, singularize,
+    encrypt_password, inspect_validation as inspect, internal, singularize,
+    verify_password,
 )
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
@@ -42,8 +41,9 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, privilege_tier,
+    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
@@ -142,17 +142,8 @@ class CoreBaseBackend(AbstractBackend):
             return False
         return self.verify_password(password, password_hash)
 
-    @staticmethod
-    def verify_password(password: str, password_hash: str) -> bool:
-        """Central function, so that the actual implementation may be easily
-        changed.
-        """
-        return sha512_crypt.verify(password, password_hash)
-
-    @staticmethod
-    def encrypt_password(password: str) -> str:
-        """We currently use passlib for password protection."""
-        return sha512_crypt.hash(password)
+    verify_password = staticmethod(verify_password)
+    encrypt_password = staticmethod(encrypt_password)
 
     @staticmethod
     def create_fulltext(persona: CdEDBObject) -> str:
@@ -213,7 +204,8 @@ class CoreBaseBackend(AbstractBackend):
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
                     persona_id: Optional[int], delta: Optional[decimal.Decimal],
                     new_balance: Optional[decimal.Decimal],
-                    change_note: str = None) -> DefaultReturnCode:
+                    change_note: str = None, transaction_date: datetime.date = None,
+                    ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
         See
@@ -234,7 +226,8 @@ class CoreBaseBackend(AbstractBackend):
             "persona_id": persona_id,
             "delta": delta,
             "new_balance": new_balance,
-            "change_note": change_note
+            "change_note": change_note,
+            "transaction_date": transaction_date,
         }
         with Atomizer(rs):
             query = """
@@ -251,44 +244,62 @@ class CoreBaseBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
-    def retrieve_log(self, rs: RequestState,
-                     codes: Collection[const.CoreLogCodes] = None,
-                     offset: int = None, length: int = None,
-                     persona_id: int = None, submitted_by: int = None,
-                     change_note: str = None,
-                     time_start: datetime.datetime = None,
-                     time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.CoreLogCodes, "persona", "core.log", codes=codes,
-            offset=offset, length=length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
+        log_filter = affirm_dataclass(CoreLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(
-            self, rs: RequestState,
-            stati: Collection[const.MemberChangeStati] = None,
-            offset: int = None, length: int = None, persona_id: int = None,
-            submitted_by: int = None, change_note: str = None,
-            time_start: datetime.datetime = None,
-            time_stop: datetime.datetime = None,
-            reviewed_by: int = None) -> CdEDBLog:
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: ChangelogLogFilter
+                                ) -> CdEDBLog:
         """Get changelog activity.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        return self.generic_retrieve_log(
-            rs, const.MemberChangeStati, "persona", "core.changelog",
-            additional_columns=['automated_change'], codes=stati, offset=offset,
-            length=length, persona_id=persona_id, submitted_by=submitted_by,
-            reviewed_by=reviewed_by, change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
+        log_filter = affirm_dataclass(ChangelogLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
+
+    @staticmethod
+    @internal
+    def _get_changelog_inconsistencies(
+            persona: CdEDBObject, generation: CdEDBObject) -> List[str]:
+        """Helper to get actual inconsistencies between changelog and core.personas.
+
+        This is outlined to avoid duplicated calls to changelog_get_history and
+        get_total_persona in changelog_submit_change.
+
+        :returns: A list of inconsistent field names.
+        """
+        if generation['code'] != const.PersonaChangeStati.committed:
+            raise RuntimeError(n_("Given changelog generation must be committed."))
+        return [key for key in persona if persona[key] != generation[key]]
+
+    @access("persona")
+    def get_changelog_inconsistencies(self, rs: RequestState,
+                                      persona_id: int) -> Optional[List[str]]:
+        """Get inconsistencies between latest committed changelog entry and
+        core.personas.
+
+        If None is returned, there was no committed state in the changelog (which is
+        an error by itself).
+        If an empty list is returned, changelog and core.personas are consistent.
+
+        :returns: A list of inconsistent field names, an empty list or None.
+        """
+        with Atomizer(rs):
+            committed_generation = self.changelog_get_generation(
+                rs, persona_id, committed_only=True)
+            committed_state = unwrap(self.changelog_get_history(
+                rs, persona_id, generations=(committed_generation,)))
+            if not committed_state:
+                return None
+            persona = self.get_total_persona(rs, persona_id)
+        return self._get_changelog_inconsistencies(persona, committed_state)
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
@@ -317,36 +328,61 @@ class CoreBaseBackend(AbstractBackend):
         """
         with Atomizer(rs):
             # check for race
-            current_generation = unwrap(self.changelog_get_generations(
-                rs, (data['id'],)))
+            current_generation = self.changelog_get_generation(rs, data['id'])
             if generation is not None and current_generation != generation:
                 self.logger.info(f"Generation mismatch ({current_generation} !="
                                  f" {generation}) for {data['id']}")
                 return 0
 
-            # get current state
-            history = self.changelog_get_history(
-                rs, data['id'], generations=(current_generation,))
-            current_state = history[current_generation]
+            # The following tries to summarize the logic of this function to
+            # facilitate better understanding
+            #
+            # - if a pending change exists (current_state != committed_state)
+            #     - if we may not wait
+            #       => stash pending change in `diff`
+            #          (current_state == committed_state as if no pending change)
+            # - if no actual change (data == current_state)
+            #     - if stashed pending change: reenable
+            #     - if unstashed pending change exists and is admin:
+            #          an admin tried to submit identical change => resolve it
+            #     - return
+            # - determine review requirements
+            # - supersede potential pending changes
+            # - insert new changelog entry
+            # - if not requiring review: resolve
+            # - if stashed pending change: reinstate
+            #      (this can only happen if the resolve action was taken)
+
+            # latest state of the changelog which is either committed or pending
+            current_state = unwrap(self.changelog_get_history(
+                rs, data['id'], generations=(current_generation, )))
+            # latest state of the changelog which is committed
+            committed_generation = self.changelog_get_generation(
+                rs, data['id'], committed_only=True)
+            committed_state = unwrap(self.changelog_get_history(
+                rs, data['id'], generations=(committed_generation, )))
+            # state of the persona in core.personas
+            persona = self.get_total_persona(rs, data['id'])
+
+            # Die when committed_state and core.personas are inconsistent.
+            if not committed_state:
+                raise RuntimeError(n_("No committed state found."))
+            if self._get_changelog_inconsistencies(persona, committed_state):
+                raise RuntimeError(n_("Persona and Changelog are inconsistent."))
 
             # handle pending changes
             diff = None
-            if (current_state['code']
-                    == const.MemberChangeStati.pending):
-                committed_state = unwrap(self.get_total_personas(
-                    rs, (data['id'],)))
+            if current_state['code'] == const.PersonaChangeStati.pending:
                 # stash pending change if we may not wait
                 if not may_wait:
-                    diff = {key: current_state[key] for key in committed_state
-                            if committed_state[key] != current_state[key]}
-                    current_state.update(committed_state)
+                    diff = {key: current_state[key] for key in persona
+                            if persona[key] != current_state[key]}
+                    current_state.update(persona)
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND code = %s")
                     self.query_exec(rs, query, (
-                        const.MemberChangeStati.displaced, data['id'],
-                        const.MemberChangeStati.pending))
-            else:
-                committed_state = current_state
+                        const.PersonaChangeStati.displaced, data['id'],
+                        const.PersonaChangeStati.pending))
 
             # determine if something changed
             newly_changed_fields = {key for key, value in data.items()
@@ -356,39 +392,51 @@ class CoreBaseBackend(AbstractBackend):
                     # reenable old change if we were going to displace it
                     query = glue("UPDATE core.changelog SET code = %s",
                                  "WHERE persona_id = %s AND generation = %s")
-                    self.query_exec(rs, query, (const.MemberChangeStati.pending,
+                    self.query_exec(rs, query, (const.PersonaChangeStati.pending,
                                                 data['id'], current_generation))
+                elif (current_state != committed_state
+                        and self.is_relative_admin(rs, data['id'])):
+                    # if user is relative admin, set pending change as reviewed
+                    return self.changelog_resolve_change(
+                        rs, data['id'], current_generation, ack=True)
                 # We successfully made the data set match to the requested
-                # values. It's not our fault, that we didn't have to do any
-                # work.
+                # values. It's not our fault, that we didn't have to do any work.
+                # The change however may still be pending and awaiting review.
+                #
+                # The one case that's awkward here is that if a normal user
+                # first tries to update multiple attributes some of which
+                # require review causing a pending change and then tries in a
+                # second attempt to only change uncritical attributes to
+                # achieve an immediate resolve they will be stuck with the
+                # pending change.
+                rs.notify('info', n_("Nothing changed."))
                 return 1
-
             # Determine if something requiring a review changed.
             fields_requiring_review = {
                 "birthday", "family_name", "given_names", "birth_name",
                 "gender", "address_supplement", "address", "postal_code",
-                "location", "country",
+                "location", "country", "donation",
             }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
             requires_review = (
                     (all_changed_fields & fields_requiring_review
                      or (current_state['code']
-                         == const.MemberChangeStati.pending and not diff))
-                    and current_state['is_cde_realm']
-                    and not ({"core_admin", "cde_admin"} & rs.user.roles))
+                         == const.PersonaChangeStati.pending and not diff))
+                    and current_state['is_event_realm']
+                    and not self.is_relative_admin(rs, data['id']))
 
             # prepare for inserting a new changelog entry
             query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
                          "WHERE persona_id = %s")
             max_gen = unwrap(self.query_one(rs, query, (data['id'],))) or 1
             next_generation = max_gen + 1
-            # the following is a nop, if there is no pending change
+            # the following is a nop if there is no pending change
             query = glue("UPDATE core.changelog SET code = %s",
                          "WHERE persona_id = %s AND code = %s")
             self.query_exec(rs, query, (
-                const.MemberChangeStati.superseded, data['id'],
-                const.MemberChangeStati.pending))
+                const.PersonaChangeStati.superseded, data['id'],
+                const.PersonaChangeStati.pending))
 
             # insert new changelog entry
             insert = copy.deepcopy(current_state)
@@ -398,7 +446,7 @@ class CoreBaseBackend(AbstractBackend):
                 "reviewed_by": None,
                 "generation": next_generation,
                 "change_note": change_note,
-                "code": const.MemberChangeStati.pending,
+                "code": const.PersonaChangeStati.pending,
                 "persona_id": data['id'],
                 "automated_change": automated_change,
             })
@@ -429,7 +477,7 @@ class CoreBaseBackend(AbstractBackend):
                     "reviewed_by": None,
                     "generation": next_generation + 1,
                     "change_note": "Verdrängte Änderung.",
-                    "code": const.MemberChangeStati.pending,
+                    "code": const.PersonaChangeStati.pending,
                     "persona_id": data['id'],
                     "automated_change": automated_change,
                 })
@@ -446,7 +494,7 @@ class CoreBaseBackend(AbstractBackend):
         that the reviewers won't get plagued too much.
 
         :param ack: whether to commit or refuse the change
-        :param reviewed: Signals wether the change was reviewed. This exists,
+        :param reviewed: Signals whether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         """
         if not ack:
@@ -456,18 +504,18 @@ class CoreBaseBackend(AbstractBackend):
                 "WHERE persona_id = %s AND code = %s",
                 "AND generation = %s")
             return self.query_exec(rs, query, (
-                rs.user.persona_id, const.MemberChangeStati.nacked, persona_id,
-                const.MemberChangeStati.pending, generation))
+                rs.user.persona_id, const.PersonaChangeStati.nacked, persona_id,
+                const.PersonaChangeStati.pending, generation))
         with Atomizer(rs):
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(rs, persona_id,
                                                  generations=(generation,))
             data = history[generation]
-            if data['code'] != const.MemberChangeStati.pending:
+            if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
             setters = ["code = %s"]
-            params: List[Any] = [const.MemberChangeStati.committed]
+            params: List[Any] = [const.PersonaChangeStati.committed]
             if reviewed:
                 setters.append("reviewed_by = %s")
                 params.append(rs.user.persona_id)
@@ -486,47 +534,69 @@ class CoreBaseBackend(AbstractBackend):
             udata = {key: data[key] for key in relevant_keys}
             # commit changes
             ret = 0
-            if len(udata) > 1:
-                ret = self.commit_persona(
-                    rs, udata, change_note="Änderung eingetragen.")
+            if len(udata) == 1:
+                rs.notify('warning', n_("Change has reverted pending change."))
+                return 1
+            elif len(udata) > 1:
+                ret = self.commit_persona(rs, udata)
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
-    changelog_resolve_change = access("core_admin", "cde_admin")(
-        _changelog_resolve_change_unsafe)
+
+    @access("core_admin", "cde_admin", "event_admin")
+    def changelog_resolve_change(self, rs: RequestState, persona_id: int,
+                                 generation: int, ack: bool) -> DefaultReturnCode:
+        if not self.is_relative_admin(rs, persona_id):
+            raise PrivilegeError(n_("Not a relative admin."))
+        return self._changelog_resolve_change_unsafe(rs, persona_id, generation, ack)
 
     @access("persona")
-    def changelog_get_generations(self, rs: RequestState,
-                                  ids: Collection[int]) -> Dict[int, int]:
+    def changelog_get_generations(
+            self, rs: RequestState, ids: Collection[int], committed_only: bool = False
+    ) -> Dict[int, int]:
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
 
+        :param committed_only: Include only committed entries of the changelog.
         :returns: dict mapping ids to generations
         """
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM core.changelog WHERE persona_id = ANY(%s)",
                      "AND code = ANY(%s) GROUP BY persona_id")
-        valid_status = (const.MemberChangeStati.pending,
-                        const.MemberChangeStati.committed)
+        valid_status: Tuple[const.PersonaChangeStati, ...]
+        if committed_only:
+            valid_status = (const.PersonaChangeStati.committed, )
+        else:
+            valid_status = (const.PersonaChangeStati.pending,
+                            const.PersonaChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         return {e['persona_id']: e['generation'] for e in data}
 
     class _ChangelogGetGenerationProtocol(Protocol):
-        def __call__(self, rs: RequestState, anid: int) -> int: ...
+        def __call__(self, rs: RequestState, anid: int,
+                     committed_only: bool = False) -> int: ...
     changelog_get_generation: _ChangelogGetGenerationProtocol = singularize(
         changelog_get_generations)
 
-    @access("core_admin")
-    def changelog_get_changes(self, rs: RequestState,
-                              stati: Collection[const.MemberChangeStati]
-                              ) -> CdEDBObjectMap:
-        """Retrieve changes in the changelog."""
-        stati = affirm_set(const.MemberChangeStati, stati)
-        query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
-                     "generation, ctime",
-                     "FROM core.changelog WHERE code = ANY(%s)")
-        data = self.query_all(rs, query, (stati,))
-        # TDOD what if there are multiple entries for one persona???
+    @access("core_admin", "cde_admin", "event_admin")
+    def changelog_get_pending_changes(self, rs: RequestState) -> CdEDBObjectMap:
+        """Retrieve pending changes in the changelog.
+
+        Only show changes for realms the respective admin has access too."""
+        clearances = []
+        if 'core_admin' not in rs.user.roles:
+            for admin_role in {"cde_admin", "event_admin"}.intersection(rs.user.roles):
+                realm = admin_role.removesuffix("_admin")
+                higher_realms = implying_realms(realm)
+                clearance = f"is_{realm}_realm = TRUE"
+                for higher_realm in higher_realms:
+                    clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
+                clearances.append(clearance)
+        query = ("SELECT persona_id, given_names, display_name, family_name,"
+                 " generation, ctime FROM core.changelog WHERE code = %s")
+        if clearances:
+            query = query + " AND (" + " OR ".join(clearances) + ")"
+        data = self.query_all(rs, query, (const.PersonaChangeStati.pending,))
         return {e['persona_id']: e for e in data}
 
     @access("persona")
@@ -661,8 +731,7 @@ class CoreBaseBackend(AbstractBackend):
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
-    def commit_persona(self, rs: RequestState, data: CdEDBObject,
-                       change_note: Optional[str]) -> DefaultReturnCode:
+    def commit_persona(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Actually update a persona data set.
 
         This is the innermost layer of the changelog functionality and
@@ -672,8 +741,7 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = unwrap(self.retrieve_personas(
-                rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
+            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -714,7 +782,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         if not change_note:
             self.logger.info(f"No change note specified (persona_id={data['id']}).")
-            change_note = "Allgemeine Änderung"
+            change_note = "Allgemeine Änderung."
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])
@@ -735,7 +803,7 @@ class CoreBaseBackend(AbstractBackend):
             if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
-        if ("is_member" in data
+        if (("is_member" in data or "trial_member" in data)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):
             raise PrivilegeError(n_("Membership modification prevented."))
@@ -815,7 +883,9 @@ class CoreBaseBackend(AbstractBackend):
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
         change_note = affirm(str, change_note)
+        ret = 1
         with Atomizer(rs):
+            is_member = trial_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
                 tmp = self.get_total_persona(rs, data['id'])
@@ -823,14 +893,22 @@ class CoreBaseBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
-            ret = self.set_persona(
+                # We can not apply the desired state directly, since this would violate
+                #  our database integrity (but we also want to get the logs right), so
+                #  we stash the changes here and apply them later on.
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+            ret *= self.set_persona(
                 rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
-            if data.get('trial_member'):
-                ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note=change_note)
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                ret *= self.change_membership_easy_mode(
+                    rs, data['id'], is_member=is_member, trial_member=trial_member)
         return ret
 
     @access("persona")
@@ -1108,44 +1186,40 @@ class CoreBaseBackend(AbstractBackend):
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
                                change_note: str = None,
-                               trial_member: bool = None) -> DefaultReturnCode:
-        """Special modification function for monetary aspects.
-
-        :param trial_member: If not None, set trial membership to this.
-        """
+                               transaction_date: datetime.date = None
+                               ) -> DefaultReturnCode:
+        """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
         balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
-        trial_member = affirm_optional(bool, trial_member)
         change_note = affirm_optional(str, change_note)
+        transaction_date = affirm_optional(datetime.date, transaction_date)
         update: CdEDBObject = {
             'id': persona_id,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ("balance", "is_cde_realm", "trial_member")))
+            current = self.retrieve_persona(
+                rs, persona_id, ("balance", "is_cde_realm", "trial_member"))
             if not current['is_cde_realm']:
                 raise RuntimeError(
                     n_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
                 update['balance'] = balance
-            if trial_member is not None:
-                if current['trial_member'] != trial_member:
-                    update['trial_member'] = trial_member
-            if 'balance' in update or 'trial_member' in update:
+            if 'balance' in update:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
-                if 'balance' in update:
-                    self.finance_log(rs, log_code, persona_id,
-                                     balance - current['balance'], balance)
+                self.finance_log(
+                    rs, log_code, persona_id, balance - current['balance'], balance,
+                    transaction_date=transaction_date)
                 return ret
             else:
                 return 0
 
     @access("core_admin", "cde_admin")
-    def change_membership_easy_mode(self, rs: RequestState, persona_id: int,
-                                    is_member: bool) -> DefaultReturnCode:
+    def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
+                                    is_member: bool = None, trial_member: bool = None
+                                    ) -> DefaultReturnCode:
         """Special modification function for membership.
 
         This variant only works for easy cases, that is for gaining membership
@@ -1153,22 +1227,27 @@ class CoreBaseBackend(AbstractBackend):
         general case) the change_membership function from the cde-backend
         has to be used.
 
-        :param is_member: Desired target state of membership.
+        :param is_member: Desired target state of membership or None.
+        :param trial_member: Desired target state of trial membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm(bool, is_member)
-        update: CdEDBObject = {
-            'id': persona_id,
-            'is_member': is_member,
-        }
+        is_member = affirm_optional(bool, is_member)
+        trial_member = affirm_optional(bool, trial_member)
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
+            current = self.retrieve_persona(rs, persona_id, (
+                'is_member', 'balance', 'is_cde_realm', 'trial_member'))
+
+            # Determine the target state of (trial) membership
+            if trial_member is None:
+                trial_member = current['trial_member']
+            if is_member is None:
+                is_member = current['is_member']
+
+            # Do some sanity checks
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
-            if current['is_member'] == is_member:
-                return 0
-
+            if trial_member and not is_member:
+                raise ValueError(n_("Trial membership implies membership."))
             if not is_member:
                 # Peek at the CdE-realm, this is somewhat of a transgression,
                 # but sadly necessary duct tape to keep the whole thing working.
@@ -1177,20 +1256,40 @@ class CoreBaseBackend(AbstractBackend):
                 params = [persona_id]
                 if self.query_all(rs, query, params):
                     raise RuntimeError(n_("Active lastschrift permit found."))
-                delta = -current['balance']
-                new_balance = decimal.Decimal(0)
-                code = const.FinanceLogCodes.lose_membership
-                # Do not modify searchability.
-                update['balance'] = decimal.Decimal(0)
-            else:
-                delta = None
-                new_balance = None
-                code = const.FinanceLogCodes.gain_membership
+
+            # check if nothing changed at all
+            if (trial_member == current['trial_member']
+                    and is_member == current['is_member']):
+                rs.notify('info', n_("Nothing changed."))
+                return 1
+
+            update: CdEDBObject = {'id': persona_id, 'is_member': is_member,
+                                   'trial_member': trial_member}
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
                 allow_specials=("membership",))
-            self.finance_log(rs, code, persona_id, delta, new_balance)
+
+            # Perform logging
+            if is_member != current['is_member']:
+                if is_member:
+                    delta = None
+                    new_balance = None
+                    code = const.FinanceLogCodes.gain_membership
+                else:
+                    # Display this to be not surprised if you look at the finance log
+                    #  and observe the decreasing of the total balance
+                    delta = decimal.Decimal(0)
+                    new_balance = current["balance"]
+                    code = const.FinanceLogCodes.lose_membership
+                self.finance_log(rs, code, persona_id, delta, new_balance)
+            if trial_member != current['trial_member']:
+                if trial_member:
+                    code = const.FinanceLogCodes.start_trial_membership
+                else:
+                    code = const.FinanceLogCodes.end_trial_membership
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
+
         return ret
 
     @access("core_admin", "meta_admin")
@@ -1405,17 +1504,18 @@ class CoreBaseBackend(AbstractBackend):
             if any(not ls['revoked_at'] for ls in lastschrift):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
+                     " SET (iban, account_owner, account_address)"
+                     " = (%s, %s, %s)"
                      " WHERE persona_id = %s"
                      " AND revoked_at < now() - interval '14 month'")
             if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
+                self.query_exec(rs, query, ("", "", "", persona_id))
             #
-            # 3. Remove complicated attributes (membership, foto and password)
+            # 3. Remove complicated attributes ([trial] membership, foto and password)
             #
             if persona['is_member']:
-                code = self.change_membership_easy_mode(rs, persona_id, is_member=False)
+                code = self.change_membership_easy_mode(
+                    rs, persona_id, is_member=False, trial_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
@@ -1463,6 +1563,9 @@ class CoreBaseBackend(AbstractBackend):
                 'title': None,
                 'name_supplement': None,
                 # 'gender' kept for later recognition
+                'pronouns': None,
+                'pronouns_profile': False,
+                'pronouns_nametag': False,
                 # 'birthday' kept for later recognition
                 'telephone': None,
                 'mobile': None,
@@ -1484,8 +1587,9 @@ class CoreBaseBackend(AbstractBackend):
                 'interests': None,
                 'free_form': None,
                 'balance': 0 if persona['balance'] is not None else None,
+                'donation': 0 if persona['donation'] is not None else None,
                 'decided_search': False,
-                'trial_member': False,
+                # 'trial_member' already adjusted
                 'bub_search': False,
                 'paper_expuls': True,
                 # 'foto' already adjusted
@@ -1508,7 +1612,7 @@ class CoreBaseBackend(AbstractBackend):
                 "FROM event.registrations as reg ",
                 "JOIN event.events as event ON reg.event_id = event.id",
                 "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s"
+                "WHERE reg.persona_id = %s",
                 "GROUP BY persona_id")
             max_end = self.query_one(rs, query, (persona_id,))
             if max_end and max_end['m'] and max_end['m'] >= now().date():
@@ -1548,6 +1652,11 @@ class CoreBaseBackend(AbstractBackend):
             #
             self.sql_delete(rs, "core.log", (persona_id,), "persona_id")
             # finance log stays untouched to keep balance correct
+            # therefore, we log if the persona had any remaining balance
+            if persona["balance"]:
+                log_code = const.FinanceLogCodes.remove_balance_on_archival
+                self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
+                                 new_balance=decimal.Decimal("0"))
             self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle
@@ -1724,7 +1833,7 @@ class CoreBaseBackend(AbstractBackend):
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
 
-    @access("event", "droid_quick_partial_export")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
                         event_id: int = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
@@ -1744,21 +1853,15 @@ class CoreBaseBackend(AbstractBackend):
         # all event users who are related to their event) or 'participant'
         # of the requested event (to get access to all event users who are also
         # 'participant' at the same event).
-        #
-        # This is a bit of a transgression since we access the event
-        # schema from the core backend, but we go for security instead of
-        # correctness here.
+        is_orga = False
         if event_id:
-            orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
-                    " AND event_id = %s")
-            is_orga = bool(
-                self.query_all(rs, orga, (rs.user.persona_id, event_id)))
-        else:
-            is_orga = False
+            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin",
                             "droid_quick_partial_export"})):
+            # Accessing the event scheme from the core backend is a bit of a
+            # transgression, but we value the added security higher than correctness.
             query = """
                 SELECT DISTINCT
                     regs.id, regs.persona_id
@@ -1976,11 +2079,18 @@ class CoreBaseBackend(AbstractBackend):
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
         with Atomizer(rs):
+            is_member = trial_member = None
+            if data.get('is_cde_realm'):
+                # For the sake of correct logging, we stash these as changes
+                is_member = data.get('is_member')
+                trial_member = data.get('trial_member')
+                data['is_member'] = data['trial_member'] = False
+
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
                 "submitted_by": submitted_by or rs.user.persona_id,
                 "generation": 1,
-                "code": const.MemberChangeStati.committed,
+                "code": const.PersonaChangeStati.committed,
                 "persona_id": new_id,
                 "change_note": "Account erstellt.",
             })
@@ -1989,6 +2099,11 @@ class CoreBaseBackend(AbstractBackend):
             del data['fulltext']
             self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
+
+            # apply the previously stashed changes
+            if is_member or trial_member:
+                self.change_membership_easy_mode(
+                    rs, new_id, is_member=is_member, trial_member=trial_member)
         return new_id
 
     @access("anonymous")
@@ -2211,7 +2326,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def verify_existence(self, rs: RequestState, email: str,
                          include_genesis: bool = True) -> bool:
-        """Check wether a certain email belongs to any persona."""
+        """Check whether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         num = unwrap(self.query_one(rs, query, (email,))) or 0
@@ -2569,19 +2684,20 @@ class CoreBaseBackend(AbstractBackend):
                 ret = self.sql_insert(rs, "core.cron_store", update)
         return ret
 
-    def _submit_general_query(self, rs: RequestState,
-                              query: Query) -> Tuple[CdEDBObject, ...]:
+    def _submit_general_query(self, rs: RequestState, query: Query,
+                              aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))
         elif query.scope == QueryScope.all_core_users:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
     submit_general_query = access("core_admin")(_submit_general_query)
 
     @access("persona")

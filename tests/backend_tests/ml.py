@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
 # pylint: disable=protected-access,missing-module-docstring
 
-from typing import Collection, Set, cast
+from typing import Collection, cast
 
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction as SA
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
+import cdedb.models.ml as models_ml
 from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.database.constants import SubscriptionState as SS
+from cdedb.uncommon.submanshim import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
 class TestMlBackend(BackendTest):
     used_backends = ("core", "ml")
+
+    @staticmethod
+    def as_id(anid: int) -> vtypes.ID:
+        return vtypes.ID(vtypes.ProtoID(anid))
+
+    @staticmethod
+    def as_creation_id(anid: int) -> vtypes.CreationID:
+        return vtypes.CreationID(vtypes.ProtoID(anid))
 
     @as_users("janis")
     def test_basics(self) -> None:
@@ -77,7 +87,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(berta_new_mod, berta_mod | janis_mod)
 
         # check the logs
-        expectation = (10, (
+        expectation = (
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
@@ -147,8 +157,9 @@ class TestMlBackend(BackendTest):
              'id': 1010,
              'mailinglist_id': 63,
              'persona_id': 2,
-             'submitted_by': 1}))
-        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+             'submitted_by': 1},
+        )
+        self.assertLogEqual(expectation, realm="ml")
 
         # assure janis is archived
         janis = self.core.get_persona(self.key, janis_id)
@@ -186,6 +197,7 @@ class TestMlBackend(BackendTest):
             64: 'Das Leben, das Universum ...',
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
+            67: 'Globaler Unsinn',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -193,90 +205,84 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
         expectation = {
-            3: {'local_part': 'witz',
-                'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'witz@lists.cde-ev.de',
-                'description': "Einer geht noch ...",
-                'assembly_id': None,
-                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
-                'event_id': None,
-                'id': 3,
-                'is_active': True,
-                'maxsize': 2048,
-                'ml_type': const.MailinglistTypes.general_opt_in.value,
-                'ml_type_class': ml_type.GeneralOptInMailinglist,
-                'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 3, 10},
-                'registration_stati': [],
-                'subject_prefix': 'witz',
-                'title': 'Witz des Tages',
-                'notes': None,
-                'whitelist': set()},
-            5: {'local_part': 'kongress',
-                'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'kongress@lists.cde-ev.de',
-                'description': None,
-                'assembly_id': 1,
-                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
-                'event_id': None,
-                'id': 5,
-                'is_active': True,
-                'maxsize': 1024,
-                'ml_type': const.MailinglistTypes.assembly_associated.value,
-                'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
-                'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 23},
-                'registration_stati': [],
-                'subject_prefix': 'kampf',
-                'title': 'Sozialistischer Kampfbrief',
-                'notes': None,
-                'whitelist': set()},
-            7: {'local_part': 'aktivenforum',
-                'domain': const.MailinglistDomain.lists,
-                'domain_str': 'lists.cde-ev.de',
-                'address': 'aktivenforum@lists.cde-ev.de',
-                'description': None,
-                'assembly_id': None,
-                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
-                'event_id': None,
-                'id': 7,
-                'is_active': True,
-                'maxsize': 1024,
-                'ml_type': const.MailinglistTypes.member_opt_in.value,
-                'ml_type_class': ml_type.MemberOptInMailinglist,
-                'mod_policy': const.ModerationPolicy.non_subscribers.value,
-                'moderators': {2, 10},
-                'registration_stati': [],
-                'subject_prefix': 'aktivenforum',
-                'title': 'Aktivenforum 2001',
-                'notes': None,
-                'whitelist': {'aliens@example.cde',
-                              'captiankirk@example.cde',
-                              'drwho@example.cde'}}}
+            3: models_ml.GeneralOptInMailinglist(
+                local_part=vtypes.EmailLocalPart('witz'),
+                domain=const.MailinglistDomain.lists,
+                description="Einer geht noch ...",
+                attachment_policy=const.AttachmentPolicy.pdf_only,
+                convert_html=True,
+                id=self.as_id(3),
+                is_active=True,
+                maxsize=vtypes.PositiveInt(2048),
+                additional_footer=None,
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                moderators={self.as_id(2), self.as_id(3), self.as_id(10)},
+                subject_prefix='witz',
+                title='Witz des Tages',
+                notes=None,
+                whitelist=set()),
+            5: models_ml.AssemblyAssociatedMailinglist(
+                local_part=vtypes.EmailLocalPart('kongress'),
+                domain=const.MailinglistDomain.lists,
+                description=None,
+                assembly_id=self.as_id(1),
+                attachment_policy=const.AttachmentPolicy.pdf_only,
+                convert_html=True,
+                id=self.as_id(5),
+                is_active=True,
+                maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                moderators={self.as_id(2), self.as_id(23)},
+                subject_prefix='kampf',
+                title='Sozialistischer Kampfbrief',
+                notes=None,
+                whitelist=set()),
+            7: models_ml.MemberOptInMailinglist(
+                local_part=vtypes.EmailLocalPart('aktivenforum'),
+                domain=const.MailinglistDomain.lists,
+                description=None,
+                attachment_policy=const.AttachmentPolicy.pdf_only,
+                convert_html=True,
+                id=self.as_id(7),
+                is_active=True,
+                maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                moderators={self.as_id(2), self.as_id(10)},
+                subject_prefix='aktivenforum',
+                title='Aktivenforum 2001',
+                notes=None,
+                whitelist={vtypes.Email('aliens@example.cde'),
+                           vtypes.Email('captiankirk@example.cde'),
+                           vtypes.Email('drwho@example.cde')})}
         self.assertEqual(expectation,
                          self.ml.get_mailinglists(self.key, (3, 5, 7)))
         setter = {
             'id': 7,
             'maxsize': 3096,
             'domain': const.MailinglistDomain.lists,
-            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
             'is_active': False,
             'local_part': 'passivenforum',
             'notes': "this list is no more",
         }
-        expectation = expectation[7]
+        moderators = expectation[7].moderators
+        whitelist = expectation[7].whitelist
+        expectation = expectation[7].to_database()
         expectation.update(setter)
-        expectation['ml_type_class'] = ml_type.MemberModeratedOptInMailinglist
-        expectation['address'] = ml_type.get_full_address(expectation)
+        self.ml.change_ml_type(
+            self.key, 7, const.MailinglistTypes.member_moderated_opt_in)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
-        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
+        # we need moderators and whitelist to construct the dataclass
+        expectation["moderators"] = moderators
+        expectation["whitelist"] = whitelist
+        self.assertEqual(models_ml.MemberModeratedOptInMailinglist(**expectation),
+                         self.ml.get_mailinglist(self.key, 7))
 
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:
         self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
-                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65})
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65, 67})
 
     @as_users("janis")
     def test_double_link(self) -> None:
@@ -285,41 +291,36 @@ class TestMlBackend(BackendTest):
             'event_id': 1,
             'assembly_id': 1
         }
-        with self.assertRaises(ValueError):
+        with self.assertRaises(KeyError):
             self.ml.set_mailinglist(self.key, setter)
 
     @as_users("nina")
     def test_mailinglist_creation_deletion(self) -> None:
         oldlists = self.ml.list_mailinglists(self.key)
-        new_data = {
-            'local_part': 'revolution',
-            'domain': const.MailinglistDomain.lists,
-            'description': 'Vereinigt Euch',
-            'assembly_id': None,
-            'attachment_policy': const.AttachmentPolicy.forbid,
-            'event_id': None,
-            'is_active': True,
-            'maxsize': None,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'moderators': {1, 2},
-            'registration_stati': [],
-            'subject_prefix': 'viva la revolution',
-            'title': 'Proletarier aller Länder',
-            'notes': "secrecy is important",
-            'ml_type': const.MailinglistTypes.member_invitation_only,
-        }
+        new_data = models_ml.MemberInvitationOnlyMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart('revolution'),
+            domain=const.MailinglistDomain.lists,
+            description='Vereinigt Euch',
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=False,
+            is_active=True,
+            maxsize=None,
+            additional_footer=None,
+            mod_policy=const.ModerationPolicy.unmoderated,
+            moderators={self.as_id(1), self.as_id(2)},
+            whitelist=set(),
+            subject_prefix='viva la revolution',
+            title='Proletarier aller Länder',
+            notes="secrecy is important",
+        )
         new_id = self.ml.create_mailinglist(self.key, new_data)
-        new_data['whitelist'] = set()
         self.assertLess(0, new_id)
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
-        new_data['id'] = new_id
-        new_data['address'] = ml_type.get_full_address(new_data)
-        new_data['domain_str'] = new_data['domain'].display_str()  # type: ignore[attr-defined]
-        atype = new_data['ml_type']
-        assert isinstance(atype, const.MailinglistTypes)
-        new_data['ml_type_class'] = ml_type.get_type(atype)
-        self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
+        expectation = new_data
+        expectation.id = self.as_id(new_id)
+        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
@@ -327,59 +328,48 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
-        new_data = {
-            'local_part': 'revolution',
-            'domain': const.MailinglistDomain.lists,
-            'description': 'Vereinigt Euch',
-            'attachment_policy': const.AttachmentPolicy.forbid,
-            'is_active': True,
-            'maxsize': None,
-            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'moderators': {2, 9},
-            'notes': None,
-            'subject_prefix': 'viva la revolution',
-            'title': 'Proletarier aller Länder',
-        }
+        new_data = models_ml.MemberModeratedOptInMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart('revolution'),
+            domain=const.MailinglistDomain.lists,
+            description='Vereinigt Euch',
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            is_active=True,
+            maxsize=None,
+            additional_footer=None,
+            mod_policy=const.ModerationPolicy.unmoderated,
+            moderators={self.as_id(2), self.as_id(9)},
+            whitelist=set(),
+            notes=None,
+            subject_prefix='viva la revolution',
+            title='Proletarier aller Länder',
+        )
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        assert isinstance(new_data['moderators'], Set)  # pylint: disable=isinstance-second-argument-not-valid-type
-        new_data['moderators'] |= {100000}
+        new_data.moderators |= {self.as_id(100000)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data['moderators'] -= {100000}
+        new_data.moderators -= {self.as_id(100000)}
         # Hades is archived.
-        new_data['moderators'] |= {8}
+        new_data.moderators |= {self.as_id(8)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data['moderators'] -= {8}
-        assert isinstance(new_data['local_part'], str)
-        new_data['local_part'] += "x"
-        new_data['registration_stati'] = [const.RegistrationPartStati.guest]
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data['registration_stati'] = []
+        new_data.moderators -= {self.as_id(8)}
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['local_part'] += "x"
-        new_data['whitelist'] = "datenbank@example.cde"
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = vtypes.Email("datenbank@example.cde")  # type: ignore[assignment]
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data['local_part'] += "x"
-        new_data['whitelist'] = ["datenbank@example.cde"]
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = {vtypes.Email("datenbank@example.cde")}
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['local_part'] += "x"
-        new_data['whitelist'] = []
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
+        new_data.whitelist = set()
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['local_part'] += "x"
-        new_data['event_id'] = 1
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data['event_id'] = None
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['local_part'] += "x"
-        new_data['assembly_id'] = 1
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data['assembly_id'] = None
+        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
     @as_users("nina")
@@ -403,45 +393,39 @@ class TestMlBackend(BackendTest):
             {
                 'id': mailinglist_id,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_associated,
                 'title': 'Hallo Welt',
             },
             {
                 'id': mailinglist_id,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_associated,
                 'local_part': 'alternativ',
             },
             {
                 'id': mailinglist_id,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_associated,
                 'is_active': False,
             },
             {
                 'id': mailinglist_id,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_associated,
                 'event_id': 1,
                 'registration_stati': [],
             },
             {
                 'id': mailinglist_id,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_orga,
                 'event_id': None,
-                'registration_stati': [],
             },
         ]
 
         restricted_mod_mdata = {
             'id': mailinglist_id,
             'domain': const.MailinglistDomain.aka,
-            'ml_type': const.MailinglistTypes.event_associated,
             'description': "Nice one",
             'notes': "Blabediblubblabla",
             'mod_policy': const.ModerationPolicy.unmoderated,
             'attachment_policy': const.AttachmentPolicy.allow,
+            'convert_html': True,
             'subject_prefix': 'Aufbruch',
             'maxsize': 101,
         }
@@ -449,11 +433,11 @@ class TestMlBackend(BackendTest):
         full_mod_mdata = {
             'id': mailinglist_id,
             'domain': const.MailinglistDomain.aka,
-            'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.applied],
         }
 
-        expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
+        original = self.ml.get_mailinglist(self.key, mailinglist_id)
+        expectation = original.to_database()
 
         for data in admin_mdatas:
             # admins may change any attribute of a mailinglist
@@ -463,6 +447,19 @@ class TestMlBackend(BackendTest):
             else:
                 with self.assertRaises(PrivilegeError):
                     self.ml.set_mailinglist(self.key, data)
+
+        # only admins may change the ml_type
+        if self.user_in('nina'):
+            self.assertLess(0, self.ml.change_ml_type(
+                self.key, mailinglist_id, const.MailinglistTypes.event_orga))
+            # revert the change for the following test
+            self.assertLess(0, self.ml.change_ml_type(
+                self.key, mailinglist_id, const.MailinglistTypes.event_associated,
+                update={"registration_stati": [const.RegistrationPartStati.applied]}))
+        else:
+            with self.assertRaises(PrivilegeError):
+                self.ml.change_ml_type(
+                    self.key, mailinglist_id, const.MailinglistTypes.event_orga)
 
         # every moderator may change these attributes ...
         expectation.update(restricted_mod_mdata)
@@ -476,12 +473,11 @@ class TestMlBackend(BackendTest):
             expectation.update(full_mod_mdata)
             self.assertLess(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
 
-        if self.user_in('nina'):
-            # adjust address form changed local part
-            expectation['address'] = 'alternativ@aka.cde-ev.de'
-
+        # we need the moderators and whitelist to construct the dataclass
+        expectation["moderators"] = original.moderators
+        expectation["whitelist"] = original.whitelist
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
-        self.assertEqual(expectation, reality)
+        self.assertEqual(models_ml.EventAssociatedMailinglist(**expectation), reality)
 
     @as_users("nina", "berta", "paul", "quintus")
     def test_subscriptions(self) -> None:
@@ -501,7 +497,8 @@ class TestMlBackend(BackendTest):
             53: SS.subscribed,
             54: SS.pending,
             59: SS.implicit,
-            63: SS.subscribed
+            63: SS.subscribed,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -549,6 +546,7 @@ class TestMlBackend(BackendTest):
             54: SS.unsubscription_override,
             56: SS.pending,
             61: SS.implicit,
+            67: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
@@ -597,7 +595,7 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
             }
             _, log_entries = self.ml.retrieve_log(
-                self.key, mailinglist_ids=[mailinglist_id])
+                self.key, MlLogFilter(mailinglist_id=mailinglist_id))
             # its a bit annoying to check always the correct log id
             log_entries = [{k: v for k, v in log.items()
                             if k not in {'id', 'submitted_by'}}
@@ -986,7 +984,6 @@ class TestMlBackend(BackendTest):
             'id': ml_id,
             'event_id': 2,
             'domain': const.MailinglistDomain.aka,
-            'ml_type': const.MailinglistTypes.event_associated,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1041,7 +1038,10 @@ class TestMlBackend(BackendTest):
                          state=SS.subscribed)
 
         ml_id = 66
-        assembly_id = self.ml.get_mailinglist(self.key, ml_id)["assembly_id"]
+        assembly_ml = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(assembly_ml, models_ml.AssemblyAssociatedMailinglist)
+        assembly_id = assembly_ml.assembly_id
+        assert assembly_id is not None
 
         expectation = {
             23: SS.implicit,
@@ -1206,7 +1206,7 @@ class TestMlBackend(BackendTest):
 
         # Check that this has been logged
         _, log_entries = self.ml.retrieve_log(
-            self.key, mailinglist_ids=[mailinglist_id])
+            self.key, MlLogFilter(mailinglist_id=mailinglist_id))
         expected_log = {
             'id': 1001,
             'change_note': None,
@@ -1305,39 +1305,33 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina")
     def test_change_sub_policy(self) -> None:
-        mdata = {
-            'local_part': 'revolution',
-            'domain': const.MailinglistDomain.lists,
-            'description': 'Vereinigt Euch',
-            'assembly_id': None,
-            'attachment_policy': const.AttachmentPolicy.forbid,
-            'event_id': None,
-            'is_active': True,
-            'maxsize': None,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'moderators': {2},
-            'registration_stati': [],
-            'subject_prefix': 'viva la revolution',
-            'title': 'Proletarier aller Länder',
-            'notes': "secrecy is important",
-            'whitelist': {
-                'fidel@example.cde',
-                'che@example.cde',
+        data = models_ml.MemberInvitationOnlyMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart('revolution'),
+            domain=const.MailinglistDomain.lists,
+            description='Vereinigt Euch',
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=False,
+            is_active=True,
+            maxsize=None,
+            additional_footer=None,
+            mod_policy=const.ModerationPolicy.unmoderated,
+            moderators={self.as_id(2)},
+            subject_prefix='viva la revolution',
+            title='Proletarier aller Länder',
+            notes="secrecy is important",
+            whitelist={
+                vtypes.Email('fidel@example.cde'),
+                vtypes.Email('che@example.cde'),
             },
-            'ml_type': const.MailinglistTypes.member_invitation_only,
-        }
-        new_id = self.ml.create_mailinglist(self.key, mdata)
+        )
+        new_id = self.ml.create_mailinglist(self.key, data)
 
         # List should have no subscribers.
         self.assertEqual({}, self.ml.get_subscription_states(self.key, new_id))
 
         # Making the list Opt-Out should yield implicits subscribers.
-        mdata = {
-            'id': new_id,
-            'domain': const.MailinglistDomain.lists,
-            'ml_type': const.MailinglistTypes.member_opt_out,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
+        self.ml.change_ml_type(self.key, new_id, const.MailinglistTypes.member_opt_out)
 
         expectation = {
             1: SS.implicit,
@@ -1395,12 +1389,8 @@ class TestMlBackend(BackendTest):
 
         # Making the list mandatory should get rid of all unsubscriptions, even
         # outside of the audience.
-        mdata = {
-            'id': new_id,
-            'domain': const.MailinglistDomain.lists,
-            'ml_type': const.MailinglistTypes.member_mandatory,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
+        self.ml.change_ml_type(
+            self.key, new_id, const.MailinglistTypes.member_mandatory)
 
         expectation = {
             1: SS.implicit,
@@ -1417,24 +1407,25 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina")
     def test_change_mailinglist_association(self) -> None:
-        mdata = {
-            'local_part': 'orga',
-            'domain': const.MailinglistDomain.aka,
-            'description': None,
-            'assembly_id': None,
-            'attachment_policy': const.AttachmentPolicy.forbid,
-            'event_id': 2,
-            'is_active': True,
-            'maxsize': None,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'moderators': {2},
-            'registration_stati': [],
-            'subject_prefix': 'orga',
-            'title': 'Orgateam',
-            'notes': None,
-            'ml_type': const.MailinglistTypes.event_orga,
-        }
-        new_id = self.ml.create_mailinglist(self.key, mdata)
+        data = models_ml.EventOrgaMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart('orga'),
+            domain=const.MailinglistDomain.aka,
+            description=None,
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            event_id=self.as_id(2),
+            is_active=True,
+            maxsize=None,
+            additional_footer=None,
+            mod_policy=const.ModerationPolicy.unmoderated,
+            moderators={self.as_id(2)},
+            whitelist=set(),
+            subject_prefix='orga',
+            title='Orgateam',
+            notes=None,
+        )
+        new_id = self.ml.create_mailinglist(self.key, data)
 
         expectation = {
             1: SS.implicit,
@@ -1448,7 +1439,6 @@ class TestMlBackend(BackendTest):
             'id': new_id,
             'event_id': 1,
             'domain': const.MailinglistDomain.aka,
-            'ml_type': const.MailinglistTypes.event_orga,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1461,10 +1451,11 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'domain': const.MailinglistDomain.aka,
-            'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.guest,
                                    const.RegistrationPartStati.cancelled],
         }
+        self.ml.change_ml_type(
+            self.key, new_id, const.MailinglistTypes.event_associated)
         self.ml.set_mailinglist(self.key, mdata)
 
         expectation = {
@@ -1477,10 +1468,11 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'domain': const.MailinglistDomain.lists,
-            'ml_type': const.MailinglistTypes.assembly_associated,
-            'event_id': None,
             'assembly_id': 1,
         }
+        self.ml.change_ml_type(
+            self.key, new_id, const.MailinglistTypes.assembly_associated,
+            update={"domain": const.MailinglistDomain.lists})
         self.ml.set_mailinglist(self.key, mdata)
 
         expectation = {
@@ -1493,6 +1485,34 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
+
+    @as_users("nina")
+    def test_change_ml_type(self) -> None:
+        ml_id = 59
+        expectation = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(expectation, models_ml.EventOrgaMailinglist)
+
+        # no changes if the type does not change
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.event_orga))
+        self.assertEqual(expectation, self.ml.get_mailinglist(self.key, ml_id))
+
+        # no requirements to update non-mandatory fields, keep shared optional fields
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.event_associated))
+        event_associated = self.ml.get_mailinglist(self.key, ml_id)
+        assert isinstance(event_associated, models_ml.EventAssociatedMailinglist)
+        self.assertEqual([], event_associated.registration_stati)
+        self.assertEqual(expectation.event_id, event_associated.event_id)
+
+        # preserve data integrity
+        with self.assertRaises(ValueError) as e:
+            self.ml.change_ml_type(
+                self.key, ml_id, const.MailinglistTypes.assembly_associated)
+        self.assertIn("Invalid domain", str(e.exception))
+        self.assertLess(0, self.ml.change_ml_type(
+            self.key, ml_id, const.MailinglistTypes.assembly_associated,
+            update={"domain": const.MailinglistDomain.lists}))
 
     @as_users("nina", "janis")
     def test_subscription_addresses(self) -> None:
@@ -1665,9 +1685,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
         data = [
             {
                 'mailinglist_id': 2,
@@ -1702,9 +1724,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1732,9 +1756,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1758,9 +1784,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         datum = {
             'mailinglist_id': 4,
@@ -1784,9 +1812,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1813,9 +1843,11 @@ class TestMlBackend(BackendTest):
             61: SS.implicit,
             63: SS.subscribed,
             64: SS.subscribed,
+            67: SS.implicit,
         }
-        self.assertEqual(expectation,
-                         self.ml.get_user_subscriptions(self.key, persona_id=9))
+        self.assertEqual(
+            expectation,
+            self.ml.get_user_subscriptions(self.key, persona_id=self.user['id']))
 
     @as_users("inga")
     def test_request_cancellation(self) -> None:
@@ -1849,23 +1881,26 @@ class TestMlBackend(BackendTest):
     def test_relevant_admins(self) -> None:
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
-            mldata = {
-                'local_part': "cyber",
-                'domain': const.MailinglistDomain.aka,
-                'description': "Für alle, die nicht ohne Akademien können.",
-                'event_id': None,
-                'ml_type': const.MailinglistTypes.event_associated,
-                'is_active': True,
-                'attachment_policy': const.AttachmentPolicy.forbid,
-                'maxsize': None,
-                'moderators': {self.user['id']},
-                'subject_prefix': "cyber",
-                'title': "CyberAka",
-                'mod_policy': const.ModerationPolicy.non_subscribers,
-                'notes': None,
-                'registration_stati': [],
-            }
-            new_id = self.ml.create_mailinglist(self.key, mldata)
+            data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
+                id=self.as_creation_id(-1),
+                local_part=vtypes.EmailLocalPart("cyber"),
+                domain=const.MailinglistDomain.aka,
+                description="Für alle, die nicht ohne Akademien können.",
+                event_id=None,
+                is_active=True,
+                attachment_policy=const.AttachmentPolicy.forbid,
+                convert_html=True,
+                maxsize=None,
+                additional_footer=None,
+                moderators={self.user['id']},
+                whitelist=set(),
+                subject_prefix="cyber",
+                title="CyberAka",
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                notes=None,
+                registration_stati=[],
+            )
+            new_id = self.ml.create_mailinglist(self.key, data)
             self.assertGreater(new_id, 0)
 
             # Add self as a subscriber.
@@ -1883,23 +1918,23 @@ class TestMlBackend(BackendTest):
                 ],
                 'event_id': 1,
                 'domain': const.MailinglistDomain.aka,
-                'ml_type': const.MailinglistTypes.event_associated,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
 
             # Attempt to change the mailinglist type.
-            mdata = {
-                'id': new_id,
-                'domain': const.MailinglistDomain.lists,
-                'ml_type': const.MailinglistTypes.member_opt_in,
-            }
-            if self.user['display_name'] != "Nina":
+            ml_type = const.MailinglistTypes.member_opt_out
+            if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
-                    self.ml.set_mailinglist(self.key, mdata)
+                    self.ml.change_ml_type(
+                        self.key, new_id, ml_type,
+                        update={"domain": const.MailinglistDomain.lists})
                 self.assertEqual(cm.exception.args,
                                  ("Not privileged to make this change.",))
             else:
-                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+                self.assertTrue(
+                    self.ml.change_ml_type(
+                        self.key, new_id, ml_type,
+                        update={"domain": const.MailinglistDomain.lists}))
 
             # Delete the mailinglist.
             self.assertTrue(self.ml.delete_mailinglist(
@@ -1908,22 +1943,26 @@ class TestMlBackend(BackendTest):
 
         if self.user_in("viktor", "nina"):
             # Create a new assembly mailinglist.
-            mldata = {
-                'local_part': "mgv-ag",
-                'domain': const.MailinglistDomain.lists,
-                'description': "Vor der nächsten MGV müssen wir noch ein paar"
-                               " Dinge klären.",
-                'ml_type': const.MailinglistTypes.assembly_opt_in,
-                'is_active': True,
-                'attachment_policy': const.AttachmentPolicy.forbid,
-                'maxsize': None,
-                'moderators': {self.user['id']},
-                'subject_prefix': "mgv-ag",
-                'title': "Arbeitsgruppe Mitgliederversammlung",
-                'mod_policy': const.ModerationPolicy.non_subscribers,
-                'notes': None,
-            }
-            new_id = self.ml.create_mailinglist(self.key, mldata)
+            data = models_ml.AssemblyAssociatedMailinglist(
+                id=self.as_creation_id(-1),
+                local_part=vtypes.EmailLocalPart("mgv-ag"),
+                domain=const.MailinglistDomain.lists,
+                description="Vor der nächsten MGV müssen wir noch ein paar"
+                            " Dinge klären.",
+                is_active=True,
+                attachment_policy=const.AttachmentPolicy.forbid,
+                convert_html=True,
+                maxsize=None,
+                additional_footer=None,
+                moderators={self.user['id']},
+                whitelist=set(),
+                subject_prefix="mgv-ag",
+                title="Arbeitsgruppe Mitgliederversammlung",
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                notes=None,
+                assembly_id=None,
+            )
+            new_id = self.ml.create_mailinglist(self.key, data)
             self.assertGreater(new_id, 0)
 
             # Add self as a subscriber.
@@ -1935,23 +1974,18 @@ class TestMlBackend(BackendTest):
                 'id': new_id,
                 'assembly_id': 2,
                 'domain': const.MailinglistDomain.lists,
-                'ml_type': const.MailinglistTypes.assembly_associated,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
 
             # Attempt to change the mailinglist type.
-            mdata = {
-                'id': new_id,
-                'domain': const.MailinglistDomain.lists,
-                'ml_type': const.MailinglistTypes.member_opt_in,
-            }
+            ml_type = const.MailinglistTypes.member_opt_in
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
-                    self.ml.set_mailinglist(self.key, mdata)
+                    self.ml.change_ml_type(self.key, new_id, ml_type)
                 self.assertEqual(cm.exception.args,
                                  ("Not privileged to make this change.",))
             else:
-                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+                self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
             # Delete the mailinglist.
             self.assertTrue(self.ml.delete_mailinglist(
@@ -1959,22 +1993,24 @@ class TestMlBackend(BackendTest):
                 cascade=["moderators", "subscriptions", "log"]))
         if self.user_in("quintus", "nina"):
             # Create a new member mailinglist.
-            mldata = {
-                'local_part': "literatir",
-                'domain': const.MailinglistDomain.lists,
-                'description': "Wir reden hier über coole Bücher die wir"
-                               " gelesen haben.",
-                'ml_type': const.MailinglistTypes.member_opt_in,
-                'is_active': True,
-                'attachment_policy': const.AttachmentPolicy.forbid,
-                'maxsize': None,
-                'moderators': {self.user['id']},
-                'subject_prefix': "literatur",
-                'title': "Buchclub",
-                'mod_policy': const.ModerationPolicy.non_subscribers,
-                'notes': None,
-            }
-            new_id = self.ml.create_mailinglist(self.key, mldata)
+            data = models_ml.MemberOptInMailinglist(
+                id=self.as_creation_id(-1),
+                local_part=vtypes.EmailLocalPart("literatir"),
+                domain=const.MailinglistDomain.lists,
+                description="Wir reden hier über coole Bücher die wir gelesen haben.",
+                is_active=True,
+                attachment_policy=const.AttachmentPolicy.forbid,
+                convert_html=True,
+                maxsize=None,
+                additional_footer=None,
+                moderators={self.user['id']},
+                whitelist=set(),
+                subject_prefix="literatur",
+                title="Buchclub",
+                mod_policy=const.ModerationPolicy.non_subscribers,
+                notes=None,
+            )
+            new_id = self.ml.create_mailinglist(self.key, data)
             self.assertGreater(new_id, 0)
 
             # Add self as a subscriber.
@@ -1985,23 +2021,18 @@ class TestMlBackend(BackendTest):
             mdata = {
                 'id': new_id,
                 'domain': const.MailinglistDomain.lists,
-                'ml_type': const.MailinglistTypes.member_opt_out,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
 
             # Attempt to change the mailinglist type.
-            mdata = {
-                'id': new_id,
-                'domain': const.MailinglistDomain.lists,
-                'ml_type': const.MailinglistTypes.general_opt_in,
-            }
+            ml_type = const.MailinglistTypes.general_opt_in
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
-                    self.ml.set_mailinglist(self.key, mdata)
+                    self.ml.change_ml_type(self.key, new_id, ml_type)
                 self.assertEqual(cm.exception.args,
                                  ("Not privileged to make this change.",))
             else:
-                self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
+                self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
             # Delete the mailinglist.
             self.assertTrue(self.ml.delete_mailinglist(
@@ -2019,23 +2050,23 @@ class TestMlBackend(BackendTest):
         }
         self.ml.set_subscription_address(self.key, **datum)
         self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
-        new_data = {
-            'local_part': 'revolution',
-            'domain': const.MailinglistDomain.lists,
-            'description': 'Vereinigt Euch',
-            'assembly_id': None,
-            'attachment_policy': const.AttachmentPolicy.forbid,
-            'event_id': None,
-            'is_active': True,
-            'maxsize': None,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'moderators': {1, 2},
-            'registration_stati': [],
-            'subject_prefix': 'viva la revolution',
-            'title': 'Proletarier aller Länder',
-            'notes': "secrecy is important",
-            'ml_type': const.MailinglistTypes.member_invitation_only,
-        }
+        new_data = models_ml.MemberInvitationOnlyMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart('revolution'),
+            domain=const.MailinglistDomain.lists,
+            description='Vereinigt Euch',
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            is_active=True,
+            maxsize=None,
+            additional_footer=None,
+            mod_policy=const.ModerationPolicy.unmoderated,
+            moderators={self.as_id(1), self.as_id(2)},
+            whitelist=set(),
+            subject_prefix='viva la revolution',
+            title='Proletarier aller Länder',
+            notes="secrecy is important",
+        )
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.ml.add_whitelist_entry(self.key, new_id, 'che@example.cde')
         self.ml.delete_mailinglist(
@@ -2043,7 +2074,7 @@ class TestMlBackend(BackendTest):
                                   "whitelist", "moderators", "log"))
 
         # now check it
-        expectation = (8, (
+        expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.MlLogCodes.unsubscribed,
@@ -2100,15 +2131,16 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']}
-        ))
-        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+        )
+        self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(
-            (expectation[0], expectation[1][2:5]),
-            self.ml.retrieve_log(self.key, offset=2, length=3))
+            (len(expectation), expectation[2:5]),
+            self.ml.retrieve_log(self.key, MlLogFilter(offset=2, length=3)))
+
         self.assertEqual(
-            (4, expectation[1][3:7]),
-            self.ml.retrieve_log(self.key, mailinglist_ids=[new_id]))
+            (4, expectation[3:7]),
+            self.ml.retrieve_log(self.key, MlLogFilter(mailinglist_id=new_id)))
         self.assertEqual(
-            (2, expectation[1][4:6]),
+            (2, expectation[4:6]),
             self.ml.retrieve_log(
-                self.key, codes=(const.MlLogCodes.moderator_added,)))
+                self.key, MlLogFilter(codes=[const.MlLogCodes.moderator_added])))

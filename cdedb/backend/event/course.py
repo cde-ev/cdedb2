@@ -24,7 +24,7 @@ from cdedb.common.n_ import n_
 from cdedb.database.connection import Atomizer
 
 
-class EventCourseBackend(EventBaseBackend):
+class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("anonymous")
     def list_courses(self, rs: RequestState,
                         event_id: int) -> Dict[int, str]:
@@ -213,6 +213,8 @@ class EventCourseBackend(EventBaseBackend):
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}
             new_id = self.sql_insert(rs, "event.courses", cdata)
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
             if 'segments' in data or 'active_segments' in data:
                 pdata = {
                     'id': new_id,
@@ -222,8 +224,6 @@ class EventCourseBackend(EventBaseBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-            self.event_log(rs, const.EventLogCodes.course_created,
-                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")

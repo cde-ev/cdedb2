@@ -76,19 +76,6 @@
                         <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
 
-                        <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
-
-                        <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
-                    </dl>
-
-                    <dl class="dl-horizontal col-md-6">
-                        <dt title="{% trans %}Event Part Fee{% endtrans %}">
-                            {% trans %}Event Part Fee{% endtrans %}
-                        </dt>
-                        <dd>{{ part['fee']|money }}</dd>
-
                         <dt title="{% trans %}Field for Waitlist{% endtrans %}">
                             {% trans %}Field for Waitlist{% endtrans %}
                         </dt>
@@ -99,29 +86,26 @@
                                 —
                             {% endif %}
                         </dd>
+                        <dt title="{% trans %}Camping mat field{% endtrans %}">
+                            {% trans %}Camping mat field{% endtrans %}
+                        </dt>
+                        <dd>
+                            {% if part['camping_mat_field'] %}
+                                {{ ambience['event']['fields'][part['camping_mat_field']]['field_name'] }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
+                    </dl>
+
+                    <dl class="dl-horizontal col-md-6">
+                        <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
+
+                        <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
+                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
                 </div>
-
-                <hr class="info"/>
-
-                <table class="table table-condensed">
-                    <thead>
-                        <tr>
-                            <th>{% trans %}Fee Modifier{% endtrans %}</th>
-                            <th>{% trans %}Amount{% endtrans %}</th>
-                            <th>{% trans %}Linked Field{% endtrans %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for fee_modifier in fee_modifiers_by_part[part_id].values() %}
-                            <tr id="feemodifierrow_{{ part_id }}_{{ fee_modifier['id'] }}">
-                                <td>{{ fee_modifier['modifier_name'] }}</td>
-                                <td>{{ fee_modifier['amount']|money }}</td>
-                                <td>{{ ambience['event']['fields'][fee_modifier['field_id']]['field_name'] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
 
                 <hr class="info"/>
 
@@ -133,6 +117,7 @@
                             <th>{% trans %}Course Choices{% endtrans %}</th>
                             <th>{% trans %}Req. Choices{% endtrans %}</th>
                             <th>{% trans %}Sortkey{% endtrans %}</th>
+                            <th>{% trans %}Course Room Field{% endtrans %}</th>
                             {% if ambience['event']['track_groups'] %}
                                 <th>{% trans %}Track Groups{% endtrans %}</th>
                             {% endif %}
@@ -146,6 +131,13 @@
                                 <td>{{ track['num_choices'] }}</td>
                                 <td>{{ track['min_choices'] }}</td>
                                 <td>{{ track['sortkey'] }}</td>
+                                <td>
+                                    {% if track['course_room_field'] %}
+                                        {{ ambience['event']['fields'][track['course_room_field']]['field_name'] }}
+                                    {% else %}
+                                        —
+                            {% endif %}
+                                </td>
                                 {% if ambience['event']['track_groups'] %}
                                 <td id="track{{ track_id }}_trackgroups">
                                     {% for track_group_id, track_group in track['track_groups']|keydictsort(EntitySorter.course_choice_object) %}

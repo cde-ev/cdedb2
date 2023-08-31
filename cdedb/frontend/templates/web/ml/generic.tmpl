@@ -3,13 +3,14 @@
 {# A macro to generate rows describing mailinglists for the mailinglist overviews for admins and moderators.
 
    ml            The mailinglist to describe
+   ml_additional Additional infos ('num_subscribers' and 'held_messages') for each mailinglist.
    subscriptions List of mailinglist you are subscribed to
    events        List of events, to link event mailinglists to their respective events
    assemblies    List of assemblies, to link assembly mailinglists to their respective assemblies
    management    Whether the link should point to the mailinglist management instead of the show_mailinglist page #}
-{% macro format_entry(ml, subscriptions, events, assemblies, management) %}
+{% macro format_entry(ml, ml_additional, subscriptions, events, assemblies, management) %}
     <div id="mailinglist-{{ ml['id'] }}-row"
-         class="row list-group-item{% if not ml['is_active'] %} list-group-item-muted{% endif %}">
+         class="row list-group-item{% if not ml.is_active %} list-group-item-muted{% endif %}">
         <div class="col-sm-3">
             {% if management %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': ml['id']}), ml['title']) }}
@@ -19,7 +20,7 @@
             {% if ml['id'] in subscriptions %}
                 {{ util.state_checkbox(subscriptions.get(ml['id'])) }}
             {% endif %}<br />
-            {% if not ml['is_active'] %}
+            {% if not ml.is_active %}
                 <span class="small">{% trans %}inactive{% endtrans %}</span>
             {% endif %}
         </div>
@@ -48,18 +49,18 @@
             {%- endif %}
         </div>
         <div class="col-sm-1 small" style="text-align:right;">
-            {% if ml['held_mails'] is none %}
+            {% if ml_additional['held_mails'] is none %}
                 —
             {% else %}
                 <a href="{{ cdedblink('ml/message_moderation_form', {'mailinglist_id': ml['id']}) }}"
                    title="{{ gettext("Mails awaiting moderation") }}">
-                    {{ ml['held_mails'] }}
-                    {{ util.make_icon(("far" if ml["held_mails"] == 0 else "fas") + " fa-envelope") }}
+                    {{ ml_additional['held_mails'] }}
+                    {{ util.make_icon(("far" if ml_additional["held_mails"] == 0 else "fas") + " fa-envelope") }}
                 </a>
             {% endif %}
         </div>
         <div class="col-sm-3 small">
-            {% trans count=ml['num_subscribers'] %}
+            {% trans count=ml_additional['num_subscribers'] %}
                 {{ count }} subscriber.
             {%- pluralize count -%}
                 {{ count }} subscribers.
@@ -70,5 +71,26 @@
                 {{ count }} moderators.
             {% endtrans %}
         </div>
+    </div>
+{% endmacro %}
+
+{% macro index_buttons() %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
+                aclass="btn btn-sm btn-success") }}
+        {% if "ml_admin" in user.roles %}
+            <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
+                  id="writesubscriptionstates" style="display: inline;">
+                {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
+                {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-primary",
+                        icon="sync-alt") }}
+            </form>
+            <form action="{{ cdedblink("ml/manual_mailman_sync") }}" method="POST"
+                  id="mailmansync" style="display: inline;">
+                {{ util.anti_csrf_token("ml/manual_mailman_sync") }}
+                {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-primary",
+                        icon="share") }}
+            </form>
+        {% endif %}
     </div>
 {% endmacro %}

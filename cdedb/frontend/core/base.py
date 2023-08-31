@@ -4,55 +4,55 @@
 
 import collections
 import datetime
+import decimal
 import io
 import itertools
 import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
-from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, User,
     make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
 )
-from cdedb.common.exceptions import ArchiveError, PrivilegeError
+from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
 from cdedb.common.fields import (
-    LOG_FIELDS_COMMON, META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    REALM_SPECIFIC_GENESIS_FIELDS, Role,
+    META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS,
 )
-from cdedb.common.i18n import format_country_code
+from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
     REALM_INHERITANCE, extract_roles, implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation import (
+from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
-from cdedb.common.validation.types import CdedbID
-from cdedb.filter import enum_entries_filter, markdown_parse_safe
+from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
 from cdedb.frontend.common import (
     AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, basic_redirect, calculate_db_logparams,
-    calculate_loglinks, check_validation as check,
+    TransactionObserver, access, basic_redirect, check_validation as check,
     check_validation_optional as check_optional, inspect_validation as inspect,
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
-from cdedb.ml_type_aux import MailinglistGroup
+from cdedb.models.ml import MailinglistGroup
+from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -74,7 +74,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: str = None) -> Response:
+    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -106,9 +106,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if "core_user" in rs.user.admin_views:
-                data = self.coreproxy.changelog_get_changes(
-                    rs, stati=(const.MemberChangeStati.pending,))
+            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
+                data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
             if "meta_admin" in rs.user.admin_views:
@@ -134,14 +133,19 @@ class CoreBaseFrontend(AbstractFrontend):
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
-                moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionState.pending
+                mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 mailman = self.get_mailman()
-                for mailinglist_id, ml in moderator.items():
+                moderator: Dict[int, Dict[str, Any]] = {}
+                for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
-                        rs, mailinglist_id, states=(sub_request,))
-                    ml['requests'] = len(requests)
-                    ml['held_mails'] = mailman.get_held_message_count(ml)
+                        rs, ml_id, states=(const.SubscriptionState.pending,))
+                    moderator[ml_id] = {
+                        "id": ml.id,
+                        "title": ml.title,
+                        "is_active": ml.is_active,
+                        "requests": len(requests),
+                        "held_mails": mailman.get_held_message_count(ml),
+                    }
                 dashboard['moderator'] = {k: v for k, v in moderator.items()
                                           if v['is_active']}
             # visible and open events
@@ -584,10 +588,13 @@ class CoreBaseFrontend(AbstractFrontend):
         # Cull unwanted data
         if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
             del data['foto']
+        # hide the donation property if no active lastschrift exists, to avoid confusion
+        if "donation" in data and not data.get("has_lastschrift"):
+            del data["donation"]
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
             masks = ["balance", "decided_search", "trial_member", "bub_search",
-                     "is_searchable", "paper_expuls"]
+                     "is_searchable", "paper_expuls", "donation"]
             if "meta" not in access_levels:
                 masks.extend([
                     "is_active", "is_meta_admin", "is_core_admin",
@@ -596,7 +603,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     "is_ml_realm", "is_assembly_realm", "is_archived",
                     "notes"])
             if "orga" not in access_levels:
-                masks.extend(["is_member", "gender"])
+                masks.extend(["is_member", "gender", "pronouns_nametag"])
             for key in masks:
                 if key in data:
                     del data[key]
@@ -684,11 +691,11 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
-            group_id = ml['ml_type_class'].sortkey
-            grouped[group_id][mailinglist_id] = {
-                'title': ml['title'],
+            grouped[ml.sortkey][mailinglist_id] = {
+                'title': ml.title,
                 'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id)
+                'address': addresses.get(mailinglist_id),
+                'is_active': ml.is_active,
             }
 
         return self.render(rs, "show_user_mailinglists", {
@@ -716,7 +723,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id)
         current = history[current_generation]
         fields = current.keys()
-        stati = const.MemberChangeStati
+        stati = const.PersonaChangeStati
         constants = {}
         for f in fields:
             total_const: List[int] = []
@@ -830,9 +837,6 @@ class CoreBaseFrontend(AbstractFrontend):
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
-            if include_archived:
-                return self.full_user_search(
-                    rs, is_search=True, download=None, query=query)
             return self.user_search(rs, is_search=True, download=None, query=query)
         else:
             rs.notify("warning", n_("No account found."))
@@ -1034,18 +1038,18 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
-    @staticmethod
-    def _changeable_persona_fields(roles: Set[Role], restricted: bool = True
-                                   ) -> Set[str]:
+    def _changeable_persona_fields(self, rs: RequestState, user: User,
+                                   restricted: bool = True) -> Set[str]:
         """Helper to retrieve the appropriate fields for (admin_)change_user.
 
         :param restricted: If True, only return fields the user may change
             themselves, i.e. remove the restricted fields.
         """
+        assert user.persona_id is not None
         ret: Set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = hidden_fields - {"is_searchable"} | {
+        hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
             "balance", "bub_search", "decided_search", "foto", "trial_member"}
         roles_to_fields = {
             "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
@@ -1055,8 +1059,13 @@ class CoreBaseFrontend(AbstractFrontend):
             "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
         }
         for role, fields in roles_to_fields.items():
-            if role in roles:
+            if role in user.roles:
                 ret |= fields
+
+        # hide the donation property if no active lastschrift exists, to avoid confusion
+        if "donation" in ret and not self.cdeproxy.list_lastschrift(
+                rs, [user.persona_id], active=True):
+            ret.remove("donation")
 
         restricted_fields = {"notes", "birthday", "is_searchable"}
         if restricted:
@@ -1072,14 +1081,20 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
-        if data['code'] == const.MemberChangeStati.pending:
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        shown_fields = self._changeable_persona_fields(rs.user.roles, restricted=True)
+        # The values of rs.values are converted to strings if there was a validation
+        #  error. This is a bit hacky, but ensures that donation is always a decimal.
+        if rs.values.get("donation") is not None:
+            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
+        shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
+            'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
+            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
         })
 
     @access("persona", modi={"POST"})
@@ -1087,10 +1102,34 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = self._changeable_persona_fields(rs.user.roles, restricted=True)
+        attributes = self._changeable_persona_fields(rs, rs.user, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
+        # take special care for annual donations in combination with lastschrift
+        if (data and "donation" in data
+                and (lastschrift_ids := self.cdeproxy.list_lastschrift(
+                        rs, [rs.user.persona_id], active=True))):
+            current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+            max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            # The user may specify only donations between a specific minimal and maximal
+            # value. However, admins may change this to arbitrary values, so we allow
+            # to surpass the check if the user didn't change the donation's amount.
+            if (current["donation"] != data["donation"]
+                    and not min_donation <= data["donation"] <= max_donation):
+                rs.append_validation_error(("donation", ValueError(
+                    n_("Lastschrift donation must be between %(min)s and %(max)s."),
+                    {"min": money_filter(min_donation),
+                     "max": money_filter(max_donation)})))
+            lastschrift = self.cdeproxy.get_lastschrift(
+                rs, unwrap(lastschrift_ids.keys()))
+            # "Enforce" consent of the account holder if the user changed his donation.
+            if (current["donation"] != data["donation"]
+                    and lastschrift["account_owner"] and not rs.ignore_warnings):
+                msg = n_("You are not the owner of the linked bank account. Make sure"
+                         " the owner agreed to the change before submitting it here.")
+                rs.append_validation_error(("donation", ValidationWarning(msg)))
         if data and data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
@@ -1105,7 +1144,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    query: Query = None) -> Response:
+                    query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
@@ -1115,9 +1154,13 @@ class CoreBaseFrontend(AbstractFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
+            'country': collections.OrderedDict(get_localized_country_codes(rs)),
         }
+        if query and query.scope == QueryScope.core_user:
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
+            query.scope = QueryScope.all_core_users
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
+            rs, download, is_search, QueryScope.all_core_users,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
@@ -1137,22 +1180,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
-
-    @access("core_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                         is_search: bool, query: Query = None) -> Response:
-        """Search all users, both archived and not archived."""
-        choices: Dict[str, Dict[Any, str]] = {
-            'gender': collections.OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext)),
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_core_users, QueryScope.all_core_users,
-            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:
@@ -1183,10 +1210,15 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        if data['code'] == const.MemberChangeStati.pending:
+        # The values of rs.values are converted to strings if there was a validation
+        #  error. This is a bit hacky, but ensures that donation is always a decimal.
+        if rs.values.get("donation") is not None:
+            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        shown_fields = self._changeable_persona_fields(roles, restricted=False)
+        user = User(persona_id=persona_id, roles=roles)
+        shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
@@ -1201,10 +1233,25 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        attributes = self._changeable_persona_fields(roles, restricted=False)
+        user = User(persona_id=persona_id, roles=roles)
+        attributes = self._changeable_persona_fields(rs, user, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
+        # take special care for annual donations in combination with lastschrift
+        if (data and "donation" in data and self.cdeproxy.list_lastschrift(
+                rs, [persona_id], active=True)):
+            min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+            max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            # The user may specify only donations between a specific minimal and maximal
+            # value. However, admins may change this to arbitrary values.
+            if (not min_donation <= data["donation"] <= max_donation
+                    and not rs.ignore_warnings):
+                rs.append_validation_error(("donation", ValidationWarning(
+                    n_("Lastschrift donation is outside of %(min)s and %(max)s."
+                       " The user will not be able to change this amount by himself."),
+                    {"min": money_filter(min_donation),
+                     "max": money_filter(max_donation)})))
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
         assert data is not None
@@ -1508,6 +1555,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     data[key] = False
             if data['paper_expuls'] is None:
                 data['paper_expuls'] = True
+            if data['donation'] is None:
+                data['donation'] = decimal.Decimal("0.0")
         elif target_realm == "event":
             reference = {**EVENT_TRANSITION_FIELDS}
         else:
@@ -1515,6 +1564,9 @@ class CoreBaseFrontend(AbstractFrontend):
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
+        # trial membership implies membership
+        if data.get("trial_member"):
+            data["is_member"] = True
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
@@ -1556,33 +1608,42 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "modify_membership")
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        return self.render(rs, "modify_membership", {
+            "trial_member": persona["trial_member"]})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member")
+    @REQUESTdata("is_member", "trial_member")
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> Response:
+                          is_member: bool, trial_member: bool) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
+        if trial_member and not is_member:
+            rs.append_validation_error(("trial_member", ValueError(
+                n_("Trial membership implies membership."))))
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
-            code, revoked_permit, collateral_transactions = (
-                self.cdeproxy.change_membership(rs, persona_id, is_member))
+            code, revoked_permit, collateral_transaction = (
+                self.cdeproxy.change_membership(
+                    rs, persona_id, is_member=is_member, trial_member=trial_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))
-            if collateral_transactions:
+            if collateral_transaction:
+                transaction = self.cdeproxy.get_lastschrift_transaction(
+                    rs, collateral_transaction)
                 subject = ("Einzugsermächtigung zu ausstehender "
                            "Lastschrift widerrufen.")
                 self.do_mail(rs, "pending_lastschrift_revoked",
                              {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                               'Subject': subject},
-                             {'persona_id': persona_id})
+                             {'persona_id': persona_id,
+                              'payment_date': transaction['payment_date']})
 
         return self.redirect_show_user(rs, persona_id)
 
@@ -1601,25 +1662,23 @@ class CoreBaseFrontend(AbstractFrontend):
             {'old_balance': old_balance, 'trial_member': trial_member})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata("new_balance", "trial_member", "change_note")
+    @REQUESTdata("new_balance", "change_note")
     def modify_balance(self, rs: RequestState, persona_id: int,
-                       new_balance: vtypes.NonNegativeDecimal, trial_member: bool,
+                       new_balance: vtypes.NonNegativeDecimal,
                        change_note: str) -> Response:
         """Set the new balance."""
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (persona['balance'] == new_balance
-                and persona['trial_member'] == trial_member):
-            rs.notify("warning", n_("Nothing changed."))
+        if persona['balance'] == new_balance:
+            rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
-            const.FinanceLogCodes.manual_balance_correction,
-            change_note=change_note, trial_member=trial_member)
+            const.FinanceLogCodes.manual_balance_correction, change_note=change_note)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -2013,11 +2072,10 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        pending = self.coreproxy.changelog_get_pending_changes(rs)
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
@@ -2028,8 +2086,7 @@ class CoreBaseFrontend(AbstractFrontend):
         Send a reminder after twelve hours and then daily.
         """
         current = now()
-        data = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        data = self.coreproxy.changelog_get_pending_changes(rs)
         ids = {f"{anid}/{e['generation']}" for anid, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
@@ -2052,28 +2109,32 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
-        if pending['code'] != const.MemberChangeStati.pending:
+        if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
             if (history[key]['code']
-                == const.MemberChangeStati.committed))]
+                == const.PersonaChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
         """Make decision."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if rs.has_validation_errors():
             return self.list_pending_changes(rs)
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
@@ -2146,73 +2207,26 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
+    @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "reviewed_by")
-    def view_changelog_meta(self, rs: RequestState,
-                            codes: Collection[const.MemberChangeStati],
-                            offset: Optional[int],
-                            length: Optional[vtypes.PositiveInt],
-                            persona_id: Optional[CdedbID],
-                            submitted_by: Optional[CdedbID],
-                            change_note: Optional[str],
-                            time_start: Optional[datetime.datetime],
-                            time_stop: Optional[datetime.datetime],
-                            reviewed_by: Optional[CdedbID]) -> Response:
+    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool
+                            ) -> Response:
         """View changelog activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
+        return self.generic_view_log(
+            rs, data, ChangelogLogFilter, self.coreproxy.retrieve_changelog_meta,
+            download=download, template="view_changelog_meta",
+        )
 
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['reviewed_by'] for entry in log if
-                   entry['reviewed_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_changelog_meta", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
-
+    @REQUESTdatadict(*CoreLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("core_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
-                 offset: Optional[int], length: Optional[vtypes.PositiveInt],
-                 persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],
-                 change_note: Optional[str],
-                 time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]) -> Response:
+    def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
-
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.coreproxy.retrieve_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, data, CoreLogFilter, self.coreproxy.retrieve_log,
+            download=download, template="view_log",
+        )
 
     @access("anonymous")
     def debug_email(self, rs: RequestState, token: str) -> Response:

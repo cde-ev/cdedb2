@@ -31,6 +31,8 @@ from cdedb.database.connection import Atomizer
 
 __all__ = ['EventBackend']
 
+from cdedb.models.droid import OrgaToken
+
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                    EventRegistrationBackend, EventBaseBackend, EventLowLevelBackend):
@@ -41,11 +43,12 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         Possible blockers:
 
+        * orga_tokens: An orga token granting API access to the event.
         * field_definitions: A custom datafield associated with the event.
         * courses: A course associated with the event. This can have it's own
                    blockers.
+        * event_fees: A fee of the event.
         * event_parts: An event part.
-        * fee_modifiers: A fee modifier of an event part.
         * course_tracks: A course track of the event, belonging to an event part.
         * part_groups: A group of event parts.
         * part_group_parts: A link between an event part and a part group.
@@ -71,6 +74,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
+        orga_tokens = self.sql_select(
+            rs, OrgaToken.database_table, ("id",), (event_id,), entity_key="event_id")
+        if orga_tokens:
+            blockers["orga_tokens"] = [e["id"] for e in orga_tokens]
+
         field_definitions = self.sql_select(
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
         if field_definitions:
@@ -81,15 +89,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if courses:
             blockers["courses"] = [e["id"] for e in courses]
 
+        event_fees = self.sql_select(
+            rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")
+        if event_fees:
+            blockers["event_fees"] = [e["id"] for e in event_fees]
+
         event_parts = self.sql_select(
             rs, "event.event_parts", ("id",), (event_id,), entity_key="event_id")
         if event_parts:
             blockers["event_parts"] = [e["id"] for e in event_parts]
-            fee_modifiers = self.sql_select(
-                rs, "event.fee_modifiers", ("id",), blockers["event_parts"],
-                entity_key="part_id")
-            if fee_modifiers:
-                blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
             course_tracks = self.sql_select(
                 rs, "event.course_tracks", ("id",), blockers["event_parts"],
                 entity_key="part_id")
@@ -211,8 +219,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         part_group_cascade = {"part_group_parts"} & cascade
                         for anid in blockers["part_groups"]:
                             self._delete_part_group(rs, anid, part_group_cascade)
+                if "event_fees" in cascade:
+                    ret *= self.sql_delete(rs, "event.event_fees",
+                                           blockers["event_fees"])
                 if "event_parts" in cascade:
-                    part_cascade = {"course_tracks", "fee_modifiers"} & cascade
+                    part_cascade = {"course_tracks"} & cascade
                     with Silencer(rs):
                         for anid in blockers["event_parts"]:
                             self._delete_event_part(rs, anid, part_cascade)
@@ -228,17 +239,19 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
                         'id': event_id,
-                        'course_room_field': None,
                         'lodge_field': None,
-                        'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
-                    field_cascade = {"fee_modifiers"}
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
-                            ret *= self._delete_event_field(rs, anid, field_cascade)
+                            ret *= self._delete_event_field(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "orga_tokens" in cascade:
+                    orga_token_cascade = ("atime", "log")
+                    with Silencer(rs):
+                        for anid in blockers["orga_tokens"]:
+                            ret *= self.delete_orga_token(rs, anid, orga_token_cascade)
                 if "stored_queries" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.stored_queries", blockers["stored_queries"])
@@ -320,7 +333,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                       ('event.course_segments', None),
                       ('event.orgas', None),
                       ('event.field_definitions', 'field_id'),
-                      ('event.fee_modifiers', None),
+                      ('event.event_fees', None),
                       ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),
@@ -334,14 +347,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
             # Third fix the amounts owed for all registrations.
-            reg_ids = self.list_registrations(rs, event_id=data['id'])
-            fees_owed = self.calculate_fees(rs, reg_ids)
-            for reg_id, fee in fees_owed.items():
-                update = {
-                    'id': reg_id,
-                    'amount_owed': fee,
-                }
-                ret *= self.sql_update(rs, "event.registrations", update)
+            self._update_registrations_amount_owed(rs, data['id'])
 
             # Forth unlock the event
             update = {
@@ -734,6 +740,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
+                self._update_registrations_amount_owed(rs, data['id'])
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
                 msg = build_msg("Importiere partiell", data.get('summary'))

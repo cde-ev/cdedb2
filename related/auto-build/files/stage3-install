@@ -16,6 +16,12 @@ apt-get -y upgrade
 apt-get -y clean
 
 echo ""
+echo "Pacify git paranoia..."
+echo "--------------------------------------------"
+
+cp /media/cdrom0/gitconfig /etc/gitconfig
+
+echo ""
 echo "Getting a copy of the cdedb sources..."
 echo "--------------------------------------------"
 
@@ -112,8 +118,8 @@ echo "--------------------------------------------"
 
 # This is a bit heavy-handed on stopping/restarting stuff to debug some obscure hangs
 systemctl stop pgbouncer
-cp /media/cdrom0/postgresql.conf /etc/postgresql/13/main/
-cp /media/cdrom0/pg_hba.conf /etc/postgresql/13/main/
+cp /media/cdrom0/postgresql.conf /etc/postgresql/15/main/
+cp /media/cdrom0/pg_hba.conf /etc/postgresql/15/main/
 
 systemctl restart postgresql
 sleep 10

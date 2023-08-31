@@ -63,8 +63,9 @@
             render: {
                 option: function(data, escape) {
                     if (data['id']) {
-                        var res = '<div class="option"><div class="name">' + escape(data['name']) +
-                                '</div><div class="meta">' + cdedb_id(data['id']);
+                        var res = '<div class="option" id="selectize-result-option-'
+                            + data['id'] + '"><div class="name">' + escape(data['name'])
+                            + '</div><div class="meta">' + cdedb_id(data['id']);
                         if (data['email'])
                             res += ' • '+ escape(data['email']);
                         res += '</div></div>';

@@ -10,6 +10,7 @@ import collections
 import copy
 import csv
 import datetime
+import decimal
 import itertools
 import operator
 from collections import OrderedDict
@@ -24,21 +25,21 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
 )
-from cdedb.common.fields import LOG_FIELDS_COMMON
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import FinanceLogFilter
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation import (
-    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
+from cdedb.common.validation.validate import (
+    PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, calculate_db_logparams, calculate_loglinks,
-    check_validation as check, check_validation_optional as check_optional,
-    inspect_validation as inspect, make_membership_fee_reference, request_extractor,
+    TransactionObserver, access, check_validation as check,
+    check_validation_optional as check_optional, inspect_validation as inspect,
+    make_membership_fee_reference, request_extractor,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -187,6 +188,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.ignore_validation_errors()
             return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
+        # our query facility does not allow + signs, thus special-case it here
+        phone = rs.values['phone'] = rs.request.values.get('phone')
+        if phone:
+            # remove leading zeroes - in database, numbers are stored starting with '+'
+            phone = ("".join(char for char in phone if char in '0123456789')
+                     .removeprefix("0").removeprefix("0"))
+            if phone:
+                defaults['qval_telephone,mobile'] = phone
+            else:
+                rs.append_validation_error(
+                        ('phone', ValueError(n_("Wrong formatting."))))
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
@@ -264,7 +276,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """
         current = tuple(rs.retrieve_validation_errors())
         rs.replace_validation_errors(
-            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
+            [('qval_' + k, v) if k != 'phone' else (k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
@@ -287,30 +299,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
-            self.cdeproxy.submit_general_query, choices=choices)
-
-    @access("core_admin", "cde_admin")
-    @REQUESTdata("download", "is_search")
-    def full_user_search(self, rs: RequestState, download: Optional[str],
-                             is_search: bool) -> Response:
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
-        }
-        return self.generic_user_search(
-            rs, download, is_search,
-            QueryScope.all_cde_users, QueryScope.all_core_users,
+            rs, download, is_search, QueryScope.all_cde_users,
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
@@ -319,12 +308,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'bub_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,
@@ -334,6 +324,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_active': True,
             'decided_search': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0)
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -420,6 +411,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'display_name': persona['given_names'],
             'trial_member': False,
             'paper_expuls': True,
+            'donation': decimal.Decimal(0),
             'bub_search': False,
             'decided_search': False,
             'notes': None,
@@ -777,36 +769,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
         cde_misc = (meta_data.get("cde_misc") or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
+    @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
+    @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    @REQUESTdata(*LOG_FIELDS_COMMON)
-    def view_finance_log(self, rs: RequestState,
-                         codes: Collection[const.FinanceLogCodes],
-                         offset: Optional[int],
-                         length: Optional[vtypes.PositiveInt],
-                         persona_id: Optional[vtypes.CdedbID],
-                         submitted_by: Optional[vtypes.CdedbID],
-                         change_note: Optional[str],
-                         time_start: Optional[datetime.datetime],
-                         time_stop: Optional[datetime.datetime]) -> Response:
+    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool
+                         ) -> Response:
         """View financial activity."""
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        # length is the requested length, _length the theoretically
-        # shown length for an infinite amount of log entries.
-        _offset, _length = calculate_db_logparams(offset, length)
-
-        # no validation since the input stays valid, even if some options
-        # are lost
-        rs.ignore_validation_errors()
-        total, log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, change_note=change_note,
-            time_start=time_start, time_stop=time_stop)
-        persona_ids = (
-                {entry['submitted_by'] for entry in log if
-                 entry['submitted_by']}
-                | {entry['persona_id'] for entry in log if entry['persona_id']})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_finance_log", {
-            'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'loglinks': loglinks})
+        return self.generic_view_log(
+            rs, data, FinanceLogFilter, self.cdeproxy.retrieve_finance_log,
+            download=download, template="view_finance_log",
+        )

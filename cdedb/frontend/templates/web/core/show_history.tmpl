@@ -18,11 +18,11 @@
     {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
-{% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
-                enums["MemberChangeStati"].committed: ('','',''),
-                enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
-                enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
-                enums["MemberChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
+{% set STATUS={enums["PersonaChangeStati"].pending: ('pending','user-clock',gettext("pending")),
+                enums["PersonaChangeStati"].committed: ('','',''),
+                enums["PersonaChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
+                enums["PersonaChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
+                enums["PersonaChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
                 -1: ('complicated','question-circle',gettext("complicated")),} %}
 {% macro print_history(f) %}
     {% for c in entries|sort %}
@@ -30,7 +30,7 @@
             <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
                 <div class="col-xs-3">
                     Gen {{ c }}
-                    {% if entries[c]['code'] != enums['MemberChangeStati'].committed %}
+                    {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
                         {{ util.make_icon(STATUS[eventual_status[f][c]][1],
                                 title=STATUS[eventual_status[f][c]][2]) }}
                     {% endif %}
@@ -63,7 +63,7 @@
             <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
-                    {% if entries[c]['code'] != enums['MemberChangeStati'].committed %}
+                    {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
                         {{ util.make_icon(STATUS[vars['eventual_status']][1],
                                 title=STATUS[vars['eventual_status']][2]) }}
                     {% endif %}
@@ -136,6 +136,17 @@
             {% endcall %}
         {% endif %}
 
+        {% call history_field(gettext("Pronouns")) %}
+            {{ print_history('pronouns') }}
+        {% endcall %}
+
+        {% call history_field(gettext("Pronouns on nametags")) %}
+            {{ print_history('pronouns_nametag') }}
+        {% endcall %}
+
+        {% call history_field(gettext("Pronouns on profile")) %}
+            {{ print_history('pronouns_profile') }}
+        {% endcall %}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
 
@@ -157,7 +168,7 @@
                 {% for key in ADMIN_KEYS if entries[c][key] %}
                     {{ util.privilege_icon(key, desc=True) }}
                 {% else %}
-                    <i>Keine</i>
+                    <i>{{ gettext("None") }}</i>
                 {% endfor %}
             {% endcall %}
         {% endcall %}
@@ -191,7 +202,7 @@
                 {% endcall %}
             {% endcall %}
 
-            {% for name, field in ((gettext("Balance"), 'balance'),
+            {% for name, field in ((gettext("Balance"), 'balance'), (gettext("Annual Donation"), 'donation'),
                                    (gettext("Searchable for BuB"), 'bub_search'),
                                    (gettext("Admin Notes"), 'notes')) %}
                 {% call history_field(name) %}
@@ -276,7 +287,7 @@
                 <tr id="generation{{ entry['generation'] }}">
                     <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
-                    <td>{{ gettext(entry['code']|enum(enums['MemberChangeStati'])) }}</td>
+                    <td>{{ gettext(entry['code']|enum(enums['PersonaChangeStati'])) }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>
                     <td>
                         {% if entry['reviewed_by'] %}

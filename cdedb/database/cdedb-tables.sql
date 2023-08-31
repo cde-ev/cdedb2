@@ -160,6 +160,9 @@ CREATE TABLE core.personas (
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
             CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
+        donation                numeric(8, 2) DEFAULT NULL,
+        CONSTRAINT personas_cde_donation
+            CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -168,6 +171,8 @@ CREATE TABLE core.personas (
         trial_member            boolean,
         CONSTRAINT personas_cde_trial
             CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_trial_member_implicits
+            CHECK (NOT trial_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub
@@ -190,11 +195,13 @@ CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
-GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
-GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
-GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
-GRANT INSERT ON core.personas TO cdb_admin;
+-- required for _changelog_resolve_change_unsafe
+GRANT SELECT ON core.personas TO cdb_persona;
+GRANT UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
+-- includes notes in addition to cdb_member
+GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
 -- table for managing creation of new accounts by arbitrary request
@@ -236,6 +243,8 @@ CREATE TABLE core.genesis_cases (
         case_status             integer NOT NULL DEFAULT 0,
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- the created or account merged into, if any
+        persona_id              integer REFERENCES core.personas(id) DEFAULT NULL,
         -- past event and course to be added to the new user
         pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
@@ -355,7 +364,7 @@ CREATE TABLE core.changelog (
         -- Flag for whether this was an automated change.
         automated_change        boolean NOT NULL DEFAULT FALSE,
         -- enum for progress of change
-        -- see cdedb.database.constants.MemberChangeStati
+        -- see cdedb.database.constants.PersonaChangeStati
         code                    integer NOT NULL DEFAULT 0,
         --
         -- data fields
@@ -412,6 +421,7 @@ CREATE TABLE core.changelog (
         interests               varchar,
         free_form               varchar,
         balance                 numeric(8, 2),
+        donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
         bub_search              boolean,
@@ -419,6 +429,9 @@ CREATE TABLE core.changelog (
         paper_expuls            boolean
 );
 CREATE INDEX changelog_code_idx ON core.changelog(code);
+CREATE INDEX changelog_persona_id_idx ON core.changelog(persona_id);
+CREATE UNIQUE INDEX changelog_persona_id_pending ON core.changelog(persona_id) WHERE code = 1;
+-- SELECT can not be easily restricted here due to change displacement logic
 GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
 GRANT UPDATE (code) ON core.changelog TO cdb_persona;
@@ -464,6 +477,8 @@ CREATE TABLE cde.org_period (
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
         ejection_count          integer NOT NULL DEFAULT 0,
         ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
+        exmember_balance        numeric(11, 2) NOT NULL DEFAULT 0,
+        exmember_count          integer NOT NULL DEFAULT 0,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
@@ -501,7 +516,6 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(8, 2) NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
@@ -509,6 +523,8 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- we used different lastschrift subscription forms over the years
+        revision                integer NOT NULL DEFAULT 2,
         -- administrative comments
         notes                   varchar
 );
@@ -526,6 +542,7 @@ CREATE TABLE cde.lastschrift_transactions (
         status                  integer NOT NULL,
         amount                  numeric(8, 2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        payment_date            date DEFAULT NULL,
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(8, 2) DEFAULT NULL
@@ -546,6 +563,7 @@ CREATE TABLE cde.finance_log (
         delta                   numeric(8, 2),
         new_balance             numeric(8, 2),
         change_note             varchar,
+        transaction_date        date,
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
@@ -583,21 +601,12 @@ DROP SCHEMA IF EXISTS past_event CASCADE;
 CREATE SCHEMA past_event;
 GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 
-CREATE TABLE past_event.institutions (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        shortname               varchar NOT NULL
-);
-GRANT SELECT ON past_event.institutions TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
-
 CREATE TABLE past_event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES past_event.institutions(id),
+        institution             integer NOT NULL,
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in
@@ -675,7 +684,7 @@ CREATE TABLE event.events (
         title                        varchar NOT NULL,
         shortname                    varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution                  integer NOT NULL REFERENCES past_event.institutions(id),
+        institution                  integer NOT NULL,
         description                  varchar,
         --
         -- cut for past_event.events (modulo column tempus)
@@ -687,7 +696,6 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
-        nonmember_surcharge          numeric(8, 2) NOT NULL DEFAULT 0,
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
@@ -696,6 +704,7 @@ CREATE TABLE event.events (
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
+        field_definition_notes       varchar,
         offline_lock                 boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -706,9 +715,7 @@ CREATE TABLE event.events (
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- reference to special purpose custom data fields
-        lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        lodge_field                  integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
@@ -718,18 +725,32 @@ GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 GRANT SELECT ON event.events to cdb_anonymous;
 
+CREATE TABLE event.event_fees (
+        id                           serial PRIMARY KEY,
+        event_id                     integer NOT NULL REFERENCES event.events (id),
+        -- see cdedb.database.constants.EventFeeType
+        kind                         integer NOT NULL DEFAULT 1,
+        title                        varchar NOT NULL,
+        amount                       numeric(8, 2) NOT NULL,
+        condition                    varchar NOT NULL,
+        notes                        varchar
+);
+GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_fees TO cdb_persona;
+GRANT SELECT, UPDATE on event.event_fees_id_seq TO cdb_persona;
+GRANT SELECT on event.event_fees TO cdb_anonymous;
+
 CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
-        -- we implicitly assume, that parts are non-overlapping
+        UNIQUE (event_id, shortname) DEFERRABLE INITIALLY IMMEDIATE,
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
-        -- fees are cummulative
-        fee                     numeric(8, 2) NOT NULL,
         -- reference to custom data field for waitlist management
-        waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        waitlist_field          integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
 CREATE INDEX event_parts_partial_waitlist_field_idx ON event.event_parts(waitlist_field) WHERE waitlist_field IS NOT NULL;
@@ -770,7 +791,9 @@ CREATE TABLE event.course_tracks (
         shortname               varchar NOT NULL,
         num_choices             integer NOT NULL,
         min_choices             integer NOT NULL, -- required number of distinct course choices
-        sortkey                 integer NOT NULL
+        sortkey                 integer NOT NULL,
+        course_room_field       integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
@@ -832,25 +855,9 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
-
-CREATE TABLE event.fee_modifiers (
-        id                      serial PRIMARY KEY,
-        -- the event part this modifier is available in.
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
-        modifier_name           varchar NOT NULL,
-        -- the amount to modify the fee by. Can be negative.
-        amount                  numeric(8, 2) NOT NULL,
-        -- in which field do we save the information whether the modifier has been selected:
-        field_id                integer NOT NULL REFERENCES event.field_definitions(id),
-        UNIQUE (part_id, modifier_name),
-        UNIQUE (part_id, field_id)
-);
-GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
-GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
-GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
+ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
@@ -899,6 +906,29 @@ CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
 GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
+
+CREATE TABLE event.orga_apitokens (
+        id                      serial PRIMARY KEY,
+        -- Event which this token grants access to.
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The api tokens consists of two parts. The id and a secret that will be compared to the stored hash.
+        -- Upon revocation the stored hash is deleted.
+        secret_hash             varchar,
+        -- Creation, expiration, revocation and last access time of the token.
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        etime                   timestamp WITH TIME ZONE NOT NULL,
+        rtime                   timestamp WITH TIME ZONE,
+        atime                   timestamp WITH TIME ZONE,
+        -- Descriptive title and addional notes about the token.
+        title                   varchar NOT NULL,
+        notes                   varchar
+);
+CREATE INDEX orga_apitokens_event_id_idx ON event.orga_apitokens(event_id);
+GRANT SELECT ON event.orga_apitokens TO cdb_anonymous;
+GRANT UPDATE (atime) ON event.orga_apitokens TO cdb_anonymous;
+GRANT SELECT, INSERT, DELETE ON event.orga_apitokens TO cdb_persona;
+GRANT UPDATE (secret_hash, rtime, title, notes) ON event.orga_apitokens TO cdb_persona;
+GRANT SELECT, UPDATE ON event.orga_apitokens_id_seq TO cdb_persona;
 
 CREATE TABLE event.lodgement_groups (
         id                      serial PRIMARY KEY,
@@ -1043,6 +1073,9 @@ CREATE TABLE event.log (
         -- see cdedb.database.constants.EventLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
+        droid_id                integer REFERENCES event.orga_apitokens(id),
+        CONSTRAINT event_log_submitted_by_droid
+            CHECK (submitted_by is NULL or droid_id is NULL),
         event_id                integer REFERENCES event.events(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
@@ -1216,7 +1249,8 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL,
         UNIQUE (attachment_id, version_nr)
 );
-GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
+GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
@@ -1268,6 +1302,7 @@ CREATE TABLE ml.mailinglists (
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
+        convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,
@@ -1276,9 +1311,9 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         -- administrative comments
         notes                   varchar,
-        -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only useful with a
-        -- restrictive subscription policy).
+        additional_footer       varchar,
+        -- mailinglist awareness
+        -- gateway is not NULL if associated to another mailinglist
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event

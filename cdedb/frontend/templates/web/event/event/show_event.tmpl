@@ -107,7 +107,7 @@
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
-            <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
+            <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
             {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
                 <dt title="{% trans %}CdE-Account IBAN{% endtrans %}">{% trans %}CdE-Account IBAN{% endtrans %}</dt>
                 <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
@@ -266,10 +266,10 @@
                     </p>
                     <div class="p">
                         {% if ambience['event']['offline_lock'] %}
-                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
+                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-default') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
-                                {{ util.input_submit(label=gettext("JSON file"), icon='download') }}
+                                {{ util.input_submit(label=gettext("JSON file"), icon='download', aclass='btn btn-default') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
                             <script nonce="{{ csp_nonce }}">
@@ -301,7 +301,7 @@
                                                        arialabel=gettext("Export of the Offline-DB")) }}
                                     <div class="input-group-btn">
                                         {{ util.input_submit(label=gettext("Unlock"), icon='cloud-upload-alt',
-                                                             aclass='btn btn-success') }}
+                                                             aclass='btn btn-primary') }}
                                     </div>
                                 </div>
                                 {{ util.output_errors('json') }}
@@ -391,8 +391,8 @@
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
-                                        label=gettext("Create orga mailinglist"), aclass="btn btn-success",
-                                        icon="plus", readonly=not orgas,
+                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary",
+                                        icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -417,7 +417,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-success", icon="plus", readonly=not orgas,
+                                        aclass="btn btn-primary", icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
@@ -439,10 +439,16 @@
                             <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/archive_event') }}
-                                {{ util.input_submit(label=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                     aclass="btn btn-danger", icon="folder",
-                                                     title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                                {{ util.input_checkbox(name="create_past_event", readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                {{ util.input_submit(label=gettext("Archive"),
+                                                     readonly=(is_locked or (ambience['event']['end'] >= now().date()
+                                                                             and not ambience['event']['is_cancelled'])),
+                                                     aclass="btn btn-danger mosp", icon="folder",
+                                                     title=(gettext("Event is not concluded yet.")
+                                                            if (ambience['event']['end'] >= now().date()
+                                                                and not ambience['event']['is_cancelled']) else "")) }}
+                                {{ util.input_checkbox(name="create_past_event",
+                                    readonly=(is_locked or (ambience['event']['end'] >= now().date()
+                                                            and not ambience['event']['is_cancelled'])),
                                         label=gettext("Create past event after archiving."), defaultvalue='True') }}
                                 {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
                             </form>

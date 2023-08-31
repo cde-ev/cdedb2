@@ -29,8 +29,6 @@
                 {% if "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
                             active=(sidenav_active=='cde_manage_users')) }}
-                    {{ util.href(cdedblink("cde/full_user_search"), gettext("Search All Users"), aclass="list-group-item",
-                            icon="inbox", active=(sidenav_active=='cde_manage_archive')) }}
                 {% endif %}
                 {% if "finance" in user.admin_views %}
                     {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
@@ -39,6 +37,8 @@
                             icon="euro-sign", active=(sidenav_active=='cde_parse')) }}
                     {{ util.href(cdedblink("cde/money_transfers_form"), gettext("Enter Bank Transfers"), aclass="list-group-item",
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
+                {% endif %}
+                {% if "finance" in user.admin_views or "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
                 {% endif %}
@@ -59,10 +59,6 @@
                     {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
                                  aclass="list-group-item", active=(sidenav_active=='cde_past_course_search')) }}
                 {% endif %}
-                {% if "past_event" in user.admin_views %}
-                    {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
-                            aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
-                {% endif %}
                 {% if user.admin_views.intersection(('past_event', 'auditor')) %}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
@@ -70,7 +66,7 @@
             </div>
             {% if "member" in user.roles %}
                 <div class="list-group tear-down">
-                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="external-link-alt",
                                  aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
                 </div>
             {% endif %}

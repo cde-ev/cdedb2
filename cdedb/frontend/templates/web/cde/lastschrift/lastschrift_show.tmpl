@@ -18,7 +18,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {% if "finance" in user.admin_views or ambience['persona']['id'] != user.persona_id %}
-        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorization")) }}
+        {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                             util.persona_name(ambience['persona'], only_given_names=True), active=True,
@@ -39,6 +39,7 @@
                 $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#skiptransactionform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}");
+                $('.rollback-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('.failure-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('.success-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
             });
@@ -62,7 +63,7 @@
                 <dt title="{% trans %}Member{% endtrans %}">
                     {% trans %}Member{% endtrans %}
                 </dt>
-                <dd>{{ util.persona_anchor(personas[values['persona_id']]) }}</dd>
+                <dd>{{ util.persona_anchor(main_persona) }}</dd>
             {% if "finance" in user.admin_views %}
                 <dt title="{% trans %}Submitted by{% endtrans %}">
                     {% trans %}Submitted by{% endtrans %}
@@ -78,9 +79,10 @@
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
-                <dt title="{% trans %}Amount{% endtrans %}">{% trans %}Amount{% endtrans %}</dt>
-                <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
-
+                <dt title="{% trans %}Donation{% endtrans %}">
+                    {% trans %}Donation{% endtrans %}
+                </dt>
+                <dd id="donation">{{ main_persona["donation"]|money(lang=lang) }}</dd>
                 <dt title="{% trans %}IBAN{% endtrans %}">
                     {% trans %}IBAN{% endtrans %}
                 </dt>
@@ -92,13 +94,19 @@
 
                 <dt title="{% trans %}Account holder{% endtrans %}">{% trans %}Account holder{% endtrans %}</dt>
                 <dd id="account-holder">
-                    {{ lastschrift['account_owner'] }}
+                    {% if lastschrift['account_owner'] %}
+                        {{ lastschrift['account_owner'] }}
+                    {% else %}
+                        <i>{% trans %}The account is owned by the member.{% endtrans %}</i>
+                    {% endif %}
                 </dd>
 
+                {% if lastschrift['account_address'] %}
                 <dt title="{% trans %}Acc. holder’s address{% endtrans %}">{% trans %}Acc. holder’s address{% endtrans %}</dt>
                 <dd id="account-holder-address">
                     {{ lastschrift['account_address']|linebreaks }}
                 </dd>
+                {% endif %}
 
                 <dt title="{% trans %}Granted{% endtrans %}">{% trans %}Granted{% endtrans %}</dt>
                 <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
@@ -113,13 +121,18 @@
     {% if transactions or active_open %}
         <h2>{% trans %}Transactions{% endtrans %}</h2>
 		{% if active_open and "finance" in user.admin_views %}
+            <p>
+                {% trans date=payment_date|date(lang=lang) %}
+                    Transactions which are initialised today will be booked at {{ date }}.
+                {% endtrans %}
+            </p>
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
                     id="downloadsepapainform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
                     {{ util.input_submit(label=gettext("Create SEPA-PAIN-file"), icon="download",
-                                         aclass="btn btn-sm btn-primary") }}
+                                         aclass="btn btn-sm btn-default") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
@@ -142,6 +155,7 @@
 	    <thead>
             <tr>
                 <th>{% trans %}Created{% endtrans %}</th>
+                <th>{% trans %}Payment date{% endtrans %}</th>
                 <th>{% trans %}Finalized{% endtrans %}</th>
                 <th>{% trans %}Semester{% endtrans %}</th>
                 <th>{% trans %}Status{% endtrans %}</th>
@@ -155,6 +169,7 @@
             {% for transaction_id, transaction in transactions|keydictsort(EntitySorter.transaction, reverse=True) %}
                 <tr>
                     <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
+                    <td>{{ transaction['payment_date']|date(lang=lang) }}</td>
                     <td>{{ transaction['processed_at']|datetime(lang=lang) }}</td>
                     <td>{{ transaction['period_id'] }}</td>
                     <td>{{ gettext(transaction['status']|enum(enums['LastschriftTransactionStati'])) }}</td>
@@ -195,7 +210,7 @@
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
                                     {{ util.input_submit(label=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
                                 </form>
-                                {% if not active_permit %}
+                                {% if lastschrifts[transaction["lastschrift_id"]]["revoked_at"] %}
                                     <br />
                                     <b class="text-danger">
                                         {{ util.make_icon('exclamation-triangle') }}
@@ -210,15 +225,14 @@
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id}) }}"
-                                    method="GET" id="receiptform{{ transaction_id }}"
-                                    class="rollback-form">
+                                    method="GET" id="receiptform{{ transaction_id }}">
                                     {{ util.input_submit(label=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
                                                          icon='download') }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}"
-                                    method="POST" id="transactionrollbackform{{ transaction_id }}">
+                                    method="POST" id="transactionrollbackform{{ transaction_id }}" class="rollback-form">
                                     {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                                     {{ util.input_submit(label=gettext("Reverse"), aclass="btn btn-xs btn-warning",

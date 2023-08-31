@@ -104,10 +104,10 @@
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "event_id" %}
                 {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
-                        entries=all_events|dictsort, small=True, sort=True) }}
+                        entries=all_events|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
-                        entries=relevant_mailinglists|dictsort, small=True, sort=True) }}
+                        entries=all_mailinglists|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
@@ -117,13 +117,35 @@
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                     );
                 </script>
+            {% elif filter_name == "finance" %}
+                {{ util.form_input_from_to(
+                        'delta_from', 'delta_to', label=gettext("Amount"),
+                        type='number', attributes='step="0.01" min="-1000000" max="1000000"'|s, small=True) }}
+                {{ util.form_input_from_to(
+                        'new_balance_from', 'new_balance_to', label=gettext("Balance"),
+                         type='number', attributes='min="0" step="0.01 max=1000000"'|s, small=True) }}
+                {{ util.form_input_from_to(
+                        'transaction_date_from', 'transaction_date_to', label=gettext("Transaction Date"),
+                         type='date', small=True) }}
+                {{ util.form_input_from_to(
+                        'total_from', 'total_to', label=gettext("Overall Balance"),
+                         type='number', attributes='min="0" step="0.01" max="1000000"'|s, small=True) }}
+                {{ util.form_input_from_to(
+                        'members_from', 'members_to', label=gettext("Members"),
+                         type='number', attributes='min="0"'|s, small=True) }}
             {% endif %}
             {{ util.form_input_text("change_note", label=gettext("Annotation"), small=True) }}
             {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to(
-                'time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
-            {{ util.form_input_submit(label=gettext("Apply"), small=True) }}
+                'ctime_from', 'ctime_to', label=gettext("Timestamp"), type='datetime-local', small=True) }}
+            <div class="form-group mosp">
+                <div class="col-sm-offset-2 col-sm-10">
+                    {{ util.input_submit(label=gettext("Apply")) }}
+                    {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                 aclass="btn btn-default") }}
+                </div>
+            </div>
         </form>
     {% endcall %}
 {% endmacro %}

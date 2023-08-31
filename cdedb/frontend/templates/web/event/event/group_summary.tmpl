@@ -19,20 +19,20 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
-    {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups_[[part or track]]"), active=True) }}
 {% endblock %}
 
 {% block content %}
     <p>
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
-                               icon='plus', aclass='btn btn-success') }}
+                               icon='plus', aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
-                               icon='plus', aclass='btn btn-success') }}
+                               icon='plus', aclass='btn btn-success btn-sm') }}
     </p>
-    <h3>
+    <h2>
         {% trans %}Part Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Veranstaltungsteilgruppen") }}
-    </h3>
+    </h2>
     <table id="part-group-summary" class="table table-stats">
         <thead>
             <tr>
@@ -87,10 +87,10 @@
         </tbody>
     </table>
 
-    <h3>
+    <h2>
         {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
-    </h3>
+    </h2>
     <p class="text-danger">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             This feature is still experimental. Use at your own risk, and only if you know what you are doing.

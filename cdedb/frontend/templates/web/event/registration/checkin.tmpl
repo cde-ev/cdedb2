@@ -86,6 +86,11 @@
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                                 {% if registration['parts'][part_id]['lodgement_id'] %}
                                     {{ lodgements[registration['parts'][part_id]['lodgement_id']]['title'] }}
+                                    {# This is somewhat redundant regarding camping mat consent for now, but we want
+                                       to change this to be by part either way. #}
+                                    {{ generic_event.camping_mat_icon(
+                                            registration['parts'][part_id]['is_camping_mat'],
+                                            registration['fields'].get(camping_mat_field_names[part_id])) }}
                                 {% else %}
                                     –
                                 {% endif %}

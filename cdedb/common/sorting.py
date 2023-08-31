@@ -180,6 +180,10 @@ class EntitySorter:
         return (part_group['title'], part_group['id'])
 
     @staticmethod
+    def event_fee(event_fee: CdEDBObject) -> Sortkey:
+        return (event_fee['title'], event_fee['id'])
+
+    @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
 
@@ -191,10 +195,6 @@ class EntitySorter:
     @staticmethod
     def course_choice_object(cco: CdEDBObject) -> Sortkey:
         return (cco['sortkey'], cco.get('constraint_type', 0), cco['title'], cco['id'])
-
-    @staticmethod
-    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
-        return (fee_modifier['modifier_name'], fee_modifier['id'])
 
     @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
@@ -230,10 +230,6 @@ class EntitySorter:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['shortname'], institution['id'])
-
-    @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
@@ -243,7 +239,8 @@ class EntitySorter:
 
     @staticmethod
     def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (changelog_entry['ctime'], changelog_entry['id'])
+        return (changelog_entry['ctime'], changelog_entry['generation'],
+                changelog_entry['persona_id'])
 
     @staticmethod
     def mailinglist(mailinglist: CdEDBObject) -> Sortkey:

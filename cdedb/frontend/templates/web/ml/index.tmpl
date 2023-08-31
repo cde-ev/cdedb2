@@ -22,33 +22,17 @@
 
 {% block content %}
     {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
-        <div class="p button-par">
-            {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
-                    aclass="btn btn-sm btn-success") }}
-            {% if "ml_admin" in user.roles %}
-                <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
-                      id="writesubscriptionstates" style="display: inline;">
-                    {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
-                    {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
-                            icon="sync-alt") }}
-                </form>
-                <form action="{{ cdedblink("ml/manual_mailman_sync") }}" method="POST"
-                      id="mailmansync" style="display: inline;">
-                    {{ util.anti_csrf_token("ml/manual_mailman_sync") }}
-                    {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-success",
-                            icon="share") }}
-                </form>
-            {% endif %}
-        </div>
+        {{ generic_ml.index_buttons() }}
     {% endif %}
     <p>
-        {% trans %}
-            Here you can find the CdE’s Mailinglists; notably also those linked to events and assemblies.
+        {% trans infolink=util.href("https://www.cde-ev.de/vereinsleben/mailinglisten/", gettext("CdE website")) %}
+            Here you can find the CdE’s Mailinglists, notably also those linked to events and assemblies.
+            For further information on the general lists see the {{ infolink }}.
         {% endtrans %}
     </p>
     {% for group in groups %}
         {% if mailinglists[group] %}
-            <h3>{{ gettext(group|string) }}</h3>
+            {{ util.h(group|string) }}
             <div class="row">
                 {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
                     |slice(2 if mailinglists[group]|length > 5 else 1) %}

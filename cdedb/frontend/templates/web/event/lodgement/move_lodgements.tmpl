@@ -15,7 +15,8 @@
     {{ util.breadcrumb_link(cdedblink("event/create_lodgement"), gettext("Create Lodgement"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Move or Delete Lodgements"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Move or Delete Lodgements"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/move_lodgements') }}" method="POST" id="movelodgementsform" class="form-horizontal">
@@ -30,8 +31,8 @@
 
         <div class="form-group mosp">
             <div class="col-sm-offset-4 col-sm-8">
-                {{ util.input_submit("Move Lodgements", aclass='btn btn-primary', icon='random', name='delete_group', value="False") }}{{ nbsp }}
-                {{ util.input_submit("Delete Lodgement Group", aclass='btn btn-danger', icon='trash', name='delete_group', value="True") }}{{ nbsp }}
+                {{ util.input_submit(gettext("Move Lodgements"), aclass='btn btn-primary', icon='random', name='delete_group', value="False") }}{{ nbsp }}
+                {{ util.input_submit(gettext("Delete Lodgement Group"), aclass='btn btn-danger', icon='trash', name='delete_group', value="True") }}{{ nbsp }}
                 {{ util.href(cdedblink("event/lodgements"), gettext("Cancel"), icon="times", aclass="btn btn-default cancel") }}
             </div>
         </div>

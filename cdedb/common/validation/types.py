@@ -21,7 +21,11 @@ TypeMapping = MutableMapping[str, Type[Any]]
 
 NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
-ID = _NewType("ID", int)
+NegativeInt = _NewType("NegativeInt", int)
+NonZeroInt = _NewType("NonZeroInt", int)
+ProtoID = _NewType("ProtoID", int)
+ID = _NewType("ID", ProtoID)
+CreationID = _NewType("CreationID", ProtoID)
 CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
@@ -46,6 +50,7 @@ PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Identifier = _NewType("Identifier", str)
 RestrictiveIdentifier = _NewType("RestrictiveIdentifier", str)
 CSVIdentifier = _NewType("CSVIdentifier", str)
+TokenString = _NewType("TokenString", str)
 PasswordStrength = _NewType("PasswordStrength", str)
 Email = _NewType("Email", str)
 EmailLocalPart = _NewType("EmailLocalPart", str)
@@ -61,6 +66,8 @@ NonRegex = _NewType("NonRegex", str)
 IntCSVList = _NewType("IntCSVList", List[int])
 CdedbIDList = _NewType("CdedbIDList", List[CdedbID])
 
+OrgaToken = _NewType("OrgaToken", CdEDBObject)
+APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", datetime.date)
 
@@ -87,8 +94,6 @@ Period = _NewType("Period", CdEDBObject)
 ExPuls = _NewType("ExPuls", CdEDBObject)
 MoneyTransferEntry = _NewType("MoneyTransferEntry", CdEDBObject)
 Lastschrift = _NewType("Lastschrift", CdEDBObject)
-LastschriftTransaction = _NewType("LastschriftTransaction", CdEDBObject)
-LastschriftTransactionEntry = _NewType("LastschriftTransactionEntry", CdEDBObject)
 SepaTransactions = _NewType("SepaTransactions", List[CdEDBObject])
 SepaMeta = _NewType("SepaMeta", CdEDBObject)
 MetaInfo = _NewType("MetaInfo", CdEDBObject)
@@ -102,6 +107,9 @@ EventTrack = _NewType("EventTrack", CdEDBObject)
 EventTrackGroup = _NewType("EventTrackGroup", CdEDBObject)
 EventTrackGroupSetter = _NewType("EventTrackGroupSetter", CdEDBOptionalMap)
 EventField = _NewType("EventField", CdEDBObject)
+EventFee = _NewType("EventFee", CdEDBObject)
+EventFeeSetter = _NewType("EventFeeSetter", CdEDBOptionalMap)
+EventFeeCondition = _NewType("EventFeeCondition", str)
 EventFeeModifier = _NewType("EventFeeModifier", CdEDBObject)
 PastCourse = _NewType("PastCourse", CdEDBObject)
 Course = _NewType("Course", CdEDBObject)
@@ -143,7 +151,7 @@ BallotCandidate = _NewType("BallotCandidate", CdEDBObject)
 AssemblyAttachment = _NewType("AssemblyAttachment", CdEDBObject)
 AssemblyAttachmentVersion = _NewType("AssemblyAttachmentVersion", CdEDBObject)
 QueryInput = _NewType("QueryInput", Query)
-
+LogFilter = _NewType("LogFilter", CdEDBObject)
 
 # This is used for places where transitioning to the new API is not yet feasible
 # e.g. query specifications

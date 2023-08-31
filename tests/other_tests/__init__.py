@@ -4,6 +4,7 @@ This contains tests for our database interface, our middleware (like our config 
 validation) and some special cases (like testing the offline instance, our scripting
 interface or the session handling).
 """
+from tests.other_tests.test_browser import TestBrowser
 from tests.other_tests.test_common import TestCommon
 from tests.other_tests.test_config import TestConfig
 from tests.other_tests.test_database import TestDatabase

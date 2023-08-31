@@ -24,7 +24,7 @@ from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, RequestState, User, glue, make_proxy, now,
     setup_logger,
 )
-from cdedb.common.exceptions import QuotaException
+from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
@@ -40,6 +40,7 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 
 
 class Application(BaseApp):
@@ -98,7 +99,7 @@ class Application(BaseApp):
                 raise RuntimeError(
                     n_("Refusing to start in debug/offline mode."))
 
-    def make_error_page(self, error: werkzeug.exceptions.HTTPException,
+    def make_error_page(self, error: Exception,
                         request: werkzeug.wrappers.Request, user: User,
                         message: str = None) -> Response:
         """Helper to format an error page.
@@ -114,11 +115,29 @@ class Application(BaseApp):
         """
         # noinspection PyBroadException
         try:
+            # Provide additional info for privilege errors.
+            lang = self.get_locale(request)
+            gettext = self.translations[lang].gettext
+
+            if isinstance(error, PrivilegeError):
+                if len(error.args) == 1:
+                    description = gettext(error.args[0])
+                elif len(error.args) == 2:
+                    description = gettext(error.args[0]) % error.args[1]
+                else:
+                    description = "Forbidden"
+                error = werkzeug.exceptions.Forbidden(description)
+
             # We don't like werkzeug's default 404 description:
-            if isinstance(error, werkzeug.exceptions.NotFound) \
-                    and (error.description
-                         is werkzeug.exceptions.NotFound.description):
-                error.description = ""
+            if isinstance(error, werkzeug.exceptions.NotFound):
+                if error.description == werkzeug.exceptions.NotFound.description:
+                    error.description = "Not Found"
+
+            # Convert all errors to werkzeug exceptions.
+            if not isinstance(error, werkzeug.exceptions.HTTPException):
+                error = werkzeug.exceptions.InternalServerError(repr(error))
+
+            status = f"{error.code} {error.description}"
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
@@ -126,13 +145,12 @@ class Application(BaseApp):
                 return urls.build(endpoint, params or {})
 
             begin = now()
-            lang = self.get_locale(request)
             data = {
                 'ambience': {},
                 'cdedblink': _cdedblink,
                 'errors': {},
                 'generation_time': lambda: (now() - begin),
-                'gettext': self.translations[lang].gettext,
+                'gettext': gettext,
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,
                 'notifications': tuple(),
@@ -144,14 +162,16 @@ class Application(BaseApp):
             }
             t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
             html = t.render(**data)
-            response = Response(html, mimetype='text/html', status=error.code)
+            response = Response(html, mimetype='text/html', status=status)
             response.headers.add('X-Generation-Time', str(now() - begin))
             return response
         except Exception:  # pragma: no cover
             self.logger.exception("Exception while rendering error page")
-            return Response("HTTP {}: {}\n{}".format(error.code, error.name,
-                                                     error.description),
-                            status=error.code)
+            if not isinstance(error, werkzeug.exceptions.HTTPException):
+                error = werkzeug.exceptions.InternalServerError(repr(error))
+            status = f"{error.code} {error.description}"
+            return Response(
+                f"HTTP {error.code}: {error.name}\n{error.description}", status=status)
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.Response:
@@ -160,7 +180,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            apitoken = request.headers.get("X-CdEDB-API-Token")
+            apitoken = request.headers.get(APIToken.request_header_key)
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:
@@ -252,26 +272,26 @@ class Application(BaseApp):
             # It will be made accessible for the backends by the make_proxy.
             rs._conn = self.connpool[roles_to_db_role(user.roles)]
 
-            # Insert orga and moderator status context
-            orga: Set[int] = set()
-            if "event" in user.roles:
-                assert user.persona_id is not None
-                orga = self.eventproxy.orga_info(rs, user.persona_id)
-            moderator: Set[int] = set()
-            if "ml" in user.roles:
-                assert user.persona_id is not None
-                moderator = self.mlproxy.moderator_info(
-                    rs, user.persona_id)
-            presider: Set[int] = set()
-            if "assembly" in user.roles:
-                assert user.persona_id is not None
-                presider = self.assemblyproxy.presider_info(
-                    rs, user.persona_id)
-            user.orga = orga
-            user.moderator = moderator
-            user.presider = presider
-            user.init_admin_views_from_cookie(
-                request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
+            # Retrieve entity related privileges for personas.
+            # The session backend takes care of this for droids.
+            if user.persona_id:
+                # Insert orga and moderator status context
+                orga: Set[int] = set()
+                if "event" in user.roles:
+                    orga = self.eventproxy.orga_info(rs, user.persona_id)
+                moderator: Set[int] = set()
+                if "ml" in user.roles:
+                    moderator = self.mlproxy.moderator_info(
+                        rs, user.persona_id)
+                presider: Set[int] = set()
+                if "assembly" in user.roles:
+                    presider = self.assemblyproxy.presider_info(
+                        rs, user.persona_id)
+                user.orga = orga
+                user.moderator = moderator
+                user.presider = presider
+                user.init_admin_views_from_cookie(
+                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 
             try:
                 ret = handler(rs, **args)
@@ -291,8 +311,9 @@ class Application(BaseApp):
                     n_("You reached the internal limit for user profile views. "
                        "This is a privacy feature to prevent users from cloning "
                        "the address database. Unfortunatetly, this may also yield "
-                       "some false positive restrictions. Your limit will be "
-                       "reset in the next days."))
+                       "some false positive restrictions. If you require extensive "
+                       "queries, you may query %s. Your limit will be reset in the "
+                       "next days.").format(self.conf['MANAGEMENT_ADDRESS']))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
@@ -332,8 +353,7 @@ class Application(BaseApp):
 
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
-            return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(repr(e)), request, user)
+            return self.make_error_page(e, request, user)
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
         """

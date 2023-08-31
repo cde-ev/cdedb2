@@ -15,7 +15,9 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
+from cdedb.common.validation.validate import (
+    GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS,
+)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
     periodic,
@@ -59,7 +61,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @REQUESTdata("attachment_filename")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
-                        attachment_filename: str = None) -> Response:
+                        attachment_filename: Optional[str] = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
@@ -148,7 +150,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
                      })
         rs.notify(
             "success",
-            n_("Email sent. Please follow the link contained in the email."))
+            n_("We just sent you an email. To complete your account request, please"
+               " follow the link contained in the email."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
@@ -268,13 +271,22 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
-            rs, stati=(const.GenesisStati.to_review,), realms=realms)
+            rs, realms=realms, stati={
+                const.GenesisStati.to_review, const.GenesisStati.successful,
+                const.GenesisStati.existing_updated, const.GenesisStati.rejected})
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
-        cases_by_realm = {
-            realm: {k: v for k, v in cases.items() if v['realm'] == realm}
+        current_cases_by_realm = {
+            realm: {k: v for k, v in cases.items() if v['realm'] == realm
+                        and v['case_status'] == const.GenesisStati.to_review}
             for realm in realms}
+        concluded_cases = {k: v for k, v in cases.items()
+                           if v['case_status'] != const.GenesisStati.to_review}
+        created_account_ids = [case['persona_id'] for case in concluded_cases.values()
+                               if case['persona_id']]
+        personas = self.coreproxy.get_personas(rs, created_account_ids)
         return self.render(rs, "genesis/genesis_list_cases", {
-            'cases_by_realm': cases_by_realm})
+            'current_cases_by_realm': current_cases_by_realm,
+            'concluded_cases': concluded_cases, 'personas': personas})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
@@ -285,13 +297,17 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        reviewer = pevent = pcourse = None
+        persona = reviewer = pevent = pcourse = None
+        if case['persona_id']:
+            persona = self.coreproxy.get_persona(rs, case['persona_id'])
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
-        if case['pevent_id']:
-            pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
-        if case['pcourse_id']:
-            pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
+        if "event" in rs.user.roles:
+            # e.g. for ml-only ml admins
+            if case['pevent_id']:
+                pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
+            if case['pcourse_id']:
+                pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
         persona_data = {k: v for k, v in case.items() if k in PERSONA_COMMON_FIELDS}
         # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
@@ -309,7 +325,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         }
         return self.render(rs, "genesis/genesis_show_case", {
             'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
-            'doppelgangers': doppelgangers,
+            'persona': persona, 'doppelgangers': doppelgangers,
+            'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
@@ -359,12 +376,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
                     ("username", ValueError(n_("Email address already taken."))))
-        if data.get('pevent_id') and data.get('pcourse_id'):
-            if data['pevent_id'] != self.pasteventproxy.get_past_course(
+        if data.get('pcourse_id'):
+            # Capture both course without event and with unassociated event
+            if data.get('pevent_id') != self.pasteventproxy.get_past_course(
                     rs, data['pcourse_id'])['pevent_id']:
-                rs.append_validation_error(("pcourse_id", ValueError(n_(
-                    "Course not associated with past event specified."))
-                ))
+                e = ValueError(n_("Course not associated with past event specified."))
+                rs.extend_validation_errors((("pcourse_id", e), ("pevent_id", e)))
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
 
@@ -428,7 +445,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
-        if (decision.is_create() or decision.is_update()) and case['pevent_id']:
+        if ((decision.is_create() or decision.is_update()) and case['pevent_id']
+                and case['realm'] == 'cde'):
             code = self.pasteventproxy.add_participant(
                 rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                 persona_id=persona_id)

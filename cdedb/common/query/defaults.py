@@ -95,6 +95,11 @@ def generate_event_registration_default_queries(
             ("persona.given_names", "persona.family_name", "reg.orga_notes"),
             (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort),
+        n_("32_query_event_registration_notes"): Query(
+            QueryScope.registration, spec,
+            ("persona.given_names", "persona.family_name", "reg.notes"),
+            (("reg.notes", QueryOperators.nonempty, None),),
+            default_sort),
         n_("40_query_event_registration_u18"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
@@ -181,94 +186,82 @@ def generate_event_course_default_queries(
 
 
 DEFAULT_QUERIES = {
-        QueryScope.cde_user: {
+        QueryScope.all_cde_users: {
             n_("00_query_cde_user_all"): Query(
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                (),
+                (("is_archived", QueryOperators.equal, False),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_cde_members"): Query(
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                (("is_member", QueryOperators.equal, True),),
+                (("is_archived", QueryOperators.equal, False),
+                 ("is_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_cde_user_trial_members"): Query(
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                (("trial_member", QueryOperators.equal, True),),
+                (("is_archived", QueryOperators.equal, False),
+                 ("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("20_query_cde_user_expuls"): Query(
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name", "address",
                  "address_supplement", "postal_code", "location", "country"),
-                (("is_member", QueryOperators.equal, True),
+                (("is_archived", QueryOperators.equal, False),
+                 ("is_member", QueryOperators.equal, True),
                  ("paper_expuls", QueryOperators.equal, True),
                  ("address", QueryOperators.nonempty, None)),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        QueryScope.all_core_users: {
-            n_("00_query_archived_persona_all"): Query(
-                QueryScope.all_core_users,
-                QueryScope.all_core_users.get_spec(),
-                ("personas.id", "given_names", "family_name", "notes"),
-                (
-                    ("is_archived", QueryOperators.equal, True),
-                ),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.event_user: {
+        QueryScope.all_event_users: {
             n_("00_query_event_user_all"): Query(
                 QueryScope.event_user, QueryScope.event_user.get_spec(),
                 ("personas.id", "given_names", "family_name", "birth_name"),
-                tuple(),
+                (("is_archived", QueryOperators.equal, False),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_event_user_minors"): Query(
                 QueryScope.event_user, QueryScope.event_user.get_spec(),
                 ("personas.id", "given_names", "family_name",
                  "birthday"),
-                (("birthday", QueryOperators.greater,
+                (("is_archived", QueryOperators.equal, False),
+                 ("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
                  ("given_names", True))),
         },
-        QueryScope.core_user: {
+        QueryScope.all_core_users: {
             n_("00_query_core_user_all"): Query(
                 QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                tuple(),
+                (("is_archived", QueryOperators.equal, False),),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
                 QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
-                ((",".join(ADMIN_KEYS), QueryOperators.equal, True),),
+                (("is_archived", QueryOperators.equal, False),
+                 (",".join(ADMIN_KEYS), QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),
         },
-        QueryScope.assembly_user: {
+        QueryScope.all_assembly_users: {
             n_("00_query_assembly_user_all"): Query(
                 QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                tuple(),
+                (("is_archived", QueryOperators.equal, False),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        QueryScope.ml_user: {
+        QueryScope.all_ml_users: {
             n_("00_query_ml_user_all"): Query(
                 QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name"),
-                tuple(),
+                (("is_archived", QueryOperators.equal, False),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
 }
-
-DEFAULT_QUERIES[QueryScope.all_assembly_users] = DEFAULT_QUERIES[
-    QueryScope.all_core_users]
-DEFAULT_QUERIES[QueryScope.all_cde_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
-DEFAULT_QUERIES[QueryScope.all_event_users] = DEFAULT_QUERIES[QueryScope.all_core_users]
-DEFAULT_QUERIES[QueryScope.all_ml_users] = DEFAULT_QUERIES[QueryScope.all_core_users]

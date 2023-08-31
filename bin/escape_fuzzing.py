@@ -25,6 +25,7 @@ import argparse
 import itertools
 import pathlib
 import queue
+import re
 import sys
 import time
 from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set, Tuple
@@ -44,6 +45,13 @@ CheckReturn = NamedTuple("CheckReturn", [("errors", List[str]),
 visited_urls: Set[str] = set()
 posted_urls: Set[str] = set()
 
+# Exclude some forms which do some undesired behaviour
+excludes = [
+    re.compile(r"^/core/logout/"),
+    re.compile(r"^/core/locale$"),
+    re.compile(r"^/event/event/\d+/lock$"),
+    re.compile(r"^/event/event/\d+/fee/\d+/delete$"),
+]
 
 @sanity_check
 def work(
@@ -63,11 +71,7 @@ def work(
         print(f"Target directory {outdir!r} doesn't exist."
               f" Nothing will be written to file.")
 
-    # Exclude some forms which do some undesired behaviour
     posted_urls.clear()
-    posted_urls.update({
-        '/core/logout', '/core/logout/all', '/core/locale',
-        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock'})
     visited_urls.clear()
 
     # login as Anton and add the start page
@@ -199,13 +203,13 @@ def check(response_data: ResponseData, *, payload: str,
 
     # Submit all forms to unvisited action urls
     for form in response.forms.values():
-        if form.action in posted_urls:
+        if form.action in posted_urls or any(ex.match(form.action) for ex in excludes):
             continue
 
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
@@ -220,7 +224,7 @@ def check(response_data: ResponseData, *, payload: str,
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
-        except webtest.app.AppError as e:
+        except Exception as e:
             log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
         ret.queue.append(ResponseData(new_response, form.action + " [P+token]", url))

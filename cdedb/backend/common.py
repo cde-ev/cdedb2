@@ -9,24 +9,22 @@ template for all services.
 import abc
 import cgitb
 import copy
-import datetime
-import enum
 import functools
 import logging
 import sys
 import uuid
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
-    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Dict, Iterable, List, Literal, Mapping, Optional, Set,
+    Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
+from passlib.hash import sha512_crypt
 
-import cdedb.common.validation as validate
-import cdedb.common.validation.types as vtypes
+import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
@@ -34,16 +32,20 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation import parse_date, parse_datetime
+from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
-from cdedb.database.query import DatabaseValue, DatabaseValue_s, SqlQueryBackend
+from cdedb.database.query import DatabaseValue, SqlQueryBackend
+from cdedb.models.common import CdEDataclass
 
 F = TypeVar('F', bound=Callable[..., Any])
+LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
 S = TypeVar('S')
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 @overload
@@ -189,8 +191,10 @@ def access(*roles: Role) -> Callable[[F], F]:
                     **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
-                    n_("%(user_roles)s is disjoint from %(roles)s"),
-                    {"user_roles": rs.user.roles, "roles": roles}
+                    n_("%(user_roles)s is disjoint from %(roles)s"
+                       " for method %(method)s."),
+                    {"user_roles": rs.user.roles, "roles": roles,
+                     "method": function.__name__}
                 )
             return function(self, rs, *args, **kwargs)
 
@@ -291,7 +295,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             pass
 
     def general_query(self, rs: RequestState, query: Query,
-                      distinct: bool = True, view: str = None
+                      distinct: bool = True, view: str = None, aggregate: bool = False
                       ) -> Tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
@@ -299,13 +303,56 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         :param distinct: whether only unique rows should be returned
         :param view: Override parameter to specify the target of the FROM
           clause. This is necessary for event stuff and should be used seldom.
+        :param aggregate: Perform an aggregation query instead.
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug(f"Performing general query {query}.")
-        select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
-                           for field in query.fields_of_interest
-                           for column in field.split(','))
+        self.logger.debug(f"Performing general query {query} (aggregate={aggregate}).")
+
+        fields = {column: column.replace('"', '') for field in query.fields_of_interest
+                  for column in field.split(",")}
+        if aggregate:
+            agg = {}
+            for field, field_as in fields.items():
+                # distinct count for primary keys is necessary for queries that
+                # duplicate rows due to JOIN, e.g. cde user search
+                agg[(f"COUNT(DISTINCT {query.scope.get_primary_key()})"
+                     f" FILTER (WHERE {field} IS NULL)")] = f"null.{field_as}"
+                if query.spec[field].type in ("int", "float"):
+                    agg[f"SUM({field})"] = f"sum.{field_as}"
+                    agg[f"MIN({field})"] = f"min.{field_as}"
+                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    agg[f"AVG({field})"] = f"avg.{field_as}"
+                    agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
+                elif query.spec[field].type == "bool":
+                    agg[f"SUM({field}::int)"] = f"sum.{field_as}"
+                elif query.spec[field].type in ("date", "datetime"):
+                    agg[f"MIN({field})"] = f"min.{field_as}"
+                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    # TODO add avg for dates
+            select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
+            query.order = []
+        else:
+            select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
+            select += ', ' + query.scope.get_primary_key()
+        q, params = self._construct_query(query, select, distinct=distinct, view=view)
+        data = self.query_all(rs, q, params)
+
+        if aggregate:
+            # we know that all keys are unique, so we put them in a single dict
+            datum = {k: v for datum in data for k, v in datum.items()}
+            # store if the respective aggregation function has an interesting value
+            datum.update(
+                {agg: any(datum.get(f"{agg}.{field_as}") is not None
+                          for field_as in fields.values())
+                 for agg in ['null', 'sum', 'min', 'max', 'avg', 'stddev']})
+            data = (datum, )
+
+        return data
+
+    @staticmethod
+    def _construct_query(query: Query, select: str, distinct: bool,
+                         view: Optional[str]) -> Tuple[str, List[DatabaseValue]]:
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -315,7 +362,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 else:
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
-        select += ', ' + query.scope.get_primary_key()
         view = view or query.scope.get_view()
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[DatabaseValue] = []
@@ -436,20 +482,9 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                         f'{entry.split(",")[0]} '
                         f'{"ASC" if ascending else "DESC"}')
             q = glue(q, "ORDER BY", ", ".join(orders))
-        return self.query_all(rs, q, params)
+        return q, params
 
-    def generic_retrieve_log(self, rs: RequestState, code_validator: Type[T],
-                             entity_name: str, table: str,
-                             codes: Collection[int] = None,
-                             entity_ids: Collection[int] = None,
-                             offset: int = None, length: int = None,
-                             additional_columns: Collection[str] = None,
-                             persona_id: int = None,
-                             submitted_by: int = None,
-                             reviewed_by: int = None,
-                             change_note: str = None,
-                             time_start: datetime.datetime = None,
-                             time_stop: datetime.datetime = None
+    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter
                              ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -467,85 +502,17 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         history).
 
         However this handles the finance_log for financial transactions.
-
-        :param code_validator: e.g. "enum_mllogcodes"
-        :param entity_name: e.g. "event" or "mailinglist"
-        :param table: e.g. "ml.log" or "event.log"
-        :param offset: How many entries to skip at the start.
-        :param length: How many entries to list.
-        :param additional_columns: Extra values to retrieve.
-        :param persona_id: Filter for persona_id column.
-        :param submitted_by: Filter for submitted_by column.
-        :param reviewed_by: Filter for reviewed_by column.
-            Only for core.changelog.
-        :param change_note: Filter for change_note column
-        :param time_start: lower bound for ctime columns
-        :param time_stop: upper bound for ctime column
         """
-        assert issubclass(code_validator, enum.IntEnum)
-        codes = affirm_set_validation(code_validator, codes or set())
-        entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
-        offset: Optional[int] = affirm_validation_optional(
-            vtypes.NonNegativeInt, offset)
-        length: Optional[int] = affirm_validation_optional(vtypes.PositiveInt, length)
-        additional_columns = affirm_set_validation(
-            vtypes.RestrictiveIdentifier, additional_columns or set())
-        persona_id = affirm_validation_optional(vtypes.ID, persona_id)
-        submitted_by = affirm_validation_optional(vtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_optional(vtypes.ID, reviewed_by)
-        change_note = affirm_validation_optional(vtypes.Regex, change_note)
-        time_start = affirm_validation_optional(datetime.datetime, time_start)
-        time_stop = affirm_validation_optional(datetime.datetime, time_stop)
+        length = log_filter.length or 0
+        offset = log_filter.offset
+        log_code = log_filter.log_code_class
 
-        length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns: List[str] = list(additional_columns or [])
-
-        # First, define the common WHERE filter clauses
-        conditions = []
-        params: List[DatabaseValue_s] = []
-        if codes:
-            conditions.append("code = ANY(%s)")
-            params.append(codes)
-        if entity_ids:
-            conditions.append("{}_id = ANY(%s)".format(entity_name))
-            params.append(entity_ids)
-        if persona_id:
-            conditions.append("persona_id = %s")
-            params.append(persona_id)
-        if submitted_by:
-            conditions.append("submitted_by = %s")
-            params.append(submitted_by)
-        if change_note:
-            conditions.append("change_note ~* %s")
-            params.append(diacritic_patterns(change_note))
-        if time_start and time_stop:
-            conditions.append("%s <= ctime AND ctime <= %s")
-            params.extend((time_start, time_stop))
-        elif time_start:
-            conditions.append("%s <= ctime")
-            params.append(time_start)
-        elif time_stop:
-            conditions.append("ctime <= %s")
-            params.append(time_stop)
-
-        # Special column for core.changelog
-        if table == "core.changelog":
-            additional_columns += ["reviewed_by", "generation"]
-            if reviewed_by:
-                conditions.append("reviewed_by = %s")
-                params.append(reviewed_by)
-        elif reviewed_by:
-            raise ValueError(
-                "reviewed_by column only defined for changelog.")
-
-        if conditions:
-            condition = "WHERE {}".format(" AND ".join(conditions))
-        else:
-            condition = ""
+        condition, params = log_filter.to_sql_condition()
+        columns = log_filter.get_columns_str()
 
         # The first query determines the absolute number of logs existing
         # matching the given criteria
-        query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
+        query = f"SELECT COUNT(*) AS count FROM {log_filter.log_table} {condition}"
         total: int = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
@@ -553,20 +520,15 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         elif offset is None and total > length:
             offset = length * ((total - 1) // length)
 
-        extra_columns = ", ".join(additional_columns)
-        if extra_columns:
-            extra_columns = ", " + extra_columns
-
         # Now, query the actual information
-        query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
-                 f" persona_id, change_note {extra_columns} FROM {table}"
-                 f" {condition} ORDER BY id LIMIT {length}")
-        if offset is not None:
-            query = glue(query, "OFFSET {}".format(offset))
+        query = f"""
+            SELECT {columns} FROM {log_filter.log_table} {condition}
+            ORDER BY id LIMIT {length} {f' OFFSET {offset}' if offset else ''}
+        """
 
         data = self.query_all(rs, query, params)
         for e in data:
-            e['code'] = code_validator(e['code'])
+            e['code'] = log_code(e['code'])
         return total, data
 
 
@@ -686,6 +648,16 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
+def affirm_dataclass(assertion: Type[DC], value: Any, **kwargs: Any) -> DC:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but used for dataclass objects.
+    """
+    return validate.validate_assert_dataclass(
+        assertion, value, ignore_warnings=True, **kwargs)
+
+
 def affirm_validation_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
@@ -728,6 +700,18 @@ def inspect_validation(
     """
     return validate.validate_check(
         type_, value, ignore_warnings=ignore_warnings, **kwargs)
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    """Central function, so that the actual implementation may be easily
+    changed.
+    """
+    return sha512_crypt.verify(password, password_hash)
+
+
+def encrypt_password(password: str) -> str:
+    """We currently use passlib for password protection."""
+    return sha512_crypt.hash(password)
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:

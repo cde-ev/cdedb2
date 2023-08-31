@@ -10,9 +10,9 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    read_conditional_write_composer, singularize,
+    AbstractBackend, Silencer, access, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -20,11 +20,10 @@ from cdedb.common import (
     RequestState, glue, make_proxy, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import (
-    INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS,
-)
+from cdedb.common.fields import PAST_COURSE_FIELDS, PAST_EVENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
+from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 
@@ -106,103 +105,15 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState,
-                          codes: Collection[const.PastEventLogCodes] = None,
-                          pevent_id: int = None, offset: int = None,
-                          length: int = None, persona_id: int = None,
-                          submitted_by: int = None, change_note: str = None,
-                          time_start: datetime.datetime = None,
-                          time_stop: datetime.datetime = None) -> CdEDBLog:
+    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter
+                          ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        pevent_id = affirm_optional(vtypes.ID, pevent_id)
-        pevent_ids = [pevent_id] if pevent_id else None
-        return self.generic_retrieve_log(
-            rs, const.PastEventLogCodes, "pevent", "past_event.log",
-            codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
-            persona_id=persona_id, submitted_by=submitted_by,
-            change_note=change_note, time_start=time_start,
-            time_stop=time_stop)
-
-    @access("cde", "event")
-    def list_institutions(self, rs: RequestState) -> Dict[int, str]:
-        """List all institutions.
-
-        :returns: Mapping of institution ids to titles.
-        """
-        query = "SELECT id, title FROM past_event.institutions"
-        data = self.query_all(rs, query, tuple())
-        return {e['id']: e['title'] for e in data}
-
-    @access("cde", "event")
-    def get_institutions(self, rs: RequestState, institution_ids: Collection[int]
-                         ) -> CdEDBObjectMap:
-        """Retrieve data for some institutions."""
-        institution_ids = affirm_set(vtypes.ID, institution_ids)
-        data = self.sql_select(rs, "past_event.institutions",
-                               INSTITUTION_FIELDS, institution_ids)
-        return {e['id']: e for e in data}
-
-    class _GetInstitutionProtocol(Protocol):
-        def __call__(self, rs: RequestState, institution_id: int) -> CdEDBObject: ...
-    get_institution: _GetInstitutionProtocol = singularize(
-        get_institutions, "institution_ids", "institution_id")
-
-    @access("cde_admin", "event_admin")
-    def set_institution(self, rs: RequestState, data: CdEDBObject
-                        ) -> DefaultReturnCode:
-        """Update some keys of an institution."""
-        data = affirm(vtypes.Institution, data)
-        with Atomizer(rs):
-            ret = self.sql_update(rs, "past_event.institutions", data)
-            current = unwrap(self.get_institutions(rs, (data['id'],)))
-            self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
-                                pevent_id=None, change_note=current['title'])
-        return ret
-
-    class _RCWInstitutionProtocol(Protocol):
-        def __call__(self, rs: RequestState, data: CdEDBObject
-                     ) -> DefaultReturnCode: ...
-    rcw_institution: _RCWInstitutionProtocol = read_conditional_write_composer(
-        get_institution, set_institution, id_param_name='institution_id')
-
-    @access("cde_admin", "event_admin")
-    def create_institution(self, rs: RequestState, data: CdEDBObject
-                           ) -> DefaultReturnCode:
-        """Make a new institution."""
-        data = affirm(vtypes.Institution, data, creation=True)
-        with Atomizer(rs):
-            ret = self.sql_insert(rs, "past_event.institutions", data)
-            self.past_event_log(rs, const.PastEventLogCodes.institution_created,
-                                pevent_id=None, change_note=data['title'])
-        return ret
-
-    # TODO: rework deletion interface
-    @access("cde_admin", "event_admin")
-    def delete_institution(self, rs: RequestState, institution_id: int,
-                           cascade: bool = False) -> DefaultReturnCode:
-        """Remove an institution
-
-        The institution may not be referenced.
-
-        :param cascade: Must be False.
-        """
-        institution_id = affirm(vtypes.ID, institution_id)
-        cascade = affirm(bool, cascade)
-        if cascade:
-            raise NotImplementedError(n_("Not available."))
-
-        current = unwrap(self.get_institutions(rs, (institution_id,)))
-        with Atomizer(rs):
-            ret = self.sql_delete_one(rs, "past_event.institutions",
-                                      institution_id)
-            self.past_event_log(
-                rs, const.PastEventLogCodes.institution_deleted,
-                pevent_id=None, change_note=current['title'])
-        return ret
+        log_filter = affirm_dataclass(PastEventLogFilter, log_filter)
+        return self.generic_retrieve_log(rs, log_filter)
 
     @access("persona")
     def list_past_events(self, rs: RequestState) -> Dict[int, str]:
@@ -226,15 +137,11 @@ class PastEventBackend(AbstractBackend):
         """
         query = """
         SELECT
-            events.id AS pevent_id, tempus, institutions.id AS institution_id,
-            institutions.shortname AS institution_shortname,
+            events.id AS pevent_id, tempus, events.institution AS institution,
             COALESCE(course_count, 0) AS courses,
             COALESCE(participant_count, 0) AS participants
         FROM (
             past_event.events
-            LEFT OUTER JOIN
-                past_event.institutions
-            ON institutions.id = events.institution
             LEFT OUTER JOIN (
                 SELECT
                     pevent_id, COUNT(*) AS course_count
@@ -258,7 +165,10 @@ class PastEventBackend(AbstractBackend):
             ) AS participant_counts ON participant_counts.pevent_id = events.id
         )"""
         data = self.query_all(rs, query, tuple())
-        ret = {e['pevent_id']: e for e in data}
+        ret = {}
+        for e in data:
+            e['institution'] = const.PastInstitutions(e['institution'])
+            ret[e['pevent_id']] = e
         return ret
 
     @access("cde", "event")
@@ -268,7 +178,11 @@ class PastEventBackend(AbstractBackend):
         pevent_ids = affirm_set(vtypes.ID, pevent_ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS,
                                pevent_ids)
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            e['institution'] = const.PastInstitutions(e['institution'])
+            ret[e['id']] = e
+        return ret
 
     class _GetPastEventProtocol(Protocol):
         def __call__(self, rs: RequestState, pevent_id: int) -> CdEDBObject: ...
@@ -306,6 +220,7 @@ class PastEventBackend(AbstractBackend):
                         courses.
         * courses: A course associated with the past event.
         * log: A log entry for the past event.
+        * genesis cases: A genesis case associated with the past event.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -327,6 +242,10 @@ class PastEventBackend(AbstractBackend):
                               entity_key="pevent_id")
         if log:
             blockers["log"] = [e["id"] for e in log]
+        genesis_cases = self.sql_select(rs, "core.genesis_cases", ("id",),
+                                        (pevent_id,), entity_key="pevent_id")
+        if genesis_cases:
+            blockers["genesis_cases"] = [e["id"] for e in genesis_cases]
 
         return blockers
 
@@ -362,11 +281,18 @@ class PastEventBackend(AbstractBackend):
                 if "courses" in cascade:
                     with Silencer(rs):
                         for pcourse_id in blockers["courses"]:
+                            casc = {"participants"} | ({"genesis_cases"} & cascade)
                             ret *= self.delete_past_course(
-                                rs, pcourse_id, ("participants",))
+                                rs, pcourse_id, cascade=casc)
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "past_event.log", blockers["log"])
+                if "genesis_cases" in cascade:
+                    for case_id in blockers["genesis_cases"]:
+                        # we use sql_update instead of core.modify_genesis_case here,
+                        #  since the latter is forbidden for finalized cases
+                        update = {'id': case_id, 'pevent_id': None}
+                        ret *= self.sql_update(rs, "core.genesis_cases", update)
 
                 blockers = self.delete_past_event_blockers(rs, pevent_id)
 
@@ -453,6 +379,7 @@ class PastEventBackend(AbstractBackend):
         Possible blockers:
 
         * participants: Participants of the past course.
+        * genesis cases: A genesis case associated with this past course.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -464,6 +391,10 @@ class PastEventBackend(AbstractBackend):
                                        (pcourse_id,), entity_key="pcourse_id")
         if participants:
             blockers["participants"] = [e["id"] for e in participants]
+        genesis_cases = self.sql_select(rs, "core.genesis_cases", ("id",),
+                                        (pcourse_id,), entity_key="pcourse_id")
+        if genesis_cases:
+            blockers["genesis_cases"] = [e["id"] for e in genesis_cases]
 
         return blockers
 
@@ -496,6 +427,12 @@ class PastEventBackend(AbstractBackend):
                 if "participants" in cascade:
                     ret *= self.sql_delete(
                         rs, "past_event.participants", blockers["participants"])
+                if "genesis_cases" in cascade:
+                    for case_id in blockers["genesis_cases"]:
+                        # we use sql_update instead of core.modify_genesis_case here,
+                        #  since the latter is forbidden for finalized cases
+                        update = {'id': case_id, 'pcourse_id': None}
+                        ret *= self.sql_update(rs, "core.genesis_cases", update)
 
                 blockers = self.delete_past_course_blockers(rs, pcourse_id)
 
@@ -717,6 +654,8 @@ class PastEventBackend(AbstractBackend):
             course_map[course_id] = pcourse_id
         reg_ids = self.event.list_registrations(rs, event['id'])
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
+        # Remember if there were registrations for this part.
+        registrations_seen = False
         # we want to later delete empty courses
         courses_seen = set()
         # we want to add each participant/course combination at
@@ -726,6 +665,7 @@ class PastEventBackend(AbstractBackend):
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
+            registrations_seen = True
             is_orga = reg['persona_id'] in event['orgas']
             for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
@@ -746,6 +686,10 @@ class PastEventBackend(AbstractBackend):
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
                     is_instructor=False, is_orga=is_orga)
+        # Delete past event if it has no participants.
+        if not registrations_seen:
+            self.delete_past_event(rs, new_id, cascade=("log",))
+            return 0
         # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
@@ -758,7 +702,7 @@ class PastEventBackend(AbstractBackend):
     def archive_event(self, rs: RequestState, event_id: int,
                       create_past_event: bool = True
                       ) -> Union[Tuple[None, str],
-                                 Tuple[Optional[Tuple[int, ...]], None]]:
+                                 Tuple[Optional[List[int]], None]]:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -783,8 +727,8 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if any(now().date() < part['part_end']
-                   for part in event['parts'].values()):
+            if not event['is_cancelled'] and any(now().date() < part['part_end']
+                                                 for part in event['parts'].values()):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."
@@ -792,19 +736,25 @@ class PastEventBackend(AbstractBackend):
                                                'is_archived': True})
             new_ids = None
             if create_past_event:
-                new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                                for part_id in xsorted(event['parts']))
+                new_ids = []
+                for part_id in xsorted(event['parts']):
+                    new_id = self.archive_one_part(rs, event, part_id)
+                    if new_id:
+                        new_ids.append(new_id)
+                if not new_ids:
+                    raise ValueError(n_("No event parts have any participants."))
         return new_ids, None
 
     @access("member", "cde_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)

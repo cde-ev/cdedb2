@@ -1,8 +1,12 @@
 {% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
+{% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_register.js') }}
+{% endblock %}
 {% block title %}
     {% if preview %}
         {% trans title=ambience['event']['title'] %}
@@ -52,10 +56,8 @@
         {% endif %}
     </p>
 
-    {% if preview %}
-    <form class="form-horizontal">
-    {% else %}
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
+    {% if not preview %}
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
 
@@ -65,7 +67,7 @@
             {% endcall %}
         {% endif %}
 
-        <h3 class="heading-underline">{% trans %}My Data{% endtrans %}</h3>
+        {{ util.h(n_("My Data"), underline=true) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
@@ -102,22 +104,28 @@
         </p>
 
         {% if ambience['event']['parts']|length > 1 %}
-            <h3 class="heading-underline">{% trans %}Registration{% endtrans %}</h3>
+            {{ util.h(n_("Registration"), underline=true) }}
         {% endif %}
 
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
-                                          entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                              |dict_entries('id', 'title')) }}
+                                          entries=part_options) }}
+            <div class="panel panel-primary">
+                <div class="panel-body">
+                    {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
+                                              value=gettext("Activate JavaScript for automatic fee preview.")) }}
+                </div>
+            </div>
+
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% if not persona["is_member"] and ambience["event"]["nonmember_surcharge"] > 0 %}
-            <div class="heading-underline text-info" id="nonmember-surcharge" style="font-weight: bold;">
-                <p>
-                {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
-                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
+        {% if not persona["is_member"] %}
+            <div class="heading-underline text-info" style="font-weight: bold;">
+                <p id="nonmember-surcharge">
+                {% trans %}
+                    Because you are not a CdE-Member, you might have to pay an additional fee.
                 {% endtrans %}
                 </p>
                 {% if persona["is_cde_realm"] %}
@@ -132,11 +140,11 @@
         {% endif %}
 
         {% if choice_objects %}
-            <h3 class="">{% trans %}Course Choices{% endtrans %}</h3>
+            {{ util.h(n_("Course Choices"), underline=true) }}
             {{ generic_event.select_all_course_choices() }}
         {% endif %}
 
-        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
+        {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
@@ -157,6 +165,43 @@
                 </p>
             {% endif %}
         {% endcall %}
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {% if preview %}
+                    {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
+                    {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
+                                                defaultvalue="True") }}
+                {% endif %}
+                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview", aclass="font-bold",
+                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
+
+                {% if preview %}
+                    <table class="table" style="display: none">
+                        <thead>
+                            <tr>
+                                <th>{% trans %}Title{% endtrans %}</th>
+                                <th>{% trans %}Amount{% endtrans %}</th>
+                                <th>{% trans %}Condition{% endtrans %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
+                            <tr id="active-fee" data-fee_id="{{ fee_id }}">
+                                <td class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</td>
+                                <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
+                                    <strong>
+                                        {{ fee['amount']|money(lang=lang) }}
+                                    </strong>
+                                </td>
+                                <td id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+
         {% if not preview %}
         {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
@@ -164,31 +209,22 @@
 
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
-        $form.cdedbProtectChanges();
-        var checkboxes = $form.find('[type="checkbox"][name="parts"]');
-        /* Map part to part selection checkbox ($-encapsulated) */
-        checkbox_map = {};
-        checkboxes.each(function(){
-            checkbox_map[$(this).val()] = $(this);
-        });
-        ccos_per_part = {{ ccos_per_part|tojson }};
-        var containers = $('.course_choice_container');
-        var updateCourseChoiceContainers = function() {
-            /* Hide everything, then show available containers */
-            containers.each(function(){
-                $(this).hide();
-            });
-            Object.keys(ccos_per_part).forEach(function(key){
-                if (checkbox_map[key].prop('checked'))
-                    ccos_per_part[key].forEach(function(element){
-                        $('#course-choice-container-' + element).show();
-                    });
-            });
-        };
 
-        if (checkboxes.length) {
-            checkboxes.change(updateCourseChoiceContainers);
-            updateCourseChoiceContainers();
+        ccos_per_part = {{ ccos_per_part|tojson }};
+        part_map = {{ parts_per_track_group_per_course|tojson }};
+
+        feePreviewConstants = {
+            'endpoint': '{{ cdedblink('event/precompute_fee') }}',
+            'persona_id': {{ user.persona_id if not preview else "null" }},
+            'is_member': {{ persona['is_member']|tojson }},
+            'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',
+            'deko_false': '{{ util.deko_checkbox(False).strip() + nbsp }}',
+            'title_active': '{{ gettext("Active") }}',
+            'title_inactive': '{{ gettext("Inactive") }}',
         }
+
+        $form.cdedbProtectChanges().dynamicCourseChoices(ccos_per_part, part_map)
+            .cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

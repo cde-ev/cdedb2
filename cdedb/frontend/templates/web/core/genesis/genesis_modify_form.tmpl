@@ -3,21 +3,25 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
+{% set genesis_case_name = ambience['genesis_case']['given_names'] + " " + ambience['genesis_case']['family_name'] %}
 {% block title %}
-    {% trans %}
-    	Edit Account Request
+    {% trans name=genesis_case_name %}
+        Edit Account Request ({{ name }})
     {% endtrans %}
+{% endblock %}
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Account Request"), genesis_case_name, 'door-open', gettext("Account Request")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
-{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
-   util.persona_name makro here. #}
+{{ util.breadcrumb_link(cdedblink("core/genesis_show_case"), genesis_case_name, icon="door-open") }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['genesis_case_id']}),
-                        gettext("Edit Account Request from %(name)s")|format(
-                            name=values['given_names']+" "+values['family_name']),
-                        active="True", icon="user") }}
+                        gettext("Edit"), active="True") }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('core/genesis_modify') }}" method="POST" id="genesismodifyform" class="form-horizontal">
         {{ util.anti_csrf_token('core/genesis_modify') }}
@@ -32,15 +36,10 @@
                     name="realm", small=True, entries=realm_options,
                     label=gettext("Realm"), anid="realm-select") }}
             {% else %}
-                {% with (icon, caption) = {
-                        'ml': ('envelope', gettext("Mailinglists")),
-                        'event': ('chalkboard-teacher', gettext("Events")),
-                        'cde': ('education', gettext("Members")),
-                        'assembly': ('bullhorn', gettext("Assemblies"))
-                    }.get(values['realm']) %}
-                    {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
-                {% endwith %}
-                {{ util.input_hidden(name="realm") }}
+                {{ util.form_input_static(label=gettext("Realm"), small=True,
+                    value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}) }}
+                {# id is required for js script to work #}
+                {{ util.input_hidden(name="realm", anid="realm-select") }}
             {% endif %}
             {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
 
@@ -68,16 +67,22 @@
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, small=True,
                                       defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
-            {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
-                                      nulloption=nbsp, label=gettext("Past Event"), aclass="input-sm",
-                                      sort=True) }}
-            {% if values.get('pevent_id') %}
-                {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
-                                          nulloption=nbsp, label=gettext("Course"), aclass="input-sm",
-                                          defaultvalue='', sort=True) }}
-            {% else %}
-                {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
-                                          value=gettext("Course can be specified if past event is given.")) }}
+            {# Well, you might wonder how this has happened. Turns out, mailinglist admins generally have no permission
+               to access past events. And ml accounts may not have past events either way, while genesis may have them
+               (see documentation). Therefore, you need at least access to event realm to see these properly (and not
+               unset it accidentally). #}
+            {% if "event" in user.roles %}
+                {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
+                                          nulloption=nbsp, label=gettext("Past Event"), aclass="genesis-realm-specific",
+                                          sort=True) }}
+                {% if values.get('pevent_id') %}
+                    {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
+                                              nulloption=nbsp, label=gettext("Course"), aclass="genesis-realm-specific",
+                                              defaultvalue='', sort=True) }}
+                {% else %}
+                    {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
+                                              value=gettext("Course can be specified if past event is given.")) }}
+                {% endif %}
             {% endif %}
 
             <script nonce="{{ csp_nonce }}">

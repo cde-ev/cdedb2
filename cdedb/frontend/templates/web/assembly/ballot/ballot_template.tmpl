@@ -1,0 +1,31 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}
+        Use as Template
+    {% endtrans %}
+    ({{ ambience['assembly']['title'] }})
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/ballot_template"), gettext("Use as Template"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Use as Template"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink("assembly/ballot_template_redirect") }}" method="GET" id="selectassemblyform"
+          class="form-horizontal">
+        {{ util.form_input_select('target_assembly_id', assembly_entries|dict_entries('id', 'title'),
+                                  label=gettext("Assembly")) }}
+        {{ util.input_hidden('source_id', ambience['ballot']['id']) }}
+        {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right") }}
+    </form>
+{% endblock %}

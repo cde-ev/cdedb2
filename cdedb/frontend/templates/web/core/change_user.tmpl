@@ -24,7 +24,7 @@
         {{ util.anti_csrf_token('core/change_user') }}
         {{ util.input_hidden(name="generation") }}
 
-        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
+        {{ util.h(n_("Personal Information"), level=4, underline=True) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -39,8 +39,10 @@
                "most other places in the CdE Datenbank.")) }}
 
         {% if 'gender' in shown_fields %}
-            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender")) }}
+            {{ util.form_input_select(
+                name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
+                info=gettext("Needed for lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
+                    orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
         {% if "pronouns" in shown_fields %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
@@ -48,8 +50,27 @@
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
 
-        {% if "paper_expuls" in shown_fields and values['is_member'] %}
-            <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>
+        {% if "paper_expuls" in shown_fields or "donation" in shown_fields %}
+            {{ util.h(n_("Membership"), level=4, underline=True) }}
+        {% endif %}
+        {% if "donation" in shown_fields %}
+            {# Also display the form If user is changing their donation outside of the allowed range #}
+            {% if min_donation <= values["donation"] <= max_donation or errors.get("donation") %}
+                {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
+                                        attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
+                                        info=gettext("You allow the CdE to withdraw this amount annually"
+                                                     " via direct debit authorization, in addition to the annual membership fee.")) }}
+            {% else %}
+                {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
+                                          info=gettext("You allow the CdE to withdraw this amount annually"
+                                                       " via direct debit authorization, in addition to the annual membership fee.")
+                                               + " " +
+                                               gettext("Your donation is outside of the minimal and maximal boundary values."
+                                                       " Please contact %(mail)s if you want to change it.")|format(mail=MANAGEMENT_ADDRESS)) }}
+                {{ util.input_hidden(name="donation", value=values["donation"]) }}
+            {% endif %}
+        {% endif %}
+        {% if "paper_expuls" in shown_fields %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
                                                      "You can find further information about the online version at %(link)s.")|format(
@@ -58,7 +79,7 @@
                                                                      gettext("Miscellaneous"))))|s) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
+        {{ util.h(n_("Contact Information"), level=4, underline=True) }}
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
         {% if "telephone" in shown_fields or "mobile" in shown_fields %}
@@ -70,7 +91,7 @@
         {% endif %}
 
         {% if "address" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            {{ util.h(n_("Address"), level=4, underline=True) }}
             {% if "paper_expuls" in shown_fields %}
                 <p>
                 {% trans %}
@@ -86,7 +107,7 @@
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if "address2" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
+            {{ util.h(n_("Second Address"), level=4, underline=True) }}
             <p>
             {% trans %}
                 This address is meant to be a “backup”, should the primary address not work. Please give an address where
@@ -101,7 +122,7 @@
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if "specialisation" in shown_fields %}
-            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
+            {{ util.h(n_("Miscellaneous"), level=4, underline=True) }}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
             {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"), markdown=True) }}

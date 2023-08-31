@@ -45,7 +45,7 @@
             {{ generic.query_button_field_set(enums['FieldAssociations'].course) }}
         </div>
 
-        {{ generic.display_query_result(result, query) }}
+        {{ generic.display_query_result(result, aggregates, query) }}
 
     {% endif %}
 {% endblock %}

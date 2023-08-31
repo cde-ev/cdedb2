@@ -3,10 +3,14 @@
 """Everything regarding the role model of the CdEDB."""
 
 import collections
+import decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Set
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.config import LazyConfig
+
+_CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -67,11 +71,6 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
     return ret
 
 
-# The following droids are exempt from lockdown to keep our infrastructure
-# working
-INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
-
-
 def droid_roles(identity: str) -> Set[Role]:
     """Resolve droid identity to a complete set of roles.
 
@@ -81,7 +80,7 @@ def droid_roles(identity: str) -> Set[Role]:
     :param identity: The name for the API functionality, e.g. ``resolve``.
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
-    if identity in INFRASTRUCTURE_DROIDS:
+    if identity in _CONF["INFRASTRUCTURE_DROIDS"]:
         ret.add('droid_infra')
     return ret
 
@@ -164,7 +163,7 @@ def privilege_tier(roles: Set[Role], conjunctive: bool = False
     is controlled by the conjunctive parameter, if it is True the operation
     lies in the intersection of all realms.
 
-    Note that core admins and meta admins are always allowed access.
+    Note that core admins and are always allowed access.
 
     :returns: List of sets of admin roles. Any of these sets is sufficient.
     """
@@ -226,6 +225,7 @@ PERSONA_DEFAULTS = {
     'bub_search': None,
     'foto': None,
     'paper_expuls': None,
+    'donation': None,
 }
 
 #: Map of available privilege levels to those present in the SQL database
@@ -354,7 +354,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE = {
+GENESIS_REALM_OVERRIDE: Dict[str, Dict[str, Any]] = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -382,5 +382,6 @@ GENESIS_REALM_OVERRIDE = {
         'decided_search': False,
         'bub_search': False,
         'paper_expuls': True,
+        'donation': decimal.Decimal(0),
     }
 }

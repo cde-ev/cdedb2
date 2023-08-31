@@ -7,13 +7,13 @@ import decimal
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBLog
+from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now
 
 
 class TestCdEBackend(BackendTest):
@@ -184,7 +184,6 @@ class TestCdEBackend(BackendTest):
             2: {
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae',
-                'amount': decimal.Decimal('42.23'),
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
                                                 tzinfo=pytz.utc),
                 'iban': 'DE12500105170648489890',
@@ -210,15 +209,18 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
         }
-        new_id = self.cde.create_lastschrift(self.key, newdata)
+        donation = decimal.Decimal(9)
+        new_id = self.cde.create_lastschrift(self.key, newdata, donation)
         self.assertLess(0, new_id)
         self.assertEqual({new_id: 3}, self.cde.list_lastschrift(self.key))
+        # the donation is tracked in core.personas
+        user = self.core.get_cde_user(self.key, persona_id=3)
+        self.assertEqual(donation, user["donation"])
         newdata.update({
             'id': new_id,
             'revoked_at': None,
@@ -230,12 +232,8 @@ class TestCdEBackend(BackendTest):
             ["revoked_at", "transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, 2)))
 
-        transaction_data = {
-            "lastschrift_id": new_id,
-            "period_id": self.cde.current_period(self.key),
-        }
         transaction_id = self.cde.issue_lastschrift_transaction(
-            self.key, transaction_data, check_unique=True)
+            self.key, new_id, payment_date=datetime.date.today())
         self.assertEqual(
             ["revoked_at", "transactions", "active_transactions"],
             list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
@@ -253,21 +251,23 @@ class TestCdEBackend(BackendTest):
             list(self.cde.delete_lastschrift_blockers(self.key, 1)))
         self.assertLess(
             0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
+        # check that the donation survives the lastschrift deletion
+        user = self.core.get_cde_user(self.key, persona_id=3)
+        self.assertEqual(donation, user["donation"])
 
     @as_users("farin")
     def test_lastschrift_multiple_active(self) -> None:
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
         }
-        self.cde.create_lastschrift(self.key, newdata)
+        self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("3"))
         with self.assertRaises(ValueError):
-            self.cde.create_lastschrift(self.key, newdata)
+            self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("3"))
 
     @as_users("farin")
     def test_lastschrift_transaction(self) -> None:
@@ -287,6 +287,7 @@ class TestCdEBackend(BackendTest):
                 'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
                 'lastschrift_id': 1,
                 'period_id': 41,
+                'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
                                                   tzinfo=pytz.utc),
                 'status': 12,
@@ -296,65 +297,71 @@ class TestCdEBackend(BackendTest):
         }
         self.assertEqual(expectation,
                          self.cde.get_lastschrift_transactions(self.key, (1,)))
-        newdata = {
-            'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 2,
-            'period_id': 43,
-        }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        new_id = self.cde.issue_lastschrift_transaction(
+            self.key, lastschrift_id=2, payment_date=datetime.date.today())
         self.assertLess(0, new_id)
-        update = {
+        newdata = {
             'id': new_id,
-            'amount': decimal.Decimal('42.23'),
+            'lastschrift_id': 2,
+            'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
+            'issued_at': nearly_now(),
+            'payment_date': datetime.date.today(),
             'processed_at': None,
             'status': 1,
             'submitted_by': self.user['id'],
             'tally': None,
+            'period_id': 43,
         }
-        newdata.update(update)
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrift_transactions(self.key, (new_id,)))
 
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        for status, tally in ((ltstati.success, None),
-                              (ltstati.cancelled, None),
-                              (ltstati.failure, decimal.Decimal("-4.50"))):
+        new_id: int
+        for status in (ltstati.success, ltstati.cancelled, ltstati.failure):
             with self.subTest(status=status):
                 # since this is modified by the successful lastschrift test, we need to
                 # retrieve it in each subtest
                 old_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"])["balance"]
-                newdata = {
-                    'issued_at': datetime.datetime.now(pytz.utc),
-                    'lastschrift_id': 2,
-                    'period_id': 43,
-                }
-                new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+                # issuing a lastschrift transaction if there is already a pending or
+                #  successful one is forbidden, so we need to delete it via sql first
+                if status == ltstati.cancelled:
+                    with self.assertRaises(RuntimeError):
+                        self.cde.issue_lastschrift_transaction(
+                            self.key, lastschrift_id=2,
+                            payment_date=datetime.date.today())
+                    execsql(f"DELETE FROM cde.lastschrift_transactions"
+                            f" WHERE id = {new_id}")  # noqa: F821
+                new_id = self.cde.issue_lastschrift_transaction(
+                    self.key, lastschrift_id=2, payment_date=datetime.date.today())
                 self.assertLess(0, new_id)
-                update = {
+                newdata = {
                     'id': new_id,
-                    'amount': decimal.Decimal('42.23'),
+                    'lastschrift_id': 2,
+                    'amount': decimal.Decimal('42.23') + 2*self.conf["MEMBERSHIP_FEE"],
+                    'issued_at': nearly_now(),
+                    'payment_date': datetime.date.today(),
                     'processed_at': None,
-                    'status': 1,
+                    'status': ltstati.issued,
                     'submitted_by': self.user['id'],
                     'tally': None,
+                    'period_id': 43,
                 }
-                newdata.update(update)
                 self.assertEqual(
                     {new_id: newdata}, self.cde.get_lastschrift_transactions(
                         self.key, (new_id,)))
                 self.assertLess(
                     0, self.cde.finalize_lastschrift_transaction(
-                        self.key, new_id, status, tally=tally))
+                        self.key, new_id, status))
                 data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
                 data = data[new_id]
                 new_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"])["balance"]
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
-                    self.assertEqual(decimal.Decimal('42.23'), data['tally'])
+                    self.assertEqual(decimal.Decimal('50.23'), data['tally'])
                     self.assertEqual(
                         new_balance, old_balance + 2*self.conf["MEMBERSHIP_FEE"])
                 elif status == ltstati.cancelled:
@@ -367,22 +374,21 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        newdata = {
-            'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 2,
-            'period_id': 43,
-        }
-        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        new_id = self.cde.issue_lastschrift_transaction(
+            self.key, lastschrift_id=2, payment_date=datetime.date.today())
         self.assertLess(0, new_id)
-        update = {
+        newdata = {
             'id': new_id,
-            'amount': decimal.Decimal('42.23'),
+            'lastschrift_id': 2,
+            'amount': decimal.Decimal('42.23') + 2 * self.conf["MEMBERSHIP_FEE"],
+            'issued_at': nearly_now(),
+            'payment_date': datetime.date.today(),
             'processed_at': None,
-            'status': 1,
+            'status': ltstati.issued,
             'submitted_by': self.user['id'],
             'tally': None,
+            'period_id': 43,
         }
-        newdata.update(update)
         self.assertEqual(
             {new_id: newdata}, self.cde.get_lastschrift_transactions(
                 self.key, (new_id,)))
@@ -390,8 +396,7 @@ class TestCdEBackend(BackendTest):
             0, self.cde.finalize_lastschrift_transaction(
                 self.key, new_id, ltstati.success))
         self.assertLess(
-            0, self.cde.rollback_lastschrift_transaction(
-                self.key, new_id, decimal.Decimal('-4.50')))
+            0, self.cde.rollback_lastschrift_transaction(self.key, new_id))
         data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
         data = data[new_id]
         self.assertEqual(ltstati.rollback, data['status'])
@@ -405,13 +410,12 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
         }
-        new_id = self.cde.create_lastschrift(self.key, newdata)
+        new_id = self.cde.create_lastschrift(self.key, newdata, decimal.Decimal("9"))
         self.assertLess(0, new_id)
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
 
@@ -422,65 +426,59 @@ class TestCdEBackend(BackendTest):
         for k, v in period.items():
             if k == "id":
                 self.assertEqual(v, period_id)
-            elif k == "semester_start":
+            elif k in {"semester_start", "billing_done", "archival_notification_done"}:
                 self.assertEqual(v, nearly_now())
             else:
                 self.assertFalse(v)
 
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        # step 2
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
+                         self.cde.allowed_semester_steps(self.key))
 
         if self.user_in("anton"):
+            self.cde.finish_semester_ejection(self.key)
+            self.assertEqual(AllowedSemesterSteps(automated_archival=True),
+                             self.cde.allowed_semester_steps(self.key))
+        elif self.user_in("farin"):
+            self.cde.finish_automated_archival(self.key)
+            self.assertEqual(AllowedSemesterSteps(ejection=True),
+                             self.cde.allowed_semester_steps(self.key))
+
+        if self.user_in("anton"):
+            self.cde.finish_automated_archival(self.key)
+        elif self.user_in("farin"):
+            self.cde.finish_semester_ejection(self.key)
+        self.assertEqual(AllowedSemesterSteps(balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 3
+        self.cde.finish_semester_balance_update(self.key)
+        self.assertEqual(AllowedSemesterSteps(advance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 4 (in the UI, this is the first part of step 1)
+        self.cde.advance_semester(self.key)
+        self.assertEqual(AllowedSemesterSteps(billing=True, archival_notification=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1
+        if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
+            self.assertEqual(AllowedSemesterSteps(archival_notification=True),
+                             self.cde.allowed_semester_steps(self.key))
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
+            self.assertEqual(AllowedSemesterSteps(billing=True),
+                             self.cde.allowed_semester_steps(self.key))
         else:
             self.fail("Invalid user configuration for this test.")
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
 
         if self.user_in("anton"):
             self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_semester_bill(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_semester_ejection(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_automated_archival(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_automated_archival(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_ejection(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertTrue(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
-
-        self.cde.finish_semester_balance_update(self.key)
-        self.assertFalse(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertTrue(self.cde.may_advance_semester(self.key))
-
-        self.cde.advance_semester(self.key)
-        self.assertTrue(self.cde.may_start_semester_bill(self.key))
-        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
-        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
-        self.assertFalse(self.cde.may_advance_semester(self.key))
+        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
+                         self.cde.allowed_semester_steps(self.key))
 
     @as_users("vera")
     def test_cde_log(self) -> None:
@@ -488,5 +486,4 @@ class TestCdEBackend(BackendTest):
         # TODO more when available
 
         # now check it
-        expectation: CdEDBLog = (0, tuple())
-        self.assertEqual(expectation, self.cde.retrieve_cde_log(self.key))
+        self.assertLogEqual([], 'cde')

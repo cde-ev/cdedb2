@@ -26,12 +26,13 @@ from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
 
 
 @enum.unique
-class QueryOperators(enum.IntEnum):
+class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
     empty = 1
     nonempty = 2
@@ -142,7 +143,7 @@ class QuerySpecEntry(NamedTuple):
 QuerySpec = Dict[str, QuerySpecEntry]
 
 
-class QueryScope(enum.IntEnum):
+class QueryScope(CdEIntEnum):
     """Enum that contains the different kinds of generalized queries.
 
     This is used in conjunction with the `Query` class and bundles together a lot of
@@ -247,26 +248,14 @@ class QueryScope(enum.IntEnum):
             prefix, target = "query", "lodgement_query"
         elif self == QueryScope.event_course:
             prefix, target = "query", "course_query"
-        elif self == QueryScope.event_user:
+        elif self in {QueryScope.event_user, QueryScope.all_event_users}:
             prefix, target = "user", "user_search"
-        elif self == QueryScope.all_event_users:
-            prefix, target = "user", "full_user_search"
-        elif self == QueryScope.core_user:
+        elif self in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
+            prefix, target = "base", "user_search"
+        elif self in {QueryScope.core_user, QueryScope.all_core_users,
+                      QueryScope.cde_user, QueryScope.all_cde_users,
+                      QueryScope.ml_user, QueryScope.all_ml_users}:
             target = "user_search"
-        elif self == QueryScope.assembly_user:
-            target = "user_search"
-        elif self == QueryScope.cde_user:
-            target = "user_search"
-        elif self == QueryScope.ml_user:
-            target = "user_search"
-        elif self == QueryScope.all_core_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_assembly_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_cde_users:
-            target = "full_user_search"
-        elif self == QueryScope.all_ml_users:
-            target = "full_user_search"
         else:
             prefix, target = "", ""
         if redirect and self.realm:
@@ -324,7 +313,7 @@ _QUERY_VIEWS = {
             SELECT
                 id, granted_at, revoked_at,
                 revoked_at IS NULL AS active_lastschrift,
-                amount, persona_id
+                persona_id
             FROM cde.lastschrift
             WHERE (granted_at, persona_id) IN (
                 SELECT MAX(granted_at) AS granted_at, persona_id
@@ -449,6 +438,7 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
             "balance": QuerySpecEntry("float", n_("Membership-Fee Balance")),
+            "donation": QuerySpecEntry("float", n_("Annual Donation")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"))
@@ -469,7 +459,6 @@ _QUERY_SPECS = {
                 "datetime", n_("Lastschrift Revoked")),
             "lastschrift.active_lastschrift": QuerySpecEntry(
                 "bool", n_("Active Lastschrift")),
-            "lastschrift.amount": QuerySpecEntry("float", n_("Lastschrift Amount")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Basic view of an event-realm user.
@@ -696,7 +685,7 @@ class Query:
             params[f'qsel_{field}'] = True
         for field, op, value in self.constraints:
             params[f'qop_{field}'] = op.value
-            if (isinstance(value, collections.Iterable)
+            if (isinstance(value, collections.abc.Iterable)
                     and not isinstance(value, str)):
                 params[f'qval_{field}'] = QUERY_VALUE_SEPARATOR.join(
                     serialize_value(x) for x in value)
@@ -864,6 +853,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
+        "reg.remaining_owed": QuerySpecEntry("float", n_("Remaining Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
@@ -952,13 +942,23 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
     def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
         track_id = track['id']
         prefix = "" if len(event['tracks']) <= 1 else track['shortname']
-        return {
+        ret = {
             f"course_choices{track_id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
             for i in range(track['num_choices'])
         }
+
+        # If there are course choices for the track, add an entry for any choice.
+        if key := ",".join(ret.keys()):
+            # Don't overwrite a potential existing spec.
+            #  This happens if there is exactly one choice.
+            if key not in ret:
+                ret[key] = QuerySpecEntry(
+                    "id", n_("Any Choice"), prefix, choices=course_choices)
+
+        return ret
 
     # Presort part specs, so we can iterate over them in order.
     part_specs = {
@@ -986,16 +986,12 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
                                                   EntitySorter.course_track):
             spec.update(track_specs[track_id])
 
-            course_choice_spec = course_choice_specs[track_id]
-            # If there are course choices for the track, add an entry for any choice.
-            if key := ",".join(course_choice_spec.keys()):
-                # Don't overwrite a potential existing spec.
-                # This happens if there is exactly one choice.
-                if key not in course_choice_spec:
-                    prefix = "" if len(event['tracks']) <= 1 else track['shortname']
-                    spec[key] = QuerySpecEntry(
-                        "id", n_("Any Choice"), prefix, choices=course_choices)
-            spec.update(course_choice_spec)
+            # Skip course choice filters if track is synced.
+            if any(tg['constraint_type']
+                   == const.CourseTrackGroupType.course_choice_sync
+                   for tg in track['track_groups'].values()):
+                continue
+            spec.update(course_choice_specs[track_id])
 
         # Add Entries for all tracks in this part.
         spec.update(_combine_specs(
@@ -1023,9 +1019,27 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         spec.update(_combine_specs(
             course_choice_specs, track_ids, prefix=prefix or n_("any track")))
 
+    # Add entries for track groups.
+    sorted_track_groups = xsorted(
+        event['track_groups'].values(), key=EntitySorter.course_track_group)
+    for track_group in sorted_track_groups:
+        if (track_group['constraint_type']
+                != const.CourseTrackGroupType.course_choice_sync):
+            continue
+
+        # Randomly choose a track in the group to use for filtering.
+        #  Since all synced tracks have identical entries, this choice does not matter.
+        track_id = next(iter(track_group['track_ids']))
+        fake_track = {
+            'id': track_id,
+            'num_choices': event['tracks'][track_id]['num_choices'],
+            'shortname': track_group['shortname'],
+        }
+        spec.update(get_course_choice_spec(fake_track))
+
     spec.update({
         f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['field_name'], choices=field_choices[f['field_name']])
+            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
     return spec
@@ -1076,6 +1090,8 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             f"track{track_id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
             f"track{track_id}.instructors": QuerySpecEntry(
+                "int", n_("potential instructor count"), prefix),
+            f"track{track_id}.assigned_instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
         }
 
@@ -1139,7 +1155,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
 
     spec.update({
         f"course_fields.xfield_{field['field_name']}": QuerySpecEntry(
-            field['kind'].name, field['field_name'],
+            field['kind'].name, field['title'],
             choices=field_choices[field['field_name']])
         for field in sorted_course_fields
     })
@@ -1177,7 +1193,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
-        "lodgement_group.title": QuerySpecEntry("int", n_("Lodgement Group Title")),
+        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.
     }
 
@@ -1220,7 +1236,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
 
     spec.update({
         f"lodgement_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['field_name'], choices=field_choices[f['field_name']])
+            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
         for f in sorted_lodgement_fields
     })
 

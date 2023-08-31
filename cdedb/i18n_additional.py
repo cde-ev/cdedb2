@@ -125,6 +125,10 @@ I18N_STRINGS = (
     n_("EventLogCodes.track_group_deleted"),
     n_("EventLogCodes.track_group_link_created"),
     n_("EventLogCodes.track_group_link_deleted"),
+    n_("EventLogCodes.orga_token_created"),
+    n_("EventLogCodes.orga_token_changed"),
+    n_("EventLogCodes.orga_token_revoked"),
+    n_("EventLogCodes.orga_token_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -133,6 +137,8 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.deduct_membership_fee"),
     n_("FinanceLogCodes.end_trial_membership"),
     n_("FinanceLogCodes.manual_balance_correction"),
+    n_("FinanceLogCodes.remove_balance_on_archival"),
+    n_("FinanceLogCodes.start_trial_membership"),
     n_("FinanceLogCodes.grant_lastschrift"),
     n_("FinanceLogCodes.revoke_lastschrift"),
     n_("FinanceLogCodes.modify_lastschrift"),
@@ -175,11 +181,11 @@ I18N_STRINGS = (
     n_("LineResolutions.update"),
     n_("LineResolutions.renew_and_update"),
 
-    n_("MemberChangeStati.pending"),
-    n_("MemberChangeStati.committed"),
-    n_("MemberChangeStati.superseded"),
-    n_("MemberChangeStati.nacked"),
-    n_("MemberChangeStati.displaced"),
+    n_("PersonaChangeStati.pending"),
+    n_("PersonaChangeStati.committed"),
+    n_("PersonaChangeStati.superseded"),
+    n_("PersonaChangeStati.nacked"),
+    n_("PersonaChangeStati.displaced"),
 
     n_("MlLogCodes.email_trouble"),
     n_("MlLogCodes.list_created"),
@@ -217,9 +223,6 @@ I18N_STRINGS = (
     n_("PastEventLogCodes.course_deleted"),
     n_("PastEventLogCodes.participant_added"),
     n_("PastEventLogCodes.participant_removed"),
-    n_("PastEventLogCodes.institution_created"),
-    n_("PastEventLogCodes.institution_changed"),
-    n_("PastEventLogCodes.institution_deleted"),
 
     n_("PrivilegeChangeStati.pending"),
     n_("PrivilegeChangeStati.approved"),
@@ -249,6 +252,13 @@ I18N_STRINGS = (
     n_("LastschriftTransactionStati.failure"),
     n_("LastschriftTransactionStati.cancelled"),
     n_("LastschriftTransactionStati.rollback"),
+
+    n_("PastInstitutions.cde"),
+    n_("PastInstitutions.dsa"),
+    n_("PastInstitutions.dja"),
+    n_("PastInstitutions.jgw"),
+    n_("PastInstitutions.basf"),
+    n_("PastInstitutions.van"),
 
     n_("QueryOperators.empty"),
     n_("QueryOperators.nonempty"),
@@ -299,7 +309,14 @@ I18N_STRINGS = (
     n_("MailinglistTypes.general_moderators"),
     n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
+    n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
+
+    n_("EventFeeType.common"),
+    n_("EventFeeType.storno"),
+    n_("EventFeeType.external"),
+    n_("EventFeeType.solidarity"),
+    n_("EventFeeType.donation"),
 
     #
     # Validation errors

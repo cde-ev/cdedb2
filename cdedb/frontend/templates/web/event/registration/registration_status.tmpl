@@ -16,6 +16,10 @@
     {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {{ util.href(cdedblink('event/show_registration', {'registration_id': registration['id']}),
+                     gettext("View as Orga"), icon='eye', aclass='btn btn-default pull-right') }}
+    {% endif %}
     {{ util.context_heading(gettext("Your Registration"), ambience['event']['title'],
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
@@ -29,6 +33,18 @@
         {% endcall %}
     {% endif %}
 {% endblock %}
+
+{% macro print_course(reg_track, courses) %}
+<dd>
+    {% if reg_track['course_id'] %}
+        {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
+                "{}. {}".format(courses[reg_track['course_id']]['nr'], courses[reg_track['course_id']]['title'])) }}
+    {% else %}
+        —
+    {% endif %}
+</dd>
+{% endmacro %}
+
 {% block content %}
     {% if ambience['event']['registration_text'] %}
         {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
@@ -37,7 +53,7 @@
     {% endif %}
     {% if fee %}
     {% if registration['amount_paid'] >= fee %}
-        <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
+        {{ util.h(n_("Payment"), underline=true) }}
         <p>
             {% trans fee=fee|money(lang=lang) %}
                 You have already paid the registration fee of {{ fee }}.
@@ -49,7 +65,7 @@
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
                          aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
-            <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
+            {{ util.h(n_("Bank Transfer"), underline=true) }}
             <script nonce="{{ csp_nonce }}">
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
@@ -94,7 +110,7 @@
                 </tbody>
             </table>
         {% else %}
-            <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
+            {{ util.h(n_("Payment"), underline=true) }}
             <p>
                 {% trans %}
                     The orgas will tell you separately how to pay your fee of {{ to_pay }}.
@@ -115,10 +131,10 @@
                 {% endtrans %}
             </p>
         {% endif %}
-        {% if "member" not in user.roles and ambience["event"]["nonmember_surcharge"] %}
+        {% if complex_fee.nonmember_surcharge %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
-                {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
+                {% trans additional_fee=complex_fee.nonmember_surcharge_amount|money(lang=lang) %}
                     Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                 {% endtrans %}
                 </p>
@@ -136,7 +152,7 @@
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
-        <h3 class="heading-underline">{% trans %}Parental Consent{% endtrans %}</h3>
+        {{ util.h(n_("Parental Consent"), underline=true) }}
         <p>
             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') %}
                 You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
@@ -144,56 +160,67 @@
         </p>
     {% endif %}
 
-    <h3 class="heading-underline">Status</h3>
+    {{ util.h(n_("Status"), underline=true) }}
     <dl class="dl-horizontal">
-        {% for part_id, part in registration['parts'].items() %}
-            <dt title="{{ ambience['event']['parts'][part_id]['title'] }}">
-                {% if ambience['event']['parts']|length > 1 %}
-                    {{ ambience['event']['parts'][part_id]['title'] }}
-                {% else %}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+            {% if ambience['event']['parts']|length > 1 %}
+                <dt title="{{ part['title'] }}: {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
+                        {{- part['part_end']|date(lang=lang) }}">
+                    {{ part['title'] }}
+                </dt>
+            {% else %}
+                <dt title="{% trans %}Registration Status{% endtrans %}">
                     {% trans %}Registration Status{% endtrans %}
-                {% endif %}
-            </dt>
+                </dt>
+            {% endif %}
             <dd id="registration_status_part{{ part_id }}">
-                {{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}
+                {{ gettext(registration['parts'][part_id]['status']|enum(enums['RegistrationPartStati'])) }}
                 {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
-                   E.g. one might only request a second instalment of the fee by participants shortly before the event
+                   E.g. one might only request a second installment of the fee by participants shortly before the event
                    See also EventRegistrationBackend.get_registration_payment_info() #}
-                {% if part['status'].has_to_pay() and not registration['payment'] and fee %}
+                {% if registration['parts'][part_id]['status'].has_to_pay() and not registration['payment'] and fee %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
-                {% if part['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
+                {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
                     ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
                 {% endif %}
             </dd>
         {% endfor %}
     </dl>
 
-    {% for cco in choice_objects %}
-        {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
-        {% set reg_track = registration['tracks'][track['id']] %}
-        {% if 'track_ids' in cco and cco['track_ids'].intersection(involved_tracks) or cco['id'] in involved_tracks %}
-            <h4>
-                {% trans %}Course{% endtrans %}
-                {% if choice_objects|length > 1 %}
-                    {% trans %}for{% endtrans %}
-                    {{ cco['title'] }}
-                {% endif %}
-            </h4>
+    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
 
-            <dl class="dl-horizontal" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
-                {% if ambience['event']['is_course_assignment_visible'] %}
-                    <dt title="{% trans %}Assigned to{% endtrans %}">{% trans %}Assigned to{% endtrans %}</dt>
-                    <dd>
-                        {% if reg_track['course_id'] %}
-                            {{ util.href(cdedblink('event/course_list') + '#course-' + reg_track['course_id']|string,
-                                         "{}. {}".format(courses[reg_track['course_id']]['nr'],
-                                                         courses[reg_track['course_id']]['title'])) }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
-                {% endif %}
+    {% for batch in filtered_choice_objects|batch(2) %}
+        <div class="row">
+        {% for cco in batch %}
+        {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+        {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
+        {% set reg_track = registration['tracks'][track['id']] %}
+
+        <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
+            {{ util.h(gettext("Course") + (" {} {}".format(gettext("for"), cco['title']) if (filtered_choice_objects|length > 1) else ""),
+                      anchor="cco-" + cco['id']|string, translate=False) }}
+
+            {% if ambience['event']['is_course_assignment_visible'] %}
+                <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
+                    {% if 'track_ids' in cco %}
+                        {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
+                            <dt title="{{ track['title'] }}">
+                                {{ track['title'] }}
+                            </dt>
+                            {{ print_course(registration['tracks'][track_id], courses) }}
+                        {% endfor %}
+                    {% else %}
+                        <dt title="{% trans %}Assigned to{% endtrans %}">
+                            {% trans %}
+                                Assigned to
+                            {% endtrans %}
+                        </dt>
+                        {{ print_course(reg_track, courses) }}
+                    {% endif %}
+                </dl>
+            {% endif %}
+            <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
                 {% if reg_track['course_instructor'] %}
                     <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
                     <dd><em>
@@ -216,10 +243,12 @@
                     </dd>
                 {% endfor %}
             </dl>
-        {% endif %}
+        </div>
+        {% endfor %}
+        </div>
     {% endfor %}
 
-    <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
+    {{ util.h(n_("Registration Data"), underline=true) }}
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>

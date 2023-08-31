@@ -11,7 +11,7 @@ from typing import (
 
 import pytz
 
-import cdedb.common.validation as validate
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
@@ -180,13 +180,13 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError),
             (12, None, TypeError),
             (12.3, None, TypeError),
-            (decimal.Decimal(1e7) - 1, decimal.Decimal(1e7) - 1, None),
-            (decimal.Decimal(1e7), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e6) - 1, decimal.Decimal(1e6) - 1, None),
+            (decimal.Decimal(1e6), None, ValueError),  # exceeds maximum value
         ))
         self.do_validator_test(decimal.Decimal, (
-            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
-            (decimal.Decimal(-1e10) + 1, decimal.Decimal(-1e10) + 1, None),
-            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e9) - 1, decimal.Decimal(1e9) - 1, None),
+            (decimal.Decimal(-1e9) + 1, decimal.Decimal(-1e9) + 1, None),
+            (decimal.Decimal(1e9), None, ValueError),  # exceeds maximum value
         ), extraparams={"large": True})
         self.do_validator_test(NonNegativeDecimal, (
             (decimal.Decimal(0), decimal.Decimal(0), None),
@@ -194,9 +194,9 @@ class TestValidation(unittest.TestCase):
             (decimal.Decimal(-12.3), None, ValueError),
         ))
         self.do_validator_test(NonNegativeLargeDecimal, (
-            (decimal.Decimal(1e10) - 1, decimal.Decimal(1e10) - 1, None),
-            (decimal.Decimal(-1e10) + 1, None, ValueError),
-            (decimal.Decimal(1e10), None, ValueError),  # exceeds maximum value
+            (decimal.Decimal(1e9) - 1, decimal.Decimal(1e9) - 1, None),
+            (decimal.Decimal(-1e9) + 1, None, ValueError),
+            (decimal.Decimal(1e9), None, ValueError),  # exceeds maximum value
         ))
 
     def test_str_type(self) -> None:
@@ -252,13 +252,13 @@ class TestValidation(unittest.TestCase):
                 bytes, "no encoding", ignore_warnings=True, encoding=None)
 
     def test_mapping(self) -> None:
-        self.do_validator_test(Mapping, (  # type: ignore[misc]
+        self.do_validator_test(Mapping, (  # type: ignore[type-abstract]
             ({"a": "dict"}, {"a": "dict"}, None),
             ("something else", "", TypeError),
         ))
 
     def test_sequence(self) -> None:
-        self.do_validator_test(Sequence, (  # type: ignore[misc]
+        self.do_validator_test(Sequence, (  # type: ignore[type-abstract]
             (("a", "b"), ("a", "b"), None),
         ))
 

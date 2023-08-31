@@ -103,14 +103,14 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
                 {% endif %}
-                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                {% if (is_relative_admin_view or "event_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
                     {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
-                                 gettext("Show Event Data"), aclass="btn btn-default btn-sm",
+                                 gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
                 {% endif %}
-                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
+                {% if (is_relative_admin_view or "ml_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
-                                 gettext("Show Mailinglist Data"), aclass="btn btn-default btn-sm",
+                                 gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
                 {% endif %}
             {% endif %}
@@ -131,7 +131,7 @@
                         <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
                              class="profilepic img-thumbnail mosp">
                     {%- endif -%}
-                    {% if data['id'] == user.persona_id or is_relative_admin_view -%}
+                    {% if (data['id'] == user.persona_id or is_relative_admin_view) and not ambience['persona']['is_archived'] -%}
                         <br />
                         {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
                                 aclass="btn btn-xs btn-warning mosp", icon="pen") }}
@@ -199,8 +199,24 @@
                 </dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
-        </dl>
 
+            {% if "pronouns_nametag" in data %}
+                {% if "pronouns" in data %}
+                    <dt title="{% trans %}Pronouns{% endtrans %}">
+                    {% trans %}Pronouns{% endtrans %}
+                    </dt>
+                    <dd id="pronouns">
+                        {{ data["pronouns"] or "–" }}
+                    </dd>
+                {% endif %}
+                <dt title="{% trans %}Pronouns on nametags{% endtrans %}">
+                    {% trans %}Pronouns on nametags{% endtrans %}
+                </dt>
+                <dd id="pronouns_nametag">
+                    {{ util.deko_checkbox(checked=data['pronouns_nametag'], titles=[gettext("No"), gettext("Yes")]) }}
+                </dd>
+            {% endif %}
+        </dl>
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         <div id="account">
@@ -275,7 +291,7 @@
                         <dt title="{% trans %}Admin Notes{% endtrans %}">
                             {% trans %}Admin Notes{% endtrans %}
                         </dt>
-                        <dd>{{ data['notes']|md|linebreaks }}</dd>
+                        <dd id="admin-notes">{{ data['notes']|md|linebreaks }}</dd>
                     {% endif %}
                 </dl>
             {% endif %}
@@ -295,35 +311,9 @@
                         {% if data['trial_member'] %}
                             {% trans %}(Trial Membership){% endtrans %}
                         {% endif %}
-                        {% if is_relative_admin_view %}
+                        {% if is_relative_admin_view and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
-                        {% endif %}
-                    </dd>
-                {% endif %}
-
-                {% if "balance" in data %}
-                    <dt title="{% trans %}Balance{% endtrans %}">
-                        {% trans %}Balance{% endtrans %}
-                    </dt>
-                    <dd id="balance">
-                        {% if data['balance'] is not none %}
-                            {{ data['balance']|money(lang=lang) }}
-                        {% endif %}
-                        {% if "finance" in user.admin_views %}
-                            {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
-                                         aclass="btn btn-xs btn-warning") }}
-                        {% endif %}
-                        {% if data['has_lastschrift'] %}
-                            {% trans %}and{% endtrans %}
-                            {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
-                                         else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("Direct Debit Authorization"), icon="euro-sign",
-                                    readonly=(data['id'] != user.persona_id
-                                              and "finance" not in user.admin_views)) }}
-                        {% elif "finance" in user.admin_views %}
-                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                         {% endif %}
                     </dd>
                 {% endif %}
@@ -345,6 +335,53 @@
                                 {% endif %}
                             {% else %}
                                 {% trans %}Data is not visible.{% endtrans %}
+                            {% endif %}
+                        {% endif %}
+                    </dd>
+                {% endif %}
+
+                {% if "balance" in data %}
+                    <dt title="{% trans %}Balance{% endtrans %}">
+                        {% trans %}Balance{% endtrans %}
+                    </dt>
+                    <dd id="balance">
+                        {% if data['balance'] is not none %}
+                            {{ data['balance']|money(lang=lang) }}
+                        {% endif %}
+                        {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
+                                         aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
+                    </dd>
+                {% endif %}
+
+                {% if "donation" in data %}
+                    <dt title="{% trans %}Annual Donation{% endtrans %}">
+                        {% trans %}Annual Donation{% endtrans %}
+                    </dt>
+                    <dd>{{ data['donation']|money(lang=lang) if data['donation'] else "–" }}</dd>
+                {% endif %}
+
+                {% if "has_lastschrift" in data %}
+                    <dt title="{% trans %}Method of Payment{% endtrans %}">
+                        {% trans %}Method of Payment{% endtrans %}
+                    </dt>
+                    <dd id="lastschrift">
+                        {% if data["has_lastschrift"] %}
+                            {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
+                                         else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                         gettext("Direct Debit Authorization"), icon="euro-sign",
+                                         readonly=(data['id'] != user.persona_id and "finance" not in user.admin_views)) }}
+                        {% else %}
+                            {% trans %}Balance{% endtrans %}
+                            {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                                {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                             gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
+                            {% else %}
+                            {{ util.output_info(
+                                gettext("You may issue a new %(direct_debit_link)s instead.")|format(
+                                    direct_debit_link=util.href(cdedblink("cde/i25p_index"),
+                                                                gettext("Direct Debit Authorization")))|s) }}
                             {% endif %}
                         {% endif %}
                     </dd>

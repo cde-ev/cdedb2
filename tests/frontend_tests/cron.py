@@ -38,7 +38,7 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
             tmp[key] = "'{}'".format(value)
         elif isinstance(value, numbers.Number):
             tmp[key] = "{}".format(value)
-        elif isinstance(value, collections.Mapping):
+        elif isinstance(value, collections.abc.Mapping):
             tmp[key] = "'{}'::jsonb".format(json.dumps(value))
         else:
             raise ValueError("Unknown datum {} -> {}".format(key, value))
@@ -85,7 +85,7 @@ def changelog_template(**kwargs: Any) -> str:
         'birthday': datetime.date(1980, 2, 11),
         'bub_search': True,
         'change_note': 'Radical change.',
-        'code': const.MemberChangeStati.pending.value,
+        'code': const.PersonaChangeStati.pending.value,
         'country': None,
         'country2': 'US',
         'ctime': now(),
@@ -403,6 +403,46 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('event_keeper')
 
+    def test_mail_orgateam_reminders_none(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual([], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+
+    # this part belongs to "Große Testakademie 2222"
+    @prepsql("UPDATE event.event_parts"
+             " SET (part_begin, part_end) = (CURRENT_DATE, CURRENT_DATE) WHERE id = 1")
+    def test_mail_orgateam_reminders_halftime(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual(["halftime_reminder"], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+
+    # this part is the only event part of the event "CdE-Party 2050"
+    # we need to set an orga address to the event, otherwise no mails can be sent
+    @prepsql("UPDATE event.event_parts"
+             " SET (part_begin, part_end) = (date '2000-01-01', date '2000-01-01')"
+             " WHERE id = 4;"
+             " UPDATE event.events SET orga_address = 'party@example.cde' WHERE id = 2")
+    def test_mail_orgateam_reminders_past(self) -> None:
+        cronjob = "mail_orgateam_reminders"
+        self.execute(cronjob)
+        self.assertEqual(
+            ["past_event_reminder"], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
+            self.core.get_cron_store(RS, cronjob))
+
+        # make sure that the past mail is sent only once
+        self.mails = []
+        self.execute(cronjob)
+        self.assertEqual([], [mail.template for mail in self.mails])
+        self.assertEqual(
+            {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
+            self.core.get_cron_store(RS, cronjob))
+
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
@@ -427,6 +467,7 @@ class TestCron(CronTest):
             'pass_extensions': ['pdf'],
             'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
+            'collapse_alternatives': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
@@ -492,6 +533,7 @@ class TestCron(CronTest):
             'platin': unittest.mock.MagicMock(),
             'geheim': unittest.mock.MagicMock(),
             'hogwarts': unittest.mock.MagicMock(),
+            'gu': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 
@@ -544,6 +586,7 @@ class TestCron(CronTest):
                           umcall('platin'),
                           umcall('geheim'),
                           umcall('hogwarts'),
+                          umcall('gu'),
                           umcall('migration'),
                           ])))
         # Meta update
@@ -558,7 +601,7 @@ class TestCron(CronTest):
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
-        self.assertEqual(mm_lists['werbung'].set_template.call_count, 2)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 3)
         # Subscriber update
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,

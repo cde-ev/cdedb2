@@ -10,6 +10,7 @@ import collections
 import collections.abc
 import copy
 import csv
+import datetime
 import email
 import email.charset
 import email.encoders
@@ -60,8 +61,8 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
-import cdedb.common.validation as validate
 import cdedb.common.validation.types as vtypes
+import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -71,11 +72,11 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBMultiDict,
-    CdEDBObject, CustomJSONEncoder, Error, Notification, NotificationType, PathLike,
-    RequestState, Role, User, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_persona_name, make_proxy, merge_dicts, now, setup_logger,
-    unwrap,
+    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
+    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
+    NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
+    decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
+    make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -83,11 +84,12 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
+from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
     roles_to_db_role,
 )
-from cdedb.common.sorting import EntitySorter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -96,6 +98,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -513,6 +516,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, self.mlproxy, method_name="is_relevant_admin"),
             'is_warning': _is_warning,
             'lang': rs.lang,
+            'n_': n_,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
@@ -656,7 +660,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
-            csv_data = csv_output(result, fields, substitutions=substitutions)
+            csv_data = csv_output(result, fields, substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
             return self.send_csv_file(
                 rs, data=csv_data, inline=False, filename=filename)
         elif kind == "json":
@@ -794,7 +799,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
-                            default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             choices: Mapping[str, Mapping[Any, str]] = None,
@@ -806,8 +810,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param scope: The query scope of the search.
-        :param default_scope: Use the default queries associated with this scope.
+        :param scope: The query scope of the search. Source for default queries.
         :param choices: Mapping of replacements of primary keys by human-readable
             strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
@@ -826,7 +829,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = DEFAULT_QUERIES[default_scope]
+        default_queries = DEFAULT_QUERIES[scope]
         choices_lists = {}
         if choices is None:
             choices = {}
@@ -847,10 +850,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return self.send_query_download(
                     rs, result, query, kind=download,
                     filename=scope.get_target() + "_result")
+            params["aggregates"] = unwrap(submit_general_query(
+                rs, query, aggregate=True))  # type: ignore[call-arg]
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
-                rs.values['qval_is_archived'] = True
+                rs.values['qval_is_archived'] = False
             rs.values['is_search'] = False
         return self.render(rs, scope.get_target(redirect=False), params)
 
@@ -903,8 +908,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
-            with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
-                                             suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
+                    encoding='UTF-8') as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
@@ -926,7 +932,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    def safe_compile(self, rs: RequestState, target_file: str, cwd: PathLike,
+    def safe_compile(self, rs: RequestState, target_file: str, cwd: pathlib.Path,
                      runs: int, errormsg: Optional[str]) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
@@ -951,17 +957,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
-                               stdout=subprocess.DEVNULL)
+                               capture_output=True, text=True)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
                 self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug(f"Exception \"{e}\" caught and handled.")
+            self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
+            self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
                 self.logger.info(f"Copying source file to {backup_path}")
-                shutil.copy2(target_file, backup_path)
+                shutil.copy2(cwd / target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")
@@ -984,7 +991,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
                 path = self.safe_compile(
-                    rs, tmp_file.name, tmp_dir, runs=runs, errormsg=errormsg)
+                    rs, tmp_file.name, pathlib.Path(tmp_dir), runs=runs,
+                    errormsg=errormsg)
                 if path.exists():
                     # noinspection PyTypeChecker
                     with open(path, 'rb') as pdf:
@@ -1114,6 +1122,76 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
+    def generic_view_log(self, rs: RequestState, data: CdEDBObject,
+                         filter_class: Type[GenericLogFilter],
+                         log_retriever: Callable[..., CdEDBLog],
+                         *, download: bool, template: str,
+                         template_kwargs: CdEDBObject = None
+                         ) -> werkzeug.Response:
+        """Generic helper to retrieve log data and render the result.
+
+        This takes care of validating the filter input and retrieving log entries via
+        the passed backend method.
+        """
+        data = check_validation(rs, vtypes.LogFilter, data, subtype=filter_class)
+        if rs.has_validation_errors() or data is None:
+            # If validation fails, there is no good way to get a partial filter
+            #  that is valid, so we use an empty filter instead. This should not
+            #  matter much in practice because, with regular usage there should not
+            #  be a way to input invalid filter values.
+            self.logger.debug(
+                f"Log filter validation failed: {rs.retrieve_validation_errors()}")
+            log_filter = filter_class()
+        else:
+            log_filter = filter_class(**data)
+
+        # Retrieve entry count and log entries.
+        total, log = log_retriever(rs, log_filter)
+
+        # Retrieve linked personas.
+        persona_ids = log_filter.get_persona_ids(log)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        if download:
+            # Postprocess persona information: Add names and cdedb id.
+            persona_fields = log_filter.get_persona_columns()
+            cdedbids = {persona_id: cdedbid_filter(persona_id)
+                        for persona_id in persona_ids}
+            substitutions = {persona_field: cdedbids
+                              for persona_field in persona_fields}
+
+            given_names = {f"{key}_given_names" for key in persona_fields}
+            family_names = {f"{key}_family_name" for key in persona_fields}
+
+            # Compile columns in a readable order
+            ordered_cols = ("id", "ctime", "code", "change_note")
+            unordered_cols = set(log_filter.get_columns()) | given_names | family_names
+            unordered_cols.difference_update(ordered_cols)
+            columns = ordered_cols + tuple(xsorted(unordered_cols))
+
+            for entry in log:
+                for k in persona_fields:
+                    if entry.get(k):
+                        entry[f"{k}_given_names"] = personas[entry[k]]['given_names']
+                        entry[f"{k}_family_name"] = personas[entry[k]]['family_name']
+                    else:
+                        entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
+
+            csv_data = csv_output(log, columns, replace_newlines=True,
+                                  substitutions=substitutions,
+                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
+            return self.send_csv_file(
+                rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
+        else:
+            # Create pagination.
+            loglinks = calculate_loglinks(rs, total, log_filter._offset,  # pylint: disable=protected-access
+                                          log_filter._length)  # pylint: disable=protected-access
+            return self.render(rs, template, {
+                'log': log, 'total': total, 'length': log_filter.length,
+                'personas': personas, 'loglinks': loglinks,
+                **(template_kwargs or {})
+            })
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1214,7 +1292,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: CdEDBObject) -> Optional[
+    def get_held_messages(self, dblist: Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1224,20 +1302,20 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return HELD_MESSAGE_SAMPLE
                 else:
                     return []
             return None
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.held if mmlist else None
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1246,12 +1324,12 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
                 # Add some diversity.
-                if dblist['id'] % 2 == 0:
+                if dblist.id % 2 == 0:
                     return len(HELD_MESSAGE_SAMPLE)
                 else:
                     return 0
         else:
-            mmlist = self.get_list_safe(dblist['address'])
+            mmlist = self.get_list_safe(dblist.address)
             try:
                 return mmlist.get_held_count() if mmlist else None
             except urllib.error.HTTPError:
@@ -1380,8 +1458,35 @@ class Worker(threading.Thread):
         return worker
 
 
+AmbienceDict = typing.TypedDict(
+    "AmbienceDict",
+    {
+        'persona': CdEDBObject,
+        'privilege_change': CdEDBObject,
+        'genesis_case': CdEDBObject,
+        'lastschrift': CdEDBObject,
+        'transaction':  CdEDBObject,
+        'event': CdEDBObject,
+        'pevent': CdEDBObject,
+        'course': CdEDBObject,
+        'pcourse': CdEDBObject,
+        'registration': CdEDBObject,
+        'group': CdEDBObject,
+        'lodgement': CdEDBObject,
+        'part_group': CdEDBObject,
+        'track_group': CdEDBObject,
+        'fee': CdEDBObject,
+        'attachment': CdEDBObject,
+        'attachment_version': CdEDBObject,
+        'assembly': CdEDBObject,
+        'ballot': CdEDBObject,
+        'mailinglist': Mailinglist,
+    }
+)
+
+
 def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> Dict[str, CdEDBObject]:
+                         rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1409,8 +1514,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'transaction_id', 'transaction',
               ((lambda a: do_assert(a['transaction']['lastschrift_id']
                                     == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
-              'institution_id', 'institution', ()),
         Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
               'event_id', 'event', ()),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
@@ -1451,10 +1554,17 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group']['event_id']
                                     == a['event']['id'])),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+              'fee_id', 'fee',
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
                                     == rs.requestargs['assembly_id'])),)),
+        Scout(lambda version: obj.assemblyproxy.get_attachment_version(
+                    rs, rs.requestargs['attachment_id'], version),
+              'version_nr', 'attachment_version', ()),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
@@ -1489,7 +1599,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return ambience
+    return cast("AmbienceDict", ambience)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -1552,9 +1662,14 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
-                raise werkzeug.exceptions.Forbidden(
-                    rs.gettext("Access denied to {realm}/{endpoint}.").format(
-                        realm=obj.__class__.__name__, endpoint=fun.__name__))
+                msg = n_("Access denied to {realm}/{endpoint}.")
+                params = {
+                    'realm': obj.__class__.__name__,
+                    'endpoint': fun.__name__,
+                }
+                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                _LOGGER.error(log_msg)
+                raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
         new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
@@ -1705,7 +1820,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1751,6 +1867,10 @@ def REQUESTdata(
                     else:
                         type_ = hints[name]
                         optional = False
+
+                    # Optionally skip items that are not given.
+                    if _omit_missing and name not in rs.request.values:
+                        continue
 
                     val = rs.request.values.get(name, "")
 
@@ -1807,7 +1927,7 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
+def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
                     ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
@@ -1834,12 +1954,13 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
+                    rs.values[name] = data[name]
                 elif argtype == "[str]":
                     data[name] = tuple(rs.request.values.getlist(name))
+                    rs.values.setlist(name, data[name])
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=repr(argtype)))
-                rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
         return cast(F, new_fun)
@@ -1853,7 +1974,9 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
         constraints: Collection[RequestConstraint] = None,
-        postpone_validation: bool = False) -> CdEDBObject:
+        postpone_validation: bool = False,
+        omit_missing: bool = False,
+) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1876,7 +1999,8 @@ def request_extractor(
     :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation,
+                 _omit_missing=omit_missing)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -1887,8 +2011,9 @@ def request_extractor(
     return fun(None, rs)
 
 
-def request_dict_extractor(rs: RequestState,
-                           args: Collection[str]) -> CdEDBObject:
+def request_dict_extractor(
+        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]],
+) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
     Like :py:meth:`request_extractor`.
@@ -2327,7 +2452,8 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping[Any, Any]] = None) -> str:
+               substitutions: Mapping[str, Mapping[Any, Any]] = None,
+               tzinfo: datetime.timezone = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2336,6 +2462,7 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
     :param substitutions: Allow replacements of values with better
       representations for output. The key of the outer dict is the field
       name.
+    :param tzinfo: If given convert all datetimes to this timezone.
     """
     substitutions = substitutions or {}
     outfile = io.StringIO()
@@ -2351,6 +2478,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                 value = substitutions[field].get(value, value)
             if replace_newlines and isinstance(value, str):
                 value = value.replace('\n', 14 * ' ')
+            if tzinfo and isinstance(value, datetime.datetime):
+                value = value.astimezone(tzinfo)
             row[field] = value
         writer.writerow(row)
     return outfile.getvalue()
@@ -2376,22 +2505,6 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
-
-
-def calculate_db_logparams(offset: Optional[int], length: int
-                           ) -> Tuple[Optional[int], int]:
-    """Modify the offset and length values used in the frontend to
-    allow for guaranteed valid sql queries.
-    """
-    _offset = offset
-    _length = length
-    if _offset and _offset < 0:
-        # Avoid non-positive lengths
-        if -_offset < length:
-            _length = _length + _offset
-        _offset = 0
-
-    return _offset, _length
 
 
 def calculate_loglinks(rs: RequestState, total: int,

@@ -41,86 +41,29 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="fee", label=gettext("Event Part Fee"), anid="input-text-fee", addon='€') }}
-        {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
+        {{ util.form_input_select(name="waitlist_field", entries=fields['waitlist_field'],
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
                                                               gettext("Waitlist")))|s
                                   ) }}
-
-        <h3 class="mosp heading-underline">{% trans %}Fee Modifiers{% endtrans %}</h3>
-        <table class="table table-condensed" id="fee_modifier-drow-table">
-            <thead>
-                <tr>
-                    <th>{% trans %}Fee Modifier{% endtrans %}</th>
-                    <th>{% trans %}Amount{% endtrans %}</th>
-                    <th>{% trans %}Linked Field{% endtrans %}</th>
-                    <th></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_fee_modifier_ids, prefix="fee_modifier",
-                                                                         add_prototype_row=not has_registrations) %}
-                    <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
-                        <td class={{ util.has_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}>
-                            {{ util.input_text(drow_name("modifier_name", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control',
-                                    attributes=util.drow_basename("modifier_name", prefix="fee_modifier"),
-                                    arialabel=gettext("Fee Modifier"), readonly=has_registrations) }}
-                            {{ util.output_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}
-                        </td>
-                        <td class={{ util.has_errors(drow_name("amount", id, prefix="fee_modifier")) }}>
-                            {{ util.input_text(drow_name("amount", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control',
-                                    attributes=util.drow_basename("amount", prefix="fee_modifier"),
-                                    arialabel=gettext("Amount"), readonly=has_registrations) }}
-                            {{ util.output_errors(drow_name("amount", id, prefix="fee_modifier")) }}
-                        </td>
-                        <td class={{ util.has_errors(drow_name("field_id", id, prefix="fee_modifier")) }}>
-                            {{ util.input_select(drow_name("field_id", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control',
-                                    attributes=util.drow_basename("field_id", prefix="fee_modifier"),
-                                    arialabel=gettext("Linked Field"), readonly=has_registrations,
-                                    entries=fee_modifier_fields) }}
-                            {{ util.output_errors(drow_name("field_id", id, prefix="fee_modifier")) }}
-                        </td>
-                        <td>
-                            <span class="drow-buttonspace">
-                                {% if is_new_row %}
-                                    {{ util.input_checkbox(drow_create(id, prefix="fee_modifier"), label=gettext("Add"),
-                                            attributes=util.drow_basename("create", prefix="fee_modifier"),
-                                            aclass='drow-indicator') }}
-                                {% else %}
-                                    {{ util.input_checkbox(drow_delete(id, prefix="fee_modifier"), label=gettext("Delete"),
-                                            readonly=has_registrations, aclass='drow-indicator') }}
-                                {% endif %}
-                            </span>
-                        </td>
-                    </tr>
-                {% endcall %}
-            </tbody>
-        </table>
-
-        {% if not has_registrations %}
-            <p>
-                <button type="button" class="btn btn-success softhide pull-right" id="fee_modifier-drow-addbutton">
-                    {{ util.make_icon('plus') }} {% trans %}Add Fee Modifier{% endtrans %}
-                </button>
-            </p>
-        {% endif %}
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"),
+                                  entries=fields['camping_mat_field'], nulloption=nbsp,
+                                  info=gettext("The custom field in which the participants’ "
+                                  "willingness to sleep on a camping mat will be saved. It is displayed on "
+                                  "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
 
         <h3 class="mosp heading-underline clear-both">{% trans %}Coursetracks{% endtrans %}</h3>
         <table class="table table-condensed" id="track-drow-table">
             <thead>
                 <tr>
-                    <th>{% trans %}Coursetrack{% endtrans %}</th>
-                    <th>{% trans %}Shortname{% endtrans %}</th>
-                    <th>{% trans %}Course Choices{% endtrans %}</th>
-                    <th>{% trans %}Req. Choices{% endtrans %}</th>
-                    <th>{% trans %}Sortkey{% endtrans %}</th>
+                    <th class="col-sm-4">{% trans %}Coursetrack{% endtrans %}</th>
+                    <th class="col-sm-2">{% trans %}Shortname{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Course Choices{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Req. Choices{% endtrans %}</th>
+                    <th class="col-sm-1">{% trans %}Sortkey{% endtrans %}</th>
+                    <th class="col-sm-3">{% trans %}Course Room Field{% endtrans %}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -168,6 +111,13 @@
                                     defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
+                        <td class={{ util.has_errors(drow_name("course_room_field", id, prefix="track")) }}>
+                            {{ util.input_select(drow_name("course_room_field", id, prefix="track"),
+                                    aclass='drow-input form-control', entries=fields['course_room_field'],
+                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field", prefix="track"),
+                                    arialabel=gettext("Course Room Field")) }}
+                            {{ util.output_errors(drow_name("course_room_field", id, prefix="track")) }}
+                        </td>
                         <td>
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}
@@ -184,6 +134,16 @@
                     </tr>
                 {% endcall %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="7" class="text-muted">
+                        {{ util.make_icon('info-circle') }}
+                        {{ gettext("The course room field is the custom field in which the course’s assigned course"
+                                   " room will be saved. It is used for PDF participant lists and nametags."
+                                   " Fieldtype: Text") }}
+                    </td>
+                </tr>
+            </tfoot>
         </table>
 
         {% if not has_registrations %}
@@ -200,9 +160,6 @@
 
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#fee_modifier-drow-table').cdedbDynamicRow({
-                addButton: $('#fee_modifier-drow-addbutton'),
-                delButtonTitle: "{{ gettext("Delete line") }}"});
             $('#track-drow-table').cdedbDynamicRow({
                 addButton: $('#track-drow-addbutton'),
                 delButtonTitle: "{{ gettext("Delete line") }}"});

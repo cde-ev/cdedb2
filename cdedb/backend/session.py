@@ -10,17 +10,20 @@ special in here.
 """
 
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 import psycopg2.extensions
+from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import inspect_validation as inspect
-from cdedb.common import User, now, setup_logger
+from cdedb.backend.common import inspect_validation as inspect, verify_password
+from cdedb.common import User, n_, now, setup_logger
+from cdedb.common.exceptions import APITokenError
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
-from cdedb.common.roles import droid_roles, extract_roles
+from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
+from cdedb.models.droid import DynamicAPIToken, StaticAPIToken, resolve_droid_name
 
 
 class SessionBackend:
@@ -37,8 +40,8 @@ class SessionBackend:
         secrets = SecretsConfig()
 
         # local variable also to prevent closure over secrets
-        lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
-        self.api_token_lookup = lookup.get
+        self._validate_static_droid_secret = lambda droid, secret: consteq(
+            secrets['API_TOKENS'][droid], secret)
 
         setup_logger(
             "cdedb.backend.session", self.conf["LOG_DIR"] / "cdedb-backend-session.log",
@@ -142,14 +145,103 @@ class SessionBackend:
 
         Resolve an API token (originally submitted via header) into the
         User wrapper required for a :py:class:`cdedb.common.RequestState`.
+
+        A malformed token or a valid token for an unknown droid or
+        with an invalid secret will raise an error.
         """
-        ret = User()
-        identity = self.api_token_lookup(apitoken)
-        if identity:
-            ret = User(roles=droid_roles(identity))
-            if self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
-                ret = User()
-        else:
-            # log message to be picked up by fail2ban
-            self.logger.warning(f"CdEDB invalid API token from {ip}")
+        apitoken, errs = inspect(vtypes.APITokenString, apitoken)
+        if not apitoken or errs:
+            raise APITokenError(n_("Malformed API token."))
+
+        droid_name, secret = apitoken
+
+        try:
+            droid_class, token_id = resolve_droid_name(droid_name)
+
+            if droid_class is None:
+                # Droid name did not match any known droid.
+                self.logger.warning(
+                    f"API token did not match any known droid: {droid_name!r}.")
+                raise APITokenError(n_("Unknown droid name."))
+            elif issubclass(droid_class, StaticAPIToken):
+                if self._validate_static_droid_secret(droid_class.name, secret):
+                    ret = droid_class.get_user()
+                else:
+                    raise APITokenError
+            elif issubclass(droid_class, DynamicAPIToken) and token_id:
+                ret = self._validate_dynamic_droid_secret(droid_class, token_id, secret)
+            else:
+                raise APITokenError
+        except APITokenError:
+            # log message to be picked up by fail2ban.
+            self.logger.exception(f"Received invalid API token from {ip}.")
+            raise
+
+        # Prevent non-infrastructure droids from access during lockdown.
+        if self.conf['LOCKDOWN'] and 'droid_infra' not in ret.roles:
+            ret = User()
+
         return ret
+
+    def _validate_dynamic_droid_secret(self, droid_class: Type[DynamicAPIToken],
+                                       token_id: int, secret: str) -> User:
+
+        if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
+            raise APITokenError(n_("This API is not available in offline mode."))
+
+        with self.connpool["cdb_anonymous"] as conn:
+            with conn.cursor() as cur:
+                query = f"""
+                    SELECT
+                        {','.join(droid_class.database_fields())}, secret_hash
+                    FROM {droid_class.database_table}
+                    WHERE id = %s
+                """
+                cur.execute(query, (token_id,))
+                data = cur.fetchone()
+
+                # Not a valid token id. Probably garbage input or deleted token.
+                if not data:
+                    self.logger.warning(
+                        f"Access using unknown {droid_class.name}"
+                        f" token id: {token_id}.")
+                    raise APITokenError(
+                        n_("Unknown %(droid_name)s token."),
+                        {'droid_name': droid_class.name}
+                    )
+
+                data = dict(data)
+                secret_hash = data.pop('secret_hash')
+                token = droid_class(**data)
+
+                if secret_hash is None or token.rtime:
+                    self.logger.warning(
+                        f"Access using inactive {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("This %(droid_name)s token has been revoked."),
+                        {'droid_name': droid_class.name}
+                    )
+                if not verify_password(secret, secret_hash):
+                    self.logger.warning(
+                        f"Invalid secret for {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("Invalid %(droid_name)s token."),
+                        {'droid_name': droid_class.name}
+                    )
+                if now() > token.etime:
+                    self.logger.warning(
+                        f"Access using expired {droid_class.name} token {token}.")
+                    raise APITokenError(
+                        n_("This %(droid_name)s token has expired."),
+                        {'droid_name': droid_class.name}
+                    )
+
+                # Log latest access time.
+                query = f"""
+                    UPDATE {droid_class.database_table}
+                    SET atime = now()
+                    WHERE id = %s
+                """
+                cur.execute(query, (token_id,))
+
+        return token.get_user()

@@ -256,7 +256,8 @@ class TestLDAP(BasicTest):
                 'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de'
+                'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             ]
         }
         self.single_result_search(search_filter, expectation, attributes=attributes,
@@ -309,6 +310,7 @@ class TestLDAP(BasicTest):
         expectation: Dict[str, List[str]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
+            'ipaUniqueID': ['personas/1'],
 
             'cn': ['Anton Armin A. Administrator'],
             'displayName': ['Anton Administrator'],
@@ -334,10 +336,11 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': ['is_cdelokal_admin'],
             'description': ['CdELokal-Administratoren'],
+            'ipaUniqueID': ['status_groups/is_cdelokal_admin'],
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',
                 'uid=100,ou=users,dc=cde-ev,dc=de',
-                'uid=9,ou=users,dc=cde-ev,dc=de'
+                'uid=38,ou=users,dc=cde-ev,dc=de'
             ],
             'objectClass': ['groupOfUniqueNames']
         }
@@ -358,6 +361,7 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': ['gutscheine@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
+            'ipaUniqueID': ['mls/gutscheine@lists.cde-ev.de'],
             'uniqueMember': [
                 'uid=100,ou=users,dc=cde-ev,dc=de',
                 'uid=11,ou=users,dc=cde-ev,dc=de'
@@ -382,6 +386,7 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': ['gutscheine-owner@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine-owner@lists.cde-ev.de>'],
+            'ipaUniqueID': ['ml_moderator_groups/gutscheine@lists.cde-ev.de'],
             'uniqueMember': [
                 'uid=9,ou=users,dc=cde-ev,dc=de'
             ],
@@ -405,6 +410,7 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': [group_cn],
             'description': ['Große Testakademie 2222 (TestAka)'],
+            'ipaUniqueID': ['event_orga_groups/1'],
             'uniqueMember': [
                 'uid=7,ou=users,dc=cde-ev,dc=de'
             ],
@@ -428,6 +434,7 @@ class TestLDAP(BasicTest):
         expectation = {
             'cn': [group_cn],
             'description': ['Internationaler Kongress (kongress)'],
+            'ipaUniqueID': ['assembly_presider_groups/1'],
             'uniqueMember': [
                 'uid=23,ou=users,dc=cde-ev,dc=de'
             ],
@@ -449,6 +456,7 @@ class TestLDAP(BasicTest):
         dua_cn = "test"
         expectation: Dict[str, List[str]] = {
             'cn': ['test'],
+            'ipaUniqueID': ['duas/test'],
             'objectClass': ['person', 'simpleSecurityObject'],
             # there is no password returned, since passwords may not be retrived but
             # only used for binding
@@ -485,6 +493,7 @@ class TestLDAP(BasicTest):
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
             # pylint: disable=line-too-long

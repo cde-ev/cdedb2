@@ -6,7 +6,7 @@ Orgas
    :hidden:
 
    Handbuch_Orga_Datenfelder
-   Handbuch_Orga_Beitragsmodifikator
+   Handbuch_Orga_Teilnahmebeitraege
    Handbuch_Orga_Warteliste
    Handbuch_Orga_Mitnahmeversion
    Handbuch_Orga_Template-Renderer
@@ -51,4 +51,4 @@ und Unterkünfte.
 Beachtet, das das **Dokuteam** euch vor, nach und vor allem während eurer
 Veranstaltung kontaktieren wird, um Daten aus der Datenbank zu erhalten, die
 für die Erstellung der Doku benötigt werden.
-Genaueres hierzu findet ihr unter :doc:`Handbuch_Akademieteam_Dokuteam`.
+Genaueres hierzu findet ihr unter :doc:`Handbuch_Dokuteam`.

@@ -195,7 +195,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
                              outfile: pathlib.Path) -> None:
     """Generate a JSON-file from the current state of the database."""
     data = sql2json(config, secrets)
-    with open(outfile, "w") as f:
+    with open(outfile, "w", encoding='UTF-8') as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
         f.write("\n")
 
@@ -262,9 +262,10 @@ def apply_evolution_trial(config: TestConfig, secrets: SecretsConfig) -> None:
 
 
 @development.command(name="serve")
-def serve_debugger_cmd() -> None:
+@click.option('-t', '--test', is_flag=True)
+def serve_debugger_cmd(test: bool) -> None:
     """Serve the cdedb using the werkzeug development server"""
-    serve_debugger()
+    serve_debugger(test)
 
 
 @development.command(name="execute-sql-script")

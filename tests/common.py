@@ -18,10 +18,15 @@ import os
 import pathlib
 import re
 import shutil
+import socket
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
+import urllib.error
 import urllib.parse
+import urllib.request
 from typing import (
     Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
     NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
@@ -51,6 +56,10 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
+from cdedb.common.query.log_filter import (
+    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
+    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
+)
 from cdedb.common.roles import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
 )
@@ -63,6 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -173,12 +183,12 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, ip)
-        if user.roles == {'anonymous'}:
+        if key and APIToken.token_string_pattern.fullmatch(key):
+            user = sessionproxy.lookuptoken(key, ip)
+            apitoken = key
+        else:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
-        else:
-            apitoken = key
 
         rs = RequestState(
             sessionkey=sessionkey,
@@ -197,13 +207,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
+            rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
+            rs.user.presider = backend.presider_info(
                 rs, rs.user.persona_id)
         return rs
 
@@ -306,6 +316,13 @@ class BasicTest(unittest.TestCase):
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
+        def parse_date(s: Optional[str]) -> Optional[datetime.date]:
+            if s is None:
+                return None
+            if s == "---now---":
+                return nearly_now().date()
+            return datetime.date.fromisoformat(s)
+
         if keys is None:
             try:
                 keys = next(iter(_SAMPLE_DATA[table].values())).keys()
@@ -323,8 +340,12 @@ class BasicTest(unittest.TestCase):
                 if table == 'core.personas':
                     if k == 'balance' and r[k]:
                         r[k] = decimal.Decimal(r[k])
+                    if k == 'donation' and r[k]:
+                        r[k] = decimal.Decimal(r[k])
                     if k == 'birthday' and r[k]:
-                        r[k] = datetime.date.fromisoformat(r[k])
+                        r[k] = parse_date(r[k])
+                if k in {'transaction_date'} and r[k]:
+                    r[k] = parse_date(r[k])
                 if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
                          'vote_extension_end', 'signup_end'} and r[k]:
                     r[k] = parse_datetime(r[k])
@@ -361,7 +382,6 @@ class CdEDBTest(BasicTest):
         with Script(
             persona_id=-1,
             dbuser="cdb",
-            dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
@@ -450,17 +470,21 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None,
-                       log_retriever: Callable[..., CdEDBLog] = None,
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        if realm and not log_retriever:
-            log_retriever = getattr(self, realm).retrieve_log
-        if log_retriever:
-            _, log = log_retriever(self.key, **kwargs)
-        else:
-            raise ValueError("No method of log retrieval provided.")
+        logs: dict[str, tuple[Callable[..., CdEDBLog], Type[GenericLogFilter]]] = {
+            'core': (self.core.retrieve_log, CoreLogFilter),
+            'changelog': (self.core.retrieve_changelog_meta, ChangelogLogFilter),
+            'cde': (self.cde.retrieve_cde_log, CdELogFilter),
+            'finance': (self.cde.retrieve_finance_log, FinanceLogFilter),
+            'assembly': (self.assembly.retrieve_log, AssemblyLogFilter),
+            'event': (self.event.retrieve_log, EventLogFilter),
+            'ml': (self.ml.retrieve_log, MlLogFilter),
+            'past_event': (self.pastevent.retrieve_past_log, PastEventLogFilter),
+        }
+        log_retriever, log_filter_class = logs[realm]
+        _, log = log_retriever(self.key, log_filter_class(**kwargs))
 
         for real, exp in zip(log, log_expectation):
             if 'id' not in exp:
@@ -470,10 +494,13 @@ class BackendTest(CdEDBTest):
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
             for k in ('event_id', 'assembly_id', 'mailinglist_id'):
-                if k in kwargs and k not in exp:
+                if k in kwargs and 'entity_ids' not in exp:
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
+                    exp[k] = None
+            for k in ('droid_id',):
+                if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
@@ -488,6 +515,45 @@ class BackendTest(CdEDBTest):
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True)
+
+
+class BrowserTest(CdEDBTest):
+    """
+    Base class for a TestCase that uses a real browser.
+
+    We instantiate a real (development) server for this usecase as a bare WSGI
+    application won't do the trick.
+    """
+    serverProcess = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.serverProcess = subprocess.Popen(
+            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
+            stderr=subprocess.DEVNULL)
+        for _ in range(42):
+            try:
+                response = urllib.request.urlopen("http://localhost:5000/",
+                                                  timeout=.1)
+                if response.status == 200:
+                    break
+            except urllib.error.URLError:
+                time.sleep(.1)
+            except socket.timeout:
+                time.sleep(.1)
+        else:
+            raise RuntimeError('Test server failed to start.')
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if cls.serverProcess:
+            cls.serverProcess.terminate()
+            cls.serverProcess.wait(2)
+            cls.serverProcess.kill()
+            cls.serverProcess.wait()
+            cls.serverProcess = None
+        super().tearDownClass()
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -724,6 +790,16 @@ USER_DICT: Dict[str, UserObject] = {
         'family_name': "Kassenprüfer",
         'default_name_format': "Katarina Kassenprüfer",
     },
+    "ludwig": {
+        'id': 38,
+        'DB-ID': "DB-38-8",
+        'username': "ludwig@example.cde",
+        'password': "secret",
+        'diplay_name': "Ludwig",
+        'given_names': "Ludwig",
+        'family_name': "Lokus",
+        'default_name_format': "Ludwig Lokus",
+    },
     "viktor": {
         'id': 48,
         'DB-ID': "DB-48-5",
@@ -836,7 +912,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[str]"
+    gettext: "staticmethod[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -1156,17 +1232,21 @@ class FrontendTest(BackendTest):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
-    def assertTitle(self, title: str) -> None:
+    def assertTitle(self, title: str, exact: bool = True) -> None:
         """
         Assert that the tilte of the current page equals the given string.
 
         The actual title has a prefix, which is checked automatically.
+        :param exact: If False, presence as substring suffices.
         """
         components = tuple(x.strip() for x in self.response.lxml.xpath(
             '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
-        self.assertEqual(title.strip(), normalized)
+        if exact:
+            self.assertEqual(title.strip(), normalized)
+        else:
+            self.assertIn(title.strip(), normalized)
 
     def get_content(self, div: str = "content") -> str:
         """Retrieve the content of the (first) element with the given id."""
@@ -1371,7 +1451,8 @@ class FrontendTest(BackendTest):
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-{kind} box")
-        msg = f"Expected error message not found near input with name {f!r}."
+        msg = f"Expected error message not found near input with name {f!r}:\n"
+        msg += container[0].text_content()
         self.assertIn(message, container[0].text_content(), msg)
 
     def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
@@ -1411,11 +1492,9 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None, **kwargs: Any) -> None:
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+                       **kwargs: Any) -> None:
         saved_response = self.response
-        if not realm:
-            raise RuntimeError("Need to specify realm.")
 
         # Check raw log.
         super().assertLogEqual(log_expectation, realm=realm, **kwargs)
@@ -1440,12 +1519,19 @@ class FrontendTest(BackendTest):
             else:
                 self.get("/assembly/log")
         elif realm == "ml":
-            entities = self.ml.get_mailinglists(self.key, entity_ids)
+            entities = {ml_id: ml.to_database() for ml_id, ml
+                        in self.ml.get_mailinglists(self.key, entity_ids).items()}
             if ml_id := kwargs.get('mailinglist_id'):
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
             else:
                 self.get("/ml/log")
+        elif realm == "finance":
+            self.get("/cde/finances")
+            entities = {}
+        elif realm == "changelog":
+            self.get("/core/changelog/view")
+            entities = {}
         else:
             self.get(f"/{realm}/log")
             entities = {}
@@ -1565,6 +1651,16 @@ class FrontendTest(BackendTest):
         for field in f.fields['codes']:
             self.assertTrue(field.checked)
 
+        # Check csv export
+        save = self.response
+        self.response = f.submit("download", value="csv")
+        self.assertIn('id;ctime;code;change_note;', self.response.text)
+        self.assertIn('persona_id;persona_id_family_name;persona_id_given_names;',
+                      self.response.text)
+        self.assertIn('submitted_by;submitted_by_family_name;submitted_by_given_names',
+                      self.response.text)
+        self.response = save
+
     def _log_subroutine(self, title: str,
                         all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:
@@ -1653,13 +1749,14 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Alle Nutzer verwalten")
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.traverse("Nutzer verwalten")
+        self.assertTitle("utzerverwaltung", exact=False)
         f = self.response.forms['queryform']
+        f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Vollständige Nutzerverwaltung")
+        self.assertTitle("utzerverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

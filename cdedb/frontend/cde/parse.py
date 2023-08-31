@@ -55,7 +55,6 @@ class CdEParseMixin(CdEBaseFrontend):
             'params': params or None,
             'data': data,
             'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
-            'ref_sep': parse.REFERENCE_SEPARATOR,
             'TransactionType': parse.TransactionType,
             'event_entries': event_entries,
             'events': events,
@@ -65,8 +64,7 @@ class CdEParseMixin(CdEBaseFrontend):
     @staticmethod
     def organize_transaction_data(
         rs: RequestState, transactions: List[parse.Transaction],
-        start: Optional[datetime.date], end: Optional[datetime.date],
-        timestamp: datetime.datetime
+        date: datetime.date,
     ) -> Tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
 
@@ -74,9 +72,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 for t in transactions
                 for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
-        data["start"] = start
-        data["end"] = end
-        data["timestamp"] = timestamp
+        data["date"] = date
         params: CdEDBObject = {
             "all": [],
             "has_error": [],
@@ -132,7 +128,7 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
-        start, end, timestamp = parse.dates_from_filename(filename)
+        date = parse.date_from_filename(filename)
         statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
@@ -149,8 +145,10 @@ class CdEParseMixin(CdEBaseFrontend):
 
         transactions = []
 
+        ALL_KEYS = parse.StatementCSVKeys.all_keys()
+
         for i, line in enumerate(reader):
-            if not line.keys() <= parse.STATEMENT_CSV_ALL_KEY:
+            if not line.keys() <= ALL_KEYS:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct columns."),
@@ -167,20 +165,19 @@ class CdEParseMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
 
-        data, params = self.organize_transaction_data(
-            rs, transactions, start, end, timestamp)
+        data, params = self.organize_transaction_data(rs, transactions, date)
 
         return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("count", "start", "end", "timestamp", "validate", "event",
-                 "membership", "excel", "gnucash", "ignore_warnings")
-    def parse_download(self, rs: RequestState, count: int, start: datetime.date,
-                       end: Optional[datetime.date],
-                       timestamp: datetime.datetime, validate: str = None,
-                       event: vtypes.ID = None, membership: str = None,
-                       excel: str = None, gnucash: str = None,
-                       ignore_warnings: bool = False) -> Response:
+    @REQUESTdata("count", "date", "validate", "event", "membership", "excel", "gnucash",
+                 "ignore_warnings")
+    def parse_download(self, rs: RequestState, count: int, date: datetime.date,
+                       validate: Optional[str] = None,
+                       event: Optional[vtypes.ID] = None,
+                       membership: Optional[str] = None, excel: Optional[str] = None,
+                       gnucash: Optional[str] = None, ignore_warnings: bool = False
+                       ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
 
@@ -200,8 +197,7 @@ class CdEParseMixin(CdEBaseFrontend):
             t.inspect()
             transactions.append(t)
 
-        data, params = self.organize_transaction_data(
-            rs, transactions, start, end, timestamp)
+        data, params = self.organize_transaction_data(rs, transactions, date)
 
         fields: Sequence[str]
         if validate is not None or params["has_error"] \
@@ -231,19 +227,17 @@ class CdEParseMixin(CdEBaseFrontend):
             if not account:
                 rs.notify("error", n_("Unknown account."))
                 return self.parse_statement_form(rs, data, params)
-            filename = "transactions_" + str(account.value)
+            filename = f"transactions_{account.display_str()}"
             transactions = [t for t in transactions if t.account == account]
             fields = parse.EXCEL_EXPORT_FIELDS
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
             return self.parse_statement_form(rs, data, params)
-        if end is None:
-            filename += "_{}.csv".format(start)
-        else:
-            filename += "_{}_bis_{}.csv".format(start, end)
+        filename += f"_{date}.csv"
         csv_data = [t.to_dict() for t in transactions]
-        csv_data = csv_output(csv_data, fields, write_header)
+        csv_data = csv_output(csv_data, fields, write_header,
+                              tzinfo=self.conf['DEFAULT_TIMEZONE'])
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")

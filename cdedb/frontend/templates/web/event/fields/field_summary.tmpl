@@ -14,8 +14,9 @@
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields"), active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.doclink_('Handbuch_Orga') }}
     {{ util.context_heading(gettext("Configure Custom Fields"), ambience['event']['title'],
-                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga") }}
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {# Macro for a general field, that can have each role in the DynamicRow workflow.
@@ -81,7 +82,7 @@
                     {{ util.input_hidden(name=drow_name('association', field_id), value=association) }}
                 {% endif %}
                 {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
-                                            actualreadonly=not changeable, aclass='drow-input',
+                                            aclass='drow-input',
                                             attributes=util.drow_basename('entries')|s if newrow else '') }}
                 {% if association == enums['FieldAssociations'].registration %}
                     {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),
@@ -106,8 +107,14 @@
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
-                     aclass="btn btn-info btn-sm", icon='file-upload') }}
+                     aclass="btn btn-warning btn-sm", icon='file-upload') }}
     </div>
+    {% if ambience['event']['field_definition_notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Custom Fields Notes"), icon="tag",
+                                     aclass="panel-default panel-condensed") %}
+            <div id="field-definition-notes">{{ ambience['event']['field_definition_notes']|md }}</div>
+        {% endcall %}
+    {% endif %}
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/field_summary') }}
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">
@@ -140,7 +147,7 @@
                         <div class="row">
                         {% for field_id, entry in batch %}
                             {% if field_id > 0 %}
-                                {{ print_field(field_id, association, field_id not in referenced, field_id not in fee_modifiers, 'drow-row') }}
+                                {{ print_field(field_id, association, field_id not in referenced, field_id not in locked, 'drow-row') }}
                             {% else %}
                                 {{ print_field(field_id, association, False, True, 'drow-new', newrow=True) }}
                             {% endif %}
