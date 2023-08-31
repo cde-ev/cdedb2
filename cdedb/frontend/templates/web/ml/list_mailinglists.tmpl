@@ -15,10 +15,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
-                aclass="btn btn-sm btn-success") }}
-    </div>
+    {{ generic_ml.index_buttons() }}
      <p class="text-info">
          {{ util.make_icon('info-circle') }}
          {% trans documentation=util.href(docurl('Realm_Mailinglist_Types'), gettext('documentation')) %}
