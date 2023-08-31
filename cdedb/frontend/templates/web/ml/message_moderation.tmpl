@@ -27,7 +27,7 @@
             {% endtrans %}
         </p>
     {% else %}
-        <p class="text-info">
+        <p class="text-info" id="help-text-box">
          {{ util.make_icon('info-circle') }}
          {% trans %}
              If you reject a message, its author will receive a notification message. If you discard a message, no
@@ -46,7 +46,7 @@
                             ('accept', gettext('Accept All'), 'check', 'success'),
                             ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
                         {{ util.input_submit(label=label, icon=icon, value=action, name="action",
-                                             aclass="btn btn-xs btn-" + coloring) }}
+                                             aclass="btn btn-sm btn-" + coloring) }}
                     {% endfor %}
                 </form>
             </p>
@@ -65,16 +65,16 @@
                             <div class="button-par">
                                 {{ util.input_submit(label=gettext('Whitelist_[[verb]]'), icon='plus',
                                                      value='whitelist', name="action",
-                                                     aclass=("btn btn-xs btn-success")) }}
+                                                     aclass=("btn btn-sm btn-success")) }}
                                 {{ util.input_submit(label=gettext('Accept'), icon='check', value='accept',
-                                                     name="action", aclass=("btn btn-xs btn-success")) }}
+                                                     name="action", aclass=("btn btn-sm btn-success")) }}
                                 {{ util.input_text('reason', placeholder=gettext('Rejection reason'),
                                                    aclass='form-control input-slim input-sm',
                                                    anid=('mlmod-text-reason-' + (email.request_id | string))) }}
                                 {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
-                                                     name="action", aclass=("btn btn-xs btn-warning")) }}
+                                                     name="action", aclass=("btn btn-sm btn-warning")) }}
                                 {{ util.input_submit(label=gettext('Discard'), icon='trash-alt', value='discard',
-                                                     name="action", aclass=("btn btn-xs btn-danger")) }}
+                                                     name="action", aclass=("btn btn-sm btn-danger")) }}
                             </div>
                             <script nonce="{{ csp_nonce }}">
                                 $(document).ready(function() {mlmod_bind_modal({{email.request_id}})});
@@ -95,13 +95,20 @@
     <script nonce="{{ csp_nonce }}">
         function mlmod_bind_modal(request_id) {
             const button = `
-                <button type="button" id="mlmod-button-expand-${ request_id }" class="btn btn-xs btn-neutral">
+                <button type="button" id="mlmod-button-expand-${ request_id }" class="btn btn-sm btn-neutral">
                     <!-- <span class="fas fa-maximize fa-fw" aria-hidden="true"></span>
                          This icon somehow does not work, so we use the one below. :/
                          -->
                     <span class="fas fa-expand fa-fw" aria-hidden="true"></span>
                 </button>
             `;
+            const helptext = `
+                 <div id="help-text-rejection-reason">
+                     {% trans button=('<button type="button" class="btn btn-sm btn-neutral"><span class="fas fa-expand fa-fw" aria-hidden="true"></span></button>'|safe)%}
+                         The button {{ button }} allows to expand the rejection reason into a multiline text.
+                     {% endtrans %}
+                 </div>
+            `
             if (!$("#mlmod-button-expand-" + request_id).length) {
                 $("#mlmod-text-reason-" + request_id).after(button);
             }
@@ -115,6 +122,10 @@
                     return true;
                 }
             });
+            <!-- Add help text -->
+            if (!$("#help-text-rejection-reason").length) {
+                $("#help-text-box").append(helptext);
+            }
         }
 
         function mlmod_show_modal(request_id) {
