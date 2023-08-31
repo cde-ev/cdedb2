@@ -68,13 +68,15 @@
                                                      aclass=("btn btn-sm btn-success")) }}
                                 {{ util.input_submit(label=gettext('Accept'), icon='check', value='accept',
                                                      name="action", aclass=("btn btn-sm btn-success")) }}
-                                {{ util.input_text('reason', placeholder=gettext('Rejection reason'),
-                                                   aclass='form-control input-slim input-sm',
-                                                   anid=('mlmod-text-reason-' + (email.request_id | string))) }}
                                 {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
-                                                     name="action", aclass=("btn btn-sm btn-warning")) }}
+                                                     name="action", aclass=("btn btn-sm btn-warning"),
+                                                     anid=('mlmod-button-reject-' + (email.request_id | string))) }}
                                 {{ util.input_submit(label=gettext('Discard'), icon='trash-alt', value='discard',
                                                      name="action", aclass=("btn btn-sm btn-danger")) }}
+                            </div>
+                            <div>
+                                {{ util.input_textarea('reason', aclass='form-control  input-sm', rows=2,
+                                                       anid=('mlmod-noscript-reason-' + (email.request_id | string))) }}
                             </div>
                             <script nonce="{{ csp_nonce }}">
                                 $(document).ready(function() {mlmod_bind_modal({{email.request_id}})});
@@ -95,37 +97,24 @@
     <script nonce="{{ csp_nonce }}">
         function mlmod_bind_modal(request_id) {
             const button = `
-                <button type="button" id="mlmod-button-expand-${ request_id }" class="btn btn-sm btn-neutral">
-                    <!-- <span class="fas fa-maximize fa-fw" aria-hidden="true"></span>
-                         This icon somehow does not work, so we use the one below. :/
-                         -->
-                    <span class="fas fa-expand fa-fw" aria-hidden="true"></span>
-                </button>
-            `;
-            const helptext = `
-                 <div id="help-text-rejection-reason">
-                     {% trans button=('<button type="button" class="btn btn-sm btn-neutral"><span class="fas fa-expand fa-fw" aria-hidden="true"></span></button>'|safe)%}
-                         The button {{ button }} allows to expand the rejection reason into a multiline text.
-                     {% endtrans %}
-                 </div>
+               {{ util.input_submit(label=gettext('Reject with cause'), icon='reply', value='none',
+                                    name="action", aclass=("btn btn-sm btn-warning"),
+                                    anid=('mlmod-button-cause-XXX=ID=XXX')) }}
+            `.replace(/XXX=ID=XXX/g, request_id);
+            const hidden_input = `
+                <input type="hidden" name="reason" value="" id="mlmod-hidden-reason-${ request_id }"/>
             `
-            if (!$("#mlmod-button-expand-" + request_id).length) {
-                $("#mlmod-text-reason-" + request_id).after(button);
+            if (!$("#mlmod-button-cause-" + request_id).length) {
+                $("#mlmod-button-reject-" + request_id).after(button);
+                $("#mlmod-button-reject-" + request_id).after(hidden_input);
+                $("#mlmod-noscript-reason-" + request_id).remove();
+                $("#mlmod-button-cause-" + request_id).on("click", function(e) {
+                    return false;
+                });
             }
-            $("#mlmod-button-expand-" + request_id).on("click", function() {
+            $("#mlmod-button-cause-" + request_id).on("click", function() {
                 mlmod_show_modal(request_id);
             });
-            <!-- Rebind enter key to avoid accidential submit if a multi-line message is intended -->
-            $("#mlmod-text-reason-" + request_id).on("keydown", function(event) {
-                if (event.key == "Enter") {
-                    mlmod_show_modal(request_id);
-                    return true;
-                }
-            });
-            <!-- Add help text -->
-            if (!$("#help-text-rejection-reason").length) {
-                $("#help-text-box").append(helptext);
-            }
         }
 
         function mlmod_show_modal(request_id) {
@@ -135,57 +124,36 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">
-                        {{ gettext('Longform rejection reason') }}
+                        {{ gettext('Rejection reason') }}
                     </h4>
                 </div>
                 <div class="modal-body" id="mlmod-modal-content">
-                    <textarea id="mlmod-textarea-reason-${ request_id }" class="form-control" rows="7">
-                    </textarea>
+                    <textarea id="mlmod-textarea-reason-${ request_id }" class="form-control" rows="7"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" id="mlmod-modal-cancel-${ request_id }">
-                        {{ gettext('Cancel') }}
-                    </button>
-                    <button type="button" class="btn btn-primary" id="mlmod-modal-save-${ request_id }">
-                        {{ gettext('Save') }}
-                    </button>
+                    {{ util.input_submit(label=gettext('Cancel'), icon='times', value='none',
+                                         name="action", aclass=("btn btn-m btn-neutral"),
+                                         anid=('mlmod-modal-cancel-XXX=ID=XXX')) }}
+                    {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
+                                         name="action", aclass=("btn btn-m btn-warning"),
+                                         anid=('mlmod-modal-reject-XXX=ID=XXX')) }}
                 </div>
             </div>
         </div>
     </div>
-            `;
-            const hidden_input = `
-    <input type="hidden" name="reason" value="" id="mlmod-hidden-reason-${ request_id }"/>
-            `
+            `.replace(/XXX=ID=XXX/g, request_id);
             if (!$("#mlmod-modal-" + request_id).length) {
                 $("body").append(modal);
-                $("#mlmod-modal-save-" + request_id).on("click", function() {
-                    mlmod_save_modal(request_id);
-                    $("#mlmod-modal-" + request_id).modal("hide");
+                $("#mlmod-modal-reject-" + request_id).on("click", function() {
+                    $("#mlmod-hidden-reason-" + request_id).val(
+                        $("#mlmod-textarea-reason-" + request_id).val());
+                    $("#mlmod-button-reject-" + request_id).click();
                 });
                 $("#mlmod-modal-cancel-" + request_id).on("click", function() {
-                    mlmod_cancel_modal(request_id);
                     $("#mlmod-modal-" + request_id).modal("hide");
                 });
             }
-            if ($("#mlmod-text-reason-" + request_id).length) {
-                $("#mlmod-textarea-reason-" + request_id).val(
-                    $("#mlmod-text-reason-" + request_id).val());
-                $("#mlmod-text-reason-" + request_id).remove();
-                $("#mlmod-button-expand-" + request_id).after(hidden_input);
-                mlmod_save_modal(request_id);
-            }
             $("#mlmod-modal-" + request_id).modal("show");
-        }
-
-        function mlmod_save_modal(request_id) {
-            $("#mlmod-hidden-reason-" + request_id).val(
-                $("#mlmod-textarea-reason-" + request_id).val());
-        }
-
-        function mlmod_cancel_modal(request_id) {
-            $("#mlmod-textarea-reason-" + request_id).val(
-                $("#mlmod-hidden-reason-" + request_id).val());
         }
     </script>
 {% endblock %}
