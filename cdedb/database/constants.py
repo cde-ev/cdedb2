@@ -55,12 +55,16 @@ class RegistrationPartStati(CdEIntEnum):
     cancelled = 5  #:
     rejected = 6  #:
 
+    @classmethod
+    def involved_states(cls) -> tuple["RegistrationPartStati", ...]:
+        return (RegistrationPartStati.applied,
+                RegistrationPartStati.participant,
+                RegistrationPartStati.waitlist,
+                RegistrationPartStati.guest,)
+
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
-        return self in (RegistrationPartStati.applied,
-                        RegistrationPartStati.participant,
-                        RegistrationPartStati.waitlist,
-                        RegistrationPartStati.guest,)
+        return self in self.involved_states()
 
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
