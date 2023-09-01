@@ -1,0 +1,16 @@
+BEGIN;
+    ALTER TABLE past_event.events DROP CONSTRAINT events_institution_fkey;
+    ALTER TABLE event.events DROP CONSTRAINT events_institution_fkey;
+    UPDATE past_event.events SET institution = 20 WHERE institution = 2;
+    UPDATE past_event.events SET institution = 40 WHERE institution = 3;
+    UPDATE past_event.events SET institution = 60 WHERE institution = 4;
+    UPDATE past_event.events SET institution = 80 WHERE institution = 5;
+    UPDATE past_event.events SET institution = 200 WHERE institution = 6;
+    UPDATE event.events SET institution = 20 WHERE institution = 2;
+    UPDATE event.events SET institution = 40 WHERE institution = 3;
+    UPDATE event.events SET institution = 60 WHERE institution = 4;
+    UPDATE event.events SET institution = 80 WHERE institution = 5;
+    UPDATE event.events SET institution = 200 WHERE institution = 6;
+    DELETE FROM past_event.log WHERE code = ANY(ARRAY[30, 31, 32]);
+    DROP TABLE past_event.institutions;
+COMMIT;

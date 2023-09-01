@@ -47,7 +47,9 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: Dict[str, Tuple[str, ...]] = {
-        "event.events": ("lodge_field", "course_room_field", "camping_mat_field"),
+        "event.events": ("lodge_field",),
+        "event.event_parts": ("camping_mat_field",),
+        "event.course_tracks": ("course_room_field",),
     }
 
     # This contains a list of replacements performed on the resulting SQL

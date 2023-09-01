@@ -34,17 +34,17 @@ echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
 cat > /etc/apt/sources.list <<EOF
-deb http://deb.debian.org/debian bullseye main contrib non-free
-deb-src http://deb.debian.org/debian bullseye main contrib non-free
+deb http://deb.debian.org/debian bookworm main contrib non-free
+deb-src http://deb.debian.org/debian bookworm main contrib non-free
 
-deb http://deb.debian.org/debian-security/ bullseye-security main contrib non-free
-deb-src http://deb.debian.org/debian-security/ bullseye-security main contrib non-free
+deb http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
+deb-src http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
 
-deb http://deb.debian.org/debian bullseye-updates main contrib non-free
-deb-src http://deb.debian.org/debian bullseye-updates main contrib non-free
+deb http://deb.debian.org/debian bookworm-updates main contrib non-free
+deb-src http://deb.debian.org/debian bookworm-updates main contrib non-free
 
-deb http://deb.debian.org/debian bullseye-backports main contrib non-free
-deb-src http://deb.debian.org/debian bullseye-backports main contrib non-free
+deb http://deb.debian.org/debian bookworm-backports main contrib non-free
+deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free
 EOF
 
 sleep 3
@@ -79,7 +79,8 @@ apt-get install --yes --no-install-recommends                       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
     python3-requests python3-graphviz python3-phonenumbers          \
-    python3-tabulate                                                \
+    python3-tabulate python3-mailmanclient python3-pyparsing        \
+    python3-psycopg python3-psycopg-pool                            \
     \
     python3-pip python3-click isort python3-freezegun               \
     \
@@ -93,21 +94,14 @@ apt-get install --yes --no-install-recommends                       \
 apt-get install --yes python3-coverage
 
 # runtime dependencies
-#
-# The python3-mailmanclient debian package in bullseye is lagging behing the
-# mailman server funcionality.
-python3 -m pip install --no-cache-dir \
+python3 -m pip install --no-cache-dir --break-system-packages \
     ldaptor==21.2.0 \
-    mailmanclient==3.3.3 \
-    psycopg[binary]==3.0.15 \
-    psycopg_pool==3.1.1 \
-    pyparsing==3.0.9 \
     schulze_condorcet==2.0.0 \
     subman==0.1.0 \
     segno==1.5.2
 
 # devtools
-python3 -m pip install --no-cache-dir \
+python3 -m pip install --no-cache-dir --break-system-packages \
     mypy==1.4.0 \
     flake8==3.8.4 \
     pylint==2.7.2 \
