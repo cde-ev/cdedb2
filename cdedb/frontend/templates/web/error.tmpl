@@ -60,7 +60,9 @@
         </p>
     {% else %}
             {% if help is not none %}
-                <p>{{ gettext(help) }}</p>
+                <p>
+                    {{ gettext(help)|format(management_mail=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS))|s }}
+                </p>
             {% else %}
                 <p>{% trans %}First try reloading this page.{% endtrans %}</p>
             {% endif %}
