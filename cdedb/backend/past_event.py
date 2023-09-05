@@ -732,8 +732,7 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."
-            self.event.set_event_archived(rs, {'id': event_id,
-                                               'is_archived': True})
+            self.event.set_event_archived(rs, event_id)
             new_ids = None
             if create_past_event:
                 new_ids = []

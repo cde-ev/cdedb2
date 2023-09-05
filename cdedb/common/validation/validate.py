@@ -2378,35 +2378,28 @@ def _event(
         mandatory_fields = {**EVENT_COMMON_FIELDS}
         optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
     else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
+        mandatory_fields = {}
+        optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    if 'registration_soft_limit' in val and 'registration_hard_limit' in val:
-        if (val['registration_soft_limit']
-                and val['registration_hard_limit']
-                and (val['registration_soft_limit']
-                     > val['registration_hard_limit'])):
-            errs.append(ValueError("registration_soft_limit", n_(
-                "Must be before or equal to hard limit.")))
-        if val.get('registration_start') and (
-                val['registration_soft_limit'] and
-                val['registration_start'] > val['registration_soft_limit']
-                or val['registration_hard_limit'] and
-                val['registration_start'] > val['registration_hard_limit']):
-            errs.append(ValueError("registration_start", n_(
-                "Must be before hard and soft limit.")))
+
+    configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
+    if configuration_fields:
+        if creation:
+            kwargs['current'] = {}
+        with errs:
+            configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
+                configuration_fields, argname, creation=creation, **kwargs)
+            val.update(configuration_fields)
 
     if 'orgas' in val:
         orgas = set()
         for anid in val['orgas']:
-            try:
+            with errs:
                 v = _id(anid, 'orgas', **kwargs)
                 orgas.add(v)
-            except ValidationSummary as e:
-                errs.extend(e)
         val['orgas'] = orgas
 
     if 'parts' in val:
@@ -3465,7 +3458,8 @@ def _serialized_event(
     # data looks a bit different.
     # TODO replace the functions with types
     table_validators: Mapping[str, Callable[..., Any]] = {
-        'event.events': _event,
+        'event.events': functools.partial(
+            _event, current={}, skip_field_validation=True),
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
@@ -4015,6 +4009,66 @@ def _serialized_event_questionnaire(
         raise errs
 
     return SerializedEventQuestionnaire(val)
+
+
+@_add_typed_validator
+def _serialized_event_configuration(
+    val: Any, argname: str = "serialized_event_configuration", *,
+    creation: bool = False,
+    current: CdEDBObject,
+    skip_field_validation: bool = False,
+    **kwargs: Any
+) -> SerializedEventConfiguration:
+
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = dict(**EVENT_COMMON_FIELDS)
+        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS)
+    else:
+        mandatory_fields = {}
+        optional_fields = dict(**EVENT_EXPOSED_FIELDS)
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+
+    # Check registration time compatibility.
+    start = val.get('registration_start', current.get('registration_start'))
+    soft = val.get('registration_soft_limit', current.get('registration_soft_limit'))
+    hard = val.get('registration_hard_limit', current.get('registration_hard_limit'))
+    if start and (soft and start > soft or hard and start > hard):
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_start", n_("Must be before hard and soft limit.")))
+    if soft and hard and soft > hard:
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_soft_limit", "Must be before or equal to hard limit."))
+
+    if not skip_field_validation:
+        if lodge_field := val.get('lodge_field'):
+            if lodge_field not in current['fields']:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "lodge_field", n_("Unknown lodge field.")))
+            else:
+                field = current['fields'][lodge_field]
+                if field['association'] != FieldAssociations.registration:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field",
+                            n_("Lodge field must be a registration field.")))
+                if field['kind'] != FieldDatatypes.str:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field", n_("Lodge field must have type 'string'.")))
+
+    if errs:
+        raise errs
+
+    return SerializedEventConfiguration(val)
 
 
 @_add_typed_validator

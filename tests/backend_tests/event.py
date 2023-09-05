@@ -310,8 +310,7 @@ class TestEventBackend(BackendTest):
             ],
             'checkin': True,
         }
-        self.event.set_event(self.key, {
-            'id': new_id,
+        self.event.set_event(self.key, new_id, {
             'title': data['title'],
             'parts': {
                 part_map["First coming"]: None,
@@ -750,7 +749,6 @@ class TestEventBackend(BackendTest):
             'course_room_field': None,
         }
         update_event = {
-            'id': event_id,
             'parts': {
                 part_id: {
                     'tracks': {
@@ -759,7 +757,7 @@ class TestEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, update_event)
+        self.event.set_event(self.key, event_id, update_event)
         new_track['id'] = new_track_id
         new_track['part_id'] = part_id
         new_track['track_groups'] = {}
@@ -799,7 +797,6 @@ class TestEventBackend(BackendTest):
             self.assertIn(track_id, reg["tracks"])
 
         edata = {
-            'id': event_id,
             'parts': {
                 part_id: {
                     'tracks': {
@@ -809,7 +806,7 @@ class TestEventBackend(BackendTest):
             },
         }
 
-        self.assertLess(0, self.event.set_event(self.key, edata))
+        self.assertLess(0, self.event.set_event(self.key, event_id, edata))
         event = self.event.get_event(self.key, event_id)
         regs = self.event.get_registrations(
             self.key, self.event.list_registrations(self.key, event_id))
@@ -824,7 +821,6 @@ class TestEventBackend(BackendTest):
     def test_json_fields_with_dates(self) -> None:
         event_id = 1
         update_event = {
-            'id': event_id,
             'fields': {
                 -1: {
                     'association': 1,
@@ -834,7 +830,7 @@ class TestEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, update_event)
+        self.event.set_event(self.key, event_id, update_event)
         reg_id = 1
         update_registration = {
             'id': reg_id,
@@ -1806,7 +1802,6 @@ class TestEventBackend(BackendTest):
     def test_set_questionnaire(self) -> None:
         event_id = 1
         edata = {
-            'id': event_id,
             'fields': {
                 -1: {
                     'field_name': 'solidarity',
@@ -1816,7 +1811,7 @@ class TestEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, edata)
+        self.event.set_event(self.key, event_id, edata)
         qdata: Dict[const.QuestionnaireUsages, List[CdEDBObject]] = {
             const.QuestionnaireUsages.additional: [
                 {
@@ -2321,12 +2316,11 @@ class TestEventBackend(BackendTest):
             "entries": None,
         }
         event_data = {
-            "id": event_id,
             "fields": {
                 -1: field_data,
             },
         }
-        self.event.set_event(self.key, event_data)
+        self.event.set_event(self.key, event_id, event_data)
         event = self.event.get_event(self.key, event_id)
         query = Query(
             QueryScope.registration, QueryScope.registration.get_spec(event=event),
@@ -2342,14 +2336,14 @@ class TestEventBackend(BackendTest):
         field_data["kind"] = const.FieldDatatypes.date
         del field_data["field_name"]
         event_data["fields"] = {1001: field_data}
-        self.event.set_event(self.key, event_data)
+        self.event.set_event(self.key, event_id, event_data)
 
         # The query can no longer be retrieved.
         self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
 
         # Change the field back.
         field_data["kind"] = const.FieldDatatypes.str
-        self.event.set_event(self.key, event_data)
+        self.event.set_event(self.key, event_id, event_data)
 
         # The query is valid again.
         self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
@@ -3307,7 +3301,6 @@ class TestEventBackend(BackendTest):
         event_id = 2
         unique_name = 'unique_name'
         data = {
-            'id': event_id,
             'fields': {
                 -1: {
                     'association': const.FieldAssociations.registration,
@@ -3317,12 +3310,11 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
-        self.event.set_event(self.key, data)
+        self.event.set_event(self.key, event_id, data)
         # TODO throw an actual backend error here.
         with self.assertRaises(psycopg2.IntegrityError):
-            self.event.set_event(self.key, data)
+            self.event.set_event(self.key, event_id, data)
         data = {
-            'id': event_id,
             'fields': {
                 -1: {
                     'association': const.FieldAssociations.registration,
@@ -3332,7 +3324,7 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
-        self.event.set_event(self.key, data)
+        self.event.set_event(self.key, event_id, data)
 
     @as_users("annika")
     @unittest.skip("Removed feature.")
@@ -3340,7 +3332,6 @@ class TestEventBackend(BackendTest):
         event_id = 2
         event = self.event.get_event(self.key, event_id)
         field_data = {
-            'id': event_id,
             'fields': {
                 -1: {
                     'association': const.FieldAssociations.registration,
@@ -3362,7 +3353,7 @@ class TestEventBackend(BackendTest):
                 },
             }
         }
-        self.event.set_event(self.key, field_data)
+        self.event.set_event(self.key, event_id, field_data)
         field_links = (
             (1001, None, None),
             (1001, psycopg2.IntegrityError, None),
@@ -3371,7 +3362,6 @@ class TestEventBackend(BackendTest):
         )
         for field_id, error, error_msg in field_links:
             data = {
-                'id': event_id,
                 'parts': {
                     list(event['parts'])[0]: {
                         'fee_modifiers': {
@@ -3386,12 +3376,12 @@ class TestEventBackend(BackendTest):
             }
             if error:
                 with self.assertRaises(error) as cm:
-                    self.event.set_event(self.key, data)
+                    self.event.set_event(self.key, event_id, data)
                 if error_msg is not None:
                     self.assertEqual(error_msg,
                                      cm.exception.args[0] % cm.exception.args[1])
             else:
-                self.assertTrue(self.event.set_event(self.key, data))
+                self.assertTrue(self.event.set_event(self.key, event_id, data))
         reg_data = {
             "persona_id": 1,
             "event_id": event_id,
@@ -3410,20 +3400,20 @@ class TestEventBackend(BackendTest):
         reg_id = self.event.create_registration(self.key, reg_data)
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
                          decimal.Decimal("15"))
-        data = {
+        reg_data = {
             'id': reg_id,
             'fields': {
                 'solidarity': True,
             }
         }
-        self.assertTrue(self.event.set_registration(self.key, data))
+        self.assertTrue(self.event.set_registration(self.key, reg_data))
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
                          decimal.Decimal("2.50"))
 
     @as_users("garcia")
     def test_waitlist(self) -> None:
+        event_id = 1
         edata = {
-            'id': 1,
             'fields': {
                 -1: {
                     'field_name': "waitlist",
@@ -3433,9 +3423,8 @@ class TestEventBackend(BackendTest):
                 },
             },
         }
-        self.event.set_event(self.key, edata)
+        self.event.set_event(self.key, event_id, edata)
         edata = {
-            'id': 1,
             'parts': {
                 1: {
                     'waitlist_field': 1001,
@@ -3450,7 +3439,7 @@ class TestEventBackend(BackendTest):
                 },
             }
         }
-        self.event.set_event(self.key, edata)
+        self.event.set_event(self.key, event_id, edata)
         regs = [
             {
                 'id': anid,
@@ -3732,8 +3721,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.add_event_orgas(self.key, new_id, {2, 1})
         self.event.remove_event_orga(self.key, new_id, 2)
-        self.event.set_event(self.key, {
-            'id': new_id,
+        self.event.set_event(self.key, new_id, {
             'title': data['title'],
             'parts': {
                 part_map["First coming"]: None,
@@ -4228,7 +4216,7 @@ class TestEventBackend(BackendTest):
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
-            self.key, {'id': event_id, 'parts': {min(event['parts']): None}}))
+            self.key, event_id, {'parts': {min(event['parts']): None}}))
 
         export_expectation = {
             1: {'constraint_type': const.EventPartGroupType.Statistic,
@@ -4546,7 +4534,7 @@ class TestEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, event_data)
+        self.event.set_event(self.key, event_id, event_data)
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
             "part.2.H. and not part.1.H.", event['fees'][1001]['condition'])

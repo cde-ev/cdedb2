@@ -340,7 +340,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     @access("event")
-    def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
+    def set_event_archived(self, rs: RequestState, event_id: int) -> None:
         """Wrapper around ``set_event()`` for archiving an event.
 
         This exists to emit the correct log message. It delegates
@@ -348,9 +348,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         with Atomizer(rs):
             with Silencer(rs):
-                self.set_event(rs, data)
-            self.event_log(rs, const.EventLogCodes.event_archived,
-                           data['id'])
+                self.set_event(rs, event_id, {'is_archived': True})
+            self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
     def add_event_orgas(self, rs: RequestState, event_id: int,
@@ -635,7 +634,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event", "droid_orga")
-    def set_event(self, rs: RequestState, data: CdEDBObject,
+    def set_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                   change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
@@ -666,13 +665,17 @@ class EventBaseBackend(EventLowLevelBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
-        data = affirm(vtypes.Event, data)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['id'])
-
         ret = 1
         with Atomizer(rs):
+            event_id = affirm(vtypes.ID, event_id)
+            current = self.get_event(rs, event_id)
+            data = affirm(vtypes.Event, data, current=current)
+            data['id'] = event_id
+
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             # Set top-level event fields.
             if len(edata) > 1:
@@ -693,13 +696,13 @@ class EventBaseBackend(EventLowLevelBackend):
                                data['id'], change_note=change_note)
 
             if 'orgas' in data:
-                ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
+                ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
-                ret *= self._set_event_fields(rs, data['id'], data['fields'])
+                ret *= self._set_event_fields(rs, event_id, data['fields'])
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
-                ret *= self._set_event_parts(rs, data['id'], data['parts'])
+                ret *= self._set_event_parts(rs, event_id, data['parts'])
 
         return ret
 
@@ -714,13 +717,12 @@ class EventBaseBackend(EventLowLevelBackend):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
-            update_data = {aspect: data[aspect]
-                           for aspect in ('parts', 'orgas', 'fields')
-                           if aspect in data}
-            if update_data:
-                update_data['id'] = new_id
-                self.set_event(rs, update_data)
-            # lg_data: vtypes.LodgementGroup
+            if 'orgas' in data:
+                self.add_event_orgas(rs, new_id, data['orgas'])
+            if 'fields' in data:
+                self._set_event_fields(rs, new_id, data['fields'])
+            if 'parts' in data:
+                self._set_event_parts(rs, new_id, data['parts'])
             if groups := data.get('lodgement_groups'):
                 for creation_id in mixed_existence_sorter(groups):
                     lg_data = groups[creation_id]
@@ -1434,7 +1436,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_offline_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
-            ret = self.set_event(rs, {'id': event_id, 'fields': fields})
+            ret = self.set_event(rs, event_id, {'fields': fields})
             ret *= self.set_questionnaire(rs, event_id, questionnaire)
         return ret
 
