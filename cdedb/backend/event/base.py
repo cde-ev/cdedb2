@@ -289,7 +289,7 @@ class EventBaseBackend(EventLowLevelBackend):
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
-    def check_unique_shortname(self, rs: RequestState, shortname: str) -> bool:
+    def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
         """Return True if the given shortname already exists for some event."""
         shortname = affirm(str, shortname)
         return bool(self.query_all(

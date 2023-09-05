@@ -156,7 +156,7 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, vtypes.Event, data)
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event']['shortname']
-                and self.eventproxy.check_unique_shortname(rs, data['shortname'])):
+                and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
                     n_("Shortname already in use for another event.")
@@ -923,7 +923,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         })
         if (data and data['shortname']
-                and self.eventproxy.check_unique_shortname(rs, data['shortname'])):
+                and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
                     n_("Shortname already in use for another event.")
