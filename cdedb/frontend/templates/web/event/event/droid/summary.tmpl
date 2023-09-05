@@ -24,7 +24,7 @@
                 {{ util.make_icon("exclamation-triangle") }}
                 {% trans %}The token cannot be shown again later. Write it down somewhere safe now!{% endtrans %}
             </p>
-            <pre>{{ new_token }}</pre>
+            <pre id="neworgatoken">{{ new_token }}</pre>
         {% endcall %}
     {% endif %}
     <p>

@@ -6240,33 +6240,29 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
-        new_token = OrgaToken(
-            id=cast(vtypes.ProtoID, -1),
-            event_id=cast(vtypes.ID, event_id),
-            title="New Token!",
-            notes=None,
-            etime=now().replace(year=3000),
-        )
-        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
+                      "Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "New Token!"
+        f['etime'] = now().date().replace(year=3000)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
         orga_token = self.event.get_orga_token(self.key, new_token_id)
+
+        with self.switch_user("anonymous"):
+            self.get(
+                f'/event/event/{event_id}/droid/partial',
+                headers={
+                    orga_token.request_header_key:
+                        orga_token.get_token_string(secret),
+                },
+            )
+            droid_export = self.response.json
+
         self.get(f"/event/event/{event_id}/download/partial")
         orga_export = self.response.json
 
-        self.get("/")
-        self.logout()
-
-        self.get(
-            f'/event/event/{event_id}/droid/partial',
-            headers={
-                orga_token.request_header_key:
-                    orga_token.get_token_string(secret),
-            },
-        )
-        droid_export = self.response.json
-
         droid_export['timestamp'] = orga_export['timestamp']
-        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
-        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
         self.assertEqual(orga_export, droid_export)
 
     @as_users("anton")

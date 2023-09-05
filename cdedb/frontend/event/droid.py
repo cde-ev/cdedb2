@@ -54,6 +54,7 @@ class EventDroidMixin(EventBaseFrontend):
         new_id, secret = self.eventproxy.create_orga_token(rs, OrgaToken(**data))
         orga_token = self.eventproxy.get_orga_token(rs, new_id)
         new_token = orga_token.get_token_string(secret)
+        rs.notify_return_code(new_id)
 
         return self.orga_token_summary(rs, event_id, new_token=new_token)
 
