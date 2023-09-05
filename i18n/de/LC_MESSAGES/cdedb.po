@@ -20034,3 +20034,6 @@ msgstr "Sambia"
 #: cdedb/i18n_additional.py:628 cdedb/i18n_additional.py:632
 msgid "CountryCodes.ZW"
 msgstr "Simbabwe"
+
+msgid "Shortname already in use for another event."
+msgstr "Kurzname bereits vergeben."
