@@ -768,6 +768,7 @@
     "id": 1,
     "event.course_tracks": {
         "2": {
+            "course_room_field": 5,
             "min_choices": 1,
             "num_choices": 1,
             "shortname": "Kaffee",
@@ -777,6 +778,7 @@
             "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)"
         },
         "1": {
+            "course_room_field": 5,
             "min_choices": 4,
             "num_choices": 4,
             "shortname": "Morgenkreis",
@@ -786,6 +788,7 @@
             "title": "Morgenkreis (Erste H\u00e4lfte)"
         },
         "3": {
+            "course_room_field": 5,
             "min_choices": 2,
             "num_choices": 3,
             "shortname": "Sitzung",
@@ -1420,7 +1423,6 @@
     },
     "event.events": {
         "1": {
-            "course_room_field": 2,
             "is_visible": true,
             "iban": "DE26370205000008068900",
             "shortname": "TestAka",
@@ -1434,7 +1436,6 @@
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "id": 1,
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
-            "camping_mat_field": 4,
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
@@ -1540,7 +1541,8 @@
             "part_begin": "2222-11-01",
             "shortname": "1.H.",
             "title": "Erste H\u00e4lfte",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         "1": {
             "event_id": 1,
@@ -1549,7 +1551,8 @@
             "part_begin": "2222-02-02",
             "shortname": "Wu",
             "title": "Warmup",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         "3": {
             "event_id": 1,
@@ -1558,7 +1561,8 @@
             "part_begin": "2222-11-11",
             "shortname": "2.H.",
             "title": "Zweite H\u00e4lfte",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         }
     },
     "event.part_groups": {

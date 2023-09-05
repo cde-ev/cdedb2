@@ -3,8 +3,9 @@
 """The `EventLodgementMixin` subclasses the `EventBaseFrontend` and provides endpoints
 for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
+import dataclasses
 import itertools
-from typing import Collection, Dict, List, NamedTuple, Optional
+from typing import Collection, Dict, List, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -31,16 +32,21 @@ from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
 
-LodgementProblem = NamedTuple(
-    "LodgementProblem", [("description", str), ("lodgement_id", int),
-                         ("part_id", int), ("reg_ids", Collection[int]),
-                         ("severeness", int)])
+
+@dataclasses.dataclass(frozen=True)
+class LodgementProblem:
+    description: str
+    lodgement_id: int
+    part_id: int
+    reg_ids: Collection[int]
+    severeness: int
+    camping_mat: Optional[bool] = None
 
 
 class EventLodgementMixin(EventBaseFrontend):
-    @staticmethod
+    @classmethod
     def check_lodgement_problems(
-            event: CdEDBObject, lodgements: CdEDBObjectMap,
+            cls, event: CdEDBObject, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
             all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:
@@ -51,6 +57,7 @@ class EventLodgementMixin(EventBaseFrontend):
           id, part id, affected registrations, severeness).
         """
         ret: List[LodgementProblem] = []
+        camping_mat_field_names = cls._get_camping_mat_field_names(event)
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
@@ -83,6 +90,17 @@ class EventLodgementMixin(EventBaseFrontend):
                     ret.append(LodgementProblem(
                         n_("Too many camping mats used."),
                         lodgement_id, part_id, cm, 1))
+                if camping_mat_field_names:
+                    for reg_id in cm:
+                        unhappy_campers = set()
+                        if not registrations[reg_id]['fields'].get(
+                                camping_mat_field_names[part_id]):
+                            unhappy_campers.add(reg_id)
+                        if unhappy_campers:
+                            ret.append(LodgementProblem(
+                                n_("Participants assigned to, but may not sleep"
+                                   " on a camping mat."),
+                                lodgement_id, part_id, unhappy_campers, 1, True))
                 non_mixed_lodging_people = tuple(
                     reg_id for reg_id in reg + cm
                     if not registrations[reg_id]['mixed_lodging'])
@@ -156,11 +174,20 @@ class EventLodgementMixin(EventBaseFrontend):
             rs.ambience['event'], lodgements, registrations, personas, inhabitants)
         problems_condensed = {}
         for lodgement_id, part_id in itertools.product(lodgement_ids, parts.keys()):
-            problems_here = [p for p in problems
-                             if p.lodgement_id == lodgement_id and p.part_id == part_id]
-            problems_condensed[(lodgement_id, part_id)] = (
-                max(p.severeness for p in problems_here) if problems_here else 0,
-                "; ".join(rs.gettext(p.description) for p in problems_here),)
+            problems_here_rg = [p for p in problems
+                                if p.lodgement_id == lodgement_id
+                                and p.part_id == part_id
+                                and p.camping_mat is not True]
+            problems_here_cm = [p for p in problems
+                                if p.lodgement_id == lodgement_id
+                                and p.part_id == part_id
+                                and p.camping_mat is not False]
+            problems_condensed[(lodgement_id, part_id, False)] = (
+                max(p.severeness for p in problems_here_rg) if problems_here_rg else 0,
+                "; ".join(rs.gettext(p.description) for p in problems_here_rg),)
+            problems_condensed[(lodgement_id, part_id, True)] = (
+                max(p.severeness for p in problems_here_cm) if problems_here_cm else 0,
+                "; ".join(rs.gettext(p.description) for p in problems_here_cm),)
 
         def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
             primary_sort: Sortkey
@@ -280,10 +307,8 @@ class EventLodgementMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
-        if f_id := rs.ambience["event"]["camping_mat_field"]:
-            camping_mat_field_name = rs.ambience["event"]["fields"][f_id]["field_name"]
-        else:
-            camping_mat_field_name = None
+        camping_mat_field_names = self._get_camping_mat_field_names(
+            rs.ambience['event'])
 
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
@@ -326,7 +351,7 @@ class EventLodgementMixin(EventBaseFrontend):
             'groups': groups, 'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
             'make_inhabitants_query': make_inhabitants_query,
-            'camping_mat_field_name': camping_mat_field_name,
+            'camping_mat_field_names': camping_mat_field_names,
             'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
         })
 

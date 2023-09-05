@@ -4254,9 +4254,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": 3,
-            "camping_mat_field": 4,
-            "course_room_field": 2
+            "lodge_field": 3
         },
         {
             "id": 2,
@@ -4283,9 +4281,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         },
         {
             "id": 3,
@@ -4312,9 +4308,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         },
         {
             "id": 4,
@@ -4341,9 +4335,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         }
     ],
     "event.event_fees": [
@@ -4484,7 +4476,8 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 2,
@@ -4493,7 +4486,8 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 3,
@@ -4502,7 +4496,8 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 4,
@@ -4511,7 +4506,8 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 5,
@@ -4520,7 +4516,8 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 6,
@@ -4529,7 +4526,8 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 7,
@@ -4538,7 +4536,8 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 8,
@@ -4547,7 +4546,8 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 9,
@@ -4556,7 +4556,8 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 10,
@@ -4565,7 +4566,8 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 11,
@@ -4574,7 +4576,8 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 12,
@@ -4583,7 +4586,8 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         }
     ],
     "event.part_groups": [
@@ -4766,7 +4770,8 @@
             "shortname": "Morgenkreis",
             "num_choices": 4,
             "min_choices": 4,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": 5
         },
         {
             "id": 2,
@@ -4775,7 +4780,8 @@
             "shortname": "Kaffee",
             "num_choices": 1,
             "min_choices": 1,
-            "sortkey": 2
+            "sortkey": 2,
+            "course_room_field": 5
         },
         {
             "id": 3,
@@ -4784,7 +4790,8 @@
             "shortname": "Sitzung",
             "num_choices": 3,
             "min_choices": 2,
-            "sortkey": 3
+            "sortkey": 3,
+            "course_room_field": 5
         },
         {
             "id": 4,
@@ -4793,7 +4800,8 @@
             "shortname": "cyta",
             "num_choices": 3,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 6,
@@ -4802,7 +4810,8 @@
             "shortname": "OK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 7,
@@ -4811,7 +4820,8 @@
             "shortname": "WK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 8,
@@ -4820,7 +4830,8 @@
             "shortname": "KK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 9,
@@ -4829,7 +4840,8 @@
             "shortname": "OK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 10,
@@ -4838,7 +4850,8 @@
             "shortname": "OK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 11,
@@ -4847,7 +4860,8 @@
             "shortname": "WK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 12,
@@ -4856,7 +4870,8 @@
             "shortname": "WK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 13,
@@ -4865,7 +4880,8 @@
             "shortname": "KK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 14,
@@ -4874,7 +4890,8 @@
             "shortname": "KK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 15,
@@ -4883,7 +4900,8 @@
             "shortname": "KV",
             "num_choices": 1,
             "min_choices": 1,
-            "sortkey": 2
+            "sortkey": 2,
+            "course_room_field": null
         }
     ],
     "event.track_groups": [

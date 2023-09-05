@@ -2230,12 +2230,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual([x[0] for x in f['waitlist_field'].options], ['', '8', '1001'])
         f['waitlist_field'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field',
-                                   "Unpassendes Datenfeld für die Warteliste.")
+        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
         f['waitlist_field'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field',
-                                   "Unpassendes Datenfeld für die Warteliste.")
+        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
 
         # Set the correct waitlist field.
         f['waitlist_field'] = '1001'
@@ -3281,6 +3279,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
+        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-1")
+        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-2")
+        self.assertNonPresence("nicht-binärer Teilnehmer", div="inhabitants-3")
+        self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
+        self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
+        self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
+        self.assertNonPresence("Isomatte eingeteilt, hat dem aber nicht zugestimmt.")
         self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
@@ -3291,6 +3296,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual("high", f['fields.contamination'].value)
         f['fields.contamination'] = "medium"
         self.submit(f)
+        self.assertNonPresence("Überfüllte Unterkunft")
         self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
@@ -4572,6 +4578,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("In Anmeldungsliste", div='inhabitants-1')
         self.assertNonPresence("Emilia", div='inhabitants')
         self.assertNonPresence("In Anmeldungsliste", div='inhabitants-2')
+        self.assertNonPresence("nicht zugestimmt")
         self.traverse("Bewohner verwalten")
         self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)")
@@ -4594,10 +4601,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                          " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
+        # Override camping mat status
+        f = self.response.forms['manageinhabitantsform']
+        f['is_camping_mat_3_3'] = True
+        f['is_camping_mat_3_4'] = False
+        self.submit(f)
+        self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
+        self.assertPresence("Teilnehmer ist auf eine Isomatte eingeteilt, hat dem"
+                            " aber nicht zugestimmt.", div='inhabitants-3')
 
         # Check inhabitants link
-        self.traverse("Kalte Kammer",
-                      {'description': "In Anmeldungsliste anzeigen",
+        self.traverse({'description': "In Anmeldungsliste anzeigen",
                        'linkid': "inhabitants-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]", div='query-results')

@@ -511,20 +511,19 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms["membersearchform"]
-        f["qval_telephone,mobile"] = 9876
+        f["phone"] = "+49163"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton Armin A. Administrator", div='result')
         self.assertPresence("Bertålotta Beispiel", div='result')
+        self.assertPresence("Inga Iota", div='result')
 
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
         fields = [
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "telephone,mobile",
-            "address,address_supplement,address2,address_supplement2",
+            "username", "address,address_supplement,address2,address_supplement2",
             "location,location2", "country,country2"]
         for field in fields:
             f['qval_' + field].force_value("[a]")

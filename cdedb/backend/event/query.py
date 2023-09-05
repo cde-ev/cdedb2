@@ -350,22 +350,22 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     ) AS segment ON c.id = segment.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track_id, instructor=False, strict=False)}
+                            track, instructor=False, strict=False)}
                     ) AS attendees ON c.id = attendees.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track_id, instructor=True, strict=False)}
+                            track, instructor=True, strict=False)}
                     ) AS instructors ON c.id = instructors.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track_id, instructor=True, strict=True)}
+                            track, instructor=True, strict=True)}
                     ) AS assigned_instructors
                         ON c.id = assigned_instructors.base_id
                     {course_choices_tables}
                 """
 
             # Step 3.2: Template for counting instructors and attendees.
-            def registration_track_count_table(t_id: int, instructor: bool,
+            def registration_track_count_table(track: CdEDBObject, instructor: bool,
                                                strict: bool) -> str:
                 """
                 Construct a table to gather registration track information.
@@ -383,9 +383,13 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     FROM (
                         {base}
                         LEFT OUTER JOIN (
-                            SELECT registration_id, {col}
-                            FROM event.registration_tracks
-                            WHERE track_id = {t_id} {constraint}
+                            SELECT rt.registration_id, {col}
+                            FROM event.registration_tracks AS rt
+                            LEFT OUTER JOIN event.registration_parts AS rp
+                                ON rt.registration_id = rp.registration_id
+                                AND rp.part_id = {track['part_id']}
+                            WHERE rp.status = {int(const.RegistrationPartStati.participant)}
+                            AND track_id = {track['id']} {constraint}
                         ) AS reg_track ON c.id = reg_track.{col}
                     )
                     GROUP BY id
@@ -394,13 +398,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # Step 3.3: Prepare template for constructing table with course choices.
 
             # Limit to registrations with these stati.
-            stati = {
-                const.RegistrationPartStati.participant,
-                const.RegistrationPartStati.guest,
-                const.RegistrationPartStati.waitlist,
-                const.RegistrationPartStati.applied,
-            }
-            stati_array = ', '.join(str(x.value) for x in stati)
+            stati = [int(x) for x in const.RegistrationPartStati.involved_states()]
 
             # Template for a specific course choice in a specific track.
             def single_choice_table(track: CdEDBObject, rank: int) -> str:
@@ -415,7 +413,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                                 ON cc.registration_id = rp.registration_id
                             WHERE cc.rank = {rank} AND cc.track_id = {track['id']}
                                 AND rp.part_id = {track['part_id']}
-                                AND rp.status = ANY(ARRAY[{stati_array}])
+                                AND rp.status = ANY(ARRAY{stati})
                         ) AS choices ON c.id = choices.course_id
                     )
                     GROUP BY base_id
