@@ -322,11 +322,7 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
-        update = {
-            'id': 2,
-            'is_cancelled': True
-        }
-        self.event.set_event(self.key, update)
+        self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
         new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
