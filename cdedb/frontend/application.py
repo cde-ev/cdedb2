@@ -159,7 +159,6 @@ class Application(BaseApp):
                 'nbsp': "\u00A0",
                 'error': error,
                 'help': message,
-                'MANAGEMENT_ADDRESS': self.conf.get("MANAGEMENT_ADDRESS"),
             }
             t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
             html = t.render(**data)
@@ -308,13 +307,13 @@ class Application(BaseApp):
                 # they happen through the frontend.
                 self.coreproxy.log_quota_violation(rs)
                 return self.make_error_page(
-                    e, request, user, n_(
-                        "You reached the internal limit for user profile views. "
-                        "This is a privacy feature to prevent users from cloning "
-                        "the address database. Unfortunately, this may also yield "
-                        "some false positive restrictions. If you require extensive "
-                        "queries, you may query %(management_mail)s. Your limit will "
-                        "be reset in the next days."))
+                    e, request, user,
+                    n_("You reached the internal limit for user profile views. "
+                       "This is a privacy feature to prevent users from cloning "
+                       "the address database. Unfortunatetly, this may also yield "
+                       "some false positive restrictions. If you require extensive "
+                       "queries, you may query %s. Your limit will be reset in the "
+                       "next days.").format(self.conf['MANAGEMENT_ADDRESS']))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
