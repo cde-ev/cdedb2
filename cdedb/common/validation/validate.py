@@ -1167,12 +1167,11 @@ def _api_token_string(
     Split the token into the droid name and the secret.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if m := models_droid.APIToken.token_string_pattern.fullmatch(val):
-        droid_name = m.group(1)
-        secret = m.group(2)
+    try:
+        droid_name, secret = models_droid.APIToken.parse_token_string(val)
         return APITokenString((droid_name, secret))
-    raise ValidationSummary(ValueError(
-        argname, n_("Wrong format for api token.")))
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args))
 
 
 @_add_typed_validator

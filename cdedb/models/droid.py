@@ -95,7 +95,7 @@ from secrets import token_hex
 from typing import TYPE_CHECKING, ClassVar, Optional, Pattern, Type, Union
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import User, now
+from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
@@ -188,6 +188,14 @@ class APIToken(abc.ABC):
     #:  to validate the given secret.
     token_string_pattern = re.compile(
         r"CdEDB-(?P<droid_name>\w+/\w+)/(?P<secret>[0-9a-zA-Z\-]+)/")
+
+    @classmethod
+    def parse_token_string(cls, token_str: str) -> tuple[str, str]:
+        if m := cls.token_string_pattern.fullmatch(token_str):
+            droid_name = m.group('droid_name')
+            secret = m.group('secret')
+            return droid_name, secret
+        raise ValueError(n_("Wrong format for api token."))
 
 
 class StaticAPIToken(APIToken):
