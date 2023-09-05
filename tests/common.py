@@ -462,7 +462,7 @@ class BackendTest(CdEDBTest):
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
-        self.logout()
+        self.logout(allow_anonymous=True)
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
