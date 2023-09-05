@@ -1171,7 +1171,7 @@ def _api_token_string(
         droid_name, secret = models_droid.APIToken.parse_token_string(val)
         return APITokenString((droid_name, secret))
     except ValueError as e:
-        raise ValidationSummary(ValueError(argname, *e.args))
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
 
 
 @_add_typed_validator

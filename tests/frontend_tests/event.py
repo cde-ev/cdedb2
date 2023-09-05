@@ -10,13 +10,12 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence, cast
+from typing import Collection, Optional, Sequence
 
 import lxml.etree
 import segno.helpers
 import webtest
 
-import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,

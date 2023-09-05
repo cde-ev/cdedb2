@@ -1236,7 +1236,7 @@ class FrontendTest(BackendTest):
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
         droid_name, secret = APIToken.parse_token_string(new_token)
         droid_class, token_id = resolve_droid_name(droid_name)
-        return token_id, secret
+        return cast(int, token_id), secret
 
     def assertTitle(self, title: str, exact: bool = True) -> None:
         """
