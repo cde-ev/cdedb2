@@ -42,6 +42,13 @@
         {% set action = 'event/change_orga_token' %}
     {% else %}
         {% set action = 'event/create_orga_token' %}
+        <p class="text-warning">
+            {% trans %}
+                Orga Tokens allow for automated access to event data. With such a token a programm may create and download
+                a partial export, containing all information about courses, lodgements and registrations including personal
+                data of all orgas and everyone who is registered. Treat these tokens appropriately and do not publish them.
+            {% endtrans %}
+        </p>
     {% endif %}
     <form action="{{ cdedblink(action) }}" method="POST" id="configureorgatokenform" class="form-horizontal">
         {{ util.anti_csrf_token(action) }}
