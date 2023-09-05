@@ -61,6 +61,7 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard()
     def change_orga_token_form(self, rs: RequestState, event_id: int,
                                orga_token_id: int) -> Response:
+        """Display the form for changing an existing orga token."""
         merge_dicts(rs.values, rs.ambience['orga_token'].to_database())
         return self.render(rs, "event/droid/configure", {})
 
@@ -69,6 +70,7 @@ class EventDroidMixin(EventBaseFrontend):
     @REQUESTdatadict(*OrgaToken.requestdict_fields())
     def change_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int,
                           data: CdEDBObject) -> Response:
+        """Change an existing orga token."""
         data['id'] = orga_token_id
         # These are only needed for creation and are empty here.
         del data['event_id']
@@ -86,6 +88,10 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard()
     def delete_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int
                           ) -> Response:
+        """Delete an existing orga token.
+
+        Only available if the token has not been used.
+        """
         blockers = self.eventproxy.delete_orga_token_blockers(rs, orga_token_id)
         orga_token_cascade: set[str] = set()
         if blockers.keys() - orga_token_cascade:
@@ -101,6 +107,7 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard()
     def revoke_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int,
                           ) -> Response:
+        """Revoke an existing orga token, making it unusable."""
         code = self.eventproxy.revoke_orga_token(rs, orga_token_id)
         rs.notify_return_code(code)
 
