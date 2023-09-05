@@ -42,6 +42,9 @@ msgstr "Beitrags-Statistik (%(title)s)"
 msgid "Owed"
 msgstr "Zu Zahlen"
 
+msgid "Shortname already in use for another event."
+msgstr "Kurzname bereits vergeben."
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
