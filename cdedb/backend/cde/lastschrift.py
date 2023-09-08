@@ -104,7 +104,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
-    @access("member", "cde_admin")
+    @access("cde", "cde_admin")
     def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
