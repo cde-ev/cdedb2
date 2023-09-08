@@ -672,9 +672,9 @@ class EventBaseBackend(EventLowLevelBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
+        event_id = affirm(vtypes.ID, event_id)
         ret = 1
         with Atomizer(rs):
-            event_id = affirm(vtypes.ID, event_id)
             current = self.get_event(rs, event_id)
             data = affirm(vtypes.Event, data, current=current)
             data['id'] = event_id
