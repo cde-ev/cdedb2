@@ -91,7 +91,7 @@ from cdedb.common import (
     compute_checkdigit, now,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
@@ -4055,12 +4055,13 @@ def _serialized_event_configuration(
                         "lodge_field", n_("Unknown lodge field.")))
             else:
                 field = current['fields'][lodge_field]
-                if field['association'] != FieldAssociations.registration:
+                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                if field['association'] not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
                             "lodge_field",
                             n_("Lodge field must be a registration field.")))
-                if field['kind'] != FieldDatatypes.str:
+                if field['kind'] not in legal_kinds:
                     with errs:
                         raise ValidationSummary(ValueError(
                             "lodge_field", n_("Lodge field must have type 'string'.")))
