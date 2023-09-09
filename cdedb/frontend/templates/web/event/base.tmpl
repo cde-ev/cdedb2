@@ -54,6 +54,8 @@
                     icon="file-download", active=(sidenav_active == 'event_downloads')) }}
             {{ util.href(cdedblink("event/partial_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
                     icon="cloud-upload-alt", active=(sidenav_active == 'partial_import')) }}
+            {{ util.href(cdedblink("event/orga_token_summary", {"event_id": data['id']}), gettext("Orga Tokens"),
+                    aclass="list-group-item", icon="robot", active=(sidenav_active == 'orga_tokens')) }}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
                          aclass="list-group-item", icon="euro-sign", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}

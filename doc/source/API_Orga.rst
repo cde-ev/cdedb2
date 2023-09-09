@@ -8,9 +8,8 @@ like courses and registrations.
 In order to use this API a secret Token must be created and provided in the
 HTTP-Header of every request.
 
-.. warning:: The Orga API is currently in beta. Some specifics may change and as of now
-    the creation and management of tokens for the API is limited and not available
-    via the frontend.
+.. warning:: The Orga API is currently in beta. Specifics may still change and
+    only read-access is currently available.
 
 Available Endpoints
 -------------------
