@@ -809,7 +809,8 @@ class AgeClasses(CdEIntEnum):
     full = 1  #: at least 18 years old
     u18 = 2  #: between 16 and 18 years old
     u16 = 3  #: between 14 and 16 years old
-    u14 = 4  #: less than 14 years old
+    u14 = 4  #: between 10 and 14 years old
+    u10 = 5  #: under 10 years old, presumed child with parents
 
     def is_minor(self) -> bool:
         """Checks whether a legal guardian is required."""
@@ -819,7 +820,12 @@ class AgeClasses(CdEIntEnum):
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+
+    def with_guardian(self) -> bool:
+        """Whether we assume that the child is supervised by a legal guardian
+        the event, i.e. usually a parent."""
+        return self == AgeClasses.u10
 
 
 def deduct_years(date: datetime.date, years: int) -> datetime.date:
@@ -850,7 +856,9 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
         return AgeClasses.u18
     if birth <= deduct_years(reference, 14):
         return AgeClasses.u16
-    return AgeClasses.u14
+    if birth <= deduct_years(reference, 10):
+        return AgeClasses.u14
+    return AgeClasses.u10
 
 
 @enum.unique

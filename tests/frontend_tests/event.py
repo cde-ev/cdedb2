@@ -1535,6 +1535,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Outside")
 
     @as_users("charly", "daniel", "rowena")
+    @prepsql("UPDATE core.personas SET birthday = date '2220-02-19' WHERE id = 4;")
     def test_register(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         # check participant info page for unregistered users
@@ -1555,11 +1556,15 @@ etc;anything else""", f['entries_2'].value)
         elif self.user_in('daniel'):
             self.assertPresence(surcharge)
             self.assertPresence(membership_fee)
-            self.assertPresence("19.02.1963")
+            self.assertPresence("19.02.2220")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertNonPresence("Eltern")
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
             self.assertNonPresence(membership_fee)
             self.assertPresence("26.08.932")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertNonPresence("Eltern")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 

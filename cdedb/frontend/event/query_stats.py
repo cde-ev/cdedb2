@@ -355,6 +355,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     u18 = n_("U18"), 1
     u16 = n_("U16"), 1
     u14 = n_("U14"), 1
+    u10 = n_("U10"), 1
     checked_in = n_("Checked-In"), 1
     not_checked_in = n_("Not Checked-In"), 1
     orgas = n_("Orgas"), 1
@@ -395,6 +396,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return _is_participant(part) and part['age_class'] == AgeClasses.u16
         elif self == self.u14:
             return _is_participant(part) and part['age_class'] == AgeClasses.u14
+        elif self == self.u10:
+            return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
             return _is_participant(part) and reg['checkin']
         elif self == self.not_checked_in:
@@ -478,6 +481,15 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [
                     _participant_constraint(part),
                     _age_constraint(part, 14),
+                ],
+                []
+            )
+        elif self == self.u10:
+            return (
+                ['persona.birthday'],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 10),
                 ],
                 []
             )

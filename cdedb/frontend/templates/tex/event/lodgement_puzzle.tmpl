@@ -58,7 +58,8 @@
                     <<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
-                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
+                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>
+                     <<% if registration['age'] == enums['AgeClasses'].u10 %>>U10<<% endif -%>>}%
                     {<<% if ambience['event']['parts'][part_id]['camping_mat_field'] and
                             registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['parts'][part_id]['camping_mat_field']]['field_name']) -%>>
