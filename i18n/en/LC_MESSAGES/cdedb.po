@@ -12495,7 +12495,7 @@ msgid "May sleep on a camping mat."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:429
-msgid "Assigned to sleep on, but may not sleep on a camping mat."
+msgid "Assigned to, but may not sleep on a camping mat."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:5
