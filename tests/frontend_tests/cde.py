@@ -1614,14 +1614,14 @@ class TestCdEFrontend(FrontendTest):
         # Check that both given_names and display_name have changed.
         persona = self.core.get_persona(self.key, persona_id)
         self.assertEqual("Berta B.", persona["given_names"])
-        self.assertEqual("Berta B.", persona["display_name"])
+        self.assertEqual("Bertie", persona["display_name"])
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
         )
 
         self.traverse({'description': 'Mitglieder'},
@@ -1661,7 +1661,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_batch_admission_username_taken(self) -> None:
         # check that we do not allow to create an account with already taken mail adress
-        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"";"1";"";"";"";"";"";"";"";'
                 '"daniel@example.cde";"19.02.1963"')
 
         self.traverse({'description': 'Mitglieder'},
@@ -1726,7 +1726,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_batch_admission_doppelganger_archived(self) -> None:
-        data = "pa14;;Hell;Hades;;;;;;;;;;;;hades@example.cde;10.11.1977"
+        data = "pa14;;Hell;Hades;;;;;;;;;;;;;hades@example.cde;10.11.1977"
 
         self.admin_view_profile("hades")
         self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
@@ -1758,8 +1758,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_batch_admission_already_participant(self) -> None:
-        data = ("pa14;;Clown;Charly;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
-                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;daniel@example.cde;19.02.1963")
+        data = ("pa14;;Clown;Charly;;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
+                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;;daniel@example.cde;19.02.1963")
 
         self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
         f = self.response.forms['admissionform']
