@@ -4832,7 +4832,7 @@ msgstr "U14"
 
 #: cdedb/frontend/event/query_stats.py:358
 msgid "U10"
-msgstr "U10"
+msgstr "U10 (mit Eltern)"
 
 #: cdedb/frontend/event/query_stats.py:359
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46

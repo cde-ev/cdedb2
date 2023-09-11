@@ -4698,7 +4698,7 @@ msgstr ""
 
 #: cdedb/frontend/event/query_stats.py:358
 msgid "U10"
-msgstr ""
+msgstr "U10 (with parents)"
 
 #: cdedb/frontend/event/query_stats.py:359
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
