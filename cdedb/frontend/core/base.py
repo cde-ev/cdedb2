@@ -2161,7 +2161,9 @@ class CoreBaseFrontend(AbstractFrontend):
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
-            rs.notify("error", e.args[0])
+            msg = e.args[0]
+            args = e.args[1] if len(e.args) > 1 else {}
+            rs.notify("error", msg, args)
             code = 0
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
