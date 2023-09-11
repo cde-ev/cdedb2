@@ -193,6 +193,12 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
+msgid "Not privileged to change to this mailinglist type for this mailinglist."
+msgstr "Nicht die nötigen Zugriffsberechtigungen, um diesen Typenwechsel für diese Mailingliste durchzuführen."
+
+msgid "Not privileged to create mailinglist of this type."
+msgstr "Nicht die nötigen Zugriffsberechtigungen, um eine Mailingliste dieses Typs zu erstellen."
+
 #: cdedb/backend/assembly.py:371 cdedb/backend/assembly.py:372
 #: cdedb/backend/cde/base.py:542 cdedb/backend/cde/base.py:544
 #: cdedb/backend/cde/base.py:546 cdedb/backend/core/base.py:2567
