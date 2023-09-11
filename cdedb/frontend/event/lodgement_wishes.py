@@ -19,7 +19,6 @@ from cdedb.common.n_ import n_
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl
 
-MAY_CAMPING_MAT_ICON = "(⛺?)"
 
 @dataclass
 class LodgementWish:
@@ -428,19 +427,35 @@ def create_lodgement_wishes_graph(
 
     return graph
 
+
+def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
+    if may_camp and is_camping:
+        # Assigned to sleep on a camping mat.
+        return " (⛺←)"
+    elif may_camp:
+        # May sleep on a camping mat.
+        return " (⛺?)"
+    elif is_camping:
+        # Assigned to, but may not sleep on a camping mat.
+        return " (⛺!)"
+    return ""
+
+
 def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
                      event: CdEDBObject,
                      camping_mat_field_names: dict[int,Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
-    icons = {p: f" {MAY_CAMPING_MAT_ICON}"
-             if registration['fields'].get(camping_mat_field_names[p]) else ""
-             for p in presence_parts}
+    icons = {p: _camping_mat_icon(
+        registration['fields'].get(camping_mat_field_names[p]),
+        registration['parts'][p]['is_camping_mat'])
+        for p in presence_parts}
     parts = (', '.join(f"{event['parts'][p]['shortname']}{icons[p]}"
                        for p in presence_parts)
              if len(event['parts']) > 1 else unwrap(icons.values()))
     linebreak = "\n" if parts else ""
     return (f"{make_persona_name(personas[registration['persona_id']])}"
             f"{linebreak}{parts}")
+
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
                        personas: CdEDBObjectMap, event: CdEDBObject) -> str:
