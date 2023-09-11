@@ -439,7 +439,7 @@ class MlBackend(AbstractBackend):
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
         with Atomizer(rs):
@@ -473,7 +473,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM ml.moderators"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
@@ -831,7 +831,7 @@ class MlBackend(AbstractBackend):
                            or self.may_manage(rs, datum['mailinglist_id'],
                                               allow_restricted=False)
                            for datum in set_data):
-                    raise PrivilegeError("Not privileged.")
+                    raise PrivilegeError(n_("Not privileged."))
 
                 keys = ("subscription_state", "mailinglist_id", "persona_id")
                 placeholders = ", ".join(("(%s, %s, %s)",) * len(set_data))
@@ -867,7 +867,7 @@ class MlBackend(AbstractBackend):
             if not all(datum['persona_id'] == rs.user.persona_id
                        or self.may_manage(rs, datum['mailinglist_id'])
                        for datum in data):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(n_("Not privileged."))
 
             # noinspection SqlWithoutWhere
             query = "DELETE FROM ml.subscription_states"
