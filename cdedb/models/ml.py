@@ -99,8 +99,6 @@ class Mailinglist(CdEDataclass):
 
     sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
     available_domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
-    available_roster_visibilities: ClassVar[List[MailinglistRosterVisibility]] = \
-        [MailinglistRosterVisibility.none]
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
@@ -358,9 +356,6 @@ class TeamMeta(GeneralMailinglist):
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
     available_domains = [MailinglistDomain.lists]
-    available_roster_visibilities = [
-        MailinglistRosterVisibility.none, MailinglistRosterVisibility.subscribable,
-        MailinglistRosterVisibility.viewers]
     maxsize_default = vtypes.PositiveInt(4096)
 
 

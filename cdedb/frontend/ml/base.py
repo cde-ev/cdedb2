@@ -481,14 +481,12 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
-    @REQUESTdata("ml_type", "domain", "roster_visibility")
+    @REQUESTdata("ml_type", "domain")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
-        domain: const.MailinglistDomain, data: CdEDBObject,
-        roster_visibility: const.MailinglistRosterVisibility,
+        domain: const.MailinglistDomain, data: CdEDBObject
     ) -> Response:
-        update = {"id": mailinglist_id, "domain": domain,
-                  "roster_visibility": roster_visibility}
+        update = {"id": mailinglist_id, "domain": domain}
         new_type = get_ml_type(ml_type)
         for field in new_type.get_additional_fields():
             update[field] = data[field]

@@ -4048,9 +4048,6 @@ def _mailinglist(
         if val["domain"].value not in subtype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
-    if val["roster_visibility"].value not in subtype.available_roster_visibilities:
-        errs.append(ValueError("roster_visibility", n_(
-            "Invalid roster visibility for this mailinglist type.")))
 
     if errs:
         raise errs
