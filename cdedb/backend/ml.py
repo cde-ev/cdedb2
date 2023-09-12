@@ -554,7 +554,8 @@ class MlBackend(AbstractBackend):
 
             if not (new_type.is_relevant_admin(rs.user)
                     and old_type.is_relevant_admin(rs.user)):
-                raise PrivilegeError("Not privileged to make this change.")
+                raise PrivilegeError(n_("Not privileged to change to this mailinglist"
+                                        " type for this mailinglist."))
 
             # check that the type change preserves the data integrity
             ml = self.get_mailinglist(rs, mailinglist_id)
@@ -648,7 +649,8 @@ class MlBackend(AbstractBackend):
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
         if not data.is_relevant_admin(rs.user):
-            raise PrivilegeError("Not privileged to create mailinglist of this type.")
+            raise PrivilegeError(n_(
+                "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
             mdata = data.to_database()
             # The address is a readonly property, but we want to save it into the
