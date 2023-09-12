@@ -1879,8 +1879,8 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
-        type_change_err_msg = ("Nicht die nötigen Zugriffsberechtigungen, um diesen"
-                               " Typenwechsel für diese Mailingliste durchzuführen.")
+        type_change_err_msg = (
+            "Not privileged to change to this mailinglist type for this mailinglist.")
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
