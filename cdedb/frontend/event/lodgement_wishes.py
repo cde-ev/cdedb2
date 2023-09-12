@@ -16,6 +16,7 @@ from cdedb.common import (
     make_persona_name, unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl
 
@@ -237,6 +238,12 @@ def _parts_with_status(registration: CdEDBObject,
     }
 
 
+def _sort_parts(part_ids: Set[int], event: CdEDBObject) -> List[int]:
+    """Sort the given parts accordingly to EntitySorter."""
+    sorted_parts = xsorted(event['parts'].values(), key=EntitySorter.event_part)
+    return [part["id"] for part in sorted_parts if part["id"] in part_ids]
+
+
 def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
                          personas: CdEDBObjectMap) -> bool:
     """ Check if two participants are allowed to be assigned to the same
@@ -450,7 +457,7 @@ def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
         registration['parts'][p]['is_camping_mat'])
         for p in presence_parts}
     parts = (', '.join(f"{event['parts'][p]['shortname']}{icons[p]}"
-                       for p in presence_parts)
+                       for p in _sort_parts(presence_parts, event))
              if len(event['parts']) > 1 else unwrap(icons.values()))
     linebreak = "\n" if parts else ""
     return (f"{make_persona_name(personas[registration['persona_id']])}"
@@ -464,7 +471,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
         parts = "\n"
         present_parts = _parts_with_status(registration, PRESENT_STATI)
         parts += ', '.join(event['parts'][p]['title']
-                           for p in present_parts)
+                           for p in _sort_parts(present_parts, event))
         waitlist_parts = _parts_with_status(registration,
                                             {RegistrationPartStati.waitlist})
         if waitlist_parts:
@@ -472,7 +479,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
                 parts += "  |  "
             parts += (rs.gettext("Waitlist: ")
                       + ', '.join(event['parts'][p]['title']
-                                  for p in waitlist_parts))
+                                  for p in _sort_parts(waitlist_parts, event)))
 
     persona = personas[registration['persona_id']]
     lodge_field_name = event['fields'][event['lodge_field']]['field_name']
