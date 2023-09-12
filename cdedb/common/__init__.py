@@ -813,7 +813,10 @@ class AgeClasses(CdEIntEnum):
     u10 = 5  #: under 10 years old, presumed child with parents
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required."""
+        """Checks whether permission by a legal guardian is required.
+
+        This excludes young children which are assumed to be accompanied.
+        """
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
@@ -823,8 +826,8 @@ class AgeClasses(CdEIntEnum):
         return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
 
     def with_guardian(self) -> bool:
-        """Whether we assume that the child is supervised by a legal guardian
-        the event, i.e. usually a parent."""
+        """Whether we assume that the child is accompanied by a legal guardian
+        at the event, usually a parent."""
         return self == AgeClasses.u10
 
 
