@@ -98,6 +98,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.droid import OrgaToken
 from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
@@ -1466,7 +1467,6 @@ AmbienceDict = typing.TypedDict(
         'genesis_case': CdEDBObject,
         'lastschrift': CdEDBObject,
         'transaction':  CdEDBObject,
-        'institution':  CdEDBObject,
         'event': CdEDBObject,
         'pevent': CdEDBObject,
         'course': CdEDBObject,
@@ -1477,6 +1477,7 @@ AmbienceDict = typing.TypedDict(
         'part_group': CdEDBObject,
         'track_group': CdEDBObject,
         'fee': CdEDBObject,
+        'orga_token': OrgaToken,
         'attachment': CdEDBObject,
         'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
@@ -1515,8 +1516,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'transaction_id', 'transaction',
               ((lambda a: do_assert(a['transaction']['lastschrift_id']
                                     == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
-              'institution_id', 'institution', ()),
         Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
               'event_id', 'event', ()),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
@@ -1561,6 +1560,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
               'fee_id', 'fee',
               ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
+              'orga_token_id', 'orga_token',
+              ((lambda a: do_assert(a['orga_token'].event_id == a['event']['id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']

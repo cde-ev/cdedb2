@@ -107,7 +107,7 @@
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
-            <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
+            <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
             {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
                 <dt title="{% trans %}CdE-Account IBAN{% endtrans %}">{% trans %}CdE-Account IBAN{% endtrans %}</dt>
                 <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>

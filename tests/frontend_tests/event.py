@@ -10,13 +10,12 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence, cast
+from typing import Collection, Optional, Sequence
 
 import lxml.etree
 import segno.helpers
 import webtest
 
-import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
@@ -403,7 +402,7 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin"}
+            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -1232,7 +1231,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
@@ -1305,7 +1304,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Veranstaltung anlegen'})
         f = self.response.forms['createeventform']
         f['title'] = "Alternative Akademie"
-        f['institution'] = 1
+        f['institution'] = const.PastInstitutions.cde
         f['shortname'] = ""
         f['part_begin'] = "2345-01-01"
         f['part_end'] = "2345-6-7"
@@ -2230,12 +2229,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual([x[0] for x in f['waitlist_field'].options], ['', '8', '1001'])
         f['waitlist_field'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field',
-                                   "Unpassendes Datenfeld für die Warteliste.")
+        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
         f['waitlist_field'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field',
-                                   "Unpassendes Datenfeld für die Warteliste.")
+        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
 
         # Set the correct waitlist field.
         f['waitlist_field'] = '1001'
@@ -3055,6 +3052,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
+        self.assertPresence("Insgesamt zu zahlender Betrag 466,49 €")
 
     @event_keeper
     @as_users("garcia")
@@ -3280,6 +3278,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
+        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-1")
+        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-2")
+        self.assertNonPresence("nicht-binärer Teilnehmer", div="inhabitants-3")
+        self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
+        self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
+        self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
+        self.assertNonPresence("Isomatte eingeteilt, hat dem aber nicht zugestimmt.")
         self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
@@ -3290,6 +3295,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertEqual("high", f['fields.contamination'].value)
         f['fields.contamination'] = "medium"
         self.submit(f)
+        self.assertNonPresence("Überfüllte Unterkunft")
         self.traverse("Bearbeiten")
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
@@ -4571,6 +4577,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("In Anmeldungsliste", div='inhabitants-1')
         self.assertNonPresence("Emilia", div='inhabitants')
         self.assertNonPresence("In Anmeldungsliste", div='inhabitants-2')
+        self.assertNonPresence("nicht zugestimmt")
         self.traverse("Bewohner verwalten")
         self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)")
@@ -4593,10 +4600,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                          " (Große Testakademie 2222)")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
+        # Override camping mat status
+        f = self.response.forms['manageinhabitantsform']
+        f['is_camping_mat_3_3'] = True
+        f['is_camping_mat_3_4'] = False
+        self.submit(f)
+        self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
+        self.assertPresence("Teilnehmer ist auf eine Isomatte eingeteilt, hat dem"
+                            " aber nicht zugestimmt.", div='inhabitants-3')
 
         # Check inhabitants link
-        self.traverse("Kalte Kammer",
-                      {'description': "In Anmeldungsliste anzeigen",
+        self.traverse({'description': "In Anmeldungsliste anzeigen",
                        'linkid': "inhabitants-link-3"})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]", div='query-results')
@@ -6239,34 +6253,84 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
-        new_token = OrgaToken(
-            id=cast(vtypes.ProtoID, -1),
-            event_id=cast(vtypes.ID, event_id),
-            title="New Token!",
-            notes=None,
-            ctime=now(),
-            etime=now().replace(year=3000),
-            rtime=None,
-            atime=None,
-        )
-        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
+                      "Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "New Token!"
+        f['etime'] = now().date().replace(year=3000)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
         orga_token = self.event.get_orga_token(self.key, new_token_id)
+
+        with self.switch_user("anonymous"):
+            self.get(
+                f'/event/event/{event_id}/droid/partial',
+                headers={
+                    orga_token.request_header_key:
+                        orga_token.get_token_string(secret),
+                },
+            )
+            droid_export = self.response.json
+
         self.get(f"/event/event/{event_id}/download/partial")
         orga_export = self.response.json
 
-        self.get("/")
-        self.logout()
-
-        self.get(
-            f'/event/event/{event_id}/droid/partial',
-            headers={
-                orga_token.request_header_key:
-                    orga_token.get_token_string(secret),
-            },
-        )
-        droid_export = self.response.json
-
         droid_export['timestamp'] = orga_export['timestamp']
-        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
-        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
         self.assertEqual(orga_export, droid_export)
+
+    @as_users("anton")
+    def test_event_fee_stats(self) -> None:
+        event_id = 2
+        reg_ids = []
+        reg_data: CdEDBObject = {
+            "event_id": event_id,
+            "persona_id": 1,
+            "mixed_lodging": True,
+            "list_consent": True,
+            "notes": None,
+            "parts": {
+                4: {
+                    "status": const.RegistrationPartStati.participant,
+                },
+            },
+            "tracks": {},
+            "fields": {
+                "solidarity": True,
+                "donation": False,
+            },
+        }
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 5
+        reg_data['fields'] = {
+            "solidarity": False,
+            "donation": True,
+        }
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 2
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
+        registrations = self.event.get_registrations(self.key, reg_ids)
+        self.assertEqual(
+            decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("437.00"), registrations[reg_ids[1]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
+        reg_update = [
+            {
+                'id': reg_ids[0],
+                'amount_paid': registrations[reg_ids[0]]['amount_owed'],
+            },
+            {
+                'id': reg_ids[1],
+                'amount_paid': registrations[reg_ids[1]]['amount_owed'],
+            },
+        ]
+        self.event.set_registrations(self.key, reg_update)
+        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
+                      "Beitrags-Statistik")
+        self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
+        self.assertPresence("Regulärer Beitrag 25,00 € 20,00 €")
+        self.assertPresence("Stornokosten 0,00 € 0,00 €")
+        self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
+        self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
+        self.assertPresence("Spende 840,00 € 420,00 €")

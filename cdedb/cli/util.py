@@ -208,7 +208,7 @@ def execute_sql_script(
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
             for statement in sql_text.split(";"):
-                if not statement.strip():
+                if not statement.strip() or statement.strip().startswith("--"):
                     continue
                 cur.execute(statement)
                 if verbose > 2:

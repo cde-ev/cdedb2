@@ -188,6 +188,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.ignore_validation_errors()
             return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
+        # our query facility does not allow + signs, thus special-case it here
+        phone = rs.values['phone'] = rs.request.values.get('phone')
+        if phone:
+            # remove leading zeroes - in database, numbers are stored starting with '+'
+            phone = ("".join(char for char in phone if char in '0123456789')
+                     .removeprefix("0").removeprefix("0"))
+            if phone:
+                defaults['qval_telephone,mobile'] = phone
+            else:
+                rs.append_validation_error(
+                        ('phone', ValueError(n_("Wrong formatting."))))
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
@@ -265,7 +276,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """
         current = tuple(rs.retrieve_validation_errors())
         rs.replace_validation_errors(
-            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
+            [('qval_' + k, v) if k != 'phone' else (k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
