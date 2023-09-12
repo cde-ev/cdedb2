@@ -571,7 +571,7 @@ class CoreBaseFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id, event_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if "core" in access_levels and "member" in roles:
+            if "core" in access_levels:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = bool(user_lastschrift)
@@ -2161,7 +2161,9 @@ class CoreBaseFrontend(AbstractFrontend):
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
-            rs.notify("error", e.args[0])
+            msg = e.args[0]
+            args = e.args[1] if len(e.args) > 1 else {}
+            rs.notify("error", msg, args)
             code = 0
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)

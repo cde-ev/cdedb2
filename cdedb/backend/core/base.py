@@ -1642,11 +1642,11 @@ class CoreBaseBackend(AbstractBackend):
                 ml_ids = set(unwrap(self.query_one(
                     rs, query, (moderated_mailinglists,))) or [])
                 # Check the difference.
-                unmodearated_mailinglists = moderated_mailinglists - ml_ids
-                if unmodearated_mailinglists:
+                unmoderated_mailinglists = moderated_mailinglists - ml_ids
+                if unmoderated_mailinglists:
                     raise ArchiveError(
                         n_("Sole moderator of a mailinglist %(ml_ids)s."),
-                        {'ml_ids': unmodearated_mailinglists})
+                        {'ml_ids': unmoderated_mailinglists})
             #
             # 9. Clear logs
             #
