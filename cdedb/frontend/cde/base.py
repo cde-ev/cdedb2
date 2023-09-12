@@ -408,7 +408,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_ml_realm': True,
             'is_assembly_realm': True,
             'is_member': True,
-            'display_name': persona['given_names'],
+            'display_name': persona['display_name'] or persona['given_names'],
             'trial_member': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
@@ -632,10 +632,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs)
 
         fields = (
-            'event', 'course', 'family_name', 'given_names', 'title',
+            'event', 'course', 'family_name', 'given_names', 'display_name', 'title',
             'name_supplement', 'birth_name', 'gender', 'address_supplement',
             'address', 'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'username', 'birthday')
+            'mobile', 'username', 'birthday',
+        )
         reader = csv.DictReader(
             accountlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
