@@ -395,9 +395,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             "3": str(const.Genders.not_specified.value),
             "m": str(const.Genders.male.value),
             "w": str(const.Genders.female.value),
+            "f": str(const.Genders.female.value),
             "d": str(const.Genders.other.value),
         }
-        gender = persona.get('gender') or "3"
+        gender = (persona.get('gender') or "3")[0].lower()
         persona['gender'] = gender_convert.get(
             gender.strip(), str(const.Genders.not_specified.value))
         del persona['event']

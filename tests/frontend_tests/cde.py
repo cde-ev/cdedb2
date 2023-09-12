@@ -1372,8 +1372,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona:\W*Ähnlicher Account gefunden.",),
             (r"course:\W*Kein Kurs verfügbar.",),
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
-             r"course:\W*Kein Kurs verfügbar.",
-             r"gender:\W*Kein Geschlecht angegeben."),
+             r"course:\W*Kein Kurs verfügbar.",),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             # TODO check that this is actually a warning and no problem
@@ -1383,8 +1382,7 @@ class TestCdEFrontend(FrontendTest):
              r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
-             r"birthday\W*Person ist jünger als 10 Jahre.",
-             r"gender:\W*Kein Geschlecht angegeben."),
+             r"birthday\W*Person ist jünger als 10 Jahre.",),
             (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
