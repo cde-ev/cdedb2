@@ -13,7 +13,7 @@ import graphviz
 
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
-    make_persona_name, unwrap
+    make_persona_name, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.database.constants import Genders, RegistrationPartStati
@@ -443,7 +443,7 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
 
 def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
                      event: CdEDBObject,
-                     camping_mat_field_names: dict[int,Optional[str]]) -> str:
+                     camping_mat_field_names: dict[int, Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {p: _camping_mat_icon(
         registration['fields'].get(camping_mat_field_names[p]),
