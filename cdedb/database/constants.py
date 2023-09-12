@@ -300,6 +300,10 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 
 @enum.unique
 class MailinglistRosterVisibility(CdEIntEnum):
+    """Visibility of the subscriber list to non-moderators or admins.
+
+    Roster of inactive mailinglists are always hidden.
+    """
     none = 1
     subscribable = 10
     viewers = 20
