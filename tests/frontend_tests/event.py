@@ -6284,7 +6284,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids = []
         reg_data: CdEDBObject = {
             "event_id": event_id,
-            "persona_id": 1,
+            "persona_id": self.user['id'],
             "mixed_lodging": True,
             "list_consent": True,
             "notes": None,
@@ -6334,3 +6334,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
         self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
         self.assertPresence("Spende 840,00 € 420,00 €")
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[0]}/show")
+        self.assertPresence("Anton")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050, Anton Armin A. Administrator")
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[1]}/show")
+        self.assertPresence("Emilia")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[2]}/show")
+        self.assertPresence("Berta")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
