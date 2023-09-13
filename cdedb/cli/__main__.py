@@ -6,7 +6,6 @@ and should not be called directly.
 import difflib
 import json
 import pathlib
-import subprocess
 import sys
 from typing import Any, Dict, List
 
