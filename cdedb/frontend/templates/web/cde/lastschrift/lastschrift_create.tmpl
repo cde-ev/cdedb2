@@ -53,7 +53,7 @@
         {% endif %}
         {{ util.form_input_text(name="donation", label=gettext("Initial Donation"), type="number",
                                 attributes='min="%(min)s" step="0.01"'|s|format(min=min_donation),
-                                defaultvalue=current_donation or typical_donation, addon="€") }}
+                                defaultvalue=current_donation, addon="€") }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}

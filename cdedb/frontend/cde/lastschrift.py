@@ -150,14 +150,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                                 ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
-        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
         current_donation = None
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
             current_donation = persona["donation"] or None
         return self.render(rs, "lastschrift/lastschrift_create", {
-            "min_donation": min_donation, "typical_donation": typical_donation,
-            "current_donation": current_donation,
+            "min_donation": min_donation, "current_donation": current_donation,
         })
 
     @access("finance_admin", modi={"POST"})
