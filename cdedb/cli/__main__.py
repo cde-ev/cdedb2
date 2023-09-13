@@ -3,6 +3,7 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
+import difflib
 import json
 import pathlib
 import subprocess
@@ -191,12 +192,13 @@ def development() -> None:
 @development.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
+@click.option("-s", "--silent", default=False, type=bool)
 @pass_secrets
 @pass_config
 def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
-                             outfile: pathlib.Path) -> None:
+                             outfile: pathlib.Path, silent: bool) -> None:
     """Generate a JSON-file from the current state of the database."""
-    data = sql2json(config, secrets)
+    data = sql2json(config, secrets, silent=silent)
     with open(outfile, "w", encoding='UTF-8') as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
         f.write("\n")
@@ -300,12 +302,15 @@ def describe_database(config: TestConfig, secrets: SecretsConfig,
 
 
 @development.command(name="check-sample-data-consistency")
-def check_sample_data_consistency() -> None:
+@click.pass_context
+def check_sample_data_consistency(ctx: click.Context) -> None:
     """Ensure json2sql() -> sql2json() leaves sample_data.json invariant."""
     clean_data = pathlib.Path("/tmp/sample_data.json")
     current_data = pathlib.Path("/cdedb2/tests/ancillary_files/sample_data.json")
 
     # setup fresh database
+    # it does not matter which database we use here, but we don't want to flush the
+    # current one, so we use a test database instead.
     set_configpath("/cdedb2/tests/config/test_ldap.py")
     config = TestConfig()
     secrets = SecretsConfig()
@@ -313,19 +318,21 @@ def check_sample_data_consistency() -> None:
     populate_database(config, secrets)
 
     # get a fresh sample_data.json from this database
-    data = sql2json(config, secrets, silent=True)
-    with open(clean_data, "w", encoding='UTF-8') as f:
-        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
-        f.write("\n")
+    ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
 
     # compare the fresh one with the current one
-    ret = subprocess.run(["diff", "-u", str(current_data), str(clean_data)],
-                         check=False)
-    if ret.returncode == 1:
-        print("Inconsistent", file=sys.stderr)
+    with open(clean_data, "r", encoding='UTF-8') as f:
+        fresh = f.readlines()
+    with open(current_data, "r", encoding='UTF-8') as f:
+        current = f.readlines()
+    diff = "".join(difflib.unified_diff(
+        fresh, current, fromfile="Cleanly generated sampledata.",
+        tofile="/cdedb2/tests/ancillary_files/sample_data.json", n=2))
+    if diff:
+        print(diff, file=sys.stderr)
         sys.exit(1)
     else:
-        print("Consistent", file=sys.stdout)
+        print("\nConsistent.", file=sys.stdout)
 
 
 def main() -> None:
