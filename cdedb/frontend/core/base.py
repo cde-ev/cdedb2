@@ -155,23 +155,20 @@ class CoreBaseFrontend(AbstractFrontend):
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final = {}
                 for event_id, event in events.items():
-                    if event_id not in orga_info:
-                        event['registration'], event['payment_pending'] = (
-                            self.eventproxy.get_registration_payment_info(rs, event_id))
-                        # Skip event, if the registration begins more than
-                        # 2 weeks in future
-                        if event['registration_start'] and \
-                                now() + datetime.timedelta(weeks=2) < \
-                                event['registration_start']:
-                            continue
-                        # Skip events, that are over or are not registerable
-                        # anymore
-                        if event['registration_hard_limit'] and \
-                                now() > event['registration_hard_limit'] \
-                                and not event['registration'] \
-                                or now().date() > event['end']:
-                            continue
-                        final[event_id] = event
+                    event['registration'], event['payment_pending'] = (
+                        self.eventproxy.get_registration_payment_info(rs, event_id))
+                    # Skip event, if the registration begins more than 2 weeks in future
+                    if event['registration_start'] and \
+                            now() + datetime.timedelta(weeks=2) < \
+                            event['registration_start']:
+                        continue
+                    # Skip events, that are over or are not registerable anymore
+                    if (event['registration_hard_limit']
+                            and now() > event['registration_hard_limit']
+                            and not event['registration']
+                            or now().date() > event['end']):
+                        continue
+                    final[event_id] = event
                 if final:
                     dashboard['events'] = final
             # open assemblies
