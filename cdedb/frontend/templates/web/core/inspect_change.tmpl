@@ -21,7 +21,7 @@
 
 {# Helper to take care of some special values (enums, date, country codes) #}
 {% macro format_property(key, persona) %}
-    {%- if persona[key] -%}
+    {%- if persona[key] is not none -%}
         {% if key == 'birthday' %}
             {{- persona['birthday']|date(lang=lang) -}}
         {% elif key == 'gender' %}
