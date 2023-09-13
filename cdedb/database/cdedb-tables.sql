@@ -574,6 +574,7 @@ CREATE INDEX cde_finance_log_code_idx ON cde.finance_log(code);
 CREATE INDEX cde_finance_log_persona_id_idx ON cde.finance_log(persona_id);
 GRANT SELECT, INSERT ON cde.finance_log TO cdb_member;
 GRANT SELECT, UPDATE ON cde.finance_log_id_seq TO cdb_member;
+-- In contrast to other logs, UPDATE and DELETE are not possible for cdb_admin to ensure integrity.
 
 CREATE TABLE cde.log (
         id                      bigserial PRIMARY KEY,
