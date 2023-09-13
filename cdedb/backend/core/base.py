@@ -420,9 +420,7 @@ class CoreBaseBackend(AbstractBackend):
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
             requires_review = (
-                    (all_changed_fields & fields_requiring_review
-                     or (current_state['code']
-                         == const.PersonaChangeStati.pending and not diff))
+                    all_changed_fields & fields_requiring_review
                     and current_state['is_event_realm']
                     and not self.is_relative_admin(rs, data['id']))
 
