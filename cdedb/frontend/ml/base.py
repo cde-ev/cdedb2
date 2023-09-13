@@ -41,6 +41,15 @@ class MlBaseFrontend(AbstractUserFrontend):
     def __init__(self) -> None:
         super().__init__()
 
+    def render(self, rs: RequestState, templatename: str,
+               params: CdEDBObject = None) -> Response:
+        params = params or {}
+        if 'mailinglist' in rs.ambience:
+            params['may_view_roster'] = self.mlproxy.may_view_roster(
+                rs, rs.ambience['mailinglist'])
+
+        return super().render(rs, templatename, params=params)
+
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
@@ -536,27 +545,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert rs.user.persona_id is not None
         ml = rs.ambience['mailinglist']
 
-        # Check if user is privileged to view the roster list
-        if (mailinglist_id not in rs.user.moderator
-                and not self.mlproxy.is_relevant_admin(rs, mailinglist=ml)):
-            if not ml.is_active:
-                rs.notify("info", n_("Roster of inactive mailinglist is hidden."))
-                return self.redirect(rs, "ml/show_mailinglist")
-            if (ml.roster_visibility == const.MailinglistRosterVisibility.viewers
-                    and not self.mlproxy.may_view(rs, ml)):
-                raise werkzeug.exceptions.Forbidden
-            if (ml.roster_visibility == const.MailinglistRosterVisibility.subscribable
-                    and not self.mlproxy.get_subscription_policy(
-                    rs, rs.user.persona_id, mailinglist=ml).may_subscribe()):
-                raise werkzeug.exceptions.Forbidden
+        if not self.mlproxy.may_view_roster(rs, ml):
+            raise werkzeug.exceptions.Forbidden
 
-        sub_states = const.SubscriptionState.subscribing_states()
-        subscriber_ids = set(self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=sub_states).keys())
-        subscribers = xsorted(self.coreproxy.get_personas(rs, subscriber_ids).values(),
-                              key=EntitySorter.persona)
+        roster_ids = self.mlproxy.get_roster(rs, mailinglist_id)
+        roster = xsorted(self.coreproxy.get_personas(rs, roster_ids).values(),
+                         key=EntitySorter.persona)
 
-        return self.render(rs, "roster", {'subscribers': subscribers})
+        return self.render(rs, "roster", {'roster': roster})
 
     @access("ml")
     @mailinglist_guard()

@@ -1039,6 +1039,51 @@ class MlBackend(AbstractBackend):
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
+    def may_view_roster(self, rs: RequestState, ml: Mailinglist) -> bool:
+        """Determine if the user is privileged to view the roster of this mailinglist.
+
+        This is needed to determine the visibility of "roster" in the navbar. Therefor,
+        we take the is_active of the mailinglist into account.
+        """
+        ml = affirm_dataclass(Mailinglist, ml)
+        mrv = const.MailinglistRosterVisibility
+
+        if not ml.is_active:
+            return False
+        elif ml.roster_visibility == mrv.none:
+            return False
+        elif ml.roster_visibility == mrv.subscribable:
+            return (self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id)
+                    or ml.id in rs.user.moderator
+                    or self.is_relevant_admin(rs, mailinglist=ml))
+        elif ml.roster_visibility == mrv.viewers:
+            return (self.may_view(rs, ml)
+                    or self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id)
+                    or ml.id in rs.user.moderator
+                    or self.is_relevant_admin(rs, mailinglist=ml))
+        else:
+            raise RuntimeError
+
+    @access("ml")
+    def get_roster(self, rs: RequestState, mailinglist_id: int) -> Set[int]:
+        """Retrieve the roster of a given mailinglist."""
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        mailinglist = self.get_mailinglist(rs, mailinglist_id)
+
+        # Check if the user is privileged to view the roster list
+        if not self.may_view_roster(rs, mailinglist):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = ("SELECT persona_id FROM ml.subscription_states"
+                 " WHERE mailinglist_id = %s AND subscription_state = ANY(%s)")
+        params = [mailinglist_id, const.SubscriptionState.subscribing_states()]
+        return {entry["persona_id"] for entry in self.query_all(rs, query, params)}
+
+    @access("ml")
     def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
                                       ) -> Set[int]:
         """Retrieve all unsubscribed users who's unsubscriptions have no effect.
