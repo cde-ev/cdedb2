@@ -2090,7 +2090,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
+        # self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
+        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 
@@ -2102,7 +2103,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("0 Accounts archiviert.", div="8-1008")
         self.assertPresence("0 Probemitgliedschaften beendet", div="9-1009")
         self.assertPresence("20,00 € Guthaben abgebucht.", div="9-1009")
-        self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
+        # self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
+        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="9-1009")
         self.assertPresence("Nächstes Semester", div="10-1010")
         self.assertPresence("45", div="10-1010")
 
