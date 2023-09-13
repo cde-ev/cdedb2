@@ -1064,6 +1064,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})
         f = self.response.forms["createlastschriftform"]
+        f["donation"] = "8"
         f["iban"] = "DE12500105170648489890"
         self.submit(f)
         f = self.response.forms["generatetransactionform"]
@@ -1218,8 +1219,6 @@ class TestCdEFrontend(FrontendTest):
                       {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
         self.assertTitle("Neue Einzugsermächtigung")
-        # check default value
-        self.assertEqual(f["donation"].value, "20.00")
         f['persona_id'] = "DB-3-5"
         f['iban'] = "DE26370205000008068900"
         f['donation'] = "25"
