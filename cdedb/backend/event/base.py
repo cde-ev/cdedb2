@@ -292,6 +292,13 @@ class EventBaseBackend(EventLowLevelBackend):
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
+    def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
+        """Return True if the given shortname already exists for some event."""
+        shortname = affirm(str, shortname)
+        return bool(self.query_all(
+            rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
+
+    @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: Optional[bytes]) -> DefaultReturnCode:
         """Change or remove an event's minor form.
@@ -441,16 +448,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             ret: dict[int, OrgaToken] = {}
             for e in data:
-                ret[e['id']] = OrgaToken(
-                    id=e['id'],
-                    event_id=e['event_id'],
-                    title=e['title'],
-                    notes=e['notes'],
-                    ctime=e['ctime'],
-                    etime=e['etime'],
-                    rtime=e['rtime'],
-                    atime=e['atime'],
-                )
+                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):

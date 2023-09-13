@@ -72,7 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.models.droid import APIToken
+from cdedb.models.droid import APIToken, resolve_droid_name
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -462,7 +462,7 @@ class BackendTest(CdEDBTest):
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
-        self.logout()
+        self.logout(allow_anonymous=True)
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
@@ -1231,6 +1231,12 @@ class FrontendTest(BackendTest):
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
+
+    def fetch_orga_token(self) -> Tuple[int, str]:
+        new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
+        droid_name, secret = APIToken.parse_token_string(new_token)
+        droid_class, token_id = resolve_droid_name(droid_name)
+        return cast(int, token_id), secret
 
     def assertTitle(self, title: str, exact: bool = True) -> None:
         """

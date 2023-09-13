@@ -10,13 +10,12 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence, cast
+from typing import Collection, Optional, Sequence
 
 import lxml.etree
 import segno.helpers
 import webtest
 
-import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
@@ -403,7 +402,7 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin"}
+            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -1536,6 +1535,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Outside")
 
     @as_users("charly", "daniel", "rowena")
+    @prepsql("UPDATE core.personas SET birthday = date '2220-02-19' WHERE id = 4;")
     def test_register(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         # check participant info page for unregistered users
@@ -1556,11 +1556,15 @@ etc;anything else""", f['entries_2'].value)
         elif self.user_in('daniel'):
             self.assertPresence(surcharge)
             self.assertPresence(membership_fee)
-            self.assertPresence("19.02.1963")
+            self.assertPresence("19.02.2220")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertNonPresence("Eltern")
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
             self.assertNonPresence(membership_fee)
             self.assertPresence("26.08.932")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertNonPresence("Eltern")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
@@ -6254,36 +6258,29 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
-        new_token = OrgaToken(
-            id=cast(vtypes.ProtoID, -1),
-            event_id=cast(vtypes.ID, event_id),
-            title="New Token!",
-            notes=None,
-            ctime=now(),
-            etime=now().replace(year=3000),
-            rtime=None,
-            atime=None,
-        )
-        new_token_id, secret = self.event.create_orga_token(self.key, new_token)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
+                      "Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "New Token!"
+        f['etime'] = now().date().replace(year=3000)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
         orga_token = self.event.get_orga_token(self.key, new_token_id)
+
+        with self.switch_user("anonymous"):
+            self.get(
+                f'/event/event/{event_id}/droid/partial',
+                headers={
+                    orga_token.request_header_key:
+                        orga_token.get_token_string(secret),
+                },
+            )
+            droid_export = self.response.json
+
         self.get(f"/event/event/{event_id}/download/partial")
         orga_export = self.response.json
 
-        self.get("/")
-        self.logout()
-
-        self.get(
-            f'/event/event/{event_id}/droid/partial',
-            headers={
-                orga_token.request_header_key:
-                    orga_token.get_token_string(secret),
-            },
-        )
-        droid_export = self.response.json
-
         droid_export['timestamp'] = orga_export['timestamp']
-        droid_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
-        orga_export['event']['orga_tokens'][str(orga_token.id)]['atime'] = None
         self.assertEqual(orga_export, droid_export)
 
     @as_users("anton")

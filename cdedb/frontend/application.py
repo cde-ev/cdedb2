@@ -311,9 +311,8 @@ class Application(BaseApp):
                     n_("You reached the internal limit for user profile views. "
                        "This is a privacy feature to prevent users from cloning "
                        "the address database. Unfortunatetly, this may also yield "
-                       "some false positive restrictions. If you require extensive "
-                       "queries, you may query %s. Your limit will be reset in the "
-                       "next days.").format(self.conf['MANAGEMENT_ADDRESS']))
+                       "some false positive restrictions. Your limit will be "
+                       "reset in the next days."))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()

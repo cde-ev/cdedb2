@@ -248,7 +248,6 @@ def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
                          personas: CdEDBObjectMap) -> bool:
     """ Check if two participants are allowed to be assigned to the same
     lodgement based on their gender and gender preferences."""
-    # TODO special rules for children <= 12 years
     return (_gender_equality(personas[registration1['persona_id']]['gender'],
                              personas[registration2['persona_id']]['gender'])
             or (registration1['mixed_lodging']
