@@ -414,11 +414,14 @@ class EventLodgementMixin(EventBaseFrontend):
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
+        camping_mat_field_names = self._get_camping_mat_field_names(
+            rs.ambience['event'])
 
         wishes, _problems = detect_lodgement_wishes(
             registrations, personas, event, part_id)
         graph = create_lodgement_wishes_graph(
             rs, registrations, wishes, lodgements, lodgement_groups, event, personas,
+            camping_mat_field_names,
             filter_part_id=part_id, show_all=all_participants, cluster_part_id=part_id,
             cluster_by_lodgement=show_lodgements,
             cluster_by_lodgement_group=show_lodgement_groups,
