@@ -1462,6 +1462,7 @@ class TestMlFrontend(FrontendTest):
         client.get_held_messages.return_value = messages[2:]
         client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
+        f['reason'] = 'naughty joke'
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
@@ -1482,7 +1483,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'reject', comment='naughty joke'),
+             umcall(3, 'discard', comment=None)])
 
         self.traverse("Log")
         self.assertPresence("Nachricht akzeptiert", div="1-1001")
@@ -1530,7 +1533,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'accept'), umcall(3, 'accept')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'accept', comment=None),
+             umcall(3, 'accept', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
@@ -1567,7 +1572,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'discard'), umcall(2, 'discard'), umcall(3, 'discard')])
+            [umcall(1, 'discard', comment=None),
+             umcall(2, 'discard', comment=None),
+             umcall(3, 'discard', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")

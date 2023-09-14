@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-08-31 20:00+0200\n"
-"PO-Revision-Date: 2020-12-06 11:30+0100\n"
+"POT-Creation-Date: 2023-08-31 21:48+0200\n"
+"PO-Revision-Date: 2023-08-31 21:51+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
@@ -6781,25 +6781,27 @@ msgstr "Mailman-Anfrage wird im Entwicklungs- bzw. Offline-Modus übersprungen."
 msgid "List unavailable."
 msgstr "Mailingliste nicht verfügbar."
 
-#: cdedb/frontend/ml/__init__.py:60
+#: cdedb/frontend/ml/__init__.py:60 cdedb/frontend/ml/__init__.py:61
 msgid "Message unavailable."
 msgstr "Nachricht nicht verfügbar."
 
-#: cdedb/frontend/ml/__init__.py:76
+#: cdedb/frontend/ml/__init__.py:76 cdedb/frontend/ml/__init__.py:77
 #, python-format
 msgid "%(count)s messages moderated."
 msgstr "%(count)s Nachrichten moderiert."
 
-#: cdedb/frontend/ml/__init__.py:79 cdedb/frontend/ml/__init__.py:82
+#: cdedb/frontend/ml/__init__.py:79 cdedb/frontend/ml/__init__.py:80
+#: cdedb/frontend/ml/__init__.py:82 cdedb/frontend/ml/__init__.py:83
 #, python-format
 msgid "%(count)s messages not moderated."
 msgstr "%(count)s Nachrichten nicht moderiert."
 
-#: cdedb/frontend/ml/__init__.py:98 cdedb/frontend/ml/__init__.py:114
+#: cdedb/frontend/ml/__init__.py:98 cdedb/frontend/ml/__init__.py:99
+#: cdedb/frontend/ml/__init__.py:114 cdedb/frontend/ml/__init__.py:115
 msgid "Invalid moderation action."
 msgstr "Ungültige Moderationsaktion."
 
-#: cdedb/frontend/ml/__init__.py:130
+#: cdedb/frontend/ml/__init__.py:130 cdedb/frontend/ml/__init__.py:131
 msgid "Could not connect."
 msgstr "Verbindungsfehler."
 
@@ -12014,6 +12016,8 @@ msgstr "Genehmigen"
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:219
 #: cdedb/frontend/templates/web/ml/management.tmpl:121
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:71
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:137
 msgid "Reject"
 msgstr "Ablehnen"
 
@@ -12033,6 +12037,7 @@ msgstr "Aktualisieren"
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:74
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:86
 #: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:36
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:134
 #: cdedb/i18n_additional.py:368 cdedb/i18n_additional.py:372
 #: cdedb/i18n_additional.py:373 cdedb/i18n_additional.py:377
 #: cdedb/i18n_additional.py:383 cdedb/i18n_additional.py:384
@@ -17974,6 +17979,7 @@ msgstr "Abonnement-Anfragen für diese Mailingliste."
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:120
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:66
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:69
 msgid "Accept"
 msgstr "Genehmigen"
 
@@ -18080,20 +18086,32 @@ msgid "Discard All"
 msgstr "Alle Verwerfen"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:65
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:66
 msgid "Whitelist_[[verb]]"
 msgstr "Whitelisten"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:68
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
 msgid "Discard"
 msgstr "Verwerfen"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:77
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:87
 msgid "Message details"
 msgstr "Nachrichtendetails"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:84
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:94
 msgid "No held messages."
 msgstr "Keine zurückgehaltenen Nachrichten."
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:100
+msgid "Reject with cause ..."
+msgstr "Begründet Ablehnen ..."
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:127
+msgid "Rejection reason"
+msgstr "Ablehnungsgrund"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:25
 #, python-format
