@@ -86,6 +86,16 @@
                                 —
                             {% endif %}
                         </dd>
+                        <dt title="{% trans %}Camping mat field{% endtrans %}">
+                            {% trans %}Camping mat field{% endtrans %}
+                        </dt>
+                        <dd>
+                            {% if part['camping_mat_field'] %}
+                                {{ ambience['event']['fields'][part['camping_mat_field']]['field_name'] }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
                     </dl>
 
                     <dl class="dl-horizontal col-md-6">
@@ -107,6 +117,7 @@
                             <th>{% trans %}Course Choices{% endtrans %}</th>
                             <th>{% trans %}Req. Choices{% endtrans %}</th>
                             <th>{% trans %}Sortkey{% endtrans %}</th>
+                            <th>{% trans %}Course Room Field{% endtrans %}</th>
                             {% if ambience['event']['track_groups'] %}
                                 <th>{% trans %}Track Groups{% endtrans %}</th>
                             {% endif %}
@@ -120,6 +131,13 @@
                                 <td>{{ track['num_choices'] }}</td>
                                 <td>{{ track['min_choices'] }}</td>
                                 <td>{{ track['sortkey'] }}</td>
+                                <td>
+                                    {% if track['course_room_field'] %}
+                                        {{ ambience['event']['fields'][track['course_room_field']]['field_name'] }}
+                                    {% else %}
+                                        —
+                            {% endif %}
+                                </td>
                                 {% if ambience['event']['track_groups'] %}
                                 <td id="track{{ track_id }}_trackgroups">
                                     {% for track_group_id, track_group in track['track_groups']|keydictsort(EntitySorter.course_choice_object) %}

@@ -150,14 +150,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                                 ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
-        typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
         current_donation = None
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
             current_donation = persona["donation"] or None
         return self.render(rs, "lastschrift/lastschrift_create", {
-            "min_donation": min_donation, "typical_donation": typical_donation,
-            "current_donation": current_donation,
+            "min_donation": min_donation, "current_donation": current_donation,
         })
 
     @access("finance_admin", modi={"POST"})
@@ -169,6 +167,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, vtypes.Lastschrift, data, creation=True)
+        if rs.has_validation_errors():
+            return self.lastschrift_create_form(rs, persona_id)
         if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
             rs.add_validation_error(("persona_id", ValueError(
                 n_("Persona must have cde realm."))))

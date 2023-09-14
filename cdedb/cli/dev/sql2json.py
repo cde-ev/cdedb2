@@ -67,7 +67,8 @@ implicit_columns = {
 }
 
 
-def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str, Any]]]:
+def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False
+             ) -> Dict[str, List[Dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
     conn = connect(config, secrets)
     rs = fake_rs(conn)
@@ -98,7 +99,8 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
         entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
-        print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        if not silent:
+            print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved

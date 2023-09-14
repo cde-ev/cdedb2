@@ -439,7 +439,7 @@ class MlBackend(AbstractBackend):
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
         with Atomizer(rs):
@@ -473,7 +473,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM ml.moderators"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
@@ -554,7 +554,8 @@ class MlBackend(AbstractBackend):
 
             if not (new_type.is_relevant_admin(rs.user)
                     and old_type.is_relevant_admin(rs.user)):
-                raise PrivilegeError("Not privileged to make this change.")
+                raise PrivilegeError(n_("Not privileged to change to this mailinglist"
+                                        " type for this mailinglist."))
 
             # check that the type change preserves the data integrity
             ml = self.get_mailinglist(rs, mailinglist_id)
@@ -648,7 +649,8 @@ class MlBackend(AbstractBackend):
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
         if not data.is_relevant_admin(rs.user):
-            raise PrivilegeError("Not privileged to create mailinglist of this type.")
+            raise PrivilegeError(n_(
+                "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
             mdata = data.to_database()
             # The address is a readonly property, but we want to save it into the
@@ -831,7 +833,7 @@ class MlBackend(AbstractBackend):
                            or self.may_manage(rs, datum['mailinglist_id'],
                                               allow_restricted=False)
                            for datum in set_data):
-                    raise PrivilegeError("Not privileged.")
+                    raise PrivilegeError(n_("Not privileged."))
 
                 keys = ("subscription_state", "mailinglist_id", "persona_id")
                 placeholders = ", ".join(("(%s, %s, %s)",) * len(set_data))
@@ -867,7 +869,7 @@ class MlBackend(AbstractBackend):
             if not all(datum['persona_id'] == rs.user.persona_id
                        or self.may_manage(rs, datum['mailinglist_id'])
                        for datum in data):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(n_("Not privileged."))
 
             # noinspection SqlWithoutWhere
             query = "DELETE FROM ml.subscription_states"

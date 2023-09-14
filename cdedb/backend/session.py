@@ -212,7 +212,7 @@ class SessionBackend:
 
                 data = dict(data)
                 secret_hash = data.pop('secret_hash')
-                token = droid_class(**data)
+                token = droid_class.from_database(data)
 
                 if secret_hash is None or token.rtime:
                     self.logger.warning(

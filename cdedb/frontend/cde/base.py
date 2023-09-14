@@ -188,6 +188,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.ignore_validation_errors()
             return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
+        # our query facility does not allow + signs, thus special-case it here
+        phone = rs.values['phone'] = rs.request.values.get('phone')
+        if phone:
+            # remove leading zeroes - in database, numbers are stored starting with '+'
+            phone = ("".join(char for char in phone if char in '0123456789')
+                     .removeprefix("0").removeprefix("0"))
+            if phone:
+                defaults['qval_telephone,mobile'] = phone
+            else:
+                rs.append_validation_error(
+                        ('phone', ValueError(n_("Wrong formatting."))))
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
@@ -265,7 +276,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """
         current = tuple(rs.retrieve_validation_errors())
         rs.replace_validation_errors(
-            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
+            [('qval_' + k, v) if k != 'phone' else (k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
@@ -384,9 +395,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             "3": str(const.Genders.not_specified.value),
             "m": str(const.Genders.male.value),
             "w": str(const.Genders.female.value),
+            "f": str(const.Genders.female.value),
             "d": str(const.Genders.other.value),
         }
-        gender = persona.get('gender') or "3"
+        gender = (persona.get('gender') or "3")[0].lower()
         persona['gender'] = gender_convert.get(
             gender.strip(), str(const.Genders.not_specified.value))
         del persona['event']
@@ -397,7 +409,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_ml_realm': True,
             'is_assembly_realm': True,
             'is_member': True,
-            'display_name': persona['given_names'],
+            'display_name': persona['display_name'] or persona['given_names'],
             'trial_member': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
@@ -621,10 +633,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs)
 
         fields = (
-            'event', 'course', 'family_name', 'given_names', 'title',
+            'event', 'course', 'family_name', 'given_names', 'display_name', 'title',
             'name_supplement', 'birth_name', 'gender', 'address_supplement',
             'address', 'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'username', 'birthday')
+            'mobile', 'username', 'birthday',
+        )
         reader = csv.DictReader(
             accountlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []

@@ -101,9 +101,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields for institutions of events
-INSTITUTION_FIELDS = ("id", "title", "shortname")
-
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
                      "tempus", "participant_info")
@@ -116,12 +113,12 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
-    "camping_mat_field", "course_room_field", "field_definition_notes",
+    "field_definition_notes",
 )
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "waitlist_field")
+                     "part_end", "waitlist_field", "camping_mat_field")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
@@ -131,7 +128,7 @@ TRACK_GROUP_FIELDS = (
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "min_choices", "sortkey")
+                       "min_choices", "sortkey", "course_room_field")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
@@ -140,7 +137,7 @@ FIELD_DEFINITION_FIELDS = (
 )
 
 #: Fields of a conditional event fee.
-EVENT_FEE_FIELDS = ("id", "event_id", "title", "amount", "condition", "notes")
+EVENT_FEE_FIELDS = ("id", "event_id", "kind", "title", "amount", "condition", "notes")
 
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
@@ -240,9 +237,9 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
     'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat_field': (
+    'camping_mat': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
 }
 

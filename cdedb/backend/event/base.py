@@ -210,6 +210,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
                 ret[anid]['fees'] = {}
+                ret[anid]['institution'] =\
+                    const.PastInstitutions(ret[anid]['institution'])
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")
@@ -268,6 +270,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
             for d in fee_data:
+                d['kind'] = const.EventFeeType(d['kind'])
                 ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
@@ -287,6 +290,13 @@ class EventBaseBackend(EventLowLevelBackend):
     class _GetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
+
+    @access("event")
+    def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
+        """Return True if the given shortname already exists for some event."""
+        shortname = affirm(str, shortname)
+        return bool(self.query_all(
+            rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
@@ -438,16 +448,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             ret: dict[int, OrgaToken] = {}
             for e in data:
-                ret[e['id']] = OrgaToken(
-                    id=e['id'],
-                    event_id=e['event_id'],
-                    title=e['title'],
-                    notes=e['notes'],
-                    ctime=e['ctime'],
-                    etime=e['etime'],
-                    rtime=e['rtime'],
-                    atime=e['atime'],
-                )
+                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):
@@ -675,8 +676,7 @@ class EventBaseBackend(EventLowLevelBackend):
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
-                    edata[f] for f in ("lodge_field", "camping_mat_field",
-                                       "course_room_field") if f in edata
+                    edata[f] for f in ("lodge_field",) if f in edata
                 )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
@@ -686,14 +686,6 @@ class EventBaseBackend(EventLowLevelBackend):
                         self._validate_special_event_field(
                             rs, data['id'], "lodge_field",
                             indirect_data[edata['lodge_field']])
-                    if edata.get('camping_mat_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "camping_mat_field",
-                            indirect_data[edata['camping_mat_field']])
-                    if edata.get('course_room_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "course_room_field",
-                            indirect_data[edata['course_room_field']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'], change_note=change_note)
@@ -1364,13 +1356,16 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['id']
             del part['event_id']
             del part['part_groups']
-            for f in ('waitlist_field',):
+            for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
                     part[f] = event['fields'][part[f]]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
                 del track['track_groups']
+                for f in ('course_room_field',):
+                    if track[f]:
+                        track[f] = event['fields'][track[f]]['field_name']
         for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']
@@ -1381,7 +1376,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del tg['event_id']
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
             tg['track_ids'] = xsorted(tg['track_ids'])
-        for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
+        for f in ('lodge_field',):
             if event[f]:
                 event[f] = event['fields'][event[f]]['field_name']
         # Fields and questionnaire

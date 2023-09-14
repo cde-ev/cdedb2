@@ -74,8 +74,9 @@
                 {% endif %}
 
                 {% trans select1=select1,
-                        select2=util.input_select(name="course_id", entries=course_entries, nulloption=nbsp,
-                                aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
+                        select2=util.input_select(name="course_id", entries=course_entries,
+                                nulloption=gettext("— no Course —"), aclass="form-control input-slim input-sm",
+                                arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
                                 arialabel=gettext("Filter: Course Operator"), sort=True)

@@ -352,9 +352,10 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     paid = n_("Paid"), 1
     participant = n_("Participants")
     minors = n_("All minors"), 1
-    u18 = n_("U18"), 1
-    u16 = n_("U16"), 1
-    u14 = n_("U14"), 1
+    u18 = n_("U18"), 2
+    u16 = n_("U16"), 2
+    u14 = n_("U14"), 2
+    u10 = n_("U10"), 1
     checked_in = n_("Checked-In"), 1
     not_checked_in = n_("Not Checked-In"), 1
     orgas = n_("Orgas"), 1
@@ -395,6 +396,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return _is_participant(part) and part['age_class'] == AgeClasses.u16
         elif self == self.u14:
             return _is_participant(part) and part['age_class'] == AgeClasses.u14
+        elif self == self.u10:
+            return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
             return _is_participant(part) and reg['checkin']
         elif self == self.not_checked_in:
@@ -451,7 +454,9 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.minors:
             return (
                 ['persona.birthday'],
-                [_participant_constraint(part), _age_constraint(part, 18)],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 18, 10)],
                 []
             )
         elif self == self.u18:
@@ -477,7 +482,16 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 ['persona.birthday'],
                 [
                     _participant_constraint(part),
-                    _age_constraint(part, 14),
+                    _age_constraint(part, 14, 10),
+                ],
+                []
+            )
+        elif self == self.u10:
+            return (
+                ['persona.birthday'],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 10),
                 ],
                 []
             )
@@ -542,7 +556,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [f"part{part['id']}.status"],
                 [
                     _involved_constraint(part),
-                    _age_constraint(part, 18),
+                    _age_constraint(part, 18, 10),
                     ('reg.parental_agreement', QueryOperators.equal, False),
                 ],
                 []

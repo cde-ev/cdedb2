@@ -1167,12 +1167,11 @@ def _api_token_string(
     Split the token into the droid name and the secret.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if m := models_droid.APIToken.token_string_pattern.fullmatch(val):
-        droid_name = m.group(1)
-        secret = m.group(2)
+    try:
+        droid_name, secret = models_droid.APIToken.parse_token_string(val)
         return APITokenString((droid_name, secret))
-    raise ValidationSummary(ValueError(
-        argname, n_("Wrong format for api token.")))
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
 
 
 @_add_typed_validator
@@ -1184,7 +1183,7 @@ def _orga_token(
 
     mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
     val = _examine_dictionary_fields(
-        val, mandatory, optional, argname=argname, **kwargs)
+        val, mandatory, optional, **kwargs)
 
     errs = ValidationSummary()
 
@@ -2245,37 +2244,10 @@ def _meta_info(
     return MetaInfo(val)
 
 
-INSTITUTION_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-}
-
-
-@_add_typed_validator
-def _institution(
-    val: Any, argname: str = "institution", *,
-    creation: bool = False, **kwargs: Any
-) -> Institution:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**INSTITUTION_COMMON_FIELDS}
-    return Institution(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Shortname,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
 }
@@ -2311,7 +2283,7 @@ def _past_event(
 
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,
@@ -2336,8 +2308,6 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field': Optional[ID],
-    'camping_mat_field': Optional[ID],
-    'course_room_field': Optional[ID],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -2472,6 +2442,7 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
+    'camping_mat_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
@@ -2596,6 +2567,7 @@ EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
+    'course_room_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 
@@ -2788,6 +2760,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
     "condition": EventFeeCondition,
+    "kind": const.EventFeeType,
 }
 
 
@@ -3535,7 +3508,8 @@ def _serialized_event(
                           'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
                           'pos': int}),
         'event.event_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
+            _empty_dict, {'id': ID, 'event_id': ID,
+                          'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
                           'condition': str, 'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
