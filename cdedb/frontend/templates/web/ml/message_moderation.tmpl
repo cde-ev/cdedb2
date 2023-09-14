@@ -97,10 +97,10 @@
     <script nonce="{{ csp_nonce }}">
         function mlmod_bind_modal(request_id) {
             const button = `
-               {{ util.input_submit(label=gettext('Reject with cause'), icon='reply', value='none',
+               {{ util.input_submit(label=gettext('Reject with cause ...'), icon='reply', value='none',
                                     name="action", aclass=("btn btn-sm btn-warning"),
-                                    anid=('mlmod-button-cause-XXX=ID=XXX')) }}
-            `.replace(/XXX=ID=XXX/g, request_id);
+                                    anid=('mlmod-button-cause-${ request_id }')) }}
+            `;
             const hidden_input = `
                 <input type="hidden" name="reason" value="" id="mlmod-hidden-reason-${ request_id }"/>
             `
@@ -132,16 +132,16 @@
                 </div>
                 <div class="modal-footer">
                     {{ util.input_submit(label=gettext('Cancel'), icon='times', value='none',
-                                         name="action", aclass=("btn btn-m btn-neutral"),
-                                         anid=('mlmod-modal-cancel-XXX=ID=XXX')) }}
+                                         name="action", aclass=("btn btn-default"),
+                                         anid=('mlmod-modal-cancel-${ request_id }')) }}
                     {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
-                                         name="action", aclass=("btn btn-m btn-warning"),
-                                         anid=('mlmod-modal-reject-XXX=ID=XXX')) }}
+                                         name="action", aclass=("btn btn-warning"),
+                                         anid=('mlmod-modal-reject-${ request_id }')) }}
                 </div>
             </div>
         </div>
     </div>
-            `.replace(/XXX=ID=XXX/g, request_id);
+            `;
             if (!$("#mlmod-modal-" + request_id).length) {
                 $("body").append(modal);
                 $("#mlmod-modal-reject-" + request_id).on("click", function() {
@@ -150,6 +150,7 @@
                     $("#mlmod-button-reject-" + request_id).click();
                 });
                 $("#mlmod-modal-cancel-" + request_id).on("click", function() {
+                    $("#mlmod-textarea-reason-" + request_id).val("");
                     $("#mlmod-modal-" + request_id).modal("hide");
                 });
                 $("#mlmod-textarea-reason-" + request_id).on("keydown", function(event) {

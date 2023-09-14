@@ -18106,8 +18106,8 @@ msgid "No held messages."
 msgstr "Keine zurückgehaltenen Nachrichten."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:100
-msgid "Reject with cause"
-msgstr "Begründet Ablehnen"
+msgid "Reject with cause ..."
+msgstr "Begründet Ablehnen ..."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:127
 msgid "Rejection reason"

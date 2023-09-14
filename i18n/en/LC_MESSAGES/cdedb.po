@@ -15829,7 +15829,7 @@ msgid "No held messages."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:100
-msgid "Reject with cause"
+msgid "Reject with cause ..."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:127
