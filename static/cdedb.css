@@ -829,18 +829,19 @@ tr.drow-delete>td, tr.drow-delete1>td {
     border-color: #245782;
 }
 .prefvote_stage.positive {
-    background: #e9ede9;
-    background: -webkit-linear-gradient(top, #eef8ee, #e5efe5);
-    background: -moz-linear-gradient(top, #eef8ee, #e5efe5);
-    background: -o-linear-gradient(top, #eef8ee, #e5efe5);
-    background: linear-gradient(top, #eef8ee, #e5efe5);
+    background: #e9ffe9;
+    background: -webkit-linear-gradient(top, #eeffee, #e5f8e5);
+    background: -moz-linear-gradient(top, #eeffee, #e5f8e5);
+    background: -o-linear-gradient(top, #eeffee, #e5f8e5);
+    background: linear-gradient(top, #eeffee, #e5f8e5);
 }
 .prefvote_stage.negative {
-    background: #ede9e9;
-    background: -webkit-linear-gradient(top, #f8eeee, #efe5e5);
-    background: -moz-linear-gradient(top, #f8eeee, #efe5e5);
-    background: -o-linear-gradient(top, #f8eeee, #efe5e5);
-    background: linear-gradient(top, #f8eeee, #efe5e5);
+    background: #ffe9e9;
+    background: -webkit-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: -moz-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: -o-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: linear-gradient(top, #ffeeee, #f8e5e5);
+}
 }
 .prefvote_stage.neutral .label {
     margin-right: 10px;
