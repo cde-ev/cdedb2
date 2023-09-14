@@ -676,6 +676,63 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly")
     @assembly_guard
+    def reschedule_ballots_form(self, rs: RequestState, assembly_id: int) -> Response:
+        """Give an online summary of all tallied ballots of an assembly."""
+        if not (grouped := self._group_ballots(rs, assembly_id)):
+            # some ballots updated state
+            return self.redirect(rs, "assembly/reschedule_ballots")
+
+        config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
+        return self.render(rs, "ballot/reschedule_ballots", {
+            'ballots': grouped.upcoming, 'config_grouped': config_grouped})
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("ballot_ids","vote_begin", "vote_end", "vote_extension_end")
+    def reschedule_ballots(
+            self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
+            vote_begin: Optional[datetime.datetime],
+            vote_end: Optional[datetime.datetime],
+            vote_extension_end: Optional[datetime.datetime]) -> Response:
+        if rs.has_validation_errors():
+            return self.reschedule_ballots_form(rs, assembly_id)
+
+        code = 1
+        if self.assemblyproxy.is_any_ballot_locked(rs, ballot_ids):
+            rs.notify("error",
+                      n_("Modification of locked ballots prevented."))
+            return self.redirect(rs, "assembly/reschedule_ballots")
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
+        # Dummy validation for generic ballot should suffice
+        data = {
+            'vote_begin': vote_begin,
+            'vote_end': vote_end,
+            'vote_extension_end': vote_extension_end,
+            # placeholders required for validation
+            'id': 1,
+            'abs_quorum': 1 if vote_extension_end else 0,
+            'rel_quorum': 0,
+        }
+        data = check(rs, vtypes.Ballot, data)
+        if rs.has_validation_errors():
+            return self.reschedule_ballots_form(rs, assembly_id)
+        assert data is not None
+
+        for ballot_id in ballot_ids:
+            data.update({
+                'id': ballot_id,
+                'abs_quorum': ballots[ballot_id]['abs_quorum'],
+                'rel_quorum': ballots[ballot_id]['rel_quorum'],
+            })
+            if not ballots[ballot_id]['quorum']:
+                data['vote_extension_end'] = None
+            code *= self.assemblyproxy.set_ballot(rs, data)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "assembly/summary_ballots")
+
+    @access("assembly")
+    @assembly_guard
     def comment_concluded_ballot_form(self, rs: RequestState, assembly_id: int,
                                       ballot_id: int) -> Response:
         if not rs.ambience['ballot']['is_tallied']:

@@ -4269,24 +4269,14 @@ def _ballot(
         ValueError("rel_quorum", quorum_msg),
     ]
 
-    if (quorum is None) == ('vote_extension_end' in val):
-        # only one of quorum and extension end is given
-        if quorum is None:
-            errs.extend(quorum_errors)
-        else:
-            errs.append(vote_extension_error)
-        # at least one error occured
-        raise errs
-
-    # TODO this and the above could be merged
-    if 'vote_extension_end' in val:
-        # quorum can not be None at this point
-        if val['vote_extension_end'] is None and quorum:
-            # No extension end, but quorum
-            errs.append(vote_extension_error)
-        elif val['vote_extension_end'] and not quorum:
-            # No quorum, but extension end
-            errs.extend(quorum_errors)
+    if ('vote_extension_end' in val and quorum is None
+            or val.get('vote_extension_end') and not quorum):
+        # Quorum key missing or trivial quorum, but non-empty extension end
+        errs.extend(quorum_errors)
+    elif (quorum is not None and 'vote_extension_end' not in val
+            or quorum and not val.get('vote_extension_end')):
+        # Extension end key missing or empty extension end, but non-trivial quorum
+        errs.append(vote_extension_error)
 
     if errs:
         raise errs

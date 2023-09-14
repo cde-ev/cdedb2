@@ -20,6 +20,8 @@
         <div class="p">
             {{ util.href(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), aclass="btn btn-success btn-sm",
                     icon="plus") }}
+            {{ util.href(cdedblink("assembly/reschedule_ballots"), gettext("Reschedule Ballots"), aclass="btn btn-warning btn-sm",
+                    icon="calendar-alt") }}
         </div>
     {% endif %}
     {% for heading, sample, show_state in ((n_("Upcoming Ballots"), grouped_ballots.upcoming, False),
