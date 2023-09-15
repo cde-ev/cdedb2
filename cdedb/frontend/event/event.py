@@ -136,8 +136,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
-        data['id'] = event_id
-        data = check(rs, vtypes.Event, data)
+        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event']['shortname']
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
@@ -150,7 +149,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.change_event_form(rs, event_id)
         assert data is not None
 
-        code = self.eventproxy.set_event(rs, data)
+        code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
@@ -247,8 +246,8 @@ class EventEventMixin(EventBaseFrontend):
                    else n_("Participant mailinglist created."))
             rs.notify_return_code(code, success=msg)
             if code and orgalist:
-                data = {'id': event_id, 'orga_address': ml_data.address}
-                self.eventproxy.set_event(rs, data)
+                self.eventproxy.set_event(
+                    rs, event_id, {'orga_address': ml_data.address})
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_data.address})
@@ -323,11 +322,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("This part can not be deleted."))
             return self.part_summary(rs, event_id)
 
-        event = {
-            'id': event_id,
-            'parts': {part_id: None},
-        }
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': {part_id: None}})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -380,8 +375,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
-        event = {'id': event_id, 'parts': {-1: data}}
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
         if code:
             new_fee = {
                 'kind': const.EventFeeType.common,
@@ -512,11 +506,7 @@ class EventEventMixin(EventBaseFrontend):
                                 'min_choices': track['min_choices'],
                             })
 
-        event = {
-            'id': event_id,
-            'parts': part_data,
-        }
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': part_data})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -961,7 +951,7 @@ class EventEventMixin(EventBaseFrontend):
                 code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
                 rs.notify_return_code(code, success=n_("Orga mailinglist created."))
             code = self.eventproxy.set_event(
-                rs, {"id": new_id, "orga_address": orga_ml_data.address},
+                rs, new_id, {"orga_address": orga_ml_data.address},
                 change_note="Mailadresse der Orgas gesetzt.")
             rs.notify_return_code(code)
         if create_participant_list:

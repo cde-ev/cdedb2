@@ -2515,8 +2515,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("berta", "emilia")
     def test_lodgement_wish_detection(self) -> None:
         with self.switch_user("garcia"):
-            self.event.set_event(self.key, {
-                'id': 1,
+            self.event.set_event(self.key, 1, {
                 'is_participant_list_visible': True,
                 'use_additional_questionnaire': True,
             })
@@ -3014,7 +3013,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         regisration2_id = 8
         # Disable course choices
         edata = {
-            'id': event_id,
             'parts': {
                 event['tracks'][track_id]['part_id']: {
                     'tracks': {
@@ -3026,7 +3024,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 }
             }
         }
-        self.event.set_event(self.key, edata)
+        self.event.set_event(self.key, event_id, edata)
         # Make Daniel a course instructor.
         rdata = {
             'id': registration_id,
@@ -5411,8 +5409,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event = self.event.get_event(self.key, 1)
         self.event.set_event(
             self.key,
+            1,
             {
-                'id': 1,
                 'fields': {id_: None for id_ in event['fields'] if id_ > 1000},
             })
 
@@ -5636,7 +5634,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_questionnaire_csrf(self) -> None:
-        self.event.set_event(self.key, {'id': 1, 'use_additional_questionnaire': True})
+        self.event.set_event(self.key, 1, {'use_additional_questionnaire': True})
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
         f = self.response.forms['questionnaireform']
         f['fields.lodge'] = "Test"
@@ -6199,9 +6197,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("emilia")
     def test_ccs_cancelled_courses(self) -> None:
         self.event.set_event(
-            self.key, {'id': 4, 'is_course_state_visible': True,
-                       'is_participant_list_visible': True,
-                       'is_course_assignment_visible': True})
+            self.key, 4, {'is_course_state_visible': True,
+                          'is_participant_list_visible': True,
+                          'is_course_assignment_visible': True})
         course_id = 9
         self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
 
