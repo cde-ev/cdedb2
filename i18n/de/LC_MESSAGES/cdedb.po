@@ -258,6 +258,30 @@ msgstr "Keine Zugriffsrechte zum Ändern der Versammlung."
 msgid "Assembly already concluded."
 msgstr "Die Versammlung ist bereits beendet."
 
+msgid "Roster"
+msgstr "Abonnenten"
+
+msgid "%(title)s – Roster"
+msgstr "%(title)s – Abonnenten"
+
+msgid "Roster Visibility"
+msgstr "Abonnentensichtbarkeit"
+
+msgid "Currently, these people are subscribed to this mailinglist:"
+msgstr "Aktuell sind diese Personen Abonnenten dieser Mailingliste:"
+
+msgid "The Roster is currently only visible to Moderators and Admins."
+msgstr "Die Abonnenten sind aktuell nur für Moderatoren und Admins sichtbar."
+
+msgid "MailinglistRosterVisibility.none"
+msgstr "Niemand"
+
+msgid "MailinglistRosterVisibility.subscribable"
+msgstr "Abonnementberechtigte"
+
+msgid "MailinglistRosterVisibility.viewers"
+msgstr "Zielgruppe"
+
 #: cdedb/backend/assembly.py:660 cdedb/backend/assembly.py:661
 msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""

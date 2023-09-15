@@ -15969,6 +15969,15 @@ msgstr "Members (Opt-out), Public (Opt-in)"
 msgid "MailinglistTypes.cdelokal"
 msgstr "CdElokal ([Moderated] Opt-in)"
 
+msgid "MailinglistRosterVisibility.none"
+msgstr "None"
+
+msgid "MailinglistRosterVisibility.subscribable"
+msgstr "Subscribability"
+
+msgid "MailinglistRosterVisibility.viewers"
+msgstr "Viewability"
+
 #: cdedb/i18n_additional.py:315
 msgid "EventFeeType.common"
 msgstr "Regular Fee"
