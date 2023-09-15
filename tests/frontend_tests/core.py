@@ -716,6 +716,30 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
 
+    @as_users("daniel")
+    def test_changedata_lastschrift(self) -> None:
+        # create a new lastschrift
+        with self.switch_user("anton"):
+            self.admin_view_profile("daniel")
+            self.assertNonPresence("Lastschrift")
+            self.traverse("Neue Einzugsermächtigung …", "Anlegen")
+            f = self.response.forms["createlastschriftform"]
+            f["donation"] = "25"
+            f["iban"] = "DE26370205000008068900"
+            self.submit(f)
+        # check that the lastschrift is visible
+        self.traverse("Meine Daten")
+        self.assertTitle("Daniel Dino")
+        self.assertPresence("Einzugsermächtigung", div="lastschrift")
+        # check changing is possible
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        # Invalid postal code
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
     @as_users("vera")
     def test_automatic_country(self) -> None:
         self.admin_view_profile('annika')

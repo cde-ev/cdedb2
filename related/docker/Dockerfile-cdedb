@@ -67,7 +67,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-freezegun \
     flake8 \
     isort \
-    pylint \
     wget \
     unzip \
     \
@@ -112,6 +111,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     segno==1.5.2 \
     \
     && python3 -m pip --no-cache-dir install \
+    pylint==2.7.2 \
     mypy==1.4.0 \
     types-werkzeug \
     types-pytz \

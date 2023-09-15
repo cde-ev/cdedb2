@@ -447,16 +447,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             ret: dict[int, OrgaToken] = {}
             for e in data:
-                ret[e['id']] = OrgaToken(
-                    id=e['id'],
-                    event_id=e['event_id'],
-                    title=e['title'],
-                    notes=e['notes'],
-                    ctime=e['ctime'],
-                    etime=e['etime'],
-                    rtime=e['rtime'],
-                    atime=e['atime'],
-                )
+                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):

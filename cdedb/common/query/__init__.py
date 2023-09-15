@@ -327,6 +327,8 @@ _QUERY_VIEWS = {
             ON personas.id = participants.persona_id
         """),
     QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.core_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.all_core_users: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.quick_registration:
         """core.personas
         INNER JOIN event.registrations
