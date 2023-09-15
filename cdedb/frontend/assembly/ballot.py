@@ -688,7 +688,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("ballot_ids","vote_begin", "vote_end", "vote_extension_end")
+    @REQUESTdata("ballot_ids", "vote_begin", "vote_end", "vote_extension_end")
     def reschedule_ballots(
             self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
             vote_begin: Optional[datetime.datetime],
@@ -705,7 +705,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Dummy validation for generic ballot should suffice
-        data = {
+        dummy_data = {
             'vote_begin': vote_begin,
             'vote_end': vote_end,
             'vote_extension_end': vote_extension_end,
@@ -714,12 +714,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             'abs_quorum': 1 if vote_extension_end else 0,
             'rel_quorum': 0,
         }
-        data = check(rs, vtypes.Ballot, data)
+        dummy_data = check(rs, vtypes.Ballot, dummy_data)
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
-        assert data is not None
+        assert dummy_data is not None
 
         for ballot_id in ballot_ids:
+            data = dummy_data.copy()
             data.update({
                 'id': ballot_id,
                 'abs_quorum': ballots[ballot_id]['abs_quorum'],

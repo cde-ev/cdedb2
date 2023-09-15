@@ -27,7 +27,7 @@
             {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local") }}
             {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local") }}
             {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local",
-                info=gettext("WIll only be applied to ballots with quorum.")) }}
+                info=gettext("Will only be applied to ballots with quorum.")) }}
             {{ util.form_input_submit(cancellink=cdedblink("assembly/list_ballots")) }}
         </form>
     {% else %}
