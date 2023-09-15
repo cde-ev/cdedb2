@@ -19,6 +19,15 @@
                             'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['mailinglist'].roster_visibility == enums["MailinglistRosterVisibility"].none %}
+        {% call util.notification('info') %}
+            {% trans %}The Roster is currently only visible to Moderators and Admins.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <p>
         {% trans %}Currently, these people are subscribed to this mailinglist:{% endtrans %}

@@ -1042,29 +1042,28 @@ class MlBackend(AbstractBackend):
     def may_view_roster(self, rs: RequestState, ml: Mailinglist) -> bool:
         """Determine if the user is privileged to view the roster of this mailinglist.
 
-        This is needed to determine the visibility of "roster" in the navbar. Therefor,
+        This is needed to determine the visibility of "roster" in the navbar. Therefore,
         we take the is_active of the mailinglist into account.
         """
         ml = affirm_dataclass(Mailinglist, ml)
         mrv = const.MailinglistRosterVisibility
+        assert rs.user.persona_id is not None
 
         if not ml.is_active:
             return False
+        elif self.may_manage(rs, ml.id):
+            return True
         elif ml.roster_visibility == mrv.none:
             return False
         elif ml.roster_visibility == mrv.subscribable:
             return (self.get_subscription_policy(
                             rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
-                    or self.is_subscribed(rs, rs.user.persona_id, ml.id)
-                    or ml.id in rs.user.moderator
-                    or self.is_relevant_admin(rs, mailinglist=ml))
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
         elif ml.roster_visibility == mrv.viewers:
             return (self.may_view(rs, ml)
                     or self.get_subscription_policy(
                             rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
-                    or self.is_subscribed(rs, rs.user.persona_id, ml.id)
-                    or ml.id in rs.user.moderator
-                    or self.is_relevant_admin(rs, mailinglist=ml))
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
         else:
             raise RuntimeError
 
@@ -1080,7 +1079,7 @@ class MlBackend(AbstractBackend):
 
         query = ("SELECT persona_id FROM ml.subscription_states"
                  " WHERE mailinglist_id = %s AND subscription_state = ANY(%s)")
-        params = [mailinglist_id, const.SubscriptionState.subscribing_states()]
+        params = (mailinglist_id, const.SubscriptionState.subscribing_states())
         return {entry["persona_id"] for entry in self.query_all(rs, query, params)}
 
     @access("ml")
