@@ -8544,7 +8544,7 @@
             "attachment_policy": 1,
             "convert_html": false,
             "ml_type": 4,
-            "roster_visibility": 1,
+            "roster_visibility": 10,
             "subject_prefix": "gutschein",
             "maxsize": null,
             "is_active": true,

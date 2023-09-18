@@ -312,7 +312,7 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Feriendorf Bau'})
         everyone = {"Mailinglisten-Übersicht", "Übersicht"}
         moderator = {"Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Nachrichtenmoderation", "Log"}
+                     "Nachrichtenmoderation", "Log", "Abonnenten"}
 
         # Moderators:
         out = set()
@@ -781,6 +781,41 @@ class TestMlFrontend(FrontendTest):
                 self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
                 f = self.response.forms[f'remove{state}form{anid}']
                 self.submit(f)
+
+    @as_users("charly")
+    def test_roster(self) -> None:
+        self.traverse("Mailinglisten", "Gutscheine")
+        self.assertPresence("Du kannst diese Mailingliste nicht abonnieren,"
+                            " da Du von ihren Moderatoren blockiert wurdest.")
+        # Charly may not subscribe to the mailinglist, but may view it.
+        self.assertNonPresence("Abonnenten", div="sidebar-navigation")
+        with self.switch_user("anton"):
+            self.traverse("Mailinglisten", "Gutscheine", "Konfiguration")
+            f = self.response.forms['changelistform']
+            self.assertEqual(f['roster_visibility'].value,
+                             str(const.MailinglistRosterVisibility.subscribable))
+            f['roster_visibility'] = const.MailinglistRosterVisibility.viewers
+            self.submit(f)
+        self.traverse("Mailinglisten", "Gutscheine", "Abonnenten")
+        self.assertNonPresence("Die Abonnenten sind aktuell nur für Moderatoren",
+                               div='static-notifications')
+        self.assertPresence("Akira Abukara")
+
+        self.traverse("Mailinglisten", "Allumfassende Liste")
+        # Roster visibility is None, so he can not see the roster
+        self.assertPresence("Du hast diese Mailingliste abonniert.")
+        self.assertNonPresence("Abonnenten", div="sidebar-navigation")
+        with self.switch_user("anton"):
+            self.traverse("Mailinglisten", "Allumfassende Liste", "Konfiguration")
+            f = self.response.forms['changelistform']
+            self.assertEqual(f['roster_visibility'].value,
+                             str(const.MailinglistRosterVisibility.none))
+            # but Anton can see the roster, since he is an admin
+            self.assertPresence("Abonnenten", div="sidebar-navigation")
+            self.traverse("Abonnenten")
+            self.assertPresence("Die Abonnenten sind aktuell nur für Moderatoren und"
+                                " Admins sichtbar.", div='static-notifications')
+            self.assertPresence("Charly Clown")
 
     @as_users("nina")
     def test_create_mailinglist(self) -> None:
