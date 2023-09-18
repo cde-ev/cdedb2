@@ -1744,6 +1744,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_assembly_realm': True,
                 'is_purged': True,
                 'balance': 0,
+                'donation': 0,
                 'decided_search': False,
                 'trial_member': False,
                 'bub_search': False,
