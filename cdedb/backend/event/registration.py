@@ -52,6 +52,8 @@ CourseChoiceValidationAux = NamedTuple(
         ("orga_input", bool),
     ])
 
+FeeStats = Dict[str, Dict[Optional[const.EventFeeType], decimal.Decimal]]
+
 
 @dataclasses.dataclass
 class RegistrationFee:
@@ -1398,24 +1400,39 @@ class EventRegistrationBackend(EventBaseBackend):
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
-    def get_fee_stats(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    def get_fee_stats(self, rs: RequestState, event_id: int
+                      ) -> Tuple[FeeStats, int, decimal.Decimal]:
+        """Group and sum the paid fees by type.
+
+        This calculated the sum over both owed and paid fees. """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
-        ret = {
+        ret: FeeStats = {
             'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
             'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
         }
+        # Amount that has been paid but is not owed
+        ret['paid'][None] = decimal.Decimal(0)
+        # Registration fees that have not paid fully can not be split by kind
+        not_paid_count = 0
+        not_paid_amount = decimal.Decimal(0)
 
         for reg in self.get_registrations(rs, reg_ids).values():
             reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
-            paid = reg['amount_owed'] == reg['amount_paid']
+            paid = reg['amount_paid'] >= reg['amount_owed']
             for kind, amount in reg_fee.by_kind.items():
                 ret['owed'][kind] += amount
                 if paid:
                     ret['paid'][kind] += amount
+                else:
+                    not_paid_amount += amount
+            if paid:
+                ret['paid'][None] += reg['amount_paid'] - reg['amount_owed']
+            else:
+                not_paid_count += 1
 
-        return ret
+        return ret, not_paid_count, not_paid_amount
 
     @access("event")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],

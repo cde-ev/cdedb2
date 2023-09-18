@@ -521,9 +521,21 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     def fee_stats(self, rs: RequestState, event_id: int) -> Response:
         """Show stats for existing fees."""
-        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+        fee_stats, not_paid_count, not_paid_amount = self.eventproxy.get_fee_stats(
+            rs, event_id)
+        corresponding_query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
+            ["reg.id", "persona.given_names", "persona.family_name",
+             "persona.username", "reg.remaining_owed", "reg.amount_owed",
+             "reg.amount_paid"],
+            (("reg.remaining_owed", QueryOperators.greater, 0.00),),
+            (("persona.family_name", True), ("persona.given_names", True),)
+        )
         return self.render(rs, "event/fee/fee_stats", {
-            'fee_stats': fee_stats,
+            'fee_stats': fee_stats, 'not_paid_count': not_paid_count,
+            'not_paid_amount': not_paid_amount,
+            'corresponding_query': corresponding_query,
         })
 
     @access("event")
