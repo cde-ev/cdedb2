@@ -54,18 +54,17 @@
                 </tr>
         </tbody>
     </table>
+    {% if not_paid_count %}
     <hr />
-    <p class="text-warning">
-        {{ util.make_icon('exclamation-triangle') }}
-        {% trans not_paid_count=not_paid_count, not_paid_amount=not_paid_amount|money(lang=lang), paid=gettext("Paid") %}
-            {{ not_paid_count }} people have paid {{ not_paid_amount }} without hitting their owed amount.
-            Their payment can not be split by type and has been excluded from the {{ paid }} column above.
-        {%- pluralize not_paid_count -%}
-            {{ not_paid_count }} person have paid {{ not_paid_amount }} without hitting their owed amount.
-            Their payment can not be split by type and has been excluded from the {{ paid }} column above.
-        {% endtrans %}
-        <br />
-        {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize_to_url()),
-                         gettext("View in Registrations"), icon='list') }}
-    </p>
+        <p class="text-warning">
+            {{ util.make_icon('exclamation-triangle') }}
+            {% trans not_paid_count=not_paid_count, not_paid_amount=not_paid_amount|money(lang=lang), paid=gettext("Paid") %}
+                {{ not_paid_count }} people have paid {{ not_paid_amount }} without hitting their owed amount.
+                Their payment can not be split by type and has been excluded from the {{ paid }} column above.
+            {% endtrans %}
+            <br />
+            {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize_to_url()),
+                             gettext("View in Registrations"), icon='list') }}
+        </p>
+    {% endif %}
 {% endblock %}

@@ -1404,7 +1404,17 @@ class EventRegistrationBackend(EventBaseBackend):
                       ) -> Tuple[FeeStats, int, decimal.Decimal]:
         """Group and sum the paid fees by type.
 
-        This calculated the sum over both owed and paid fees. """
+        This calculates the sum over both owed and paid fees, for each kind of event
+        fees individually. If people have paid more or less than the owed amount,
+        special treatment is applied:
+
+        * The share of the paid amount excessive the owed amount can not be assigned to
+          a specific fee type, and is therefore summed under `None` in the FeeStats
+          dict.
+        * If the paid amount is less than the owed amount, it can not be split into the
+          respective kinds of owed fees at all. Therefore, it is reported separately as
+          the number of registrations and the total paid amount affected thereby.
+        """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
