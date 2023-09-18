@@ -10,7 +10,26 @@
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block content %}
+    {% if "event_mgmt" in user.admin_views %}
+        <div class="p button-par">
+        {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), icon="plus",
+                aclass="btn btn-sm btn-success") }}
+        </div>
+    {% endif %}
+    <p>
+        {% trans infolink=util.href("https://www.cde-ev.de/veranstaltungen/arten/", gettext("CdE website")),
+                 faq=util.href("https://www.cde-ev.de/faq/akademien/", gettext("FAQ")) %}
+            Here You can find the CdE’s events.
+            If you want to know more about the different kinds of events, take a look at the {{ infolink }}.
+            There is also a public {{ faq }} regarding general information about CdE events on the CdE website.
+        {% endtrans %}
+    </p>
     {{ util.h(n_("Current Events")) }}
+    <p>
+        {% trans infolink=util.href("https://www.cde-ev.de/veranstaltungen/uebersicht/", gettext("CdE website")) %}
+            A list with public information about current and future events is also available on the {{ infolink }}.
+        {% endtrans %}
+    </p>
     {% if open_events %}
         <ul class="spaced" id="current-events">
             {% for event_id, event in open_events|keydictsort(EntitySorter.event) %}
