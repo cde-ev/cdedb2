@@ -33,6 +33,14 @@
     {% endif %}
 
     <dl class="dl-horizontal">
+        {% if ambience['event']['homepage_url'] %}
+            <dt title="{% trans %}Homepage Link{% endtrans %}">
+                {% trans %}Homepage Link{% endtrans %}
+            </dt>
+            <dd id="homepage-link">
+                {{ util.href(ambience['event']['homepage_url'], ambience['event']['title']) }}
+            </dd>
+        {% endif %}
         {% if ambience['event']['parts']|length > 0 %}
             <dt title="{% trans %}Timeframe{% endtrans %}">
                 {% trans %}Timeframe{% endtrans %}

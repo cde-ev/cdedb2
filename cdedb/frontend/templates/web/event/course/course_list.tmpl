@@ -44,6 +44,13 @@
     {% endif %}
 {% endblock %}
 {% block content %}
+    {% if ambience['event']['homepage_url'] %}
+        <p>
+            {% trans infolink=util.href(ambience['event']['homepage_url'], gettext("CdE website")) %}
+                You can find more information about this event on the {{ infolink }}.
+            {% endtrans %}
+        </p>
+    {% endif %}
     {% if courses_exist %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary pull-right-responsive') %}

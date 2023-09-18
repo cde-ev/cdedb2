@@ -63,6 +63,7 @@ import math
 import re
 import string
 import typing
+import urllib.parse
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
@@ -765,6 +766,21 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
     if not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return val
+
+
+@_add_typed_validator
+def _url(val: Any, argname: str = None, **kwargs: Any) -> Url:
+    """A string which is a valid url.
+
+    We can not guarantee that the URL is actually valid, since the respective RFCs
+    are not strictly respected. See also
+    https://docs.python.org/3/library/urllib.parse.html#url-parsing-security
+    """
+    val = _str(val, argname, **kwargs)
+    url = urllib.parse.urlparse(val)
+    if not all([url.scheme, url.netloc, url.path]):
+        raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
+    return Url(urllib.parse.urlunparse(url))
 
 
 @_add_typed_validator
@@ -2308,6 +2324,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field': Optional[ID],
+    'homepage_url': Optional[Url],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
