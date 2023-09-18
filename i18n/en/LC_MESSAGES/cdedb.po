@@ -27,6 +27,9 @@ msgstr "Subscribability"
 msgid "MailinglistRosterVisibility.viewers"
 msgstr "Viewability"
 
+msgid "Roster Visibility"
+msgstr ""
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr ""
