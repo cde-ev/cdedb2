@@ -426,7 +426,7 @@
     {% elif may_camping_mat %}
         {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a camping mat.")) }}
     {% elif is_camping_mat %}
-        <span title="{{ gettext("Assigned to sleep on, but may not sleep on a camping mat.") }}">
+        <span title="{{ gettext("Assigned to, but may not sleep on a camping mat.") }}">
             {{- util.make_icon('campground', aclass='text-warning') -}}
             {{- util.make_icon('exclamation', aclass='text-warning') -}}
         </span>

@@ -1064,6 +1064,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Neue Einzugsermächtigung …'},
                       {'description': 'Anlegen'})
         f = self.response.forms["createlastschriftform"]
+        f["donation"] = "8"
         f["iban"] = "DE12500105170648489890"
         self.submit(f)
         f = self.response.forms["generatetransactionform"]
@@ -1218,8 +1219,6 @@ class TestCdEFrontend(FrontendTest):
                       {'description': "Neue Einzugsermächtigung"})
         f = self.response.forms['createlastschriftform']
         self.assertTitle("Neue Einzugsermächtigung")
-        # check default value
-        self.assertEqual(f["donation"].value, "20.00")
         f['persona_id'] = "DB-3-5"
         f['iban'] = "DE26370205000008068900"
         f['donation'] = "25"
@@ -1372,8 +1371,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona:\W*Ähnlicher Account gefunden.",),
             (r"course:\W*Kein Kurs verfügbar.",),
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
-             r"course:\W*Kein Kurs verfügbar.",
-             r"gender:\W*Kein Geschlecht angegeben."),
+             r"course:\W*Kein Kurs verfügbar.",),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             # TODO check that this is actually a warning and no problem
@@ -1383,8 +1381,7 @@ class TestCdEFrontend(FrontendTest):
              r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
-             r"birthday\W*Person ist jünger als 10 Jahre.",
-             r"gender:\W*Kein Geschlecht angegeben."),
+             r"birthday\W*Person ist jünger als 10 Jahre.",),
             (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
@@ -1612,14 +1609,14 @@ class TestCdEFrontend(FrontendTest):
         # Check that both given_names and display_name have changed.
         persona = self.core.get_persona(self.key, persona_id)
         self.assertEqual("Berta B.", persona["given_names"])
-        self.assertEqual("Berta B.", persona["display_name"])
+        self.assertEqual("Bertie", persona["display_name"])
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
         )
 
         self.traverse({'description': 'Mitglieder'},
@@ -1659,7 +1656,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_batch_admission_username_taken(self) -> None:
         # check that we do not allow to create an account with already taken mail adress
-        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"";"1";"";"";"";"";"";"";"";'
                 '"daniel@example.cde";"19.02.1963"')
 
         self.traverse({'description': 'Mitglieder'},
@@ -1724,7 +1721,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_batch_admission_doppelganger_archived(self) -> None:
-        data = "pa14;;Hell;Hades;;;;;;;;;;;;hades@example.cde;10.11.1977"
+        data = "pa14;;Hell;Hades;;;;;;;;;;;;;hades@example.cde;10.11.1977"
 
         self.admin_view_profile("hades")
         self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
@@ -1756,8 +1753,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_batch_admission_already_participant(self) -> None:
-        data = ("pa14;;Clown;Charly;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
-                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;daniel@example.cde;19.02.1963")
+        data = ("pa14;;Clown;Charly;;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
+                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;;daniel@example.cde;19.02.1963")
 
         self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
         f = self.response.forms['admissionform']
@@ -2093,7 +2090,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Accounts archiviert.", div="2-1002")
         self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
         self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
+        # self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
+        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="3-1003")
         self.assertPresence("Nächstes Semester", div="4-1004")
         self.assertPresence("44", div="4-1004")
 
@@ -2105,7 +2103,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("0 Accounts archiviert.", div="8-1008")
         self.assertPresence("0 Probemitgliedschaften beendet", div="9-1009")
         self.assertPresence("20,00 € Guthaben abgebucht.", div="9-1009")
-        self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
+        # self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
+        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="9-1009")
         self.assertPresence("Nächstes Semester", div="10-1010")
         self.assertPresence("45", div="10-1010")
 

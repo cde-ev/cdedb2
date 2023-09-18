@@ -100,13 +100,9 @@ class EventFieldMixin(EventBaseFrontend):
             if fields.get(field_id) == field:
                 # remove unchanged
                 del fields[field_id]
-        event = {
-            'id': event_id,
-            'fields': fields
-        }
         self.eventproxy.event_keeper_commit(
             rs, event_id, "Snapshot vor Datenfeld-Änderungen.")
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'fields': fields})
         self.eventproxy.event_keeper_commit(
             rs, event_id, "Ändere Datenfelder.", after_change=True)
         rs.notify_return_code(code)

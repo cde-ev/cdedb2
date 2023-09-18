@@ -1886,6 +1886,8 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
+        type_change_err_msg = (
+            "Not privileged to change to this mailinglist type for this mailinglist.")
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
@@ -1936,8 +1938,7 @@ class TestMlBackend(BackendTest):
                     self.ml.change_ml_type(
                         self.key, new_id, ml_type,
                         update={"domain": const.MailinglistDomain.lists})
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(
                     self.ml.change_ml_type(
@@ -1991,8 +1992,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2039,8 +2039,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 

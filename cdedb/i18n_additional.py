@@ -12,6 +12,7 @@ I18N_STRINGS = (
     n_("AgeClasses.u18"),
     n_("AgeClasses.u16"),
     n_("AgeClasses.u14"),
+    n_("AgeClasses.u10"),
 
     n_("AssemblyLogCodes.assembly_created"),
     n_("AssemblyLogCodes.assembly_changed"),
