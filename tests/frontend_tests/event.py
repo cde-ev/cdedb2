@@ -1182,7 +1182,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['queryform']
         f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
         f['qop_reg_fields.xfield_CapitalLetters'] = QueryOperators.nonempty.value
-        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
+        f['qord_1'] = 'reg_fields.xfield_CapitalLetters'
         self.submit(f)
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Garcia G.")
@@ -1192,7 +1192,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/query'})
         f = self.response.forms['queryform']
         f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
-        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
+        f['qord_1'] = 'reg_fields.xfield_CapitalLetters'
         self.submit(f)
         self.assertPresence("Other Text")
 
@@ -2257,7 +2257,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # Check that the linked stat query applies the correct ordering.
         self.traverse('Statistik', {'linkid': 'part_waitlist_1'})
         f = self.response.forms['queryform']
-        self.assertEqual(f['qord_primary'].value,
+        self.assertEqual(f['qord_1'].value,
                          "reg_fields.xfield_waitlist_position")
         self.assertEqual(f['qop_part1.status'].value,
                          str(QueryOperators.equal.value))
@@ -2769,7 +2769,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 f[field].checked = True
         f['qop_persona.family_name'] = QueryOperators.match.value
         f['qval_persona.family_name'] = 'e'
-        f['qord_primary'] = 'reg.id'
+        f['qord_1'] = 'reg.id'
         self.submit(f)
         self.assertTitle("\nAnmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]")
@@ -2817,7 +2817,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f["qsel_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"].checked = True
         f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = \
             QueryOperators.nonempty.value
-        f["qord_primary"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
+        f["qord_1"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
         f["query_name"] = "Großbuchstaben"
         self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("Anzahl Großbuchstaben", div="query-result")
@@ -2863,7 +2863,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['qval_track3.takes_place'] = True
         f['qop_track3.num_choices1'] = QueryOperators.greaterequal.value
         f['qval_track3.num_choices1'] = 2
-        f['qord_primary'] = 'track2.num_choices0'
+        f['qord_1'] = 'track2.num_choices0'
         self.submit(f)
         self.assertTitle('Kurssuche (Große Testakademie 2222)')
         self.assertPresence("Ergebnis [2]", div="query-results")
@@ -2907,7 +2907,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 f[field].checked = True
         f['qop_part3.total_inhabitants'] = QueryOperators.greater.value
         f['qval_part3.total_inhabitants'] = 1
-        f['qord_primary'] = 'lodgement_group.title'
+        f['qord_1'] = 'lodgement_group.title'
         self.submit(f)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")

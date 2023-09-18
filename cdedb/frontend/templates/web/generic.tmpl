@@ -224,25 +224,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
-                                                       ("3.", "qord_tertiary"))%}
+                                {% for i in range(1, 21) %}
                                     <tr class="query_sort">
-                                        <td> {{ title }} </td>
+                                        <td> {{ i|string + "." }} </td>
                                         <td>
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
                                             {%- for field in spec if ',' not in field %}
                                                 {%- do myentries.append((field, spec[field].get_title(gettext))) %}
                                             {%- endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption=nbsp,
+                                            {{ util.input_select("qord_" + i|string, entries=myentries, nulloption=nbsp,
                                                                  aclass="form-control input-sm sort-field",
-                                                                 arialabel=gettext("%s sort key")|format(title)) }}
+                                                                 arialabel=gettext("%s. sort key")|format(i)) }}
                                         </td>
                                         <td>
-                                            {{ util.input_select(name + "_ascending", defaultvalue=True,
+                                            {{ util.input_select("qord_" + i|string + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
                                                                  entries=((True, "A→Z"), (False, "Z→A")),
-                                                                 arialabel=gettext("%s sort order")|format(title)) }}
+                                                                 arialabel=gettext("%s. sort order")|format(i)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -483,13 +482,18 @@
                                         {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
-                                {% if values.get("qord_primary") == field or
-                                        values.get("qord_secondary") == field or
-                                        values.get("qord_tertiary") == field %}
-                                    <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {{ util.make_icon('sort-alpha-down') }}
-                                    </span>
-                                {% endif %}
+                                {% for i in range(1, 21) %}
+                                    {% if values.get("qord_" + i|string) == field %}
+                                        <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
+                                        {% if values.get("qord_" + i|string + "_ascending") == "False" %}
+                                            {{ util.make_icon('sort-alpha-down') }}
+                                        {% else %}
+                                            {{ util.make_icon('sort-alpha-down-alt') }}
+                                        {% endif %}
+                                        </span>
+                                        {% break %}
+                                    {% endif %}
+                                {% endfor %}
                             </th>
                         {% endfor %}
                     {% endfor %}

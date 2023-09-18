@@ -60,8 +60,8 @@ MEMBERSEARCH_DEFAULTS = {
         QueryOperators.match,
     'qop_pevent_id': QueryOperators.equal,
     'qop_pcourse_id': QueryOperators.equal,
-    'qord_primary': 'family_name,birth_name',
-    'qord_primary_ascending': True,
+    'qord_1': 'family_name,birth_name',
+    'qord_1_ascending': True,
 }
 
 

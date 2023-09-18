@@ -4669,14 +4669,14 @@ def _query_input(
         errs.append(ValueError(argname, n_("Selection may not be empty.")))
 
     # Third the ordering
-    for postfix in ("primary", "secondary", "tertiary"):
-        if "qord_" + postfix not in val:
+    for postfix in range(1, 21):
+        if f"qord_{postfix}" not in val:
             continue
 
         try:
             entry: Optional[CSVIdentifier] = _ALL_TYPED[
                 Optional[CSVIdentifier]  # type: ignore[index]
-            ](val["qord_" + postfix], "qord_" + postfix, **kwargs)
+            ](val[f"qord_{postfix}"], f"qord_{postfix}", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4684,7 +4684,7 @@ def _query_input(
         if not entry or entry not in spec:
             continue
 
-        tmp = "qord_" + postfix + "_ascending"
+        tmp = f"qord_{postfix}_ascending"
         try:
             ascending = _ALL_TYPED[bool](val.get(tmp, "True"), tmp, **kwargs)
         except ValidationSummary as e:
