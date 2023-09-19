@@ -301,6 +301,9 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
+        link = self.response.html.find(id="website-link").find(name="a")
+        self.assertEqual(link.attrs["href"], "https://www.cde-ev.de/")
+        self.assertIn("Große Testakademie 2222", link.getText())
         self.assertPresence("Warmup: 02.02.2222 – 02.02.2222 "
                             "Erste Hälfte: 01.11.2222 – 11.11.2222 "
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",

@@ -1429,6 +1429,7 @@
             "use_additional_questionnaire": false,
             "is_archived": false,
             "description": "Everybody come!",
+            "website_url": "https://www.cde-ev.de/",
             "institution": 1,
             "lodge_field": 3,
             "offline_lock": false,
