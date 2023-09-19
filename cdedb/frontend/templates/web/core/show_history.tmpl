@@ -39,7 +39,7 @@
 {% macro print_history(f) %}
     {% for c in entries|sort %}
         {% if c not in constants[f] %}
-            <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
+            <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}" id="{{ f }}-{{ c }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
                     {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
@@ -55,7 +55,7 @@
     {% endfor %}
     {# Print a panic entry if the latest committed changelog generation is inconsistent with core.personas #}
     {% if f in inconsistencies %}
-        <div class="row history-row panic">
+        <div class="row history-row panic" id="{{ f }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
                 {{ util.make_icon('exclamation-triangle', title=gettext(
@@ -85,7 +85,7 @@
             {% endif %}
         {% endfor %}
         {% if vars['has_nonconstant'] %}
-            <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
+            <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}" id="{{ fields|first }}-{{ c }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
                     {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
@@ -108,7 +108,7 @@
         {% endif %}
     {% endfor %}
     {% if is_inconsistent %}
-        <div class="row history-row panic">
+        <div class="row history-row panic" id="{{ fields|first }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
                 {{ util.make_icon('exclamation-triangle', title=gettext(

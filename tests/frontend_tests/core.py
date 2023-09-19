@@ -1855,6 +1855,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Automatisiert", div='generation1')
 
     @as_users("vera")
+    def test_inconsistent_history(self) -> None:
+        self.admin_view_profile("lisa")
+        self.traverse("Änderungshistorie")
+        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("Gen 1", div="is_member-1")
+        self.assertPresence("Probemitgliedschaft", div="is_member-1")
+        self.assertPresence("Aktuell", div="is_member-panic")
+        self.assertPresence("Kein Mitglied", div="is_member-panic")
+
+    @as_users("vera")
     def test_markdown(self) -> None:
         self.admin_view_profile('inga')
         self.assertIn('<h4 id="CDEDB_MD_inga">', self.response.text)
