@@ -153,7 +153,8 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).ejection:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not allowed_steps.ejection or allowed_steps.automated_archival:
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
