@@ -44,9 +44,9 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if ambience['event']['homepage_url'] %}
+    {% if ambience['event']['website_url'] %}
         <p>
-            {% trans infolink=util.href(ambience['event']['homepage_url'], gettext("CdE website")) %}
+            {% trans infolink=util.href(ambience['event']['website_url'], gettext("CdE website")) %}
                 You can find more information about this event on the {{ infolink }}.
             {% endtrans %}
         </p>
