@@ -54,24 +54,18 @@
         {% endif %}
     {% endfor %}
     {# Print a panic entry if the latest committed changelog generation is inconsistent with core.personas #}
-    {% for c in entries|sort(reverse=True) %}
-        {% if entries[c]['code'] != enums["MemberChangeStati"].committed %}
-            {% continue %}
-        {% endif %}
-        {% if entries[c][f] != current[f] %}
-            <div class="row history-row panic">
-                <div class="col-xs-3">
-                    {% trans %}Current{% endtrans %}
-                    {{ util.make_icon('exclamation-triangle', title=gettext(
-                            "Current dataset is inconsistent with latest committed changelog generation (Gen %s)!")|format(c)) }}
-                </div>
-                <div class="col-xs-9">
-                    {% if caller %}{{ caller(current) }}{% else %}{{ current[f] }}{% endif %}
-                </div>
+    {% if f in inconsistencies %}
+        <div class="row history-row panic">
+            <div class="col-xs-3">
+                {% trans %}Current{% endtrans %}
+                {{ util.make_icon('exclamation-triangle', title=gettext(
+                        "Current dataset is inconsistent with latest committed changelog generation!")) }}
             </div>
-        {% endif %}
-        {% break %}
-    {% endfor %}
+            <div class="col-xs-9">
+                {% if caller %}{{ caller(current) }}{% else %}{{ current[f] }}{% endif %}
+            </div>
+        </div>
+    {% endif %}
 {% endmacro %}
 {% macro print_multifield_history(fields=[]) %}
     {% for c in entries|sort %}
@@ -106,31 +100,25 @@
         {% endif %}
     {% endfor %}
     {# Print a panic entry if the latest committed changelog generation is inconsistent with core.personas #}
-    {% for c in entries|sort(reverse=True) %}
-        {% if entries[c]['code'] != enums["MemberChangeStati"].committed %}
-            {% continue %}
+    {% set is_inconsistent = {} %}
+    {% for f in fields %}
+        {% if f in inconsistencies %}
+            {# Not sure why this does not work with set and bools... #}
+            {% do is_inconsistent.update({'inconsistent': True}) %}
         {% endif %}
-        {% set is_inconsistent = {} %}
-        {% for f in fields %}
-            {% if current[f] != entries[c][f] %}
-                {# Not sure why this does not work with set and bools... #}
-                {% do is_inconsistent.update({'iconsistent': True}) %}
-            {% endif %}
-        {% endfor %}
-        {% if is_inconsistent %}
-            <div class="row history-row panic">
-                <div class="col-xs-3">
-                    {% trans %}Current{% endtrans %}
-                    {{ util.make_icon('exclamation-triangle', title=gettext(
-                            "Current dataset is inconsistent with latest committed changelog generation (Gen %s)!"|format(c))) }}
-                </div>
-                <div class="col-xs-9">
-                    {% if caller %}{{ caller(current) }}{% endif %}
-                </div>
-            </div>
-        {% endif %}
-        {% break %}
     {% endfor %}
+    {% if is_inconsistent %}
+        <div class="row history-row panic">
+            <div class="col-xs-3">
+                {% trans %}Current{% endtrans %}
+                {{ util.make_icon('exclamation-triangle', title=gettext(
+                        "Current dataset is inconsistent with latest committed changelog generation!")) }}
+            </div>
+            <div class="col-xs-9">
+                {% if caller %}{{ caller(current) }}{% endif %}
+            </div>
+        </div>
+    {% endif %}
 {% endmacro %}
 {% macro history_field(title) %}
     <div class="form-group">

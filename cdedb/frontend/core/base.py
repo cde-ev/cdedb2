@@ -715,6 +715,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # do not use the latest changelog version, since we want to highlight any
         # inconsistencies between latest changelog generation and core.personas
         current = self.coreproxy.get_total_persona(rs, persona_id)
+        inconsistencies = self.coreproxy.get_changelog_inconsistencies(rs, persona_id)
         fields = current.keys()
         stati = const.PersonaChangeStati
         constants = {}
@@ -778,6 +779,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'entries': history, 'constants': constants, 'current': current,
             'pending': pending, 'eventual_status': eventual_status,
             'personas': personas, 'ADMIN_KEYS': ADMIN_KEYS,
+            'inconsistencies': inconsistencies or [],
         })
 
     @access("core_admin")
