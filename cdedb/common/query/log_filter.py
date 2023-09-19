@@ -188,7 +188,7 @@ class CdELogFilter(GenericLogFilter):
 @dataclasses.dataclass
 class ChangelogLogFilter(GenericLogFilter):
     log_table = "core.changelog"
-    log_code_class = const.MemberChangeStati
+    log_code_class = const.PersonaChangeStati
     additional_columns = ("reviewed_by", "generation", "automated_change",)
     additional_persona_columns = ("reviewed_by",)
 
@@ -232,10 +232,11 @@ class AssemblyLogFilter(GenericLogFilter):
 class EventLogFilter(GenericLogFilter):
     log_table = "event.log"
     log_code_class = const.EventLogCodes
-    additional_columns = ("event_id",)
+    additional_columns = ("event_id", "droid_id")
 
     event_id: Optional[int] = None
     _event_ids: list[int] = dataclasses.field(default_factory=list)
+    droid_id: Optional[int] = None
 
     def event_ids(self) -> list[int]:
         if self.event_id:
@@ -248,6 +249,9 @@ class EventLogFilter(GenericLogFilter):
         if self.event_ids():
             conditions.append("event_id = ANY(%s)")
             params.append(self.event_ids())
+        if self.droid_id:
+            conditions.append("droid_id = %s")
+            params.append(self.droid_id)
 
         return conditions, params
 

@@ -10,7 +10,10 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict, Optional, Set
 
-from subman.machine import (  # pylint: disable=unused-import # noqa: F401
+from cdedb.uncommon.intenum import CdEIntEnum
+
+# these are stored in the database, so provide them here for consistency
+from cdedb.uncommon.submanshim import (  # pylint: disable=unused-import # noqa: F401
     SubscriptionAction, SubscriptionState,
 )
 
@@ -21,7 +24,7 @@ def n_(x: str) -> str:  # pragma: no cover
 
 
 @enum.unique
-class Genders(enum.IntEnum):
+class Genders(CdEIntEnum):
     """Spec for field gender of core.personas."""
     female = 1  #:
     male = 2  #:
@@ -31,7 +34,7 @@ class Genders(enum.IntEnum):
 
 
 @enum.unique
-class MemberChangeStati(enum.IntEnum):
+class PersonaChangeStati(enum.IntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
@@ -42,7 +45,7 @@ class MemberChangeStati(enum.IntEnum):
 
 
 @enum.unique
-class RegistrationPartStati(enum.IntEnum):
+class RegistrationPartStati(CdEIntEnum):
     """Spec for field status of event.registration_parts."""
     not_applied = -1  #:
     applied = 1  #:
@@ -52,12 +55,16 @@ class RegistrationPartStati(enum.IntEnum):
     cancelled = 5  #:
     rejected = 6  #:
 
+    @classmethod
+    def involved_states(cls) -> tuple["RegistrationPartStati", ...]:
+        return (RegistrationPartStati.applied,
+                RegistrationPartStati.participant,
+                RegistrationPartStati.waitlist,
+                RegistrationPartStati.guest,)
+
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
-        return self in (RegistrationPartStati.applied,
-                        RegistrationPartStati.participant,
-                        RegistrationPartStati.waitlist,
-                        RegistrationPartStati.guest,)
+        return self in self.involved_states()
 
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
@@ -72,7 +79,7 @@ class RegistrationPartStati(enum.IntEnum):
 
 
 @enum.unique
-class FieldAssociations(enum.IntEnum):
+class FieldAssociations(CdEIntEnum):
     """Coordinates fields to the entities they are attached to."""
     registration = 1  #:
     course = 2  #:
@@ -88,7 +95,7 @@ class FieldAssociations(enum.IntEnum):
 
 
 @enum.unique
-class FieldDatatypes(enum.IntEnum):
+class FieldDatatypes(CdEIntEnum):
     """Spec for the datatypes available as custom data fields."""
     str = 1  #:
     bool = 2  #:
@@ -99,7 +106,7 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
-class QuestionnaireUsages(enum.IntEnum):
+class QuestionnaireUsages(CdEIntEnum):
     """Where a questionnaire row will be displayed."""
     registration = 1
     additional = 2
@@ -114,7 +121,7 @@ class QuestionnaireUsages(enum.IntEnum):
 
 
 @enum.unique
-class EventPartGroupType(enum.IntEnum):
+class EventPartGroupType(CdEIntEnum):
     # Weak constraints that only produce warnings:
     mutually_exclusive_participants = 1
     mutually_exclusive_courses = 2
@@ -133,7 +140,7 @@ class EventPartGroupType(enum.IntEnum):
 
 
 @enum.unique
-class CourseTrackGroupType(enum.IntEnum):
+class CourseTrackGroupType(CdEIntEnum):
     course_choice_sync = 1
 
     def get_icon(self) -> str:
@@ -146,7 +153,26 @@ class CourseTrackGroupType(enum.IntEnum):
 
 
 @enum.unique
-class GenesisStati(enum.IntEnum):
+class EventFeeType(CdEIntEnum):
+    """Different kinds of event fees, to be displayed and/or treated differently."""
+    common = 1
+    storno = 2
+    external = 3
+    solidarity = 10
+    donation = 11
+
+    def get_icon(self) -> str:
+        return {
+            EventFeeType.common: "coins",
+            EventFeeType.storno: "ban",
+            EventFeeType.external: "external-link-alt",
+            EventFeeType.solidarity: "hands-helping",
+            EventFeeType.donation: "donate",
+        }[self]
+
+
+@enum.unique
+class GenesisStati(CdEIntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
     unconfirmed = 1
@@ -179,7 +205,7 @@ class GenesisStati(enum.IntEnum):
 
 
 @enum.unique
-class PrivilegeChangeStati(enum.IntEnum):
+class PrivilegeChangeStati(CdEIntEnum):
     """Spec for field status of core.privilege_changes."""
     #: initialized, pending for review
     pending = 1
@@ -192,7 +218,7 @@ class PrivilegeChangeStati(enum.IntEnum):
 
 
 @enum.unique
-class MailinglistTypes(enum.IntEnum):
+class MailinglistTypes(CdEIntEnum):
     member_mandatory = 1
     member_opt_out = 2
     member_opt_in = 3
@@ -228,7 +254,7 @@ class MailinglistTypes(enum.IntEnum):
 
 
 @enum.unique
-class MailinglistDomain(enum.IntEnum):
+class MailinglistDomain(CdEIntEnum):
     lists = 1
     aka = 2
     general = 3
@@ -273,7 +299,7 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 
 
 @enum.unique
-class ModerationPolicy(enum.IntEnum):
+class ModerationPolicy(CdEIntEnum):
     """Regulate posting of mail to a list."""
     unmoderated = 1  #:
     #: subscribers may post without moderation, but external mail is reviewed
@@ -282,7 +308,7 @@ class ModerationPolicy(enum.IntEnum):
 
 
 @enum.unique
-class AttachmentPolicy(enum.IntEnum):
+class AttachmentPolicy(CdEIntEnum):
     """Regulate allowed payloads for mails to lists.
 
     This is currently only a tri-state, so we implement it as an enum.
@@ -294,7 +320,7 @@ class AttachmentPolicy(enum.IntEnum):
 
 
 @enum.unique
-class LastschriftTransactionStati(enum.IntEnum):
+class LastschriftTransactionStati(CdEIntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
     issued = 1  #:
     skipped = 2  #:
@@ -312,7 +338,34 @@ class LastschriftTransactionStati(enum.IntEnum):
 
 
 @enum.unique
-class CoreLogCodes(enum.IntEnum):
+class PastInstitutions(CdEIntEnum):
+    """Insitutions for (primarily past) events, used for sorting into categories."""
+    cde = 1  #:
+    dsa = 20  #:
+    dja = 40  #:
+    jgw = 60  #:
+    basf = 80  #:
+    van = 200  #:
+
+    @classmethod
+    def main_insitution(cls) -> "PastInstitutions":
+        return PastInstitutions.cde
+
+    @property
+    def shortname(self) -> str:
+        shortnames = {
+            self.cde: "CdE",
+            self.dsa: "DSA",
+            self.dja: "DJA",
+            self.jgw: "JGW",
+            self.basf: "BASF",
+            self.van: "VAN",
+        }
+        return shortnames[self]
+
+
+@enum.unique
+class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:
     persona_change = 2  #:
@@ -339,7 +392,7 @@ class CoreLogCodes(enum.IntEnum):
 
 
 @enum.unique
-class CdeLogCodes(enum.IntEnum):
+class CdeLogCodes(CdEIntEnum):
     """Available log messages cde.log."""
     semester_bill = 10
     semester_bill_with_addresscheck = 11
@@ -354,7 +407,7 @@ class CdeLogCodes(enum.IntEnum):
 
 
 @enum.unique
-class FinanceLogCodes(enum.IntEnum):
+class FinanceLogCodes(CdEIntEnum):
     """Available log messages cde.finance_log."""
     new_member = 1  #:
     gain_membership = 2  #:
@@ -364,6 +417,7 @@ class FinanceLogCodes(enum.IntEnum):
     end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
+    start_trial_membership = 15  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
@@ -379,7 +433,7 @@ class FinanceLogCodes(enum.IntEnum):
 
 
 @enum.unique
-class EventLogCodes(enum.IntEnum):
+class EventLogCodes(CdEIntEnum):
     """Available log messages event.log."""
     event_created = 1  #:
     event_changed = 2  #:
@@ -431,10 +485,14 @@ class EventLogCodes(enum.IntEnum):
     track_group_deleted = 112  #:
     track_group_link_created = 113  #:
     track_group_link_deleted = 114  #:
+    orga_token_created = 200  #:
+    orga_token_changed = 201  #:
+    orga_token_revoked = 202  #:
+    orga_token_deleted = 203  #:
 
 
 @enum.unique
-class PastEventLogCodes(enum.IntEnum):
+class PastEventLogCodes(CdEIntEnum):
     """Available log messages past_event.log."""
     event_created = 1  #:
     event_changed = 2  #:
@@ -444,13 +502,14 @@ class PastEventLogCodes(enum.IntEnum):
     course_deleted = 12  #:
     participant_added = 20  #:
     participant_removed = 21  #:
-    institution_created = 30  #:
-    institution_changed = 31  #:
-    institution_deleted = 32  #:
+    # The following log codes used to exist. To avoid conflicts, do not reuse:
+    # institution_created = 30  #:
+    # institution_changed = 31  #:
+    # institution_deleted = 32  #:
 
 
 @enum.unique
-class AssemblyLogCodes(enum.IntEnum):
+class AssemblyLogCodes(CdEIntEnum):
     """Available log messages core.log."""
     assembly_created = 1  #:
     assembly_changed = 2  #:
@@ -478,7 +537,7 @@ class AssemblyLogCodes(enum.IntEnum):
 
 
 @enum.unique
-class MlLogCodes(enum.IntEnum):
+class MlLogCodes(CdEIntEnum):
     """Available log messages for ml.log."""
     list_created = 1  #:
     list_changed = 2  #:
@@ -526,6 +585,6 @@ class MlLogCodes(enum.IntEnum):
 
 
 @enum.unique
-class LockType(enum.IntEnum):
+class LockType(CdEIntEnum):
     """Types of Locks."""
     mailman = 1  #:

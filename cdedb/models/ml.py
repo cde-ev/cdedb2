@@ -1,7 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import enum
 import itertools
 from dataclasses import dataclass, fields
 from typing import (
@@ -19,6 +18,7 @@ from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import MailinglistDomain, MailinglistTypes
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
+from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
@@ -42,7 +42,7 @@ class BackendContainer:
         self.assembly = cast("AssemblyBackend", assembly)
 
 
-class MailinglistGroup(enum.IntEnum):
+class MailinglistGroup(CdEIntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
     public = 1
     cde = 2
@@ -87,6 +87,7 @@ class Mailinglist(CdEDataclass):
     whitelist: Set[vtypes.Email]
 
     description: Optional[str]
+    additional_footer: Optional[str]
     subject_prefix: Optional[str]
     maxsize: Optional[vtypes.PositiveInt]
     notes: Optional[str]
@@ -98,6 +99,8 @@ class Mailinglist(CdEDataclass):
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
+
+    database_table = "ml.mailinglists"
 
     def __post_init__(self) -> None:
         if self.__class__ not in ML_TYPE_MAP_INV:
@@ -418,6 +421,8 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable)
     ])
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
@@ -654,30 +659,31 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
+    # Disallow management by cde admins.
+    relevant_admins: ClassVar[Set[str]] = set()
 
 
 @dataclass
-class GeneralOptInMailinglist(GeneralMailinglist):
+class GeneralMeta(GeneralMailinglist):
     relevant_admins = {"core_admin"}
 
+
+@dataclass
+class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.subscribable)
     ])
 
 
 @dataclass
-class GeneralModeratedOptInMailinglist(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
-
+class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
 @dataclass
-class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
-
+class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", SubscriptionPolicy.invitation_only)
     ])

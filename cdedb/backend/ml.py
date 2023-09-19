@@ -7,7 +7,6 @@ import itertools
 from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
 
 import subman
-from subman.machine import SubscriptionAction, SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -36,6 +35,7 @@ from cdedb.models.ml import (
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
     get_ml_type,
 )
+from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -284,12 +284,13 @@ class MlBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState,
-                             query: Query) -> Tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
+        aggregate = affirm(bool, aggregate)
         if query.scope in {QueryScope.ml_user, QueryScope.all_ml_users}:
             # Potentially restrict to non-archived users.
             if not query.scope.includes_archived:
@@ -306,7 +307,7 @@ class MlBackend(AbstractBackend):
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+        return self.general_query(rs, query, aggregate=aggregate)
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
@@ -399,6 +400,7 @@ class MlBackend(AbstractBackend):
                     description=e["description"],
                     subject_prefix=e["subject_prefix"],
                     maxsize=e["maxsize"],
+                    additional_footer=e["additional_footer"],
                     notes=e["notes"],
                 )
                 if isinstance(ml, EventAssociatedMetaMailinglist):
@@ -437,7 +439,7 @@ class MlBackend(AbstractBackend):
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
         with Atomizer(rs):
@@ -471,7 +473,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM ml.moderators"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
@@ -552,7 +554,8 @@ class MlBackend(AbstractBackend):
 
             if not (new_type.is_relevant_admin(rs.user)
                     and old_type.is_relevant_admin(rs.user)):
-                raise PrivilegeError("Not privileged to make this change.")
+                raise PrivilegeError(n_("Not privileged to change to this mailinglist"
+                                        " type for this mailinglist."))
 
             # check that the type change preserves the data integrity
             ml = self.get_mailinglist(rs, mailinglist_id)
@@ -646,7 +649,8 @@ class MlBackend(AbstractBackend):
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
         if not data.is_relevant_admin(rs.user):
-            raise PrivilegeError("Not privileged to create mailinglist of this type.")
+            raise PrivilegeError(n_(
+                "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
             mdata = data.to_database()
             # The address is a readonly property, but we want to save it into the
@@ -829,7 +833,7 @@ class MlBackend(AbstractBackend):
                            or self.may_manage(rs, datum['mailinglist_id'],
                                               allow_restricted=False)
                            for datum in set_data):
-                    raise PrivilegeError("Not privileged.")
+                    raise PrivilegeError(n_("Not privileged."))
 
                 keys = ("subscription_state", "mailinglist_id", "persona_id")
                 placeholders = ", ".join(("(%s, %s, %s)",) * len(set_data))
@@ -865,7 +869,7 @@ class MlBackend(AbstractBackend):
             if not all(datum['persona_id'] == rs.user.persona_id
                        or self.may_manage(rs, datum['mailinglist_id'])
                        for datum in data):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(n_("Not privileged."))
 
             # noinspection SqlWithoutWhere
             query = "DELETE FROM ml.subscription_states"

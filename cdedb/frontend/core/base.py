@@ -17,7 +17,6 @@ import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
-from subman.machine import SubscriptionPolicy
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -53,6 +52,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
+from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
 USER_REALM_NAMES = {
@@ -74,7 +74,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: str = None) -> Response:
+    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -106,9 +106,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if "core_user" in rs.user.admin_views:
-                data = self.coreproxy.changelog_get_changes(
-                    rs, stati=(const.MemberChangeStati.pending,))
+            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
+                data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
             if "meta_admin" in rs.user.admin_views:
@@ -156,23 +155,20 @@ class CoreBaseFrontend(AbstractFrontend):
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final = {}
                 for event_id, event in events.items():
-                    if event_id not in orga_info:
-                        event['registration'], event['payment_pending'] = (
-                            self.eventproxy.get_registration_payment_info(rs, event_id))
-                        # Skip event, if the registration begins more than
-                        # 2 weeks in future
-                        if event['registration_start'] and \
-                                now() + datetime.timedelta(weeks=2) < \
-                                event['registration_start']:
-                            continue
-                        # Skip events, that are over or are not registerable
-                        # anymore
-                        if event['registration_hard_limit'] and \
-                                now() > event['registration_hard_limit'] \
-                                and not event['registration'] \
-                                or now().date() > event['end']:
-                            continue
-                        final[event_id] = event
+                    event['registration'], event['payment_pending'] = (
+                        self.eventproxy.get_registration_payment_info(rs, event_id))
+                    # Skip event, if the registration begins more than 2 weeks in future
+                    if event['registration_start'] and \
+                            now() + datetime.timedelta(weeks=2) < \
+                            event['registration_start']:
+                        continue
+                    # Skip events, that are over or are not registerable anymore
+                    if (event['registration_hard_limit']
+                            and now() > event['registration_hard_limit']
+                            and not event['registration']
+                            or now().date() > event['end']):
+                        continue
+                    final[event_id] = event
                 if final:
                     dashboard['events'] = final
             # open assemblies
@@ -572,7 +568,7 @@ class CoreBaseFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id, event_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if "core" in access_levels and "member" in roles:
+            if "core" in access_levels:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = bool(user_lastschrift)
@@ -720,7 +716,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # inconsistencies between latest changelog generation and core.personas
         current = self.coreproxy.get_total_persona(rs, persona_id)
         fields = current.keys()
-        stati = const.MemberChangeStati
+        stati = const.PersonaChangeStati
         constants = {}
         for f in fields:
             total_const: List[int] = []
@@ -1078,7 +1074,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
-        if data['code'] == const.MemberChangeStati.pending:
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
@@ -1141,7 +1137,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
-                    query: Query = None) -> Response:
+                    query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: Dict[str, Dict[Any, str]] = {
@@ -1211,7 +1207,7 @@ class CoreBaseFrontend(AbstractFrontend):
         #  error. This is a bit hacky, but ensures that donation is always a decimal.
         if rs.values.get("donation") is not None:
             rs.values["donation"] = decimal.Decimal(rs.values["donation"])
-        if data['code'] == const.MemberChangeStati.pending:
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         user = User(persona_id=persona_id, roles=roles)
@@ -1561,6 +1557,9 @@ class CoreBaseFrontend(AbstractFrontend):
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
+        # trial membership implies membership
+        if data.get("trial_member"):
+            data["is_member"] = True
         data['is_{}_realm'.format(target_realm)] = True
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
@@ -1602,23 +1601,29 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "modify_membership")
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        return self.render(rs, "modify_membership", {
+            "trial_member": persona["trial_member"]})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member")
+    @REQUESTdata("is_member", "trial_member")
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> Response:
+                          is_member: bool, trial_member: bool) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
+        if trial_member and not is_member:
+            rs.append_validation_error(("trial_member", ValueError(
+                n_("Trial membership implies membership."))))
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
-                self.cdeproxy.change_membership(rs, persona_id, is_member))
+                self.cdeproxy.change_membership(
+                    rs, persona_id, is_member=is_member, trial_member=trial_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))
@@ -1650,16 +1655,15 @@ class CoreBaseFrontend(AbstractFrontend):
             {'old_balance': old_balance, 'trial_member': trial_member})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata("new_balance", "trial_member", "change_note")
+    @REQUESTdata("new_balance", "change_note")
     def modify_balance(self, rs: RequestState, persona_id: int,
-                       new_balance: vtypes.NonNegativeDecimal, trial_member: bool,
+                       new_balance: vtypes.NonNegativeDecimal,
                        change_note: str) -> Response:
         """Set the new balance."""
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (persona['balance'] == new_balance
-                and persona['trial_member'] == trial_member):
+        if persona['balance'] == new_balance:
             rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
@@ -1667,8 +1671,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
-            const.FinanceLogCodes.manual_balance_correction,
-            change_note=change_note, trial_member=trial_member)
+            const.FinanceLogCodes.manual_balance_correction, change_note=change_note)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -2062,11 +2065,10 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        pending = self.coreproxy.changelog_get_pending_changes(rs)
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
@@ -2077,8 +2079,7 @@ class CoreBaseFrontend(AbstractFrontend):
         Send a reminder after twelve hours and then daily.
         """
         current = now()
-        data = self.coreproxy.changelog_get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
+        data = self.coreproxy.changelog_get_pending_changes(rs)
         ids = {f"{anid}/{e['generation']}" for anid, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
@@ -2101,28 +2102,32 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         pending = history[max(history)]
-        if pending['code'] != const.MemberChangeStati.pending:
+        if pending['code'] != const.PersonaChangeStati.pending:
             rs.notify("warning", n_("Persona has no pending change."))
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
             if (history[key]['code']
-                == const.MemberChangeStati.committed))]
+                == const.PersonaChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending': pending, 'current': current, 'diff': diff})
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(self, rs: RequestState, persona_id: int,
                        generation: int, ack: bool) -> Response:
         """Make decision."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if rs.has_validation_errors():
             return self.list_pending_changes(rs)
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
@@ -2149,7 +2154,9 @@ class CoreBaseFrontend(AbstractFrontend):
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
-            rs.notify("error", e.args[0])
+            msg = e.args[0]
+            args = e.args[1] if len(e.args) > 1 else {}
+            rs.notify("error", msg, args)
             code = 0
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)

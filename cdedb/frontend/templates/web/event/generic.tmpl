@@ -177,7 +177,7 @@
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {%- if field['kind'] == datatypes.bool %}
-            <div class="checkbox">
+            <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
@@ -415,4 +415,20 @@
             </li>
         {% endfor %}
     </ul>
+{% endmacro %}
+
+{% macro camping_mat_icon(is_camping_mat, may_camping_mat) %}
+    {% if is_camping_mat and may_camping_mat  %}
+        <span title="{{ gettext("Assigned to sleep on a camping mat.") }}">
+            {{- util.make_icon('campground') -}}
+            {{- util.make_icon('arrow-left') -}}
+        </span>
+    {% elif may_camping_mat %}
+        {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a camping mat.")) }}
+    {% elif is_camping_mat %}
+        <span title="{{ gettext("Assigned to, but may not sleep on a camping mat.") }}">
+            {{- util.make_icon('campground', aclass='text-warning') -}}
+            {{- util.make_icon('exclamation', aclass='text-warning') -}}
+        </span>
+    {% endif %}
 {% endmacro %}

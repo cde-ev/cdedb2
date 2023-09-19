@@ -187,11 +187,13 @@
                         <tbody>
                         {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
                             <tr id="active-fee" data-fee_id="{{ fee_id }}">
-                                <th class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</th>
-                                <th class="{{ 'text-success' if fee['amount'] < 0 }}" style="text-align: right;">
-                                    {{ fee['amount']|money(lang=lang) }}
-                                </th>
-                                <th id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></th>
+                                <td class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</td>
+                                <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
+                                    <strong>
+                                        {{ fee['amount']|money(lang=lang) }}
+                                    </strong>
+                                </td>
+                                <td id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -201,7 +203,11 @@
         </div>
 
         {% if not preview %}
-        {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
+            {% if age.with_guardian() %}
+                {{ util.form_input_static(aclass='text-info', icon='info-circle',
+                    value=gettext("I confirm that I will attend the event only under the supervision of a parent who will attend the same event.")) }}
+            {% endif %}
+            {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
     </form>
 
@@ -213,7 +219,7 @@
 
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ user.persona_id }},
+            'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',

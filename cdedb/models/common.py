@@ -2,7 +2,7 @@
 import dataclasses
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING, Any, List, Literal, Tuple, Type, TypeVar, Union, get_args,
+    TYPE_CHECKING, Any, ClassVar, List, Literal, Tuple, Type, TypeVar, Union, get_args,
     get_origin,
 )
 
@@ -10,7 +10,9 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common.validation.types import TypeMapping
 
 if TYPE_CHECKING:
-    from cdedb.common import CdEDBObject
+    from typing_extensions import Self
+
+    from cdedb.common import CdEDBObject  # pylint:disable=ungrouped-imports
 
 NoneType = type(None)
 T = TypeVar("T")
@@ -33,14 +35,28 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
 class CdEDataclass:
     id: vtypes.ProtoID
 
+    database_table: ClassVar[str]
+
     def to_database(self) -> "CdEDBObject":
         """Generate a dict representation of this entity to be saved to the database."""
-        data = {key: value for key, value in vars(self).items()
-                if key in self.database_fields()}
+        database_fields = self.database_fields()
+        values = vars(self)
+
+        # Exclude fields marked as init=False.
+        data = {
+            field.name: values[field.name]
+            for field in dataclasses.fields(self)
+            if field.name in database_fields and field.init
+        }
+
         # during creation the id is unknown
         if self.in_creation:
             del data["id"]
         return data
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        return cls(**data)
 
     @property
     def in_creation(self) -> bool:
@@ -57,10 +73,12 @@ class CdEDataclass:
         fields = {field.name: field for field in dataclasses.fields(cls)}
         # always special case the id, see below
         del fields["id"]
+        # Fields with init=False are optional, so that objects retrieved from the
+        #  database can pass validation.
         mandatory = {name: field.type for name, field in fields.items()
-                     if not is_optional_type(field.type)}
+                     if not is_optional_type(field.type) and field.init}
         optional = {name: field.type for name, field in fields.items()
-                    if is_optional_type(field.type)}
+                    if is_optional_type(field.type) or not field.init}
         if creation:
             mandatory["id"] = vtypes.CreationID
         else:
@@ -77,7 +95,7 @@ class CdEDataclass:
         field_names = set(cls.database_fields())
         field_names.remove("id")
         fields = [field for field in dataclasses.fields(cls)
-                  if field.name in field_names]
+                  if field.name in field_names and field.init]
         return [(field.name, requestdict_field_spec(field)) for field in fields]
 
     @classmethod

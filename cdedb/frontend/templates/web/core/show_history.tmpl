@@ -30,11 +30,11 @@
     {% endif %}
 {% endblock %}
 
-{% set STATUS={enums["MemberChangeStati"].pending: ('pending','user-clock',gettext("pending")),
-                enums["MemberChangeStati"].committed: ('','',''),
-                enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
-                enums["MemberChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
-                enums["MemberChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
+{% set STATUS={enums["PersonaChangeStati"].pending: ('pending','user-clock',gettext("pending")),
+                enums["PersonaChangeStati"].committed: ('','',''),
+                enums["PersonaChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
+                enums["PersonaChangeStati"].nacked: ('nacked', 'ban', gettext("nacked")),
+                enums["PersonaChangeStati"].displaced: ('displaced', 'sync', gettext("displaced")),
                 -1: ('complicated','question-circle',gettext("complicated")),} %}
 {% macro print_history(f) %}
     {% for c in entries|sort %}
@@ -42,7 +42,7 @@
             <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
-                    {% if entries[c]['code'] != enums['MemberChangeStati'].committed %}
+                    {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
                         {{ util.make_icon(STATUS[eventual_status[f][c]][1],
                                 title=STATUS[eventual_status[f][c]][2]) }}
                     {% endif %}
@@ -94,7 +94,7 @@
             <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
-                    {% if entries[c]['code'] != enums['MemberChangeStati'].committed %}
+                    {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
                         {{ util.make_icon(STATUS[vars['eventual_status']][1],
                                 title=STATUS[vars['eventual_status']][2]) }}
                     {% endif %}
@@ -339,7 +339,7 @@
                 <tr id="generation{{ entry['generation'] }}">
                     <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
-                    <td>{{ gettext(entry['code']|enum(enums['MemberChangeStati'])) }}</td>
+                    <td>{{ gettext(entry['code']|enum(enums['PersonaChangeStati'])) }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>
                     <td>
                         {% if entry['reviewed_by'] %}

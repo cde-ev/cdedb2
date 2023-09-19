@@ -50,7 +50,7 @@ Instead, we provide some convenient wrappers around them for frontend and backen
 Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
-
+import collections
 import copy
 import dataclasses
 import distutils.util
@@ -83,6 +83,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.droid as models_droid
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -90,7 +91,7 @@ from cdedb.common import (
     compute_checkdigit, now,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
@@ -106,6 +107,7 @@ from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,u
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
+from cdedb.models.common import CdEDataclass
 
 NoneType = type(None)
 
@@ -117,6 +119,7 @@ _CONFIG = LazyConfig()
 T = TypeVar('T')
 T_Co = TypeVar('T_Co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
+DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -183,14 +186,15 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[Any]] = {
+DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
+    models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
 }
 
 
-def _validate_dataclass_preprocess(type_: Type[T], value: Any
-                                   ) -> Tuple[Type[T], Type[T]]:
+def _validate_dataclass_preprocess(type_: Type[DC], value: Any
+                                   ) -> Tuple[Type[DC], Type[CdEDBObject]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -210,15 +214,15 @@ def _validate_dataclass_preprocess(type_: Type[T], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[T], validated: T) -> T:
+def _validate_dataclass_postprocess(subtype: Type[DC], validated: CdEDBObject) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
-    validated = {k: v for k, v in validated.items() if k in dataclass_keys}  # type: ignore[attr-defined]
-    return subtype(**validated)
+    validated = {k: v for k, v in validated.items() if k in dataclass_keys}
+    return cast(DC, subtype(**validated))
 
 
-def validate_assert_dataclass(type_: Type[T], value: Any, ignore_warnings: bool,
-                              **kwargs: Any) -> T:
+def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool,
+                              **kwargs: Any) -> DC:
     """Wrapper of validate_assert that accepts dataclasses.
 
     Allows for subclasses, and figures out the appropriate superclass, for which
@@ -446,7 +450,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
+                **{"allow_superfluous": True, **kwargs})
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -1155,6 +1159,48 @@ def _password_strength(
 
 
 @_add_typed_validator
+def _api_token_string(
+        val: Any, argname: str = "api_token_string", **kwargs: Any
+) -> APITokenString:
+    """Check if a string has the correct format to be a valid api token.
+
+    Split the token into the droid name and the secret.
+    """
+    val = _printable_ascii(val, argname, **kwargs)
+    try:
+        droid_name, secret = models_droid.APIToken.parse_token_string(val)
+        return APITokenString((droid_name, secret))
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
+
+
+@_add_typed_validator
+def _orga_token(
+        val: Any, argname: str = "orga_token", *, creation: bool = False,
+        **kwargs: Any
+) -> OrgaToken:
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
+    val = _examine_dictionary_fields(
+        val, mandatory, optional, **kwargs)
+
+    errs = ValidationSummary()
+
+    timestamp = now()
+    if 'etime' in val:
+        if val['etime'] and val['etime'] <= timestamp:
+            with errs:
+                raise ValidationSummary(ValueError(
+                    'etime', n_("Expiration time must be in the future.")))
+
+    if errs:
+        raise errs
+
+    return OrgaToken(val)
+
+
+@_add_typed_validator
 def _email(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Email:
@@ -1406,6 +1452,10 @@ def _persona(
             if val.get(key):
                 mandatory_fields.update(checkers)
         optional_fields = {key: bool for key in realm_checks}
+        # promoting to cde realm may be used to grant a trial membership.
+        #  since trial member implies is_member, we need to allow the latter here
+        if val.get("is_cde_realm"):
+            optional_fields["is_member"] = bool
     else:
         mandatory_fields = {'id': ID}
         optional_fields = PERSONA_COMMON_FIELDS
@@ -1413,6 +1463,10 @@ def _persona(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
+    if "is_member" in val and "trial_member" in val:
+        if val["trial_member"] and not val["is_member"]:
+            errs.append(ValueError("trial_member", n_(
+                "Trial membership implies membership.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:
@@ -2190,37 +2244,10 @@ def _meta_info(
     return MetaInfo(val)
 
 
-INSTITUTION_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-}
-
-
-@_add_typed_validator
-def _institution(
-    val: Any, argname: str = "institution", *,
-    creation: bool = False, **kwargs: Any
-) -> Institution:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**INSTITUTION_COMMON_FIELDS}
-    return Institution(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Shortname,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
 }
@@ -2256,7 +2283,7 @@ def _past_event(
 
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,
@@ -2271,6 +2298,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_soft_limit': Optional[datetime.datetime],
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
+    'field_definition_notes': Optional[str],
     'is_participant_list_visible': bool,
     'is_course_assignment_visible': bool,
     'is_cancelled': bool,
@@ -2280,8 +2308,6 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field': Optional[ID],
-    'camping_mat_field': Optional[ID],
-    'course_room_field': Optional[ID],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -2351,35 +2377,28 @@ def _event(
         mandatory_fields = {**EVENT_COMMON_FIELDS}
         optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
     else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
+        mandatory_fields = {}
+        optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    if 'registration_soft_limit' in val and 'registration_hard_limit' in val:
-        if (val['registration_soft_limit']
-                and val['registration_hard_limit']
-                and (val['registration_soft_limit']
-                     > val['registration_hard_limit'])):
-            errs.append(ValueError("registration_soft_limit", n_(
-                "Must be before or equal to hard limit.")))
-        if val.get('registration_start') and (
-                val['registration_soft_limit'] and
-                val['registration_start'] > val['registration_soft_limit']
-                or val['registration_hard_limit'] and
-                val['registration_start'] > val['registration_hard_limit']):
-            errs.append(ValueError("registration_start", n_(
-                "Must be before hard and soft limit.")))
+
+    configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
+    if configuration_fields:
+        if creation:
+            kwargs['current'] = {}
+        with errs:
+            configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
+                configuration_fields, argname, creation=creation, **kwargs)
+            val.update(configuration_fields)
 
     if 'orgas' in val:
         orgas = set()
         for anid in val['orgas']:
-            try:
+            with errs:
                 v = _id(anid, 'orgas', **kwargs)
                 orgas.add(v)
-            except ValidationSummary as e:
-                errs.extend(e)
         val['orgas'] = orgas
 
     if 'parts' in val:
@@ -2416,6 +2435,7 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
+    'camping_mat_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
@@ -2540,6 +2560,7 @@ EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
+    'course_room_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 
@@ -2732,6 +2753,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
     "condition": EventFeeCondition,
+    "kind": const.EventFeeType,
 }
 
 
@@ -3393,6 +3415,8 @@ def _serialized_event(
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
+    }
+    mandatory_tables: TypeMapping = {
         'event.events': Mapping,
         'event.event_parts': Mapping,
         'event.course_tracks': Mapping,
@@ -3411,15 +3435,17 @@ def _serialized_event(
         'event.event_fees': Mapping,
         'event.stored_queries': Mapping,
     }
-    optional_fields: TypeMapping = {
+    optional_tables: TypeMapping = {
         'core.personas': Mapping,
         'event.part_groups': Mapping,
         'event.part_group_parts': Mapping,
         'event.track_groups': Mapping,
         'event.track_group_tracks': Mapping,
+        models_droid.OrgaToken.database_table: Mapping,
     }
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, dict(collections.ChainMap(mandatory_fields, mandatory_tables)),
+        optional_tables, **kwargs)
 
     if val['EVENT_SCHEMA_VERSION'] != EVENT_SCHEMA_VERSION:
         raise ValidationSummary(ValueError(
@@ -3431,7 +3457,8 @@ def _serialized_event(
     # data looks a bit different.
     # TODO replace the functions with types
     table_validators: Mapping[str, Callable[..., Any]] = {
-        'event.events': _event,
+        'event.events': functools.partial(
+            _event, current={}, skip_field_validation=True),
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
@@ -3475,7 +3502,8 @@ def _serialized_event(
                           'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
                           'pos': int}),
         'event.event_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
+            _empty_dict, {'id': ID, 'event_id': ID,
+                          'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
                           'condition': str, 'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
@@ -3491,7 +3519,10 @@ def _serialized_event(
             _event_track_group, {'id': ID, 'event_id': ID}),
         'event.track_group_tracks': _augment_dict_validator(
             _empty_dict, {'id': ID, 'track_group_id': ID, 'track_id': ID}),
+        # Ignore models_droid.OrgaToken. Do not validate and do not import.
     }
+
+    new_val = {k: val[k] for k in mandatory_fields}
 
     errs = ValidationSummary()
     for table, validator in table_validators.items():
@@ -3501,7 +3532,7 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     for table, validator in optional_table_validators.items():
         if table not in val:
@@ -3512,28 +3543,29 @@ def _serialized_event(
                 new_entry = validator(entry, argname=table, **kwargs)
                 new_key = _int(key, argname=table, **kwargs)
                 new_table[new_key] = new_entry
-        val[table] = new_table
+        new_val[table] = new_table
 
     if errs:
         raise errs
 
     # Third a consistency check
-    if len(val['event.events']) != 1:
+    if len(new_val['event.events']) != 1:
         errs.append(ValueError('event.events', n_(
             "Only a single event is supported.")))
-    if val['event.events'] and val['id'] != val['event.events'][val['id']]['id']:
+    event_id = new_val['id']
+    if new_val['event.events'] and event_id != new_val['event.events'][event_id]['id']:
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
-    for k, v in val.items():
-        if k not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
-            for event in v.values():
-                if event.get('event_id') and event['event_id'] != val['id']:
-                    errs.append(ValueError(k, n_("Mismatched event.")))
+    for table, entity_dict in new_val.items():
+        if table not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
+            for entity in entity_dict.values():
+                if entity.get('event_id') and entity['event_id'] != event_id:
+                    errs.append(ValueError(table, n_("Mismatched event.")))
 
     if errs:
         raise errs
 
-    return SerializedEvent(val)
+    return SerializedEvent(new_val)
 
 
 @_add_typed_validator
@@ -3979,6 +4011,67 @@ def _serialized_event_questionnaire(
 
 
 @_add_typed_validator
+def _serialized_event_configuration(
+    val: Any, argname: str = "serialized_event_configuration", *,
+    creation: bool = False,
+    current: CdEDBObject,
+    skip_field_validation: bool = False,
+    **kwargs: Any
+) -> SerializedEventConfiguration:
+
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = dict(**EVENT_COMMON_FIELDS)
+        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS)
+    else:
+        mandatory_fields = {}
+        optional_fields = dict(**EVENT_EXPOSED_FIELDS)
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+
+    # Check registration time compatibility.
+    start = val.get('registration_start', current.get('registration_start'))
+    soft = val.get('registration_soft_limit', current.get('registration_soft_limit'))
+    hard = val.get('registration_hard_limit', current.get('registration_hard_limit'))
+    if start and (soft and start > soft or hard and start > hard):
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_start", n_("Must be before hard and soft limit.")))
+    if soft and hard and soft > hard:
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_soft_limit", "Must be before or equal to hard limit."))
+
+    if not skip_field_validation:
+        if lodge_field := val.get('lodge_field'):
+            if lodge_field not in current['fields']:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "lodge_field", n_("Unknown lodge field.")))
+            else:
+                field = current['fields'][lodge_field]
+                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                if field['association'] not in legal_associations:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field",
+                            n_("Lodge field must be a registration field.")))
+                if field['kind'] not in legal_kinds:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field", n_("Lodge field must have type 'string'.")))
+
+    if errs:
+        raise errs
+
+    return SerializedEventConfiguration(val)
+
+
+@_add_typed_validator
 def _mailinglist(
     val: Any, argname: str = "mailinglist", *, creation: bool = False,
     subtype: models_ml.MLType = models_ml.Mailinglist, **kwargs: Any
@@ -4321,12 +4414,17 @@ def _assembly_attachment(
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", creation: bool = False,
+    **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
-    optional_fields: TypeMapping = {}
+    if creation:
+        mandatory_fields = {'attachment_id': ID, **ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        optional_fields: TypeMapping = {}
+    else:
+        mandatory_fields = {'attachment_id': ID, 'version_nr': ID}
+        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -4691,7 +4789,7 @@ def _query(
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, misc]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment, type-abstract]
         except ValidationSummary as e:
             errs.extend(e)
             continue

@@ -72,6 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
+from cdedb.models.droid import APIToken, resolve_droid_name
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -182,12 +183,12 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        user = sessionproxy.lookuptoken(key, ip)
-        if user.roles == {'anonymous'}:
+        if key and APIToken.token_string_pattern.fullmatch(key):
+            user = sessionproxy.lookuptoken(key, ip)
+            apitoken = key
+        else:
             user = sessionproxy.lookupsession(key, ip)
             sessionkey = key
-        else:
-            apitoken = key
 
         rs = RequestState(
             sessionkey=sessionkey,
@@ -206,13 +207,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(  # type: ignore[attr-defined]
+            rs.user.orga = backend.orga_info(
                 rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(  # type: ignore[attr-defined]
+            rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(  # type: ignore[attr-defined]
+            rs.user.presider = backend.presider_info(
                 rs, rs.user.persona_id)
         return rs
 
@@ -461,7 +462,7 @@ class BackendTest(CdEDBTest):
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
-        self.logout()
+        self.logout(allow_anonymous=True)
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
@@ -497,6 +498,9 @@ class BackendTest(CdEDBTest):
                     exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
+                    exp[k] = None
+            for k in ('droid_id',):
+                if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
@@ -908,7 +912,7 @@ class FrontendTest(BackendTest):
     """
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[str]"
+    gettext: "staticmethod[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -1227,6 +1231,12 @@ class FrontendTest(BackendTest):
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
+
+    def fetch_orga_token(self) -> Tuple[int, str]:
+        new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
+        droid_name, secret = APIToken.parse_token_string(new_token)
+        droid_class, token_id = resolve_droid_name(droid_name)
+        return cast(int, token_id), secret
 
     def assertTitle(self, title: str, exact: bool = True) -> None:
         """

@@ -45,7 +45,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class ConstraintViolation:
     @property
     @abc.abstractmethod
@@ -59,7 +59,7 @@ class ConstraintViolation:
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class PartGroupConstraintViolation(ConstraintViolation):
     part_group_id: int  # ID of the part group whose constraint is being violated.
 
@@ -69,7 +69,7 @@ class PartGroupConstraintViolation(ConstraintViolation):
         ...
 
 
-@dataclass(frozen=True)  # type: ignore[misc]
+@dataclass(frozen=True)
 class TrackGroupConstraintViolation(ConstraintViolation):
     track_group_id: int  # ID of the track group whose constraint is being violated.
 
@@ -222,7 +222,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
-                         part_id: vtypes.ID = None, sortkey: Optional[str] = "persona",
+                         part_id: Optional[vtypes.ID] = None,
+                         sortkey: Optional[str] = "persona",
                          reverse: bool = False) -> Response:
         """List participants of an event"""
         if rs.has_validation_errors():
@@ -361,14 +362,17 @@ class EventBaseFrontend(AbstractUserFrontend):
             registration_id = unwrap(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id).keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
-            wish_data = self._get_participant_list_data(rs, event_id)
+            data = self._get_participant_list_data(rs, event_id)
             wish_data['field'] = rs.ambience['event']['fields'][field_id]
             wishes, problems = detect_lodgement_wishes(
-                wish_data['registrations'], wish_data['personas'], rs.ambience['event'],
+                data['registrations'], data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
                 check_edges=False)
             if registration['list_consent']:
-                wish_data['wishes'] = wishes
+                # Ordered list of wished personas
+                wish_data['wished_personas'] = xsorted(
+                    (data['personas'][data['registrations'][wish.wished]['persona_id']]
+                     for wish in wishes), key=EntitySorter.persona)
                 wish_data['problems'] = problems
             else:
                 msg = n_(
@@ -659,6 +663,16 @@ class EventBaseFrontend(AbstractUserFrontend):
                 'registration_map': registration_map,
             },
         )
+
+    @staticmethod
+    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, Optional[str]]:
+        field_names = {}
+        for part_id, part in event["parts"].items():
+            if f_id := part["camping_mat_field"]:
+                field_names[part_id] = event["fields"][f_id]["field_name"]
+            else:
+                field_names[part_id] = None
+        return field_names
 
     @periodic("event_keeper", 2)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:

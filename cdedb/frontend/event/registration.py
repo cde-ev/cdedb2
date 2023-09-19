@@ -239,7 +239,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields)
+                                        csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
@@ -402,9 +402,9 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: vtypes.IntCSVList, field_ids: vtypes.IntCSVList,
-                       is_member: bool = None, is_orga: bool = None,
+                       is_member: Optional[bool] = None, is_orga: Optional[bool] = None,
                        ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -428,8 +428,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return Response("{}", mimetype='application/json', status=400)
 
+        field_params = {f"field.{field_id}": bool
+                        for field_id in rs.ambience['event']['fields']}
+        field_values = request_extractor(rs, field_params, omit_missing=True)
+
         complex_fee = self.eventproxy.precompute_fee(
-            rs, event_id, persona_id, part_ids, field_ids, is_member, is_orga)
+            rs, event_id, persona_id, part_ids, is_member, is_orga, field_values)
 
         msg = rs.gettext("Because you are not a CdE-Member, you will have to pay an"
                          " additional fee of %(additional_fee)s"
@@ -943,27 +947,24 @@ class EventRegistrationMixin(EventBaseFrontend):
     def show_registration(self, rs: RequestState, event_id: int,
                           registration_id: int) -> Response:
         """Display all information pertaining to one registration."""
-        persona = self.coreproxy.get_event_user(
-            rs, rs.ambience['registration']['persona_id'], event_id)
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
+        persona = payment_data.pop('persona')
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
-        fee = self.eventproxy.calculate_fee(rs, registration_id)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
         constraint_violations = self.get_constraint_violations(
             rs, event_id, registration_id=registration_id, course_id=-1)
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(rs, "registration/show_registration", {
-            'persona': persona, 'age': age,
-            'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference, 'waitlist_position': waitlist_position,
+            'persona': persona, 'age': age, 'lodgements': lodgements,
+            'waitlist_position': waitlist_position,
             'mep_violations': constraint_violations['mep_violations'],
             'ccs_violations': constraint_violations['ccs_violations'],
             'violation_severity': constraint_violations['max_severity'],
+            **payment_data,
             **course_choice_parameters,
         })
 
@@ -1253,7 +1254,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Collection[int] = None) -> Response:
+                     part_ids: Optional[Collection[int]] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -1284,17 +1285,19 @@ class EventRegistrationMixin(EventBaseFrontend):
             field_id: f for field_id, f in rs.ambience['event']['fields'].items()
             if f['checkin'] and f['association'] == const.FieldAssociations.registration
         }
+        camping_mat_field_names = self._get_camping_mat_field_names(
+            rs.ambience['event'])
         return self.render(rs, "registration/checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids': part_ids
+            'part_ids': part_ids, 'camping_mat_field_names': camping_mat_field_names,
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Collection[int] = None) -> Response:
+                part_ids: Optional[Collection[int]] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -1313,18 +1316,22 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
-    def _get_payment_data(self, rs: RequestState, event_id: int) -> CdEDBObject:
-        reg_list = self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id)
-        if not reg_list:
-            return {}
-        registration_id = unwrap(reg_list.keys())
+    def _get_payment_data(self, rs: RequestState, event_id: int,
+                          registration_id: Optional[int] = None) -> CdEDBObject:
+        if not registration_id:
+            reg_list = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id)
+            if not reg_list:
+                return {}
+            registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
+        persona = self.coreproxy.get_event_user(
+            rs, registration['persona_id'], event_id)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        reference = make_event_fee_reference(persona, rs.ambience['event'])
         complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        reference = make_event_fee_reference(
+            persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount
         to_pay = fee - registration['amount_paid']
 

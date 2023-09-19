@@ -12,6 +12,7 @@ import tempfile
 from collections import OrderedDict
 from typing import Collection, Optional
 
+import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -229,10 +230,12 @@ class EventDownloadMixin(EventBaseFrontend):
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
         instructors = {}
-        # Look for the field name of the course_room_field.
-        cr_field_id = rs.ambience['event']['course_room_field']
-        cr_field = rs.ambience['event']['fields'].get(cr_field_id, {})
-        cr_field_name = cr_field.get('field_name')
+        # Look for the field name of the course_room_fields.
+        cr_field_names = {}
+        for track_id, track in rs.ambience['event']['tracks'].items():
+            cr_field_id = track['course_room_field']
+            cr_field = rs.ambience['event']['fields'].get(cr_field_id, {})
+            cr_field_names[track_id] = cr_field.get('field_name')
         for c_id, course in courses.items():
             for t_id in course['active_segments']:
                 instructors[(c_id, t_id)] = [
@@ -250,7 +253,7 @@ class EventDownloadMixin(EventBaseFrontend):
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
-            'instructors': instructors, 'course_room_field': cr_field_name,
+            'instructors': instructors, 'course_room_fields': cr_field_names,
             'tracks_sorted': tracks_sorted, })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
@@ -519,9 +522,18 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
         json = json_serialize(data)
         return self.send_file(
-            rs, data=json, inline=False,
+            rs, mimetype="application/json", data=json, inline=False,
             filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
+
+    @access("droid_orga")
+    @event_guard()
+    def droid_partial_export(self, rs: RequestState, event_id: int) -> Response:
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
+        return self.send_file(
+            rs, mimetype="application/json", data=json_serialize(data))
 
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:

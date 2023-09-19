@@ -804,6 +804,7 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = "Noch mehr Gemunkel."
         f['domain'] = const.MailinglistDomain.lists
         f['local_part'] = 'munkelwand'
+        f['additional_footer'] = "Man munklelt, dass…"
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
         f['moderators'] = ""
@@ -1213,6 +1214,7 @@ class TestMlFrontend(FrontendTest):
         # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
+        f['additional_footer'] = "Disco, Disco."
         f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
         f['attachment_policy'] = const.AttachmentPolicy.allow
@@ -1247,6 +1249,7 @@ class TestMlFrontend(FrontendTest):
                          f['attachment_policy'].value)
         self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
+        self.assertEqual("Disco, Disco.", f['additional_footer'].value)
 
     @as_users("janis")
     # add Janis as restricted moderator
@@ -1459,6 +1462,7 @@ class TestMlFrontend(FrontendTest):
         client.get_held_messages.return_value = messages[2:]
         client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
+        f['reason'] = 'naughty joke'
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
@@ -1479,7 +1483,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'reject', comment='naughty joke'),
+             umcall(3, 'discard', comment=None)])
 
         self.traverse("Log")
         self.assertPresence("Nachricht akzeptiert", div="1-1001")
@@ -1527,7 +1533,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'accept'), umcall(3, 'accept')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'accept', comment=None),
+             umcall(3, 'accept', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
@@ -1564,7 +1572,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'discard'), umcall(2, 'discard'), umcall(3, 'discard')])
+            [umcall(1, 'discard', comment=None),
+             umcall(2, 'discard', comment=None),
+             umcall(3, 'discard', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")

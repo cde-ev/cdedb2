@@ -266,6 +266,17 @@ class EventLowLevelBackend(AbstractBackend):
         new = {x for x in data if x < 0}
         updated = {x for x in data if x > 0 and data[x] is not None}
         deleted = {x for x in data if x > 0 and data[x] is None}
+
+        # Do some additional validation for any given course room field.
+        course_room_fields: Set[int] = set(
+            filter(None, (t.get('camping_mat_field') for t in data.values() if t)))
+        course_room_field_data = self._get_event_fields(rs, event_id,
+                                                        course_room_fields)
+        if len(course_room_fields) != len(course_room_field_data):
+            raise ValueError(n_("Unknown field."))
+        for field in course_room_field_data.values():
+            self._validate_special_event_field(rs, event_id, "course_room", field)
+
         # new
         for x in mixed_existence_sorter(new):
             new_track = copy.copy(data[x])
@@ -561,7 +572,7 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
-        # Do some additional validation for any given waitlist fields.
+        # Do some additional validation for any given waitlist and camping mat fields.
         waitlist_fields: Set[int] = set(
             filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
         waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
@@ -569,6 +580,15 @@ class EventLowLevelBackend(AbstractBackend):
             raise ValueError(n_("Unknown field."))
         for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
+
+        camping_mat_fields: Set[int] = set(
+            filter(None, (p.get('camping_mat_field') for p in parts.values() if p)))
+        camping_mat_field_data = self._get_event_fields(rs, event_id,
+                                                        camping_mat_fields)
+        if len(camping_mat_fields) != len(camping_mat_field_data):
+            raise ValueError(n_("Unknown field."))
+        for field in camping_mat_field_data.values():
+            self._validate_special_event_field(rs, event_id, "camping_mat", field)
 
         self.sql_defer_constraints(rs, "event.event_parts_event_id_shortname_key")
 
@@ -1004,9 +1024,9 @@ class EventLowLevelBackend(AbstractBackend):
         * event_fees:         An event fee referencing this field.
         * questionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields:       An event that uses this field for lodging wishes.
-        * camping_mat_fields: An event that uses this field for camping mat
+        * camping_mat_fields: An event_part that uses this field for camping mat
                               wishes.
-        * course_room_fields: An event that uses this field for course room
+        * course_room_fields: A course_track that uses this field for course room
                               assignment.
         * waitlist_fields:    An event_part that uses this field for waitlist
                               management.
@@ -1040,14 +1060,14 @@ class EventLowLevelBackend(AbstractBackend):
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
         camping_mat_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,),
+            rs, "event.event_parts", ("id",), (field_id,),
             entity_key="camping_mat_field")
         if camping_mat_fields:
             blockers["camping_mat_fields"] = [
                 e["id"] for e in camping_mat_fields]
 
         course_room_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,),
+            rs, "event.course_tracks", ("id",), (field_id,),
             entity_key="course_room_field")
         if course_room_fields:
             blockers["course_room_fields"] = [
@@ -1291,7 +1311,7 @@ class EventLowLevelBackend(AbstractBackend):
             if x in translations or x in extra_translations:
                 target = extra_translations.get(x, x)
                 ret[x] = translations[target].get(ret[x], ret[x])
-            if isinstance(ret[x], collections.Mapping):
+            if isinstance(ret[x], collections.abc.Mapping):
                 # All mappings have to be JSON columns in the database
                 # (nothing else should be possible).
                 ret[x] = PsycoJson(

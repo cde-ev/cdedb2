@@ -8,9 +8,13 @@ import unittest
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.session import SessionBackend
 from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
+from cdedb.common.exceptions import APITokenError
 from cdedb.config import TestConfig, get_configpath
 from cdedb.frontend.core import CoreFrontend
 from cdedb.script import DryRunError, Script, ScriptAtomizer
@@ -217,11 +221,11 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             self.check_buffer(buffer, self.assertIn, "Success!")
 
             insertion_query = (
-                "INSERT INTO past_event.institutions"  # arbitrary, small table
-                " (title, shortname) VALUES ('Dummy', 'Test')"
+                "INSERT INTO core.cron_store"  # arbitrary, small table
+                " (title, store) VALUES ('Test', '{}')"
             )
-            selection_query = ("SELECT shortname FROM past_event.institutions"
-                               " WHERE title = 'Dummy'")
+            selection_query = ("SELECT title FROM core.cron_store"
+                               " WHERE title = 'Test'")
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
@@ -238,3 +242,20 @@ Aborting Dry Run! Time taken: 0.000 seconds.
                 with conn.cursor() as cur:
                     cur.execute(selection_query)
                     self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+
+    def test_offline_orgatoken(self) -> None:
+        offline_script = self.get_script(CDEDB_OFFLINE_DEPLOYMENT=True)
+        event: EventBackend = offline_script.make_backend('event')
+        session: SessionBackend = offline_script.make_backend('session', proxy=False)
+
+        token = event.get_orga_token(offline_script.rs(), 1)
+        with self.assertRaisesRegex(
+                APITokenError, "This API is not available in offline mode."
+        ):
+            session.lookuptoken(token.get_token_string("abc"), "127.0.0.0")
+
+        with self.assertRaisesRegex(
+                ValueError, "May not create new orga token in offline instance."
+        ):
+            token.id = vtypes.ProtoID(-1)
+            event.create_orga_token(offline_script.rs(), token)

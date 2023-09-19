@@ -116,7 +116,8 @@ class MlMailmanMixin(MlBaseFrontend):
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
-Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)})""",
+E-Mails an diese Mailingliste werden unter https://ssl.cde-ev.de/mailman3/hyperkitty/list/{db_list.address}/ archiviert.
+Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)}).""",
             'list:admin:action:post': f"""
 As list moderator, your authorization is requested for the
 following mailing list posting:
@@ -155,6 +156,10 @@ going again).
 The triggering DSN if available is attached.
 """.strip(),
         }
+        if db_list.additional_footer:
+            desired_templates['list:member:regular:footer'] = (
+                "--\n" + db_list.additional_footer + "\n" +
+                desired_templates['list:member:regular:footer'])
         desired_header_matches = {
             ('x-spam-flag', 'YES', 'hold'),
         }
@@ -212,7 +217,7 @@ The original message as received by Mailman is attached.
             if not file_path.exists():
                 todo = True
             else:
-                with open(file_path) as f:
+                with open(file_path, encoding='UTF-8') as f:
                     current_text = f.read()
                 if current_text != text:
                     todo = True

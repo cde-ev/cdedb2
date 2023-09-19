@@ -181,7 +181,7 @@ class EntitySorter:
 
     @staticmethod
     def event_fee(event_fee: CdEDBObject) -> Sortkey:
-        return (event_fee['title'], event_fee['id'])
+        return (event_fee['kind'], event_fee['title'], event_fee['id'])
 
     @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
@@ -230,10 +230,6 @@ class EntitySorter:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['shortname'], institution['id'])
-
-    @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
@@ -243,7 +239,8 @@ class EntitySorter:
 
     @staticmethod
     def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (changelog_entry['ctime'], changelog_entry['id'])
+        return (changelog_entry['ctime'], changelog_entry['generation'],
+                changelog_entry['persona_id'])
 
     @staticmethod
     def mailinglist(mailinglist: CdEDBObject) -> Sortkey:

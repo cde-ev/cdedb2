@@ -254,10 +254,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/transaction/finalize", methods=_POST,
                      endpoint="lastschrift_finalize_transactions"),)),
             sub('/past/', (
-                rule("/institution/summary", methods=_GET,
-                     endpoint="institution_summary_form"),
-                rule("/institution/summary", methods=_POST,
-                     endpoint="institution_summary"),
                 rule("/event/list", methods=_GET,
                      endpoint="list_past_events"),
                 rule("/event/create", methods=_GET,
@@ -394,6 +390,28 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="checkin_form"),
                 rule("/checkin", methods=_POST,
                      endpoint="checkin"),
+                sub('/droid', (
+                    # API-functionality:
+                    rule("/partial", methods=_GET,
+                         endpoint="droid_partial_export"),
+                    # Token management:
+                    rule("/summary", methods=_GET,
+                         endpoint="orga_token_summary"),
+                    rule("/create", methods=_GET,
+                         endpoint="create_orga_token_form"),
+                    rule("/create", methods=_POST,
+                         endpoint="create_orga_token"),
+                    sub("/<int:orga_token_id>", (
+                        rule("/change", methods=_GET,
+                             endpoint="change_orga_token_form"),
+                        rule("/change", methods=_POST,
+                             endpoint="change_orga_token"),
+                        rule("/delete", methods=_POST,
+                             endpoint="delete_orga_token"),
+                        rule("/revoke", methods=_POST,
+                             endpoint="revoke_orga_token"),
+                    )),
+                )),
                 sub('/minorform', (
                     rule("/get", methods=_GET,
                          endpoint="get_minor_form"),
@@ -479,6 +497,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 )),
                 sub('/fee', (
                     rule("/summary", methods=_GET, endpoint="fee_summary"),
+                    rule("/stats", methods=_GET, endpoint="fee_stats"),
                     rule("/add", methods=_GET, endpoint="configure_fee_form"),
                     rule("/add", methods=_POST, endpoint="configure_fee"),
                     sub('/<int:fee_id>', (
@@ -738,6 +757,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                                  redirect_to="assembly/assembly/<assembly_id>"
                                              "/attachment/<attachment_id>/version"
                                              "/<version_nr>"),
+                            rule("/change", methods=_GET,
+                                 endpoint="change_attachment_version_form"),
+                            rule("/change", methods=_POST,
+                                 endpoint="change_attachment_version"),
                             rule("/delete", methods=_POST,
                                  endpoint="delete_attachment_version"),
                         )),

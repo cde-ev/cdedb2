@@ -26,12 +26,13 @@ from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
 
 
 @enum.unique
-class QueryOperators(enum.IntEnum):
+class QueryOperators(CdEIntEnum):
     """Enum for all possible operators on a query column."""
     empty = 1
     nonempty = 2
@@ -142,7 +143,7 @@ class QuerySpecEntry(NamedTuple):
 QuerySpec = Dict[str, QuerySpecEntry]
 
 
-class QueryScope(enum.IntEnum):
+class QueryScope(CdEIntEnum):
     """Enum that contains the different kinds of generalized queries.
 
     This is used in conjunction with the `Query` class and bundles together a lot of
@@ -249,8 +250,9 @@ class QueryScope(enum.IntEnum):
             prefix, target = "query", "course_query"
         elif self in {QueryScope.event_user, QueryScope.all_event_users}:
             prefix, target = "user", "user_search"
+        elif self in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
+            prefix, target = "base", "user_search"
         elif self in {QueryScope.core_user, QueryScope.all_core_users,
-                      QueryScope.assembly_user, QueryScope.all_assembly_users,
                       QueryScope.cde_user, QueryScope.all_cde_users,
                       QueryScope.ml_user, QueryScope.all_ml_users}:
             target = "user_search"
@@ -325,6 +327,8 @@ _QUERY_VIEWS = {
             ON personas.id = participants.persona_id
         """),
     QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.core_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.all_core_users: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.quick_registration:
         """core.personas
         INNER JOIN event.registrations
@@ -683,7 +687,7 @@ class Query:
             params[f'qsel_{field}'] = True
         for field, op, value in self.constraints:
             params[f'qop_{field}'] = op.value
-            if (isinstance(value, collections.Iterable)
+            if (isinstance(value, collections.abc.Iterable)
                     and not isinstance(value, str)):
                 params[f'qval_{field}'] = QUERY_VALUE_SEPARATOR.join(
                     serialize_value(x) for x in value)
@@ -851,6 +855,7 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
+        "reg.remaining_owed": QuerySpecEntry("float", n_("Remaining Owed")),
         "reg.parental_agreement": QuerySpecEntry("bool", n_("Parental Consent")),
         "reg.mixed_lodging": QuerySpecEntry("bool", n_("Mixed Lodging")),
         "reg.list_consent": QuerySpecEntry("bool", n_("Participant List Consent")),
@@ -1190,7 +1195,7 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
-        "lodgement_group.title": QuerySpecEntry("int", n_("Lodgement Group Title")),
+        "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.
     }
 

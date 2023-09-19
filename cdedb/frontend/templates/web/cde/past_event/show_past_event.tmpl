@@ -29,11 +29,13 @@
         {% if "past_event" in user.admin_views %}
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
+            <dt title="{% trans %}Cutoff date{% endtrans %}">{% trans %}Cutoff date{% endtrans %}</dt>
+            <dd id="cutoff">{{ ambience['pevent']['tempus']|date(lang=lang) }}</dd>
         {% endif %}
         <dt title="{% trans %}Institution{% endtrans %}">
             {% trans %}Institution{% endtrans %}
         </dt>
-        <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
+        <dd id="institution">{{ gettext(ambience['pevent']['institution']|string) }}</dd>
         {% if orgas %}
         <dt title="{% trans %}Orgas{% endtrans %}">
             {% trans %}Orgas{% endtrans %}
@@ -76,7 +78,9 @@
        <div id="gallery-link">{{ ambience['pevent']['participant_info']|md }}</div>
     {% endif %}
     {% if courses or "past_event" in user.admin_views %}
-        {{ util.h(n_("Courses"), level=2) }}
+        {% call util.h(n_("Courses"), level=2) %}
+            [{{ courses|length }}]
+        {% endcall %}
     {% endif %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
@@ -95,7 +99,9 @@
         </ul>
     {% endif %}
 
-    {{ util.h(n_("Participants"), level=2) }}
+    {% call util.h(n_("Participants"), level=2) %}
+        [{{ participants|length + extra_participants }}]
+    {% endcall %}
     {% if "past_event" in user.admin_views %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">

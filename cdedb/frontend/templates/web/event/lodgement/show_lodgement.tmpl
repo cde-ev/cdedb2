@@ -83,13 +83,12 @@
                     </div>
 
                     <div class="panel-body">
-                        {% for description, lodgement_id, problem_part, affected_regs, severeness in problems
-                                if problem_part == part_id %}
-                            <p class="{% if severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
-                                {{ gettext(description) }}
+                        {% for p in problems if p.part_id == part_id %}
+                            <p class="{% if p.severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
+                                {{ gettext(p.description) }}
                                 {% if affected_regs %}
                                     (
-                                        {%- for reg_id in affected_regs -%}
+                                        {%- for reg_id in p.affected_regs -%}
                                             {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                             {%- if not loop.last %}, {% endif %}
                                         {%- endfor -%}
@@ -105,11 +104,9 @@
                                                            {'registration_id': registration_id}),
                                                  util.persona_name(personas[registrations[registration_id]
                                                         ['persona_id']])) }}
-                                    {% if registrations[registration_id]['parts'][part_id]['is_camping_mat'] %}
-                                        {{ util.make_icon('campground', title=gettext("Assigned to sleep on a Camping Mat.")) }}
-                                    {% elif registrations[registration_id]["fields"].get(camping_mat_field_name) %}
-                                        {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a Camping Mat.")) }}
-                                    {% endif %}
+                                    {{ generic_event.camping_mat_icon(
+                                        registrations[registration_id]['parts'][part_id]['is_camping_mat'],
+                                        registrations[registration_id]['fields'].get(camping_mat_field_names[part_id])) }}
                                 </li>
                             {% endfor %}
                         </ul>

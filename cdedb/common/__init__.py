@@ -36,6 +36,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.database.connection import ConnectionContainer
+from cdedb.uncommon.intenum import CdEIntEnum
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 CdEDBObject = Dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
+    from cdedb.models.droid import APIToken
 else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
 
@@ -97,13 +99,19 @@ T = TypeVar("T")
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id: Optional[int] = None,
+    def __init__(self, *, persona_id: Optional[int] = None,
+                 droid_class: Optional[Type["APIToken"]] = None,
+                 droid_token_id: Optional[int] = None,
                  roles: Set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
                  presider: Collection[int] = None) -> None:
         self.persona_id = persona_id
+        self.droid_class = droid_class
+        self.droid_token_id = droid_token_id
+        if self.persona_id and (self.droid_class or self.droid_token_id):
+            raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
         self.display_name = display_name
@@ -791,7 +799,7 @@ class LodgementsSortkeys(enum.Enum):
 
 
 @enum.unique
-class AgeClasses(enum.IntEnum):
+class AgeClasses(CdEIntEnum):
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
@@ -801,17 +809,26 @@ class AgeClasses(enum.IntEnum):
     full = 1  #: at least 18 years old
     u18 = 2  #: between 16 and 18 years old
     u16 = 3  #: between 14 and 16 years old
-    u14 = 4  #: less than 14 years old
+    u14 = 4  #: between 10 and 14 years old
+    u10 = 5  #: under 10 years old, presumed child with parents
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required."""
+        """Checks whether permission by a legal guardian is required.
+
+        This excludes young children which are assumed to be accompanied.
+        """
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+
+    def with_guardian(self) -> bool:
+        """Whether we assume that the child is accompanied by a legal guardian
+        at the event, usually a parent."""
+        return self == AgeClasses.u10
 
 
 def deduct_years(date: datetime.date, years: int) -> datetime.date:
@@ -842,11 +859,13 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
         return AgeClasses.u18
     if birth <= deduct_years(reference, 14):
         return AgeClasses.u16
-    return AgeClasses.u14
+    if birth <= deduct_years(reference, 10):
+        return AgeClasses.u14
+    return AgeClasses.u10
 
 
 @enum.unique
-class LineResolutions(enum.IntEnum):
+class LineResolutions(CdEIntEnum):
     """Possible actions during batch admission
     """
     create = 1  #: Create a new account with this data.
@@ -876,7 +895,7 @@ class LineResolutions(enum.IntEnum):
 
 
 @enum.unique
-class GenesisDecision(enum.IntEnum):
+class GenesisDecision(CdEIntEnum):
     """Possible decisions during review of a genesis request."""
     approve = 1  #: Approve the request and create a new account.
     deny = 2  #: Deny the request. Do not create or update an account.
@@ -957,7 +976,7 @@ class InfiniteEnum(Generic[E]):
 
 @infinite_enum
 @enum.unique
-class CourseFilterPositions(enum.IntEnum):
+class CourseFilterPositions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     We want to find registrations which have a specific course as choice
@@ -974,7 +993,7 @@ class CourseFilterPositions(enum.IntEnum):
 
 @infinite_enum
 @enum.unique
-class CourseChoiceToolActions(enum.IntEnum):
+class CourseChoiceToolActions(CdEIntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
@@ -998,7 +1017,7 @@ class Accounts(enum.Enum):
 
 
 @enum.unique
-class ConfidenceLevel(enum.IntEnum):
+class ConfidenceLevel(CdEIntEnum):
     """Store the different Levels of Confidence about the prediction."""
     Null = 0
     Low = 1
@@ -1027,7 +1046,7 @@ class ConfidenceLevel(enum.IntEnum):
 
 
 @enum.unique
-class TransactionType(enum.IntEnum):
+class TransactionType(CdEIntEnum):
     """Store the type of a Transactions."""
     MembershipFee = 1
     EventFee = 2
@@ -1369,7 +1388,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (16, 0)
+EVENT_SCHEMA_VERSION = (16, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

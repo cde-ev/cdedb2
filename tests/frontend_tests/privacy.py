@@ -168,11 +168,12 @@ class TestPrivacyFrontend(FrontendTest):
         return expected | checked
 
     def _profile_of_archived(self, inspected: UserObject) -> Set[str]:
+        # TODO this assumes that the inspected user has CdE realm
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
             "Geschlecht", "Geburtsdatum", "VCard", "Pronomen",
-            "Pronomen auf Namensschild",
+            "Pronomen auf Namensschild", "Zahlungsmethode"
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -669,7 +670,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... and then non-member
         self.traverse({'href': '/core/persona/2/membership/change'})
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
 
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']

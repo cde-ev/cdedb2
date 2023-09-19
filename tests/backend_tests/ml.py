@@ -4,7 +4,6 @@
 from typing import Collection, cast
 
 from subman.exceptions import SubscriptionError
-from subman.machine import SubscriptionAction as SA
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -13,6 +12,7 @@ from cdedb.common import CdEDBObject, RequestState, nearly_now
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query.log_filter import MlLogFilter
 from cdedb.database.constants import SubscriptionState as SS
+from cdedb.uncommon.submanshim import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
@@ -214,6 +214,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(3),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(2048),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(3), self.as_id(10)},
                 subject_prefix='witz',
@@ -230,6 +231,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(5),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(23)},
                 subject_prefix='kampf',
@@ -245,6 +247,7 @@ class TestMlBackend(BackendTest):
                 id=self.as_id(7),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
+                additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 moderators={self.as_id(2), self.as_id(10)},
                 subject_prefix='aktivenforum',
@@ -303,6 +306,7 @@ class TestMlBackend(BackendTest):
             convert_html=False,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),
@@ -333,6 +337,7 @@ class TestMlBackend(BackendTest):
             convert_html=True,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2), self.as_id(9)},
             whitelist=set(),
@@ -1309,6 +1314,7 @@ class TestMlBackend(BackendTest):
             convert_html=False,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2)},
             subject_prefix='viva la revolution',
@@ -1411,6 +1417,7 @@ class TestMlBackend(BackendTest):
             event_id=self.as_id(2),
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(2)},
             whitelist=set(),
@@ -1872,6 +1879,8 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
+        type_change_err_msg = (
+            "Not privileged to change to this mailinglist type for this mailinglist.")
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
@@ -1884,6 +1893,7 @@ class TestMlBackend(BackendTest):
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="cyber",
@@ -1920,8 +1930,7 @@ class TestMlBackend(BackendTest):
                     self.ml.change_ml_type(
                         self.key, new_id, ml_type,
                         update={"domain": const.MailinglistDomain.lists})
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(
                     self.ml.change_ml_type(
@@ -1945,6 +1954,7 @@ class TestMlBackend(BackendTest):
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="mgv-ag",
@@ -1973,8 +1983,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -1993,6 +2002,7 @@ class TestMlBackend(BackendTest):
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
                 maxsize=None,
+                additional_footer=None,
                 moderators={self.user['id']},
                 whitelist=set(),
                 subject_prefix="literatur",
@@ -2019,8 +2029,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2049,6 +2058,7 @@ class TestMlBackend(BackendTest):
             convert_html=True,
             is_active=True,
             maxsize=None,
+            additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
             moderators={self.as_id(1), self.as_id(2)},
             whitelist=set(),

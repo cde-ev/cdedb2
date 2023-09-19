@@ -8,6 +8,7 @@ from typing import Dict, Optional, Tuple, Union
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
 )
@@ -123,30 +124,35 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("CdE-Datenbank")
         everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
         genesis = {"Accountanfragen"}
-        core_admin = {"Nutzer verwalten", "Änderungen prüfen", "Metadaten"}
+        pending = {"Änderungen prüfen"}
+        core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
 
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = genesis | core_admin | meta_admin | log
-        # admin of a realm with genesis cases
-        elif self.user_in('annika', 'nina'):
-            ins = everyone | genesis
+            out = pending | genesis | core_admin | meta_admin | log
+        # event admin (genesis, review)
+        elif self.user_in('annika'):
+            ins = everyone | genesis | pending
             out = core_admin | meta_admin | log
+        # ml admin (genesis)
+        elif self.user_in('nina'):
+            ins = everyone | genesis
+            out = pending | core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | genesis | core_admin | log
+            ins = everyone | pending | genesis | core_admin | log
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = genesis | core_admin | log
+            out = pending | genesis | core_admin | log
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = genesis | core_admin | meta_admin
+            out = pending | genesis | core_admin | meta_admin
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -711,6 +717,30 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
+
+    @as_users("daniel")
+    def test_changedata_lastschrift(self) -> None:
+        # create a new lastschrift
+        with self.switch_user("anton"):
+            self.admin_view_profile("daniel")
+            self.assertNonPresence("Lastschrift")
+            self.traverse("Neue Einzugsermächtigung …", "Anlegen")
+            f = self.response.forms["createlastschriftform"]
+            f["donation"] = "25"
+            f["iban"] = "DE26370205000008068900"
+            self.submit(f)
+        # check that the lastschrift is visible
+        self.traverse("Meine Daten")
+        self.assertTitle("Daniel Dino")
+        self.assertPresence("Einzugsermächtigung", div="lastschrift")
+        # check changing is possible
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        # Invalid postal code
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
 
     @as_users("vera")
     def test_automatic_country(self) -> None:
@@ -1597,7 +1627,6 @@ class TestCoreFrontend(FrontendTest):
         # Test form default values
         f = self.response.forms['modifybalanceform']
         self.assertEqual(f['new_balance'].value, "22.20")
-        self.assertFalse(f['trial_member'].checked)
         f['change_note'] = 'nop'
         # Test 'Nothing changed!' info
         self.submit(f, check_notification=False)
@@ -1615,24 +1644,6 @@ class TestCoreFrontend(FrontendTest):
         f['change_note'] = 'deduct stolen cookies'
         self.submit(f)
         self.assertPresence("15,66 €", div='balance')
-        # Test changing trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        f['trial_member'].checked = True
-        f['change_note'] = "deduct lost cookies"
-        self.submit(f)
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div='membership')
-        # Test changing balance and trial membership
-        self.traverse({'description': 'Guthaben anpassen'})
-        f = self.response.forms['modifybalanceform']
-        self.assertTrue(f['trial_member'].checked)
-        f['new_balance'] = 22.22
-        f['trial_member'].checked = False
-        f['change_note'] = "deduct eaten cookies"
-        self.submit(f)
-        self.assertPresence("22,22 €", div='balance')
-        self.assertNonPresence("Probemitgliedschaft")
 
     @as_users("vera")
     def test_meta_info(self) -> None:
@@ -1658,6 +1669,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(self.user['family_name'], div='personal-information')
         self.assertPresence("Gemeinser", div='personal-information')
         self.assertNonPresence('Ganondorf')
+        with self.switch_user("annika"):
+            # event admin may not see cde user change
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [0]")
+            self.get('/core/persona/2/changelog/inspect', status=403)
+        with self.switch_user("ferdinand"):
+            # event+cde admin can see everything
+            self.traverse({'description': 'Änderungen prüfen'})
+            self.assertTitle("Zu prüfende Profiländerungen [1]")
         with self.switch_user("vera"):
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")
@@ -1765,32 +1785,32 @@ class TestCoreFrontend(FrontendTest):
         with self.switch_user("paul"):
             changelog_expectation: Tuple[Dict[str, Union[int, str, None]], ...] = (
                 {
-                    'code': const.MemberChangeStati.superseded,
+                    'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
                     'submitted_by': 2,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.superseded,
+                    'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
                     'submitted_by': 2,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.committed,
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': None,
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.MemberChangeStati.committed.value,
+                    'code': const.PersonaChangeStati.committed.value,
                     'reviewed_by': 17,
                     'submitted_by': 2,
                 },
@@ -2908,9 +2928,12 @@ class TestCoreFrontend(FrontendTest):
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
+        token_key = model_droid.APIToken.request_header_key
+        resolve_token = model_droid.ResolveToken.get_token_string(
+            self.secrets['API_TOKENS']['resolve'])
         self.get(
             '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
@@ -2920,7 +2943,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=anton{}example.cde'.format(at),
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
@@ -2930,7 +2953,7 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get(
             '/core/api/resolve?username=antonatexample.cde',
-            headers={'X-CdEDB-API-token': 'a1o2e3u4i5d6h7t8n9s0'})
+            headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             'error':  ["('username', ValueError('Must be a valid email address.'))"]
         })

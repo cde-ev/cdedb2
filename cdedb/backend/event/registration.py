@@ -9,6 +9,8 @@ registrations at once for the mailinglist realm.
 import copy
 import dataclasses
 import decimal
+import typing
+from collections import defaultdict
 from typing import (
     Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
     Tuple, TypeVar,
@@ -56,6 +58,7 @@ class RegistrationFee:
     amount: decimal.Decimal
     active_fees: set[int]
     visual_debug: dict[int, str]
+    by_kind: dict[const.EventFeeType, decimal.Decimal]
 
 
 @dataclasses.dataclass
@@ -71,6 +74,10 @@ class RegistrationFeeData:
     @property
     def amount(self) -> decimal.Decimal:
         return self.fee.amount
+
+    @property
+    def donation(self) -> decimal.Decimal:
+        return self.fee.by_kind[const.EventFeeType.donation]
 
     @property
     def nonmember_surcharge_amount(self) -> decimal.Decimal:
@@ -639,15 +646,25 @@ class EventRegistrationBackend(EventBaseBackend):
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
-                sub_conditions.append(
-                    "(choices.course_id = %s AND "
-                    " choices.rank < course_tracks.num_choices)")
-                params.append(course_id)
-            if position.enum == cfp.specific_rank and course_id:
-                sub_conditions.append(
-                    "(choices.course_id = %s AND choices.rank = %s)")
-                params.extend((course_id, position.int))
+            if position.enum in (cfp.any_choice, cfp.anywhere):
+                if course_id:
+                    sub_conditions.append(
+                        "(choices.course_id = %s AND "
+                        " choices.rank < course_tracks.num_choices)")
+                    params.append(course_id)
+                else:
+                    sub_conditions.append(
+                        "(choices.course_id IS NULL AND "
+                        " choices.rank < course_tracks.num_choices)")
+            if position.enum == cfp.specific_rank:
+                if course_id:
+                    sub_conditions.append(
+                        "(choices.course_id = %s AND choices.rank = %s)")
+                    params.extend((course_id, position.int))
+                else:
+                    sub_conditions.append(
+                        "(choices.course_id IS NULL AND choices.rank = %s)")
+                    params.append(position.int)
             if position.enum in (cfp.assigned, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
@@ -1240,6 +1257,8 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
+            fees_by_kind: Dict[const.EventFeeType, decimal.Decimal] = defaultdict(
+                decimal.Decimal)
             visual_debug_data: Dict[int, str] = {}
             for fee in event['fees'].values():
                 parse_result = fcp_parsing.parse(fee['condition'])
@@ -1248,12 +1267,14 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools):
                     amount += fee['amount']
                     active_fees.add(fee['id'])
+                    fees_by_kind[fee['kind']] += fee['amount']
                 if visual_debug:
                     visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
                         parse_result, reg_bool_fields, reg_part_involvement,
                         other_bools
                     )[1]
-            ret[tmp_is_member] = RegistrationFee(amount, active_fees, visual_debug_data)
+            ret[tmp_is_member] = RegistrationFee(
+                amount, active_fees, visual_debug_data, fees_by_kind)
 
         if is_member is None:
             is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
@@ -1264,34 +1285,52 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: int,
-                       part_ids: Collection[int], field_ids: Collection[int],
-                       is_member: Optional[bool], is_orga: Optional[bool],
+    def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
+                       part_ids: Collection[int], is_member: Optional[bool],
+                       is_orga: Optional[bool], field_values: dict[str, bool]
                        ) -> RegistrationFeeData:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
         :param part_ids: Collection of part ids the user is (supposedly) registered for.
-        :param field_ids: Collection of fields, which have a truthy value.
         :param is_member: Optional override for membership status in fee calculation.
+        :param field_values: Mapping of `f"field.{field_id}"` to value of the field.
         :param is_orga: Optional override for orga status in fee calculation.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
         part_ids = affirm_set(vtypes.ID, part_ids)
-        field_ids = affirm_set(vtypes.ID, field_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
+        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
+        registration_id = None
+        if persona_id:
+            registration_id = unwrap(
+                self.list_registrations(rs, event_id, persona_id).keys() or None)
+
         if self.is_orga(rs, event_id=event_id):
             pass
-        elif persona_id == rs.user.persona_id and (
-                event['is_open'] or self.list_registrations(rs, event_id, persona_id)):
+        elif persona_id and persona_id == rs.user.persona_id and (
+                event['is_open'] or registration_id):
             pass
         else:
             raise PrivilegeError
+
+        reg = None
+        if registration_id:
+            reg = self.get_registration(rs, registration_id)
+
+        fields = {}
+        for field_id, field in event['fields'].items():
+            fn = field['field_name']
+            fields[fn] = field_values.get(f"field.{field_id}")
+            if fields[fn] is None and reg:
+                fields[fn] = bool(reg['fields'].get(fn, False))
+            else:
+                field[fn] = False
 
         fake_registration = {
             'persona_id': persona_id,
@@ -1304,10 +1343,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 }
                 for part_id in event['parts']
             },
-            'fields': {
-                event['fields'][field_id]['field_name']: field_id in field_ids
-                for field_id in event['fields']
-            }
+            'fields': fields,
         }
         return self._calculate_complex_fee(
             rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
@@ -1360,6 +1396,26 @@ class EventRegistrationBackend(EventBaseBackend):
                      ) -> decimal.Decimal: ...
     calculate_fee: _CalculateFeeProtocol = singularize(
         calculate_fees, "registration_ids", "registration_id")
+
+    @access("event")
+    def get_fee_stats(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        event = self.get_event(rs, event_id)
+        reg_ids = self.list_registrations(rs, event_id)
+
+        ret = {
+            'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
+            'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
+        }
+
+        for reg in self.get_registrations(rs, reg_ids).values():
+            reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
+            paid = reg['amount_owed'] == reg['amount_paid']
+            for kind, amount in reg_fee.by_kind.items():
+                ret['owed'][kind] += amount
+                if paid:
+                    ret['paid'][kind] += amount
+
+        return ret
 
     @access("event")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
