@@ -22,10 +22,9 @@ msgid "Current"
 msgstr "Aktuell"
 
 msgid ""
-"Current dataset is inconsistent with latest committed changelog generation!"
+"Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately."
 msgstr ""
-"Der aktuelle Datensatz ist inkonsistent mit der letzten übernommenen "
-"Änderung der Änderungshistorie!"
+"Fehler: Inkonsistente Historie. Kontaktiere umgehend <cdedb@lists.cde-ev.de>."
 
 msgid "Not privileged to change to this mailinglist type for this mailinglist."
 msgstr ""

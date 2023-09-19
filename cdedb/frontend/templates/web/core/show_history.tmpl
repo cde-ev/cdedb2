@@ -58,8 +58,8 @@
         <div class="row history-row panic" id="{{ f }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
-                {{ util.make_icon('exclamation-triangle', title=gettext(
-                        "Current dataset is inconsistent with latest committed changelog generation!")) }}
+                {{ util.make_icon('exclamation-circle', title=gettext(
+                        "Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately.")) }}
             </div>
             <div class="col-xs-9">
                 {% if caller %}{{ caller(current) }}{% else %}{{ current[f] }}{% endif %}
@@ -111,8 +111,8 @@
         <div class="row history-row panic" id="{{ fields|first }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
-                {{ util.make_icon('exclamation-triangle', title=gettext(
-                        "Current dataset is inconsistent with latest committed changelog generation!")) }}
+                {{ util.make_icon('exclamation-circle', title=gettext(
+                        "Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately.")) }}
             </div>
             <div class="col-xs-9">
                 {% if caller %}{{ caller(current) }}{% endif %}
