@@ -741,7 +741,11 @@ class MlBaseFrontend(AbstractUserFrontend):
         except PrivilegeError:
             rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
-            rs.notify_return_code(code)
+            # give a more helpful notification for subscription request
+            if action == SubscriptionAction.request_subscription:
+                rs.notify_return_code(code, success=n_("Subscription request sent."))
+            else:
+                rs.notify_return_code(code)
 
     def _subscription_multi_action_handler(self, rs: RequestState,
                                            field: str,
