@@ -79,9 +79,20 @@
     <h2 class="mosp">{% trans %}Swap inhabitants with{% endtrans %}</h2>
     <form action="{{ cdedblink('event/swap_inhabitants') }}" method="POST" class="form-horizontal" id="swapinhabitantsform">
         {{ util.anti_csrf_token('event/swap_inhabitants') }}
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-            {{ util.form_input_select("swap_with_{}".format(part_id), entries=other_lodgements.items(), label=ambience['event']['parts'][part_id]['title'], nulloption=nbsp, sort=True) }}
-        {% endfor %}
+        {% if ambience['event']['parts']|length == 1 %}
+            {# using the form_input_select or the form_input_general macro looks ugly #}
+            <div class="form-group">
+                <div class="col-sm-6 col-sm-offset-0">
+                    {{ util.input_select("swap_with_{}".format(ambience['event']['parts']|first), entries=other_lodgements.items(),
+                                         nulloption=nbsp, sort=True) }}
+                </div>
+            </div>
+        {% else %}
+            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                {{ util.form_input_select("swap_with_{}".format(part_id), entries=other_lodgements.items(),
+                                          label=ambience['event']['parts'][part_id]['title'], nulloption=nbsp, sort=True) }}
+            {% endfor %}
+        {% endif %}
         {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
