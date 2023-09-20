@@ -393,7 +393,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This is a rewritten form of `segno.helpers.make_vcard_data` to suite our needs.
         """
-        escape = segno.helpers._escape_vcard
+        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
         name = [persona['family_name'], persona['given_names'], "",
                 persona['title'], persona['name_supplement']]
