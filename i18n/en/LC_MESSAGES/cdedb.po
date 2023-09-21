@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-08-31 21:48+0200\n"
+"POT-Creation-Date: 2023-09-05 17:08+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -17,6 +17,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "MailinglistRosterVisibility.none"
+msgstr "None"
+
+msgid "MailinglistRosterVisibility.subscribable"
+msgstr "Subscribability"
+
+msgid "MailinglistRosterVisibility.viewers"
+msgstr "Viewability"
+
+msgid "Roster Visibility"
+msgstr ""
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -43,35 +55,41 @@ msgstr ""
 #: cdedb/backend/core/genesis.py:374 cdedb/backend/event/__init__.py:296
 #: cdedb/backend/event/__init__.py:298 cdedb/backend/event/__init__.py:386
 #: cdedb/backend/event/__init__.py:388 cdedb/backend/event/base.py:138
-#: cdedb/backend/event/base.py:668 cdedb/backend/event/base.py:669
-#: cdedb/backend/event/base.py:671 cdedb/backend/event/base.py:746
+#: cdedb/backend/event/base.py:662 cdedb/backend/event/base.py:668
+#: cdedb/backend/event/base.py:669 cdedb/backend/event/base.py:671
+#: cdedb/backend/event/base.py:739 cdedb/backend/event/base.py:746
 #: cdedb/backend/event/base.py:748 cdedb/backend/event/base.py:754
-#: cdedb/backend/event/base.py:763 cdedb/backend/event/base.py:765
-#: cdedb/backend/event/base.py:771 cdedb/backend/event/base.py:853
+#: cdedb/backend/event/base.py:756 cdedb/backend/event/base.py:763
+#: cdedb/backend/event/base.py:765 cdedb/backend/event/base.py:771
+#: cdedb/backend/event/base.py:846 cdedb/backend/event/base.py:853
 #: cdedb/backend/event/base.py:855 cdedb/backend/event/base.py:861
-#: cdedb/backend/event/base.py:954 cdedb/backend/event/base.py:956
-#: cdedb/backend/event/base.py:962 cdedb/backend/event/base.py:1026
+#: cdedb/backend/event/base.py:947 cdedb/backend/event/base.py:954
+#: cdedb/backend/event/base.py:956 cdedb/backend/event/base.py:962
+#: cdedb/backend/event/base.py:1019 cdedb/backend/event/base.py:1026
 #: cdedb/backend/event/base.py:1028 cdedb/backend/event/base.py:1034
-#: cdedb/backend/event/base.py:1088 cdedb/backend/event/base.py:1090
-#: cdedb/backend/event/base.py:1096 cdedb/backend/event/base.py:1119
+#: cdedb/backend/event/base.py:1081 cdedb/backend/event/base.py:1088
+#: cdedb/backend/event/base.py:1090 cdedb/backend/event/base.py:1096
+#: cdedb/backend/event/base.py:1112 cdedb/backend/event/base.py:1119
 #: cdedb/backend/event/base.py:1121 cdedb/backend/event/base.py:1127
-#: cdedb/backend/event/base.py:1144 cdedb/backend/event/base.py:1146
-#: cdedb/backend/event/base.py:1152 cdedb/backend/event/base.py:1226
+#: cdedb/backend/event/base.py:1137 cdedb/backend/event/base.py:1144
+#: cdedb/backend/event/base.py:1146 cdedb/backend/event/base.py:1152
+#: cdedb/backend/event/base.py:1219 cdedb/backend/event/base.py:1226
 #: cdedb/backend/event/base.py:1228 cdedb/backend/event/base.py:1234
-#: cdedb/backend/event/base.py:1431 cdedb/backend/event/base.py:1433
-#: cdedb/backend/event/base.py:1436 cdedb/backend/event/course.py:93
-#: cdedb/backend/event/course.py:205 cdedb/backend/event/course.py:286
-#: cdedb/backend/event/lodgement.py:61 cdedb/backend/event/lodgement.py:98
-#: cdedb/backend/event/lodgement.py:117 cdedb/backend/event/lodgement.py:212
-#: cdedb/backend/event/lodgement.py:248 cdedb/backend/event/lodgement.py:272
-#: cdedb/backend/event/lodgement.py:314 cdedb/backend/event/lodgement.py:360
-#: cdedb/backend/event/lowlevel.py:992 cdedb/backend/event/lowlevel.py:1012
-#: cdedb/backend/event/lowlevel.py:1241 cdedb/backend/event/lowlevel.py:1261
-#: cdedb/backend/event/query.py:61 cdedb/backend/event/query.py:256
-#: cdedb/backend/event/query.py:282 cdedb/backend/event/query.py:428
-#: cdedb/backend/event/query.py:430 cdedb/backend/event/query.py:704
-#: cdedb/backend/event/query.py:706 cdedb/backend/event/query.py:718
-#: cdedb/backend/event/query.py:720 cdedb/backend/event/registration.py:348
+#: cdedb/backend/event/base.py:1424 cdedb/backend/event/base.py:1431
+#: cdedb/backend/event/base.py:1433 cdedb/backend/event/base.py:1436
+#: cdedb/backend/event/course.py:93 cdedb/backend/event/course.py:205
+#: cdedb/backend/event/course.py:286 cdedb/backend/event/lodgement.py:61
+#: cdedb/backend/event/lodgement.py:98 cdedb/backend/event/lodgement.py:117
+#: cdedb/backend/event/lodgement.py:212 cdedb/backend/event/lodgement.py:248
+#: cdedb/backend/event/lodgement.py:272 cdedb/backend/event/lodgement.py:314
+#: cdedb/backend/event/lodgement.py:360 cdedb/backend/event/lowlevel.py:992
+#: cdedb/backend/event/lowlevel.py:1012 cdedb/backend/event/lowlevel.py:1241
+#: cdedb/backend/event/lowlevel.py:1261 cdedb/backend/event/query.py:61
+#: cdedb/backend/event/query.py:256 cdedb/backend/event/query.py:282
+#: cdedb/backend/event/query.py:428 cdedb/backend/event/query.py:430
+#: cdedb/backend/event/query.py:704 cdedb/backend/event/query.py:706
+#: cdedb/backend/event/query.py:718 cdedb/backend/event/query.py:720
+#: cdedb/backend/event/registration.py:348
 #: cdedb/backend/event/registration.py:350
 #: cdedb/backend/event/registration.py:386
 #: cdedb/backend/event/registration.py:388
@@ -213,8 +231,9 @@ msgstr ""
 #: cdedb/backend/cde/lastschrift.py:225 cdedb/backend/cde/lastschrift.py:251
 #: cdedb/backend/core/genesis.py:159 cdedb/backend/core/genesis.py:182
 #: cdedb/backend/event/__init__.py:187 cdedb/backend/event/__init__.py:283
-#: cdedb/backend/event/__init__.py:285 cdedb/backend/event/base.py:593
-#: cdedb/backend/event/base.py:594 cdedb/backend/event/base.py:596
+#: cdedb/backend/event/__init__.py:285 cdedb/backend/event/base.py:587
+#: cdedb/backend/event/base.py:593 cdedb/backend/event/base.py:594
+#: cdedb/backend/event/base.py:596 cdedb/backend/event/base.py:623
 #: cdedb/backend/event/base.py:629 cdedb/backend/event/base.py:630
 #: cdedb/backend/event/base.py:632 cdedb/backend/event/course.py:295
 #: cdedb/backend/event/course.py:378 cdedb/backend/event/lodgement.py:173
@@ -458,9 +477,9 @@ msgstr ""
 #: cdedb/backend/assembly.py:2435 cdedb/backend/cde/base.py:434
 #: cdedb/backend/cde/base.py:436 cdedb/backend/cde/lastschrift.py:451
 #: cdedb/backend/common.py:468 cdedb/backend/core/base.py:2187
-#: cdedb/backend/event/base.py:1196 cdedb/backend/event/base.py:1198
-#: cdedb/backend/event/base.py:1204 cdedb/common/__init__.py:242
-#: cdedb/frontend/assembly/__init__.py:1317
+#: cdedb/backend/event/base.py:1189 cdedb/backend/event/base.py:1196
+#: cdedb/backend/event/base.py:1198 cdedb/backend/event/base.py:1204
+#: cdedb/common/__init__.py:242 cdedb/frontend/assembly/__init__.py:1317
 #: cdedb/frontend/assembly/ballot.py:518 cdedb/frontend/cde/base.py:682
 #: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/base.py:695
 #: cdedb/frontend/cde/lastschrift.py:512
@@ -1068,70 +1087,74 @@ msgstr ""
 msgid "Only orga tokens from one event allowed."
 msgstr ""
 
-#: cdedb/backend/event/base.py:473 cdedb/backend/event/base.py:474
-#: cdedb/backend/event/base.py:476
+#: cdedb/backend/event/base.py:467 cdedb/backend/event/base.py:473
+#: cdedb/backend/event/base.py:474 cdedb/backend/event/base.py:476
 msgid "May not create new orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:504 cdedb/backend/event/base.py:505
-#: cdedb/backend/event/base.py:507
+#: cdedb/backend/event/base.py:498 cdedb/backend/event/base.py:504
+#: cdedb/backend/event/base.py:505 cdedb/backend/event/base.py:507
 msgid "May not change orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:533 cdedb/backend/event/base.py:534
-#: cdedb/backend/event/base.py:536 cdedb/backend/event/base.py:600
+#: cdedb/backend/event/base.py:527 cdedb/backend/event/base.py:533
+#: cdedb/backend/event/base.py:534 cdedb/backend/event/base.py:536
+#: cdedb/backend/event/base.py:594 cdedb/backend/event/base.py:600
 #: cdedb/backend/event/base.py:601 cdedb/backend/event/base.py:603
 msgid "May not revoke orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:537 cdedb/backend/event/base.py:538
-#: cdedb/backend/event/base.py:540
+#: cdedb/backend/event/base.py:531 cdedb/backend/event/base.py:537
+#: cdedb/backend/event/base.py:538 cdedb/backend/event/base.py:540
 msgid "This orga token has already been revoked."
 msgstr ""
 
-#: cdedb/backend/event/base.py:710 cdedb/backend/event/base.py:712
-#: cdedb/backend/event/base.py:718 cdedb/backend/event/lowlevel.py:562
-#: cdedb/backend/event/lowlevel.py:573
+#: cdedb/backend/event/base.py:703 cdedb/backend/event/base.py:710
+#: cdedb/backend/event/base.py:712 cdedb/backend/event/base.py:718
+#: cdedb/backend/event/lowlevel.py:562 cdedb/backend/event/lowlevel.py:573
 msgid "At least one event part required."
 msgstr ""
 
-#: cdedb/backend/event/base.py:782 cdedb/backend/event/base.py:784
-#: cdedb/backend/event/base.py:790
+#: cdedb/backend/event/base.py:775 cdedb/backend/event/base.py:782
+#: cdedb/backend/event/base.py:784 cdedb/backend/event/base.py:790
 msgid "Unknown part group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:804 cdedb/backend/event/base.py:806
-#: cdedb/backend/event/base.py:812 cdedb/backend/event/base.py:833
+#: cdedb/backend/event/base.py:797 cdedb/backend/event/base.py:804
+#: cdedb/backend/event/base.py:806 cdedb/backend/event/base.py:812
+#: cdedb/backend/event/base.py:826 cdedb/backend/event/base.py:833
 #: cdedb/backend/event/base.py:835 cdedb/backend/event/base.py:841
 #: cdedb/backend/event/registration.py:522
 #: cdedb/backend/event/registration.py:524
 msgid "Unknown part for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:821 cdedb/backend/event/base.py:823
-#: cdedb/backend/event/base.py:829 cdedb/backend/event/base.py:918
+#: cdedb/backend/event/base.py:814 cdedb/backend/event/base.py:821
+#: cdedb/backend/event/base.py:823 cdedb/backend/event/base.py:829
+#: cdedb/backend/event/base.py:911 cdedb/backend/event/base.py:918
 #: cdedb/backend/event/base.py:920 cdedb/backend/event/base.py:926
 msgid "May not change constraint type."
 msgstr ""
 
-#: cdedb/backend/event/base.py:877 cdedb/backend/event/base.py:879
-#: cdedb/backend/event/base.py:885
+#: cdedb/backend/event/base.py:870 cdedb/backend/event/base.py:877
+#: cdedb/backend/event/base.py:879 cdedb/backend/event/base.py:885
 msgid "Unknown track group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:899 cdedb/backend/event/base.py:901
-#: cdedb/backend/event/base.py:907 cdedb/backend/event/base.py:930
+#: cdedb/backend/event/base.py:892 cdedb/backend/event/base.py:899
+#: cdedb/backend/event/base.py:901 cdedb/backend/event/base.py:907
+#: cdedb/backend/event/base.py:923 cdedb/backend/event/base.py:930
 #: cdedb/backend/event/base.py:932 cdedb/backend/event/base.py:938
 msgid "Unknown track for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:972 cdedb/backend/event/base.py:974
-#: cdedb/backend/event/base.py:980
+#: cdedb/backend/event/base.py:965 cdedb/backend/event/base.py:972
+#: cdedb/backend/event/base.py:974 cdedb/backend/event/base.py:980
 msgid "Non-existing event fee specified."
 msgstr ""
 
-#: cdedb/backend/event/base.py:1428 cdedb/backend/event/base.py:1430
-#: cdedb/backend/event/base.py:1433
+#: cdedb/backend/event/base.py:1421 cdedb/backend/event/base.py:1428
+#: cdedb/backend/event/base.py:1430 cdedb/backend/event/base.py:1433
 msgid "Cannot use questionnaire import to delete questionnaire."
 msgstr ""
 

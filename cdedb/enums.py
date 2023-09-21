@@ -39,6 +39,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.FieldDatatypes,
     const.MailinglistTypes,
     const.MailinglistDomain,
+    const.MailinglistRosterVisibility,
     const.QuestionnaireUsages,
     const.EventPartGroupType,
     const.CourseTrackGroupType,

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-08-27 20:12+0200\n"
-"PO-Revision-Date: 2023-05-03 18:06+0200\n"
+"POT-Creation-Date: 2023-09-05 17:08+0000\n"
+"PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
@@ -17,6 +17,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
+
+msgid "%(title)s – Roster"
+msgstr "%(title)s – Abonnenten"
+
+msgid "Currently, these people are subscribed to this mailinglist:"
+msgstr "Aktuell sind diese Personen Abonnenten dieser Mailingliste:"
+
+msgid "MailinglistRosterVisibility.none"
+msgstr "Niemand"
+
+msgid "MailinglistRosterVisibility.subscribable"
+msgstr "Abonnementberechtigte"
+
+msgid "MailinglistRosterVisibility.viewers"
+msgstr "Zielgruppe"
 
 msgid "Not privileged to change to this mailinglist type for this mailinglist."
 msgstr ""
@@ -27,6 +42,15 @@ msgid "Not privileged to create mailinglist of this type."
 msgstr ""
 "Du hast nicht die nötigen Zugriffsberechtigungen, um eine Mailingliste "
 "dieses Typs zu erstellen."
+
+msgid "Roster"
+msgstr "Abonnenten"
+
+msgid "Roster Visibility"
+msgstr "Abonnentensichtbarkeit"
+
+msgid "The Roster is currently only visible to Moderators and Admins."
+msgstr "Die Abonnenten sind aktuell nur für Moderatoren und Admins sichtbar."
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
