@@ -87,13 +87,14 @@
                                          nulloption=nbsp, sort=True) }}
                 </div>
             </div>
+            {{ util.input_submit(label=gettext("Save")) }}&emsp;
+            {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
         {% else %}
             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                 {{ util.form_input_select("swap_with_{}".format(part_id), entries=other_lodgements.items(),
                                           label=ambience['event']['parts'][part_id]['title'], nulloption=nbsp, sort=True) }}
             {% endfor %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_lodgement')) }}
         {% endif %}
-        {{ util.input_submit(label=gettext("Save")) }}&emsp;
-        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
 {% endblock %}
