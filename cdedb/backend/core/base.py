@@ -417,7 +417,8 @@ class CoreBaseBackend(AbstractBackend):
                 "gender", "address_supplement", "address", "postal_code",
                 "location", "country", "donation",
             }
-            all_changed_fields = {key for key, value in data.items()
+            new_state = current_state | data
+            all_changed_fields = {key for key, value in new_state.items()
                                   if value != committed_state[key]}
             requires_review = (
                     all_changed_fields & fields_requiring_review
