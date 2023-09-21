@@ -417,6 +417,18 @@ class CoreBaseBackend(AbstractBackend):
                 "gender", "address_supplement", "address", "postal_code",
                 "location", "country", "donation",
             }
+            # Special care is necessary in case of an existing pending
+            # change. In this case we blend the new changes with the existing
+            # pending change and then try to apply this fused change
+            # superseeding the previous pending change. In most cases this
+            # will result in a new pending change, however it's also possible
+            # to revert all pending changes requiring review and thus the
+            # fused change may directly apply.
+            #
+            # This way the history is somewhat sane and pretty much linear. We
+            # don't want multiple pending changes or changes that apply by
+            # half -- this should devolve into an overly complex resolution
+            # tool for arbitrary conflicts (use git for that).
             new_state = current_state | data
             all_changed_fields = {key for key, value in new_state.items()
                                   if value != committed_state[key]}
