@@ -6346,6 +6346,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
         self.assertPresence("Spende 1.260,00 € 420,00 €")
         self.assertPresence("Überschuss – 0,00 €")
+        self.assertPresence("Total 1.297,01 € 437,01 €")
         self.assertPresence("1 Personen haben 200,00 € gezahlt, ohne")
         self.assertPresence("1 Personen haben noch nichts")
         self.traverse("In Anmeldungsliste anzeigen")

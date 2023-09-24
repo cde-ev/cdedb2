@@ -54,6 +54,24 @@
                     </td>
                 </tr>
         </tbody>
+        <tfoot>
+            <tr class="summary">
+                {# No suitable free icon exists, but that's fine. We need the spacing though. #}
+                <td>{{ util.make_icon("") + nbsp }}{{ gettext("Total") }}</td>
+                {% set total_owed = fee_stats['owed'].values()|sum %}
+                <td class="text-right {{ 'text-danger' if total_owed < 0 }}">
+                    <strong>
+                        {{ total_owed|money(lang=lang) }}
+                    </strong>
+                </td>
+                {% set total_paid = fee_stats['paid'].values()|sum + surplus.amount %}
+                <td class="text-right {{ 'text-danger' if total_paid < 0 }}">
+                    <strong>
+                        {{ total_paid|money(lang=lang) }}
+                    </strong>
+                </td>
+            </tr>
+        </tfoot>
     </table>
     {% if not_paid.count or incomplete_paid.count %}
     <hr />

@@ -11,7 +11,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, Optional, NamedTuple, Set
+from typing import Collection, NamedTuple, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
