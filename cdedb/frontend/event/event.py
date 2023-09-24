@@ -8,10 +8,11 @@ This also includes all functionality directly avalable on the `show_event` page.
 """
 
 import copy
+import dataclasses
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, NamedTuple, Optional, Set
+from typing import Collection, Optional, Set
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -43,7 +44,8 @@ from cdedb.models.ml import (
 )
 
 
-class RemainingOwedQuery(NamedTuple):
+@dataclasses.dataclass(frozen=True)
+class RemainingOwedQuery:
     query: Query
     count: int
     amount: Optional[decimal.Decimal]
