@@ -16,7 +16,9 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
 from cdedb.common.validation.types import TypeMapping
-from cdedb.database.constants import MailinglistDomain, MailinglistTypes
+from cdedb.database.constants import (
+    MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
+)
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -81,6 +83,7 @@ class Mailinglist(CdEDataclass):
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
     convert_html: bool
+    roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
     moderators: Set[vtypes.ID]
@@ -170,6 +173,19 @@ class Mailinglist(CdEDataclass):
         """
         return (bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
                 or cls.is_relevant_admin(rs.user))
+
+    # This fields may be changed by all moderators, even restricted ones.
+    restricted_moderator_fields: ClassVar[Set[str]] = {
+        "description", "mod_policy", "notes", "attachment_policy", "convert_html",
+        "subject_prefix", "maxsize", "additional_footer"}
+
+    # This fields require non-restricted moderator access to be changed.
+    full_moderator_fields: ClassVar[Set[str]] = set()
+
+    @classmethod
+    def get_moderator_fields(cls) -> Set[str]:
+        """This fields may be changed by non-restricted moderators."""
+        return cls.restricted_moderator_fields | cls.full_moderator_fields
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:  # pylint: disable=no-self-use
         """Check if the user is a restricted moderator.
@@ -460,6 +476,9 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     registration_stati: List[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
+
+    # This fields require non-restricted moderator access to be changed.
+    full_moderator_fields: ClassVar[Set[str]] = {"registration_stati"}
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.

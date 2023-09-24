@@ -179,18 +179,6 @@ QUESTIONNAIRE_ROW_FIELDS = ("event_id", "field_id", "pos", "title", "info",
 STORED_EVENT_QUERY_FIELDS = (
     "id", "event_id", "query_name", "scope", "serialized_query")
 
-#: Fields of a mailinglist which may be changed by all moderators, even restricted ones
-RESTRICTED_MOD_ALLOWED_FIELDS = {
-    "description", "mod_policy", "notes", "attachment_policy", "convert_html",
-    "subject_prefix", "maxsize", "additional_footer"}
-
-#: Fields of a mailinglist which require full moderator access to be changed
-FULL_MOD_REQUIRING_FIELDS = {
-    'registration_stati'}
-
-#: Fields of a mailinglist which may be changed by (full) moderators
-MOD_ALLOWED_FIELDS = RESTRICTED_MOD_ALLOWED_FIELDS | FULL_MOD_REQUIRING_FIELDS
-
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",
                    "signup_end", "is_active", "notes")
