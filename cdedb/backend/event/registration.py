@@ -52,7 +52,7 @@ CourseChoiceValidationAux = NamedTuple(
         ("orga_input", bool),
     ])
 
-FeeStats = Dict[str, Dict[Optional[const.EventFeeType], decimal.Decimal]]
+FeeStats = Dict[str, Dict[const.EventFeeType, decimal.Decimal]]
 
 
 @dataclasses.dataclass
@@ -1401,19 +1401,18 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_fee_stats(self, rs: RequestState, event_id: int
-                      ) -> Tuple[FeeStats, int, decimal.Decimal]:
+                      ) -> FeeStats:
         """Group and sum the paid fees by type.
 
         This calculates the sum over both owed and paid fees, for each kind of event
         fees individually. If people have paid more or less than the owed amount,
-        special treatment is applied:
+        special treatment is needed:
 
         * The share of the paid amount excessive the owed amount can not be assigned to
-          a specific fee type, and is therefore summed under `None` in the FeeStats
-          dict.
+          a specific fee type, and is therefore not included.
         * If the paid amount is less than the owed amount, it can not be split into the
-          respective kinds of owed fees at all. Therefore, it is reported separately as
-          the number of registrations and the total paid amount affected thereby.
+          respective kinds of owed fees at all. Therefore, it the amount defected
+          thereby is reported separately.
         """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
@@ -1422,11 +1421,6 @@ class EventRegistrationBackend(EventBaseBackend):
             'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
             'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
         }
-        # Amount that has been paid but is not owed
-        ret['paid'][None] = decimal.Decimal(0)
-        # Registration fees that have not paid fully can not be split by kind
-        not_paid_count = 0
-        not_paid_amount = decimal.Decimal(0)
 
         for reg in self.get_registrations(rs, reg_ids).values():
             reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
@@ -1435,14 +1429,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 ret['owed'][kind] += amount
                 if paid:
                     ret['paid'][kind] += amount
-                else:
-                    not_paid_amount += amount
-            if paid:
-                ret['paid'][None] += reg['amount_paid'] - reg['amount_owed']
-            else:
-                not_paid_count += 1
 
-        return ret, not_paid_count, not_paid_amount
+        return ret
 
     @access("event")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],

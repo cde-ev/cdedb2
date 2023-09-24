@@ -46,25 +46,40 @@
                     <td class="text-right">
                         –
                     </td>
-                    <td class="text-right {{ 'text-danger' if fee_stats['paid'][none] < 0 }}">
+                    <td class="text-right {{ 'text-danger' if surplus.amount < 0 }}">
                         <strong>
-                            {{ fee_stats['paid'][none]|money(lang=lang) }}
+                            {{ util.href(cdedblink('event/registration_query', surplus.query.serialize_to_url()),
+                                         surplus.amount|money(lang=lang)) }}
                         </strong>
                     </td>
                 </tr>
         </tbody>
     </table>
-    {% if not_paid_count %}
+    {% if not_paid.count or incomplete_paid.count %}
     <hr />
+        {% if incomplete_paid.count %}
         <p class="text-warning">
             {{ util.make_icon('exclamation-triangle') }}
-            {% trans not_paid_count=not_paid_count, not_paid_amount=not_paid_amount|money(lang=lang), paid=gettext("Paid") %}
-                {{ not_paid_count }} people have paid {{ not_paid_amount }} without hitting their owed amount.
+            {% trans incomplete_paid_count=incomplete_paid.count,
+                     incomplete_paid_amount=incomplete_paid.amount|money(lang=lang), paid=gettext("Paid") %}
+                {{ incomplete_paid_count }} people have paid {{ incomplete_paid_amount }} without hitting their owed amount.
                 Their payment can not be split by type and has been excluded from the {{ paid }} column above.
             {% endtrans %}
             <br />
-            {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize_to_url()),
+            {{ util.href(cdedblink('event/registration_query', incomplete_paid.query.serialize_to_url()),
                              gettext("View in Registrations"), icon='list') }}
         </p>
+        {% endif %}
+        {% if not_paid.count %}
+        <p class="text-muted">
+            {{ util.make_icon('info-circle') }}
+            {% trans not_paid_count=not_paid.count %}
+                {{ not_paid_count }} people have not paid anything of their fee yet.
+            {% endtrans %}
+            <br />
+            {{ util.href(cdedblink('event/registration_query', not_paid.query.serialize_to_url()),
+                             gettext("View in Registrations"), icon='list') }}
+        </p>
+        {% endif %}
     {% endif %}
 {% endblock %}
