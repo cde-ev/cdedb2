@@ -1411,8 +1411,8 @@ class EventRegistrationBackend(EventBaseBackend):
         * The share of the paid amount excessive the owed amount can not be assigned to
           a specific fee type, and is therefore not included.
         * If the paid amount is less than the owed amount, it can not be split into the
-          respective kinds of owed fees at all. Therefore, it the amount defected
-          thereby is reported separately.
+          respective kinds of owed fees at all. Therefore, these payments are not
+          included at all.
         """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)

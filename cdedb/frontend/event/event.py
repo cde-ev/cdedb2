@@ -44,7 +44,7 @@ from cdedb.models.ml import (
 )
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class RemainingOwedQuery:
     query: Query
     count: int
@@ -567,6 +567,8 @@ class EventEventMixin(EventBaseFrontend):
         surplus = _paid_query(
             (("reg.remaining_owed", QueryOperators.less, 0.00),),
             "reg.remaining_owed")
+        # Remaining owed is negative in this case
+        surplus.amount = -surplus.amount
 
         return self.render(rs, "event/fee/fee_stats", {
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
