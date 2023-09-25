@@ -11524,7 +11524,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:30
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:37
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:38
-msgid "Homepage Link"
+msgid "Website Link"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:31

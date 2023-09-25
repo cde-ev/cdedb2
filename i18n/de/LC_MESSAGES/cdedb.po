@@ -6756,9 +6756,9 @@ msgid ""
 "CdE assemblies are provided on the CdE website. Hints how to participate in "
 "an assembly are provided on the “%(howtomgv)s” page of the CdE website."
 msgstr ""
-"Hier findest du die Versammlungen des CdE. Mehr %(general_info)s über CdE "
-"Versammlungen findest du auf der CdE Homepage. Tipps zur Teilnahme an einer "
-"Versammlung findest du auf der „%(howtomgv)s“ Seite der CdE Homepage."
+"Hier findest du die Versammlungen des CdE. Mehr %(general_info)s über CdE-"
+"Versammlungen findest du auf der CdE-Website. Tipps zur Teilnahme an einer "
+"Versammlung findest du auf der „%(howtomgv)s“ Seite der CdE-Website."
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:15
 msgid "general information"
@@ -7548,7 +7548,7 @@ msgid ""
 "questions, please consult the %(faq)s at the CdE website."
 msgstr ""
 "Hier findest du den internen Mitgliederbereich des CdE. Bei weiteren Fragen "
-"kannst du das %(faq)s auf der CdE Homepage zu Rate ziehen."
+"kannst du das %(faq)s auf der CdE-Website zu Rate ziehen."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:20
 msgid "CdE-Member Quick-Search"
@@ -7757,7 +7757,7 @@ msgstr "Deutschen SchülerAkademie"
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
 #, python-format
 msgid "You can find more information about %(donations)s at the CdE website."
-msgstr "Mehr Informationen zu %(donations)s findest du auf der CdE Homepage."
+msgstr "Mehr Informationen zu %(donations)s findest du auf der CdE-Website."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/i25p_index.tmpl:31
 msgid "donations"
@@ -11592,7 +11592,7 @@ msgstr "Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
 #, python-format
 msgid "You can find more information %(about_this_event)s on the CdE website."
 msgstr ""
-"Mehr Informationen %(about_this_event)s findest du auf der CdE Homepage."
+"Mehr Informationen %(about_this_event)s findest du auf der CdE-Website."
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:49
 msgid "about this event"
@@ -12077,8 +12077,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:30
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:37
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:38
-msgid "Homepage Link"
-msgstr "Link zur Homepage"
+msgid "Website Link"
+msgstr "Link zur Website"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:31
 msgid ""
@@ -12086,7 +12086,7 @@ msgid ""
 "cross linked on the overview and on the course list, if “Visibility of the "
 "Courselist” is set."
 msgstr ""
-"URL zur öffentlichen Seite dieser Veranstaltung auf der CdE Homepage. Diese "
+"URL der öffentlichen Seite dieser Veranstaltung auf der CdE-Website. Diese "
 "wird auf der Veranstaltungsübersicht und auf der Kursliste angezeigt, wenn "
 "die „Sichtbarkeit der Kursliste“ gesetzt ist."
 
@@ -12739,8 +12739,8 @@ msgid ""
 "website."
 msgstr ""
 "Hier findest du die Veranstaltungen des CdE. Wenn du mehr über die "
-"%(different_kinds_of_events)s wissen möchtest, wirf einen Blick auf die CdE "
-"Homepage. Dort gibt es auch ein öffentliches %(faq)s über CdE "
+"%(different_kinds_of_events)s wissen möchtest, wirf einen Blick auf die CdE-"
+"Website. Dort gibt es auch ein öffentliches %(faq)s über CdE-"
 "Veranstaltungen im Allgemeinen."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:20
@@ -12754,7 +12754,7 @@ msgid ""
 "available on the CdE website."
 msgstr ""
 "Eine Liste mit öffentlichen Informationen über %(current_and_future_events)s "
-"ist auf der CdE Homepage verfügbar."
+"ist auf der CdE-Website verfügbar."
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:29
 msgid "current and future events"
@@ -15474,7 +15474,7 @@ msgid ""
 msgstr ""
 "Hier findest Du die Mailinglisten des CdE, insbesondere auch zu Akademien "
 "und Versammlungen. Weitere Informationen zu %(general_mailinglists)s findest "
-"du auf der CdE Homepage."
+"du auf der CdE-Website."
 
 #: cdedb/frontend/templates/web/ml/index.tmpl:28
 msgid "general mailinglists"

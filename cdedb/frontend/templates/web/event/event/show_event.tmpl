@@ -34,8 +34,8 @@
 
     <dl class="dl-horizontal">
         {% if ambience['event']['website_url'] %}
-            <dt title="{% trans %}Homepage Link{% endtrans %}">
-                {% trans %}Homepage Link{% endtrans %}
+            <dt title="{% trans %}Website Link{% endtrans %}">
+                {% trans %}Website Link{% endtrans %}
             </dt>
             <dd id="website-link">
                 {{ util.href(ambience['event']['website_url'], ambience['event']['title']) }}
