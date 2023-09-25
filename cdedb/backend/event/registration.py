@@ -52,6 +52,8 @@ CourseChoiceValidationAux = NamedTuple(
         ("orga_input", bool),
     ])
 
+FeeStats = Dict[str, Dict[const.EventFeeType, decimal.Decimal]]
+
 
 @dataclasses.dataclass
 class RegistrationFee:
@@ -1398,18 +1400,31 @@ class EventRegistrationBackend(EventBaseBackend):
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
-    def get_fee_stats(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    def get_fee_stats(self, rs: RequestState, event_id: int
+                      ) -> FeeStats:
+        """Group and sum the paid fees by type.
+
+        This calculates the sum over both owed and paid fees, for each kind of event
+        fees individually. If people have paid more or less than the owed amount,
+        special treatment is needed:
+
+        * The share of the paid amount excessive the owed amount can not be assigned to
+          a specific fee type, and is therefore not included.
+        * If the paid amount is less than the owed amount, it can not be split into the
+          respective kinds of owed fees at all. Therefore, these payments are not
+          included at all.
+        """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
-        ret = {
+        ret: FeeStats = {
             'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
             'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
         }
 
         for reg in self.get_registrations(rs, reg_ids).values():
             reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
-            paid = reg['amount_owed'] == reg['amount_paid']
+            paid = reg['amount_paid'] >= reg['amount_owed']
             for kind, amount in reg_fee.by_kind.items():
                 ret['owed'][kind] += amount
                 if paid:
