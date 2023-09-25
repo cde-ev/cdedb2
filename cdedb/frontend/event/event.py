@@ -8,7 +8,9 @@ This also includes all functionality directly avalable on the `show_event` page.
 """
 
 import copy
+import dataclasses
 import datetime
+import decimal
 from collections import OrderedDict
 from typing import Collection, Optional, Set
 
@@ -22,7 +24,9 @@ from cdedb.common import (
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpecEntry,
+)
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
@@ -38,6 +42,13 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.models.ml import (
     EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
 )
+
+
+@dataclasses.dataclass
+class RemainingOwedQuery:
+    query: Query
+    count: int
+    amount: Optional[decimal.Decimal]
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -522,8 +533,47 @@ class EventEventMixin(EventBaseFrontend):
     def fee_stats(self, rs: RequestState, event_id: int) -> Response:
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+
+        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None
+                        ) -> RemainingOwedQuery:
+            query = Query(
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=rs.ambience['event']),
+                ["reg.id", "persona.given_names", "persona.family_name",
+                 "persona.username", "reg.remaining_owed", "reg.amount_owed",
+                 "reg.amount_paid"],
+                constraints,
+                (("persona.family_name", True), ("persona.given_names", True),)
+            )
+            count = len(self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id))
+            amount = None
+            if sum_col:
+                aggregates = unwrap(self.eventproxy.submit_general_query(
+                    rs, query, event_id=event_id, aggregate=True))
+                amount = aggregates[f"sum.{sum_col}"] or decimal.Decimal(0)
+
+            return RemainingOwedQuery(query, count, amount)
+
+        incomplete_paid = _paid_query(
+            (("reg.remaining_owed", QueryOperators.greater, 0.00),
+             ("reg.amount_paid", QueryOperators.greater, 0.00)),
+            "reg.amount_paid"
+        )
+        not_paid = _paid_query(
+            (("reg.remaining_owed", QueryOperators.greater, 0.00),
+             ("reg.amount_paid", QueryOperators.less, 0.01))
+        )
+        surplus = _paid_query(
+            (("reg.remaining_owed", QueryOperators.less, 0.00),),
+            "reg.remaining_owed")
+        # Remaining owed is negative in this case
+        assert surplus.amount is not None
+        surplus.amount = -surplus.amount
+
         return self.render(rs, "event/fee/fee_stats", {
-            'fee_stats': fee_stats,
+            'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
+            'not_paid': not_paid, 'surplus': surplus,
         })
 
     @access("event")

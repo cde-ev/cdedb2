@@ -6308,6 +6308,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids.append(self.event.create_registration(self.key, reg_data))
         reg_data['persona_id'] = 2
         reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 3
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
         registrations = self.event.get_registrations(self.key, reg_ids)
         self.assertEqual(
             decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
@@ -6315,6 +6317,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             decimal.Decimal("437.00"), registrations[reg_ids[1]]['amount_owed'])
         self.assertEqual(
             decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("435.00"), registrations[reg_ids[3]]['amount_owed'])
         reg_update = [
             {
                 'id': reg_ids[0],
@@ -6324,16 +6328,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 'id': reg_ids[1],
                 'amount_paid': registrations[reg_ids[1]]['amount_owed'],
             },
+            {
+                'id': reg_ids[3],
+                'amount_paid': decimal.Decimal("200.00"),
+            },
         ]
         self.event.set_registrations(self.key, reg_update)
         self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
                       "Beitrags-Statistik")
         self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
-        self.assertPresence("Regulärer Beitrag 25,00 € 20,00 €")
+        self.assertPresence("Regulärer Beitrag 40,00 € 20,00 €")
         self.assertPresence("Stornokosten 0,00 € 0,00 €")
         self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
         self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
-        self.assertPresence("Spende 840,00 € 420,00 €")
+        self.assertPresence("Spende 1.260,00 € 420,00 €")
+        self.assertPresence("Überschuss – 0,00 €")
+        self.assertPresence("Gesamtsumme 1.297,01 € 437,01 €")
+        self.assertPresence("1 Personen haben 200,00 € gezahlt, ohne")
+        self.assertPresence("1 Personen haben noch nichts")
+        self.traverse("In Anmeldungsliste anzeigen")
+        self.assertPresence("Ergebnis [1]", div='query-results')
 
         self.get(f"/event/event/{event_id}/registration/{reg_ids[0]}/show")
         self.assertPresence("Anton")
