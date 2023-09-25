@@ -568,6 +568,7 @@ class EventEventMixin(EventBaseFrontend):
             (("reg.remaining_owed", QueryOperators.less, 0.00),),
             "reg.remaining_owed")
         # Remaining owed is negative in this case
+        assert surplus.amount is not None
         surplus.amount = -surplus.amount
 
         return self.render(rs, "event/fee/fee_stats", {
