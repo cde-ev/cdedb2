@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-09-25 19:46+0200\n"
+"POT-Creation-Date: 2023-09-25 19:55+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -15452,19 +15452,19 @@ msgid "Manage"
 msgstr "Verwalten"
 
 #: cdedb/frontend/templates/web/ml/index.tmpl:28
-msgid "CdE website"
-msgstr "CdE-Webseite"
-
-#: cdedb/frontend/templates/web/ml/index.tmpl:28
 #, python-format
 msgid ""
-"Here you can find the CdE’s Mailinglists, notably also those linked to "
-"events and assemblies. For further information on the general lists see the "
-"%(infolink)s."
+"Here you can find the CdE’s mailinglists, notably also those linked to "
+"events and assemblies. Further information about the "
+"%(general_mailinglists)s are provided on the CdE website."
 msgstr ""
 "Hier findest Du die Mailinglisten des CdE, insbesondere auch zu Akademien "
-"und Versammlungen. Für weitere Informationen zu den allgemeinen "
-"Mailinglisten siehe die %(infolink)s."
+"und Versammlungen. Weitere Informationen zu %(general_mailinglists)s findest "
+"du auf der CdE Homepage."
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:28
+msgid "general mailinglists"
+msgstr "allgemeinen Mailinglisten"
 
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:21
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:16

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-09-25 19:46+0200\n"
+"POT-Creation-Date: 2023-09-25 19:55+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -14655,16 +14655,17 @@ msgid "Manage"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/index.tmpl:28
-msgid "CdE website"
+#, python-format
+msgid ""
+"Here you can find the CdE’s mailinglists, notably also those linked to "
+"events and assemblies. Further information about the "
+"%(general_mailinglists)s are provided on the CdE website."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/index.tmpl:28
-#, python-format
-msgid ""
-"Here you can find the CdE’s Mailinglists, notably also those linked to "
-"events and assemblies. For further information on the general lists see the "
-"%(infolink)s."
-msgstr ""
+#, fuzzy
+msgid "general mailinglists"
+msgstr "tabellae epistularum electronicarum moderatae"
 
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:21
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:16
