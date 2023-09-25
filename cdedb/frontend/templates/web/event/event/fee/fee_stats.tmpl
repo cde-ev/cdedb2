@@ -81,7 +81,7 @@
             {% trans incomplete_paid_count=incomplete_paid.count,
                      incomplete_paid_amount=incomplete_paid.amount|money(lang=lang), paid=gettext("Paid") %}
                 {{ incomplete_paid_count }} people have paid {{ incomplete_paid_amount }} without hitting their owed amount.
-                Their payment can not be split by type and has been excluded from the {{ paid }} column above.
+                Their payment can not be split by type and has been excluded from the "{{ paid }}" column above.
             {% endtrans %}
             <br />
             {{ util.href(cdedblink('event/registration_query', incomplete_paid.query.serialize_to_url()),

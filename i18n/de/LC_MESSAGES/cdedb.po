@@ -12660,11 +12660,11 @@ msgstr "Gesamtsumme"
 msgid ""
 "%(incomplete_paid_count)s people have paid %(incomplete_paid_amount)s "
 "without hitting their owed amount. Their payment can not be split by type "
-"and has been excluded from the %(paid)s column above."
+"and has been excluded from the \"%(paid)s\" column above."
 msgstr ""
 "%(incomplete_paid_count)s Personen haben %(incomplete_paid_amount)s gezahlt, "
 "ohne ihren zu zahlenden Beitrag zu erreichen. Ihre Zahlung kann nicht auf "
-"die verschiedenen Typen aufgeteilt werden und ist in der Spalte %(paid)s "
+"die verschiedenen Typen aufgeteilt werden und ist in der Spalte \"%(paid)s\" "
 "nicht berücksichtigt."
 
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:94
