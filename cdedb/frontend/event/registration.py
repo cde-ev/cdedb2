@@ -638,7 +638,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             for rank, course_id in enumerate(choices_list):
                 # Check for choosing instructed course.
                 if course_id == instructed_course:
-                    rs.add_validation_error((
+                    rs.append_validation_error((
                         choice_key(rank),
                         ValueError(n_("Instructed course must not be chosen."))
                         if orga_input else
@@ -647,7 +647,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 # Check for duplicated course choices.
                 for x in range(rank):
                     if course_id == choice(x):
-                        rs.add_validation_error((
+                        rs.append_validation_error((
                             choice_key(rank),
                              ValueError(
                                  n_("Cannot have the same course as %(i)s."
@@ -660,7 +660,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 # Check that the course choice is allowed for this track.
                 if not self.eventproxy.validate_single_course_choice(
                         rs, course_id, track_id, aux):
-                    rs.add_validation_error((
+                    rs.append_validation_error((
                         choice_key(rank),
                         ValueError(n_("Invalid course choice for this track."))
                     ))
@@ -668,7 +668,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             # Check for unfilled mandatory course choices, but only if not orga.
             if (len(choices_list) < track['min_choices']
                     and track['part_id'] in part_ids and not orga_input):
-                rs.add_validation_errors(
+                rs.extend_validation_errors(
                     (choice_key(x), ValueError(n_(
                         "You must choose at least %(min_choices)s courses."),
                         {'min_choices': track['min_choices']}))
