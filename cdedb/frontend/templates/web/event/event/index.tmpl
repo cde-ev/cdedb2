@@ -17,17 +17,17 @@
         </div>
     {% endif %}
     <p>
-        {% trans infolink=util.href("https://www.cde-ev.de/veranstaltungen/arten/", gettext("CdE website")),
+        {% trans different_kinds_of_events=util.href("https://www.cde-ev.de/veranstaltungen/arten/", gettext("different kinds of events")),
                  faq=util.href("https://www.cde-ev.de/faq/akademien/", gettext("FAQ")) %}
             Here You can find the CdE’s events.
-            If you want to know more about the different kinds of events, take a look at the {{ infolink }}.
+            If you want to know more about the {{ different_kinds_of_events }}, take a look at the CdE website.
             There is also a public {{ faq }} regarding general information about CdE events on the CdE website.
         {% endtrans %}
     </p>
     {{ util.h(n_("Current Events")) }}
     <p>
-        {% trans infolink=util.href("https://www.cde-ev.de/veranstaltungen/uebersicht/", gettext("CdE website")) %}
-            A list with public information about current and future events is also available on the {{ infolink }}.
+        {% trans current_and_future_events=util.href("https://www.cde-ev.de/veranstaltungen/uebersicht/", gettext("current and future events")) %}
+            A list with public information about {{ current_and_future_events }} is also available on the CdE website.
         {% endtrans %}
     </p>
     {% if open_events %}

@@ -12,10 +12,10 @@
         </div>
     {% endif %}
     <p>
-        {% trans infolink=util.href("https://www.cde-ev.de/vereinsleben/mgv/", gettext("CdE website")),
+        {% trans general_info=util.href("https://www.cde-ev.de/vereinsleben/mgv/", gettext("general information")),
                  howtomgv=util.href("https://www.cde-ev.de/vereinsleben/mgv/how-to/", gettext("How to MGV")) %}
             Here you can find the CdE’s general assemblies.
-            More general information about CdE assemblies are provided on the {{ infolink }}.
+            More {{ general_info }} about CdE assemblies are provided on the CdE website.
             Hints how to participate in an assembly are provided on the “{{ howtomgv }}” page of the CdE website.
         {% endtrans %}
     </p>
