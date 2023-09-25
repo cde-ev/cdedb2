@@ -94,8 +94,8 @@ from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder, QueryScope, QuerySpec,
+    MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, QUERY_ORDERS, VALID_QUERY_OPERATORS,
+    QueryOperators, QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
@@ -4669,7 +4669,7 @@ def _query_input(
         errs.append(ValueError(argname, n_("Selection may not be empty.")))
 
     # Third the ordering
-    for postfix in range(1, 21):
+    for postfix in QUERY_ORDERS:
         if f"qord_{postfix}" not in val:
             continue
 

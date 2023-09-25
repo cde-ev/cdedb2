@@ -31,6 +31,9 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
 
+# The range of sorting criteria that can be used for queries
+QUERY_ORDERS = range(1, 21)
+
 
 @enum.unique
 class QueryOperators(CdEIntEnum):
@@ -292,7 +295,7 @@ class QueryScope(CdEIntEnum):
                 name = prefix + field
                 if name in rs.request.values:
                     params[name] = rs.values[name] = rs.request.values[name]
-        for postfix in range(1, 21):
+        for postfix in QUERY_ORDERS:
             name = f"qord_{postfix}"
             if name in rs.request.values:
                 params[name] = rs.values[name] = rs.request.values[name]
@@ -696,7 +699,7 @@ class Query:
                     serialize_value(x) for x in value)
             else:
                 params[f'qval_{field}'] = serialize_value(value)
-        for entry, postfix in zip(self.order, range(1, 21)):
+        for entry, postfix in zip(self.order, QUERY_ORDERS):
             field, ascending = entry
             params[f'qord_{postfix}'] = field
             params[f'qord_{postfix}_ascending'] = ascending

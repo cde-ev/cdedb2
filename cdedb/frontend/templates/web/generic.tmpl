@@ -224,7 +224,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for i in range(1, 21) %}
+                                {% for i in QUERY_ORDERS %}
                                     <tr class="query_sort">
                                         <td> {{ i|string + "." }} </td>
                                         <td>
@@ -482,7 +482,7 @@
                                         {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
-                                {% for i in range(1, 21) %}
+                                {% for i in QUERY_ORDERS %}
                                     {% if values.get("qord_" + i|string) == field %}
                                         <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
                                         {% if values.get("qord_" + i|string + "_ascending") == "False" %}
