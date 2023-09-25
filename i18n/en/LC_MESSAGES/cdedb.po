@@ -15729,6 +15729,9 @@ msgstr ""
 msgid "Remove %(name)s as moderator"
 msgstr ""
 
+msgid "Subscription request sent."
+msgstr ""
+
 #: cdedb/frontend/templates/web/ml/management.tmpl:98
 msgid "Subscription Requests"
 msgstr ""

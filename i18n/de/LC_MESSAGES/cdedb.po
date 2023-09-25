@@ -21387,6 +21387,9 @@ msgstr ""
 msgid "corresponding site"
 msgstr "entsprechende Seite"
 
+msgid "Subscription request sent."
+msgstr "Abonnementantrag gestellt."
+
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:155
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:156
 msgid "Your subscription request is currently pending review by a moderator."
