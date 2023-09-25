@@ -181,7 +181,7 @@ class EntitySorter:
 
     @staticmethod
     def event_fee(event_fee: CdEDBObject) -> Sortkey:
-        return (event_fee['title'], event_fee['id'])
+        return (event_fee['kind'], event_fee['title'], event_fee['id'])
 
     @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:

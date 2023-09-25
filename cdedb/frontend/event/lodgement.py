@@ -61,16 +61,14 @@ class EventLodgementMixin(EventBaseFrontend):
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
-            """Un-inlined check whether both genders are present.
+            """Un-inlined check whether multiple genders are present."""
+            genders = list(personas[registrations[reg_id]['persona_id']]['gender']
+                           for reg_id in group)
+            if genders.count(const.Genders.not_specified) > 1:
+                # We can not tell whether not specified genders align.
+                return True
+            return len(set(genders)) > 1
 
-            This ignores non-binary people.
-            """
-            return set(
-                personas[registrations[reg_id]['persona_id']]['gender']
-                for reg_id in group
-            ) >= {const.Genders.male, const.Genders.female}
-
-        complex_genders = {const.Genders.other, const.Genders.not_specified}
         # now the actual work
         for lodgement_id in lodgements:
             for part_id in event['parts']:
@@ -108,14 +106,6 @@ class EventLodgementMixin(EventBaseFrontend):
                     ret.append(LodgementProblem(
                         n_("Mixed lodgement with non-mixing participants."),
                         lodgement_id, part_id, non_mixed_lodging_people, 3))
-                complex_gender_people = tuple(
-                    reg_id for reg_id in reg + cm
-                    if (personas[registrations[reg_id]['persona_id']]['gender']
-                        in complex_genders))
-                if complex_gender_people:
-                    ret.append(LodgementProblem(
-                        n_("Non-Binary Participant."),
-                        lodgement_id, part_id, complex_gender_people, 1))
         return ret
 
     @access("event")
