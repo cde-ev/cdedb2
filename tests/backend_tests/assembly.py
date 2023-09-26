@@ -1496,7 +1496,7 @@ class TestAssemblyBackend(BackendTest):
             key = BallotConfiguration(
                 ballot['vote_begin'], ballot['vote_end'], ballot['vote_extension_end'],
                 ballot['abs_quorum'], ballot['rel_quorum'])
-            self.assertIn(ballot_id, grouped.ballots[key])
+            self.assertIn(ballot_id, grouped[key])
 
     @as_users("werner", "berta")
     @storage
