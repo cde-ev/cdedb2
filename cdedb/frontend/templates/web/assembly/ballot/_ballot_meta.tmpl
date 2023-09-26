@@ -32,7 +32,7 @@
 
 {% macro details_list(config_grouped, ballots, checkboxes=False) %}
     {% set sorted_ballots = ballots|keydictsort(EntitySorter.ballot) %}
-    {% for (vote_begin, vote_end, extension_end, abs_quorum, rel_quorum), ballot_ids in config_grouped if ballot_ids.intersection(ballots) %}
+    {% for (vote_begin, vote_end, extension_end, abs_quorum, rel_quorum), ballot_ids in config_grouped.items() if ballot_ids.intersection(ballots) %}
         <li>
             <div>
                 {{- vote_begin|datetime(lang=lang) }} – {{ vote_end|datetime(lang=lang) }}
