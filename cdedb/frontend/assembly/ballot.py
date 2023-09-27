@@ -696,6 +696,9 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             vote_extension_end: Optional[datetime.datetime]) -> Response:
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
+        if not ballot_ids:
+            rs.notify("error", n_("You need to select at least one ballot."))
+            return self.reschedule_ballots_form(rs, assembly_id)
 
         code = 1
         if self.assemblyproxy.is_any_ballot_locked(rs, ballot_ids):
@@ -704,32 +707,29 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/reschedule_ballots")
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        # Dummy validation for generic ballot should suffice
-        dummy_data = {
-            'vote_begin': vote_begin,
-            'vote_end': vote_end,
-            'vote_extension_end': vote_extension_end,
-            # placeholders required for validation
-            'id': 1,
-            'abs_quorum': 1 if vote_extension_end else 0,
-            'rel_quorum': 0,
-        }
-        dummy_data = check(rs, vtypes.Ballot, dummy_data)
+        # Compile and validate all updated data first
+        updated_ballots = []
+        for ballot_id, ballot in ballots.items():
+            updated_ballot = {
+                'id': ballot_id,
+                'abs_quorum': ballot['abs_quorum'],
+                'rel_quorum': ballot['rel_quorum'],
+                'vote_begin': vote_begin,
+                'vote_end': vote_end,
+                'vote_extension_end': vote_extension_end,
+            }
+            if not ballot['vote_extension_end']:
+                updated_ballot['vote_extension_end'] = None
+            updated_ballot = check(rs, vtypes.Ballot, updated_ballot)
+            updated_ballots.append(updated_ballot)
+
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
-        assert dummy_data is not None
-
-        for ballot_id in ballot_ids:
-            data = dummy_data.copy()
-            data.update({
-                'id': ballot_id,
-                'abs_quorum': ballots[ballot_id]['abs_quorum'],
-                'rel_quorum': ballots[ballot_id]['rel_quorum'],
-            })
-            if not ballots[ballot_id]['quorum']:
-                data['vote_extension_end'] = None
-            code *= self.assemblyproxy.set_ballot(rs, data)
+        for updated_ballot in updated_ballots:
+            assert updated_ballot is not None
+            code *= self.assemblyproxy.set_ballot(rs, updated_ballot)
         rs.notify_return_code(code)
+
         return self.redirect(rs, "assembly/summary_ballots")
 
     @access("assembly")
