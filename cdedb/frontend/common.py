@@ -11,6 +11,7 @@ import collections.abc
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -2314,13 +2315,15 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
+def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject,
+                             donation: decimal.Decimal = decimal.Decimal(0)) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
+    return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
         event=asciificator(event['title']),
+        donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id'])

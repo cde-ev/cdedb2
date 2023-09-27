@@ -2515,8 +2515,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("berta", "emilia")
     def test_lodgement_wish_detection(self) -> None:
         with self.switch_user("garcia"):
-            self.event.set_event(self.key, {
-                'id': 1,
+            self.event.set_event(self.key, 1, {
                 'is_participant_list_visible': True,
                 'use_additional_questionnaire': True,
             })
@@ -3014,7 +3013,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         regisration2_id = 8
         # Disable course choices
         edata = {
-            'id': event_id,
             'parts': {
                 event['tracks'][track_id]['part_id']: {
                     'tracks': {
@@ -3026,7 +3024,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 }
             }
         }
-        self.event.set_event(self.key, edata)
+        self.event.set_event(self.key, event_id, edata)
         # Make Daniel a course instructor.
         rdata = {
             'id': registration_id,
@@ -3283,9 +3281,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Einzelzelle", "Nächste", "Vorherige")
         self.assertTitle("Unterkunft Einzelzelle (Große Testakademie 2222)")
         self.assertPresence("Emilia")
-        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-1")
-        self.assertPresence("nicht-binärer Teilnehmer", div="inhabitants-2")
-        self.assertNonPresence("nicht-binärer Teilnehmer", div="inhabitants-3")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-1")
         self.assertPresence("Überfüllte Unterkunft", div="inhabitants-2")
         self.assertNonPresence("Überfüllte Unterkunft", div="inhabitants-3")
@@ -5411,8 +5406,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         event = self.event.get_event(self.key, 1)
         self.event.set_event(
             self.key,
+            1,
             {
-                'id': 1,
                 'fields': {id_: None for id_ in event['fields'] if id_ > 1000},
             })
 
@@ -5636,7 +5631,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_questionnaire_csrf(self) -> None:
-        self.event.set_event(self.key, {'id': 1, 'use_additional_questionnaire': True})
+        self.event.set_event(self.key, 1, {'use_additional_questionnaire': True})
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
         f = self.response.forms['questionnaireform']
         f['fields.lodge'] = "Test"
@@ -6199,9 +6194,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("emilia")
     def test_ccs_cancelled_courses(self) -> None:
         self.event.set_event(
-            self.key, {'id': 4, 'is_course_state_visible': True,
-                       'is_participant_list_visible': True,
-                       'is_course_assignment_visible': True})
+            self.key, 4, {'is_course_state_visible': True,
+                          'is_participant_list_visible': True,
+                          'is_course_assignment_visible': True})
         course_id = 9
         self.event.set_course(self.key, {'id': course_id, 'active_segments': []})
 
@@ -6289,7 +6284,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids = []
         reg_data: CdEDBObject = {
             "event_id": event_id,
-            "persona_id": 1,
+            "persona_id": self.user['id'],
             "mixed_lodging": True,
             "list_consent": True,
             "notes": None,
@@ -6313,6 +6308,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids.append(self.event.create_registration(self.key, reg_data))
         reg_data['persona_id'] = 2
         reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 3
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
         registrations = self.event.get_registrations(self.key, reg_ids)
         self.assertEqual(
             decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
@@ -6320,6 +6317,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             decimal.Decimal("437.00"), registrations[reg_ids[1]]['amount_owed'])
         self.assertEqual(
             decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("435.00"), registrations[reg_ids[3]]['amount_owed'])
         reg_update = [
             {
                 'id': reg_ids[0],
@@ -6329,13 +6328,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 'id': reg_ids[1],
                 'amount_paid': registrations[reg_ids[1]]['amount_owed'],
             },
+            {
+                'id': reg_ids[3],
+                'amount_paid': decimal.Decimal("200.00"),
+            },
         ]
         self.event.set_registrations(self.key, reg_update)
         self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
                       "Beitrags-Statistik")
         self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
-        self.assertPresence("Regulärer Beitrag 25,00 € 20,00 €")
+        self.assertPresence("Regulärer Beitrag 40,00 € 20,00 €")
         self.assertPresence("Stornokosten 0,00 € 0,00 €")
         self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
         self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
-        self.assertPresence("Spende 840,00 € 420,00 €")
+        self.assertPresence("Spende 1.260,00 € 420,00 €")
+        self.assertPresence("Überschuss – 0,00 €")
+        self.assertPresence("Gesamtsumme 1.297,01 € 437,01 €")
+        self.assertPresence("1 Personen haben 200,00 € gezahlt, ohne")
+        self.assertPresence("1 Personen haben noch nichts")
+        self.traverse("In Anmeldungsliste anzeigen")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[0]}/show")
+        self.assertPresence("Anton")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050, Anton Armin A. Administrator")
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[1]}/show")
+        self.assertPresence("Emilia")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+
+        self.get(f"/event/event/{event_id}/registration/{reg_ids[2]}/show")
+        self.assertPresence("Berta")
+        self.assertPresence(
+            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")

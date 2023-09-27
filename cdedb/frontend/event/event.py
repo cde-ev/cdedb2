@@ -8,7 +8,9 @@ This also includes all functionality directly avalable on the `show_event` page.
 """
 
 import copy
+import dataclasses
 import datetime
+import decimal
 from collections import OrderedDict
 from typing import Collection, Optional, Set
 
@@ -22,7 +24,9 @@ from cdedb.common import (
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpecEntry,
+)
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
@@ -38,6 +42,13 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.models.ml import (
     EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
 )
+
+
+@dataclasses.dataclass
+class RemainingOwedQuery:
+    query: Query
+    count: int
+    amount: Optional[decimal.Decimal]
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -136,8 +147,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
-        data['id'] = event_id
-        data = check(rs, vtypes.Event, data)
+        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event']['shortname']
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
@@ -150,7 +160,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.change_event_form(rs, event_id)
         assert data is not None
 
-        code = self.eventproxy.set_event(rs, data)
+        code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
@@ -247,8 +257,8 @@ class EventEventMixin(EventBaseFrontend):
                    else n_("Participant mailinglist created."))
             rs.notify_return_code(code, success=msg)
             if code and orgalist:
-                data = {'id': event_id, 'orga_address': ml_data.address}
-                self.eventproxy.set_event(rs, data)
+                self.eventproxy.set_event(
+                    rs, event_id, {'orga_address': ml_data.address})
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_data.address})
@@ -323,11 +333,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("This part can not be deleted."))
             return self.part_summary(rs, event_id)
 
-        event = {
-            'id': event_id,
-            'parts': {part_id: None},
-        }
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': {part_id: None}})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -380,8 +386,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
-        event = {'id': event_id, 'parts': {-1: data}}
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': {-1: data}})
         if code:
             new_fee = {
                 'kind': const.EventFeeType.common,
@@ -512,11 +517,7 @@ class EventEventMixin(EventBaseFrontend):
                                 'min_choices': track['min_choices'],
                             })
 
-        event = {
-            'id': event_id,
-            'parts': part_data,
-        }
-        code = self.eventproxy.set_event(rs, event)
+        code = self.eventproxy.set_event(rs, event_id, {'parts': part_data})
         rs.notify_return_code(code)
 
         return self.redirect(rs, "event/part_summary")
@@ -532,8 +533,47 @@ class EventEventMixin(EventBaseFrontend):
     def fee_stats(self, rs: RequestState, event_id: int) -> Response:
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+
+        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None
+                        ) -> RemainingOwedQuery:
+            query = Query(
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=rs.ambience['event']),
+                ["reg.id", "persona.given_names", "persona.family_name",
+                 "persona.username", "reg.remaining_owed", "reg.amount_owed",
+                 "reg.amount_paid"],
+                constraints,
+                (("persona.family_name", True), ("persona.given_names", True),)
+            )
+            count = len(self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id))
+            amount = None
+            if sum_col:
+                aggregates = unwrap(self.eventproxy.submit_general_query(
+                    rs, query, event_id=event_id, aggregate=True))
+                amount = aggregates[f"sum.{sum_col}"] or decimal.Decimal(0)
+
+            return RemainingOwedQuery(query, count, amount)
+
+        incomplete_paid = _paid_query(
+            (("reg.remaining_owed", QueryOperators.greater, 0.00),
+             ("reg.amount_paid", QueryOperators.greater, 0.00)),
+            "reg.amount_paid"
+        )
+        not_paid = _paid_query(
+            (("reg.remaining_owed", QueryOperators.greater, 0.00),
+             ("reg.amount_paid", QueryOperators.less, 0.01))
+        )
+        surplus = _paid_query(
+            (("reg.remaining_owed", QueryOperators.less, 0.00),),
+            "reg.remaining_owed")
+        # Remaining owed is negative in this case
+        assert surplus.amount is not None
+        surplus.amount = -surplus.amount
+
         return self.render(rs, "event/fee/fee_stats", {
-            'fee_stats': fee_stats,
+            'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
+            'not_paid': not_paid, 'surplus': surplus,
         })
 
     @access("event")
@@ -817,6 +857,7 @@ class EventEventMixin(EventBaseFrontend):
                 mod_policy=const.ModerationPolicy.unmoderated,
                 attachment_policy=const.AttachmentPolicy.allow,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 subject_prefix=event['shortname'],
                 maxsize=EventOrgaMailinglist.maxsize_default,
                 additional_footer=None,
@@ -843,6 +884,7 @@ class EventEventMixin(EventBaseFrontend):
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 subject_prefix=event['shortname'],
                 maxsize=EventAssociatedMailinglist.maxsize_default,
                 additional_footer=None,
@@ -961,7 +1003,7 @@ class EventEventMixin(EventBaseFrontend):
                 code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
                 rs.notify_return_code(code, success=n_("Orga mailinglist created."))
             code = self.eventproxy.set_event(
-                rs, {"id": new_id, "orga_address": orga_ml_data.address},
+                rs, new_id, {"orga_address": orga_ml_data.address},
                 change_note="Mailadresse der Orgas gesetzt.")
             rs.notify_return_code(code)
         if create_participant_list:
