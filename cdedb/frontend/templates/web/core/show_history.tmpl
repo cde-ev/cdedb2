@@ -19,6 +19,13 @@
 {% endblock %}
 
 {% block static_notifications %}
+    {% if inconsistencies %}
+        {% call util.notification('error') %}
+            {% trans mailto=util.href(util.mailto('cdedb@lists.cde-ev.de'), 'cdedb@lists.cde-ev.de') %}
+                Inconsistent Changelog. Contact {{ mailto }} immediately.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
     {% if ambience['persona']['is_archived'] %}
         {% call util.notification('info', id='archived') %}
             {% trans %}The user is archived.{% endtrans %}

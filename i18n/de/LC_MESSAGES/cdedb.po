@@ -22,6 +22,11 @@ msgid "Current"
 msgstr "Aktuell"
 
 msgid ""
+"Inconsistent Changelog. Contact %(mailto)s immediately."
+msgstr ""
+"Inkonsistente Historie. Kontaktiere umgehend %(mailto)s."
+
+msgid ""
 "Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately."
 msgstr ""
 "Fehler: Inkonsistente Historie. Kontaktiere umgehend <cdedb@lists.cde-ev.de>."
