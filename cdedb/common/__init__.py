@@ -256,41 +256,32 @@ class RequestState(ConnectionContainer):
                 self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
-        """Register a new  error.
+        """Register a new error, if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
-
-        However in general the method extend_validation_errors()
-        should be preferred since it activates the validation tracking
-        even if no errors are present.
         """
         self.validation_appraised = False
-        self._errors.append(error)
-
-    def add_validation_error(self, error: Error) -> None:
-        """Register a new error, if the same error is not already present."""
         for k, e in self._errors:
             if k == error[0]:
                 if e.args == error[1].args:
                     break
         else:
-            self.append_validation_error(error)
+            self._errors.append(error)
 
     def extend_validation_errors(self, errors: Iterable[Error]) -> None:
         """Register a new (maybe empty) set of errors.
+
+        Errors are only added if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
         """
         self.validation_appraised = False
-        self._errors.extend(errors)
-
-    def add_validation_errors(self, errors: Iterable[Error]) -> None:
         for e in errors:
-            self.add_validation_error(e)
+            self.append_validation_error(e)
 
     def has_validation_errors(self) -> bool:
         """Check whether validation errors exists.
