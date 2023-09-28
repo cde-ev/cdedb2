@@ -1,0 +1,299 @@
+"""
+event realm tables:
+  - event.events
+  - event.event_fees
+  - event.event_parts
+  * event.part_groups
+  * event.part_group_parts
+  - event.course_tracks
+  * event.track_groups
+  * event.track_group_tracks
+  - event.field_definitions
+  - event.courses
+  * event.course_segments
+  * event.orgas
+  + event.orga_apitokens
+  - event.lodgement_groups
+  - event.lodgements
+  - event.registrations
+  - event.registration_parts
+  - event.registration_tracks
+  * event.course_choices
+  - event.questionnaire_rows
+  + event.stored_queries
+  * event.log
+"""
+import dataclasses
+import datetime
+import decimal
+from typing import TYPE_CHECKING, Optional, get_origin
+
+import cdedb.common.validation.types as vtypes
+import cdedb.database.constants as const
+from cdedb.common import CdEDBObject
+from cdedb.models.common import CdEDataclass
+from cdedb.uncommon.intenum import CdEIntEnum
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+
+#
+# meta
+#
+
+@dataclasses.dataclass
+class EventDataclass(CdEDataclass):
+
+    @classmethod
+    def database_fields(cls) -> list[str]:
+        return [
+            field.name for field in dataclasses.fields(cls)
+            if field.init
+                and get_origin(field.type) is not dict
+        ]
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        for field in dataclasses.fields(cls):
+            if isinstance(field.type, type) and issubclass(field.type, CdEIntEnum):
+                if field.name in data:
+                    data[field.name] = field.type(data[field.name])
+        return super().from_database(data)
+
+
+#
+# get_event
+#
+
+@dataclasses.dataclass
+class Event(EventDataclass):
+    database_table = "event.events"
+
+    title: str
+    shortname: str
+
+    institution: const.PastInstitutions
+    description: Optional[str]
+
+    registration_start: Optional[datetime.datetime]
+    registration_soft_limit: Optional[datetime.datetime]
+    registration_hard_limit: Optional[datetime.datetime]
+
+    iban: Optional[str]
+    orga_address: Optional[vtypes.Email]
+
+    registration_text: Optional[str]
+    mail_text: Optional[str]
+    participant_info: Optional[str]
+    notes: Optional[str]
+    field_definition_notes: Optional[str]
+
+    offline_lock: bool
+    is_archived: bool
+    is_cancelled: bool
+    is_visible: bool
+    is_course_list_visible: bool
+    is_course_state_visible: bool
+    is_participant_list_visible: bool
+    is_course_assignment_visible: bool
+    use_additional_questionnaire: bool
+
+    lodge_field: Optional["EventField"]
+
+    parts: dict[vtypes.ID, "EventPart"]
+    tracks: dict[vtypes.ID, "CourseTrack"]
+
+    fields: dict[vtypes.ID, "EventField"]
+    fees: dict[vtypes.ID, "EventFee"]
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['parts'] = {
+            part.id: part for part in map(EventPart.from_database, data['parts'])
+        }
+
+        data['tracks'] = {
+            track.id: track for track in map(CourseTrack.from_database, data['tracks'])
+        }
+
+        data['fields'] = {
+            field.id: field for field in map(EventField.from_database, data['fields'])
+        }
+
+        data['fees'] = {
+            fee.id: fee for fee in map(EventFee.from_database, data['fees'])
+        }
+
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        for part in self.parts.values():
+            part.event = self
+            part.waitlist_field = self.fields.get(part.waitlist_field)  # type: ignore[call-overload]
+            part.camping_mat_field = self.fields.get(part.camping_mat_field)  # type: ignore[call-overload]
+        for track in self.tracks.values():
+            track.event = self
+            track.part = self.parts[track.part_id]
+            track.part.tracks[track.id] = track  # type: ignore[index]
+            track.course_room_field = self.fields.get(track.course_room_field)  # type: ignore[call-overload]
+        for field in self.fields.values():
+            field.event = self
+        for fee in self.fees.values():
+            fee.event = self
+        self.lodge_field = self.fields.get(self.lodge_field)  # type: ignore[call-overload]
+
+
+@dataclasses.dataclass
+class EventPart(EventDataclass):
+    database_table = "event.event_parts"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+
+    title: str
+    shortname: str
+
+    part_begin: datetime.date
+    part_end: datetime.date
+
+    waitlist_field: Optional["EventField"]
+    camping_mat_field: Optional["EventField"]
+
+    tracks: dict[vtypes.ID, "CourseTrack"] = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass
+class CourseTrack(EventDataclass):
+    database_table = "event.course_tracks"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
+    part_id: vtypes.ID  # tODO: maybe remove, seems more complicated though.
+
+    title: str
+    shortname: str
+    num_choices: int
+    min_choices: int
+    sortkey: int
+
+    course_room_field: Optional["EventField"]
+
+
+@dataclasses.dataclass
+class EventFee(EventDataclass):
+    database_table = "event.event_fees"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+
+    kind: const.EventFeeType
+    title: str
+    amount: decimal.Decimal
+    condition: vtypes.EventFeeCondition
+    notes: Optional[str]
+
+
+@dataclasses.dataclass
+class EventField(EventDataclass):
+    database_table = "event.field_definitions"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+
+    field_name: vtypes.RestrictiveIdentifier
+    title: str
+    kind: const.FieldDatatypes
+    association: const.FieldAssociations
+    checkin: bool
+    sortkey: int
+
+    entries: Optional[dict[str, str]]
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['entries'] = dict(data['entries'] or []) or None
+        return super().from_database(data)
+
+
+#
+# get_questionnaire
+#
+
+@dataclasses.dataclass
+class Questionnaire:
+    registration: list["QuestionnaireRow"]
+    additional: list["QuestionnaireRow"]
+
+
+@dataclasses.dataclass
+class QuestionnaireRow(EventDataclass):
+    database_table = "event.questionnaire_rows"
+
+    event: Event
+    field: Optional[EventField]
+
+
+#
+# get_course
+#
+
+@dataclasses.dataclass
+class Course(EventDataclass):
+    database_table = "event.courses"
+
+    # event: Event
+    segments: dict[CourseTrack, bool]
+
+#
+# get_lodgement_group + get_lodgement
+#
+
+
+@dataclasses.dataclass
+class LodgementGroup(EventDataclass):
+    database_table = "event.lodgement_groups"
+
+    # event: Event
+
+
+@dataclasses.dataclass
+class Lodgement(EventDataclass):
+    database_table = "event.lodgements"
+
+    # event: Event
+    group: LodgementGroup
+
+
+#
+# get_registration
+#
+
+@dataclasses.dataclass
+class Registration(EventDataclass):
+    database_table = "event.registrations"
+
+    # event: Event
+
+    parts: dict[EventPart, "RegistrationPart"]
+    tracks: dict[CourseTrack, "RegistrationTrack"]
+
+
+@dataclasses.dataclass
+class RegistrationPart(EventDataclass):
+    database_table = "event.registration_parts"
+
+    registration: Registration
+    tracks: dict[CourseTrack, "RegistrationTrack"]
+
+    lodgement: Optional[Lodgement]
+
+
+@dataclasses.dataclass
+class RegistrationTrack(EventDataclass):
+    database_table = "event.registration_tracks"
+
+    registration: Registration
+    registration_part: RegistrationPart
+
+    course: Optional[Course]
+    instructed: Optional[Course]
+
+    choices: list[Course]

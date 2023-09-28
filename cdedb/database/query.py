@@ -9,7 +9,9 @@ import datetime
 import decimal
 import enum
 import logging
-from typing import Collection, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast,
+)
 
 import psycopg2.extensions
 import psycopg2.extras
@@ -17,6 +19,7 @@ import psycopg2.extras
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 from cdedb.database.conversions import from_db_output, to_db_input
+from cdedb.models.common import CdEDataclass
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -32,6 +35,8 @@ EntityKey = Union[int, str]
 # EntityKeys is a collection of identifiers, i.e. ids, given for retrieval or deletion
 # of the corresponding entities. Note that we do not use string identifiers for this.
 EntityKeys = Collection[int]
+
+DC = TypeVar("DC", bound=CdEDataclass)
 
 
 class SqlQueryBackend:
@@ -230,3 +235,15 @@ class SqlQueryBackend:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
         return self.query_exec(container, query, ())
+
+    def sql_select_dataclass_one_raw(self, container: ConnectionContainer, dc: Type[DC],
+                                     entity: EntityKey) -> Optional[CdEDBObject]:
+        return self.sql_select_one(
+            container, dc.database_table, dc.database_fields(), entity)
+
+    def sql_select_dataclass_raw(self, container: ConnectionContainer, dc: Type[DC],
+                                 entities: EntityKeys, *, entity_key: str = "id",
+                                 ) -> Tuple[CdEDBObject, ...]:
+        return self.sql_select(
+            container, dc.database_table, dc.database_fields(), entities,
+            entity_key=entity_key)
