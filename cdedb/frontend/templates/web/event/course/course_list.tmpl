@@ -44,6 +44,13 @@
     {% endif %}
 {% endblock %}
 {% block content %}
+    {% if ambience['event']['website_url'] %}
+        <p>
+            {% trans about_this_event=util.href(ambience['event']['website_url'], gettext("about this event")) %}
+                You can find more information {{ about_this_event }} on the CdE website.
+            {% endtrans %}
+        </p>
+    {% endif %}
     {% if courses_exist %}
         {% if ambience['event']['tracks']|length > 1 or show_course_state %}
             {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary pull-right-responsive') %}
