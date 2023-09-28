@@ -4324,15 +4324,18 @@ def _ballot(
         ValueError("rel_quorum", quorum_msg),
     ]
 
-    # The first condition ensures that either both of extension end and quorum are
-    # given or none of them.
+    # The first part of each condition ensures that either both of extension end and
+    # quorum are given or none of them, while the second part of the condition checks
+    # whether the values are compatible if both are present.
     if ('vote_extension_end' in val and quorum is None
             or val.get('vote_extension_end') and not quorum):
-        # Quorum key missing or trivial quorum, but non-empty extension end
+        # Quorum key missing and vote extension end key given
+        # or trivial quorum given, but non-empty extension end provided
         errs.extend(quorum_errors)
     elif (quorum is not None and 'vote_extension_end' not in val
             or quorum and not val.get('vote_extension_end')):
-        # Extension end key missing or empty extension end, but non-trivial quorum
+        # Extension end key missing and quorum key given
+        # or empty extension end, but non-trivial quorum provided
         errs.append(vote_extension_error)
 
     if errs:

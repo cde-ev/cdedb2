@@ -4,13 +4,13 @@
 import datetime
 import json
 import pathlib
-import pytz
 import re
 import subprocess
 import tempfile
 from typing import List
 
 import freezegun
+import pytz
 import webtest
 
 from cdedb.common import (

@@ -367,11 +367,11 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 83,
             'quorum': 9,
             'title': 'Farbe des Logos',
-            'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22, 222222,
+            'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22,
                                             tzinfo=pytz.utc),
-            'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22, 222222,
+            'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22,
                                           tzinfo=pytz.utc),
-            'vote_extension_end': datetime.datetime(2222, 2, 4, 20, 22, 22, 222222,
+            'vote_extension_end': datetime.datetime(2222, 2, 4, 20, 22, 22,
                                                     tzinfo=pytz.utc),
             'votes': None}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
