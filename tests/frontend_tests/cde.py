@@ -744,7 +744,7 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_decided_search'].checked = True
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
-        f['qord_1'] = "personas.id"
+        f['qord_0'] = "personas.id"
         self.response = f.submit("download", value="csv")
         expectation = "\n".join((
             'personas.id;given_names;family_name;username;birthday;decided_search;'
@@ -772,7 +772,7 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_decided_search'].checked = True
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
-        f['qord_1'] = "personas.id"
+        f['qord_0'] = "personas.id"
         self.response = f.submit("download", value="json")
         expectation = [
             {'birthday': '1981-02-11',

@@ -1578,8 +1578,8 @@
             "serialized_query": {
                 "is_search": true,
                 "qop_persona.birthday": 20,
-                "qord_1": "persona.birthday",
-                "qord_1_ascending": true,
+                "qord_0": "persona.birthday",
+                "qord_0_ascending": true,
                 "qsel_persona.birthday": true,
                 "qsel_persona.id": true,
                 "qsel_reg.id": true,

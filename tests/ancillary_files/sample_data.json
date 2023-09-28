@@ -6568,12 +6568,12 @@
             "scope": 30,
             "serialized_query": {
                 "scope": 30,
-                "qord_1": "persona.birthday",
+                "qord_0": "persona.birthday",
                 "is_search": true,
                 "query_name": "Test-Query",
                 "qsel_reg.id": true,
                 "qsel_persona.id": true,
-                "qord_1_ascending": true,
+                "qord_0_ascending": true,
                 "qop_persona.birthday": 20,
                 "qsel_persona.birthday": true,
                 "qval_persona.birthday": "2000-01-01"

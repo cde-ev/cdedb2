@@ -39,10 +39,10 @@ COURSESEARCH_DEFAULTS = {
     'qop_courses.description': QueryOperators.match,
     'qsel_courses.pevent_id': True,
     'qsel_events.tempus': True,
-    'qord_1': 'courses.title',
-    'qord_1_ascending': True,
-    'qord_2': 'events.tempus',
-    'qord_2_ascending': False
+    'qord_0': 'courses.title',
+    'qord_0_ascending': True,
+    'qord_1': 'events.tempus',
+    'qord_1_ascending': False
 }
 
 
