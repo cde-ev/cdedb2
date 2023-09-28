@@ -302,8 +302,6 @@ class QueryScope(CdEIntEnum):
                 name = f"qord_{postfix}_ascending"
                 if name in rs.request.values:
                     params[name] = rs.values[name] = rs.request.values[name]
-                continue
-            break
         for key, value in defaults.items():
             if key not in params:
                 params[key] = rs.values[key] = value
