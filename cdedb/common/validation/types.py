@@ -40,6 +40,7 @@ EmptyList = _NewType("EmptyList", List[Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
+Url = _NewType("Url", str)
 Shortname = _NewType("Shortname", str)
 ShortnameIdentifier = _NewType("ShortnameIdentifier", Shortname)
 ShortnameRestrictiveIdentifier = _NewType(
@@ -132,6 +133,7 @@ SerializedPartialEventUpload = _NewType(
 SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", CdEDBObject)
 SerializedEventQuestionnaireUpload = _NewType(
     "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire)
+SerializedEventConfiguration = _NewType("SerializedEventConfiguration", CdEDBObject)
 
 PartialCourse = _NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", CdEDBObject)

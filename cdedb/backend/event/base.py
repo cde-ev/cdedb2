@@ -210,6 +210,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
                 ret[anid]['track_groups'] = {}
                 ret[anid]['fees'] = {}
+                ret[anid]['institution'] =\
+                    const.PastInstitutions(ret[anid]['institution'])
             part_data = self.sql_select(
                 rs, "event.event_parts", EVENT_PART_FIELDS,
                 event_ids, entity_key="event_id")
@@ -268,6 +270,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 track = ret[event_id]['tracks'][d['track_id']]
                 track['track_groups'][d['track_group_id']] = track_group
             for d in fee_data:
+                d['kind'] = const.EventFeeType(d['kind'])
                 ret[d['event_id']]['fees'][d['id']] = d
             for event_id, fields in self._get_events_fields(rs, event_ids).items():
                 ret[event_id]['fields'] = fields
@@ -287,6 +290,13 @@ class EventBaseBackend(EventLowLevelBackend):
     class _GetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
+
+    @access("event")
+    def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
+        """Return True if the given shortname already exists for some event."""
+        shortname = affirm(str, shortname)
+        return bool(self.query_all(
+            rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
@@ -337,7 +347,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     @access("event")
-    def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
+    def set_event_archived(self, rs: RequestState, event_id: int) -> None:
         """Wrapper around ``set_event()`` for archiving an event.
 
         This exists to emit the correct log message. It delegates
@@ -345,9 +355,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         with Atomizer(rs):
             with Silencer(rs):
-                self.set_event(rs, data)
-            self.event_log(rs, const.EventLogCodes.event_archived,
-                           data['id'])
+                self.set_event(rs, event_id, {'is_archived': True})
+            self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
     def add_event_orgas(self, rs: RequestState, event_id: int,
@@ -438,16 +447,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             ret: dict[int, OrgaToken] = {}
             for e in data:
-                ret[e['id']] = OrgaToken(
-                    id=e['id'],
-                    event_id=e['event_id'],
-                    title=e['title'],
-                    notes=e['notes'],
-                    ctime=e['ctime'],
-                    etime=e['etime'],
-                    rtime=e['rtime'],
-                    atime=e['atime'],
-                )
+                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):
@@ -632,7 +632,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event", "droid_orga")
-    def set_event(self, rs: RequestState, data: CdEDBObject,
+    def set_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                   change_note: str = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
@@ -663,20 +663,23 @@ class EventBaseBackend(EventLowLevelBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
-        data = affirm(vtypes.Event, data)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['id'])
-
+        event_id = affirm(vtypes.ID, event_id)
         ret = 1
         with Atomizer(rs):
+            current = self.get_event(rs, event_id)
+            data = affirm(vtypes.Event, data, current=current)
+            data['id'] = event_id
+
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             # Set top-level event fields.
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
-                    edata[f] for f in ("lodge_field", "camping_mat_field",
-                                       "course_room_field") if f in edata
+                    edata[f] for f in ("lodge_field",) if f in edata
                 )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
@@ -686,26 +689,18 @@ class EventBaseBackend(EventLowLevelBackend):
                         self._validate_special_event_field(
                             rs, data['id'], "lodge_field",
                             indirect_data[edata['lodge_field']])
-                    if edata.get('camping_mat_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "camping_mat_field",
-                            indirect_data[edata['camping_mat_field']])
-                    if edata.get('course_room_field'):
-                        self._validate_special_event_field(
-                            rs, data['id'], "course_room_field",
-                            indirect_data[edata['course_room_field']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'], change_note=change_note)
 
             if 'orgas' in data:
-                ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
+                ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
-                ret *= self._set_event_fields(rs, data['id'], data['fields'])
+                ret *= self._set_event_fields(rs, event_id, data['fields'])
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
-                ret *= self._set_event_parts(rs, data['id'], data['parts'])
+                ret *= self._set_event_parts(rs, event_id, data['parts'])
 
         return ret
 
@@ -720,13 +715,12 @@ class EventBaseBackend(EventLowLevelBackend):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
-            update_data = {aspect: data[aspect]
-                           for aspect in ('parts', 'orgas', 'fields')
-                           if aspect in data}
-            if update_data:
-                update_data['id'] = new_id
-                self.set_event(rs, update_data)
-            # lg_data: vtypes.LodgementGroup
+            if 'orgas' in data:
+                self.add_event_orgas(rs, new_id, data['orgas'])
+            if 'fields' in data:
+                self._set_event_fields(rs, new_id, data['fields'])
+            if 'parts' in data:
+                self._set_event_parts(rs, new_id, data['parts'])
             if groups := data.get('lodgement_groups'):
                 for creation_id in mixed_existence_sorter(groups):
                     lg_data = groups[creation_id]
@@ -1364,13 +1358,16 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['id']
             del part['event_id']
             del part['part_groups']
-            for f in ('waitlist_field',):
+            for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
                     part[f] = event['fields'][part[f]]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
                 del track['track_groups']
+                for f in ('course_room_field',):
+                    if track[f]:
+                        track[f] = event['fields'][track[f]]['field_name']
         for pg in event['part_groups'].values():
             del pg['id']
             del pg['event_id']
@@ -1381,7 +1378,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del tg['event_id']
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
             tg['track_ids'] = xsorted(tg['track_ids'])
-        for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
+        for f in ('lodge_field',):
             if event[f]:
                 event[f] = event['fields'][event[f]]['field_name']
         # Fields and questionnaire
@@ -1437,7 +1434,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_offline_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
-            ret = self.set_event(rs, {'id': event_id, 'fields': fields})
+            ret = self.set_event(rs, event_id, {'fields': fields})
             ret *= self.set_questionnaire(rs, event_id, questionnaire)
         return ret
 

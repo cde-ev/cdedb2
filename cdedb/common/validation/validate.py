@@ -63,6 +63,7 @@ import math
 import re
 import string
 import typing
+import urllib.parse
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
@@ -91,7 +92,7 @@ from cdedb.common import (
     compute_checkdigit, now,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
@@ -768,6 +769,21 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
 
 
 @_add_typed_validator
+def _url(val: Any, argname: str = None, **kwargs: Any) -> Url:
+    """A string which is a valid url.
+
+    We can not guarantee that the URL is actually valid, since the respective RFCs
+    are not strictly respected. See also
+    https://docs.python.org/3/library/urllib.parse.html#url-parsing-security
+    """
+    val = _str(val, argname, **kwargs)
+    url = urllib.parse.urlparse(val)
+    if not all([url.scheme, url.netloc, url.path]):
+        raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
+    return Url(urllib.parse.urlunparse(url))
+
+
+@_add_typed_validator
 def _shortname(val: Any, argname: str = None, *,
                ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
     """A string used as shortname with therefore limited length."""
@@ -1167,12 +1183,11 @@ def _api_token_string(
     Split the token into the droid name and the secret.
     """
     val = _printable_ascii(val, argname, **kwargs)
-    if m := models_droid.APIToken.token_string_pattern.fullmatch(val):
-        droid_name = m.group(1)
-        secret = m.group(2)
+    try:
+        droid_name, secret = models_droid.APIToken.parse_token_string(val)
         return APITokenString((droid_name, secret))
-    raise ValidationSummary(ValueError(
-        argname, n_("Wrong format for api token.")))
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
 
 
 @_add_typed_validator
@@ -1184,7 +1199,7 @@ def _orga_token(
 
     mandatory, optional = models_droid.OrgaToken.validation_fields(creation=creation)
     val = _examine_dictionary_fields(
-        val, mandatory, optional, argname=argname, **kwargs)
+        val, mandatory, optional, **kwargs)
 
     errs = ValidationSummary()
 
@@ -2245,37 +2260,10 @@ def _meta_info(
     return MetaInfo(val)
 
 
-INSTITUTION_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Shortname,
-}
-
-
-@_add_typed_validator
-def _institution(
-    val: Any, argname: str = "institution", *,
-    creation: bool = False, **kwargs: Any
-) -> Institution:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**INSTITUTION_COMMON_FIELDS}
-    return Institution(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
-
-
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Shortname,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'tempus': datetime.date,
     'description': Optional[str],
 }
@@ -2311,7 +2299,7 @@ def _past_event(
 
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'institution': ID,
+    'institution': const.PastInstitutions,
     'description': Optional[str],
     # Event shortnames do not actually need to be that short.
     'shortname': Identifier,
@@ -2336,8 +2324,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field': Optional[ID],
-    'camping_mat_field': Optional[ID],
-    'course_room_field': Optional[ID],
+    'website_url': Optional[Url],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -2407,35 +2394,28 @@ def _event(
         mandatory_fields = {**EVENT_COMMON_FIELDS}
         optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
     else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
+        mandatory_fields = {}
+        optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    if 'registration_soft_limit' in val and 'registration_hard_limit' in val:
-        if (val['registration_soft_limit']
-                and val['registration_hard_limit']
-                and (val['registration_soft_limit']
-                     > val['registration_hard_limit'])):
-            errs.append(ValueError("registration_soft_limit", n_(
-                "Must be before or equal to hard limit.")))
-        if val.get('registration_start') and (
-                val['registration_soft_limit'] and
-                val['registration_start'] > val['registration_soft_limit']
-                or val['registration_hard_limit'] and
-                val['registration_start'] > val['registration_hard_limit']):
-            errs.append(ValueError("registration_start", n_(
-                "Must be before hard and soft limit.")))
+
+    configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
+    if configuration_fields:
+        if creation:
+            kwargs['current'] = {}
+        with errs:
+            configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
+                configuration_fields, argname, creation=creation, **kwargs)
+            val.update(configuration_fields)
 
     if 'orgas' in val:
         orgas = set()
         for anid in val['orgas']:
-            try:
+            with errs:
                 v = _id(anid, 'orgas', **kwargs)
                 orgas.add(v)
-            except ValidationSummary as e:
-                errs.extend(e)
         val['orgas'] = orgas
 
     if 'parts' in val:
@@ -2472,6 +2452,7 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
+    'camping_mat_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
@@ -2596,6 +2577,7 @@ EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
+    'course_room_field': Optional[ID],  # type: ignore[dict-item]
 }
 
 
@@ -2788,6 +2770,7 @@ EVENT_FEE_COMMON_FIELDS: TypeMapping = {
     "notes": Optional[str],  # type: ignore[dict-item]
     "amount": decimal.Decimal,
     "condition": EventFeeCondition,
+    "kind": const.EventFeeType,
 }
 
 
@@ -3491,7 +3474,8 @@ def _serialized_event(
     # data looks a bit different.
     # TODO replace the functions with types
     table_validators: Mapping[str, Callable[..., Any]] = {
-        'event.events': _event,
+        'event.events': functools.partial(
+            _event, current={}, skip_field_validation=True),
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
@@ -3535,7 +3519,8 @@ def _serialized_event(
                           'field_id': Optional[ID], 'kind': const.QuestionnaireUsages,  # type: ignore[dict-item]
                           'pos': int}),
         'event.event_fees': _augment_dict_validator(
-            _empty_dict, {'id': ID, 'event_id': ID, 'title': str,
+            _empty_dict, {'id': ID, 'event_id': ID,
+                          'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
                           'condition': str, 'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
@@ -4040,6 +4025,67 @@ def _serialized_event_questionnaire(
         raise errs
 
     return SerializedEventQuestionnaire(val)
+
+
+@_add_typed_validator
+def _serialized_event_configuration(
+    val: Any, argname: str = "serialized_event_configuration", *,
+    creation: bool = False,
+    current: CdEDBObject,
+    skip_field_validation: bool = False,
+    **kwargs: Any
+) -> SerializedEventConfiguration:
+
+    val = _mapping(val, argname, **kwargs)
+
+    if creation:
+        mandatory_fields = dict(**EVENT_COMMON_FIELDS)
+        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS)
+    else:
+        mandatory_fields = {}
+        optional_fields = dict(**EVENT_EXPOSED_FIELDS)
+
+    val = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+
+    # Check registration time compatibility.
+    start = val.get('registration_start', current.get('registration_start'))
+    soft = val.get('registration_soft_limit', current.get('registration_soft_limit'))
+    hard = val.get('registration_hard_limit', current.get('registration_hard_limit'))
+    if start and (soft and start > soft or hard and start > hard):
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_start", n_("Must be before hard and soft limit.")))
+    if soft and hard and soft > hard:
+        with errs:
+            raise ValidationSummary(ValueError(
+                "registration_soft_limit", "Must be before or equal to hard limit."))
+
+    if not skip_field_validation:
+        if lodge_field := val.get('lodge_field'):
+            if lodge_field not in current['fields']:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "lodge_field", n_("Unknown lodge field.")))
+            else:
+                field = current['fields'][lodge_field]
+                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                if field['association'] not in legal_associations:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field",
+                            n_("Lodge field must be a registration field.")))
+                if field['kind'] not in legal_kinds:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "lodge_field", n_("Lodge field must have type 'string'.")))
+
+    if errs:
+        raise errs
+
+    return SerializedEventConfiguration(val)
 
 
 @_add_typed_validator

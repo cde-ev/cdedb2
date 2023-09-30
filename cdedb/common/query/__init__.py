@@ -250,8 +250,9 @@ class QueryScope(CdEIntEnum):
             prefix, target = "query", "course_query"
         elif self in {QueryScope.event_user, QueryScope.all_event_users}:
             prefix, target = "user", "user_search"
+        elif self in {QueryScope.assembly_user, QueryScope.all_assembly_users}:
+            prefix, target = "base", "user_search"
         elif self in {QueryScope.core_user, QueryScope.all_core_users,
-                      QueryScope.assembly_user, QueryScope.all_assembly_users,
                       QueryScope.cde_user, QueryScope.all_cde_users,
                       QueryScope.ml_user, QueryScope.all_ml_users}:
             target = "user_search"
@@ -326,6 +327,8 @@ _QUERY_VIEWS = {
             ON personas.id = participants.persona_id
         """),
     QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.core_user: _PERSONAS_PAST_EVENT_VIEW,
+    QueryScope.all_core_users: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.quick_registration:
         """core.personas
         INNER JOIN event.registrations

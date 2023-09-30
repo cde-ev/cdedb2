@@ -1,0 +1,67 @@
+{% set sidenav_active='orga_tokens' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% if ambience['orga_token'] %}
+        {% trans event_title=ambience['event']['title'] %}
+            Change Orga Token ({{ event_title }})
+        {% endtrans %}
+    {% else %}
+        {% trans event_title=ambience['event']['title'] %}
+            Create Orga Token ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {% if ambience['orga_token'] %}
+        {{ util.context_heading(gettext("Change Orga Token"),
+                                ambience['orga_token']['title'], 'robot', gettext('Orga Token'),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% else %}
+        {{ util.context_heading(gettext("Create Orga Token"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens")) }}
+    {% if ambience['orga_token'] %}
+        {{ util.breadcrumb_link("", ambience['orga_token']['title'], icon="robot", readonly=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/change_orga_token"), gettext("Change"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/create_orga_token"), gettext("Create Orga Token"), active=True) }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if ambience['orga_token'] %}
+        {% set action = 'event/change_orga_token' %}
+    {% else %}
+        {% set action = 'event/create_orga_token' %}
+        <p class="text-warning">
+            {% trans %}
+                Orga Tokens allow for automated access to event data. With such a token a programm may create and download
+                a partial export, containing all information about courses, lodgements and registrations including personal
+                data of all orgas and everyone who is registered. Treat these tokens appropriately and do not publish them.
+            {% endtrans %}
+        </p>
+    {% endif %}
+    <form action="{{ cdedblink(action) }}" method="POST" id="configureorgatokenform" class="form-horizontal">
+        {{ util.anti_csrf_token(action) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
+        {% if ambience['orga_token'] %}
+            {{ util.form_input_static(
+                    label=gettext("Expiration"), value=ambience['orga_token'].etime|datetime(lang=lang)) }}
+        {% else %}
+            {{ util.form_input_text(
+                    name="etime", label=gettext("Expiration"), type="datetime-local") }}
+        {% endif %}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/orga_token_summary")) }}
+    </form>
+
+{% endblock %}

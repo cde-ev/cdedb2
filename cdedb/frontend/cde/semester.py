@@ -65,7 +65,8 @@ class CdESemesterMixin(CdEBaseFrontend):
             self.cdeproxy.advance_semester(rs)
 
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).billing:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not (allowed_steps.billing or allowed_steps.archival_notification):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -153,7 +154,8 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).ejection:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not (allowed_steps.ejection or allowed_steps.automated_archival):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -218,12 +220,13 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
-        period = self.cdeproxy.get_period(rs, period_id)
+        # TODO fix removal of exmember balance after specification
+        # period = self.cdeproxy.get_period(rs, period_id)
         # Make sure to perform this step only once, so the amount of balance removed
         #  in this way is not overwritten by later calls.
-        if not period["exmember_balance"]:
-            ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
-            rs.notify_return_code(ret, success=n_("Balance of Exmembers removed."))
+        # if not period["exmember_balance"]:
+        #     ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
+        #     rs.notify_return_code(ret, success=n_("Balance of Exmembers removed."))
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak

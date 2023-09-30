@@ -9,6 +9,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members"), active="True") }}
 {% endblock %}
 {% block content %}
+    <p>
+        {% trans faq=util.href("https://www.cde-ev.de/faq/mitglied/", gettext("FAQ")) %}
+            Here you can find the CdE’s internal member area.
+            If you have further questions, please consult the {{ faq }} at the CdE website.
+        {% endtrans %}
+    </p>
     <div class="row">
         <div class="col-md-6" id="member-quick-search">
             {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}

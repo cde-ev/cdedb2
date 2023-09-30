@@ -210,11 +210,17 @@ def execute_sql_script(
             for statement in sql_text.split(";"):
                 if not statement.strip():
                     continue
-                cur.execute(statement)
+
                 if verbose > 2:
                     click.echo(cur.query)
                 if verbose > 1:
                     click.echo(cur.statusmessage)
+
+                try:
+                    cur.execute(statement)
+                except psycopg2.ProgrammingError:
+                    continue
+
                 if verbose > 0:
                     try:
                         for x in cur:

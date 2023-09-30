@@ -4095,18 +4095,6 @@
         }
     ],
     "cde.log": [],
-    "past_event.institutions": [
-        {
-            "id": 1,
-            "title": "Club der Ehemaligen",
-            "shortname": "CdE"
-        },
-        {
-            "id": 2,
-            "title": "Disco des Ehemaligen",
-            "shortname": "DdE"
-        }
-    ],
     "past_event.events": [
         {
             "id": 1,
@@ -4121,7 +4109,7 @@
             "id": 2,
             "title": "Geburtstagsfete",
             "shortname": "gebi",
-            "institution": 2,
+            "institution": 200,
             "description": null,
             "tempus": "2019-07-26",
             "participant_info": null
@@ -4248,6 +4236,7 @@
             "shortname": "TestAka",
             "institution": 1,
             "description": "Everybody come!",
+            "website_url": "https://www.cde-ev.de/",
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
@@ -4267,9 +4256,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": 3,
-            "camping_mat_field": 4,
-            "course_room_field": 2
+            "lodge_field": 3
         },
         {
             "id": 2,
@@ -4277,6 +4264,7 @@
             "shortname": "Party50",
             "institution": 1,
             "description": "Let's have a party!",
+            "website_url": null,
             "registration_start": "2049-12-01T00:00:00+00:00",
             "registration_soft_limit": "2049-12-31T00:00:00+00:00",
             "registration_hard_limit": "2049-12-31T00:00:00+00:00",
@@ -4296,9 +4284,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         },
         {
             "id": 3,
@@ -4306,6 +4292,7 @@
             "shortname": "cyta",
             "institution": 1,
             "description": "Ein ganz normales Event – mit ✨.",
+            "website_url": null,
             "registration_start": null,
             "registration_soft_limit": null,
             "registration_hard_limit": null,
@@ -4325,9 +4312,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         },
         {
             "id": 4,
@@ -4335,6 +4320,7 @@
             "shortname": "triaka",
             "institution": 1,
             "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            "website_url": null,
             "registration_start": "---now---",
             "registration_soft_limit": null,
             "registration_hard_limit": null,
@@ -4354,14 +4340,13 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null,
-            "camping_mat_field": null,
-            "course_room_field": null
+            "lodge_field": null
         }
     ],
     "event.event_fees": [
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag Warmup",
             "amount": "10.50",
             "condition": "part.Wu",
@@ -4369,6 +4354,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag 1. Hälfte",
             "amount": "123.00",
             "condition": "part.1.H.",
@@ -4376,6 +4362,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Teilnahmebeitrag 2. Hälfte",
             "amount": "450.99",
             "condition": "part.2.H.",
@@ -4383,6 +4370,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis Warmup",
             "amount": "-5.00",
             "condition": "part.Wu and field.is_child",
@@ -4390,6 +4378,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis 1. Hälfte",
             "amount": "-12.00",
             "condition": "part.1.H. and field.is_child",
@@ -4397,6 +4386,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Kinderpreis 2. Hälfte",
             "amount": "-19.00",
             "condition": "part.2.H. and field.is_child",
@@ -4404,6 +4394,7 @@
         },
         {
             "event_id": 1,
+            "kind": 3,
             "title": "Externenzusatzbeitrag",
             "amount": "5.00",
             "condition": "any_part and not (is_member or field.is_child)",
@@ -4411,6 +4402,7 @@
         },
         {
             "event_id": 1,
+            "kind": 10,
             "title": "Mengenrabatt",
             "amount": "-0.01",
             "condition": "all_parts",
@@ -4418,6 +4410,7 @@
         },
         {
             "event_id": 1,
+            "kind": 1,
             "title": "Orgarabatt",
             "amount": "-50.00",
             "condition": "part.1.H. and part.2.H. and is_orga",
@@ -4425,6 +4418,7 @@
         },
         {
             "event_id": 2,
+            "kind": 1,
             "title": "Teilnahmebeitrag Party",
             "amount": "15.00",
             "condition": "part.Party",
@@ -4432,13 +4426,47 @@
         },
         {
             "event_id": 2,
+            "kind": 1,
+            "title": "Orgarabatt",
+            "amount": "-10.00",
+            "condition": "any_part and is_orga",
+            "notes": null
+        },
+        {
+            "event_id": 2,
+            "kind": 2,
+            "title": "Absager",
+            "amount": "7.50",
+            "condition": "false",
+            "notes": "TODO: add real condition once implemented."
+        },
+        {
+            "event_id": 2,
+            "kind": 3,
             "title": "Externenzusatzbeitrag",
             "amount": "2.00",
             "condition": "any_part and not is_member",
             "notes": null
         },
         {
+            "event_id": 2,
+            "kind": 10,
+            "title": "Solidarische Reduktion",
+            "amount": "-4.99",
+            "condition": "part.Party and field.solidarity",
+            "notes": null
+        },
+        {
+            "event_id": 2,
+            "kind": 11,
+            "title": "Generöse Spende",
+            "amount": "420.00",
+            "condition": "field.donation",
+            "notes": null
+        },
+        {
             "event_id": 4,
+            "kind": 1,
             "title": "Unkostenbeitrag Silvesterfeier",
             "amount": "4.20",
             "condition": "part.Feier",
@@ -4453,7 +4481,8 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 2,
@@ -4462,7 +4491,8 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 3,
@@ -4471,7 +4501,8 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": 4
         },
         {
             "id": 4,
@@ -4480,7 +4511,8 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 5,
@@ -4489,7 +4521,8 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 6,
@@ -4498,7 +4531,8 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 7,
@@ -4507,7 +4541,8 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 8,
@@ -4516,7 +4551,8 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 9,
@@ -4525,7 +4561,8 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 10,
@@ -4534,7 +4571,8 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 11,
@@ -4543,7 +4581,8 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         },
         {
             "id": 12,
@@ -4552,7 +4591,8 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "waitlist_field": null
+            "waitlist_field": null,
+            "camping_mat_field": null
         }
     ],
     "event.part_groups": [
@@ -4735,7 +4775,8 @@
             "shortname": "Morgenkreis",
             "num_choices": 4,
             "min_choices": 4,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": 5
         },
         {
             "id": 2,
@@ -4744,7 +4785,8 @@
             "shortname": "Kaffee",
             "num_choices": 1,
             "min_choices": 1,
-            "sortkey": 2
+            "sortkey": 2,
+            "course_room_field": 5
         },
         {
             "id": 3,
@@ -4753,7 +4795,8 @@
             "shortname": "Sitzung",
             "num_choices": 3,
             "min_choices": 2,
-            "sortkey": 3
+            "sortkey": 3,
+            "course_room_field": 5
         },
         {
             "id": 4,
@@ -4762,7 +4805,8 @@
             "shortname": "cyta",
             "num_choices": 3,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 6,
@@ -4771,7 +4815,8 @@
             "shortname": "OK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 7,
@@ -4780,7 +4825,8 @@
             "shortname": "WK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 8,
@@ -4789,7 +4835,8 @@
             "shortname": "KK1",
             "num_choices": 4,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 9,
@@ -4798,7 +4845,8 @@
             "shortname": "OK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 10,
@@ -4807,7 +4855,8 @@
             "shortname": "OK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 11,
@@ -4816,7 +4865,8 @@
             "shortname": "WK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 12,
@@ -4825,7 +4875,8 @@
             "shortname": "WK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 13,
@@ -4834,7 +4885,8 @@
             "shortname": "KK2m",
             "num_choices": 5,
             "min_choices": 2,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 14,
@@ -4843,7 +4895,8 @@
             "shortname": "KK2n",
             "num_choices": 3,
             "min_choices": 1,
-            "sortkey": 1
+            "sortkey": 1,
+            "course_room_field": null
         },
         {
             "id": 15,
@@ -4852,7 +4905,8 @@
             "shortname": "KV",
             "num_choices": 1,
             "min_choices": 1,
-            "sortkey": 2
+            "sortkey": 2,
+            "course_room_field": null
         }
     ],
     "event.track_groups": [
@@ -5048,6 +5102,28 @@
             "kind": 3,
             "association": 1,
             "checkin": true,
+            "entries": null
+        },
+        {
+            "id": 101,
+            "event_id": 2,
+            "field_name": "solidarity",
+            "title": "Solidaritätsbeitrag",
+            "sortkey": 0,
+            "kind": 2,
+            "association": 1,
+            "checkin": false,
+            "entries": null
+        },
+        {
+            "id": 102,
+            "event_id": 2,
+            "field_name": "donation",
+            "title": "Spender",
+            "sortkey": 0,
+            "kind": 2,
+            "association": 1,
+            "checkin": false,
             "entries": null
         }
     ],
@@ -8094,6 +8170,7 @@
             "attachment_policy": 3,
             "convert_html": true,
             "ml_type": 1,
+            "roster_visibility": 1,
             "subject_prefix": "Hört, hört",
             "maxsize": null,
             "is_active": true,
@@ -8115,6 +8192,7 @@
             "attachment_policy": 1,
             "convert_html": false,
             "ml_type": 2,
+            "roster_visibility": 1,
             "subject_prefix": "werbung",
             "maxsize": null,
             "is_active": true,
@@ -8136,6 +8214,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 40,
+            "roster_visibility": 1,
             "subject_prefix": "witz",
             "maxsize": 2048,
             "is_active": true,
@@ -8157,6 +8236,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 4,
+            "roster_visibility": 20,
             "subject_prefix": "klatsch",
             "maxsize": null,
             "is_active": true,
@@ -8178,6 +8258,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 30,
+            "roster_visibility": 1,
             "subject_prefix": "kampf",
             "maxsize": 1024,
             "is_active": true,
@@ -8199,6 +8280,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 3,
+            "roster_visibility": 1,
             "subject_prefix": "aktivenforum",
             "maxsize": 1024,
             "is_active": false,
@@ -8220,6 +8302,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 3,
+            "roster_visibility": 1,
             "subject_prefix": "aktivenforum",
             "maxsize": 1024,
             "is_active": true,
@@ -8241,6 +8324,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 21,
+            "roster_visibility": 1,
             "subject_prefix": "orga",
             "maxsize": null,
             "is_active": true,
@@ -8262,6 +8346,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 20,
+            "roster_visibility": 1,
             "subject_prefix": "aka",
             "maxsize": null,
             "is_active": true,
@@ -8286,6 +8371,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 20,
+            "roster_visibility": 1,
             "subject_prefix": "wait",
             "maxsize": null,
             "is_active": true,
@@ -8309,6 +8395,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 31,
+            "roster_visibility": 1,
             "subject_prefix": "talk",
             "maxsize": null,
             "is_active": true,
@@ -8330,6 +8417,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 45,
+            "roster_visibility": 1,
             "subject_prefix": "mod",
             "maxsize": null,
             "is_active": true,
@@ -8351,6 +8439,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 38,
+            "roster_visibility": 1,
             "subject_prefix": "all",
             "maxsize": 64,
             "is_active": true,
@@ -8372,6 +8461,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 46,
+            "roster_visibility": 1,
             "subject_prefix": "lokalgruppen",
             "maxsize": null,
             "is_active": true,
@@ -8393,6 +8483,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 1,
+            "roster_visibility": 1,
             "subject_prefix": "all",
             "maxsize": null,
             "is_active": true,
@@ -8414,6 +8505,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 2,
+            "roster_visibility": 1,
             "subject_prefix": "info",
             "maxsize": null,
             "is_active": true,
@@ -8435,6 +8527,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 3,
+            "roster_visibility": 10,
             "subject_prefix": "mitg.",
             "maxsize": null,
             "is_active": true,
@@ -8456,6 +8549,7 @@
             "attachment_policy": 1,
             "convert_html": false,
             "ml_type": 4,
+            "roster_visibility": 10,
             "subject_prefix": "gutschein",
             "maxsize": null,
             "is_active": true,
@@ -8477,6 +8571,7 @@
             "attachment_policy": 1,
             "convert_html": false,
             "ml_type": 5,
+            "roster_visibility": 1,
             "subject_prefix": "platin",
             "maxsize": null,
             "is_active": true,
@@ -8498,6 +8593,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 10,
+            "roster_visibility": 1,
             "subject_prefix": "bau",
             "maxsize": null,
             "is_active": true,
@@ -8519,6 +8615,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 11,
+            "roster_visibility": 1,
             "subject_prefix": "psst",
             "maxsize": null,
             "is_active": true,
@@ -8540,6 +8637,7 @@
             "attachment_policy": 3,
             "convert_html": true,
             "ml_type": 20,
+            "roster_visibility": 1,
             "subject_prefix": "special",
             "maxsize": null,
             "is_active": true,
@@ -8563,6 +8661,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 21,
+            "roster_visibility": 1,
             "subject_prefix": "Party50",
             "maxsize": 1024,
             "is_active": true,
@@ -8584,6 +8683,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 20,
+            "roster_visibility": 1,
             "subject_prefix": "Party50",
             "maxsize": 1024,
             "is_active": true,
@@ -8607,6 +8707,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 30,
+            "roster_visibility": 1,
             "subject_prefix": "kanonisch",
             "maxsize": null,
             "is_active": true,
@@ -8628,6 +8729,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 31,
+            "roster_visibility": 1,
             "subject_prefix": "wal",
             "maxsize": null,
             "is_active": true,
@@ -8649,6 +8751,7 @@
             "attachment_policy": 3,
             "convert_html": true,
             "ml_type": 40,
+            "roster_visibility": 1,
             "subject_prefix": "dsa",
             "maxsize": null,
             "is_active": true,
@@ -8670,6 +8773,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 50,
+            "roster_visibility": 1,
             "subject_prefix": "42",
             "maxsize": null,
             "is_active": true,
@@ -8691,6 +8795,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 60,
+            "roster_visibility": 10,
             "subject_prefix": "hogwarts",
             "maxsize": null,
             "is_active": true,
@@ -8712,6 +8817,7 @@
             "attachment_policy": 1,
             "convert_html": true,
             "ml_type": 32,
+            "roster_visibility": 1,
             "subject_prefix": "kongress-leitung",
             "maxsize": null,
             "is_active": true,
@@ -8733,6 +8839,7 @@
             "attachment_policy": 2,
             "convert_html": false,
             "ml_type": 70,
+            "roster_visibility": 1,
             "subject_prefix": null,
             "maxsize": 64,
             "is_active": true,
@@ -8754,6 +8861,7 @@
             "attachment_policy": 2,
             "convert_html": true,
             "ml_type": 3,
+            "roster_visibility": 1,
             "subject_prefix": "migcation",
             "maxsize": 1024,
             "is_active": true,
