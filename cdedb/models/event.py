@@ -26,7 +26,10 @@ event realm tables:
 import dataclasses
 import datetime
 import decimal
-from typing import TYPE_CHECKING, ClassVar, Collection, Optional, get_args, get_origin
+from typing import (
+    TYPE_CHECKING, ClassVar, Collection, Optional, TypeVar, get_args,
+    get_origin,
+)
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -43,6 +46,9 @@ if TYPE_CHECKING:
 #
 # meta
 #
+
+T = TypeVar('T')
+CdEDataclassMap = dict[vtypes.ProtoID, T]
 
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
@@ -77,7 +83,7 @@ class EventDataclass(CdEDataclass):
 
     @classmethod
     def many_from_database(cls, list_of_data: Collection["CdEDBObject"]
-                           ) -> dict[vtypes.ID, "Self"]:
+                           ) -> CdEDataclassMap["Self"]:
         return {
             obj.id: obj for obj in map(cls.from_database, list_of_data)
         }
@@ -123,14 +129,14 @@ class Event(EventDataclass):
 
     lodge_field: Optional["EventField"]
 
-    parts: dict[vtypes.ID, "EventPart"]
-    tracks: dict[vtypes.ID, "CourseTrack"]
+    parts: CdEDataclassMap["EventPart"]
+    tracks: CdEDataclassMap["CourseTrack"]
 
-    fields: dict[vtypes.ID, "EventField"]
-    fees: dict[vtypes.ID, "EventFee"]
+    fields: CdEDataclassMap["EventField"]
+    fees: CdEDataclassMap["EventFee"]
 
-    part_groups: dict[vtypes.ID, "PartGroup"]
-    track_groups: dict[vtypes.ID, "TrackGroup"]
+    part_groups: CdEDataclassMap["PartGroup"]
+    track_groups: CdEDataclassMap["TrackGroup"]
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
@@ -193,7 +199,7 @@ class EventPart(EventDataclass):
     waitlist_field: Optional["EventField"]
     camping_mat_field: Optional["EventField"]
 
-    tracks: dict[vtypes.ID, "CourseTrack"] = dataclasses.field(default_factory=dict)
+    tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
