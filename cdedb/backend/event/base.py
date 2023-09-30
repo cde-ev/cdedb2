@@ -300,22 +300,27 @@ class EventBaseBackend(EventLowLevelBackend):
             if not event_data:
                 raise KeyError(event_id)
             part_data = self.sql_select_dataclass_raw(
-                rs, models.EventPart, (event_id,), entity_key="event_id")
+                rs, models.EventPart, (event_id,))
             all_parts = {e['id'] for e in part_data}
+            part_group_data = self.sql_select_dataclass_raw(
+                rs, models.PartGroup, (event_id,))
             track_data = self.sql_select_dataclass_raw(
-                rs, models.CourseTrack, all_parts, entity_key="part_id")
-            # all_tracks = {e['id'] for e in track_data}
+                rs, models.CourseTrack, all_parts)
+            track_group_data = self.sql_select_dataclass_raw(
+                rs, models.TrackGroup, (event_id,))
             fee_data = self.sql_select_dataclass_raw(
-                rs, models.EventFee, (event_id,), entity_key="event_id")
+                rs, models.EventFee, (event_id,))
             field_data = self.sql_select_dataclass_raw(
-                rs, models.EventField, (event_id,), entity_key="event_id")
+                rs, models.EventField, (event_id,))
             # orga_data = self.sql_select(
             #     rs, "event.orgas", ("persona_id", "event_id"), event_ids,
             #     entity_key="event_id")
             return models.Event.from_database(dict(
                 **event_data,
                 parts=part_data,
+                part_groups=part_group_data,
                 tracks=track_data,
+                track_groups=track_group_data,
                 fields=field_data,
                 fees=fee_data,
             ))

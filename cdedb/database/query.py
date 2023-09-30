@@ -10,7 +10,8 @@ import decimal
 import enum
 import logging
 from typing import (
-    Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast,
+    TYPE_CHECKING, Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union,
+    cast,
 )
 
 import psycopg2.extensions
@@ -19,7 +20,9 @@ import psycopg2.extras
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 from cdedb.database.conversions import from_db_output, to_db_input
-from cdedb.models.common import CdEDataclass
+
+if TYPE_CHECKING:
+    from cdedb.models.event import EventDataclass
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -36,7 +39,7 @@ EntityKey = Union[int, str]
 # of the corresponding entities. Note that we do not use string identifiers for this.
 EntityKeys = Collection[int]
 
-DC = TypeVar("DC", bound=CdEDataclass)
+DC = TypeVar("DC", bound="EventDataclass")
 
 
 class SqlQueryBackend:
@@ -237,13 +240,9 @@ class SqlQueryBackend:
         return self.query_exec(container, query, ())
 
     def sql_select_dataclass_one_raw(self, container: ConnectionContainer, dc: Type[DC],
-                                     entity: EntityKey) -> Optional[CdEDBObject]:
-        return self.sql_select_one(
-            container, dc.database_table, dc.database_fields(), entity)
+                                     entity: int) -> Optional[CdEDBObject]:
+        return self.query_one(container, *dc.get_select_query(entities=(entity,)))
 
     def sql_select_dataclass_raw(self, container: ConnectionContainer, dc: Type[DC],
-                                 entities: EntityKeys, *, entity_key: str = "id",
-                                 ) -> Tuple[CdEDBObject, ...]:
-        return self.sql_select(
-            container, dc.database_table, dc.database_fields(), entities,
-            entity_key=entity_key)
+                                 entities: EntityKeys) -> Tuple[CdEDBObject, ...]:
+        return self.query_all(container, *dc.get_select_query(entities))

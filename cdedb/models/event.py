@@ -3,7 +3,7 @@ event realm tables:
   - event.events
   - event.event_fees
   - event.event_parts
-  * event.part_groups
+  - event.part_groups
   * event.part_group_parts
   - event.course_tracks
   * event.track_groups
@@ -26,7 +26,7 @@ event realm tables:
 import dataclasses
 import datetime
 import decimal
-from typing import TYPE_CHECKING, Optional, get_origin
+from typing import TYPE_CHECKING, ClassVar, Collection, Optional, get_origin
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -37,6 +37,8 @@ from cdedb.uncommon.intenum import CdEIntEnum
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+    from cdedb.database.query import DatabaseValue_s
+
 
 #
 # meta
@@ -44,6 +46,18 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
+    entity_key: ClassVar[str] = "event_id"
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT {','.join(cls.database_fields())}
+            FROM {cls.database_table}
+            WHERE {cls.entity_key} = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
 
     @classmethod
     def database_fields(cls) -> list[str]:
@@ -69,6 +83,7 @@ class EventDataclass(CdEDataclass):
 @dataclasses.dataclass
 class Event(EventDataclass):
     database_table = "event.events"
+    entity_key = "id"
 
     title: str
     shortname: str
@@ -107,6 +122,9 @@ class Event(EventDataclass):
     fields: dict[vtypes.ID, "EventField"]
     fees: dict[vtypes.ID, "EventFee"]
 
+    part_groups: dict[vtypes.ID, "PartGroup"]
+    track_groups: dict[vtypes.ID, "TrackGroup"]
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['parts'] = {
@@ -125,23 +143,51 @@ class Event(EventDataclass):
             fee.id: fee for fee in map(EventFee.from_database, data['fees'])
         }
 
+        data['part_groups'] = {
+            part_group.id: part_group for part_group in map(
+                PartGroup.from_database, data['part_groups'])
+        }
+
+        data['track_groups'] = {
+            track_group.id: track_group for track_group in map(
+                TrackGroup.from_database, data['track_groups'])
+        }
+
         return super().from_database(data)
 
     def __post_init__(self) -> None:
         for part in self.parts.values():
             part.event = self
-            part.waitlist_field = self.fields.get(part.waitlist_field)  # type: ignore[call-overload]
-            part.camping_mat_field = self.fields.get(part.camping_mat_field)  # type: ignore[call-overload]
+            part.waitlist_field = self.fields.get(
+                part.waitlist_field)  # type: ignore[call-overload]
+            part.camping_mat_field = self.fields.get(
+                part.camping_mat_field)  # type: ignore[call-overload]
+            part.tracks = {
+                track_id: self.tracks[track_id]
+                for track_id in part.tracks
+            }
         for track in self.tracks.values():
             track.event = self
-            track.part = self.parts[track.part_id]
-            track.part.tracks[track.id] = track  # type: ignore[index]
-            track.course_room_field = self.fields.get(track.course_room_field)  # type: ignore[call-overload]
+            track.course_room_field = self.fields.get(
+                track.course_room_field)  # type: ignore[call-overload]
         for field in self.fields.values():
             field.event = self
         for fee in self.fees.values():
             fee.event = self
-        self.lodge_field = self.fields.get(self.lodge_field)  # type: ignore[call-overload]
+        for part_group in self.part_groups.values():
+            part_group.event = self
+            part_group.parts = {
+                part_id: self.parts[part_id]
+                for part_id in part_group.parts
+            }
+        for track_group in self.track_groups.values():
+            track_group.event = self
+            track_group.tracks = {
+                track_id: self.tracks[track_id]
+                for track_id in track_group.tracks
+            }
+        self.lodge_field = self.fields.get(
+            self.lodge_field)  # type: ignore[call-overload]
 
 
 @dataclasses.dataclass
@@ -161,14 +207,32 @@ class EventPart(EventDataclass):
 
     tracks: dict[vtypes.ID, "CourseTrack"] = dataclasses.field(default_factory=dict)
 
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT
+                {', '.join(cls.database_fields())},
+                array(
+                    SELECT id
+                    FROM event.course_tracks
+                    WHERE part_id = event_parts.id
+                ) AS tracks
+            FROM
+                event.event_parts
+            WHERE
+                event_id = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
 
 @dataclasses.dataclass
 class CourseTrack(EventDataclass):
     database_table = "event.course_tracks"
+    entity_key = "part_id"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
-    part_id: vtypes.ID  # tODO: maybe remove, seems more complicated though.
 
     title: str
     shortname: str
@@ -211,6 +275,73 @@ class EventField(EventDataclass):
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['entries'] = dict(data['entries'] or []) or None
         return super().from_database(data)
+
+
+@dataclasses.dataclass
+class PartGroup(EventDataclass):
+    database_table = "event.part_groups"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+
+    title: str
+    shortname: str
+    notes: Optional[str]
+    constraint_type: const.EventPartGroupType
+
+    parts: dict[vtypes.ID, EventPart] = dataclasses.field(default_factory=dict)
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT
+                {', '.join(cls.database_fields())},
+                array(
+                    SELECT part_id
+                    FROM event.part_group_parts
+                    WHERE part_group_id = part_groups.id
+                ) AS parts
+            FROM
+                event.part_groups
+            WHERE
+                event_id = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
+
+
+@dataclasses.dataclass
+class TrackGroup(EventDataclass):
+    database_table = "event.track_groups"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+
+    title: str
+    shortname: str
+    notes: Optional[str]
+    sortkey: int
+    constraint_type: const.CourseTrackGroupType
+
+    tracks: dict[vtypes.ID, CourseTrack] = dataclasses.field(default_factory=dict)
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT
+                {', '.join(cls.database_fields())},
+                array(
+                    SELECT track_id
+                    FROM event.track_group_tracks
+                    WHERE track_group_id = track_groups.id
+                ) AS tracks
+            FROM
+                event.track_groups
+            WHERE
+                event_id = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
 
 
 #
