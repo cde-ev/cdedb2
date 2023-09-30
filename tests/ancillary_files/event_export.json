@@ -405,7 +405,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         16,
-        1
+        2
     ],
     "event.registration_parts": {
         "2": {
@@ -1579,8 +1579,8 @@
             "serialized_query": {
                 "is_search": true,
                 "qop_persona.birthday": 20,
-                "qord_primary": "persona.birthday",
-                "qord_primary_ascending": true,
+                "qord_0": "persona.birthday",
+                "qord_0_ascending": true,
                 "qsel_persona.birthday": true,
                 "qsel_persona.id": true,
                 "qsel_reg.id": true,

@@ -15242,13 +15242,13 @@ msgstr "Sortierung"
 
 #: cdedb/frontend/templates/web/generic.tmpl:239
 #, python-format
-msgid "%s sort key"
-msgstr "%s Sortierkriterium"
+msgid "%s. sort key"
+msgstr "%s. Sortierkriterium"
 
 #: cdedb/frontend/templates/web/generic.tmpl:245
 #, python-format
-msgid "%s sort order"
-msgstr "%s Sortierreihenfolge"
+msgid "%s. sort order"
+msgstr "%s. Sortierreihenfolge"
 
 #: cdedb/frontend/templates/web/generic.tmpl:260
 msgid "add filter"
