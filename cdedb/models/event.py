@@ -26,7 +26,7 @@ event realm tables:
 import dataclasses
 import datetime
 import decimal
-from typing import TYPE_CHECKING, ClassVar, Collection, Optional, get_origin
+from typing import TYPE_CHECKING, ClassVar, Collection, Optional, get_args, get_origin
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -74,6 +74,13 @@ class EventDataclass(CdEDataclass):
                 if field.name in data:
                     data[field.name] = field.type(data[field.name])
         return super().from_database(data)
+
+    @classmethod
+    def many_from_database(cls, list_of_data: Collection["CdEDBObject"]
+                           ) -> dict[vtypes.ID, "Self"]:
+        return {
+            obj.id: obj for obj in map(cls.from_database, list_of_data)
+        }
 
 
 #
@@ -127,37 +134,23 @@ class Event(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['parts'] = {
-            part.id: part for part in map(EventPart.from_database, data['parts'])
-        }
-
-        data['tracks'] = {
-            track.id: track for track in map(CourseTrack.from_database, data['tracks'])
-        }
-
-        data['fields'] = {
-            field.id: field for field in map(EventField.from_database, data['fields'])
-        }
-
-        data['fees'] = {
-            fee.id: fee for fee in map(EventFee.from_database, data['fees'])
-        }
-
-        data['part_groups'] = {
-            part_group.id: part_group for part_group in map(
-                PartGroup.from_database, data['part_groups'])
-        }
-
-        data['track_groups'] = {
-            track_group.id: track_group for track_group in map(
-                TrackGroup.from_database, data['track_groups'])
-        }
-
+        data['parts'] = EventPart.many_from_database(data['parts'])
+        data['tracks'] = CourseTrack.many_from_database(data['tracks'])
+        data['fields'] = EventField.many_from_database(data['fields'])
+        data['fees'] = EventFee.many_from_database(data['fees'])
+        data['part_groups'] = PartGroup.many_from_database(data['part_groups'])
+        data['track_groups'] = TrackGroup.many_from_database(data['track_groups'])
         return super().from_database(data)
 
     def __post_init__(self) -> None:
+        for field in dataclasses.fields(self):
+            if get_origin(field.type) is dict:
+                value_class = globals()[(get_args(field.type)[1])]
+                if issubclass(value_class, EventDataclass):
+                    for obj in getattr(self, field.name).values():
+                        obj.event = self
+
         for part in self.parts.values():
-            part.event = self
             part.waitlist_field = self.fields.get(
                 part.waitlist_field)  # type: ignore[call-overload]
             part.camping_mat_field = self.fields.get(
@@ -166,22 +159,17 @@ class Event(EventDataclass):
                 track_id: self.tracks[track_id]
                 for track_id in part.tracks
             }
+            for track in part.tracks.values():
+                track.part = part
         for track in self.tracks.values():
-            track.event = self
             track.course_room_field = self.fields.get(
                 track.course_room_field)  # type: ignore[call-overload]
-        for field in self.fields.values():
-            field.event = self
-        for fee in self.fees.values():
-            fee.event = self
         for part_group in self.part_groups.values():
-            part_group.event = self
             part_group.parts = {
                 part_id: self.parts[part_id]
                 for part_id in part_group.parts
             }
         for track_group in self.track_groups.values():
-            track_group.event = self
             track_group.tracks = {
                 track_id: self.tracks[track_id]
                 for track_id in track_group.tracks
@@ -225,6 +213,7 @@ class EventPart(EventDataclass):
         """
         params = (entities,)
         return query, params
+
 
 @dataclasses.dataclass
 class CourseTrack(EventDataclass):
