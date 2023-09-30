@@ -696,7 +696,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if not rs.notifications:
             rs.notify_validation()
-        if self.coreproxy.is_lockdown(rs):
+        if self.coreproxy.is_locked_down(rs):
             if {'core_admin', 'meta_admin'} & rs.user.roles:
                 rs.notify(
                     'warning',
@@ -704,7 +704,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                        " access it as admin. Only use the CdEDB if you know why it was"
                        " locked!"))
             else:
-                rs.notify("info", n_("The CdE database currently undergoes"
+                rs.notify("info", n_("The CdE database is currently under"
                                      " maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)

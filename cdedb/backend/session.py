@@ -62,7 +62,7 @@ class SessionBackend:
             secrets, self.conf["DB_HOST"], self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
 
-    def _is_lockdown(self) -> bool:
+    def _is_locked_down(self) -> bool:
         """Helper to determine if CdEDB is locked."""
         if self.conf["LOCKDOWN"]:
             return True
@@ -139,8 +139,8 @@ class SessionBackend:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
-        if self._is_lockdown() and not (data['is_meta_admin']
-                                        or data['is_core_admin']):
+        if self._is_locked_down() and not (data['is_meta_admin']
+                                           or data['is_core_admin']):
             # Short circuit in case of lockdown
             return User()
         if not data["is_active"]:
@@ -189,7 +189,7 @@ class SessionBackend:
             raise
 
         # Prevent non-infrastructure droids from access during lockdown.
-        if self._is_lockdown() and 'droid_infra' not in ret.roles:
+        if self._is_locked_down() and 'droid_infra' not in ret.roles:
             ret = User()
 
         return ret
