@@ -23,14 +23,14 @@ event realm tables:
   + event.stored_queries
   * event.log
 """
+import copy
 import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional,
-    TypeVar, Union, get_args, get_origin,
+    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, TypeVar,
+    Union, get_args, get_origin,
 )
-import copy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -97,7 +97,7 @@ class EventDataclass(CdEDataclass):
         }
 
     def as_dict(self, *, dict_factory: Callable[[Any], dict[str, Any]]=dict
-                )-> dict[str, Any]:
+                ) -> dict[str, Any]:
         """Return the fields of a dataclass instance as a new dictionary mapping
         field names to field values.
 
@@ -159,6 +159,8 @@ class EventDataclass(CdEDataclass):
         return field.repr
 
     def __lt__(self, other: "EventDataclass") -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
         return self.sorter(self.as_dict()) < self.sorter(other.as_dict())
 
 
@@ -252,11 +254,15 @@ class Event(EventDataclass):
                 part_id: self.parts[part_id]
                 for part_id in part_group.parts
             }
+            for part in part_group.parts.values():
+                part.part_groups[part_group.id] = part_group
         for track_group in self.track_groups.values():
             track_group.tracks = {
                 track_id: self.tracks[track_id]
                 for track_id in track_group.tracks
             }
+            for track in track_group.tracks.values():
+                track.track_groups[track_group.id] = track_group
         self.lodge_field = self.fields.get(
             self.lodge_field)  # type: ignore[call-overload]
 
@@ -314,6 +320,8 @@ class EventPart(EventDataclass):
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
 
+    part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(default_factory=dict)
+
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
@@ -351,6 +359,9 @@ class CourseTrack(EventDataclass):
     sortkey: int
 
     course_room_field: Optional["EventField"]
+
+    track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
+        default_factory=dict)
 
 
 @dataclasses.dataclass
