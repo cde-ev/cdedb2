@@ -677,7 +677,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     @access("assembly")
     @assembly_guard
     def reschedule_ballots_form(self, rs: RequestState, assembly_id: int) -> Response:
-        """Give an online summary of all tallied ballots of an assembly."""
+        """Render form allowing to select some ballots for rescheduling."""
         if not (grouped := self._group_ballots(rs, assembly_id)):
             # some ballots updated state
             return self.redirect(rs, "assembly/reschedule_ballots")
@@ -694,6 +694,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             vote_begin: Optional[datetime.datetime],
             vote_end: Optional[datetime.datetime],
             vote_extension_end: Optional[datetime.datetime]) -> Response:
+        """Change the voting dates for all selected ballots."""
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
         if not ballot_ids:
