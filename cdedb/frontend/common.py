@@ -362,6 +362,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
+            'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,

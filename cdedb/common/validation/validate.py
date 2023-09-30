@@ -63,6 +63,7 @@ import math
 import re
 import string
 import typing
+import urllib.parse
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
@@ -94,8 +95,8 @@ from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder, QueryScope, QuerySpec,
+    MAX_QUERY_ORDERS, MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS,
+    QueryOperators, QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
@@ -765,6 +766,21 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
     if not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return val
+
+
+@_add_typed_validator
+def _url(val: Any, argname: str = None, **kwargs: Any) -> Url:
+    """A string which is a valid url.
+
+    We can not guarantee that the URL is actually valid, since the respective RFCs
+    are not strictly respected. See also
+    https://docs.python.org/3/library/urllib.parse.html#url-parsing-security
+    """
+    val = _str(val, argname, **kwargs)
+    url = urllib.parse.urlparse(val)
+    if not all([url.scheme, url.netloc, url.path]):
+        raise ValidationSummary(ValueError(argname, n_("Malformed URL.")))
+    return Url(urllib.parse.urlunparse(url))
 
 
 @_add_typed_validator
@@ -2308,6 +2324,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field': Optional[ID],
+    'website_url': Optional[Url],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -4664,14 +4681,14 @@ def _query_input(
         errs.append(ValueError(argname, n_("Selection may not be empty.")))
 
     # Third the ordering
-    for postfix in ("primary", "secondary", "tertiary"):
-        if "qord_" + postfix not in val:
+    for postfix in range(MAX_QUERY_ORDERS):
+        if f"qord_{postfix}" not in val:
             continue
 
         try:
             entry: Optional[CSVIdentifier] = _ALL_TYPED[
                 Optional[CSVIdentifier]  # type: ignore[index]
-            ](val["qord_" + postfix], "qord_" + postfix, **kwargs)
+            ](val[f"qord_{postfix}"], f"qord_{postfix}", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4679,7 +4696,7 @@ def _query_input(
         if not entry or entry not in spec:
             continue
 
-        tmp = "qord_" + postfix + "_ascending"
+        tmp = f"qord_{postfix}_ascending"
         try:
             ascending = _ALL_TYPED[bool](val.get(tmp, "True"), tmp, **kwargs)
         except ValidationSummary as e:

@@ -4235,6 +4235,7 @@
             "shortname": "TestAka",
             "institution": 1,
             "description": "Everybody come!",
+            "website_url": "https://www.cde-ev.de/",
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
@@ -4262,6 +4263,7 @@
             "shortname": "Party50",
             "institution": 1,
             "description": "Let's have a party!",
+            "website_url": null,
             "registration_start": "2049-12-01T00:00:00+00:00",
             "registration_soft_limit": "2049-12-31T00:00:00+00:00",
             "registration_hard_limit": "2049-12-31T00:00:00+00:00",
@@ -4289,6 +4291,7 @@
             "shortname": "cyta",
             "institution": 1,
             "description": "Ein ganz normales Event – mit ✨.",
+            "website_url": null,
             "registration_start": null,
             "registration_soft_limit": null,
             "registration_hard_limit": null,
@@ -4316,6 +4319,7 @@
             "shortname": "triaka",
             "institution": 1,
             "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            "website_url": null,
             "registration_start": "---now---",
             "registration_soft_limit": null,
             "registration_hard_limit": null,
@@ -6568,15 +6572,15 @@
             "scope": 30,
             "serialized_query": {
                 "scope": 30,
+                "qord_0": "persona.birthday",
                 "is_search": true,
                 "query_name": "Test-Query",
                 "qsel_reg.id": true,
-                "qord_primary": "persona.birthday",
                 "qsel_persona.id": true,
+                "qord_0_ascending": true,
                 "qop_persona.birthday": 20,
                 "qsel_persona.birthday": true,
-                "qval_persona.birthday": "2000-01-01",
-                "qord_primary_ascending": true
+                "qval_persona.birthday": "2000-01-01"
             }
         }
     ],

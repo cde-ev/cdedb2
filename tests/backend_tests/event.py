@@ -61,6 +61,7 @@ class TestEventBackend(BackendTest):
             'description': """Some more text
 
             on more lines.""",
+            'website_url': "https://www.example.com/test",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
                                                     tzinfo=pytz.utc),
