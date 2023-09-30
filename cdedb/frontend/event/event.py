@@ -109,7 +109,7 @@ class EventEventMixin(EventBaseFrontend):
                         rs, rs.ambience['event'].orgas).values(),
                     key=EntitySorter.persona))
         if "ml" in rs.user.roles:
-            ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'])
+            ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'].as_dict())
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
@@ -129,7 +129,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
-        merge_dicts(rs.values, rs.ambience['event'])
+        merge_dicts(rs.values, rs.ambience['event'].as_dict())
 
         sorted_fields = xsorted(rs.ambience['event'].fields.values(),
                                 key=EntitySorter.event_field)
@@ -251,7 +251,8 @@ class EventEventMixin(EventBaseFrontend):
                       n_("Must have orgas in order to create a mailinglist."))
             return self.redirect(rs, "event/show_event")
 
-        ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'], orgalist)
+        ml_data = self._get_mailinglist_setter(
+            rs, rs.ambience['event'].as_dict(), orgalist)
         if not self.mlproxy.verify_existence(rs, ml_data.address):
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
@@ -302,7 +303,7 @@ class EventEventMixin(EventBaseFrontend):
         for course in courses.values():
             blocked_tracks.update(course['segments'])
         for tg in rs.ambience['event'].track_groups.values():
-            blocked_tracks.update(tg['track_ids'])
+            blocked_tracks.update(tg.tracks)
         return blocked_tracks
 
     @access("event")
@@ -587,7 +588,7 @@ class EventEventMixin(EventBaseFrontend):
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
-                merge_dicts(rs.values, rs.ambience['fee'])
+                merge_dicts(rs.values, rs.ambience['fee'].as_dict())
         return self.render(rs, "event/fee/configure_fee")
 
     @access("event", modi={"POST"})
@@ -642,11 +643,14 @@ class EventEventMixin(EventBaseFrontend):
             'constraint_type': constraint_type,
             'part_ids': part_ids,
         }
-        for key in ('title', 'shortname'):
-            existing = {pg[key] for pg in rs.ambience['event'].part_groups.values()}
-            if data[key] in existing:
-                rs.append_validation_error((key, ValueError(n_(
-                    "A part group with this name already exists."))))
+        existing = {pg.title for pg in rs.ambience['event'].part_groups.values()}
+        if data['title'] in existing:
+            rs.append_validation_error(('title', ValueError(n_(
+                "A part group with this name already exists."))))
+        existing = {pg.shortname for pg in rs.ambience['event'].part_groups.values()}
+        if data['shortname'] in existing:
+            rs.append_validation_error(('shortname', ValueError(n_(
+                "A part group with this name already exists."))))
         data = check(rs, vtypes.EventPartGroup, data)
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
@@ -658,7 +662,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     def change_part_group_form(self, rs: RequestState, event_id: int,
                                part_group_id: int) -> Response:
-        merge_dicts(rs.values, rs.ambience['part_group'])
+        merge_dicts(rs.values, rs.ambience['part_group'].as_dict())
         return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
@@ -672,11 +676,14 @@ class EventEventMixin(EventBaseFrontend):
             'shortname': shortname,
             'notes': notes,
         }
-        for key in ('title', 'shortname'):
-            existing = {pg[key] for pg in rs.ambience['event'].part_groups.values()}
-            if data[key] in existing - {rs.ambience['part_group'][key]}:
-                rs.append_validation_error((key, ValueError(n_(
-                    "A part group with this name already exists."))))
+        existing = {pg.title for pg in rs.ambience['event'].part_groups.values()}
+        if data['title'] in existing - {rs.ambience['part_group'].title}:
+            rs.append_validation_error(('title', ValueError(n_(
+                "A part group with this name already exists."))))
+        existing = {pg.shortname for pg in rs.ambience['event'].part_groups.values()}
+        if data['shortname'] in existing - {rs.ambience['part_group'].shortname}:
+            rs.append_validation_error(('shortname', ValueError(n_(
+                "A part group with this name already exists."))))
         data = check(rs, vtypes.EventPartGroup, data)
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
@@ -716,11 +723,14 @@ class EventEventMixin(EventBaseFrontend):
             'sortkey': sortkey,
             'track_ids': track_ids,
         }
-        for key in ('title', 'shortname'):
-            existing = {tg[key] for tg in rs.ambience['event'].track_groups.values()}
-            if data[key] in existing:
-                rs.append_validation_error((key, ValueError(n_(
-                    "A track group with this name already exists."))))
+        existing = {tg.title for tg in rs.ambience['event'].track_groups.values()}
+        if data['title'] in existing:
+            rs.append_validation_error(('title', ValueError(n_(
+                "A track group with this name already exists."))))
+        existing = {tg.shortname for tg in rs.ambience['event'].track_groups.values()}
+        if data['shortname'] in existing:
+            rs.append_validation_error(('shortname', ValueError(n_(
+                "A track group with this name already exists."))))
         data = check(rs, vtypes.EventTrackGroup, data)
         if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
@@ -728,7 +738,7 @@ class EventEventMixin(EventBaseFrontend):
         tracks = event.tracks
         if constraint_type.is_sync():
             track_ids = set(track_ids)
-            if any(tg.constraint_type.is_sync() and tg['track_ids'] & track_ids
+            if any(tg.constraint_type.is_sync() and set(tg.tracks) & track_ids
                    for tg in event.track_groups.values()):
                 rs.append_validation_error((
                     "track_ids",
@@ -756,7 +766,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard()
     def change_track_group_form(self, rs: RequestState, event_id: int,
                                 track_group_id: int) -> Response:
-        merge_dicts(rs.values, rs.ambience['track_group'])
+        merge_dicts(rs.values, rs.ambience['track_group'].as_dict())
         return self.render(rs, "event/configure_track_group")
 
     @access("event", modi={"POST"})
@@ -771,11 +781,14 @@ class EventEventMixin(EventBaseFrontend):
             'notes': notes,
             'sortkey': sortkey,
         }
-        for key in ('title', 'shortname'):
-            existing = {tg[key] for tg in rs.ambience['event'].track_groups.values()}
-            if data[key] in existing - {rs.ambience['track_group'][key]}:
-                rs.append_validation_error((key, ValueError(n_(
-                    "A track group with this name already exists."))))
+        existing = {tg.title for tg in rs.ambience['event'].track_groups.values()}
+        if data['title'] in existing - {rs.ambience['track_group'].title}:
+            rs.append_validation_error(('title', ValueError(n_(
+                "A track group with this name already exists."))))
+        existing = {tg.shortname for tg in rs.ambience['event'].track_groups.values()}
+        if data['shortname'] in existing - {rs.ambience['track_group'].shortname}:
+            rs.append_validation_error(('shortname', ValueError(n_(
+                "A track group with this name already exists."))))
         data = check(rs, vtypes.EventTrackGroup, data)
         if rs.has_validation_errors():
             return self.change_track_group_form(rs, event_id, track_group_id)
