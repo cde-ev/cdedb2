@@ -526,17 +526,17 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if self.event_id is None:
             return set()
 
-        event = bc.event.get_event(rs, self.event_id)
+        event = bc.event.new_get_event(rs, self.event_id)
 
         spec = QueryScope.registration.get_spec(event=event)
-        target = {f"part{part_id}.status" for part_id in event['parts']}
+        target = {f"part{part_id}.status" for part_id in event.parts}
         for column in spec:
             if set(column.split(',')) == target:
                 status_column = column
                 break
         else:
             status_column = ",".join(
-                f"part{part_id}.status" for part_id in event['parts'])
+                f"part{part_id}.status" for part_id in event.parts)
         query = Query(
             scope=QueryScope.registration,
             spec=spec,
@@ -545,7 +545,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                 (status_column, QueryOperators.oneof, self.registration_stati),
             ],
             order=tuple())
-        data = bc.event.submit_general_query(rs, query, event_id=event["id"])
+        data = bc.event.submit_general_query(rs, query, event_id=event.id)
 
         return {e["persona.id"] for e in data}
 

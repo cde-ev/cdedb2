@@ -28,8 +28,8 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, TypeVar,
-    Union, get_args, get_origin,
+    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, Protocol,
+    TypeVar, get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
@@ -55,10 +55,15 @@ T = TypeVar('T')
 CdEDataclassMap = dict[int, T]
 
 
+class SorterProtocol(Protocol):
+    def __call__(self, __data: CdEDBObject) -> Sortkey:
+        pass
+
+
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
     entity_key: ClassVar[str] = "event_id"
-    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]] = lambda x: tuple(x['id'])
+    sorter: ClassVar[SorterProtocol] = lambda x: (x['id'],)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -96,7 +101,7 @@ class EventDataclass(CdEDataclass):
             obj.id: obj for obj in map(cls.from_database, list_of_data)
         }
 
-    def as_dict(self, *, dict_factory: Callable[[Any], dict[str, Any]]=dict
+    def as_dict(self, *, dict_factory: Callable[[Any], dict[str, Any]] = dict
                 ) -> dict[str, Any]:
         """Return the fields of a dataclass instance as a new dictionary mapping
         field names to field values.
@@ -586,7 +591,7 @@ class LodgementGroup(EventDataclass):
             GROUP BY
                 lodgement_groups.id
         """
-        params = [entities]
+        params = (entities,)
         return query, params
 
 
@@ -624,7 +629,7 @@ class Lodgement(EventDataclass):
 @dataclasses.dataclass
 class Registration(EventDataclass):
     database_table = "event.registrations"
-    sorter = EntitySorter.make_persona_sorter
+    sorter = EntitySorter.persona
 
     # event: Event
 

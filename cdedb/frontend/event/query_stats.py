@@ -45,8 +45,8 @@ def _is_participant(reg_part: CdEDBObject) -> bool:
 
 
 # Helper functions to build query constraints frequently used by stats.
-def _status_constraint(part: EventPart, status: RPS, negate: bool = False
-                       ) -> QueryConstraint:
+def _status_constraint(part: EventPart, status: const.RegistrationPartStati,
+                       negate: bool = False) -> QueryConstraint:
     return (
         f"part{part.id}.status",
         QueryOperators.unequal if negate else QueryOperators.equal,
@@ -88,9 +88,8 @@ def _age_constraint(part: EventPart, max_age: int, min_age: int = None
 # Helper function to construct ordering for waitlist queries.
 def _waitlist_order(event: Event, part: EventPart) -> List[QueryOrder]:
     ret = []
-    if field:= part.waitlist_field:
-        field_name = event.fields[field.id].field_name
-        ret.append((f'reg_fields.xfield_{field_name}', True))
+    if field := part.waitlist_field:
+        ret.append((f'reg_fields.xfield_{field.field_name}', True))
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
@@ -217,17 +216,17 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: Event, *, part_group_id: int) -> Sequence[int]:
-        return xsorted(event.part_groups[part_group_id]['part_ids'])
+        return xsorted(event.part_groups[part_group_id].parts)
 
     @staticmethod
     def get_track_ids(event: Event, *, part_id: int = None,
                       part_group_id: int = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return xsorted(event.parts[part_id].tracks_ids)
+            return xsorted(event.parts[part_id].tracks)
         if part_group_id:
-            parts = event.part_groups[part_group_id].parts
-            return xsorted(itertools.chain.from_iterable(p['tracks'] for p in parts))
+            parts = event.part_groups[part_group_id].parts.values()
+            return xsorted(itertools.chain.from_iterable(p.tracks for p in parts))
         return ()
 
     @abc.abstractmethod
