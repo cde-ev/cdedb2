@@ -43,7 +43,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event import Event
+from cdedb.models.event import Event, PartGroup
 
 
 @dataclass(frozen=True)
@@ -255,7 +255,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, event_id, part_ids, include_total_count=True,
             sortkey=sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event'].parts) == 1:
-            part_id = unwrap(rs.ambience['event'].parts.keys())
+            part_id = unwrap(rs.ambience['event'].parts.keys())  # type: ignore[assignment]
         data['part_id'] = part_id
         data['list_consent'] = list_consent
         data['last_sortkey'] = sortkey
@@ -328,7 +328,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 # TODO sort tracks by title?
                 tracks = xsorted(
                     registered_tracks,
-                    key=lambda track: all_tracks[track['track_id']]['sortkey'])
+                    key=lambda track: all_tracks[track['track_id']].sortkey)
                 course_ids = [track['course_id'] for track in tracks]
                 prim_rank: Sortkey = tuple()
                 for course_id in course_ids:
@@ -354,9 +354,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int
                                    ) -> CdEDBObject:
         assert rs.user.persona_id is not None
-        wish_data = {}
+        wish_data: dict[str, Any] = {}
         if (rs.ambience['event'].is_participant_list_visible
-                and (field_id := rs.ambience['event'].lodge_field)
+                and rs.ambience['event'].lodge_field
                 and self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
                     [const.RegistrationPartStati.participant])):
@@ -364,7 +364,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 rs, event_id, rs.user.persona_id).keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
             data = self._get_participant_list_data(rs, event_id)
-            wish_data['field'] = rs.ambience['event'].fields[field_id]
+            wish_data['field'] = rs.ambience['event'].lodge_field
             wishes, problems = detect_lodgement_wishes(
                 data['registrations'], data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
@@ -463,7 +463,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             sorter = lambda anid: EntitySorter.persona(
                 personas[registrations[anid]['persona_id']])  # type: ignore[index]
         if aspect == 'tracks':
-            sub_ids = tracks.keys()
+            sub_ids: Collection[int] = tracks.keys()
         elif aspect == 'parts':
             sub_ids = event.parts.keys()
         else:
@@ -495,7 +495,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         :return: A collection of data pertaining to the constraint violations.
         """
 
-        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, CdEDBObject]]] = {
+        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, PartGroup]]] = {
             constraint: keydictsort_filter(
                 {
                     pg_id: part_group
@@ -529,8 +529,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             lambda reg: EntitySorter.persona(personas[reg['persona_id']])))
 
         def part_id_sorter(part_ids: Collection[int]) -> List[int]:
-            return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
-                rs.ambience['event'].parts[part_id]))
+            return xsorted(part_ids,
+                           key=lambda part_id: rs.ambience['event'].parts[part_id])
 
         # Check registrations for violations against mutual exclusiveness constraints.
         mep = const.EventPartGroupType.mutually_exclusive_participants
@@ -540,7 +540,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for pg_id, part_group in pgs_by_type[mep]:
                 # Check for participant violations.
                 participant = const.RegistrationPartStati.participant
-                part_ids = set(part_id for part_id in part_group['part_ids']
+                part_ids = set(part_id for part_id in part_group.parts
                                if reg['parts'][part_id]['status'] == participant)
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
@@ -552,7 +552,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     continue
 
                 # Check for guest violations.
-                part_ids = set(part_id for part_id in part_group['part_ids']
+                part_ids = set(part_id for part_id in part_group.parts
                                if reg['parts'][part_id]['status'].is_present())
                 if len(part_ids) > 1:
                     sorted_part_ids = part_id_sorter(part_ids)
@@ -572,7 +572,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if any(reg['tracks'][t1]['choices'] != reg['tracks'][t2]['choices']
                        or reg['tracks'][t1]['course_instructor']
                        != reg['tracks'][t2]['course_instructor']
-                       for t1, t2 in itertools.combinations(tg['track_ids'], 2)):
+                       for t1, t2 in itertools.combinations(tg.tracks, 2)):
                     ccs_violations.append(
                         CCSViolation(tg_id, reg_id, reg['persona_id']))
 
@@ -593,19 +593,19 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
         def track_id_sorter(track_ids: Iterable[int]) -> List[int]:
-            return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
-                rs.ambience['event'].tracks[track_id]))
+            return xsorted(track_ids,
+                           key=lambda track_id: rs.ambience['event'].tracks[track_id])
 
         for course_id_, course in courses.items():
             # Gather the track and part ids of the courses active segments.
             track_ids = set(course['active_segments'])
             part_ids = set(track_part_map[t_id] for t_id in track_ids)
             for pg_id, part_group in pgs_by_type[mec]:
-                if len(part_ids & part_group['part_ids']) > 1:
+                if len(part_ids & set(part_group.parts)) > 1:
                     # Filter those tracks that belong to this part group.
                     sorted_track_ids = track_id_sorter(
                         t_id for t_id in track_ids
-                        if track_part_map[t_id] in part_group['part_ids'])
+                        if track_part_map[t_id] in part_group.parts)
                     mec_violations.append(MECViolation(
                         pg_id, course_id_, sorted_track_ids,
                         ", ".join(rs.ambience['event'].tracks[track_id].shortname
