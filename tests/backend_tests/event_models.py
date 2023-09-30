@@ -572,3 +572,140 @@ class TestEventModels(BackendTest):
         self.assertEqual(expectation.track_groups, reality.track_groups)
         self.assertEqual(expectation.part_groups, reality.part_groups)
         self.assertEqual(expectation, reality)
+
+    @as_users("anton")
+    def test_get_lodgements(self) -> None:
+        lodgement_id = 1
+        print(self.event.new_get_lodgement(self.key, lodgement_id))
+
+        expectation = models.Lodgement(
+            id=lodgement_id,
+            event_id=1,
+            group=models.LodgementGroup(
+                id=2,
+                event_id=1,
+                title='AußenWohnGruppe',
+            ),
+            group_id=2,
+            title='Warme Stube',
+            regular_capacity=5,
+            camping_mat_capacity=1,
+            notes=None,
+            fields={'contamination': 'high'},
+        )
+
+        reality = self.event.new_get_lodgement(self.key, lodgement_id)
+
+        self.assertEqual(
+            vars(expectation),
+            vars(reality),
+        )
+
+        event_id = 1
+        lodgement_ids = self.event.list_lodgements(self.key, event_id)
+        print(self.event.new_get_lodgements(self.key, lodgement_ids))
+
+        expectation = {
+            1: models.Lodgement(
+                id=1,
+                event_id=1,
+                group=models.LodgementGroup(
+                    id=2,
+                    event_id=event_id,
+                    title="AußenWohnGruppe",
+                ),
+                group_id=2,
+                title='Warme Stube',
+                regular_capacity=5,
+                camping_mat_capacity=1,
+                notes=None,
+                fields={'contamination': 'high'}),
+            2: models.Lodgement(
+                id=2,
+                event_id=1,
+                group=models.LodgementGroup(
+                    id=1,
+                    event_id=event_id,
+                    title="Haupthaus",
+                ),
+                group_id=1,
+                title='Kalte Kammer',
+                regular_capacity=10,
+                camping_mat_capacity=2,
+                notes='Dafür mit Frischluft.',
+                fields={'contamination': 'none'}),
+            3: models.Lodgement(
+                id=3,
+                event_id=1,
+                group=models.LodgementGroup(
+                    id=3,
+                    event_id=event_id,
+                    title="Sonstige",
+                ),
+                group_id=3,
+                title='Kellerverlies',
+                regular_capacity=0,
+                camping_mat_capacity=100,
+                notes='Nur für Notfälle.',
+                fields={'contamination': 'low'}),
+            4: models.Lodgement(
+                id=4,
+                event_id=1,
+                group=models.LodgementGroup(
+                    id=1,
+                    event_id=event_id,
+                    title="Haupthaus",
+                ),
+                group_id=1,
+                title='Einzelzelle',
+                regular_capacity=1,
+                camping_mat_capacity=0,
+                notes=None,
+                fields={'contamination': 'high'}),
+        }
+
+        reality = self.event.new_get_lodgements(self.key, lodgement_ids)
+
+        self.assertEqual(
+            expectation,
+            reality,
+        )
+
+    @as_users("anton")
+    def test_get_lodgement_groups(self) -> None:
+        event_id = 1
+        print(self.event.new_get_lodgement_groups(self.key, event_id))
+
+        expectation = {
+            1: models.LodgementGroup(
+                id=1,
+                event_id=event_id,
+                title="Haupthaus",
+                lodgement_ids=[2, 4],
+                regular_capacity=11,
+                camping_mat_capacity=2,
+            ),
+            2: models.LodgementGroup(
+                id=2,
+                event_id=event_id,
+                title="AußenWohnGruppe",
+                lodgement_ids=[1],
+                regular_capacity=5,
+                camping_mat_capacity=1,
+            ),
+            3: models.LodgementGroup(
+                id=3,
+                event_id=event_id,
+                title="Sonstige",
+                lodgement_ids=[3],
+                regular_capacity=0,
+                camping_mat_capacity=100,
+            ),
+        }
+
+        reality = self.event.new_get_lodgement_groups(self.key, event_id)
+
+        self.assertEqual(
+            expectation,
+            reality,
+        )

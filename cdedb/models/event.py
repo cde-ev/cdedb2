@@ -27,11 +27,13 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, ClassVar, Collection, Optional, TypeVar, get_args, get_origin,
+    TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, TypeVar, get_args,
+    get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.common import cast_fields
 from cdedb.common import CdEDBObject, now
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
@@ -72,6 +74,7 @@ class EventDataclass(CdEDataclass):
             if field.init
                 and get_origin(field.type) is not dict
                 and get_origin(field.type) is not set
+                and not field.metadata.get('database_exclude')
         ]
 
     @classmethod
@@ -420,14 +423,57 @@ class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
 
     # event: Event
+    event_id: int
+    title: str
+
+    lodgement_ids: set[int] = dataclasses.field(default_factory=set, metadata={'database_exclude': True})
+    regular_capacity: int = dataclasses.field(default=0, metadata={'database_exclude': True})
+    camping_mat_capacity: int = dataclasses.field(default=0, metadata={'database_exclude': True})
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT
+                {', '.join(f'lodgement_groups.{f}' for f in cls.database_fields())},
+                ARRAY_REMOVE(ARRAY_AGG(lodgements.id), NULL) AS lodgement_ids,
+                COALESCE(SUM(lodgements.regular_capacity), 0) AS regular_capacity,
+                COALESCE(SUM(lodgements.camping_mat_capacity), 0) AS camping_mat_capacity
+            FROM event.lodgement_groups
+                LEFT JOIN event.lodgements ON lodgement_groups.id = lodgements.group_id
+            WHERE
+                lodgement_groups.{cls.entity_key} = ANY(%s)
+            GROUP BY
+                lodgement_groups.id
+        """
+        params = [entities]
+        return query, params
 
 
 @dataclasses.dataclass
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
+    entity_key = "id"
 
     # event: Event
-    group: LodgementGroup
+    event_id: int
+    group: LodgementGroup = dataclasses.field(
+        compare=False, repr=False, metadata={'database_exclude': True})
+    group_id: int
+
+    title: str
+    regular_capacity: int
+    camping_mat_capacity: int
+    notes: Optional[str]
+
+    fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['fields'] = cast_fields(data['fields'], data.pop('event_fields'))
+        if 'group_data' in data:
+            data['group'] = LodgementGroup.from_database(data.pop('group_data'))
+        return super().from_database(data)
 
 
 #
