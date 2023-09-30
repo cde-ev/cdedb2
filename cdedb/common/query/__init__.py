@@ -11,6 +11,7 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import copy
+import dataclasses
 import datetime
 import enum
 import itertools
@@ -117,27 +118,24 @@ QueryChoices = Mapping[Union[int, str, enum.Enum], str]
 QUERY_VALUE_SEPARATOR = ","
 
 
-class QuerySpecEntry(NamedTuple):
+@dataclasses.dataclass
+class QuerySpecEntry:
     type: str
     title_base: str
     title_prefix: str = ""
-    title_params: Dict[str, str] = {}
-    choices: QueryChoices = {}
+    title_params: Dict[str, str] = dataclasses.field(default_factory=dict)
+    choices: QueryChoices = dataclasses.field(default_factory=dict)
+    translate_prefix: bool = True
 
     # Mask gettext so pybabel doesn't try to extract the f-string.
     def get_title(self, g: Callable[[str], str]) -> str:
-        ret_prefix = g(f"{self.title_prefix}: ") if self.title_prefix else ""
-        ret_title = g(self.title_base).format(**self.title_params)
-        return ret_prefix + ret_title
-
-    def replace_choices(self, choices: QueryChoices) -> "QuerySpecEntry":
-        return self.__class__(
-            type=self.type,
-            title_base=self.title_base,
-            title_prefix=self.title_prefix,
-            title_params=self.title_params,
-            choices=choices,
-        )
+        ret = g(self.title_base).format(**self.title_params)
+        if self.title_prefix:
+            if self.translate_prefix:
+                ret = f"{g(self.title_prefix)}: {ret}"
+            else:
+                ret = f"{self.title_prefix}: {ret}"
+        return ret
 
 
 QuerySpec = Dict[str, QuerySpecEntry]
@@ -750,7 +748,7 @@ def _sort_event_fields(fields: CdEDBObjectMap
 
 
 def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
-                   prefix: str) -> QuerySpec:
+                   prefix: str, translate_prefix: bool = False) -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 
     Entries are grouped by their position in the individual spec. Thus the individual
@@ -780,6 +778,7 @@ def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
         ret[key] = QuerySpecEntry(
             type=entry.type, title_base=entry.title_base, title_prefix=prefix,
             title_params=entry.title_params, choices=entry.choices,
+            translate_prefix=translate_prefix,
         )
     return ret
 
@@ -1012,14 +1011,17 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
         part_ids = part_group['part_ids']
         prefix = part_group['shortname']
         spec.update(_combine_specs(
-            part_specs, part_ids, prefix=prefix or n_("any part")))
+            part_specs, part_ids, prefix=prefix or n_("any part"),
+            translate_prefix=not prefix))
         # Add entries for track combinations.
         track_ids = tuple(itertools.chain.from_iterable(
             event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
         spec.update(_combine_specs(
-            track_specs, track_ids, prefix=prefix or n_("any track")))
+            track_specs, track_ids, prefix=prefix or n_("any track"),
+            translate_prefix=not prefix))
         spec.update(_combine_specs(
-            course_choice_specs, track_ids, prefix=prefix or n_("any track")))
+            course_choice_specs, track_ids, prefix=prefix or n_("any track"),
+            translate_prefix=not prefix))
 
     # Add entries for track groups.
     sorted_track_groups = xsorted(
@@ -1136,7 +1138,7 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
     sorted_part_groups = xsorted(
         event['part_groups'].values(), key=EntitySorter.event_part_group)
     track_groups = (
-        {'track_ids': event['tracks'].keys(), 'shortname': n_("any track")},
+        {'track_ids': event['tracks'].keys(), 'shortname': None},
         *(
             {'track_ids': part['tracks'].keys(), 'shortname': part['shortname']}
             for part in sorted_parts
@@ -1153,9 +1155,13 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']
-        prefix = track_group['shortname'] or n_("any track")
-        spec.update(_combine_specs(track_specs, track_ids, prefix))
-        spec.update(_combine_specs(course_choice_specs, track_ids, prefix))
+        prefix = track_group['shortname']
+        spec.update(_combine_specs(
+            track_specs, track_ids, prefix or n_("any track"),
+            translate_prefix=not prefix))
+        spec.update(_combine_specs(
+            course_choice_specs, track_ids, prefix or n_("any track"),
+            translate_prefix=not prefix))
 
     spec.update({
         f"course_fields.xfield_{field['field_name']}": QuerySpecEntry(
@@ -1235,8 +1241,10 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
     sorted_part_groups.append({'part_ids': event['parts'].keys(), 'shortname': None})
     for part_group in sorted_part_groups:
         part_ids = part_group['part_ids']
-        prefix = part_group['shortname'] or n_("any part")
-        spec.update(_combine_specs(part_specs, part_ids, prefix=prefix))
+        prefix = part_group['shortname']
+        spec.update(_combine_specs(
+            part_specs, part_ids, prefix=prefix or n_("any part"),
+            translate_prefix=not prefix))
 
     spec.update({
         f"lodgement_fields.xfield_{f['field_name']}": QuerySpecEntry(
