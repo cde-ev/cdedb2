@@ -27,8 +27,8 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, TypeVar, get_args,
-    get_origin,
+    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional,
+    TypeVar, Union, get_args, get_origin,
 )
 import copy
 
@@ -36,6 +36,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import CdEDBObject, now
+from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -57,6 +58,7 @@ CdEDataclassMap = dict[int, T]
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
     entity_key: ClassVar[str] = "event_id"
+    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]] = lambda x: tuple(x['id'])
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -88,13 +90,14 @@ class EventDataclass(CdEDataclass):
         return super().from_database(data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection["CdEDBObject"]
+    def many_from_database(cls, list_of_data: Collection[CdEDBObject]
                            ) -> CdEDataclassMap["Self"]:
         return {
             obj.id: obj for obj in map(cls.from_database, list_of_data)
         }
 
-    def as_dict(self, *, dict_factory=dict):
+    def as_dict(self, *, dict_factory: Callable[[Any], dict[str, Any]]=dict
+                )-> dict[str, Any]:
         """Return the fields of a dataclass instance as a new dictionary mapping
         field names to field values.
 
@@ -104,8 +107,8 @@ class EventDataclass(CdEDataclass):
         """
         return self._asdict_inner(self, dict_factory)
 
-    def _asdict_inner(self, obj, dict_factory):
-        if dataclasses._is_dataclass_instance(obj):
+    def _asdict_inner(self, obj: Any, dict_factory: Any):  # type: ignore[no-untyped-def]
+        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
             for f in dataclasses.fields(obj):
                 #######################################################
@@ -151,9 +154,12 @@ class EventDataclass(CdEDataclass):
             return copy.deepcopy(obj)
 
     @staticmethod
-    def _include_in_dict(field: dataclasses.Field) -> bool:
+    def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
         return field.repr
+
+    def __lt__(self, other: "EventDataclass") -> bool:
+        return self.sorter(self.as_dict()) < self.sorter(other.as_dict())
 
 
 #
@@ -164,6 +170,7 @@ class EventDataclass(CdEDataclass):
 class Event(EventDataclass):
     database_table = "event.events"
     entity_key = "id"
+    sorter = EntitySorter.event
 
     title: str
     shortname: str
@@ -291,6 +298,7 @@ class Event(EventDataclass):
 @dataclasses.dataclass
 class EventPart(EventDataclass):
     database_table = "event.event_parts"
+    sorter = EntitySorter.event_part
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -330,6 +338,7 @@ class EventPart(EventDataclass):
 class CourseTrack(EventDataclass):
     database_table = "event.course_tracks"
     entity_key = "part_id"
+    sorter = EntitySorter.course_track
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
@@ -347,6 +356,7 @@ class CourseTrack(EventDataclass):
 @dataclasses.dataclass
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
+    sorter = EntitySorter.event_fee
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -361,6 +371,7 @@ class EventFee(EventDataclass):
 @dataclasses.dataclass
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
+    sorter = EntitySorter.event_field
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -383,6 +394,7 @@ class EventField(EventDataclass):
 @dataclasses.dataclass
 class PartGroup(EventDataclass):
     database_table = "event.part_groups"
+    sorter = EntitySorter.event_part_group
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -417,6 +429,7 @@ class PartGroup(EventDataclass):
 @dataclasses.dataclass
 class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
+    sorter = EntitySorter.course_choice_object
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -475,6 +488,7 @@ class QuestionnaireRow(EventDataclass):
 class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
+    sorter = EntitySorter.course
 
     # event: Event
     event_id: vtypes.ID
@@ -535,6 +549,7 @@ class Course(EventDataclass):
 @dataclasses.dataclass
 class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
+    sorter = EntitySorter.lodgement_group
 
     # event: Event
     event_id: int
@@ -568,6 +583,7 @@ class LodgementGroup(EventDataclass):
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
+    sorter = EntitySorter.lodgement_by_group
 
     # event: Event
     event_id: int
@@ -597,6 +613,7 @@ class Lodgement(EventDataclass):
 @dataclasses.dataclass
 class Registration(EventDataclass):
     database_table = "event.registrations"
+    sorter = EntitySorter.make_persona_sorter
 
     # event: Event
 

@@ -163,8 +163,8 @@ class EntitySorter:
 
     @staticmethod
     def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['group_title'] is None, lodgement['group_title'],
-                lodgement['group_id'], lodgement['title'], lodgement['id'])
+        return (lodgement['group_title'], lodgement['group_id'], lodgement['title'],
+                lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
