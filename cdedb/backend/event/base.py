@@ -296,22 +296,22 @@ class EventBaseBackend(EventLowLevelBackend):
     def new_get_event(self, rs: RequestState, event_id: int) -> models.Event:
         event_id = affirm(vtypes.ID, event_id)
         with Atomizer(rs):
-            event_data = self.sql_select_dataclass_one_raw(rs, models.Event, event_id)
+            event_data = self.query_one(rs, *models.Event.get_select_query((event_id,)))
             if not event_data:
                 raise KeyError(event_id)
-            part_data = self.sql_select_dataclass_raw(
-                rs, models.EventPart, (event_id,))
+            part_data = self.query_all(
+                rs, *models.EventPart.get_select_query((event_id,)))
             all_parts = {e['id'] for e in part_data}
-            part_group_data = self.sql_select_dataclass_raw(
-                rs, models.PartGroup, (event_id,))
-            track_data = self.sql_select_dataclass_raw(
-                rs, models.CourseTrack, all_parts)
-            track_group_data = self.sql_select_dataclass_raw(
-                rs, models.TrackGroup, (event_id,))
-            fee_data = self.sql_select_dataclass_raw(
-                rs, models.EventFee, (event_id,))
-            field_data = self.sql_select_dataclass_raw(
-                rs, models.EventField, (event_id,))
+            part_group_data = self.query_all(
+                rs, *models.PartGroup.get_select_query((event_id,)))
+            track_data = self.query_all(
+                rs, *models.CourseTrack.get_select_query(all_parts))
+            track_group_data = self.query_all(
+                rs, *models.TrackGroup.get_select_query((event_id,)))
+            fee_data = self.query_all(
+                rs, *models.EventFee.get_select_query((event_id,)))
+            field_data = self.query_all(
+                rs, *models.EventField.get_select_query((event_id,)))
             return models.Event.from_database({
                 **event_data,
                 'parts': part_data,

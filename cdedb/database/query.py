@@ -9,9 +9,7 @@ import datetime
 import decimal
 import enum
 import logging
-from typing import (
-    Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast,
-)
+from typing import Collection, List, Optional, Sequence, Tuple, Type, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
@@ -34,8 +32,6 @@ EntityKey = Union[int, str]
 # EntityKeys is a collection of identifiers, i.e. ids, given for retrieval or deletion
 # of the corresponding entities. Note that we do not use string identifiers for this.
 EntityKeys = Collection[int]
-
-DC = TypeVar("DC", bound="EventDataclass")
 
 
 class SqlQueryBackend:
@@ -234,11 +230,3 @@ class SqlQueryBackend:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
         return self.query_exec(container, query, ())
-
-    def sql_select_dataclass_one_raw(self, container: ConnectionContainer, dc: Type[DC],
-                                     entity: int) -> Optional[CdEDBObject]:
-        return self.query_one(container, *dc.get_select_query(entities=(entity,)))
-
-    def sql_select_dataclass_raw(self, container: ConnectionContainer, dc: Type[DC],
-                                 entities: EntityKeys) -> Tuple[CdEDBObject, ...]:
-        return self.query_all(container, *dc.get_select_query(entities))
