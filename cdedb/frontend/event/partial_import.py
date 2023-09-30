@@ -23,6 +23,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTfile, access, check_validation as check, event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.models.event import Event
 
 
 class EventImportMixin(EventBaseFrontend):
@@ -50,7 +51,7 @@ class EventImportMixin(EventBaseFrontend):
             Otherwise, duplicate field names will cause an error and prevent the import.
         """
         kwargs = {
-            'field_definitions': rs.ambience['event']['fields'],
+            'field_definitions': rs.ambience['event'].fields,
             'fees_by_field':
                 self.eventproxy.get_event_fees_per_entity(rs, event_id).fields,
             'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
@@ -290,7 +291,7 @@ class EventImportMixin(EventBaseFrontend):
     # TODO: be more specific about the return types.
     @staticmethod
     def _make_partial_import_diff_aux(
-            rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
+            rs: RequestState, event: Event, courses: CdEDBObjectMap,
             lodgements: CdEDBObjectMap
     ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """ Helper method, similar to make_registration_query_aux(), to
@@ -322,9 +323,9 @@ class EventImportMixin(EventBaseFrontend):
         }
 
         # Titles and choices for track-specific fields
-        for track_id, track in event['tracks'].items():
-            if len(event['tracks']) > 1:
-                prefix = "{title}: ".format(title=track['shortname'])
+        for track_id, track in event.tracks.items():
+            if len(event.tracks) > 1:
+                prefix = "{title}: ".format(title=track.shortname)
             else:
                 prefix = ""
             reg_titles[f"tracks.{track_id}.course_id"] = (
@@ -340,21 +341,21 @@ class EventImportMixin(EventBaseFrontend):
                     prefix + rs.gettext("Status"))
             course_choices[f"segments.{track_id}"] = segment_stati_entries
 
-        for field in event['fields'].values():
+        for field in event.fields.values():
             # TODO add choices?
-            key = f"fields.{field['field_name']}"
-            title = safe_filter("<i>{}</i>").format(field['field_name'])
-            if field['association'] == const.FieldAssociations.registration:
+            key = f"fields.{field.field_name}"
+            title = safe_filter("<i>{}</i>").format(field.field_name)
+            if field.association == const.FieldAssociations.registration:
                 reg_titles[key] = title
-            elif field['association'] == const.FieldAssociations.course:
+            elif field.association == const.FieldAssociations.course:
                 course_titles[key] = title
-            elif field['association'] == const.FieldAssociations.lodgement:
+            elif field.association == const.FieldAssociations.lodgement:
                 lodgement_titles[key] = title
 
         # Titles and choices for part-specific fields
-        for part_id, part in event['parts'].items():
-            if len(event['parts']) > 1:
-                prefix = f"{part['shortname']}: "
+        for part_id, part in event.parts.items():
+            if len(event.parts) > 1:
+                prefix = f"{part.shortname}: "
             else:
                 prefix = ""
             reg_titles[f"parts.{part_id}.status"] = (

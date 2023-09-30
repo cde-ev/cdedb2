@@ -43,6 +43,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
+from cdedb.models.event import Event
 
 
 @dataclass(frozen=True)
@@ -142,7 +143,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             params['is_locked'] = self.is_locked(rs.ambience['event'])
             if rs.user.persona_id and "event" in rs.user.roles:
                 reg_list = self.eventproxy.list_registrations(
-                    rs, rs.ambience['event']['id'], rs.user.persona_id)
+                    rs, rs.ambience['event'].id, rs.user.persona_id)
                 params['is_registered'] = bool(reg_list)
                 params['is_participant'] = False
                 if params['is_registered']:
@@ -153,11 +154,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                            for part in registration['parts'].values()):
                         params['is_participant'] = True
             params['has_constraints'] = any(
-                not pg['constraint_type'].is_stats()
-                for pg in rs.ambience['event']['part_groups'].values()
+                not pg.constraint_type.is_stats()
+                for pg in rs.ambience['event'].part_groups.values()
             ) or any(
-                tg['constraint_type']
-                for tg in rs.ambience['event']['track_groups'].values()
+                tg.constraint_type
+                for tg in rs.ambience['event'].track_groups.values()
             )
 
         return super().render(rs, templatename, params=params)
@@ -174,9 +175,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         return event_id in rs.user.orga or self.is_admin(rs)
 
-    def is_locked(self, event: CdEDBObject) -> bool:
+    def is_locked(self, event: Event) -> bool:
         """Shorthand to determine locking state of an event."""
-        return event['offline_lock'] != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+        return event.offline_lock != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
     @access("core_admin", "event_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -235,7 +236,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     {const.RegistrationPartStati.participant}):
                 rs.notify('warning', n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
-            if not rs.ambience['event']['is_participant_list_visible']:
+            if not rs.ambience['event'].is_participant_list_visible:
                 rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
             reg_list = self.eventproxy.list_registrations(rs, event_id,
@@ -246,15 +247,15 @@ class EventBaseFrontend(AbstractUserFrontend):
             list_consent = True
 
         if part_id:
-            part_ids = [part_id]
+            part_ids: Collection[int] = [part_id]
         else:
-            part_ids = rs.ambience['event']['parts'].keys()
+            part_ids = rs.ambience['event'].parts.keys()
 
         data = self._get_participant_list_data(
             rs, event_id, part_ids, include_total_count=True,
             sortkey=sortkey or "persona", reverse=reverse)
-        if len(rs.ambience['event']['parts']) == 1:
-            part_id = unwrap(rs.ambience['event']['parts'].keys())
+        if len(rs.ambience['event'].parts) == 1:
+            part_id = unwrap(rs.ambience['event'].parts.keys())
         data['part_id'] = part_id
         data['list_consent'] = list_consent
         data['last_sortkey'] = sortkey
@@ -281,12 +282,12 @@ class EventBaseFrontend(AbstractUserFrontend):
             include_total=include_total_count)
 
         if not part_ids:
-            part_ids = rs.ambience['event']['parts'].keys()
-        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
+            part_ids = rs.ambience['event'].parts.keys()
+        if any(anid not in rs.ambience['event'].parts for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
         if orga_list and event_id not in rs.user.orga and not self.is_admin(rs):
             raise PermissionError
-        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+        parts = {anid: rs.ambience['event'].parts[anid] for anid in part_ids}
 
         def check(reg: CdEDBObject) -> bool:
             if not reg['list_consent'] and not orga_list:
@@ -321,7 +322,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     raise werkzeug.exceptions.BadRequest(n_(
                         "Only one part id allowed."))
                 part_id = unwrap(part_ids)
-                all_tracks = parts[part_id]['tracks']
+                all_tracks = parts[part_id].tracks
                 registered_tracks = [registrations[anid]['tracks'][track_id]
                                      for track_id in all_tracks]
                 # TODO sort tracks by title?
@@ -354,8 +355,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                                    ) -> CdEDBObject:
         assert rs.user.persona_id is not None
         wish_data = {}
-        if (rs.ambience['event']['is_participant_list_visible']
-                and (field_id := rs.ambience['event']['lodge_field'])
+        if (rs.ambience['event'].is_participant_list_visible
+                and (field_id := rs.ambience['event'].lodge_field)
                 and self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
                     [const.RegistrationPartStati.participant])):
@@ -363,7 +364,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 rs, event_id, rs.user.persona_id).keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
             data = self._get_participant_list_data(rs, event_id)
-            wish_data['field'] = rs.ambience['event']['fields'][field_id]
+            wish_data['field'] = rs.ambience['event'].fields[field_id]
             wishes, problems = detect_lodgement_wishes(
                 data['registrations'], data['personas'], rs.ambience['event'],
                 restrict_part_id=None, restrict_registration_id=registration_id,
@@ -397,17 +398,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                               ) -> vtypes.TypeMapping:
         """Helper to construct a TypeMapping to extract questionnaire data."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, rs.ambience['event']['id'], kinds=(kind,)))
+            rs, rs.ambience['event'].id, kinds=(kind,)))
 
         def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
-            field = rs.ambience['event']['fields'][row['field_id']]
-            type_ = vtypes.VALIDATOR_LOOKUP[field['kind'].name]
+            field = rs.ambience['event'].fields[row['field_id']]
+            type_ = vtypes.VALIDATOR_LOOKUP[field.kind.name]
             if kind == const.QuestionnaireUsages.additional:
                 type_ = Optional[type_]  # type: ignore[assignment]
             elif kind == const.QuestionnaireUsages.registration:
-                if field['kind'] == const.FieldDatatypes.str:
+                if field.kind == const.FieldDatatypes.str:
                     type_ = Optional[type_]  # type: ignore[assignment]
-            return (f"fields.{field['field_name']}", type_)
+            return (f"fields.{field.field_name}", type_)
 
         return dict(
             get_validator(entry) for entry in questionnaire
@@ -415,7 +416,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @staticmethod
-    def calculate_groups(entity_ids: Collection[int], event: CdEDBObject,
+    def calculate_groups(entity_ids: Collection[int], event: Event,
                          registrations: CdEDBObjectMap, key: str,
                          personas: CdEDBObjectMap = None,
                          instructors: bool = True
@@ -431,7 +432,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         :param instructors: Include instructors of courses. No effect for
           lodgements.
         """
-        tracks = event['tracks']
+        tracks = event.tracks
         if key == "course_id":
             aspect = 'tracks'
         elif key == "lodgement_id":
@@ -446,7 +447,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             if aspect == 'parts':
                 part = instance
             elif aspect == 'tracks':
-                part = registrations[reg_id]['parts'][tracks[sub_id]['part_id']]
+                part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
@@ -464,7 +465,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         if aspect == 'tracks':
             sub_ids = tracks.keys()
         elif aspect == 'parts':
-            sub_ids = event['parts'].keys()
+            sub_ids = event.parts.keys()
         else:
             raise RuntimeError(n_("Impossible."))
         return {
@@ -477,10 +478,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
     @staticmethod
-    def _get_track_ids(event: CdEDBObject, part_group_id: int) -> Set[int]:
-        part_ids = event['part_groups'][part_group_id]['part_ids']
-        parts = (p for part_id, p in event['parts'].items() if part_id in part_ids)
-        return set(itertools.chain.from_iterable(part['tracks'] for part in parts))
+    def _get_track_ids(event: Event, part_group_id: int) -> Set[int]:
+        parts = event.part_groups[part_group_id].parts.values()
+        return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
     def get_constraint_violations(self, rs: RequestState, event_id: int, *,
                                   registration_id: Optional[int],
@@ -499,8 +499,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             constraint: keydictsort_filter(
                 {
                     pg_id: part_group
-                    for pg_id, part_group in rs.ambience['event']['part_groups'].items()
-                    if part_group['constraint_type'] == constraint
+                    for pg_id, part_group in rs.ambience['event'].part_groups.items()
+                    if part_group.constraint_type == constraint
                 }, EntitySorter.event_part_group)
             for constraint in const.EventPartGroupType
         }
@@ -508,8 +508,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             constraint: keydictsort_filter(
                 {
                     tg_id: tg
-                    for tg_id, tg in rs.ambience['event']['track_groups'].items()
-                    if tg['constraint_type'] == constraint
+                    for tg_id, tg in rs.ambience['event'].track_groups.items()
+                    if tg.constraint_type == constraint
                 }, EntitySorter.course_choice_object)
             for constraint in const.CourseTrackGroupType
         }
@@ -530,7 +530,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         def part_id_sorter(part_ids: Collection[int]) -> List[int]:
             return xsorted(part_ids, key=lambda part_id: EntitySorter.event_part(
-                rs.ambience['event']['parts'][part_id]))
+                rs.ambience['event'].parts[part_id]))
 
         # Check registrations for violations against mutual exclusiveness constraints.
         mep = const.EventPartGroupType.mutually_exclusive_participants
@@ -546,7 +546,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
                         pg_id, reg_id, reg['persona_id'], sorted_part_ids,
-                        ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
+                        ", ".join(rs.ambience['event'].parts[part_id].shortname
                                   for part_id in sorted_part_ids),
                     ))
                     continue
@@ -558,7 +558,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     sorted_part_ids = part_id_sorter(part_ids)
                     mep_violations.append(MEPViolation(
                         pg_id, reg_id, reg['persona_id'], sorted_part_ids,
-                        ", ".join(rs.ambience['event']['parts'][part_id]['shortname']
+                        ", ".join(rs.ambience['event'].parts[part_id].shortname
                                   for part_id in sorted_part_ids),
                         guest_violation=True,
                     ))
@@ -588,13 +588,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             courses = self.eventproxy.get_courses(rs, (course_id,))
         courses = dict(keydictsort_filter(courses, EntitySorter.course))
         track_part_map = {
-            track_id: track['part_id']
-            for track_id, track in rs.ambience['event']['tracks'].items()
+            track_id: track.part_id
+            for track_id, track in rs.ambience['event'].tracks.items()
         }
 
         def track_id_sorter(track_ids: Iterable[int]) -> List[int]:
             return xsorted(track_ids, key=lambda track_id: EntitySorter.course_track(
-                rs.ambience['event']['tracks'][track_id]))
+                rs.ambience['event'].tracks[track_id]))
 
         for course_id_, course in courses.items():
             # Gather the track and part ids of the courses active segments.
@@ -608,7 +608,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                         if track_part_map[t_id] in part_group['part_ids'])
                     mec_violations.append(MECViolation(
                         pg_id, course_id_, sorted_track_ids,
-                        ", ".join(rs.ambience['event']['tracks'][track_id]['shortname']
+                        ", ".join(rs.ambience['event'].tracks[track_id].shortname
                                   for track_id in sorted_track_ids),
                     ))
 
@@ -665,11 +665,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @staticmethod
-    def _get_camping_mat_field_names(event: CdEDBObject) -> dict[int, Optional[str]]:
-        field_names = {}
-        for part_id, part in event["parts"].items():
-            if f_id := part["camping_mat_field"]:
-                field_names[part_id] = event["fields"][f_id]["field_name"]
+    def _get_camping_mat_field_names(event: Event) -> dict[int,
+            Optional[vtypes.RestrictiveIdentifier]]:
+        field_names: dict[int,
+            Optional[vtypes.RestrictiveIdentifier]] = {}
+        for part_id, part in event.parts.items():
+            if f := part.camping_mat_field:
+                field_names[part_id] = event.fields[f.id].field_name
             else:
                 field_names[part_id] = None
         return field_names

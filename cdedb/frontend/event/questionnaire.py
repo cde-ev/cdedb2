@@ -26,6 +26,7 @@ from cdedb.frontend.common import (
     event_guard, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.models.event import CdEDataclassMap, EventField
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
@@ -54,7 +55,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def _prepare_questionnaire_form(self, rs: RequestState, event_id: int,
                                     kind: const.QuestionnaireUsages
                                     ) -> Tuple[List[CdEDBObject],
-                                               CdEDBObjectMap]:
+                                               CdEDataclassMap[EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
@@ -65,8 +66,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             for key, value in entry.items()}
         merge_dicts(rs.values, current)
         registration_fields = {
-            k: v for k, v in rs.ambience['event']['fields'].items()
-            if v['association'] == const.FieldAssociations.registration
+            k: v for k, v in rs.ambience['event'].fields.items()
+            if v.association == const.FieldAssociations.registration
                and (kind.allow_fee_condition() or not fees_by_field[k])
         }
         return questionnaire, registration_fields
@@ -149,7 +150,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_event")
             registration_id = unwrap(registration_id.keys())
             registration = self.eventproxy.get_registration(rs, registration_id)
-            if not rs.ambience['event']['use_additional_questionnaire']:
+            if not rs.ambience['event'].use_additional_questionnaire:
                 rs.notify("warning", n_("Questionnaire disabled."))
                 return self.redirect(rs, "event/registration_status")
             if self.is_locked(rs.ambience['event']):
@@ -159,13 +160,13 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 for key, val in registration['fields'].items()
             }
             merge_dicts(rs.values, values)
-            if field_id := rs.ambience['event']['lodge_field']:
+            if field_id := rs.ambience['event'].lodge_field:
                 if any(row['field_id'] == field_id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
-            if not rs.ambience['event']['use_additional_questionnaire']:
+            if not rs.ambience['event'].use_additional_questionnaire:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         return self.render(rs, "questionnaire/additional_questionnaire", {
             'add_questionnaire': add_questionnaire,
@@ -189,13 +190,13 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
         registration_id = unwrap(registration_id.keys())
-        if not rs.ambience['event']['use_additional_questionnaire']:
+        if not rs.ambience['event'].use_additional_questionnaire:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        if rs.ambience['event']['is_archived']:
+        if rs.ambience['event'].is_archived:
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
         params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
@@ -214,7 +215,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     @staticmethod
     def process_questionnaire_input(rs: RequestState, num: int,
-                                    reg_fields: Mapping[int, Mapping[str, Any]],
+                                    reg_fields: CdEDataclassMap[EventField],
                                     kind: const.QuestionnaireUsages,
                                     other_used_fields: Collection[int]
                                     ) -> Dict[const.QuestionnaireUsages,
@@ -292,7 +293,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 continue
             data[dv_key] = check_optional(
                 rs, vtypes.ByFieldDatatype,
-                data[dv_key], dv_key, kind=reg_fields[field_id]['kind'])
+                data[dv_key], dv_key, kind=reg_fields[field_id].kind)
         questionnaire = {
             kind: list(
                 {key: data["{}_{}".format(key, i)] for key in spec}

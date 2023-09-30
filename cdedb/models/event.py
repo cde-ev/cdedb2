@@ -50,7 +50,8 @@ if TYPE_CHECKING:
 #
 
 T = TypeVar('T')
-CdEDataclassMap = dict[vtypes.ProtoID, T]
+# Should actually be a vtypes.ProtoID instead of an int
+CdEDataclassMap = dict[int, T]
 
 
 @dataclasses.dataclass
@@ -273,9 +274,11 @@ class Event(EventDataclass):
     def begin(self) -> datetime.date:
         return min(p.part_begin for p in self.parts.values())
 
+    @property
     def end(self) -> datetime.date:
         return min(p.part_end for p in self.parts.values())
 
+    @property
     def is_open(self) -> bool:
         reference_time = now()
         return bool(

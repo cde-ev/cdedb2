@@ -65,6 +65,9 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
+import cdedb.models.droid as models_droid
+import cdedb.models.event as models_event
+import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -99,8 +102,6 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.models.droid import OrgaToken
-from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -1295,7 +1296,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: Mailinglist) -> Optional[
+    def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1318,7 +1319,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
+    def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1469,22 +1470,22 @@ AmbienceDict = typing.TypedDict(
         'genesis_case': CdEDBObject,
         'lastschrift': CdEDBObject,
         'transaction':  CdEDBObject,
-        'event': CdEDBObject,
+        'event': models_event.Event,
         'pevent': CdEDBObject,
         'course': CdEDBObject,
         'pcourse': CdEDBObject,
         'registration': CdEDBObject,
         'group': CdEDBObject,
         'lodgement': CdEDBObject,
-        'part_group': CdEDBObject,
-        'track_group': CdEDBObject,
-        'fee': CdEDBObject,
-        'orga_token': OrgaToken,
+        'part_group': models_event.PartGroup,
+        'track_group': models_event.TrackGroup,
+        'fee': models_event.EventFee,
+        'orga_token': models_droid.OrgaToken,
         'attachment': CdEDBObject,
         'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
-        'mailinglist': Mailinglist,
+        'mailinglist': models_ml.Mailinglist,
     }
 )
 
@@ -1518,7 +1519,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'transaction_id', 'transaction',
               ((lambda a: do_assert(a['transaction']['lastschrift_id']
                                     == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
+        Scout(lambda anid: obj.eventproxy.new_get_event(rs, anid),
               'event_id', 'event', ()),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
               'pevent_id', 'pevent', ()),
@@ -2316,14 +2317,14 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject,
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
                              donation: decimal.Decimal = decimal.Decimal(0)) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
     return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
-        event=asciificator(event['title']),
+        event=asciificator(event.title),
         donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),

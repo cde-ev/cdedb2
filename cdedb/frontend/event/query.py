@@ -40,12 +40,12 @@ class EventQueryMixin(EventBaseFrontend):
     @event_guard()
     def stats(self, rs: RequestState, event_id: int) -> Response:
         """Present an overview of the basic stats."""
-        event_parts = rs.ambience['event']['parts']
-        tracks = rs.ambience['event']['tracks']
+        event_parts = rs.ambience['event'].parts
+        tracks = rs.ambience['event'].tracks
         stat_part_groups = {
             part_group_id: part_group
-            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
-            if part_group['constraint_type'] == const.EventPartGroupType.Statistic
+            for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+            if part_group.constraint_type == const.EventPartGroupType.Statistic
         }
 
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -59,7 +59,7 @@ class EventQueryMixin(EventBaseFrontend):
             for part_id, reg_part in reg['parts'].items():
                 reg_part['age_class'] = determine_age_class(
                     personas[reg['persona_id']]['birthday'],
-                    event_parts[part_id]['part_begin'])
+                    event_parts[part_id].part_begin)
 
         per_part_statistics: Dict[
             EventRegistrationPartStatistic, Dict[str, Dict[int, Set[int]]]]
@@ -164,7 +164,7 @@ class EventQueryMixin(EventBaseFrontend):
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         scope = QueryScope.registration
-        spec = scope.get_spec(event=rs.ambience["event"], courses=courses,
+        spec = scope.get_spec(event=rs.ambience['event'], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)
 
@@ -215,14 +215,14 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not query_name:
             rs.notify("error", n_("Invalid query name."))
 
-        spec = query_scope.get_spec(event=rs.ambience["event"])
+        spec = query_scope.get_spec(event=rs.ambience['event'])
         query_input = query_scope.mangle_query_input(rs)
         query_input["is_search"] = "True"
         query: Optional[Query] = check(
             rs, vtypes.QueryInput, query_input, "query", spec=spec, allow_empty=False)
         if not rs.has_validation_errors() and query:
             query_id = self.eventproxy.store_event_query(
-                rs, rs.ambience["event"]["id"], query)
+                rs, rs.ambience['event'].id, query)
             rs.notify_return_code(query_id)
             if query_id:
                 query.query_id = query_id
@@ -288,7 +288,7 @@ class EventQueryMixin(EventBaseFrontend):
         selection_default = ["course.nr", "course.shortname", "course.instructors"]
         for col in ("takes_place",):
             selection_default.extend(
-                f"track{t_id}.{col}" for t_id in rs.ambience['event']['tracks'])
+                f"track{t_id}.{col}" for t_id in rs.ambience['event'].tracks)
 
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
@@ -331,7 +331,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
-        spec = scope.get_spec(event=rs.ambience["event"], lodgements=lodgements,
+        spec = scope.get_spec(event=rs.ambience['event'], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
@@ -340,11 +340,11 @@ class EventQueryMixin(EventBaseFrontend):
             query = check(rs, vtypes.QueryInput,
                           query_input, "query", spec=spec, allow_empty=False)
 
-        parts = rs.ambience['event']['parts']
+        parts = rs.ambience['event'].parts
         selection_default = ["lodgement.title"] + [
-            f"lodgement_fields.xfield_{field['field_name']}"
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement]
+            f"lodgement_fields.xfield_{field.field_name}"
+            for field in rs.ambience['event'].fields.values()
+            if field.association == const.FieldAssociations.lodgement]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)
 
@@ -393,7 +393,7 @@ class EventQueryMixin(EventBaseFrontend):
                            filename: str, scope: QueryScope, query: Query,
                            params: CdEDBObject) -> Response:
         if download:
-            shortname = rs.ambience['event']['shortname']
+            shortname = rs.ambience['event'].shortname
             return self.send_query_download(
                 rs, params['result'], query, kind=download,
                 filename=f"{shortname}_{filename}")
