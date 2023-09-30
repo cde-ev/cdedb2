@@ -312,18 +312,15 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, models.EventFee, (event_id,))
             field_data = self.sql_select_dataclass_raw(
                 rs, models.EventField, (event_id,))
-            # orga_data = self.sql_select(
-            #     rs, "event.orgas", ("persona_id", "event_id"), event_ids,
-            #     entity_key="event_id")
-            return models.Event.from_database(dict(
+            return models.Event.from_database({
                 **event_data,
-                parts=part_data,
-                part_groups=part_group_data,
-                tracks=track_data,
-                track_groups=track_group_data,
-                fields=field_data,
-                fees=fee_data,
-            ))
+                'parts': part_data,
+                'part_groups': part_group_data,
+                'tracks': track_data,
+                'track_groups': track_group_data,
+                'fields': field_data,
+                'fees': fee_data,
+            })
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:

@@ -27,13 +27,12 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, ClassVar, Collection, Optional, TypeVar, get_args,
-    get_origin,
+    TYPE_CHECKING, ClassVar, Collection, Optional, TypeVar, get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject
+from cdedb.common import CdEDBObject, now
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -49,6 +48,7 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 CdEDataclassMap = dict[vtypes.ProtoID, T]
+
 
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
@@ -71,6 +71,7 @@ class EventDataclass(CdEDataclass):
             field.name for field in dataclasses.fields(cls)
             if field.init
                 and get_origin(field.type) is not dict
+                and get_origin(field.type) is not set
         ]
 
     @classmethod
@@ -138,8 +139,11 @@ class Event(EventDataclass):
     part_groups: CdEDataclassMap["PartGroup"]
     track_groups: CdEDataclassMap["TrackGroup"]
 
+    orgas: set[vtypes.ID] = dataclasses.field(default_factory=set)
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['orgas'] = set(data['orgas'])
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
@@ -183,12 +187,45 @@ class Event(EventDataclass):
         self.lodge_field = self.fields.get(
             self.lodge_field)  # type: ignore[call-overload]
 
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT
+                {', '.join(cls.database_fields())},
+                array(
+                    SELECT persona_id
+                    FROM event.orgas
+                    WHERE event_id = events.id
+                ) AS orgas
+            FROM {cls.database_table}
+            WHERE {cls.entity_key} = ANY(%s)
+            """
+        params = (entities,)
+        return query, params
+
+    @property
+    def begin(self) -> datetime.date:
+        return min(p.part_begin for p in self.parts.values())
+
+    def end(self) -> datetime.date:
+        return min(p.part_end for p in self.parts.values())
+
+    def is_open(self) -> bool:
+        reference_time = now()
+        return bool(
+            self.registration_start
+            and self.registration_start <= reference_time
+            and (self.registration_hard_limit is None
+                 or self.registration_hard_limit >= reference_time))
+
 
 @dataclasses.dataclass
 class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
 
     title: str
     shortname: str
@@ -228,6 +265,7 @@ class CourseTrack(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
+    part_id: vtypes.ProtoID
 
     title: str
     shortname: str
@@ -243,6 +281,7 @@ class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
 
     kind: const.EventFeeType
     title: str
@@ -256,6 +295,7 @@ class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
 
     field_name: vtypes.RestrictiveIdentifier
     title: str
@@ -277,13 +317,14 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
 
     title: str
     shortname: str
     notes: Optional[str]
     constraint_type: const.EventPartGroupType
 
-    parts: dict[vtypes.ID, EventPart] = dataclasses.field(default_factory=dict)
+    parts: CdEDataclassMap[EventPart] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -310,6 +351,7 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
 
     title: str
     shortname: str
@@ -317,7 +359,7 @@ class TrackGroup(EventDataclass):
     sortkey: int
     constraint_type: const.CourseTrackGroupType
 
-    tracks: dict[vtypes.ID, CourseTrack] = dataclasses.field(default_factory=dict)
+    tracks: CdEDataclassMap[CourseTrack] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

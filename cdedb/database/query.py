@@ -10,8 +10,7 @@ import decimal
 import enum
 import logging
 from typing import (
-    TYPE_CHECKING, Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union,
-    cast,
+    Collection, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast,
 )
 
 import psycopg2.extensions
@@ -20,9 +19,6 @@ import psycopg2.extras
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 from cdedb.database.conversions import from_db_output, to_db_input
-
-if TYPE_CHECKING:
-    from cdedb.models.event import EventDataclass
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or

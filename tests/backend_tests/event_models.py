@@ -31,6 +31,7 @@ class TestEventModels(BackendTest):
                 2221, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
             iban="DE26370205000008068900",
             orga_address=vtypes.Email("aka@example.cde"),
+            orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
                       " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
@@ -52,6 +53,7 @@ class TestEventModels(BackendTest):
             parts={
                 1: models.EventPart(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     title="Warmup",
                     shortname="Wu",
                     part_begin=datetime.date(2222, 2, 2),
@@ -62,6 +64,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventPart(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     title="Erste Hälfte",
                     shortname="1.H.",
                     part_begin=datetime.date(2222, 11, 1),
@@ -72,6 +75,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventPart(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     title="Zweite Hälfte",
                     shortname="2.H.",
                     part_begin=datetime.date(2222, 11, 11),
@@ -85,6 +89,7 @@ class TestEventModels(BackendTest):
             tracks={
                 1: models.CourseTrack(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    part_id=vtypes.ProtoID(2),
                     title="Morgenkreis (Erste Hälfte)",
                     shortname="Morgenkreis",
                     num_choices=4,
@@ -94,6 +99,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.CourseTrack(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    part_id=vtypes.ProtoID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
                     shortname="Kaffee",
                     num_choices=1,
@@ -103,6 +109,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.CourseTrack(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    part_id=vtypes.ProtoID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
                     shortname="Sitzung",
                     num_choices=3,
@@ -114,6 +121,7 @@ class TestEventModels(BackendTest):
             fields={
                 1: models.EventField(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="brings_balls",  # type: ignore[arg-type]
                     title="Bringt Bälle mit",
                     kind=const.FieldDatatypes.bool,
@@ -124,6 +132,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventField(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="transportation",  # type: ignore[arg-type]
                     title="Reist an mit",
                     kind=const.FieldDatatypes.str,
@@ -138,6 +147,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventField(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="lodge",  # type: ignore[arg-type]
                     title="Zimmerwünsche",
                     kind=const.FieldDatatypes.str,
@@ -148,6 +158,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.EventField(  # type: ignore[dict-item]
                     id=4,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="may_reserve",  # type: ignore[arg-type]
                     title="Würde auf Isomatte schlafen",
                     kind=const.FieldDatatypes.bool,
@@ -158,6 +169,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.EventField(  # type: ignore[dict-item]
                     id=5,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="room",  # type: ignore[arg-type]
                     title="Kursraum",
                     kind=const.FieldDatatypes.str,
@@ -168,6 +180,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.EventField(  # type: ignore[dict-item]
                     id=6,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="contamination",  # type: ignore[arg-type]
                     title="Verseuchung",
                     kind=const.FieldDatatypes.str,
@@ -183,6 +196,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventField(  # type: ignore[dict-item]
                     id=7,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="is_child",  # type: ignore[arg-type]
                     title="Ist U12",
                     kind=const.FieldDatatypes.bool,
@@ -193,6 +207,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventField(  # type: ignore[dict-item]
                     id=8,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     field_name="anzahl_GROSSBUCHSTABEN",  # type: ignore[arg-type]
                     title="Anzahl Großbuchstaben",
                     kind=const.FieldDatatypes.int,
@@ -205,6 +220,7 @@ class TestEventModels(BackendTest):
             fees={
                 1: models.EventFee(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag Warmup',
                     amount=decimal.Decimal('10.50'),
@@ -213,6 +229,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventFee(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 1. Hälfte',
                     amount=decimal.Decimal('123.00'),
@@ -221,6 +238,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventFee(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 2. Hälfte',
                     amount=decimal.Decimal('450.99'),
@@ -229,6 +247,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.EventFee(  # type: ignore[dict-item]
                     id=4,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
@@ -237,6 +256,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.EventFee(  # type: ignore[dict-item]
                     id=5,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
@@ -245,6 +265,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.EventFee(  # type: ignore[dict-item]
                     id=6,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
@@ -253,6 +274,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventFee(  # type: ignore[dict-item]
                     id=7,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.external,
                     title='Externenzusatzbeitrag',
                     amount=decimal.Decimal('5.00'),
@@ -261,6 +283,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventFee(  # type: ignore[dict-item]
                     id=8,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.solidarity,
                     title='Mengenrabatt',
                     amount=decimal.Decimal('-0.01'),
@@ -269,6 +292,7 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.EventFee(  # type: ignore[dict-item]
                     id=9,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
                     title='Orgarabatt',
                     amount=decimal.Decimal('-50.00'),
@@ -291,14 +315,14 @@ class TestEventModels(BackendTest):
             reality.to_database(),
         )
         self.assertEqual(
-            expectation,
-            reality,
+            vars(expectation),
+            vars(reality),
         )
 
-        event_id = 4
+        event_id = vtypes.ProtoID(4)
 
         expectation = models.Event(
-            id=event_id,  # type: ignore[arg-type]
+            id=event_id,
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
@@ -309,6 +333,7 @@ class TestEventModels(BackendTest):
             registration_hard_limit=None,
             iban="DE26370205000008068900",
             orga_address=None,
+            orgas={5},  # type: ignore[arg-type]
             registration_text=None,
             mail_text=None,
             participant_info=None,
@@ -327,6 +352,7 @@ class TestEventModels(BackendTest):
             parts={
                 6: models.EventPart(  # type: ignore[dict-item]
                     id=6,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="1. Hälfte Oberwesel",
                     shortname="O1",
                     part_begin=datetime.date(3000, 1, 1),
@@ -337,6 +363,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventPart(  # type: ignore[dict-item]
                     id=7,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="1. Hälfte Windischleuba",
                     shortname="W1",
                     part_begin=datetime.date(3000, 1, 1),
@@ -347,6 +374,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventPart(  # type: ignore[dict-item]
                     id=8,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="1. Hälfte Kaub",
                     shortname="K1",
                     part_begin=datetime.date(3000, 1, 1),
@@ -357,6 +385,7 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.EventPart(  # type: ignore[dict-item]
                     id=9,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="2. Hälfte Oberwesel",
                     shortname="O2",
                     part_begin=datetime.date(3000, 2, 1),
@@ -367,6 +396,7 @@ class TestEventModels(BackendTest):
                 ),
                 10: models.EventPart(  # type: ignore[dict-item]
                     id=10,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="2. Hälfte Windischleuba",
                     shortname="W2",
                     part_begin=datetime.date(3000, 2, 1),
@@ -377,6 +407,7 @@ class TestEventModels(BackendTest):
                 ),
                 11: models.EventPart(  # type: ignore[dict-item]
                     id=11,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="2. Hälfte Kaub",
                     shortname="K2",
                     part_begin=datetime.date(3000, 2, 1),
@@ -387,6 +418,7 @@ class TestEventModels(BackendTest):
                 ),
                 12: models.EventPart(  # type: ignore[dict-item]
                     id=12,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Silvesterfeier",
                     shortname="Feier",
                     part_begin=datetime.date(2999, 12, 31),
@@ -402,6 +434,7 @@ class TestEventModels(BackendTest):
             fees={
                 16: models.EventFee(  # type: ignore[dict-item]
                     id=16,  # type: ignore[arg-type]
+                    event_id=event_id,
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -412,6 +445,7 @@ class TestEventModels(BackendTest):
             part_groups={
                 1: models.PartGroup(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="1. Hälfte",
                     shortname="1.H.",
                     notes=None,
@@ -420,6 +454,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.PartGroup(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="2. Hälfte",
                     shortname="2.H.",
                     notes=None,
@@ -428,6 +463,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.PartGroup(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Oberwesel",
                     shortname="OW",
                     notes=None,
@@ -436,6 +472,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.PartGroup(  # type: ignore[dict-item]
                     id=4,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Windischleuba",
                     shortname="WS",
                     notes=None,
@@ -444,6 +481,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.PartGroup(  # type: ignore[dict-item]
                     id=5,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kaub",
                     shortname="KA",
                     notes=None,
@@ -452,6 +490,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.PartGroup(  # type: ignore[dict-item]
                     id=6,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Teilnehmer 1. Hälfte",
                     shortname="TN 1H",
                     notes=None,
@@ -460,6 +499,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.PartGroup(  # type: ignore[dict-item]
                     id=7,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Teilnehmer 2. Hälfte",
                     shortname="TN 2H",
                     notes=None,
@@ -468,6 +508,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.PartGroup(  # type: ignore[dict-item]
                     id=8,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kurse 1. Hälfte",
                     shortname="Kurs 1H",
                     notes=None,
@@ -476,6 +517,7 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.PartGroup(  # type: ignore[dict-item]
                     id=9,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kurse 2. Hälfte",
                     shortname="Kurs 2H",
                     notes=None,
@@ -486,6 +528,7 @@ class TestEventModels(BackendTest):
             track_groups={
                 1: models.TrackGroup(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kurs 1. Hälfte",
                     shortname="Kurs1",
                     notes=None,
@@ -495,6 +538,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.TrackGroup(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kurs 2. Hälfte nachmittags",
                     shortname="Kurs2n",
                     notes=None,
@@ -504,6 +548,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.TrackGroup(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
+                    event_id=event_id,
                     title="Kurs 2. Hälfte morgens",
                     shortname="Kurs2m",
                     notes=None,
