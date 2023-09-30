@@ -409,9 +409,58 @@ class QuestionnaireRow(EventDataclass):
 @dataclasses.dataclass
 class Course(EventDataclass):
     database_table = "event.courses"
+    entity_key = "id"
 
     # event: Event
-    segments: dict[CourseTrack, bool]
+    event_id: vtypes.ID
+
+    segments: set[vtypes.ID]
+    active_segments: set[vtypes.ID]
+
+    nr: str
+    title: str
+    shortname: str
+    description: str
+
+    instructors: Optional[str]
+
+    min_size: int
+    max_size: int
+
+    notes: Optional[str]
+
+    fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+                SELECT
+                    {', '.join(cls.database_fields())},
+                    array(
+                        SELECT track_id
+                        FROM event.course_segments
+                        WHERE course_id = event.courses.id
+                    ) AS segments,
+                    array(
+                        SELECT track_id
+                        FROM event.course_segments
+                        WHERE course_id = event.courses.id AND is_active = True
+                    ) AS active_segments
+                FROM
+                    event.courses
+                WHERE
+                    id = ANY(%s)
+            """
+        params = (entities,)
+        return query, params
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['fields'] = cast_fields(data['fields'], data.pop('event_fields'))
+        data['segments'] = set(data['segments'])
+        data['active_segments'] = set(data['active_segments'])
+        return super().from_database(data)
 
 #
 # get_lodgement_group + get_lodgement

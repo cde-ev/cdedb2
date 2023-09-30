@@ -574,6 +574,61 @@ class TestEventModels(BackendTest):
         self.assertEqual(expectation, reality)
 
     @as_users("anton")
+    def test_get_courses(self) -> None:
+        course_id = 1
+        print(self.event.new_get_course(self.key, course_id))
+
+        expectation = models.Course(
+            id=course_id,
+            event_id=1,
+            segments={1, 3},
+            active_segments={1, 3},
+            nr='α',
+            title='Planetenretten für Anfänger',
+            shortname='Heldentum',
+            description='Wir werden die Bäume drücken.',
+            instructors='ToFi & Co',
+            min_size=2,
+            max_size=10,
+            notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
+            fields={'room': 'Wald'}
+        )
+        reality = self.event.new_get_course(self.key, course_id)
+
+        self.assertEqual(
+            vars(expectation),
+            vars(reality),
+        )
+
+        course_ids = [1, 2]
+        print(self.event.new_get_courses(self.key, course_ids))
+
+        expectation = {
+            1: expectation,
+            2: models.Course(
+                id=2,
+                event_id=1,
+                segments={1, 2, 3},
+                active_segments={1, 3},
+                nr='β',
+                title='Lustigsein für Fortgeschrittene',
+                shortname='Kabarett',
+                description='Inklusive Post, Backwaren und frühzeitigem Ableben.',
+                instructors='Bernd Lucke',
+                min_size=10,
+                max_size=20,
+                notes='Kursleiter hat Sekt angefordert.',
+                fields={'room': 'Theater'}
+            )
+        }
+        reality = self.event.new_get_courses(self.key, course_ids)
+
+        self.assertEqual(
+            expectation,
+            reality,
+        )
+
+    @as_users("anton")
     def test_get_lodgements(self) -> None:
         lodgement_id = 1
         print(self.event.new_get_lodgement(self.key, lodgement_id))
