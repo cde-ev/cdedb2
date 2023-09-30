@@ -85,14 +85,6 @@ class AssembyAttendees:
 
 
 @dataclasses.dataclass(frozen=True)
-class ConfigurationGroupedBallots:
-    ballots: Dict[BallotConfiguration, Set[int]]
-
-    def __iter__(self) -> Iterator[Tuple[BallotConfiguration, Set[int]]]:
-        return iter(xsorted(self.ballots.items()))
-
-
-@dataclasses.dataclass(frozen=True)
 class GroupedBallots:
     concluded: CdEDBObjectMap
     extended: CdEDBObjectMap
@@ -2362,7 +2354,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def group_ballots_by_config(self, rs: RequestState, assembly_id: int
-                                ) -> ConfigurationGroupedBallots:
+                                ) -> Dict[BallotConfiguration, Set[int]]:
         """Group ballot ids by their configuration."""
         query = """
             SELECT
@@ -2371,17 +2363,18 @@ class AssemblyBackend(AbstractBackend):
             FROM assembly.ballots
             WHERE assembly_id = %s
             GROUP BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
+            ORDER BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         params = (assembly_id,)
-        return ConfigurationGroupedBallots({
+        return {
             BallotConfiguration(
                 e['vote_begin'], e['vote_end'], e['vote_extension_end'],
                 e['abs_quorum'], e['rel_quorum'],
             ):
                 set(e['ballot_ids'])
             for e in self.query_all(rs, query, params)
-        })
+        }
 
     @access("assembly")
     def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
