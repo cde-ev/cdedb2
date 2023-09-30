@@ -302,15 +302,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
             if not track_group.constraint_type == ccs:
-                continue
-            simple_tracks.difference_update(track_group.track_ids)
+                continue  # type: ignore[unreachable]
+            simple_tracks.difference_update(track_group.tracks)
             track_group_map.update(
-                {track_id: track_group_id for track_id in track_group.track_ids})
-            for track_id in track_group.track_ids:
-                ccos_per_part[tracks[track_id].part_id].append(
+                {track_id: track_group_id for track_id in track_group.tracks})
+            for track in track_group.tracks.values():
+                ccos_per_part[track.part_id].append(
                     f"group-{track_group_id}")
-                reference_tracks[track_group_id] = tracks[track_id]
-                track_group.num_choices = tracks[track_id].num_choices
+                reference_tracks[track_group_id] = track
+                track_group.num_choices = track.num_choices
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
@@ -323,7 +323,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             course_id: {
                 tg_id: {
                     event.tracks[t_id].part_id for t_id in
-                    (tg.track_ids & course['segments'])
+                    (set(tg.tracks) & course['segments'])
                 }
                 for tg_id, tg in event.track_groups.items()
                 if tg.constraint_type == ccs
@@ -593,7 +593,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         synced_data = request_extractor(rs, synced_params)
 
         for group_id in sync_track_groups:
-            for track_id in track_groups[group_id]['track_ids']:
+            for track_id in track_groups[group_id].tracks:
                 # Be careful not to override non-present keys here, due to multiedit.
                 for i in range(num_choices(group_id)):
                     key = f"group{group_id}.course_choice_{i}"
@@ -833,8 +833,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 f"track{track_id}.course_choice_{i}": choice
                 for i, choice in enumerate(reg_track['choices'])
             }
-            for tg_id, tg in event.tracks[track_id]['track_groups'].items():
-                if not tg['constraint_type'].is_sync():
+            for tg_id, tg in event.tracks[track_id].track_groups.items():
+                if not tg.constraint_type.is_sync():
                     continue
                 values |= {
                     f"group{tg_id}.{key}": value
@@ -1171,11 +1171,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             if not tg.constraint_type.is_sync():
                 continue
             repr_track = next(iter(tg.tracks))
-            for key, value in representative['tracks'][repr_track.id].items():
+            for key, value in representative['tracks'][repr_track].items():
                 if key == 'choices':
                     continue
                 if all(
-                    r['tracks'][track.id][key] == value
+                    r['tracks'][track][key] == value
                     for track in tg.tracks for r in reg_vals
                 ):
                     reg_data[f'group{tg_id}.{key}'] = value

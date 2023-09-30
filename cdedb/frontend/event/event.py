@@ -412,7 +412,7 @@ class EventEventMixin(EventBaseFrontend):
             e.id for e in xsorted(part.tracks.values(),
                                      key=EntitySorter.course_track)]
 
-        current = copy.deepcopy(part)
+        current = part.as_dict()
         del current['id']
         del current['tracks']
 
@@ -422,8 +422,9 @@ class EventEventMixin(EventBaseFrontend):
         readonly_synced_tracks = set()
         for track_id, track in xsorted(part.tracks.items()):
             for k in EVENT_TRACK_COMMON_FIELDS:
-                current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
-            for tg_id, tg in track['track_groups'].items():
+                name = drow_name(k, entity_id=track_id, prefix="track")
+                current[name] = track.as_dict()[k]
+            for tg_id, tg in track.track_groups.items():
                 if tg.constraint_type.is_sync():
                     if tg_id in sync_groups:
                         readonly_synced_tracks.add(track_id)
@@ -473,7 +474,7 @@ class EventEventMixin(EventBaseFrontend):
         #
         # process the dynamic track input
         #
-        track_existing = rs.ambience['event'].parts[part_id]['tracks']
+        track_existing = rs.ambience['event'].parts[part_id].tracks
         track_spec = EVENT_TRACK_COMMON_FIELDS
         track_data = process_dynamic_input(
             rs, vtypes.EventTrack, track_existing, track_spec, prefix="track")
@@ -505,11 +506,11 @@ class EventEventMixin(EventBaseFrontend):
                         n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
             if track and track_id in track_existing:
-                for tg_id, tg in track_existing[track_id]['track_groups'].items():
-                    if tg['constraint_type'].is_sync() and tg_id not in sync_groups:
+                for tg_id, tg in track_existing[track_id].track_groups.items():
+                    if tg.constraint_type.is_sync() and tg_id not in sync_groups:
                         sync_groups.add(tg_id)
-                        for t_id in tg['track_ids']:
-                            p_id = rs.ambience['event'].tracks[t_id]['part_id']
+                        for t_id in tg.tracks:
+                            p_id = rs.ambience['event'].tracks[t_id].part_id
                             if p_id not in part_data:
                                 part_data[p_id] = vtypes.EventPart({'tracks': {}})
                             if t_id not in part_data[p_id]['tracks']:
