@@ -108,7 +108,7 @@ class EventDataclass(CdEDataclass):
         return self._asdict_inner(self, dict)
 
     def _asdict_inner(self, obj: Any, dict_factory: Any):  # type: ignore[no-untyped-def]
-        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
+        if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]  # pylint: disable=protected-access
             result = []
             for f in dataclasses.fields(obj):
                 #######################################################
@@ -379,14 +379,17 @@ class CourseChoiceObject(abc.ABC):
         init=False, compare=False, repr=False)
 
     @abc.abstractmethod
-    def is_complex(self) -> bool: ...
+    def is_complex(self) -> bool:
+        ...
 
     @property
     @abc.abstractmethod
-    def reference_track(self) -> "CourseTrack": ...
+    def reference_track(self) -> "CourseTrack":
+        ...
 
     @abc.abstractmethod
-    def as_dict(self) -> dict[str, Any]: ...
+    def as_dict(self) -> dict[str, Any]:
+        ...
 
 
 @dataclasses.dataclass
@@ -662,9 +665,12 @@ class LodgementGroup(EventDataclass):
     event_id: vtypes.ID
     title: str
 
-    lodgement_ids: set[int] = dataclasses.field(default_factory=set, metadata={'database_exclude': True})
-    regular_capacity: int = dataclasses.field(default=0, metadata={'database_exclude': True})
-    camping_mat_capacity: int = dataclasses.field(default=0, metadata={'database_exclude': True})
+    lodgement_ids: set[int] = dataclasses.field(default_factory=set,
+                                                metadata={'database_exclude': True})
+    regular_capacity: int = dataclasses.field(default=0,
+                                              metadata={'database_exclude': True})
+    camping_mat_capacity: int = dataclasses.field(default=0,
+                                                  metadata={'database_exclude': True})
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

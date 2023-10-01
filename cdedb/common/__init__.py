@@ -43,6 +43,7 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
+    from cdedb.models.event import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
@@ -1434,7 +1435,7 @@ def parse_datetime(
     return ret.astimezone(pytz.utc)
 
 
-def cast_fields(data: CdEDBObject, fields: "models_event.CdEDataclassMap[models_event.EventField]"
+def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
                 ) -> CdEDBObject:
     """Helper to deserialize json fields.
 

@@ -37,7 +37,8 @@ class TestEventModels(BackendTest):
                       " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
                       " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
                       " warten.",
-            participant_info="Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
+            participant_info="Die Kristallkugel hat gute Dienste geleistet,"
+                             " nicht wahr?",
             notes="Todoliste ... just kidding ;)",
             field_definition_notes="Die Sortierung der Felder bitte nicht ändern!",
             offline_lock=False,
@@ -495,7 +496,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 1. Hälfte",
                     shortname="TN 1H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
                 7: models.PartGroup(
@@ -504,7 +505,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 2. Hälfte",
                     shortname="TN 2H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
                 8: models.PartGroup(

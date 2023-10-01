@@ -290,7 +290,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
     class _GetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
-    old_get_event: _GetEventProtocol = singularize(old_get_events, "event_ids", "event_id")
+    old_get_event: _GetEventProtocol = singularize(old_get_events, "event_ids",
+                                                   "event_id")
 
     @access("anonymous")
     def get_events(self, rs: RequestState, event_ids: Collection[int]

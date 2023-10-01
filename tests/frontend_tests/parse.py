@@ -2,8 +2,8 @@
 # pylint: disable=missing-module-docstring
 import collections
 import csv
-import types
 import re
+import types
 from datetime import datetime
 from typing import Any, cast
 

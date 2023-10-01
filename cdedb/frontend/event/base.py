@@ -495,7 +495,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         :return: A collection of data pertaining to the constraint violations.
         """
 
-        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, models.PartGroup]]] = {
+        PartGroupsByType = Dict[const.EventPartGroupType,
+                                List[Tuple[int, models.PartGroup]]]
+        pgs_by_type: PartGroupsByType = {
             constraint: [
                 (pg.id, pg) for pg in xsorted(rs.ambience['event'].part_groups.values())
                 if pg.constraint_type == constraint

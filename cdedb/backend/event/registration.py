@@ -828,7 +828,8 @@ class EventRegistrationBackend(EventBaseBackend):
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(event_fields.values()))
+                    ret[anid]['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
 
         return ret
 
