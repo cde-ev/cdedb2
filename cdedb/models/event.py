@@ -27,7 +27,6 @@ import copy
 import dataclasses
 import datetime
 import decimal
-import functools
 from abc import ABC
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, Protocol,
@@ -65,7 +64,7 @@ class SorterProtocol(Protocol):
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
     entity_key: ClassVar[str] = "event_id"
-    sorter: ClassVar[SorterProtocol] = lambda x: (x['id'],)
+    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]] = lambda x: (x['id'],)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -168,7 +167,8 @@ class EventDataclass(CdEDataclass):
     def __lt__(self, other: "EventDataclass") -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return self.sorter(self.as_dict()) < self.sorter(other.as_dict())
+        return self.__class__.sorter(
+            self.as_dict()) < other.__class__.sorter(other.as_dict())
 
 
 #
