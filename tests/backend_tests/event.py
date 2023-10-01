@@ -17,7 +17,6 @@ import pytz
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
     RequestState, nearly_now, now, unwrap,
@@ -30,6 +29,7 @@ from tests.common import (
     ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
     storage,
 )
+import cdedb.models.event as models_event
 
 UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
 NON_EXISTING_ID = 2 ** 30
@@ -2918,7 +2918,7 @@ class TestEventBackend(BackendTest):
                              hint: str = None) -> None:
             """Helper function to replace some placeholder values inside of a dict."""
             if hint == 'fields':
-                new = cast_fields(new, event['fields'])
+                new = models_event.EventField.cast_fields(new, event['fields'])
             deletions = [key for key, val in new.items()
                          if val is None and key in old]
             for key in deletions:
