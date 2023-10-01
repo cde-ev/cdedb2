@@ -26,9 +26,8 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
-from cdedb.filter import keydictsort_filter
 from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
