@@ -795,9 +795,9 @@ class EventRegistrationInXChoiceGrouper:
         self._sorted_part_groups = xsorted(event.part_groups.values())
         self._max_choices = max(track.num_choices for track in self._sorted_tracks)
         self._track_ids_per_part = {
-            part.id: set(part.tracks) for part in self._sorted_parts}
+            int(part.id): set(part.tracks) for part in self._sorted_parts}
         self._track_ids_per_part_group = {
-            part_group.id: set(itertools.chain.from_iterable(
+            int(part_group.id): set(itertools.chain.from_iterable(
                 self._track_ids_per_part[part_id]
                 for part_id in part_group.parts))
             for part_group in self._sorted_part_groups
@@ -852,12 +852,13 @@ class EventRegistrationInXChoiceGrouper:
 
     def __iter__(
             self
-    ) -> Iterator[Tuple[int, Dict[str, Dict[int, Optional[Set[int]]]]]]:
+    ) -> Iterator[tuple[int, dict[str, dict[int, Optional[set[int]]]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
+        # ret: dict[int, dict[str, dict[int, Optional[set[int]]]]] = {
         ret = {
             x: {
                 'tracks': {
-                    track.id: self._get_ids(x, (track.id,))
+                    int(track.id): self._get_ids(x, (track.id,))
                     for track in self._sorted_tracks
                 },
                 'parts': {

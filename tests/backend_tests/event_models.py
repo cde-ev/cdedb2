@@ -1,6 +1,5 @@
 import datetime
 import decimal
-from pprint import pprint
 
 import pytz
 
@@ -51,7 +50,7 @@ class TestEventModels(BackendTest):
             use_additional_questionnaire=False,
             lodge_field=3,  # type: ignore[arg-type]
             parts={
-                1: models.EventPart(  # type: ignore[dict-item]
+                1: models.EventPart(
                     id=1,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     title="Warmup",
@@ -62,7 +61,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=4,  # type: ignore[arg-type]
                     tracks=(),  # type: ignore[arg-type]
                 ),
-                2: models.EventPart(  # type: ignore[dict-item]
+                2: models.EventPart(
                     id=2,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     title="Erste Hälfte",
@@ -73,7 +72,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=4,  # type: ignore[arg-type]
                     tracks=(1, 2),  # type: ignore[arg-type]
                 ),
-                3: models.EventPart(  # type: ignore[dict-item]
+                3: models.EventPart(
                     id=3,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     title="Zweite Hälfte",
@@ -87,7 +86,7 @@ class TestEventModels(BackendTest):
 
             },
             tracks={
-                1: models.CourseTrack(  # type: ignore[dict-item]
+                1: models.CourseTrack(
                     id=1,  # type: ignore[arg-type]
                     part_id=vtypes.ProtoID(2),
                     title="Morgenkreis (Erste Hälfte)",
@@ -97,7 +96,7 @@ class TestEventModels(BackendTest):
                     sortkey=1,
                     course_room_field=5,  # type: ignore[arg-type]
                 ),
-                2: models.CourseTrack(  # type: ignore[dict-item]
+                2: models.CourseTrack(
                     id=2,  # type: ignore[arg-type]
                     part_id=vtypes.ProtoID(2),
                     title="Kaffeekränzchen (Erste Hälfte)",
@@ -107,7 +106,7 @@ class TestEventModels(BackendTest):
                     sortkey=2,
                     course_room_field=5,  # type: ignore[arg-type]
                 ),
-                3: models.CourseTrack(  # type: ignore[dict-item]
+                3: models.CourseTrack(
                     id=3,  # type: ignore[arg-type]
                     part_id=vtypes.ProtoID(3),
                     title="Arbeitssitzung (Zweite Hälfte)",
@@ -119,7 +118,7 @@ class TestEventModels(BackendTest):
                 ),
             },
             fields={
-                1: models.EventField(  # type: ignore[dict-item]
+                1: models.EventField(
                     id=1,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="brings_balls",  # type: ignore[arg-type]
@@ -130,7 +129,7 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 ),
-                2: models.EventField(  # type: ignore[dict-item]
+                2: models.EventField(
                     id=2,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="transportation",  # type: ignore[arg-type]
@@ -145,7 +144,7 @@ class TestEventModels(BackendTest):
                         ["etc", "anything else"],
                     ]),
                 ),
-                3: models.EventField(  # type: ignore[dict-item]
+                3: models.EventField(
                     id=3,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="lodge",  # type: ignore[arg-type]
@@ -156,7 +155,7 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 ),
-                4: models.EventField(  # type: ignore[dict-item]
+                4: models.EventField(
                     id=4,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="may_reserve",  # type: ignore[arg-type]
@@ -167,7 +166,7 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 ),
-                5: models.EventField(  # type: ignore[dict-item]
+                5: models.EventField(
                     id=5,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="room",  # type: ignore[arg-type]
@@ -178,7 +177,7 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 ),
-                6: models.EventField(  # type: ignore[dict-item]
+                6: models.EventField(
                     id=6,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="contamination",  # type: ignore[arg-type]
@@ -194,7 +193,7 @@ class TestEventModels(BackendTest):
                         ["none", "no radiation"],
                     ]),
                 ),
-                7: models.EventField(  # type: ignore[dict-item]
+                7: models.EventField(
                     id=7,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="is_child",  # type: ignore[arg-type]
@@ -205,7 +204,7 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 ),
-                8: models.EventField(  # type: ignore[dict-item]
+                8: models.EventField(
                     id=8,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     field_name="anzahl_GROSSBUCHSTABEN",  # type: ignore[arg-type]
@@ -218,7 +217,7 @@ class TestEventModels(BackendTest):
                 )
             },
             fees={
-                1: models.EventFee(  # type: ignore[dict-item]
+                1: models.EventFee(
                     id=1,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -227,7 +226,7 @@ class TestEventModels(BackendTest):
                     condition='part.Wu',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                2: models.EventFee(  # type: ignore[dict-item]
+                2: models.EventFee(
                     id=2,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -236,7 +235,7 @@ class TestEventModels(BackendTest):
                     condition='part.1.H.',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                3: models.EventFee(  # type: ignore[dict-item]
+                3: models.EventFee(
                     id=3,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -245,7 +244,7 @@ class TestEventModels(BackendTest):
                     condition='part.2.H.',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                4: models.EventFee(  # type: ignore[dict-item]
+                4: models.EventFee(
                     id=4,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -254,7 +253,7 @@ class TestEventModels(BackendTest):
                     condition='part.Wu and field.is_child',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                5: models.EventFee(  # type: ignore[dict-item]
+                5: models.EventFee(
                     id=5,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -263,7 +262,7 @@ class TestEventModels(BackendTest):
                     condition='part.1.H. and field.is_child',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                6: models.EventFee(  # type: ignore[dict-item]
+                6: models.EventFee(
                     id=6,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -272,7 +271,7 @@ class TestEventModels(BackendTest):
                     condition='part.2.H. and field.is_child',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                7: models.EventFee(  # type: ignore[dict-item]
+                7: models.EventFee(
                     id=7,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.external,
@@ -281,7 +280,7 @@ class TestEventModels(BackendTest):
                     condition='any_part and not (is_member or field.is_child)',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                8: models.EventFee(  # type: ignore[dict-item]
+                8: models.EventFee(
                     id=8,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.solidarity,
@@ -290,7 +289,7 @@ class TestEventModels(BackendTest):
                     condition='all_parts',  # type: ignore[arg-type]
                     notes=None,
                 ),
-                9: models.EventFee(  # type: ignore[dict-item]
+                9: models.EventFee(
                     id=9,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
                     kind=const.EventFeeType.common,
@@ -350,7 +349,7 @@ class TestEventModels(BackendTest):
             use_additional_questionnaire=False,
             lodge_field=None,
             parts={
-                6: models.EventPart(  # type: ignore[dict-item]
+                6: models.EventPart(
                     id=6,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Oberwesel",
@@ -361,7 +360,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(6,),  # type: ignore[arg-type]
                 ),
-                7: models.EventPart(  # type: ignore[dict-item]
+                7: models.EventPart(
                     id=7,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Windischleuba",
@@ -372,7 +371,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(7,),  # type: ignore[arg-type]
                 ),
-                8: models.EventPart(  # type: ignore[dict-item]
+                8: models.EventPart(
                     id=8,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Kaub",
@@ -383,7 +382,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(8,),  # type: ignore[arg-type]
                 ),
-                9: models.EventPart(  # type: ignore[dict-item]
+                9: models.EventPart(
                     id=9,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Oberwesel",
@@ -394,7 +393,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(9, 10),  # type: ignore[arg-type]
                 ),
-                10: models.EventPart(  # type: ignore[dict-item]
+                10: models.EventPart(
                     id=10,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Windischleuba",
@@ -405,7 +404,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(11, 12),  # type: ignore[arg-type]
                 ),
-                11: models.EventPart(  # type: ignore[dict-item]
+                11: models.EventPart(
                     id=11,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Kaub",
@@ -416,7 +415,7 @@ class TestEventModels(BackendTest):
                     camping_mat_field=None,
                     tracks=(13, 14, 15),  # type: ignore[arg-type]
                 ),
-                12: models.EventPart(  # type: ignore[dict-item]
+                12: models.EventPart(
                     id=12,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Silvesterfeier",
@@ -432,7 +431,7 @@ class TestEventModels(BackendTest):
             tracks=self.event.new_get_event(self.key, event_id).tracks,
             fields={},
             fees={
-                16: models.EventFee(  # type: ignore[dict-item]
+                16: models.EventFee(
                     id=16,  # type: ignore[arg-type]
                     event_id=event_id,
                     kind=const.EventFeeType.common,
@@ -443,7 +442,7 @@ class TestEventModels(BackendTest):
                 ),
             },
             part_groups={
-                1: models.PartGroup(  # type: ignore[dict-item]
+                1: models.PartGroup(
                     id=1,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte",
@@ -452,7 +451,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.Statistic,
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
-                2: models.PartGroup(  # type: ignore[dict-item]
+                2: models.PartGroup(
                     id=2,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte",
@@ -461,7 +460,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.Statistic,
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
-                3: models.PartGroup(  # type: ignore[dict-item]
+                3: models.PartGroup(
                     id=3,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Oberwesel",
@@ -470,7 +469,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.Statistic,
                     parts=(6, 9),  # type: ignore[arg-type]
                 ),
-                4: models.PartGroup(  # type: ignore[dict-item]
+                4: models.PartGroup(
                     id=4,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Windischleuba",
@@ -479,7 +478,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.Statistic,
                     parts=(7, 10),  # type: ignore[arg-type]
                 ),
-                5: models.PartGroup(  # type: ignore[dict-item]
+                5: models.PartGroup(
                     id=5,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kaub",
@@ -488,7 +487,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.Statistic,
                     parts=(8, 11),  # type: ignore[arg-type]
                 ),
-                6: models.PartGroup(  # type: ignore[dict-item]
+                6: models.PartGroup(
                     id=6,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Teilnehmer 1. Hälfte",
@@ -497,7 +496,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
-                7: models.PartGroup(  # type: ignore[dict-item]
+                7: models.PartGroup(
                     id=7,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Teilnehmer 2. Hälfte",
@@ -506,7 +505,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
-                8: models.PartGroup(  # type: ignore[dict-item]
+                8: models.PartGroup(
                     id=8,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurse 1. Hälfte",
@@ -515,7 +514,7 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.mutually_exclusive_courses,
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
-                9: models.PartGroup(  # type: ignore[dict-item]
+                9: models.PartGroup(
                     id=9,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurse 2. Hälfte",
@@ -526,7 +525,7 @@ class TestEventModels(BackendTest):
                 ),
             },
             track_groups={
-                1: models.SyncTrackGroup(  # type: ignore[dict-item]
+                1: models.SyncTrackGroup(
                     id=1,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 1. Hälfte",
@@ -536,7 +535,7 @@ class TestEventModels(BackendTest):
                     sortkey=1,
                     tracks=(6, 7, 8),  # type: ignore[arg-type]
                 ),
-                2: models.SyncTrackGroup(  # type: ignore[dict-item]
+                2: models.SyncTrackGroup(
                     id=2,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 2. Hälfte nachmittags",
@@ -546,7 +545,7 @@ class TestEventModels(BackendTest):
                     sortkey=4,
                     tracks=(10, 12, 14),  # type: ignore[arg-type]
                 ),
-                3: models.SyncTrackGroup(  # type: ignore[dict-item]
+                3: models.SyncTrackGroup(
                     id=3,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 2. Hälfte morgens",
@@ -579,10 +578,10 @@ class TestEventModels(BackendTest):
         # print(self.event.new_get_course(self.key, course_id))
 
         expectation = models.Course(
-            id=course_id,
-            event_id=1,
-            segments={1, 3},
-            active_segments={1, 3},
+            id=course_id,  # type: ignore[arg-type]
+            event_id=1,  # type: ignore[arg-type]
+            segments={1, 3},  # type: ignore[arg-type]
+            active_segments={1, 3},  # type: ignore[arg-type]
             nr='α',
             title='Planetenretten für Anfänger',
             shortname='Heldentum',
@@ -606,10 +605,10 @@ class TestEventModels(BackendTest):
         expectation = {
             1: expectation,
             2: models.Course(
-                id=2,
-                event_id=1,
-                segments={1, 2, 3},
-                active_segments={1, 3},
+                id=2,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
+                segments={1, 2, 3},  # type: ignore[arg-type]
+                active_segments={1, 3},  # type: ignore[arg-type]
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',
                 shortname='Kabarett',
@@ -634,14 +633,14 @@ class TestEventModels(BackendTest):
         # print(self.event.new_get_lodgement(self.key, lodgement_id))
 
         expectation = models.Lodgement(
-            id=lodgement_id,
-            event_id=1,
+            id=lodgement_id,  # type: ignore[arg-type]
+            event_id=1,  # type: ignore[arg-type]
             group=models.LodgementGroup(
-                id=2,
-                event_id=1,
+                id=2,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
                 title='AußenWohnGruppe',
             ),
-            group_id=2,
+            group_id=2,  # type: ignore[arg-type]
             title='Warme Stube',
             regular_capacity=5,
             camping_mat_capacity=1,
@@ -662,56 +661,56 @@ class TestEventModels(BackendTest):
 
         expectation = {
             1: models.Lodgement(
-                id=1,
-                event_id=1,
+                id=1,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
                 group=models.LodgementGroup(
-                    id=2,
-                    event_id=event_id,
+                    id=2,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     title="AußenWohnGruppe",
                 ),
-                group_id=2,
+                group_id=2,  # type: ignore[arg-type]
                 title='Warme Stube',
                 regular_capacity=5,
                 camping_mat_capacity=1,
                 notes=None,
                 fields={'contamination': 'high'}),
             2: models.Lodgement(
-                id=2,
-                event_id=1,
+                id=2,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
                 group=models.LodgementGroup(
-                    id=1,
-                    event_id=event_id,
+                    id=1,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     title="Haupthaus",
                 ),
-                group_id=1,
+                group_id=1,  # type: ignore[arg-type]
                 title='Kalte Kammer',
                 regular_capacity=10,
                 camping_mat_capacity=2,
                 notes='Dafür mit Frischluft.',
                 fields={'contamination': 'none'}),
             3: models.Lodgement(
-                id=3,
-                event_id=1,
+                id=3,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
                 group=models.LodgementGroup(
-                    id=3,
-                    event_id=event_id,
+                    id=3,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     title="Sonstige",
                 ),
-                group_id=3,
+                group_id=3,  # type: ignore[arg-type]
                 title='Kellerverlies',
                 regular_capacity=0,
                 camping_mat_capacity=100,
                 notes='Nur für Notfälle.',
                 fields={'contamination': 'low'}),
             4: models.Lodgement(
-                id=4,
-                event_id=1,
+                id=4,  # type: ignore[arg-type]
+                event_id=1,  # type: ignore[arg-type]
                 group=models.LodgementGroup(
-                    id=1,
-                    event_id=event_id,
+                    id=1,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     title="Haupthaus",
                 ),
-                group_id=1,
+                group_id=1,  # type: ignore[arg-type]
                 title='Einzelzelle',
                 regular_capacity=1,
                 camping_mat_capacity=0,
@@ -733,26 +732,26 @@ class TestEventModels(BackendTest):
 
         expectation = {
             1: models.LodgementGroup(
-                id=1,
-                event_id=event_id,
+                id=1,  # type: ignore[arg-type]
+                event_id=event_id,  # type: ignore[arg-type]
                 title="Haupthaus",
-                lodgement_ids=[2, 4],
+                lodgement_ids={2, 4},
                 regular_capacity=11,
                 camping_mat_capacity=2,
             ),
             2: models.LodgementGroup(
-                id=2,
-                event_id=event_id,
+                id=2,  # type: ignore[arg-type]
+                event_id=event_id,  # type: ignore[arg-type]
                 title="AußenWohnGruppe",
-                lodgement_ids=[1],
+                lodgement_ids={1},
                 regular_capacity=5,
                 camping_mat_capacity=1,
             ),
             3: models.LodgementGroup(
-                id=3,
-                event_id=event_id,
+                id=3,  # type: ignore[arg-type]
+                event_id=event_id,  # type: ignore[arg-type]
                 title="Sonstige",
-                lodgement_ids=[3],
+                lodgement_ids={3},
                 regular_capacity=0,
                 camping_mat_capacity=100,
             ),

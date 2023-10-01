@@ -665,7 +665,7 @@ class LodgementGroup(EventDataclass):
     sorter = EntitySorter.lodgement_group
 
     # event: Event
-    event_id: int
+    event_id: vtypes.ID
     title: str
 
     lodgement_ids: set[int] = dataclasses.field(default_factory=set, metadata={'database_exclude': True})
@@ -699,9 +699,9 @@ class Lodgement(EventDataclass):
     sorter = lambda x: (x['group']['title'], x['group']['id'], x['title'], x['id'])
 
     # event: Event
-    event_id: int
+    event_id: vtypes.ID
     group: LodgementGroup = dataclasses.field(metadata={'database_exclude': True})
-    group_id: int
+    group_id: vtypes.ID
 
     title: str
     regular_capacity: int

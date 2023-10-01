@@ -1213,7 +1213,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
         }
 
     # Presort part specs so we can iterate over them in order.
-    part_specs = {part.id: get_part_spec(part) for part in sorted_parts}
+    part_specs = {int(part.id): get_part_spec(part) for part in sorted_parts}
 
     # Add entries for individual parts.
     for part_id, part_spec in part_specs.items():
