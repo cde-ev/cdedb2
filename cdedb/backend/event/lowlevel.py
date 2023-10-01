@@ -1216,7 +1216,7 @@ class EventLowLevelBackend(AbstractBackend):
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
                 if entries := updated_field.get('entries'):
-                    updated_field['entries'] = list(entries.items())
+                    updated_field['entries'] = list(map(list, entries.items()))
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
                     if event_fees_per_field[x]:
