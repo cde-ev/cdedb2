@@ -220,7 +220,7 @@
                                         ({% trans registered=util.href(link, gettext("registered")) -%}
                                             already {{ registered }}
                                         {% endtrans %}
-                                        {%- if dashboard['events_payment_pending'][event_id] -%}
+                                        {%- if dashboard['events_payment_pending'][event.id] -%}
                                             , {% trans %}payment pending{% endtrans %}
                                         {%- endif %})
                                         {%- if event['use_additional_questionnaire'] %}
