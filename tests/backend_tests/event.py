@@ -193,9 +193,6 @@ class TestEventBackend(BackendTest):
         data['is_visible'] = False
         data['lodge_field'] = None
         data['orga_address'] = None
-        data['begin'] = datetime.date(2109, 8, 7)
-        data['end'] = datetime.date(2110, 8, 20)
-        data['is_open'] = True
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})
         data['parts'][-2].update({'id': 1002})
@@ -215,15 +212,15 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
-                    data['parts'][part]['part_groups'] = {}
+                    data['parts'][part]['part_group_ids'] = set()
                     self.assertEqual(
                         set(x['title'] for x in data['parts'][part]['tracks'].values()),
                         set(x.title for x in tmp.parts[part].tracks.values()))
-                    data['parts'][part]['tracks'] = tmp.parts[part].tracks
+                    data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
                     del data['parts'][oldpart]
                     break
         for track in data['tracks'].values():
-            track['track_groups'] = {}
+            track['track_group_ids'] = set()
         field_map: dict[str, int] = {}
         for field in tmp.fields:
             for oldfield in data['fields']:
@@ -348,9 +345,9 @@ class TestEventBackend(BackendTest):
         changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         data['parts'][part_map["Second coming"]] = changed_part
         for part in data['parts'].values():
-            part['part_groups'] = {}
+            part['part_group_ids'] = set()
             for track in part['tracks'].values():
-                track['track_groups'] = {}
+                track['track_group_ids'] = set()
         for field in tmp.fields:
             if tmp.fields[field].field_name == "kuea":
                 field_map[tmp.fields[field].field_name] = field
@@ -362,8 +359,6 @@ class TestEventBackend(BackendTest):
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
         data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
-        data['begin'] = datetime.date(2110, 9, 8)
-        data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1002: {
@@ -375,7 +370,7 @@ class TestEventBackend(BackendTest):
                 'min_choices': 4,
                 'sortkey': 3,
                 'course_room_field': None,
-                'track_groups': {},
+                'track_group_ids': set(),
             },
             1003: {
                 'id': 1003,
@@ -386,7 +381,7 @@ class TestEventBackend(BackendTest):
                 'min_choices': 2,
                 'sortkey': 2,
                 'course_room_field': None,
-                'track_groups': {},
+                'track_group_ids': set(),
             },
         }
         data['part_groups'] = {}
@@ -543,61 +538,10 @@ class TestEventBackend(BackendTest):
                     'min_choices': 2,
                     'sortkey': 1,
                     'course_room_field': None,
-                    'track_groups': {
-                        1: {
-                            'id': 1,
-                            'event_id': 4,
-                            'title': "Kurs 1. Hälfte",
-                            'shortname': "Kurs1",
-                            'notes': None,
-                            'constraint_type':
-                                const.CourseTrackGroupType.course_choice_sync,
-                            'track_ids': {6, 7, 8},
-                            'sortkey': 1,
-                        }
-                    },
+                    'track_group_ids': {1},
                 },
             },
-            'part_groups': {
-                1: {
-                    'id': 1,
-                    'title': "1. Hälfte",
-                    'shortname': "1.H.",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type': const.EventPartGroupType.Statistic,
-                    'part_ids': {6, 7, 8},
-                },
-                3: {
-                    'id': 3,
-                    'title': "Oberwesel",
-                    'shortname': "OW",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type': const.EventPartGroupType.Statistic,
-                    'part_ids': {6, 9},
-                },
-                6: {
-                    'id': 6,
-                    'title': "Teilnehmer 1. Hälfte",
-                    'shortname': "TN 1H",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type':
-                        const.EventPartGroupType.mutually_exclusive_participants,
-                    'part_ids': {6, 7, 8},
-                },
-                8: {
-                    'id': 8,
-                    'title': "Kurse 1. Hälfte",
-                    'shortname': "Kurs 1H",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type':
-                        const.EventPartGroupType.mutually_exclusive_courses,
-                    'part_ids': {6, 7, 8},
-                },
-            }
+            'part_group_ids': {1, 3, 6, 8},
         }
         self.assertEqual(
             expectation_part,
