@@ -23,10 +23,11 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.event as models
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
@@ -533,7 +534,7 @@ class EventRegistrationBackend(EventBaseBackend):
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
             fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event['fields'])
+                reg['id']: models.EventField.cast_fields(reg['fields'], event['fields'])
                 for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event['parts'][part_id]
@@ -826,7 +827,8 @@ class EventRegistrationBackend(EventBaseBackend):
                                and e['track_id'] == track_id)}
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+                ret[anid]['fields'] = models.EventField.cast_fields(
+                    ret[anid]['fields'], event_fields)
 
         return ret
 

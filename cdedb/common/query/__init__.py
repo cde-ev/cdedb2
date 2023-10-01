@@ -16,13 +16,14 @@ import enum
 import itertools
 import re
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence,
-    Tuple, Union,
+    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
+    Sequence, Tuple,
 )
 
+from typing_extensions import TypeAlias
+
 import cdedb.database.constants as const
-import cdedb.models.event as models
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
+from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -30,14 +31,18 @@ from cdedb.config import LazyConfig
 from cdedb.filter import keydictsort_filter
 from cdedb.uncommon.intenum import CdEIntEnum
 
+if TYPE_CHECKING:
+    import cdedb.models.event as models
+
+
 _CONFIG = LazyConfig()
 
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
 
-CourseMap = models.CdEDataclassMap[models.Course]
-LodgementMap = models.CdEDataclassMap[models.Lodgement]
-LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
+CourseMap: TypeAlias = "models.CdEDataclassMap[models.Course]"
+LodgementMap: TypeAlias = "models.CdEDataclassMap[models.Lodgement]"
+LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
 
 
 @enum.unique
@@ -212,7 +217,7 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: models.Event = None, courses: CourseMap = None,
+    def get_spec(self, *, event: "models.Event" = None, courses: CourseMap = None,
                  lodgements: LodgementMap = None,
                  lodgement_groups: LodgementGroupMap = None,
                  ) -> QuerySpec:
@@ -749,10 +754,10 @@ class Query:
         return QueryResultEntryFormat.other
 
 
-def _sort_event_fields(fields: models.CdEDataclassMap[models.EventField]
-                       ) -> Dict[const.FieldAssociations, List[models.EventField]]:
+def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
+                       ) -> Dict[const.FieldAssociations, List["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: Dict[const.FieldAssociations, List[models.EventField]] = {
+    sorted_fields: Dict[const.FieldAssociations, List["models.EventField"]] = {
         association: []
         for association in const.FieldAssociations
     }
@@ -817,7 +822,7 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: models.Event, courses: CourseMap = None,
+def make_registration_query_spec(event: "models.Event", courses: CourseMap = None,
                                  lodgements: LodgementMap = None,
                                  lodgement_groups: LodgementGroupMap = None,
                                  ) -> QuerySpec:
@@ -873,7 +878,7 @@ def make_registration_query_spec(event: models.Event, courses: CourseMap = None,
             QuerySpecEntry("datetime", n_("Last Modification Time")),
     }
 
-    def get_part_spec(part: models.EventPart) -> QuerySpec:
+    def get_part_spec(part: "models.EventPart") -> QuerySpec:
         prefix = "" if len(event.parts) <= 1 else part.shortname
         return {
             # Choices for the status will be manually set.
@@ -902,7 +907,7 @@ def make_registration_query_spec(event: models.Event, courses: CourseMap = None,
                 "str", n_("lodgement group title"), prefix),
         }
 
-    def get_track_spec(track: models.CourseTrack) -> QuerySpec:
+    def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
         track_id = track.id
         prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
@@ -946,7 +951,7 @@ def make_registration_query_spec(event: models.Event, courses: CourseMap = None,
             },
         }
 
-    def get_course_choice_spec(track: models.CourseTrack) -> QuerySpec:
+    def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
         track_id = track.id
         prefix = "" if len(event.tracks) <= 1 else track.shortname
         ret = {
@@ -1041,7 +1046,7 @@ def make_registration_query_spec(event: models.Event, courses: CourseMap = None,
     return spec
 
 
-def make_course_query_spec(event: models.Event, courses: CourseMap = None,
+def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
                            lodgements: LodgementMap = None,
                            lodgement_groups: LodgementGroupMap = None,
                            ) -> QuerySpec:
@@ -1074,7 +1079,7 @@ def make_course_query_spec(event: models.Event, courses: CourseMap = None,
         # This will be augmented with additional fields in the fly.
     }
 
-    def get_track_spec(track: models.CourseTrack) -> QuerySpec:
+    def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
             f"track{track.id}.is_offered": QuerySpecEntry(
@@ -1091,7 +1096,7 @@ def make_course_query_spec(event: models.Event, courses: CourseMap = None,
                 "int", n_("instructor count"), prefix),
         }
 
-    def get_course_choice_spec(track: models.CourseTrack) -> QuerySpec:
+    def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
             f"track{track.id}.num_choices{i}": QuerySpecEntry(
@@ -1159,7 +1164,7 @@ def make_course_query_spec(event: models.Event, courses: CourseMap = None,
     return spec
 
 
-def make_lodgement_query_spec(event: models.Event, courses: CourseMap = None,
+def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
                               lodgements: LodgementMap = None,
                               lodgement_groups: LodgementGroupMap = None,
                               ) -> QuerySpec:
@@ -1194,7 +1199,7 @@ def make_lodgement_query_spec(event: models.Event, courses: CourseMap = None,
         # This will be augmented with additional fields in the fly.
     }
 
-    def get_part_spec(part: models.EventPart) -> QuerySpec:
+    def get_part_spec(part: "models.EventPart") -> QuerySpec:
         prefix = "" if len(event.parts) <= 1 else part.shortname
         return {
             f"part{part.id}.regular_inhabitants": QuerySpecEntry(

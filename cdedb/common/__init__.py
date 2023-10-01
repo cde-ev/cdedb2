@@ -35,10 +35,12 @@ from schulze_condorcet.types import Candidate
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
+from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEIntEnum
 
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -1355,6 +1357,69 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
             _LOGGER.debug(f"Expired protected parameter {tohash}")
             return True, None
     return None, message[26:]
+
+
+def parse_date(val: str) -> datetime.date:
+    """Make a string into a date.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
+               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    for fmt, _ in formats:
+        try:
+            return datetime.datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
+    # Shorten strings to allow datetimes as inputs
+    for fmt, length in formats:
+        try:
+            return datetime.datetime.strptime(val[:length], fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(n_("Invalid date string."))
+
+
+def parse_datetime(
+    val: str, default_date: datetime.date = None
+) -> datetime.date:
+    """Make a string into a datetime.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
+    connectors = ("T", " ")
+    time_formats = (
+        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    formats = itertools.chain(
+        map("".join, itertools.product(date_formats, connectors, time_formats)),
+        map(" ".join, itertools.product(time_formats, date_formats))
+    )
+    ret = None
+    for fmt in formats:
+        try:
+            ret = datetime.datetime.strptime(val, fmt)
+            break
+        except ValueError:
+            pass
+    if ret is None and default_date:
+        for fmt in time_formats:
+            try:
+                # TODO if we get to here this should be unparseable?
+                ret = datetime.datetime.strptime(val, fmt)
+                ret = ret.replace(
+                    year=default_date.year, month=default_date.month,
+                    day=default_date.day)
+                break
+            except ValueError:
+                pass
+    if ret is None:
+        ret = datetime.datetime.fromisoformat(val)
+    if ret.tzinfo is None:
+        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = timezone.localize(ret)
+        assert ret is not None
+    return ret.astimezone(pytz.utc)
 
 
 #: Set of possible values for ``ntype`` in

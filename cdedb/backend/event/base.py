@@ -25,7 +25,7 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    cast_fields, encrypt_password, internal, singularize,
+    encrypt_password, internal, singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
@@ -1326,7 +1326,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del course['id']
             del course['event_id']
             course['segments'] = lookup[course_id]
-            course['fields'] = cast_fields(
+            course['fields'] = models.EventField.cast_fields(
                 course['fields'], event['fields'])
         ret['courses'] = courses
         # lodgement groups
@@ -1338,8 +1338,8 @@ class EventBaseBackend(EventLowLevelBackend):
         for lodgement in lodgements.values():
             del lodgement['id']
             del lodgement['event_id']
-            lodgement['fields'] = cast_fields(lodgement['fields'],
-                                              event['fields'])
+            lodgement['fields'] = models.EventField.cast_fields(
+                lodgement['fields'], event['fields'])
         ret['lodgements'] = lodgements
         # registrations
         part_lookup: Dict[int, Dict[int, CdEDBObject]]
@@ -1371,8 +1371,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['registration_id']
                 del track['track_id']
             registration['tracks'] = tracks
-            registration['fields'] = cast_fields(registration['fields'],
-                                                 event['fields'])
+            registration['fields'] = models.EventField.cast_fields(
+                registration['fields'], event['fields'])
         ret['registrations'] = registrations
 
         for token_id, orga_token in tokens.items():

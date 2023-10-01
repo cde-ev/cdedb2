@@ -12,7 +12,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    cast_fields, singularize,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
@@ -69,7 +69,8 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 if 'active_segments' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['active_segments'] = active_segments
-                ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+                ret[anid]['fields'] = models.EventField.cast_fields(
+                    ret[anid]['fields'], event_fields)
         return ret
 
     class _GetCourseProtocol(Protocol):

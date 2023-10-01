@@ -74,8 +74,6 @@ from typing import (
 import magic
 import phonenumbers
 import PIL.Image
-import pytz
-import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
 from schulze_condorcet.util import as_vote_tuple
@@ -89,7 +87,7 @@ import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, now,
+    compute_checkdigit, now, parse_date, parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
@@ -1518,27 +1516,6 @@ def _batch_admission_entry(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def parse_date(val: str) -> datetime.date:
-    """Make a string into a date.
-
-    We only support a limited set of formats to avoid any surprises
-    """
-    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
-               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
-    for fmt, _ in formats:
-        try:
-            return datetime.datetime.strptime(val, fmt).date()
-        except ValueError:
-            pass
-    # Shorten strings to allow datetimes as inputs
-    for fmt, length in formats:
-        try:
-            return datetime.datetime.strptime(val[:length], fmt).date()
-        except ValueError:
-            pass
-    raise ValueError(n_("Invalid date string."))
-
-
 # TODO move this above _persona stuff?
 @_add_typed_validator
 def _date(
@@ -1569,48 +1546,6 @@ def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
         raise ValidationSummary(ValueError(
             argname, n_("A birthday must be in the past.")))
     return Birthday(val)
-
-
-def parse_datetime(
-    val: str, default_date: datetime.date = None
-) -> datetime.date:
-    """Make a string into a datetime.
-
-    We only support a limited set of formats to avoid any surprises
-    """
-    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
-    connectors = ("T", " ")
-    time_formats = (
-        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
-    formats = itertools.chain(
-        map("".join, itertools.product(date_formats, connectors, time_formats)),
-        map(" ".join, itertools.product(time_formats, date_formats))
-    )
-    ret = None
-    for fmt in formats:
-        try:
-            ret = datetime.datetime.strptime(val, fmt)
-            break
-        except ValueError:
-            pass
-    if ret is None and default_date:
-        for fmt in time_formats:
-            try:
-                # TODO if we get to here this should be unparseable?
-                ret = datetime.datetime.strptime(val, fmt)
-                ret = ret.replace(
-                    year=default_date.year, month=default_date.month,
-                    day=default_date.day)
-                break
-            except ValueError:
-                pass
-    if ret is None:
-        ret = datetime.datetime.fromisoformat(val)
-    if ret.tzinfo is None:
-        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
-        ret = timezone.localize(ret)
-        assert ret is not None
-    return ret.astimezone(pytz.utc)
 
 
 @_add_typed_validator

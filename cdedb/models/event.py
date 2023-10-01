@@ -34,9 +34,9 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.common import cast_fields
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, CdEDBObjectMap, now
 from cdedb.common.sorting import EntitySorter, Sortkey
+from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -406,6 +406,33 @@ class EventField(EventDataclass):
         data['entries'] = dict(data['entries'] or []) or None
         return super().from_database(data)
 
+    @staticmethod
+    def cast_fields(data: CdEDBObject, fields: "CdEDBObjectMap") -> CdEDBObject:
+        """Helper to deserialize json fields.
+
+        We serialize some classes as strings and need to undo this upon
+        retrieval from the database.
+        """
+        spec: dict[str, const.FieldDatatypes]
+        spec = {v['field_name']: v['kind'] for v in fields.values()}
+        casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
+            const.FieldDatatypes.int: lambda x: x,
+            const.FieldDatatypes.str: lambda x: x,
+            const.FieldDatatypes.float: lambda x: x,
+            const.FieldDatatypes.date: parse_date,
+            const.FieldDatatypes.datetime: parse_datetime,
+            const.FieldDatatypes.bool: lambda x: x,
+        }
+
+        def _do_cast(key: str, val: Any) -> Any:
+            if val is None:
+                return None
+            if key in spec:
+                return casters[spec[key]](val)
+            return val
+
+        return {key: _do_cast(key, val) for key, val in data.items()}
+
 
 @dataclasses.dataclass
 class PartGroup(EventDataclass):
@@ -552,7 +579,8 @@ class Course(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['fields'] = cast_fields(data['fields'], data.pop('event_fields'))
+        data['fields'] = EventField.cast_fields(
+            data['fields'], data.pop('event_fields'))
         data['segments'] = set(data['segments'])
         data['active_segments'] = set(data['active_segments'])
         return super().from_database(data)
@@ -616,7 +644,8 @@ class Lodgement(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['fields'] = cast_fields(data['fields'], data.pop('event_fields'))
+        data['fields'] = EventField.cast_fields(
+            data['fields'], data.pop('event_fields'))
         if 'group_data' in data:
             data['group'] = LodgementGroup.from_database(data.pop('group_data'))
         return super().from_database(data)

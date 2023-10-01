@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    cast_fields, read_conditional_write_composer, singularize,
+    read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
@@ -260,7 +260,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             event_fields = self._get_event_fields(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
-                entry['fields'] = cast_fields(entry['fields'], event_fields)
+                entry['fields'] = models.EventField.cast_fields(
+                    entry['fields'], event_fields)
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):

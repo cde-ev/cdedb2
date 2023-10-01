@@ -714,33 +714,6 @@ def encrypt_password(password: str) -> str:
     return sha512_crypt.hash(password)
 
 
-def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
-    """Helper to deserialize json fields.
-
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
-    """
-    spec: Dict[str, FieldDatatypes]
-    spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
-        FieldDatatypes.int: lambda x: x,
-        FieldDatatypes.str: lambda x: x,
-        FieldDatatypes.float: lambda x: x,
-        FieldDatatypes.date: parse_date,
-        FieldDatatypes.datetime: parse_datetime,
-        FieldDatatypes.bool: lambda x: x,
-    }
-
-    def _do_cast(key: str, val: Any) -> Any:
-        if val is None:
-            return None
-        if key in spec:
-            return casters[spec[key]](val)
-        return val
-
-    return {key: _do_cast(key, val) for key, val in data.items()}
-
-
 #: Translate between validator names and sql data types.
 #:
 #: This is utilized during handling jsonb columns.
