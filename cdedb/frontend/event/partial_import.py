@@ -50,7 +50,7 @@ class EventImportMixin(EventBaseFrontend):
             is skipped, even if their definition is different from the existing one.
             Otherwise, duplicate field names will cause an error and prevent the import.
         """
-        kwargs = {
+        kwargs: CdEDBObject = {
             'field_definitions': rs.ambience['event'].fields,
             'fees_by_field':
                 self.eventproxy.get_event_fees_per_entity(rs, event_id).fields,

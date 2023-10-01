@@ -158,11 +158,10 @@ class EventQueryMixin(EventBaseFrontend):
         This is a pretty versatile method building on the query module.
         """
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
         scope = QueryScope.registration
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
@@ -241,6 +240,7 @@ class EventQueryMixin(EventBaseFrontend):
                 self.eventproxy.get_event_queries(rs, event_id, query_ids=(query_id,))
                 or None)
             if stored_query:
+                # noinspection PyUnresolvedReferences
                 query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
@@ -275,7 +275,7 @@ class EventQueryMixin(EventBaseFrontend):
                      ) -> Response:
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)
@@ -326,11 +326,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         scope = QueryScope.lodgement
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
-            rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
         spec = scope.get_spec(event=rs.ambience['event'], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)

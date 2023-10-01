@@ -84,10 +84,13 @@ class EventEventMixin(EventBaseFrontend):
                 regs = self.eventproxy.list_registrations(rs, event['id'])
                 event['registrations'] = len(regs)
 
+        # TODO: remove this duplicate
+        new_events = self.eventproxy.new_get_events(rs, event_ids)
+
         def querylink(event_id: int) -> str:
             query = Query(
                 QueryScope.registration,
-                QueryScope.registration.get_spec(event=events[event_id]),
+                QueryScope.registration.get_spec(event=new_events[event_id]),
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))

@@ -436,27 +436,28 @@ class EventCourseMixin(EventBaseFrontend):
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id].part_id]
         for course_id, course in courses.items():  # pylint: disable=redefined-argument-from-local
-            for track_id in tracks:  # pylint: disable=redefined-argument-from-local
+            for track in tracks.values():  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
-                    if reg_part(reg, track_id)['status'] == stati.participant
-                    and reg['tracks'][track_id]['course_id'] == course_id and
-                    reg['tracks'][track_id]['course_instructor'] != course_id)
+                    if reg_part(reg, track.id)['status'] == stati.participant
+                    and reg['tracks'][track.id]['course_id'] == course_id
+                    and reg['tracks'][track.id]['course_instructor'] != course_id
+                )
                 all_instructors = sum(
                     1 for reg in all_regs.values()
-                    if
-                    reg['tracks'][track_id]['course_instructor'] == course_id)
+                    if reg['tracks'][track.id]['course_instructor'] == course_id
+                )
                 assigned_instructors = sum(
                     1 for reg in all_regs.values()
-                    if reg_part(reg, track_id)['status'] == stati.participant
-                    and reg['tracks'][track_id]['course_id'] == course_id
-                    and reg['tracks'][track_id][
-                        'course_instructor'] == course_id)
-                course_infos[(course_id, track_id)] = {
+                    if reg_part(reg, track.id)['status'] == stati.participant
+                    and reg['tracks'][track.id]['course_id'] == course_id
+                    and reg['tracks'][track.id]['course_instructor'] == course_id
+                )
+                course_infos[(course_id, track.id)] = {
                     'assigned': assigned,
                     'all_instructors': all_instructors,
                     'assigned_instructors': assigned_instructors,
-                    'is_happening': track_id in course['segments'],
+                    'is_happening': track.id in course['segments'],
                 }
         corresponding_query = Query(
             QueryScope.registration,
@@ -595,8 +596,9 @@ class EventCourseMixin(EventBaseFrontend):
                         # Let instructors instruct
                         tmp['tracks'][atrack_id] = {'course_id': instructor}
                         continue
+                    # I replaced a `track_id` with `atrack_id` below, which I am 95% sure is correct.
                     for choice in (
-                            reg_track['choices'][:tracks[track_id].num_choices]):
+                            reg_track['choices'][:tracks[atrack_id].num_choices]):
                         if atrack_id in courses[choice]['active_segments']:
                             # Assign first possible choice
                             tmp['tracks'][atrack_id] = {'course_id': choice}

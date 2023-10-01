@@ -322,6 +322,18 @@ class EventBaseBackend(EventLowLevelBackend):
                 'fees': fee_data,
             })
 
+    @access("anonymous")
+    def new_get_events(self, rs: RequestState, event_ids: Collection[int]
+                       ) -> models.CdEDataclassMap[models.Event]:
+        event_ids = affirm_set(vtypes.ID, event_ids)
+        with Atomizer(rs):
+            return {
+                event.id: event
+                for event in (
+                    self.new_get_event(rs, event_id) for event_id in event_ids
+                )
+            }
+
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
         """Return True if the given shortname already exists for some event."""
