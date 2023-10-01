@@ -4133,7 +4133,13 @@ class TestEventBackend(BackendTest):
             part_group['constraint_type'] = const.EventPartGroupType(
                 part_group['constraint_type'])
         # Compare to retrieved data.
-        self.assertEqual(event.part_groups, part_group_expectation)
+        reality = event.as_dict()['part_groups']
+        for pg in reality.values():
+            pg['part_ids'] = set(pg.pop('parts'))
+        self.assertEqual(
+            part_group_expectation,
+            reality,
+        )
 
         # Check setting of part groups.
 
@@ -4209,9 +4215,12 @@ class TestEventBackend(BackendTest):
         del part_group_expectation[4]
         part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
+        reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
+        for pg in reality.values():
+            pg['part_ids'] = set(pg.pop('parts'))
         self.assertEqual(
-            self.event.get_event(self.key, event_id).part_groups,
-            part_group_expectation
+            part_group_expectation,
+            reality,
         )
 
         # ValueError is raised when trying to update or delete a nonexisting part group.

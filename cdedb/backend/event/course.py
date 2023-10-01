@@ -150,7 +150,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 event_fields = self._get_event_fields(rs, current['event_id'])
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=models.EventField.many_from_database(event_fields),
+                    fields=models.EventField.many_from_database(event_fields.values()),
                     association=const.FieldAssociations.course,
                 )
 

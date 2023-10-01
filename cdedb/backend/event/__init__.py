@@ -686,13 +686,13 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                     track[key] = cmap[tmp_id]
                             new_choices = [
                                 cmap.get(course_id, course_id)
-                                for course_id in track.choices
+                                for course_id in track['choices']
                             ]
-                            track.choices = new_choices
+                            track['choices'] = new_choices
                         for part in new['parts'].values():
-                            if part.lodgement_id in lmap:
-                                tmp_id = part.lodgement_id
-                                part.lodgement_id = lmap[tmp_id]
+                            if part['lodgement_id'] in lmap:
+                                tmp_id = part['lodgement_id']
+                                part['lodgement_id'] = lmap[tmp_id]
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
                 else:
@@ -713,15 +713,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                     if 'choices' in track:
                                         new_choices = [
                                             cmap.get(course_id, course_id)
-                                            for course_id in track.choices
+                                            for course_id in track['choices']
                                         ]
-                                        track.choices = new_choices
+                                        track['choices'] = new_choices
                             if 'parts' in changed_reg:
                                 for part in changed_reg['parts'].values():
                                     if 'lodgement_id' in part:
-                                        if part.lodgement_id in lmap:
-                                            tmp_id = part.lodgement_id
-                                            part.lodgement_id = lmap[tmp_id]
+                                        if part['lodgement_id'] in lmap:
+                                            tmp_id = part['lodgement_id']
+                                            part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
                             # change_note for log entry for registrations
                             change_note = "Partieller Import."
