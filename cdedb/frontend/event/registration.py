@@ -27,14 +27,14 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.filter import date_filter, keydictsort_filter, money_filter
+from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event, SyncTrackGroup
+from cdedb.models.event import Event, SyncTrackGroup, TrackGroup
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -317,7 +317,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
             tg for tg in track_groups.values() if tg.constraint_type.is_sync()]
-        choice_objects = xsorted(choice_objects, key=EntitySorter.course_choice_object)
+        choice_objects = xsorted(choice_objects)
 
         # For every course and track, determine all tracks that allow you to choose
         #  this course in this track.
@@ -385,12 +385,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         if len(event.parts) > 1:
             part_options = [
                 # narrow non-breaking space below, the string is purely user-facing
-                (part_id,
+                (part.id,
                  f"{part.title}"
                  f" ({date_filter(part.part_begin, lang=rs.lang)}\u202f–\u202f"
                  f"{date_filter(part.part_end, lang=rs.lang)})")
-                for part_id, part
-                in keydictsort_filter(event.parts, EntitySorter.event_part)]
+                for part in xsorted(event.parts.values())]
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
@@ -779,10 +778,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         age = determine_age_class(
             persona['birthday'], rs.ambience['event'].begin)
         registration['parts'] = OrderedDict(
-            (part_id, registration['parts'][part_id])
-            for part_id, _ in keydictsort_filter(
-                rs.ambience['event'].parts, EntitySorter.event_part)
-            if part_id in registration['parts'])
+            (part.id, registration['parts'][part.id])
+            for part in xsorted(rs.ambience['event'].parts.values())
+            if part.id in registration['parts'])
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
@@ -791,17 +789,16 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, orga=False)
 
         sorted_involved_tracks = {
-            track_id: track for track_id, track in keydictsort_filter(
-                rs.ambience['event'].tracks, EntitySorter.course_track)
+            track.id: track for track in xsorted(rs.ambience['event'].tracks.values())
             if registration['parts'][track.part_id]['status'].is_involved()
         }
 
-        is_involved = lambda cco: (cco['track_ids'] & sorted_involved_tracks.keys()
-                                   if 'track_ids' in cco
-                                   else cco['id'] in sorted_involved_tracks)
+        is_involved = lambda cco: (set(cco.tracks) & sorted_involved_tracks.keys()
+                                   if isinstance(cco, TrackGroup)
+                                   else cco.id in sorted_involved_tracks)
         filtered_choice_objects = [
             cco for cco in course_choice_parameters['choice_objects']
-            if cco['num_choices'] and is_involved(cco)
+            if cco.num_choices and is_involved(cco)
         ]
 
         return self.render(rs, "registration/registration_status", {

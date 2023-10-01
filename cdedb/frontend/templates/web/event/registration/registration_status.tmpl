@@ -162,7 +162,7 @@
 
     {{ util.h(n_("Status"), underline=true) }}
     <dl class="dl-horizontal">
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <dt title="{{ part['title'] }}: {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang) }}">
@@ -173,22 +173,22 @@
                     {% trans %}Registration Status{% endtrans %}
                 </dt>
             {% endif %}
-            <dd id="registration_status_part{{ part_id }}">
-                {{ gettext(registration['parts'][part_id]['status']|enum(enums['RegistrationPartStati'])) }}
+            <dd id="registration_status_part{{ part.id }}">
+                {{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }}
                 {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
                    E.g. one might only request a second installment of the fee by participants shortly before the event
                    See also EventRegistrationBackend.get_registration_payment_info() #}
-                {% if registration['parts'][part_id]['status'].has_to_pay() and not registration['payment'] and fee %}
+                {% if registration['parts'][part.id]['status'].has_to_pay() and not registration['payment'] and fee %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
-                {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
-                    ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
+                {% if registration['parts'][part.id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
+                    ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part.id] }})
                 {% endif %}
             </dd>
         {% endfor %}
     </dl>
 
-    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}
         <div class="row">
@@ -204,11 +204,11 @@
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
                     {% if 'track_ids' in cco %}
-                        {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
+                        {% for track in sorted_tracks if track.id in cco['track_ids'] %}
                             <dt title="{{ track['title'] }}">
                                 {{ track['title'] }}
                             </dt>
-                            {{ print_course(registration['tracks'][track_id], courses) }}
+                            {{ print_course(registration['tracks'][track.id], courses) }}
                         {% endfor %}
                     {% else %}
                         <dt title="{% trans %}Assigned to{% endtrans %}">

@@ -21,12 +21,12 @@
 
 
 {% macro list_courses(registration) %}
-    {% for track_id, _ in parts[part_id]['tracks']|keydictsort(EntitySorter.course_track) -%}
+    {% for track in parts[part_id]['tracks'].values()|sort -%}
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
                 {{ util.href(cdedblink('event/course_list') + '#course-' + course_id|string,
                              (courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'])) }}
-                {% if registration['tracks'][track_id]['course_instructor'] == course_id %}
+                {% if registration['tracks'][track.id]['course_instructor'] == course_id %}
                     {{ "(KL)" }}
                 {% endif %}
                 {% if not loop.last %}
@@ -76,9 +76,9 @@
                 <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
                     {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
                 </li>
-                {% for p_id, p in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                    <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
-                        {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
+                {% for p in ambience['event']['parts'].values()|sort %}
+                    <li role="presentation" {% if p.id == part_id %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': p.id}), p['title']) }}
                     </li>
                 {% endfor %}
             </ul>
@@ -169,7 +169,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
+                            {% for part in ambience['event']['parts'].values()|sort
                                    if registrations[registration_id]['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}

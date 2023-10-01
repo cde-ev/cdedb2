@@ -66,13 +66,13 @@
     {% endif %}
 
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
-    {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(3) %}
+    {% for batch in ambience['event']['parts'].values()|sort|batch(3) %}
         <div class="row" id="inhabitants">
-        {% for part_id, part in batch %}
-            <div class="col-md-4" id="inhabitants-{{ part_id }}">
+        {% for part in batch %}
+            <div class="col-md-4" id="inhabitants-{{ part.id }}">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
-                        <div class="pull-right">{{ inhabitants[part_id]|length }}</div>
+                        <div class="pull-right">{{ inhabitants[part.id]|length }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['title'] }}
@@ -83,7 +83,7 @@
                     </div>
 
                     <div class="panel-body">
-                        {% for p in problems if p.part_id == part_id %}
+                        {% for p in problems if p.part_id == part.id %}
                             <p class="{% if p.severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
                                 {{ gettext(p.description) }}
                                 {% if affected_regs %}
@@ -98,25 +98,25 @@
                         {% endfor %}
 
                         <ul class="slim">
-                            {% for registration_id in inhabitants[part_id] %}
+                            {% for registration_id in inhabitants[part.id] %}
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
                                                  util.persona_name(personas[registrations[registration_id]
                                                         ['persona_id']])) }}
                                     {{ generic_event.camping_mat_icon(
-                                        registrations[registration_id]['parts'][part_id]['is_camping_mat'],
-                                        registrations[registration_id]['fields'].get(camping_mat_field_names[part_id])) }}
+                                        registrations[registration_id]['parts'][part.id]['is_camping_mat'],
+                                        registrations[registration_id]['fields'].get(camping_mat_field_names[part.id])) }}
                                 </li>
                             {% endfor %}
                         </ul>
                     </div>
-                    {% if inhabitants[part_id] %}
+                    {% if inhabitants[part.id] %}
                         <div class="panel-footer">
                             {{ util.href(cdedblink('event/registration_query',
-                                                   make_inhabitants_query(part_id).serialize_to_url()) + "#query-results",
+                                                   make_inhabitants_query(part.id).serialize_to_url()) + "#query-results",
                                          label=gettext("View Registrations"), icon=util.make_icon('list'),
-                                         anid="inhabitants-link-{}".format(part_id)) }}
+                                         anid="inhabitants-link-{}".format(part.id)) }}
                         </div>
                     {% endif %}
                 </div>

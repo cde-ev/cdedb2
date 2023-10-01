@@ -40,7 +40,7 @@
                 <th>{% trans %}Title{% endtrans %}</th>
                 <th>{% trans %}Shortname{% endtrans %}</th>
                 <th>{% trans %}Notes{% endtrans %}</th>
-                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                {% for part in ambience['event']['parts'].values()|sort %}
                     <th {% if loop.first %}class="b-left"{% endif %} title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                         {{ part['shortname'] }}
                     </th>
@@ -63,9 +63,9 @@
                     <td>
                         {{ part_group['notes'] }}
                     </td>
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% for part in ambience['event']['parts'].values()|sort %}
                         <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
-                            {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                            {{ util.deko_checkbox(part.id in part_group['part_ids'], titles=['', part['shortname']]) }}
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">

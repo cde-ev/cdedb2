@@ -38,11 +38,11 @@
         {% endtrans %}
     </p>
 
-    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-        <div class="panel panel-info" id="part{{ part_id }}">
+    {% for part in ambience['event']['parts'].values()|sort %}
+        <div class="panel panel-info" id="part{{ part.id }}">
             <div class="panel-heading">
                 {{ part['title'] }}
-                <div id="part{{ part_id }}_partgroups" class="pull-right">
+                <div id="part{{ part.id }}_partgroups" class="pull-right">
                     {% for part_group_id, part_group in part['part_groups']|keydictsort(EntitySorter.event_part_group) %}
                         {{ util.href(cdedblink("event/group_summary") + ("#partgroup_" + part_group_id|string)|s,
                                      part_group['shortname'], aclass="badge", icon=part_group['constraint_type'].get_icon(),
@@ -53,10 +53,10 @@
 
             <div class="panel-body">
                 <div class="p button-par">
-                    {% if not has_registrations and part_id not in referenced_parts %}
-                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
+                    {% if not has_registrations and part.id not in referenced_parts %}
+                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part.id}) }}"
                               method="POST"
-                              id="deletepartform{{ part_id }}"
+                              id="deletepartform{{ part.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token('event/delete_part') }}
                             {{ util.output_errors("ack_delete", wrapper=True) }}
@@ -64,17 +64,17 @@
                             {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-sm btn-danger", icon="trash") }}
                         </form>
                         <script nonce="{{ csp_nonce }}">
-                            $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
-                            $('#deletepartform{{ part_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                            $('#deletepartform{{ part.id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
+                            $('#deletepartform{{ part.id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                         </script>
                     {% endif %}
-                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
+                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part.id}), gettext("Change Part"),
                                            icon='pen', aclass='btn btn-sm btn-warning') }}
                 </div>
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">
                         <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
+                        <dd id="part{{ part.id }}_shortname">{{ part['shortname'] }}</dd>
 
                         <dt title="{% trans %}Field for Waitlist{% endtrans %}">
                             {% trans %}Field for Waitlist{% endtrans %}
@@ -100,10 +100,10 @@
 
                     <dl class="dl-horizontal col-md-6">
                         <dt title="{% trans %}Begin{% endtrans %}">{% trans %}Begin{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
+                        <dd id="part{{ part.id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
 
                         <dt title="{% trans %}End{% endtrans %}">{% trans %}End{% endtrans %}</dt>
-                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
+                        <dd id="part{{ part.id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
                 </div>
 
@@ -125,7 +125,7 @@
                     </thead>
                     <tbody>
                         {% for track_id, track in part['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <tr id="trackrow{{ part_id }}_{{ track_id }}">
+                            <tr id="trackrow{{ part.id }}_{{ track_id }}">
                                 <td>{{ track['title'] }}</td>
                                 <td>{{ track['shortname'] }}</td>
                                 <td>{{ track['num_choices'] }}</td>

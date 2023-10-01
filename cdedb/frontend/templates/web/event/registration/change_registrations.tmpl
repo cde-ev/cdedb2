@@ -119,28 +119,28 @@
             {{ util.input_text(name="reg.checkin", type="datetime-local", anid="input_reg_checkin") }}
         {% endcall %}
 
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
-            {% call form_input_optional("part{}.status".format(part_id), label=gettext("Status"),
-                                        anid="part{}_status".format(part_id)) %}
-                {{ util.input_select(name="part{}.status".format(part_id),
+            {% call form_input_optional("part{}.status".format(part.id), label=gettext("Status"),
+                                        anid="part{}_status".format(part.id)) %}
+                {{ util.input_select(name="part{}.status".format(part.id),
                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                                     anid="part{}_status".format(part_id)) }}
+                                     anid="part{}_status".format(part.id)) }}
             {% endcall %}
 
-            {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                        anid="part{}_lodgement_id".format(part_id)) %}
-                {{ util.input_select(name="part{}.lodgement_id".format(part_id),
+            {% call form_input_optional("part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                        anid="part{}_lodgement_id".format(part.id)) %}
+                {{ util.input_select(name="part{}.lodgement_id".format(part.id),
                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp,
-                                     anid="part{}_lodgement_id".format(part_id)) }}
+                                     anid="part{}_lodgement_id".format(part.id)) }}
             {% endcall %}
-            {% call form_input_optional("part{}.is_camping_mat".format(part_id),
-                                        anid="part{}_is_camping_mat".format(part_id)) %}
+            {% call form_input_optional("part{}.is_camping_mat".format(part.id),
+                                        anid="part{}_is_camping_mat".format(part.id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat"),
-                                           anid="part{}_is_camping_mat".format(part_id)) }}
+                    {{ util.input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat"),
+                                           anid="part{}_is_camping_mat".format(part.id)) }}
                 </div>
             {% endcall %}
 

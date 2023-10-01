@@ -16,7 +16,7 @@
 {% endblock %}
 {% block content %}
     {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-    {% set sorted_parts = ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+    {% set sorted_parts = ambience['event']['parts'].values()|sort %}
     {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
         <table id="participant-stats" class="table table-slim table-condensed table-stats">

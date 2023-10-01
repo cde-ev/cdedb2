@@ -348,6 +348,8 @@ class EventPart(EventDataclass):
         params = (entities,)
         return query, params
 
+
+@dataclasses.dataclass
 class CourseChoiceObject(ABC):
     title: str
     shortname: str
@@ -361,7 +363,7 @@ class CourseChoiceObject(ABC):
 class CourseTrack(EventDataclass, CourseChoiceObject):
     database_table = "event.course_tracks"
     entity_key = "part_id"
-    sorter = EntitySorter.course_track
+    sorter = EntitySorter.course_choice_object
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)

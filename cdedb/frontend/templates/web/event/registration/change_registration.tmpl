@@ -54,7 +54,7 @@
         {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 readonly='reg.checkin' in skip) }}
 
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
