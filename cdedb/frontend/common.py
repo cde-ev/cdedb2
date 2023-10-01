@@ -648,18 +648,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # Apply special handling to enums and country codes for downloads.
         for k, v in query.spec.items():
             if k.endswith("gender"):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.Genders, lambda x: x.name, raw=True)))
+                query.spec[k].choices = dict(enum_entries_filter(
+                    const.Genders, lambda x: x.name, raw=True))
             if k.endswith(".status"):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.RegistrationPartStati, lambda x: x.name, raw=True)))
+                query.spec[k].choices = dict(enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True))
             if k.endswith(("country", "country2")):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(get_localized_country_codes(rs, rs.default_lang)))
+                query.spec[k].choices = dict(get_localized_country_codes(
+                    rs, rs.default_lang))
             if "xfield" in k:
-                query.spec[k] = query.spec[k].replace_choices({})
+                query.spec[k].choices = {}
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
@@ -839,7 +837,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for k, v in choices.items():
             choices_lists[k] = list(v.items())
             if query and k in query.spec:
-                query.spec[k] = query.spec[k].replace_choices(v)
+                query.spec[k].choices = v
         params = {
             'spec': spec, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query, 'scope': scope,
