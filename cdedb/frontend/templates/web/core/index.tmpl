@@ -120,7 +120,7 @@
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count= dashboard['orga_registrations'][event_id] %}
+                                    {% trans count=dashboard['orga_registrations'][event.id] %}
                                     	{{ count }} Registrations
                                     {% endtrans %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
