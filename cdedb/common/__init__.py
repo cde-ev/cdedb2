@@ -33,12 +33,16 @@ import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
+import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEIntEnum
+
+if TYPE_CHECKING:
+    import cdedb.models.event as models_event
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
@@ -1428,6 +1432,34 @@ def parse_datetime(
         ret = timezone.localize(ret)
         assert ret is not None
     return ret.astimezone(pytz.utc)
+
+
+def cast_fields(data: CdEDBObject, fields: "models_event.CdEDataclassMap[models_event.EventField]"
+                ) -> CdEDBObject:
+    """Helper to deserialize json fields.
+
+    We serialize some classes as strings and need to undo this upon
+    retrieval from the database.
+    """
+    spec: dict[str, const.FieldDatatypes]
+    spec = {f.field_name: f.kind for f in fields.values()}
+    casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
+        const.FieldDatatypes.int: lambda x: x,
+        const.FieldDatatypes.str: lambda x: x,
+        const.FieldDatatypes.float: lambda x: x,
+        const.FieldDatatypes.date: parse_date,
+        const.FieldDatatypes.datetime: parse_datetime,
+        const.FieldDatatypes.bool: lambda x: x,
+    }
+
+    def _do_cast(key: str, val: Any) -> Any:
+        if val is None:
+            return None
+        if key in spec:
+            return casters[spec[key]](val)
+        return val
+
+    return {key: _do_cast(key, val) for key, val in data.items()}
 
 
 #: Set of possible values for ``ntype`` in

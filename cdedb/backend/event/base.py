@@ -31,8 +31,8 @@ from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, glue, json_serialize,
-    make_persona_name, now, unwrap,
+    DefaultReturnCode, DeletionBlockers, RequestState, cast_fields, glue,
+    json_serialize, make_persona_name, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -1331,7 +1331,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del course['id']
             del course['event_id']
             course['segments'] = lookup[course_id]
-            course['fields'] = models.EventField.cast_fields(
+            course['fields'] = cast_fields(
                 course['fields'], event.fields)
         ret['courses'] = courses
         # lodgement groups
@@ -1343,7 +1343,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for lodgement in lodgements.values():
             del lodgement['id']
             del lodgement['event_id']
-            lodgement['fields'] = models.EventField.cast_fields(
+            lodgement['fields'] = cast_fields(
                 lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
@@ -1376,7 +1376,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['registration_id']
                 del track['track_id']
             registration['tracks'] = tracks
-            registration['fields'] = models.EventField.cast_fields(
+            registration['fields'] = cast_fields(
                 registration['fields'], event.fields)
         ret['registrations'] = registrations
 

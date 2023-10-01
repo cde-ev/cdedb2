@@ -32,7 +32,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, glue, unwrap,
+    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -534,7 +534,7 @@ class EventRegistrationBackend(EventBaseBackend):
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
             fields_by_id = {
-                reg['id']: models.EventField.cast_fields(reg['fields'], event.fields)
+                reg['id']: cast_fields(reg['fields'], event.fields)
                 for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event.parts[part_id]
@@ -827,7 +827,7 @@ class EventRegistrationBackend(EventBaseBackend):
                                and e['track_id'] == track_id)}
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = models.EventField.cast_fields(
+                ret[anid]['fields'] = cast_fields(
                     ret[anid]['fields'], models.EventField.many_from_database(event_fields.values()))
 
         return ret

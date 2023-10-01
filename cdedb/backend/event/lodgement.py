@@ -18,7 +18,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, unwrap,
+    RequestState, cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
@@ -259,7 +259,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             event_fields = self._get_event_fields(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
-                entry['fields'] = models.EventField.cast_fields(
+                entry['fields'] = cast_fields(
                     entry['fields'], models.EventField.many_from_database(
                         event_fields.values()))
         return {e['id']: e for e in data}

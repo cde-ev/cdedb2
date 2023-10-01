@@ -17,7 +17,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, glue, unwrap,
+    RequestState, cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
@@ -69,7 +69,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 if 'active_segments' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['active_segments'] = active_segments
-                ret[anid]['fields'] = models.EventField.cast_fields(
+                ret[anid]['fields'] = cast_fields(
                     ret[anid]['fields'], models.EventField.many_from_database(
                         event_fields.values()))
         return ret
