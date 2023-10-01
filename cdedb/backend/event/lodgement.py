@@ -257,11 +257,12 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
-            event_fields = self._get_event_fields(rs, event_id).values()
+            event_fields = self._get_event_fields(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
                 entry['fields'] = models.EventField.cast_fields(
-                    entry['fields'], models.EventField.many_from_database(event_fields))
+                    entry['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):
@@ -348,8 +349,9 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 event_fields = self._get_event_fields(rs, event_id)
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event_fields,
-                    association=const.FieldAssociations.lodgement)
+                    fields=models.EventField.many_from_database(event_fields.values()),
+                    association=const.FieldAssociations.lodgement,
+                )
 
                 fupdate = {
                     'id': data['id'],
@@ -371,8 +373,10 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         event_fields = self._get_event_fields(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            vtypes.EventAssociatedFields, fdata, fields=event_fields,
-            association=const.FieldAssociations.lodgement)
+            vtypes.EventAssociatedFields, fdata,
+            fields=models.EventField.many_from_database(event_fields.values()),
+            association=const.FieldAssociations.lodgement,
+        )
         data['fields'] = PsycoJson(fdata)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):

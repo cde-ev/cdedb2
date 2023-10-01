@@ -150,8 +150,9 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 event_fields = self._get_event_fields(rs, current['event_id'])
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event_fields,
-                    association=const.FieldAssociations.course)
+                    fields=models.EventField.many_from_database(event_fields),
+                    association=const.FieldAssociations.course,
+                )
 
                 fupdate = {
                     'id': data['id'],
@@ -235,22 +236,19 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         """Make a new course organized via DB."""
         data = affirm(vtypes.Course, data, creation=True)
         # direct validation since we already have an event_id
-        event_fields = self._get_event_fields(rs, data['event_id'])
-        fdata = data.get('fields') or {}
-        fdata = affirm(
-            vtypes.EventAssociatedFields, fdata,
-            fields=event_fields, association=const.FieldAssociations.course)
-        data['fields'] = PsycoJson(fdata)
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
-            # Check for existence of course tracks
+            self.assert_offline_lock(rs, event_id=data['event_id'])
             event = self.get_event(rs, data['event_id'])
+            # Check for existence of course tracks
             if not event.tracks:
                 raise RuntimeError(n_("Event without tracks forbids courses."))
-
+            fdata = affirm(
+                vtypes.EventAssociatedFields, data.get('fields') or {},
+                fields=event.fields, association=const.FieldAssociations.course)
+            data['fields'] = PsycoJson(fdata)
+            if (not self.is_orga(rs, event_id=data['event_id'])
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}
             new_id = self.sql_insert(rs, "event.courses", cdata)

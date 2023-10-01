@@ -3014,7 +3014,8 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: Dict[int, CdEDBObject], association: FieldAssociations, **kwargs: Any
+    fields: Dict[int, Any],  # TODO
+    association: FieldAssociations, **kwargs: Any
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
 
@@ -3032,10 +3033,10 @@ def _event_associated_fields(
     raw = copy.deepcopy(val)
     datatypes: Dict[str, Type[Any]] = {}
     for field in fields.values():
-        if field['association'] == association:
+        if field.association == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
-                field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
+                field.kind, field.field_name, **kwargs)
+            datatypes[field.field_name] = cast(Type[Any], eval(  # pylint: disable=eval-used
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -3043,20 +3044,20 @@ def _event_associated_fields(
                     'datetime': datetime.datetime
                 }))
     optional_fields = {
-        field['field_name']: datatypes[field['field_name']]
-        for field in fields.values() if field['association'] == association
+        field.field_name: datatypes[field.field_name]
+        for field in fields.values() if field.association == association
     }
 
     val = _examine_dictionary_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup: Dict[str, int] = {v['field_name']: k for k, v in fields.items()}
+    lookup: Dict[str, int] = {v.field_name: k for k, v in fields.items()}
     for field in val:
         field_id = lookup[field]
-        if fields[field_id]['entries'] is not None and val[field] is not None:
+        if fields[field_id].entries is not None and val[field] is not None:
             if not any(str(raw[field]) == x
-                       for x, _ in fields[field_id]['entries']):
+                       for x, _ in fields[field_id].entries.items()):
                 errs.append(ValueError(
                     field, n_("Entry not in definition list.")))
     if errs:
