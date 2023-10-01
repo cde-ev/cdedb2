@@ -1404,12 +1404,14 @@ class EventBaseBackend(EventLowLevelBackend):
         for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']
+            del part['part_group_ids']
             for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
                     part[f] = part[f]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
+                del track['track_group_ids']
                 for f in ('course_room_field',):
                     if track[f]:
                         track[f] = track[f]['field_name']

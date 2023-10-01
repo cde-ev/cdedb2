@@ -191,6 +191,7 @@ class Event(EventDataclass):
 
     iban: Optional[str]
     orga_address: Optional[vtypes.Email]
+    website_url: Optional[str]
 
     registration_text: Optional[str]
     mail_text: Optional[str]
