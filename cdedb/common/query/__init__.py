@@ -1126,9 +1126,8 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
-    sorted_parts = xsorted(event.parts.values(), key=EntitySorter.event_part)
-    sorted_part_groups = xsorted(
-        event.part_groups.values(), key=EntitySorter.event_part_group)
+    sorted_parts = xsorted(event.parts.values())
+    sorted_part_groups = xsorted(event.part_groups.values())
     track_groups: tuple[CdEDBObject, ...] = (
         {'track_ids': event.tracks.keys(), 'shortname': n_("any track")},
         *(
@@ -1171,7 +1170,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
     Since each event has custom lodgement fields and an arbitrary number
     of event parts, we have to expand this spec on the fly.
     """
-    sorted_parts = keydictsort_filter(event.parts, EntitySorter.event_part)
+    sorted_parts = xsorted(event.parts.values())
     sorted_lodgement_fields = _sort_event_fields(event.fields)[
         const.FieldAssociations.lodgement]
     field_choices = {
@@ -1215,10 +1214,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
         }
 
     # Presort part specs so we can iterate over them in order.
-    part_specs = {
-        part_id: get_part_spec(part)
-        for part_id, part in sorted_parts
-    }
+    part_specs = {part.id: get_part_spec(part) for part in sorted_parts}
 
     # Add entries for individual parts.
     for part_id, part_spec in part_specs.items():

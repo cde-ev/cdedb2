@@ -28,8 +28,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
 )
-from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.filter import keydictsort_filter
+from cdedb.common.sorting import xsorted
 
 RPS = const.RegistrationPartStati
 
@@ -791,39 +790,33 @@ class EventRegistrationInXChoiceGrouper:
     """
 
     def __init__(self, event: models.Event, regs: CdEDBObjectMap):
-        self._sorted_tracks = dict(keydictsort_filter(
-            event.tracks, EntitySorter.course_track))
-        self._sorted_parts = dict(keydictsort_filter(
-            event.parts, EntitySorter.event_part))
-        self._sorted_part_groups = dict(keydictsort_filter(
-            event.part_groups, EntitySorter.event_part_group))
-        self._max_choices = max(
-            track.num_choices for track in self._sorted_tracks.values())
+        self._sorted_tracks = xsorted(event.tracks.values())
+        self._sorted_parts = xsorted(event.parts.values())
+        self._sorted_part_groups = xsorted(event.part_groups.values())
+        self._max_choices = max(track.num_choices for track in self._sorted_tracks)
         self._track_ids_per_part = {
-            part_id: set(part.tracks)
-            for part_id, part in self._sorted_parts.items()
-        }
+            part.id: set(part.tracks) for part in self._sorted_parts}
         self._track_ids_per_part_group = {
-            part_group_id: set(itertools.chain.from_iterable(
+            part_group.id: set(itertools.chain.from_iterable(
                 self._track_ids_per_part[part_id]
                 for part_id in part_group.parts))
-            for part_group_id, part_group in self._sorted_part_groups.items()
+            for part_group in self._sorted_part_groups
         }
 
         self.choice_track_map: Dict[int, Dict[int, Optional[Set[int]]]] = {
             x: {
-                track_id: set() if track.num_choices > x else None
-                for track_id, track in self._sorted_tracks.items()
+                track.id: set() if track.num_choices > x else None
+                for track in self._sorted_tracks
             }
             for x in range(self._max_choices)
         }
 
         # Put each registration into the appropriate choice pool for each track.
         for reg_id, reg in regs.items():
-            for track_id, track in self._sorted_tracks.items():
+            for track in self._sorted_tracks:
                 for x in range(track.num_choices):
-                    if self._test(event, reg, track_id, x):
-                        target = self.choice_track_map[x][track_id]
+                    if self._test(event, reg, track.id, x):
+                        target = self.choice_track_map[x][track.id]
                         assert target is not None
                         target.add(reg_id)
                         break
@@ -864,8 +857,8 @@ class EventRegistrationInXChoiceGrouper:
         ret = {
             x: {
                 'tracks': {
-                    track_id: self._get_ids(x, (track_id,))
-                    for track_id in self._sorted_tracks
+                    track.id: self._get_ids(x, (track.id,))
+                    for track in self._sorted_tracks
                 },
                 'parts': {
                     part_id: self._get_ids(x, track_ids)

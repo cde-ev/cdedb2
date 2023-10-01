@@ -15,16 +15,16 @@
     {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
     {% set sorted_parts = ambience['event']['parts'].values()|sort %}
-    {% set sorted_part_groups = ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+    {% set sorted_part_groups = ambience['event']['part_groups'].values()|sort %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
         <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     {% set first_column_width = per_part_max_indent + 1 %}
                     <th colspan="{{ first_column_width }}"></th>
-                    {% for part_id, part in sorted_parts %}
+                    {% for part in sorted_parts %}
                         <th class="text-right" title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                             {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
                                 {{ part['shortname'] }}
@@ -33,7 +33,7 @@
                             {% endif %}
                         </th>
                     {% endfor %}
-                    {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
+                    {% for part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
                         <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Part Group{% endtrans %}: {{ part_group['title'] }}">
                             {{ part_group['shortname'] }}
                         </th>
@@ -47,22 +47,22 @@
                             <th class="indent"></th>
                         {% endfor %}
                         <th colspan="{{ first_column_width - stat.indent }}">{{ gettext(stat.value) }}</th>
-                        {% for part_id, part in sorted_parts %}
+                        {% for part in sorted_parts %}
                             <td class="text-right">
-                                {% set datum = row['parts'][part_id] %}
-                                {% set query = stat.get_query(ambience['event'], part_id) %}
+                                {% set datum = row['parts'][part.id] %}
+                                {% set query = stat.get_query(ambience['event'], part.id) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid=stat.get_link_id(part_id=part_id)) }}
+                                    datum|length, anid=stat.get_link_id(part_id=part.id)) }}
                             </td>
                         {% endfor %}
-                        {% for part_group_id, part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
+                        {% for part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                {% set datum = row['part_groups'][part_group_id] %}
-                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
+                                {% set datum = row['part_groups'][part_group.id] %}
+                                {% set query = stat.get_query_part_group(ambience['event'], part_group.id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                    datum|length, anid=stat.get_link_id(part_group_id=part_group_id)) }}
+                                    datum|length, anid=stat.get_link_id(part_group_id=part_group.id)) }}
                             </td>
                         {% endfor %}
                     </tr>
@@ -76,7 +76,7 @@
                 <thead>
                     <tr>
                         <th></th>
-                        {% for track_id, track in sorted_tracks %}
+                        {% for track in sorted_tracks %}
                             <th class="text-right" title="{% trans %}Track{% endtrans %}: {{ track['title'] }}">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
@@ -85,12 +85,12 @@
                                 {% endif %}
                             </th>
                         {% endfor %}
-                        {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
+                        {% for part in sorted_parts if part['tracks']|length > 1 %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                                 {{ part['shortname'] }}
                             </th>
                         {% endfor %}
-                        {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
+                        {% for part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group.id]|length > 1 and part_group['constraint_type'].is_stats() %}
                             <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Part Group{% endtrans %}: {{ part_group['title'] }}">
                                 {{ part_group['shortname'] }}
                             </th>
@@ -142,31 +142,31 @@
                     {% for stat, row in per_track_statistics.items() %}
                         <tr>
                             <th>{{ gettext(stat.value) }}</th>
-                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                            {% for track in ambience['event']['tracks'].values()|sort %}
                                 <td class="text-right">
-                                    {% set datum = row['tracks'][track_id] %}
-                                    {% set query = stat.get_query(ambience['event'], track_id) %}
+                                    {% set datum = row['tracks'][track.id] %}
+                                    {% set query = stat.get_query(ambience['event'], track.id) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(track_id=track_id)) }}
+                                        datum|length, anid=stat.get_link_id(track_id=track.id)) }}
                                 </td>
                             {% endfor %}
-                            {% for part_id, part in sorted_parts if part['tracks']|length > 1 %}
+                            {% for part in sorted_parts if part['tracks']|length > 1 %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                    {% set datum = row['parts'][part_id] %}
-                                    {% set query = stat.get_query_part(ambience['event'], part_id, datum) %}
+                                    {% set datum = row['parts'][part.id] %}
+                                    {% set query = stat.get_query_part(ambience['event'], part.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(part_id=part_id)) }}
+                                        datum|length, anid=stat.get_link_id(part_id=part.id)) }}
                                 </td>
                             {% endfor %}
-                            {% for part_group_id, part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group_id]|length > 1 and part_group['constraint_type'].is_stats() %}
+                            {% for part_group in sorted_part_groups if grouper._track_ids_per_part_group[part_group.id]|length > 1 and part_group['constraint_type'].is_stats() %}
                                 <td class="text-right {% if loop.first %}b-left{% endif %}">
-                                    {% set datum = row['part_groups'][part_group_id] %}
-                                    {% set query = stat.get_query_part_group(ambience['event'], part_group_id, datum) %}
+                                    {% set datum = row['part_groups'][part_group.id] %}
+                                    {% set query = stat.get_query_part_group(ambience['event'], part_group.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
-                                        datum|length, anid=stat.get_link_id(part_group_id=part_group_id)) }}
+                                        datum|length, anid=stat.get_link_id(part_group_id=part_group.id)) }}
                                 </td>
                             {% endfor %}
                         </tr>
