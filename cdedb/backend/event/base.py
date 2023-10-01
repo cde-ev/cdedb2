@@ -327,12 +327,43 @@ class EventBaseBackend(EventLowLevelBackend):
                        ) -> models.CdEDataclassMap[models.Event]:
         event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
-            return {
-                event.id: event
-                for event in (
-                    self.new_get_event(rs, event_id) for event_id in event_ids
-                )
+            event_data = {
+                e['id']: e
+                for e in self.query_all(rs, *models.Event.get_select_query(event_ids))
             }
+            part_data = self.query_all(
+                rs, *models.EventPart.get_select_query(event_ids))
+            all_parts = {e['id']: e['event_id'] for e in part_data}
+            part_group_data = self.query_all(
+                rs, *models.PartGroup.get_select_query(event_ids))
+            track_data = self.query_all(
+                rs, *models.CourseTrack.get_select_query(all_parts.keys()))
+            track_group_data = self.query_all(
+                rs, *models.TrackGroup.get_select_query(event_ids))
+            fee_data = self.query_all(
+                rs, *models.EventFee.get_select_query(event_ids))
+            field_data = self.query_all(
+                rs, *models.EventField.get_select_query(event_ids))
+        for e in event_data.values():
+            e['parts'] = []
+            e['part_groups'] = []
+            e['tracks'] = []
+            e['track_groups'] = []
+            e['fees'] = []
+            e['fields'] = []
+        for p in part_data:
+            event_data[p['event_id']]['parts'].append(p)
+        for pg in part_group_data:
+            event_data[pg['event_id']]['part_groups'].append(pg)
+        for t in track_data:
+            event_data[all_parts[t['part_id']]]['tracks'].append(t)
+        for tg in track_group_data:
+            event_data[tg['event_id']]['track_groups'].append(tg)
+        for fee in fee_data:
+            event_data[fee['event_id']]['fees'].append(fee)
+        for field in field_data:
+            event_data[field['event_id']]['fields'].append(field)
+        return models.Event.many_from_database(event_data.values())
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
