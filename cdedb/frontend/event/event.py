@@ -134,8 +134,7 @@ class EventEventMixin(EventBaseFrontend):
         """Render form."""
         merge_dicts(rs.values, rs.ambience['event'].as_dict())
 
-        sorted_fields = xsorted(rs.ambience['event'].fields.values(),
-                                key=EntitySorter.event_field)
+        sorted_fields = xsorted(rs.ambience['event'].fields.values())
         lodge_fields = [
             (field.id, field.field_name) for field in sorted_fields
             if field.association == const.FieldAssociations.registration
@@ -346,7 +345,7 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _valid_event_part_fields(fields: CdEDataclassMap[EventField]
             ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
-        sorted_fields = xsorted(fields.values(), key=EntitySorter.event_field)
+        sorted_fields = xsorted(fields.values())
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC[field]

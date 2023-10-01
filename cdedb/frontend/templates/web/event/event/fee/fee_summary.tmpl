@@ -35,8 +35,8 @@
             </tr>
         </thead>
         <tbody>
-            {% for fee_id, fee in ambience['event']['fees']|keydictsort(EntitySorter.event_fee) %}
-                <tr id="eventfee_{{ fee_id }}">
+            {% for fee in ambience['event']['fees'].values()|sort %}
+                <tr id="eventfee_{{ fee.id }}">
                     <td>{{ util.make_icon(fee['kind'].get_icon(), title=gettext(fee['kind']|string)) }}</td>
                     <td>{{ fee['title'] }}</td>
                     <td>{{ fee['notes'] }}</td>
@@ -44,13 +44,13 @@
                     <td><pre>{{ fee['condition'] }}</pre></td>
                     <td class="text-nowrap">
                         {{ util.href(
-                            cdedblink("event/configure_fee_form", {'fee_id': fee_id}),
+                            cdedblink("event/configure_fee_form", {'fee_id': fee.id}),
                             title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
                             label=util.make_icon("pen"),
-                            anid="eventfee{}_change".format(fee_id),
+                            anid="eventfee{}_change".format(fee.id),
                             aclass="btn btn-sm btn-warning") }}
-                        <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee_id}) }}"
-                              method="POST" id="deleteeventfeeform{{ fee_id }}"
+                        <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
+                              method="POST" id="deleteeventfeeform{{ fee.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_fee") }}
                             {{ util.input_submit(
