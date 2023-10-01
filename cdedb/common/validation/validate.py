@@ -107,6 +107,7 @@ from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+import cdedb.models.event as models_event
 
 NoneType = type(None)
 
@@ -2339,7 +2340,7 @@ def _event(
     configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
     if configuration_fields:
         if creation:
-            kwargs['current'] = {}
+            kwargs['current'] = None
         with errs:
             configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
                 configuration_fields, argname, creation=creation, **kwargs)
@@ -2732,7 +2733,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject,
+    event: models_event.Event,
     questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
     **kwargs: Any
 ) -> EventFeeCondition:
@@ -2745,12 +2746,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for field_id, f in event.get('fields', {}).items()
-        if f['association'] == const.FieldAssociations.registration
-           and f['kind'] == const.FieldDatatypes.bool
+        f.field_name for field_id, f in event.fields.items()
+        if f.association == const.FieldAssociations.registration
+           and f.kind == const.FieldDatatypes.bool
            and field_id not in additional_questionnaire_fields
     }
-    part_names = {p['shortname'] for p in event['parts'].values()}
+    part_names = {p.shortname for p in event.parts.values()}
 
     try:
         parse_result = fcp_parsing.parse(val)
@@ -3014,7 +3015,7 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: Dict[int, Any],  # TODO
+    fields: Dict[int, models_event.EventField],
     association: FieldAssociations, **kwargs: Any
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
@@ -3183,7 +3184,7 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 
 def _questionnaire_row(
     val: Any, argname: str = "questionnaire_row", *,
-    field_definitions: dict[int, Any],
+    field_definitions: dict[int, models_event.EventField],
     fees_by_field: Mapping[int, Set[int]],
     kind: Optional[const.QuestionnaireUsages] = None,
     **kwargs: Any
@@ -3269,7 +3270,7 @@ def _questionnaire_row(
 @_add_typed_validator
 def _questionnaire(
     val: Any, argname: str = "questionnaire", *,
-    field_definitions: dict[int, Any],  # TODO: fix cyclic import
+    field_definitions: dict[int, models_event.EventField],
     fees_by_field: Mapping[int, Set[int]],
     **kwargs: Any,
 ) -> Questionnaire:
@@ -3969,7 +3970,7 @@ def _serialized_event_questionnaire(
 def _serialized_event_configuration(
     val: Any, argname: str = "serialized_event_configuration", *,
     creation: bool = False,
-    current: CdEDBObject,
+    current: Optional[models_event.Event],
     skip_field_validation: bool = False,
     **kwargs: Any
 ) -> SerializedEventConfiguration:
@@ -3989,9 +3990,13 @@ def _serialized_event_configuration(
     errs = ValidationSummary()
 
     # Check registration time compatibility.
-    start = val.get('registration_start', current.get('registration_start'))
-    soft = val.get('registration_soft_limit', current.get('registration_soft_limit'))
-    hard = val.get('registration_hard_limit', current.get('registration_hard_limit'))
+    start = val.get('registration_start')
+    soft = val.get('registration_soft_limit')
+    hard = val.get('registration_hard_limit')
+    if current:
+        start = start or current.registration_start
+        soft = soft or current.registration_soft_limit
+        hard = hard or current.registration_hard_limit
     if start and (soft and start > soft or hard and start > hard):
         with errs:
             raise ValidationSummary(ValueError(
@@ -4001,21 +4006,21 @@ def _serialized_event_configuration(
             raise ValidationSummary(ValueError(
                 "registration_soft_limit", "Must be before or equal to hard limit."))
 
-    if not skip_field_validation:
+    if not skip_field_validation and current:
         if lodge_field := val.get('lodge_field'):
-            if lodge_field not in current['fields']:
+            if lodge_field not in current.fields:
                 with errs:
                     raise ValidationSummary(KeyError(
                         "lodge_field", n_("Unknown lodge field.")))
             else:
-                field = current['fields'][lodge_field]
+                field = current.fields[lodge_field]
                 legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
-                if field['association'] not in legal_associations:
+                if field.association not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
                             "lodge_field",
                             n_("Lodge field must be a registration field.")))
-                if field['kind'] not in legal_kinds:
+                if field.kind not in legal_kinds:
                     with errs:
                         raise ValidationSummary(ValueError(
                             "lodge_field", n_("Lodge field must have type 'string'.")))

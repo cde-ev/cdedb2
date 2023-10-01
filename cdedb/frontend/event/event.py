@@ -153,7 +153,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, current=rs.ambience['event'].as_dict())
+        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event'].shortname
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
@@ -604,7 +604,7 @@ class EventEventMixin(EventBaseFrontend):
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
-                         event=rs.ambience['event'].as_dict(),
+                         event=rs.ambience['event'],
                          questionnaire=questionnaire)
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")

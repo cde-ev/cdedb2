@@ -51,7 +51,8 @@ class EventImportMixin(EventBaseFrontend):
             Otherwise, duplicate field names will cause an error and prevent the import.
         """
         kwargs: CdEDBObject = {
-            'field_definitions': rs.ambience['event'].fields,
+            'field_definitions': {
+                f.id: f.as_dict() for f in rs.ambience['event'].fields.values()},
             'fees_by_field':
                 self.eventproxy.get_event_fees_per_entity(rs, event_id).fields,
             'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
