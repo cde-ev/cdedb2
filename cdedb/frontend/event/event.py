@@ -411,9 +411,7 @@ class EventEventMixin(EventBaseFrontend):
                          ) -> Response:
         part = rs.ambience['event'].parts[part_id]
 
-        sorted_track_ids = [
-            e.id for e in xsorted(part.tracks.values(),
-                                     key=EntitySorter.course_track)]
+        sorted_track_ids = [e.id for e in xsorted(part.tracks.values())]
 
         current = part.as_dict()
         del current['id']
@@ -603,7 +601,8 @@ class EventEventMixin(EventBaseFrontend):
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
-                         event=rs.ambience['event'], questionnaire=questionnaire)
+                         event=rs.ambience['event'].as_dict(),
+                         questionnaire=questionnaire)
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})

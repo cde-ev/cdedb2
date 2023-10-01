@@ -1006,12 +1006,12 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
 
     # Add entries for groups of parts and tracks in those parts.
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
-    sorted_part_groups.append({'part_ids': event.parts.keys(), 'shortname': None})
+    sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
         if constraint := part_group.get('constraint_type'):
             if constraint != const.EventPartGroupType.Statistic:
                 continue
-        part_ids = part_group['part_ids']
+        part_ids = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids, prefix=prefix or n_("any part")))
@@ -1221,11 +1221,11 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
 
     # Add entries for groups of parts.
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
-    sorted_part_groups.append({'part_ids': event.parts, 'shortname': None})
+    sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
         prefix = part_group['shortname']
         spec.update(_combine_specs(
-            part_specs, part_group['part_ids'], prefix=prefix or n_("any part")))
+            part_specs, part_group['parts'], prefix=prefix or n_("any part")))
 
     spec.update({
         f"lodgement_fields.xfield_{f.field_name}": QuerySpecEntry(

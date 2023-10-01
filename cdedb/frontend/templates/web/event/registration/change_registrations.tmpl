@@ -159,7 +159,7 @@
                                         |xdict_entries('{id}', '{nr}. {shortname}',
                                          include=courses_per_track_group[cco['id']]) %}
                 {% set prefix = "group{}".format(cco['id']) %}
-                {% for track in sorted_tracks if track.id in cco['track_ids'] %}
+                {% for track in sorted_tracks if track.id in cco['tracks'] %}
                     {% call form_input_optional("track{}.course_id".format(track.id),
                                                 label=gettext("Course %s")|format(ambience['event']['tracks'][track.id]['shortname']),
                                                 anid="track{}_course_id".format(track.id)) %}

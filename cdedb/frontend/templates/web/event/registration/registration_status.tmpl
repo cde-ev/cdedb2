@@ -203,8 +203,8 @@
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
-                    {% if 'track_ids' in cco %}
-                        {% for track in sorted_tracks if track.id in cco['track_ids'] %}
+                    {% if cco.is_complex() %}
+                        {% for track in sorted_tracks if track.id in cco['tracks'] %}
                             <dt title="{{ track['title'] }}">
                                 {{ track['title'] }}
                             </dt>

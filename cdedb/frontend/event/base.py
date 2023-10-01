@@ -496,22 +496,17 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
 
         pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, models.PartGroup]]] = {
-            constraint: keydictsort_filter(
-                {
-                    pg_id: part_group
-                    for pg_id, part_group in rs.ambience['event'].part_groups.items()
-                    if part_group.constraint_type == constraint
-                }, EntitySorter.event_part_group)
-            for constraint in const.EventPartGroupType
+            constraint: [
+                (pg.id, pg) for pg in xsorted(rs.ambience['event'].part_groups.values())
+                if pg.constraint_type == constraint
+            ] for constraint in const.EventPartGroupType
         }
         tgs_by_type = {
-            constraint: keydictsort_filter(
-                {
-                    tg_id: tg
-                    for tg_id, tg in rs.ambience['event'].track_groups.items()
-                    if tg.constraint_type == constraint
-                }, EntitySorter.course_choice_object)
-            for constraint in const.CourseTrackGroupType
+            constraint: [
+                (tg.id, tg)
+                for tg in xsorted(rs.ambience['event'].track_groups.values())
+                if tg.constraint_type == constraint
+            ] for constraint in const.CourseTrackGroupType
         }
 
         # Retrieve registrations.

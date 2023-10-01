@@ -22,7 +22,7 @@
 
 {% macro list_courses(registration) %}
     {% for track in parts[part_id]['tracks'].values()|sort -%}
-        {% with course_id = registration['tracks'][track_id]['course_id'] %}
+        {% with course_id = registration['tracks'][track.id]['course_id'] %}
             {% if course_id %}
                 {{ util.href(cdedblink('event/course_list') + '#course-' + course_id|string,
                              (courses[course_id]['nr']+ "." + nbsp + courses[course_id]['shortname'])) }}

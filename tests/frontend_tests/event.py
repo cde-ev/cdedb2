@@ -5665,7 +5665,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Kursausschließlichkeitsbeschränkungen")
         self.assertPresence("4. Akrobatik verstößt gegen die"
                             " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in OK1, KK1).",
+                            " (Findet statt in KK1, OK1).",
                             div="mec-violations-list")
         self.assertNonPresence("4. Akrobatik verstößt gegen die"
                                " Kursausschließlichkeitsbeschränkung Kurs 2H."
@@ -5722,7 +5722,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="constraint-violations")
         self.assertPresence("4. Akrobatik verstößt gegen die"
                             " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in OK1, KK1).",
+                            " (Findet statt in KK1, OK1).",
                             div="mec-violations-list")
         self.assertNonPresence("4. Akrobatik verstößt gegen die"
                                " Kursausschließlichtkeitsbeschränkung Kurs 2H."

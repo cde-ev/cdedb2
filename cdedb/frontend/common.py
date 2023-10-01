@@ -1547,15 +1547,15 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
-              ((lambda a: do_assert(a['part_group']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['part_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
               'track_group_id', 'track_group',
-              ((lambda a: do_assert(a['track_group']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['track_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
               'fee_id', 'fee',
-              ((lambda a: do_assert(a['fee']['event_id'] == a['event'].id)),)),
+              ((lambda a: do_assert(a['fee'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
               ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),

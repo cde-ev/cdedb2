@@ -33,7 +33,7 @@
                             {% endif %}
                         </th>
                     {% endfor %}
-                    {% for part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
+                    {% for part_group in sorted_part_groups if part_group['parts']|length > 1 and part_group['constraint_type'].is_stats() %}
                         <th class="text-right {% if loop.first %}b-left{% endif %}" title="{% trans %}Part Group{% endtrans %}: {{ part_group['title'] }}">
                             {{ part_group['shortname'] }}
                         </th>
@@ -56,7 +56,7 @@
                                     datum|length, anid=stat.get_link_id(part_id=part.id)) }}
                             </td>
                         {% endfor %}
-                        {% for part_group in sorted_part_groups if part_group['part_ids']|length > 1 and part_group['constraint_type'].is_stats() %}
+                        {% for part_group in sorted_part_groups if part_group['parts']|length > 1 and part_group['constraint_type'].is_stats() %}
                             <td class="text-right {% if loop.first %}b-left{% endif %}">
                                 {% set datum = row['part_groups'][part_group.id] %}
                                 {% set query = stat.get_query_part_group(ambience['event'], part_group.id, datum) %}

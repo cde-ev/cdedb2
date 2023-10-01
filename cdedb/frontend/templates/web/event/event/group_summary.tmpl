@@ -65,7 +65,7 @@
                     </td>
                     {% for part in ambience['event']['parts'].values()|sort %}
                         <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
-                            {{ util.deko_checkbox(part.id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                            {{ util.deko_checkbox(part.id in part_group['parts'], titles=['', part['shortname']]) }}
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">
@@ -134,9 +134,9 @@
                     <td>
                         {{ track_group['sortkey'] }}
                     </td>
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                    {% for track in ambience['event']['tracks'].values()|sort %}
                         <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
-                            {{ util.deko_checkbox(track_id in track_group['track_ids'], titles=['', track['shortname']]) }}
+                            {{ util.deko_checkbox(track.id in track_group['tracks'], titles=['', track['shortname']]) }}
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">
