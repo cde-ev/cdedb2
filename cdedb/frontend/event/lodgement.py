@@ -219,7 +219,7 @@ class EventLodgementMixin(EventBaseFrontend):
             for group_id, group in keydictsort_filter(
                 groups, EntitySorter.lodgement_group)
         }
-        sorted_parts = keydictsort_filter(parts, EntitySorter.event_part)
+        sorted_parts = xsorted(parts.values())
 
         return self.render(rs, "lodgement/lodgements", {
             'sorted_event_parts': sorted_parts,

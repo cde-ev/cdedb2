@@ -48,7 +48,7 @@
             </dl>
 
             <dl class="dl-horizontal">
-                {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
+                {% for field in ambience['event']['fields'].values()|sort %}
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
                         <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
                         <dd>

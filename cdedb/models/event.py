@@ -665,12 +665,11 @@ class LodgementGroup(EventDataclass):
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
-    sorter = EntitySorter.lodgement_by_group
+    sorter = lambda x: (x['group']['title'], x['group']['id'], x['title'], x['id'])
 
     # event: Event
     event_id: int
-    group: LodgementGroup = dataclasses.field(
-        compare=False, repr=False, metadata={'database_exclude': True})
+    group: LodgementGroup = dataclasses.field(metadata={'database_exclude': True})
     group_id: int
 
     title: str

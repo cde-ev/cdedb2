@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-    {% set has_lodge_field = ambience['event'].get('lodge_field') is not none %}
+    {% set has_lodge_field = ambience['event']['lodge_field'] is not none %}
     <p>
         {% trans %}
             The Lodgement Wishes Graph provides a visual representation of the roommate wishes entered by the

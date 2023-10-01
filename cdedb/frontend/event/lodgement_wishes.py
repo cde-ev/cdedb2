@@ -244,7 +244,7 @@ def _parts_with_status(registration: CdEDBObject,
 
 def _sort_parts(part_ids: Set[int], event: models.Event) -> List[int]:
     """Sort the given parts accordingly to EntitySorter."""
-    sorted_parts = xsorted(event.parts.values(), key=EntitySorter.event_part)
+    sorted_parts = xsorted(event.parts.values())
     return [part.id for part in sorted_parts if part.id in part_ids]
 
 
