@@ -178,8 +178,8 @@ class EventBaseBackend(EventLowLevelBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_events(self, rs: RequestState, event_ids: Collection[int]
-                   ) -> CdEDBObjectMap:
+    def old_get_events(self, rs: RequestState, event_ids: Collection[int]
+                       ) -> CdEDBObjectMap:
         """Retrieve data for some events organized via DB.
 
         This queries quite a lot of additional tables since there is quite
@@ -290,41 +290,11 @@ class EventBaseBackend(EventLowLevelBackend):
 
     class _GetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
-    get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
+    old_get_event: _GetEventProtocol = singularize(old_get_events, "event_ids", "event_id")
 
     @access("anonymous")
-    def new_get_event(self, rs: RequestState, event_id: int) -> models.Event:
-        event_id = affirm(vtypes.ID, event_id)
-        with Atomizer(rs):
-            event_data = self.query_one(rs, *models.Event.get_select_query((event_id,)))
-            if not event_data:
-                raise KeyError(event_id)
-            part_data = self.query_all(
-                rs, *models.EventPart.get_select_query((event_id,)))
-            all_parts = {e['id'] for e in part_data}
-            part_group_data = self.query_all(
-                rs, *models.PartGroup.get_select_query((event_id,)))
-            track_data = self.query_all(
-                rs, *models.CourseTrack.get_select_query(all_parts))
-            track_group_data = self.query_all(
-                rs, *models.TrackGroup.get_select_query((event_id,)))
-            fee_data = self.query_all(
-                rs, *models.EventFee.get_select_query((event_id,)))
-            field_data = self.query_all(
-                rs, *models.EventField.get_select_query((event_id,)))
-            return models.Event.from_database({
-                **event_data,
-                'parts': part_data,
-                'part_groups': part_group_data,
-                'tracks': track_data,
-                'track_groups': track_group_data,
-                'fields': field_data,
-                'fees': fee_data,
-            })
-
-    @access("anonymous")
-    def new_get_events(self, rs: RequestState, event_ids: Collection[int]
-                       ) -> models.CdEDataclassMap[models.Event]:
+    def get_events(self, rs: RequestState, event_ids: Collection[int]
+                   ) -> models.CdEDataclassMap[models.Event]:
         event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
             event_data = {
@@ -364,6 +334,10 @@ class EventBaseBackend(EventLowLevelBackend):
         for field in field_data:
             event_data[field['event_id']]['fields'].append(field)
         return models.Event.many_from_database(event_data.values())
+
+    class _NewGetEventProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
+    get_event: _NewGetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:

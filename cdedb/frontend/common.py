@@ -1519,7 +1519,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'transaction_id', 'transaction',
               ((lambda a: do_assert(a['transaction']['lastschrift_id']
                                     == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.eventproxy.new_get_event(rs, anid),
+        Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
               'event_id', 'event', ()),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
               'pevent_id', 'pevent', ()),

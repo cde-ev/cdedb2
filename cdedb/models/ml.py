@@ -526,7 +526,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if self.event_id is None:
             return set()
 
-        event = bc.event.new_get_event(rs, self.event_id)
+        event = bc.event.get_event(rs, self.event_id)
 
         spec = QueryScope.registration.get_spec(event=event)
         target = {f"part{part_id}.status" for part_id in event.parts}

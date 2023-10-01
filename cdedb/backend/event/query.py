@@ -602,7 +602,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:
             with Atomizer(rs):
-                event = self.new_get_event(rs, event_id)
+                event = self.get_event(rs, event_id)
                 select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
                           f" FROM event.stored_queries"
                           f" WHERE event_id = %s")

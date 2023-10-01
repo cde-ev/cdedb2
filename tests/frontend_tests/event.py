@@ -1680,7 +1680,7 @@ etc;anything else""", f['entries_2'].value)
         print(self.response.text[0])
         self.response = save
 
-        event = self.event.new_get_event(self.key, 1)
+        event = self.event.get_event(self.key, 1)
         persona = self.core.get_persona(self.key, self.user['id'])
         payment_data = {
             'meta_info': self.core.get_meta_info(self.key),
@@ -3611,7 +3611,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/stats'}, )
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
-        event = self.event.new_get_event(self.key, event_id)
+        event = self.event.get_event(self.key, event_id)
 
         def _test_one_stat(
                 stat: StatisticMixin,

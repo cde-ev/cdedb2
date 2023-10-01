@@ -303,7 +303,7 @@ class TestEventModels(BackendTest):
             track_groups={},
         )
 
-        reality = self.event.new_get_event(self.key, event_id)
+        reality = self.event.get_event(self.key, event_id)
 
         self.assertEqual(
             expectation.fields,
@@ -427,8 +427,8 @@ class TestEventModels(BackendTest):
                     tracks=(),  # type: ignore[arg-type]
                 )
             },
-            # parts=self.event.new_get_event(self.key, event_id).parts,
-            tracks=self.event.new_get_event(self.key, event_id).tracks,
+            # parts=self.event.get_event(self.key, event_id).parts,
+            tracks=self.event.get_event(self.key, event_id).tracks,
             fields={},
             fees={
                 16: models.EventFee(
@@ -558,7 +558,7 @@ class TestEventModels(BackendTest):
             }
         )
 
-        reality = self.event.new_get_event(self.key, event_id)
+        reality = self.event.get_event(self.key, event_id)
 
         # print()
         # pprint(expectation.parts)

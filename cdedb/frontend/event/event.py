@@ -85,7 +85,7 @@ class EventEventMixin(EventBaseFrontend):
                 event['registrations'] = len(regs)
 
         # TODO: remove this duplicate
-        new_events = self.eventproxy.new_get_events(rs, event_ids)
+        new_events = self.eventproxy.get_events(rs, event_ids)
 
         def querylink(event_id: int) -> str:
             query = Query(
