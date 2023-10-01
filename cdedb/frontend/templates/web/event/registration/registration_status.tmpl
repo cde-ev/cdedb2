@@ -193,8 +193,8 @@
     {% for batch in filtered_choice_objects|batch(2) %}
         <div class="row">
         {% for cco in batch %}
-        {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
-        {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
+        {% set track = cco.reference_track %}
+        {% set id_suffix = "group-{}".format(cco['id']) if cco.is_complex() else track['id'] %}
         {% set reg_track = registration['tracks'][track['id']] %}
 
         <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">

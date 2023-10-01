@@ -294,7 +294,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, event.is_course_state_visible and not orga, involved_parts)
         all_courses_per_track_group = (
             self.eventproxy.get_course_segments_per_track_group(rs, event_id))
-        reference_tracks = {}
         simple_tracks = set(tracks)
         track_group_map: dict[int, Optional[int]] = {
             track_id: None for track_id in tracks}
@@ -311,8 +310,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             for track in track_group.tracks.values():
                 ccos_per_part[track.part_id].append(
                     f"group-{track_group_id}")
-                reference_tracks[track_group_id] = track
-                track_group.num_choices = track.num_choices
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
@@ -338,7 +335,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'all_courses_per_track': all_courses_per_track,
             'courses_per_track_group': courses_per_track_group,
             'all_courses_per_track_group': all_courses_per_track_group,
-            'reference_tracks': reference_tracks, 'simple_tracks': simple_tracks,
+            'simple_tracks': simple_tracks,
             'choice_objects': choice_objects, 'sync_track_groups': sync_track_groups,
             'track_group_map': track_group_map, 'ccos_per_part': ccos_per_part,
             'parts_per_track_group_per_course': parts_per_track_group_per_course,
@@ -487,12 +484,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         event = rs.ambience['event']
         tracks = event.tracks
-        track_groups = event.track_groups
         course_choice_params = self.get_course_choice_params(
             rs, event.id, orga=orga_input)
         simple_tracks = course_choice_params['simple_tracks']
         sync_track_groups = course_choice_params['sync_track_groups']
-        reference_tracks = course_choice_params['reference_tracks']
         track_group_map = course_choice_params['track_group_map']
 
         # Top-level registration data.
@@ -581,10 +576,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         raw_tracks = request_extractor(rs, track_params)
 
         # Now for synced tracks.
-        num_choices = lambda g_id: tracks[reference_tracks[g_id]['id']].num_choices
         synced_params: vtypes.TypeMapping = {
-            f"group{group_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
-            for group_id in sync_track_groups for i in range(num_choices(group_id))
+            f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            for group in sync_track_groups.values() for i in range(group.num_choices)
         }
         synced_params.update({
             f"group{group_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
@@ -593,10 +587,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         synced_params = filter_params(synced_params)
         synced_data = request_extractor(rs, synced_params)
 
-        for group_id in sync_track_groups:
-            for track_id in track_groups[group_id].tracks:
+        for group_id, group in sync_track_groups.items():
+            for track_id in group.tracks:
                 # Be careful not to override non-present keys here, due to multiedit.
-                for i in range(num_choices(group_id)):
+                for i in range(group.num_choices):
                     key = f"group{group_id}.course_choice_{i}"
                     if key in synced_data:
                         raw_tracks[f"track{track_id}.course_choice_{i}"] = synced_data[

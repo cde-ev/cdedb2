@@ -23,11 +23,11 @@ event realm tables:
   + event.stored_queries
   * event.log
 """
+import abc
 import copy
 import dataclasses
 import datetime
 import decimal
-from abc import ABC
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, Protocol,
     TypeVar, get_args, get_origin,
@@ -349,13 +349,26 @@ class EventPart(EventDataclass):
 
 
 @dataclasses.dataclass
-class CourseChoiceObject(ABC):
+class CourseChoiceObject(abc.ABC):
+    id: vtypes.ProtoID
+
     title: str
     shortname: str
     sortkey: int
 
     num_choices: int
     min_choices: int
+
+    @abc.abstractmethod
+    def is_complex(self) -> bool: ...
+
+    @property
+    @abc.abstractmethod
+    def reference_track(self) -> "CourseTrack": ...
+
+    @property
+    @abc.abstractmethod
+    def tracks(self) -> CdEDataclassMap["CourseTrack"]: ...
 
 
 @dataclasses.dataclass
@@ -372,6 +385,17 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
         default_factory=dict)
+
+    def is_complex(self) -> bool:
+        return False
+
+    @property
+    def reference_track(self) -> "CourseTrack":
+        return self
+
+    @property
+    def tracks(self) -> CdEDataclassMap["CourseTrack"]:
+        return {self.id: self}
 
 
 @dataclasses.dataclass
@@ -519,13 +543,16 @@ class TrackGroup(EventDataclass):
 class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     constraint_type = const.CourseTrackGroupType.course_choice_sync
 
+    def is_complex(self) -> bool:
+        return True
+
     @property
-    def _reference_track(self) -> CourseTrack:
+    def reference_track(self) -> CourseTrack:
         return list(self.tracks.values())[0]
 
     @property
     def num_choices(self) -> int:
-        return self._reference_track.num_choices
+        return self.reference_track.num_choices
 
     @num_choices.setter
     def num_choices(self, value: int) -> None:
@@ -534,7 +561,7 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
 
     @property
     def min_choices(self) -> int:
-        return self._reference_track.min_choices
+        return self.reference_track.min_choices
 
     @min_choices.setter
     def min_choices(self, value: int) -> None:

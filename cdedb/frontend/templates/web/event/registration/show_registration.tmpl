@@ -219,9 +219,9 @@
             {% for batch in choice_objects|batch(2) %}
                 <div class="row">
                 {% for cco in batch %}
-                    {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
+                    {% set track = cco.reference_track %}
                     {% set reg_track = ambience['registration']['tracks'][track['id']] %}
-                    <div class="col-md-6" id="course-choices-{{ "group-{}".format(track_group['id']) if track_group else track['id'] }}">
+                    <div class="col-md-6" id="course-choices-{{ "group-{}".format(cco['id']) if cco.is_complex() else track['id'] }}">
                         {% if choice_objects|length > 1 %}
                             <h5>{{ cco['title'] }}</h5>
                         {% endif %}
