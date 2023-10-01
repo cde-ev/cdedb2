@@ -1680,12 +1680,12 @@ etc;anything else""", f['entries_2'].value)
         print(self.response.text[0])
         self.response = save
 
-        event = self.event.get_event(self.key, 1)
+        event = self.event.new_get_event(self.key, 1)
         persona = self.core.get_persona(self.key, self.user['id'])
         payment_data = {
             'meta_info': self.core.get_meta_info(self.key),
             'reference': make_event_fee_reference(persona, event),
-            'to_pay': decimal.Decimal("10.50"), 'iban': event['iban'],
+            'to_pay': decimal.Decimal("10.50"), 'iban': event.iban,
         }
 
         event_frontend: EventFrontend = self.app.app.event
@@ -3611,7 +3611,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/stats'}, )
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
-        event = self.event.get_event(self.key, event_id)
+        event = self.event.new_get_event(self.key, event_id)
 
         def _test_one_stat(
                 stat: StatisticMixin,
@@ -3660,12 +3660,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             itertools.chain.from_iterable(TRACK_STATISTICS))
 
         # Test single track stats.
-        for track_id, track in event['tracks'].items():
+        for track_id, track in event.tracks.items():
             for stat in track_stats:
                 _test_one_stat(stat, track_id=track_id)
 
         # Test single part stats.
-        for part_id, part in event['parts'].items():
+        for part_id, part in event.parts.items():
             for stat in part_stats:
                 _test_one_stat(stat, part_id=part_id)
 
@@ -3676,9 +3676,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 _test_one_stat(stat, part_id=part_id)
 
         # Test single part group stats.
-        for part_group_id, part_group in event['part_groups'].items():
+        for part_group_id, part_group in event.part_groups.items():
             # Skip all part groups with at most one part.
-            if len(part_group['part_ids']) <= 1:
+            if len(part_group.parts) <= 1:
                 continue
             for stat in part_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
