@@ -135,7 +135,7 @@
 {% macro display_field(field, entry, otherwise='—') %}
     {% if field['entries'] %}
         {% set hit = [] %}
-        {% for value, description in field['entries'] %}
+        {% for value, description in field['entries'].items() %}
             {% if value == entry|string %}
                 {% do hit.append(description) %}
             {% endif %}
@@ -172,7 +172,7 @@
     {%- set name = name or "fields.{}".format(field['field_name']) %}
     {%- set bool_label = bool_label or field['title'] %}
     {%- if field['entries'] %}
-        {{- util.input_select(name=name, entries=field['entries'], nulloption=nbsp,
+        {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
@@ -294,7 +294,7 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
+                                              entries=registration_fields.values()|sort|entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}

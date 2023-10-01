@@ -39,7 +39,8 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         formatter = lambda k, v: (v if k != 'entries' or not v else
-                                  '\n'.join(';'.join(line) for line in v))
+                                  '\n'.join(f'{value};{description}'
+                                            for value, description in v.items()))
         current = {
             "{}_{}".format(key, field_id): formatter(key, value)
             for field_id, field in rs.ambience['event'].fields.items()
@@ -59,15 +60,15 @@ class EventFieldMixin(EventBaseFrontend):
                 if row['field_id']:
                     referenced.add(row['field_id'])
         if rs.ambience['event'].lodge_field:
-            referenced.add(rs.ambience['event'].lodge_field)
+            referenced.add(rs.ambience['event'].lodge_field.id)
         for part in rs.ambience['event'].parts.values():
             if part.waitlist_field:
-                referenced.add(part.waitlist_field)
+                referenced.add(part.waitlist_field.id)
             if part.camping_mat_field:
-                referenced.add(part.camping_mat_field)
+                referenced.add(part.camping_mat_field.id)
         for track in rs.ambience['event'].tracks.values():
             if track.course_room_field:
-                referenced.add(track.course_room_field)
+                referenced.add(track.course_room_field.id)
         return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'locked': locked})
 
@@ -211,8 +212,7 @@ class EventFieldMixin(EventBaseFrontend):
         _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
                                                        kind)
         fields = [(field.id, field.title)
-                  for field in xsorted(rs.ambience['event'].fields.values(),
-                                       key=EntitySorter.event_field)
+                  for field in xsorted(rs.ambience['event'].fields.values())
                   if field.association == kind]
         return self.render(
             rs, "fields/field_set_select", {
