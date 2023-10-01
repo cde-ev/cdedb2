@@ -27,6 +27,8 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import functools
+from abc import ABC
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, Protocol,
     TypeVar, get_args, get_origin,
@@ -346,9 +348,17 @@ class EventPart(EventDataclass):
         params = (entities,)
         return query, params
 
+class CourseChoiceObject(ABC):
+    title: str
+    shortname: str
+    sortkey: int
+
+    num_choices: int
+    min_choices: int
+
 
 @dataclasses.dataclass
-class CourseTrack(EventDataclass):
+class CourseTrack(EventDataclass, CourseChoiceObject):
     database_table = "event.course_tracks"
     entity_key = "part_id"
     sorter = EntitySorter.course_track
@@ -356,12 +366,6 @@ class CourseTrack(EventDataclass):
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
     part_id: vtypes.ProtoID
-
-    title: str
-    shortname: str
-    num_choices: int
-    min_choices: int
-    sortkey: int
 
     course_room_field: Optional["EventField"]
 
@@ -486,6 +490,12 @@ class TrackGroup(EventDataclass):
     tracks: CdEDataclassMap[CourseTrack] = dataclasses.field(default_factory=dict)
 
     @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "TrackGroup":
+        if data['constraint_type'] == const.CourseTrackGroupType.course_choice_sync:
+            return SyncTrackGroup(**data)
+        return cls(**data)
+
+    @classmethod
     def get_select_query(cls, entities: Collection[int],
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
@@ -503,6 +513,32 @@ class TrackGroup(EventDataclass):
         """
         params = (entities,)
         return query, params
+
+
+class SyncTrackGroup(TrackGroup, CourseChoiceObject):
+    constraint_type = const.CourseTrackGroupType.course_choice_sync
+
+    @property
+    def _reference_track(self) -> CourseTrack:
+        return list(self.tracks.values())[0]
+
+    @property
+    def num_choices(self) -> int:
+        return self._reference_track.num_choices
+
+    @num_choices.setter
+    def num_choices(self, value: int) -> None:
+        for track in self.tracks.values():
+            track.num_choices = value
+
+    @property
+    def min_choices(self) -> int:
+        return self._reference_track.min_choices
+
+    @min_choices.setter
+    def min_choices(self, value: int) -> None:
+        for track in self.tracks.values():
+            track.min_choices = value
 
 
 #

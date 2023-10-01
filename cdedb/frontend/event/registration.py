@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event
+from cdedb.models.event import Event, SyncTrackGroup
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -298,8 +298,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         simple_tracks = set(tracks)
         track_group_map: dict[int, Optional[int]] = {
             track_id: None for track_id in tracks}
-        sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
-                             if tg.constraint_type.is_sync()}
+        sync_track_groups: dict[int, SyncTrackGroup] = {
+            tg_id: tg for tg_id, tg in track_groups.items()  # type: ignore[misc]
+            if tg.constraint_type.is_sync()}
         ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
             if not track_group.constraint_type == ccs:
