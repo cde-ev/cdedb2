@@ -12,6 +12,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, make_persona_name,
@@ -31,7 +32,6 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
-from cdedb.models.event import Event
 
 
 @dataclasses.dataclass(frozen=True)
@@ -47,7 +47,7 @@ class LodgementProblem:
 class EventLodgementMixin(EventBaseFrontend):
     @classmethod
     def check_lodgement_problems(
-            cls, event: Event, lodgements: CdEDBObjectMap,
+            cls, event: models.Event, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
             all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:

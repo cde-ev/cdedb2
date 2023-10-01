@@ -14,6 +14,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, DefaultReturnCode, Error, RequestState, merge_dicts, unwrap,
 )
@@ -25,7 +26,6 @@ from cdedb.frontend.common import (
     event_guard, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import CdEDataclassMap, EventField
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
@@ -51,10 +51,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             'add_questionnaire': add_questionnaire,
             'registration_fields': reg_fields})
 
-    def _prepare_questionnaire_form(self, rs: RequestState, event_id: int,
-                                    kind: const.QuestionnaireUsages
-                                    ) -> Tuple[List[CdEDBObject],
-                                               CdEDataclassMap[EventField]]:
+    def _prepare_questionnaire_form(
+            self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+    ) -> Tuple[List[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
@@ -213,12 +212,11 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return self.redirect(rs, "event/additional_questionnaire_form")
 
     @staticmethod
-    def process_questionnaire_input(rs: RequestState, num: int,
-                                    reg_fields: CdEDataclassMap[EventField],
-                                    kind: const.QuestionnaireUsages,
-                                    other_used_fields: Collection[int]
-                                    ) -> Dict[const.QuestionnaireUsages,
-                                              List[CdEDBObject]]:
+    def process_questionnaire_input(
+            rs: RequestState, num: int,
+            reg_fields: models.CdEDataclassMap[models.EventField],
+            kind: const.QuestionnaireUsages, other_used_fields: Collection[int]
+    ) -> Dict[const.QuestionnaireUsages, List[CdEDBObject]]:
         """This handles input to configure questionnaires.
 
         Since this covers a variable number of rows, we cannot do this

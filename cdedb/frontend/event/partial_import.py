@@ -14,6 +14,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, json_serialize
 from cdedb.common.exceptions import PartialImportError
 from cdedb.common.n_ import n_
@@ -23,7 +24,6 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTfile, access, check_validation as check, event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event
 
 
 class EventImportMixin(EventBaseFrontend):
@@ -291,7 +291,7 @@ class EventImportMixin(EventBaseFrontend):
     # TODO: be more specific about the return types.
     @staticmethod
     def _make_partial_import_diff_aux(
-            rs: RequestState, event: Event, courses: CdEDBObjectMap,
+            rs: RequestState, event: models.Event, courses: CdEDBObjectMap,
             lodgements: CdEDBObjectMap
     ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """ Helper method, similar to make_registration_query_aux(), to

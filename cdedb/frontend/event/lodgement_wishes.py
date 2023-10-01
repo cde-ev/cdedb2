@@ -11,6 +11,7 @@ from typing import Dict, List, Mapping, Optional, Pattern, Set, Tuple
 
 import graphviz
 
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
     make_persona_name, unwrap,
@@ -19,7 +20,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl
-from cdedb.models.event import Event
 
 
 @dataclass
@@ -46,7 +46,7 @@ class LodgementWish:
 
 def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
-                            event: Event,
+                            event: models.Event,
                             restrict_part_id: Optional[int],
                             restrict_registration_id: int = None,
                             check_edges: bool = True,
@@ -242,7 +242,7 @@ def _parts_with_status(registration: CdEDBObject,
     }
 
 
-def _sort_parts(part_ids: Set[int], event: Event) -> List[int]:
+def _sort_parts(part_ids: Set[int], event: models.Event) -> List[int]:
     """Sort the given parts accordingly to EntitySorter."""
     sorted_parts = xsorted(event.parts.values(), key=EntitySorter.event_part)
     return [part.id for part in sorted_parts if part.id in part_ids]
@@ -273,7 +273,7 @@ def create_lodgement_wishes_graph(
         registrations: CdEDBObjectMap, wishes: List[LodgementWish],
         lodgements: CdEDBObjectMap,
         lodgement_groups: CdEDBObjectMap,
-        event: Event,
+        event: models.Event,
         personas: CdEDBObjectMap,
         camping_mat_field_names: Mapping[int, Optional[str]],
         filter_part_id: Optional[int], show_all: bool,
@@ -454,7 +454,8 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
     return ""
 
 
-def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap, event: Event,
+def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
+                     event: models.Event,
                      camping_mat_field_names: Mapping[int, Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {p: _camping_mat_icon(
@@ -470,7 +471,7 @@ def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap, event:
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                       personas: CdEDBObjectMap, event: Event) -> str:
+                       personas: CdEDBObjectMap, event: models.Event) -> str:
     parts = ""
     if len(event.parts) > 1:
         parts = "\n"
@@ -511,7 +512,7 @@ def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
 
 
 def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: Event) -> str:
+                     event: models.Event) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
     age = _get_age(personas[registration['persona_id']], event)
@@ -535,7 +536,7 @@ def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
         return "#87d0ff"
 
 
-def _get_age(persona: CdEDBObject, event: Event) -> float:
+def _get_age(persona: CdEDBObject, event: models.Event) -> float:
     """
     Roughly calculate the age of a persona at the begin of a given event in
     years as a fractional number.

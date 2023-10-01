@@ -13,6 +13,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, make_persona_name,
     merge_dicts,
@@ -28,7 +29,6 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import EventField
 
 EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
 
@@ -118,9 +118,10 @@ class EventFieldMixin(EventBaseFrontend):
         const.FieldAssociations.lodgement: "event/lodgement_query",
     }
 
-    def field_set_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
-                      ids: Collection[int], kind: const.FieldAssociations) \
-            -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[EventField]]:
+    def field_set_aux(
+            self, rs: RequestState, event_id: int, field_id: Optional[int],
+            ids: Collection[int], kind: const.FieldAssociations
+    ) -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in

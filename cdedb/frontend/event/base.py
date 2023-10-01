@@ -28,6 +28,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
     unwrap,
@@ -43,7 +44,6 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
-from cdedb.models.event import Event, PartGroup
 
 
 @dataclass(frozen=True)
@@ -175,7 +175,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """
         return event_id in rs.user.orga or self.is_admin(rs)
 
-    def is_locked(self, event: Event) -> bool:
+    def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""
         return event.offline_lock != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
@@ -416,7 +416,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @staticmethod
-    def calculate_groups(entity_ids: Collection[int], event: Event,
+    def calculate_groups(entity_ids: Collection[int], event: models.Event,
                          registrations: CdEDBObjectMap, key: str,
                          personas: CdEDBObjectMap = None,
                          instructors: bool = True
@@ -478,7 +478,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
     @staticmethod
-    def _get_track_ids(event: Event, part_group_id: int) -> Set[int]:
+    def _get_track_ids(event: models.Event, part_group_id: int) -> Set[int]:
         parts = event.part_groups[part_group_id].parts.values()
         return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
@@ -495,7 +495,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         :return: A collection of data pertaining to the constraint violations.
         """
 
-        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, PartGroup]]] = {
+        pgs_by_type: Dict[const.EventPartGroupType, List[Tuple[int, models.PartGroup]]] = {
             constraint: keydictsort_filter(
                 {
                     pg_id: part_group
@@ -665,8 +665,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @staticmethod
-    def _get_camping_mat_field_names(event: Event) -> dict[int,
-            Optional[vtypes.RestrictiveIdentifier]]:
+    def _get_camping_mat_field_names(
+            event: models.Event
+    ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
         field_names: dict[int,
             Optional[vtypes.RestrictiveIdentifier]] = {}
         for part_id, part in event.parts.items():

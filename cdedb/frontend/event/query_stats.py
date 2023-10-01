@@ -22,6 +22,7 @@ import itertools
 from typing import Collection, Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
@@ -29,7 +30,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import keydictsort_filter
-from cdedb.models.event import Event, EventPart
 
 RPS = const.RegistrationPartStati
 
@@ -45,7 +45,7 @@ def _is_participant(reg_part: CdEDBObject) -> bool:
 
 
 # Helper functions to build query constraints frequently used by stats.
-def _status_constraint(part: EventPart, status: const.RegistrationPartStati,
+def _status_constraint(part: models.EventPart, status: const.RegistrationPartStati,
                        negate: bool = False) -> QueryConstraint:
     return (
         f"part{part.id}.status",
@@ -54,26 +54,26 @@ def _status_constraint(part: EventPart, status: const.RegistrationPartStati,
     )
 
 
-def _participant_constraint(part: EventPart) -> QueryConstraint:
+def _participant_constraint(part: models.EventPart) -> QueryConstraint:
     return _status_constraint(part, RPS.participant)
 
 
-def _involved_constraint(part: EventPart) -> QueryConstraint:
+def _involved_constraint(part: models.EventPart) -> QueryConstraint:
     return (f"part{part.id}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.is_involved()))
 
 
-def _has_to_pay_constraint(part: EventPart) -> QueryConstraint:
+def _has_to_pay_constraint(part: models.EventPart) -> QueryConstraint:
     return (f"part{part.id}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.has_to_pay()))
 
 
-def _present_constraint(part: EventPart) -> QueryConstraint:
+def _present_constraint(part: models.EventPart) -> QueryConstraint:
     return (f"part{part.id}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.is_present()))
 
 
-def _age_constraint(part: EventPart, max_age: int, min_age: int = None
+def _age_constraint(part: models.EventPart, max_age: int, min_age: int = None
                     ) -> QueryConstraint:
     min_date = deduct_years(part.part_begin, max_age)
     if min_age is None:
@@ -86,7 +86,7 @@ def _age_constraint(part: EventPart, max_age: int, min_age: int = None
 
 
 # Helper function to construct ordering for waitlist queries.
-def _waitlist_order(event: Event, part: EventPart) -> List[QueryOrder]:
+def _waitlist_order(event: models.Event, part: models.EventPart) -> List[QueryOrder]:
     ret = []
     if field := part.waitlist_field:
         ret.append((f'reg_fields.xfield_{field.field_name}', True))
@@ -172,19 +172,19 @@ class StatisticMixin:
     name: str
 
     @abc.abstractmethod
-    def test(self, event: Event, entity: CdEDBObject, context_id: int) -> bool:
+    def test(self, event: models.Event, entity: CdEDBObject, context_id: int) -> bool:
         """Determine whether the given entity fits this stat for the given context."""
 
     @abc.abstractmethod
-    def _get_query_aux(self, event: Event, context_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: models.Event, context_id: int) -> StatQueryAux:
         """Construct query fields, constraints and order for this stat and a context."""
 
     @staticmethod
     @abc.abstractmethod
-    def _get_base_query(event: Event) -> Query:
+    def _get_base_query(event: models.Event) -> Query:
         """Create a query object to base all queries for these stats on."""
 
-    def get_query(self, event: Event, context_id: int) -> Query:
+    def get_query(self, event: models.Event, context_id: int) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
         fields, constraints, order = self._get_query_aux(event, context_id)
@@ -195,11 +195,11 @@ class StatisticMixin:
         return query
 
     @abc.abstractmethod
-    def get_query_part_group(self, event: Event, part_group_id: int,
+    def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct a merged query for all things in a part group."""
 
-    def get_query_by_ids(self, event: Event, entity_ids: Collection[int]
+    def get_query_by_ids(self, event: models.Event, entity_ids: Collection[int]
                          ) -> Query:
         """This queries information by exhaustion by listing all relevant ids."""
         query = self._get_base_query(event)
@@ -215,11 +215,11 @@ class StatisticMixin:
         """
 
     @staticmethod
-    def get_part_ids(event: Event, *, part_group_id: int) -> Sequence[int]:
+    def get_part_ids(event: models.Event, *, part_group_id: int) -> Sequence[int]:
         return xsorted(event.part_groups[part_group_id].parts)
 
     @staticmethod
-    def get_track_ids(event: Event, *, part_id: int = None,
+    def get_track_ids(event: models.Event, *, part_id: int = None,
                       part_group_id: int = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
@@ -241,13 +241,13 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
     Helper class for methods to delegate tests and query construction for part stats.
     """
 
-    def test_part_group(self, event: Event, entity: CdEDBObject,
+    def test_part_group(self, event: models.Event, entity: CdEDBObject,
                         part_group_id: int) -> bool:
         """Determine whether the entity fits this stat for any track in a part group."""
         return any(self.test(event, entity, track_id) for track_id
                    in self.get_part_ids(event, part_group_id=part_group_id))
 
-    def get_query_part_group(self, event: Event, part_group_id: int,
+    def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
         if self.is_mergeable():
@@ -273,18 +273,18 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
     Helper class for methods to delegate tests and query construction for track stats.
     """
 
-    def test_part(self, event: Event, entity: CdEDBObject, part_id: int) -> bool:
+    def test_part(self, event: models.Event, entity: CdEDBObject, part_id: int) -> bool:
         """Determine whether the entity fits this stat for any track in a part."""
         return any(self.test(event, entity, track_id)
                    for track_id in self.get_track_ids(event, part_id=part_id))
 
-    def test_part_group(self, event: Event, entity: CdEDBObject,
+    def test_part_group(self, event: models.Event, entity: CdEDBObject,
                         part_group_id: int) -> bool:
         """Determine whether the entity fits this stat for any track in a part group."""
         return any(self.test(event, entity, track_id) for track_id
                    in self.get_track_ids(event, part_group_id=part_group_id))
 
-    def get_query_part(self, event: Event, part_id: int,
+    def get_query_part(self, event: models.Event, part_id: int,
                        registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part, then merge them."""
         if self.is_mergeable():
@@ -294,7 +294,7 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_query_part_group(self, event: Event, part_group_id: int,
+    def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part group, then merge them."""
         if self.is_mergeable():
@@ -376,7 +376,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             EventRegistrationPartStatistic.no_lodgement,
         }
 
-    def test(self, event: Event, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
         """
         Test whether the given registration fits into this statistic for the given part.
         """
@@ -432,7 +432,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: Event, part_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, part_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         """
         Return fields of interest, constraints and order for this statistic for a part.
         """
@@ -593,7 +593,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     @staticmethod
-    def _get_base_query(event: Event) -> Query:
+    def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -622,7 +622,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         # All queries have only a single constraint.
         return True
 
-    def test(self, event: Event, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, course: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the course fits this stat for the given track."""
         if self == self.offered:
             return track_id in course['segments']
@@ -635,7 +635,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         # Track specific constraints need to be single-field so the relation between
         #  two constraints isn't spread across different fields for joined queries.
         if self == self.offered:
@@ -667,7 +667,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     @staticmethod
-    def _get_base_query(event: Event) -> Query:
+    def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
@@ -697,7 +697,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         #  correlations between constraints.
         return False
 
-    def test(self, event: Event, reg: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
+    def test(self, event: models.Event, reg: CdEDBObject, track_id: int) -> bool:  # pylint: disable=arguments-differ
         """Determine whether the registration fits this stat for the given track."""
         track = reg['tracks'][track_id]
         part = reg['parts'][event.tracks[track_id].part_id]
@@ -719,7 +719,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
+    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:  # pylint: disable=arguments-differ
         track = event.tracks[track_id]
         part = event.parts[track.part_id]
         if self == self.all_instructors:
@@ -767,7 +767,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
             raise RuntimeError(n_("Impossible."))
 
     @staticmethod
-    def _get_base_query(event: Event) -> Query:
+    def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=event),
@@ -790,7 +790,7 @@ class EventRegistrationInXChoiceGrouper:
     the xth row, already presorted.
     """
 
-    def __init__(self, event: Event, regs: CdEDBObjectMap):
+    def __init__(self, event: models.Event, regs: CdEDBObjectMap):
         self._sorted_tracks = dict(keydictsort_filter(
             event.tracks, EntitySorter.course_track))
         self._sorted_parts = dict(keydictsort_filter(
@@ -829,7 +829,7 @@ class EventRegistrationInXChoiceGrouper:
                         break
 
     @staticmethod
-    def _test(event: Event, reg: CdEDBObject, track_id: int, x: int) -> bool:
+    def _test(event: models.Event, reg: CdEDBObject, track_id: int, x: int) -> bool:
         """Uninlined helper to determine whether a reg fits choice x in a track."""
         course_track = event.tracks[track_id]
         event_part = event.parts[course_track.part_id]
@@ -882,7 +882,7 @@ class EventRegistrationInXChoiceGrouper:
         yield from ret.items()
 
     @staticmethod
-    def _get_base_query(event: Event, reg_ids: Optional[Collection[int]]
+    def _get_base_query(event: models.Event, reg_ids: Optional[Collection[int]]
                         ) -> Query:
         return Query(
             QueryScope.registration,
@@ -893,20 +893,20 @@ class EventRegistrationInXChoiceGrouper:
             order=[('persona.family_name', True), ('persona.given_names', True)]
         )
 
-    def get_query(self, event: Event, track_id: int, x: int) -> Query:
+    def get_query(self, event: models.Event, track_id: int, x: int) -> Query:
         query = self._get_base_query(event, self._get_ids(x, (track_id,)))
         query.fields_of_interest.append(f"track{track_id}.course_id")
         query.order = [(f"track{track_id}.course_id", True)] + query.order
         return query
 
-    def get_query_part(self, event: Event, part_id: int, x: int) -> Query:
+    def get_query_part(self, event: models.Event, part_id: int, x: int) -> Query:
         track_ids = self._track_ids_per_part[part_id]
         query = self._get_base_query(event, self._get_ids(x, track_ids))
         query.fields_of_interest.extend(
             f"track{track_id}.course_id" for track_id in track_ids)
         return query
 
-    def get_query_part_group(self, event: Event, part_group_id: int, x: int
+    def get_query_part_group(self, event: models.Event, part_group_id: int, x: int
                              ) -> Query:
         track_ids = self._track_ids_per_part_group[part_group_id]
         query = self._get_base_query(event, self._get_ids(x, track_ids))

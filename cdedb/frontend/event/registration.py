@@ -19,6 +19,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
     diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
@@ -34,7 +35,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event, SyncTrackGroup, TrackGroup
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -298,7 +298,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         simple_tracks = set(tracks)
         track_group_map: dict[int, Optional[int]] = {
             track_id: None for track_id in tracks}
-        sync_track_groups: dict[int, SyncTrackGroup] = {
+        sync_track_groups: dict[int, models.SyncTrackGroup] = {
             tg_id: tg for tg_id, tg in track_groups.items()  # type: ignore[misc]
             if tg.constraint_type.is_sync()}
         ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
@@ -794,7 +794,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
 
         is_involved = lambda cco: (set(cco.tracks) & sorted_involved_tracks.keys()
-                                   if isinstance(cco, TrackGroup)
+                                   if isinstance(cco, models.TrackGroup)
                                    else cco.id in sorted_involved_tracks)
         filtered_choice_objects = [
             cco for cco in course_choice_parameters['choice_objects']
@@ -811,7 +811,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @staticmethod
-    def _prepare_registration_values(event: Event,
+    def _prepare_registration_values(event: models.Event,
                                      registration: CdEDBObject) -> CdEDBObject:
         values: CdEDBObject = {
             f"reg.{key}": val

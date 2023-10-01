@@ -19,6 +19,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
 )
@@ -39,7 +40,6 @@ from cdedb.frontend.common import (
     event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import CdEDataclassMap, EventField
 from cdedb.models.ml import (
     EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
 )
@@ -343,8 +343,9 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/part_summary")
 
     @staticmethod
-    def _valid_event_part_fields(fields: CdEDataclassMap[EventField]
-            ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
+    def _valid_event_part_fields(
+            fields: models.CdEDataclassMap[models.EventField]
+    ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
