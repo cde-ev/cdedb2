@@ -26,6 +26,7 @@ from typing import (
 
 import psycopg2.extras
 import pytz
+import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
