@@ -526,7 +526,7 @@ class TestEventModels(BackendTest):
                 ),
             },
             track_groups={
-                1: models.TrackGroup(  # type: ignore[dict-item]
+                1: models.SyncTrackGroup(  # type: ignore[dict-item]
                     id=1,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 1. Hälfte",
@@ -536,7 +536,7 @@ class TestEventModels(BackendTest):
                     sortkey=1,
                     tracks=(6, 7, 8),  # type: ignore[arg-type]
                 ),
-                2: models.TrackGroup(  # type: ignore[dict-item]
+                2: models.SyncTrackGroup(  # type: ignore[dict-item]
                     id=2,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 2. Hälfte nachmittags",
@@ -546,7 +546,7 @@ class TestEventModels(BackendTest):
                     sortkey=4,
                     tracks=(10, 12, 14),  # type: ignore[arg-type]
                 ),
-                3: models.TrackGroup(  # type: ignore[dict-item]
+                3: models.SyncTrackGroup(  # type: ignore[dict-item]
                     id=3,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Kurs 2. Hälfte morgens",
@@ -561,11 +561,11 @@ class TestEventModels(BackendTest):
 
         reality = self.event.new_get_event(self.key, event_id)
 
-        print()
-        pprint(expectation.parts)
-        print()
-        print()
-        pprint(reality.parts)
+        # print()
+        # pprint(expectation.parts)
+        # print()
+        # print()
+        # pprint(reality.parts)
 
         self.assertEqual(expectation.tracks, reality.tracks)
         self.assertEqual(expectation.parts, reality.parts)
@@ -576,7 +576,7 @@ class TestEventModels(BackendTest):
     @as_users("anton")
     def test_get_courses(self) -> None:
         course_id = 1
-        print(self.event.new_get_course(self.key, course_id))
+        # print(self.event.new_get_course(self.key, course_id))
 
         expectation = models.Course(
             id=course_id,
@@ -596,12 +596,12 @@ class TestEventModels(BackendTest):
         reality = self.event.new_get_course(self.key, course_id)
 
         self.assertEqual(
-            vars(expectation),
-            vars(reality),
+            expectation,
+            reality,
         )
 
         course_ids = [1, 2]
-        print(self.event.new_get_courses(self.key, course_ids))
+        # print(self.event.new_get_courses(self.key, course_ids))
 
         expectation = {
             1: expectation,
@@ -631,7 +631,7 @@ class TestEventModels(BackendTest):
     @as_users("anton")
     def test_get_lodgements(self) -> None:
         lodgement_id = 1
-        print(self.event.new_get_lodgement(self.key, lodgement_id))
+        # print(self.event.new_get_lodgement(self.key, lodgement_id))
 
         expectation = models.Lodgement(
             id=lodgement_id,
@@ -652,13 +652,13 @@ class TestEventModels(BackendTest):
         reality = self.event.new_get_lodgement(self.key, lodgement_id)
 
         self.assertEqual(
-            vars(expectation),
-            vars(reality),
+            expectation,
+            reality,
         )
 
         event_id = 1
         lodgement_ids = self.event.list_lodgements(self.key, event_id)
-        print(self.event.new_get_lodgements(self.key, lodgement_ids))
+        # print(self.event.new_get_lodgements(self.key, lodgement_ids))
 
         expectation = {
             1: models.Lodgement(
@@ -729,7 +729,7 @@ class TestEventModels(BackendTest):
     @as_users("anton")
     def test_get_lodgement_groups(self) -> None:
         event_id = 1
-        print(self.event.new_get_lodgement_groups(self.key, event_id))
+        # print(self.event.new_get_lodgement_groups(self.key, event_id))
 
         expectation = {
             1: models.LodgementGroup(
