@@ -639,6 +639,9 @@ class TestEventModels(BackendTest):
                 id=2,  # type: ignore[arg-type]
                 event_id=1,  # type: ignore[arg-type]
                 title='AußenWohnGruppe',
+                lodgement_ids={1},
+                regular_capacity=5,
+                camping_mat_capacity=1,
             ),
             group_id=2,  # type: ignore[arg-type]
             title='Warme Stube',
@@ -651,8 +654,8 @@ class TestEventModels(BackendTest):
         reality = self.event.new_get_lodgement(self.key, lodgement_id)
 
         self.assertEqual(
-            expectation,
-            reality,
+            vars(expectation),
+            vars(reality),
         )
 
         event_id = 1
@@ -667,6 +670,9 @@ class TestEventModels(BackendTest):
                     id=2,  # type: ignore[arg-type]
                     event_id=event_id,  # type: ignore[arg-type]
                     title="AußenWohnGruppe",
+                    lodgement_ids={1},
+                    regular_capacity=5,
+                    camping_mat_capacity=1,
                 ),
                 group_id=2,  # type: ignore[arg-type]
                 title='Warme Stube',
@@ -681,6 +687,9 @@ class TestEventModels(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     event_id=event_id,  # type: ignore[arg-type]
                     title="Haupthaus",
+                    lodgement_ids={2, 4},
+                    regular_capacity=11,
+                    camping_mat_capacity=2,
                 ),
                 group_id=1,  # type: ignore[arg-type]
                 title='Kalte Kammer',
@@ -695,6 +704,9 @@ class TestEventModels(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     event_id=event_id,  # type: ignore[arg-type]
                     title="Sonstige",
+                    lodgement_ids={3},
+                    regular_capacity=0,
+                    camping_mat_capacity=100,
                 ),
                 group_id=3,  # type: ignore[arg-type]
                 title='Kellerverlies',
@@ -709,6 +721,9 @@ class TestEventModels(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     event_id=event_id,  # type: ignore[arg-type]
                     title="Haupthaus",
+                    lodgement_ids={2, 4},
+                    regular_capacity=11,
+                    camping_mat_capacity=2,
                 ),
                 group_id=1,  # type: ignore[arg-type]
                 title='Einzelzelle',

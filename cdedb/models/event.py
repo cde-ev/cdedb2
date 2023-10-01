@@ -29,8 +29,8 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, Protocol,
-    TypeVar, get_args, get_origin,
+    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, TypeVar,
+    get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
@@ -56,11 +56,6 @@ T = TypeVar('T')
 CdEDataclassMap = dict[int, T]
 
 
-class SorterProtocol(Protocol):
-    def __call__(self, __data: CdEDBObject) -> Sortkey:
-        pass
-
-
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
     entity_key: ClassVar[str] = "event_id"
@@ -68,11 +63,12 @@ class EventDataclass(CdEDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}
             FROM {cls.database_table}
-            WHERE {cls.entity_key} = ANY(%s)
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
         """
         params = (entities,)
         return query, params
@@ -276,6 +272,7 @@ class Event(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -286,7 +283,7 @@ class Event(EventDataclass):
                     WHERE event_id = events.id
                 ) AS orgas
             FROM {cls.database_table}
-            WHERE {cls.entity_key} = ANY(%s)
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
             """
         params = (entities,)
         return query, params
@@ -334,6 +331,7 @@ class EventPart(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -346,7 +344,7 @@ class EventPart(EventDataclass):
             FROM
                 event.event_parts
             WHERE
-                event_id = ANY(%s)
+                {entity_key or cls.entity_key} = ANY(%s)
         """
         params = (entities,)
         return query, params
@@ -485,6 +483,7 @@ class PartGroup(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -497,7 +496,7 @@ class PartGroup(EventDataclass):
             FROM
                 event.part_groups
             WHERE
-                event_id = ANY(%s)
+                {entity_key or cls.entity_key} = ANY(%s)
         """
         params = (entities,)
         return query, params
@@ -527,6 +526,7 @@ class TrackGroup(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -539,7 +539,7 @@ class TrackGroup(EventDataclass):
             FROM
                 event.track_groups
             WHERE
-                event_id = ANY(%s)
+                {entity_key or cls.entity_key} = ANY(%s)
         """
         params = (entities,)
         return query, params
@@ -624,6 +624,7 @@ class Course(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
                 SELECT
@@ -641,7 +642,7 @@ class Course(EventDataclass):
                 FROM
                     event.courses
                 WHERE
-                    id = ANY(%s)
+                    {entity_key or cls.entity_key} = ANY(%s)
             """
         params = (entities,)
         return query, params
@@ -674,6 +675,7 @@ class LodgementGroup(EventDataclass):
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
                          ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -684,12 +686,17 @@ class LodgementGroup(EventDataclass):
             FROM event.lodgement_groups
                 LEFT JOIN event.lodgements ON lodgement_groups.id = lodgements.group_id
             WHERE
-                lodgement_groups.{cls.entity_key} = ANY(%s)
+                lodgement_groups.{entity_key or cls.entity_key} = ANY(%s)
             GROUP BY
                 lodgement_groups.id
         """
         params = (entities,)
         return query, params
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['lodgement_ids'] = set(data['lodgement_ids'])
+        return super().from_database(data)
 
 
 @dataclasses.dataclass

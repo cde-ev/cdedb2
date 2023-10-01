@@ -277,9 +277,9 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 rs, *models.Lodgement.get_select_query((lodgement_id,)))
             if not lodgement_data:
                 raise KeyError
-            group_data = self.sql_select_one(
-                rs, models.LodgementGroup.database_table,
-                models.LodgementGroup.database_fields(), lodgement_data['group_id'])
+            group_data = self.query_one(
+                rs, *models.LodgementGroup.get_select_query(
+                    (lodgement_data['group_id'],), 'id'))
             event_id = lodgement_data['event_id']
             if not self.is_orga(rs, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
@@ -307,11 +307,11 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             event_id = unwrap(events)
             if not self.is_orga(rs, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
-            group_data = {e['id']: e for e in self.sql_select(
-                rs, models.LodgementGroup.database_table,
-                models.LodgementGroup.database_fields(),
-                [lodge['group_id'] for lodge in lodgement_data],
-            )}
+            group_data = {
+                e['id']: e for e in self.query_all(
+                    rs, *models.LodgementGroup.get_select_query(
+                        [lodge['group_id'] for lodge in lodgement_data], "id"))
+            }
             event_fields = self._get_event_fields(rs, event_id)
         return models.Lodgement.many_from_database([
             {
