@@ -3010,14 +3010,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_multiedit_course_instructors(self) -> None:
         event_id = 3
         event = self.event.get_event(self.key, event_id)
-        track_id = unwrap(event['tracks'].keys())
+        track_id = unwrap(event.tracks.keys())
         course_id = 8
         registration_id = 7
         regisration2_id = 8
         # Disable course choices
         edata = {
             'parts': {
-                event['tracks'][track_id]['part_id']: {
+                event.tracks[track_id].part_id: {
                     'tracks': {
                         track_id: {
                             'num_choices': 0,
@@ -5212,8 +5212,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         with self.switch_user("garcia"):
             self.traverse("Veranstaltungen", "Große Testakademie 2222",
                           "Teilnahmebeiträge")
-            for fee_id, fee in self.event.get_event(self.key, 1)['fees'].items():
-                if fee['title'] == "Externenzusatzbeitrag":
+            for fee_id, fee in self.event.get_event(self.key, 1).fees.items():
+                if fee.title == "Externenzusatzbeitrag":
                     continue
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
                 self.submit(f)
@@ -5411,7 +5411,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             self.key,
             1,
             {
-                'fields': {id_: None for id_ in event['fields'] if id_ > 1000},
+                'fields': {id_: None for id_ in event.fields if id_ > 1000},
             })
 
         self.submit(f)
@@ -5423,20 +5423,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         log_expectation = []
         offset = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))[0]
 
-        self.traverse("Veranstaltungen", event['title'], "Veranstaltungsteile",
+        self.traverse("Veranstaltungen", event.title, "Veranstaltungsteile",
                       "Gruppen")
         self.assertTitle("Gruppen (TripelAkademie)")
 
         # Check summary display.
-        for pg_id, pg in event['part_groups'].items():
+        for pg_id, pg in event.part_groups.items():
             div = f"partgroup_{pg_id}"
-            self.assertPresence(pg['title'], div=div)
-            self.assertPresence(pg['shortname'], div=div)
-            for part_id, part in event['parts'].items():
-                if part_id in pg['part_ids']:
-                    self.assertPresence(part['shortname'], div=div)
+            self.assertPresence(pg.title, div=div)
+            self.assertPresence(pg.shortname, div=div)
+            for part_id, part in event.parts.items():
+                if part_id in pg.parts:
+                    self.assertPresence(part.shortname, div=div)
                 else:
-                    self.assertNonPresence(part['shortname'], div=div)
+                    self.assertNonPresence(part.shortname, div=div)
 
         # Create new part group:
         self.traverse("Veranstaltungsteilgruppe hinzufügen")
@@ -5446,7 +5446,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['shortname'] = ""
         f['constraint_type'] = const.EventPartGroupType.Statistic
         f['part_ids'] = []
-        f['part_ids'] = list(event['parts'])
+        f['part_ids'] = list(event.parts)
         self.submit(f, check_notification=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError('shortname', "Darf nicht leer sein.")
@@ -5460,9 +5460,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         log_expectation.extend([
             {
                 'code': const.EventLogCodes.part_group_link_created,
-                'change_note': part['title'] + " -> " + new_title,
+                'change_note': part.title + " -> " + new_title,
             }
-            for part_id, part in xsorted(event['parts'].items())
+            for part_id, part in xsorted(event.parts.items())
         ])
         # TODO: How to force value into multiple checkboxes?
         # f['part_ids'].force_value([10 ** 10])
@@ -5475,21 +5475,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             "Es existiert bereits eine Veranstaltungsteilgruppe mit diesem Namen.")
         # self.assertValidationError('part_ids', "Unbekannter Veranstaltungsteil")
 
-        new_id = max(self.event.get_event(self.key, event_id)['part_groups'])
+        new_id = max(self.event.get_event(self.key, event_id).part_groups)
         self.traverse("Gruppen")
         self.assertPresence(new_title, div=f"partgroup_{new_id}")
         self.assertPresence(new_shortname, div=f"partgroup_{new_id}")
 
         # Check part group badges.
         self.traverse("Veranstaltungsteile")
-        for part_id, part in event['parts'].items():
+        for part_id, part in event.parts.items():
             div = f"part{part_id}_partgroups"
             self.assertPresence(new_shortname, div=div)
-            for pg_id, pg in event['part_groups'].items():
-                if part_id in pg['part_ids']:
-                    self.assertPresence(pg['shortname'], div=div)
+            for pg_id, pg in event.part_groups.items():
+                if part_id in pg.parts:
+                    self.assertPresence(pg.shortname, div=div)
                 else:
-                    self.assertNonPresence(pg['shortname'], div=div)
+                    self.assertNonPresence(pg.shortname, div=div)
 
         # Change the new part group.
         self.traverse("Gruppen",
@@ -5503,7 +5503,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Submit garbage.
         f['title'] = ""
-        f['shortname'] = list(event['part_groups'].values())[0]['shortname']
+        f['shortname'] = list(event.part_groups.values())[0].shortname
         self.submit(f, check_notification=False)
         self.assertValidationError('title', "Darf nicht leer sein.")
         self.assertValidationError(
@@ -5541,7 +5541,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence(new_title[::-1], div="part-group-summary")
 
         self.traverse("Veranstaltungsteile")
-        for part_id, part in event['parts'].items():
+        for part_id, part in event.parts.items():
             div = f"part{part_id}_partgroups"
             self.assertNonPresence(new_shortname, div=div)
             self.assertNonPresence(new_shortname[::-1], div=div)
@@ -5992,9 +5992,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # Check that choices are correctly synced for each track group.
         registration = self.event.get_registration(self.key, 1001)
         event = self.event.get_event(self.key, 4)
-        for tg in event['track_groups'].values():
+        for tg in event.track_groups.values():
             choices_set = set()
-            for track_id in tg['track_ids']:
+            for track_id in tg.tracks.keys():
                 choices_set.add(tuple(registration['tracks'][track_id]['choices']))
             self.assertEqual(len(choices_set), 1)
 
@@ -6005,9 +6005,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['track_min_choices_8'] = 9
         self.submit(f)
         event = self.event.get_event(self.key, 4)
-        for track_id in unwrap(event['tracks'][8]['track_groups'])['track_ids']:
-            self.assertEqual(event['tracks'][track_id]['num_choices'], 10)
-            self.assertEqual(event['tracks'][track_id]['min_choices'], 9)
+        for track in unwrap(event.tracks[8].track_groups).tracks.values():
+            self.assertEqual(track.num_choices, 10)
+            self.assertEqual(track.min_choices, 9)
 
         # Check that change_registration works properly.
         self.traverse("Anmeldungen", "Alle Teilnehmer", "Details")
@@ -6163,7 +6163,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Kursschienengruppe hinzufügen")
         f = self.response.forms['configuretrackgroupform']
         f['title'] = f['shortname'] = "K1"
-        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        f['track_ids'] = list(str(id_) for id_ in event.track_groups[1].tracks.keys())
         self.submit(f)
 
         # Check failing creation after changing choices for the tracks.
@@ -6171,7 +6171,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['ack_delete'] = True
         self.submit(f)
 
-        track_ids = list(event['track_groups'][1]['track_ids'])
+        track_ids = list(event.track_groups[1].tracks.keys())
         reg_id = list(self.event.list_registrations(self.key, event_id))[0]
         self.event.set_registration(self.key, {
             'id': reg_id,
@@ -6188,7 +6188,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Kursschienengruppe hinzufügen")
         f = self.response.forms['configuretrackgroupform']
         f['title'] = f['shortname'] = "K1"
-        f['track_ids'] = list(str(id_) for id_ in event['track_groups'][1]['track_ids'])
+        f['track_ids'] = list(str(id_) for id_ in event.track_groups[1].tracks.keys())
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'track_ids', "Kursschienensynchronisierung fehlgeschlagen, weil"
