@@ -20,7 +20,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models_event
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    RequestState, nearly_now, now, unwrap,
+    RequestState, cast_fields, nearly_now, now, unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -2523,9 +2523,11 @@ class TestEventBackend(BackendTest):
         new_data['event.field_definitions'].update({
             11000: {
                 'association': const.FieldAssociations.registration,
-                'entries': [['good', 'good'],
-                            ['neutral', 'so so'],
-                            ['bad', 'not good']],
+                'entries': {
+                    'good': 'good',
+                    'neutral': 'so so',
+                    'bad': 'not good',
+                },
                 'event_id': 1,
                 'field_name': "behaviour",
                 'title': "Benehmen",
@@ -2875,7 +2877,7 @@ class TestEventBackend(BackendTest):
                              hint: str = None) -> None:
             """Helper function to replace some placeholder values inside of a dict."""
             if hint == 'fields':
-                new = models_event.EventField.cast_fields(new, event.fields)
+                new = cast_fields(new, event.fields)
             deletions = [key for key, val in new.items()
                          if val is None and key in old]
             for key in deletions:

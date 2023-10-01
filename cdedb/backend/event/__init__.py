@@ -320,6 +320,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if reg['real_persona_id']:
                     translations['persona_id'][reg['persona_id']] = \
                         reg['real_persona_id']
+            for field in data['event.field_definitions'].values():
+                if field.get('entries'):
+                    field['entries'] = list(field['entries'].items())
             extra_translations = {'course_instructor': 'course_id'}
             # Table name; name of foreign keys referencing this table
             tables = (('event.events', None),

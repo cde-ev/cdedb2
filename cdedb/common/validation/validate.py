@@ -2650,8 +2650,15 @@ def _event_field(
             val["entries"] = dict(
                 [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
             )
+        elif isinstance(val['entries'], list):
+            with errs:
+                try:
+                    val['entries'] = dict(val['entries'])
+                except ValueError as e:
+                    raise ValidationSummary(ValueError(
+                        'entries', n_("Could not convert to mapping."))) from e
         try:
-            oldentries = _mapping(val["entries"], "entries", **kwargs)
+            oldentries = _mapping(val['entries'], 'entries', **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
         else:
