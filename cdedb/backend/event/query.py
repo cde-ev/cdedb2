@@ -354,6 +354,10 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     ) AS attendees ON c.id = attendees.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
+                            track, param_name='attendees_and_guests')}
+                    ) AS attendees_and_guests ON c.id = attendees_and_guests.base_id
+                    LEFT OUTER JOIN (
+                        {registration_track_count_table(
                             track, param_name='instructors')}
                     ) AS instructors ON c.id = instructors.base_id
                     LEFT OUTER JOIN (
@@ -375,9 +379,15 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
                 Construct a table to gather registration track information.
                 """
-                col = 'course_id' if param_name == 'attendees' else 'course_instructor'
-                stati = [rps for rps in const.RegistrationPartStati if rps.is_present()]
-                if param_name == 'potential_instructors':
+                if param_name.startswith('attendees'):
+                    col = 'course_id'
+                else:
+                    col = 'course_instructor'
+                stati = [const.RegistrationPartStati.participant]
+                if param_name.endswith('guests'):
+                    stati = [
+                        rps for rps in const.RegistrationPartStati if rps.is_present()]
+                elif param_name == 'potential_instructors':
                     stati = list(const.RegistrationPartStati.involved_states())
                 stati_str = ','.join(map(str, map(int, stati)))
                 constraint = ''
