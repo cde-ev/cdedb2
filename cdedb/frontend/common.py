@@ -1778,7 +1778,6 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1811,7 +1810,6 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:

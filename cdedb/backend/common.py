@@ -15,8 +15,8 @@ import sys
 import uuid
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Dict, Iterable, List, Literal, Mapping, Optional, Set,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Iterable, List, Literal, Mapping, Optional, Set, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
@@ -26,7 +26,7 @@ from passlib.hash import sha512_crypt
 
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
+    CdEDBLog, CdEDBObject, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -34,7 +34,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType

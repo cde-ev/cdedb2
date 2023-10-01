@@ -810,7 +810,6 @@ def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
 def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
     if lodgements is None:
         return {}
-    lodge_identifier = lambda l: l["title"]
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
@@ -818,7 +817,6 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
-    lodgement_group_identifier = lambda g: g["title"]
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
