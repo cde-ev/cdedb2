@@ -262,6 +262,7 @@ class Event(EventDataclass):
             }
             for part in part_group.parts.values():
                 part.part_groups[part_group.id] = part_group
+                part.part_group_ids.add(part_group.id)
         for track_group in self.track_groups.values():
             track_group.tracks = {
                 track_id: self.tracks[track_id]
@@ -269,6 +270,7 @@ class Event(EventDataclass):
             }
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
+                track.track_group_ids.add(track_group.id)
         self.lodge_field = self.fields.get(
             self.lodge_field)  # type: ignore[call-overload]
 
@@ -326,7 +328,9 @@ class EventPart(EventDataclass):
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
 
-    part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(default_factory=dict)
+    part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(
+        default_factory=dict, compare=False, repr=False)
+    part_group_ids: set[int] = dataclasses.field(default_factory=set)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -384,7 +388,8 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     course_room_field: Optional["EventField"]
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
-        default_factory=dict)
+        default_factory=dict, compare=False, repr=False)
+    track_group_ids: set[int] = dataclasses.field(default_factory=set)
 
     def is_complex(self) -> bool:
         return False
