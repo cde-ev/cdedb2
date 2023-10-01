@@ -158,8 +158,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 for key, val in registration['fields'].items()
             }
             merge_dicts(rs.values, values)
-            if field_id := rs.ambience['event'].lodge_field:
-                if any(row['field_id'] == field_id for row in add_questionnaire):
+            if field := rs.ambience['event'].lodge_field:
+                if any(row['field_id'] == field.id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):

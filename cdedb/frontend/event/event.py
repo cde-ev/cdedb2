@@ -150,7 +150,7 @@ class EventEventMixin(EventBaseFrontend):
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
+        data = check(rs, vtypes.Event, data, current=rs.ambience['event'].as_dict())
         if (data and data['shortname']
                 and data['shortname'] != rs.ambience['event'].shortname
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
