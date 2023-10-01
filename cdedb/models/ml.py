@@ -571,7 +571,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
@@ -580,7 +580,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
             return set()
 
         event = bc.event.get_event(rs, self.event_id)
-        return event["orgas"]
+        return cast(set[int], event.orgas)
 
 
 @dataclass

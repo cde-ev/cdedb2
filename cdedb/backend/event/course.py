@@ -70,7 +70,8 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     raise RuntimeError()
                 ret[anid]['active_segments'] = active_segments
                 ret[anid]['fields'] = models.EventField.cast_fields(
-                    ret[anid]['fields'], event_fields)
+                    ret[anid]['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
         return ret
 
     class _GetCourseProtocol(Protocol):
@@ -90,7 +91,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
         return models.Course.from_database({
             **course_data,
-            'event_fields': event_fields,
+            'event_fields': event_fields.values(),
         })
 
     @access("event")
@@ -247,7 +248,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         with Atomizer(rs):
             # Check for existence of course tracks
             event = self.get_event(rs, data['event_id'])
-            if not event['tracks']:
+            if not event.tracks:
                 raise RuntimeError(n_("Event without tracks forbids courses."))
 
             cdata = {k: v for k, v in data.items()

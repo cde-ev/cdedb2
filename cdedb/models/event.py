@@ -35,7 +35,7 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, now
+from cdedb.common import CdEDBObject, now
 from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.models.common import CdEDataclass
@@ -450,14 +450,15 @@ class EventField(EventDataclass):
         return super().from_database(data)
 
     @staticmethod
-    def cast_fields(data: CdEDBObject, fields: "CdEDBObjectMap") -> CdEDBObject:
+    def cast_fields(data: CdEDBObject, fields: CdEDataclassMap["EventField"]
+                    ) -> CdEDBObject:
         """Helper to deserialize json fields.
 
         We serialize some classes as strings and need to undo this upon
         retrieval from the database.
         """
         spec: dict[str, const.FieldDatatypes]
-        spec = {v['field_name']: v['kind'] for v in fields.values()}
+        spec = {f.field_name: f.kind for f in fields.values()}
         casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
             const.FieldDatatypes.int: lambda x: x,
             const.FieldDatatypes.str: lambda x: x,
@@ -661,7 +662,7 @@ class Course(EventDataclass):
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['fields'] = EventField.cast_fields(
-            data['fields'], data.pop('event_fields'))
+            data['fields'], EventField.many_from_database(data.pop('event_fields')))
         data['segments'] = set(data['segments'])
         data['active_segments'] = set(data['active_segments'])
         return super().from_database(data)

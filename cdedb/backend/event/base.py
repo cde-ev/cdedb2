@@ -1132,7 +1132,7 @@ class EventBaseBackend(EventLowLevelBackend):
             current.update(data)
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
-                          field_definitions=event['fields'],
+                          field_definitions=event.fields,
                           fees_by_field=fees_by_field)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -1332,7 +1332,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del course['event_id']
             course['segments'] = lookup[course_id]
             course['fields'] = models.EventField.cast_fields(
-                course['fields'], event['fields'])
+                course['fields'], event.fields)
         ret['courses'] = courses
         # lodgement groups
         for lodgement_group in lodgement_groups.values():
@@ -1344,7 +1344,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del lodgement['id']
             del lodgement['event_id']
             lodgement['fields'] = models.EventField.cast_fields(
-                lodgement['fields'], event['fields'])
+                lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
         part_lookup: Dict[int, Dict[int, CdEDBObject]]
@@ -1377,62 +1377,61 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['track_id']
             registration['tracks'] = tracks
             registration['fields'] = models.EventField.cast_fields(
-                registration['fields'], event['fields'])
+                registration['fields'], event.fields)
         ret['registrations'] = registrations
+
+        ret['event'] = event.as_dict()
 
         for token_id, orga_token in tokens.items():
             del orga_token['id']
             del orga_token['event_id']
-        event['orga_tokens'] = tokens
+        ret['event']['orga_tokens'] = tokens
 
         # now we add additional information that is only auxillary and
         # does not correspond to changeable entries
         #
         # event
-        del event['id']
-        del event['begin']
-        del event['end']
-        del event['is_open']
+        del ret['event']['id']
         # Delete this later.
-        # del event['orgas']
-        del event['tracks']
-        event['fees'] = {
-            fee['title']: fee for fee in event['fees'].values()}
-        for fee in event['fees'].values():
+        # del ret['event']['orgas']
+        del ret['event']['tracks']
+        ret['event']['fees'] = {
+            fee['title']: fee for fee in ret['event']['fees'].values()}
+        for fee in ret['event']['fees'].values():
             del fee['id']
             del fee['event_id']
             del fee['title']
-        for part in event['parts'].values():
+        for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']
-            del part['part_groups']
             for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
-                    part[f] = event['fields'][part[f]]['field_name']
+                    part[f] = ret['event']['fields'][part[f]]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
-                del track['track_groups']
                 for f in ('course_room_field',):
                     if track[f]:
-                        track[f] = event['fields'][track[f]]['field_name']
-        for pg in event['part_groups'].values():
+                        track[f] = ret['event']['fields'][track[f]]['field_name']
+        for pg in ret['event']['part_groups'].values():
             del pg['id']
             del pg['event_id']
             pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
-            pg['part_ids'] = xsorted(pg['part_ids'])
-        for tg in event['track_groups'].values():
+            pg['part_ids'] = xsorted(pg['parts'].keys())
+            del pg['parts']
+        for tg in ret['event']['track_groups'].values():
             del tg['id']
             del tg['event_id']
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
-            tg['track_ids'] = xsorted(tg['track_ids'])
+            tg['track_ids'] = xsorted(tg['tracks'].keys())
+            del tg['tracks']
         for f in ('lodge_field',):
-            if event[f]:
-                event[f] = event['fields'][event[f]]['field_name']
+            if ret['event'][f]:
+                ret['event'][f] = ret['event'][f]['field_name']
         # Fields and questionnaire
         new_fields = {
             field['field_name']: field
-            for field in event['fields'].values()
+            for field in ret['event']['fields'].values()
         }
         new_questionnaire = {
             str(usage): rows
@@ -1441,7 +1440,8 @@ class EventBaseBackend(EventLowLevelBackend):
         for usage, rows in new_questionnaire.items():
             for q in rows:
                 if q['field_id']:
-                    q['field_name'] = event['fields'][q['field_id']]['field_name']
+                    q['field_name'] = ret[
+                        'event']['fields'][q['field_id']]['field_name']
                 else:
                     q['field_name'] = None
                 del q['pos']
@@ -1455,14 +1455,13 @@ class EventBaseBackend(EventLowLevelBackend):
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
             del registration['persona_id']
-            persona['is_orga'] = persona['id'] in event['orgas']
+            persona['is_orga'] = persona['id'] in ret['event']['orgas']
             for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
-        del event['orgas']
-        event['fields'] = new_fields
-        event['questionnaire'] = new_questionnaire
-        ret['event'] = event
+        del ret['event']['orgas']
+        ret['event']['fields'] = new_fields
+        ret['event']['questionnaire'] = new_questionnaire
         return ret
 
     @access("event")
