@@ -1200,6 +1200,9 @@ class EventLowLevelBackend(AbstractBackend):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
             new_field['event_id'] = event_id
+            # TODO: Special-case this in EventField.to_database()
+            if new_field['entries']:
+                new_field['entries'] = new_field['entries'].items()
             ret *= self.sql_insert(rs, "event.field_definitions", new_field)
             self.event_log(rs, const.EventLogCodes.field_added, event_id,
                            change_note=new_field['field_name'])

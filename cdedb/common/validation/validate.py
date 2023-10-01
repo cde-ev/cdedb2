@@ -2647,38 +2647,30 @@ def _event_field(
         val["entries"] = None
     if "entries" in val and val["entries"] is not None:
         if isinstance(val["entries"], str):
-            val["entries"] = [
+            val["entries"] = dict(
                 [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
-            ]
+            )
         try:
-            oldentries = _iterable(val["entries"], "entries", **kwargs)
+            oldentries = _mapping(val["entries"], "entries", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
         else:
-            # TODO replace combine entries and seen_values into dict?
-            seen_values: Set[str] = set()
-            entries = []
-            for idx, entry in enumerate(oldentries):
+            entries = {}
+            for idx, entry in enumerate(oldentries.items()):
+                value, description = entry
+                # Validate value according to type and use the opportunity
+                # to normalize the value by transforming it back to string
                 try:
-                    value, description = entry
-                except (ValueError, TypeError):
-                    errs.append(ValueError("entries", n_(
-                        "Invalid entry in line %(line)s."), {'line': idx + 1}))
+                    value = _by_field_datatype(value, "entries", kind=val.get(
+                        "kind", FieldDatatypes.str), **kwargs)
+                    description = _str(description, "entries", **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
                 else:
-                    # Validate value according to type and use the opportunity
-                    # to normalize the value by transforming it back to string
-                    try:
-                        value = _by_field_datatype(value, "entries", kind=val.get(
-                            "kind", FieldDatatypes.str), **kwargs)
-                        description = _str(description, "entries", **kwargs)
-                    except ValidationSummary as e:
-                        errs.extend(e)
+                    if value in entries:
+                        errs.append(ValueError("entries", n_("Duplicate value.")))
                     else:
-                        if value in seen_values:
-                            errs.append(ValueError("entries", n_("Duplicate value.")))
-                        else:
-                            entries.append([value, description])
-                            seen_values.add(value)
+                        entries[value] = description
             val["entries"] = entries
 
     if errs:

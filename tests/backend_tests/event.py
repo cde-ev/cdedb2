@@ -162,8 +162,10 @@ class TestEventBackend(BackendTest):
                     'title': "Bevorzugtes Ausflugsdatum",
                     'sortkey': 0,
                     'kind': const.FieldDatatypes.date,
-                    'entries': [["2109-08-16", "In the first coming"],
-                                ["2110-08-16", "During the second coming"]],
+                    'entries': {
+                        "2109-08-16": "In the first coming",
+                        "2110-08-16": "During the second coming"
+                    },
                     'checkin': True,
                 },
                 -3: {
@@ -305,10 +307,10 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
-            'entries': [
-                ["2110-08-15", "early second coming"],
-                ["2110-08-17", "late second coming"],
-            ],
+            'entries': {
+                "2110-08-15": "early second coming",
+                "2110-08-17": "late second coming",
+            },
             'checkin': True,
         }
         self.event.set_event(self.key, new_id, {
