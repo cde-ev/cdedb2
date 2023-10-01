@@ -1010,7 +1010,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event,
+            fees = affirm(vtypes.EventFeeSetter, fees, event=event.as_dict(),
                           questionnaire=questionnaire)
 
             existing_fees = {unwrap(e) for e in self.sql_select(
@@ -1406,13 +1406,13 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['event_id']
             for f in ('waitlist_field', 'camping_mat_field',):
                 if part[f]:
-                    part[f] = ret['event']['fields'][part[f]]['field_name']
+                    part[f] = part[f]['field_name']
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
                 for f in ('course_room_field',):
                     if track[f]:
-                        track[f] = ret['event']['fields'][track[f]]['field_name']
+                        track[f] = track[f]['field_name']
         for pg in ret['event']['part_groups'].values():
             del pg['id']
             del pg['event_id']
