@@ -378,21 +378,27 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                                                ) -> str:
                 """
                 Construct a table to gather registration track information.
+
+                Depending on `param_name` this does slightly different things.
                 """
-                if param_name.startswith('attendees'):
-                    col = 'course_id'
-                else:
-                    col = 'course_instructor'
+                constraint = ''
+                col = 'course_instructor'
                 stati = [const.RegistrationPartStati.participant]
-                if param_name.endswith('guests'):
-                    stati = [
-                        rps for rps in const.RegistrationPartStati if rps.is_present()]
+
+                if param_name == 'attendees':
+                    col = 'course_id'
+                elif param_name == 'attendees_and_guests':
+                    col = 'course_id'
+                    stati = [rps for rps in const.RegistrationPartStati
+                             if rps.is_present()]
+                elif param_name == 'instructors':
+                    pass
+                elif param_name == 'assigned_instructors':
+                    constraint = 'AND course_id = course_instructor'
                 elif param_name == 'potential_instructors':
                     stati = list(const.RegistrationPartStati.involved_states())
+
                 stati_str = ','.join(map(str, map(int, stati)))
-                constraint = ''
-                if param_name == 'assigned_instructors':
-                    constraint = 'AND course_id = course_instructor'
                 return f"""
                     SELECT id AS base_id, COUNT(registration_id) AS {param_name}
                     FROM (
