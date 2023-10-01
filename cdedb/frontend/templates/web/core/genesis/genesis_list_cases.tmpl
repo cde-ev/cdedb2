@@ -70,7 +70,7 @@
     </h2>
 
     <div id="concluded-cases" class="list-group list-group-hover list-group-condensed">
-    {% for genesis_case_id, entry in concluded_cases|keydictsort(EntitySorter.genesis_case) %}
+    {% for genesis_case_id, entry in concluded_cases|keydictsort(EntitySorter.genesis_case, reverse=True) %}
         <div id="genesis-{{ genesis_case_id }}-row" class="row list-group-item
                 {%- if entry['case_status'] == enums['GenesisStati'].rejected %} list-group-item-muted{% endif %}">
             <div class="col-sm-3">
