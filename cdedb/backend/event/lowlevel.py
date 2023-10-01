@@ -1202,7 +1202,7 @@ class EventLowLevelBackend(AbstractBackend):
             new_field['event_id'] = event_id
             # TODO: Special-case this in EventField.to_database()
             if new_field['entries']:
-                new_field['entries'] = new_field['entries'].items()
+                new_field['entries'] = list(new_field['entries'].items())
             ret *= self.sql_insert(rs, "event.field_definitions", new_field)
             self.event_log(rs, const.EventLogCodes.field_added, event_id,
                            change_note=new_field['field_name'])
@@ -1215,6 +1215,8 @@ class EventLowLevelBackend(AbstractBackend):
                 assert updated_field is not None
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
+                if entries := updated_field.get('entries'):
+                    updated_field['entries'] = list(entries.items())
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
                     if event_fees_per_field[x]:
