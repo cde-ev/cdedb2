@@ -160,7 +160,10 @@ class EventDataclass(CdEDataclass):
         return field.repr
 
     def __lt__(self, other: "EventDataclass") -> bool:
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, self.__class__) and not (
+                isinstance(self, CourseChoiceObject)
+                and isinstance(other, CourseChoiceObject)
+        ):
             return NotImplemented
         return self.__class__.sorter(
             self.as_dict()) < other.__class__.sorter(other.as_dict())
@@ -353,6 +356,7 @@ class EventPart(EventDataclass):
 @dataclasses.dataclass
 class CourseChoiceObject(abc.ABC):
     id: vtypes.ProtoID
+    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]]
 
     title: str
     shortname: str
@@ -361,6 +365,9 @@ class CourseChoiceObject(abc.ABC):
     num_choices: int
     min_choices: int
 
+    tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
+        init=False, compare=False, repr=False)
+
     @abc.abstractmethod
     def is_complex(self) -> bool: ...
 
@@ -368,9 +375,9 @@ class CourseChoiceObject(abc.ABC):
     @abc.abstractmethod
     def reference_track(self) -> "CourseTrack": ...
 
-    @property
     @abc.abstractmethod
-    def tracks(self) -> CdEDataclassMap["CourseTrack"]: ...
+    def as_dict(self) -> dict[str, Any]: ...
+
 
 
 @dataclasses.dataclass
@@ -396,9 +403,13 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     def reference_track(self) -> "CourseTrack":
         return self
 
-    @property
+    @property  # type: ignore[misc]
     def tracks(self) -> CdEDataclassMap["CourseTrack"]:
         return {self.id: self}
+
+    @tracks.setter
+    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:
+        raise KeyError
 
 
 @dataclasses.dataclass
@@ -521,8 +532,8 @@ class TrackGroup(EventDataclass):
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "TrackGroup":
         if data['constraint_type'] == const.CourseTrackGroupType.course_choice_sync:
-            return SyncTrackGroup(**data)
-        return cls(**data)
+            return super(cls, SyncTrackGroup).from_database(data)
+        return super().from_database(data)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
