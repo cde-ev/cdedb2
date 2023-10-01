@@ -170,7 +170,7 @@
                         </td>
                         <td>
                             {% for part in ambience['event']['parts'].values()|sort
-                                   if registrations[registration_id]['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
+                                   if registrations[registration_id]['parts'][part.id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}
                                         {% trans %}and{% endtrans %}

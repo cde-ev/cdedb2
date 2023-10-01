@@ -52,9 +52,9 @@
             {{ util.form_input_select(name="part{}.status".format(part.id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
-                                     entries=lodgements|sort|dict_entries('id', 'title'), nulloption=nbsp) }}
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
             {% for track in part['tracks'].values()|sort %}
-                {% set course_entries = courses|sort
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track.id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track.id),
                                           label=gettext("Course %s")|format(track['shortname'])
