@@ -1677,7 +1677,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("QR", div="show-registration-fee-qr")
         save = self.response
         self.traverse("QR")
-        print(self.response.text[0])
         self.response = save
 
         event = self.event.get_event(self.key, 1)
