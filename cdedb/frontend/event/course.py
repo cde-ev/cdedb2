@@ -723,7 +723,7 @@ class EventCourseMixin(EventBaseFrontend):
             part = reg['parts'][tracks[track_id].part_id]
             track = reg['tracks'][track_id]
             return (part['status'] == const.RegistrationPartStati.participant
-                    and not track.course_id)
+                    and not track['course_id'])
 
         without_course = {
             track_id: xsorted(

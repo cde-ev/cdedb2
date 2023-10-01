@@ -231,7 +231,7 @@
 {% macro print_field_inputs(association) %}
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+        {% for field in ambience['event']['fields'].values()|sort
                 if field['association'] == association %}
             {{ form_field_input(field) }}
         {% else %}
