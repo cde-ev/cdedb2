@@ -453,7 +453,10 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
                 if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    targetdict.setlist(key, adict[key])
+                    if isinstance(adict[key], dict) and "id" in adict[key]:
+                        targetdict[key] = adict[key]["id"]
+                    else:
+                        targetdict.setlist(key, adict[key])
                 else:
                     targetdict[key] = adict[key]
 
