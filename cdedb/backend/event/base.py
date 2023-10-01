@@ -1010,7 +1010,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event,
+            fees = affirm(vtypes.EventFeeSetter, fees, event=event.as_dict(),
                           questionnaire=questionnaire)
 
             existing_fees = {unwrap(e) for e in self.sql_select(

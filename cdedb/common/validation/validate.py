@@ -2725,7 +2725,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: models_event.Event,
+    event: CdEDBObject,
     questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
     **kwargs: Any
 ) -> EventFeeCondition:
@@ -2738,12 +2738,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f.field_name for field_id, f in event.fields.items()
-        if f.association == const.FieldAssociations.registration
-           and f.kind == const.FieldDatatypes.bool
+        f['field_name'] for field_id, f in event['fields'].items()
+        if f['association'] == const.FieldAssociations.registration
+           and f['kind'] == const.FieldDatatypes.bool
            and field_id not in additional_questionnaire_fields
     }
-    part_names = {p.shortname for p in event.parts.values()}
+    part_names = {p['shortname'] for p in event['parts'].values()}
 
     try:
         parse_result = fcp_parsing.parse(val)
