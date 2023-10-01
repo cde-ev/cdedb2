@@ -379,7 +379,13 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
                 Construct a table to gather registration track information.
 
-                Depending on `param_name` this does slightly different things.
+                Depending on `param_name` this does slightly different things:
+                * `attendees`: Attendees who are participants
+                * `attendees_and_guests`: Attendees who are present at the event
+                * `instructors`: Instructors who are participants for the track
+                * `assigned_instructors`:  Instructors who are participant and are
+                   assigned to the course
+                * 'potential_intructors': Intstructors who are involveed with the track
                 """
                 constraint = ''
                 col = 'course_instructor'
