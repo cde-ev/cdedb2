@@ -6572,15 +6572,15 @@
             "scope": 30,
             "serialized_query": {
                 "scope": 30,
+                "qord_0": "persona.birthday",
                 "is_search": true,
                 "query_name": "Test-Query",
                 "qsel_reg.id": true,
-                "qord_primary": "persona.birthday",
                 "qsel_persona.id": true,
+                "qord_0_ascending": true,
                 "qop_persona.birthday": 20,
                 "qsel_persona.birthday": true,
-                "qval_persona.birthday": "2000-01-01",
-                "qord_primary_ascending": true
+                "qval_persona.birthday": "2000-01-01"
             }
         }
     ],
@@ -6706,9 +6706,9 @@
             "assembly_id": 1,
             "title": "Farbe des Logos",
             "description": "Ulitmativ letzte Entscheidung",
-            "vote_begin": "2222-02-02T20:22:22.222222+00:00",
-            "vote_end": "2222-02-03T20:22:22.222222+00:00",
-            "vote_extension_end": "2222-02-04T20:22:22.222222+00:00",
+            "vote_begin": "2222-02-02T20:22:22+00:00",
+            "vote_end": "2222-02-03T20:22:22+00:00",
+            "vote_extension_end": "2222-02-04T20:22:22+00:00",
             "extended": null,
             "use_bar": false,
             "abs_quorum": 0,

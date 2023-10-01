@@ -774,6 +774,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="create_ballot"),
                 rule("/ballot/summary", methods=_GET,
                      endpoint="summary_ballots"),
+                rule("/ballot/reschedule", methods=_GET,
+                     endpoint="reschedule_ballots_form"),
+                rule("/ballot/reschedule", methods=_POST,
+                     endpoint="reschedule_ballots"),
                 sub('/ballot/<int:ballot_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_ballot"),

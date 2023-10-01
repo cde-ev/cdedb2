@@ -17,7 +17,8 @@ import enum
 import itertools
 import re
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Tuple, Union,
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence,
+    Tuple, Union,
 )
 
 import cdedb.database.constants as const
@@ -30,6 +31,9 @@ from cdedb.filter import keydictsort_filter
 from cdedb.uncommon.intenum import CdEIntEnum
 
 _CONFIG = LazyConfig()
+
+# The maximal number of sorting criteria that can be used for queries
+MAX_QUERY_ORDERS = 20
 
 
 @enum.unique
@@ -289,13 +293,13 @@ class QueryScope(CdEIntEnum):
                 name = prefix + field
                 if name in rs.request.values:
                     params[name] = rs.values[name] = rs.request.values[name]
-        for postfix in ("primary", "secondary", "tertiary"):
-            name = "qord_" + postfix
+        for postfix in range(MAX_QUERY_ORDERS):
+            name = f"qord_{postfix}"
             if name in rs.request.values:
                 params[name] = rs.values[name] = rs.request.values[name]
-            name = "qord_" + postfix + "_ascending"
-            if name in rs.request.values:
-                params[name] = rs.values[name] = rs.request.values[name]
+                name = f"qord_{postfix}_ascending"
+                if name in rs.request.values:
+                    params[name] = rs.values[name] = rs.request.values[name]
         for key, value in defaults.items():
             if key not in params:
                 params[key] = rs.values[key] = value
@@ -580,7 +584,7 @@ class Query:
     def __init__(self, scope: QueryScope, spec: QuerySpec,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Collection[QueryOrder],
+                 order: Sequence[QueryOrder],
                  name: str = None, query_id: int = None,
                  ):
         """
@@ -691,7 +695,7 @@ class Query:
                     serialize_value(x) for x in value)
             else:
                 params[f'qval_{field}'] = serialize_value(value)
-        for entry, postfix in zip(self.order, ("primary", "secondary", "tertiary")):
+        for entry, postfix in zip(self.order, range(MAX_QUERY_ORDERS)):
             field, ascending = entry
             params[f'qord_{postfix}'] = field
             params[f'qord_{postfix}_ascending'] = ascending
