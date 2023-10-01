@@ -22,14 +22,15 @@ class TestEventModels(BackendTest):
             shortname="TestAka",
             institution=const.PastInstitutions.cde,
             description="Everybody come!",
+            iban="DE26370205000008068900",
+            orga_address=vtypes.Email("aka@example.cde"),
+            website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
                 2000, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
             registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
                 2200, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
             registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
                 2221, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
-            iban="DE26370205000008068900",
-            orga_address=vtypes.Email("aka@example.cde"),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
@@ -325,13 +326,14 @@ class TestEventModels(BackendTest):
             title="TripelAkademie",
             shortname="triaka",
             institution=const.PastInstitutions.cde,
+            iban="DE26370205000008068900",
+            orga_address=None,
+            website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
                         " eine DoppelAkademie in Deine DoppelAkademie gepackt.",
             registration_start=nearly_now(),
             registration_soft_limit=None,
             registration_hard_limit=None,
-            iban="DE26370205000008068900",
-            orga_address=None,
             orgas={5},  # type: ignore[arg-type]
             registration_text=None,
             mail_text=None,
