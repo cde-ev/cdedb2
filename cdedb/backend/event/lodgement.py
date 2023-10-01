@@ -113,7 +113,6 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 rs, *models.LodgementGroup.get_select_query((event_id,)))
         return models.LodgementGroup.many_from_database(group_data)
 
-
     @access("event")
     def set_lodgement_group(self, rs: RequestState,
                             data: CdEDBObject) -> DefaultReturnCode:
