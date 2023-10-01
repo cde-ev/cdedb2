@@ -43,7 +43,8 @@ class EventFieldMixin(EventBaseFrontend):
         current = {
             "{}_{}".format(key, field_id): formatter(key, value)
             for field_id, field in rs.ambience['event'].fields.items()
-            for key, value in field.as_dict().items() if key != 'id'}
+            for key, value in field.as_dict().items() if key != 'id'
+        }
         merge_dicts(rs.values, current)
         event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
             rs, event_id).fields

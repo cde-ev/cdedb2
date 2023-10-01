@@ -296,7 +296,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             self.eventproxy.get_course_segments_per_track_group(rs, event_id))
         reference_tracks = {}
         simple_tracks = set(tracks)
-        track_group_map = {track_id: None for track_id in tracks}
+        track_group_map: dict[int, Optional[int]] = {
+            track_id: None for track_id in tracks}
         sync_track_groups = {tg_id: tg for tg_id, tg in track_groups.items()
                              if tg.constraint_type.is_sync()}
         ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
@@ -415,7 +416,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
 
         if len(all_part_ids := rs.ambience['event'].parts) == 1:
-            part_ids = all_part_ids.keys()
+            part_ids = vtypes.IntCSVList(list(all_part_ids))
 
         if self.is_orga(rs, event_id):
             pass

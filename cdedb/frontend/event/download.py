@@ -421,7 +421,7 @@ class EventDownloadMixin(EventBaseFrontend):
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        courses = self.eventproxy.new_get_courses(rs, course_ids)
 
         spec = QueryScope.event_course.get_spec(
             event=rs.ambience['event'], courses=courses)
@@ -442,9 +442,8 @@ class EventDownloadMixin(EventBaseFrontend):
                                 ) -> Response:
         """Create CSV file with all courses"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
 
         spec = QueryScope.lodgement.get_spec(
             event=rs.ambience['event'], lodgements=lodgements, lodgement_groups=groups)
@@ -466,11 +465,10 @@ class EventDownloadMixin(EventBaseFrontend):
         """Create CSV file with all registrations"""
         # Get data
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        courses = self.eventproxy.new_get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
 
         spec = QueryScope.registration.get_spec(
             event=rs.ambience['event'], courses=courses, lodgements=lodgements,
