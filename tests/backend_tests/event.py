@@ -337,7 +337,7 @@ class TestEventBackend(BackendTest):
                     set(x.title for x in tmp.parts[part].tracks.values()))
                 for track in tmp.parts[part].tracks:
                     tmp.parts[part].tracks[track].id = track
-                data['parts'][part]['tracks'] = tmp.parts[part].tracks
+                data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
@@ -391,7 +391,7 @@ class TestEventBackend(BackendTest):
         data['fees'][1005] = updated_fees[-1]
         data['fees'][1005].update({'id': 1005, 'event_id': new_id})
 
-        self.assertEqual(data, self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_events(self.key)
