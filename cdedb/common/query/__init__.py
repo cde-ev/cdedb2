@@ -1093,9 +1093,9 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
                 "int", n_("attendee count (incl. guests)"), prefix),
             f"track{track.id}.instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
-            f"track{track_id}.assigned_instructors": QuerySpecEntry(
+            f"track{track.id}.assigned_instructors": QuerySpecEntry(
                 "int", n_("assigned instructor count"), prefix),
-            f"track{track_id}.potential_instructors": QuerySpecEntry(
+            f"track{track.id}.potential_instructors": QuerySpecEntry(
                 "int", n_("potential instructor count (incl. open)"), prefix),
         }
 
@@ -1233,7 +1233,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
     sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
-        part_ids = part_group['part_ids']
+        part_ids = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids, prefix=prefix or n_("any part"),
