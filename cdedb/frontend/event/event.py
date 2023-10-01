@@ -669,6 +669,8 @@ class EventEventMixin(EventBaseFrontend):
     def change_part_group_form(self, rs: RequestState, event_id: int,
                                part_group_id: int) -> Response:
         merge_dicts(rs.values, rs.ambience['part_group'].as_dict())
+        # add this to autofill the values correctly (they are readonly anyway)
+        merge_dicts(rs.values, {"part_ids": rs.ambience['part_group'].parts.keys()})
         return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
@@ -773,6 +775,8 @@ class EventEventMixin(EventBaseFrontend):
     def change_track_group_form(self, rs: RequestState, event_id: int,
                                 track_group_id: int) -> Response:
         merge_dicts(rs.values, rs.ambience['track_group'].as_dict())
+        # add this to autofill the values correctly (they are readonly anyway)
+        merge_dicts(rs.values, {"track_ids": rs.ambience['track_group'].tracks.keys()})
         return self.render(rs, "event/configure_track_group")
 
     @access("event", modi={"POST"})
