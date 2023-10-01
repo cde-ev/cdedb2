@@ -83,6 +83,7 @@ import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.droid as models_droid
+import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
@@ -107,7 +108,6 @@ from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
-import cdedb.models.event as models_event
 
 NoneType = type(None)
 
@@ -3045,7 +3045,7 @@ def _event_associated_fields(
                     'datetime': datetime.datetime
                 }))
     optional_fields = {
-        field.field_name: datatypes[field.field_name]
+        str(field.field_name): datatypes[field.field_name]
         for field in fields.values() if field.association == association
     }
 
@@ -3056,9 +3056,9 @@ def _event_associated_fields(
     lookup: Dict[str, int] = {v.field_name: k for k, v in fields.items()}
     for field in val:
         field_id = lookup[field]
-        if fields[field_id].entries is not None and val[field] is not None:
-            if not any(str(raw[field]) == x
-                       for x, _ in fields[field_id].entries.items()):
+        entries = fields[field_id].entries
+        if entries is not None and val[field] is not None:
+            if not any(str(raw[field]) == x for x, _ in entries.items()):
                 errs.append(ValueError(
                     field, n_("Entry not in definition list.")))
     if errs:

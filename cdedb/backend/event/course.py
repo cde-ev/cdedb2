@@ -79,22 +79,6 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def new_get_course(self, rs: RequestState, course_id: int) -> models.Course:
-        course_id = affirm(vtypes.ID, course_id)
-        with Atomizer(rs):
-            course_data = self.query_one(
-                rs, *models.Course.get_select_query((course_id,)))
-            if not course_data:
-                raise KeyError
-            event_id = course_data['event_id']
-            event_fields = self._get_event_fields(rs, event_id)
-
-        return models.Course.from_database({
-            **course_data,
-            'event_fields': event_fields.values(),
-        })
-
-    @access("event")
     def new_get_courses(self, rs: RequestState, course_ids: Collection[int]
                         ) -> models.CdEDataclassMap[models.Course]:
         course_ids = affirm_set(vtypes.ID, course_ids)
@@ -111,10 +95,15 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return models.Course.many_from_database([
             {
                 **course,
-                'event_fields': event_fields,
+                'event_fields': event_fields.values(),
             }
             for course in course_data
         ])
+
+    class _NewGetCourseProtocol(Protocol):
+        def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
+    new_get_course: _NewGetCourseProtocol = singularize(
+        new_get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(self, rs: RequestState,

@@ -270,28 +270,6 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
-    def new_get_lodgement(self, rs: RequestState, lodgement_id: int) -> models.Lodgement:
-        lodgement_id = affirm(vtypes.ID, lodgement_id)
-        with Atomizer(rs):
-            lodgement_data = self.query_one(
-                rs, *models.Lodgement.get_select_query((lodgement_id,)))
-            if not lodgement_data:
-                raise KeyError
-            group_data = self.query_one(
-                rs, *models.LodgementGroup.get_select_query(
-                    (lodgement_data['group_id'],), 'id'))
-            event_id = lodgement_data['event_id']
-            if not self.is_orga(rs, event_id=event_id):
-                raise PrivilegeError(n_("Not privileged."))
-            event_fields = self._get_event_fields(rs, event_id)
-
-        return models.Lodgement.from_database({
-            **lodgement_data,
-            'group_data': group_data,
-            'event_fields': event_fields,
-        })
-
-    @access("event")
     def new_get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int]
                            ) -> models.CdEDataclassMap[models.Lodgement]:
         lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
@@ -317,10 +295,16 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             {
                 **lodge,
                 'group_data': group_data[lodge['group_id']],
-                'event_fields': event_fields,
+                'event_fields': models.EventField.many_from_database(
+                    event_fields.values()),
             }
             for lodge in lodgement_data
         ])
+
+    class _NewGetLodgementProtocol(Protocol):
+        def __call__(self, rs: RequestState, lodgement_id: int) -> models.Lodgement: ...
+    new_get_lodgement: _NewGetLodgementProtocol = singularize(
+        new_get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
     def set_lodgement(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
