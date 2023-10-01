@@ -65,32 +65,34 @@ class EventEventMixin(EventBaseFrontend):
             rs, set(other_event_list) - set(rs.user.orga))
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
 
+        events_registration: dict[int, Optional[bool]] = {}
+        events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
             for event_id, event in open_events.items():
-                event['registration'], event['payment_pending'] = (
+                events_registration[event_id], events_payment_pending[event_id] = (
                     self.eventproxy.get_registration_payment_info(rs, event_id))
 
         return self.render(rs, "event/index", {
             'open_events': open_events, 'orga_events': orga_events,
-            'other_events': other_events})
+            'other_events': other_events, 'events_registration': events_registration,
+            'events_payment_pending': events_payment_pending})
 
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
+
+        events_registrations: dict[vtypes.ProtoID, int] = {}
         if self.is_admin(rs):
             for event in events.values():
-                regs = self.eventproxy.list_registrations(rs, event['id'])
-                event['registrations'] = len(regs)
-
-        # TODO: remove this duplicate
-        new_events = self.eventproxy.get_events(rs, event_ids)
+                regs = self.eventproxy.list_registrations(rs, event.id)
+                events_registrations[event.id] = len(regs)
 
         def querylink(event_id: int) -> str:
             query = Query(
                 QueryScope.registration,
-                QueryScope.registration.get_spec(event=new_events[event_id]),
+                QueryScope.registration.get_spec(event=events[event_id]),
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))
@@ -99,7 +101,8 @@ class EventEventMixin(EventBaseFrontend):
             return cdedburl(rs, 'event/registration_query', params)
 
         return self.render(rs, "event/list_events",
-                           {'events': events, 'querylink': querylink})
+            {'events': events, 'events_registrations': events_registrations,
+             'querylink': querylink})
 
     @access("anonymous")
     def show_event(self, rs: RequestState, event_id: int) -> Response:
@@ -820,15 +823,15 @@ class EventEventMixin(EventBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
 
-        def is_halftime(part: CdEDBObject) -> bool:
-            begin: datetime.date = part["part_begin"]
-            end: datetime.date = part["part_end"]
+        def is_halftime(part: models.EventPart) -> bool:
+            begin: datetime.date = part.part_begin
+            end: datetime.date = part.part_end
             duration = end - begin
             one_day = datetime.timedelta(days=1)
             return begin + duration / 2 <= now().date() < begin + duration / 2 + one_day
 
-        def is_over(part: CdEDBObject) -> bool:
-            end: datetime.date = part["part_end"]
+        def is_over(part: models.EventPart) -> bool:
+            end: datetime.date = part.part_end
             one_day = datetime.timedelta(days=1)
             return end + one_day <= now().date()
 
@@ -838,20 +841,20 @@ class EventEventMixin(EventBaseFrontend):
                 store[str(event_id)] = {}
             if store[str(event_id)].get("did_past_event_reminder"):
                 continue
-            if not event["orga_address"]:
+            if not event.orga_address:
                 continue
 
             headers: Headers = {
-                "To": (event["orga_address"],),
+                "To": (event.orga_address,),
                 "Reply-To": "akademien@lists.cde-ev.de"
             }
             # send halftime mail (up to one per part)
-            if any(is_halftime(part) for part in event["parts"].values()):
+            if any(is_halftime(part) for part in event.parts.values()):
                 headers["Subject"] = ("Halbzeit! Was ihr vor Ende der Akademie nicht"
                                       " vergessen solltet")
                 self.do_mail(rs, "halftime_reminder", headers)
             # send past event mail (one per event)
-            elif all(is_over(part) for part in event["parts"].values()):
+            elif all(is_over(part) for part in event.parts.values()):
                 headers["Subject"] = "Wichtige Nach-Aka-Checkliste vom Akademieteam"
                 params = {"rechenschafts_deadline": now() + datetime.timedelta(days=90)}
                 self.do_mail(rs, "past_event_reminder", headers, params=params)

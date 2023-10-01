@@ -37,7 +37,7 @@
         {% if "event_mgmt" in user.admin_views %}
         <div class="col-sm-3 small">
             <a href="{{ querylink(event['id']) }}">
-                {% trans count=event['registrations'] %}
+                {% trans count=events_registrations[event.id] %}
                 	{{ count }} Registrations
                 {% endtrans -%}
             </a>,

@@ -35,7 +35,7 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, User, now
 from cdedb.common.sorting import EntitySorter, Sortkey
 from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.models.common import CdEDataclass
@@ -308,6 +308,16 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
+    def is_visible_for(self, user: User) -> bool:
+        return ("event_admin" in user.roles or user.persona_id in self.orgas
+                or self.is_visible)
+
+    def __lt__(self, other: "EventDataclass") -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return (self.begin, self.end, self.title, self.id) < (
+            other.begin, other.end, other.title, other.id)
+
 
 @dataclasses.dataclass
 class EventPart(EventDataclass):
@@ -377,7 +387,6 @@ class CourseChoiceObject(abc.ABC):
 
     @abc.abstractmethod
     def as_dict(self) -> dict[str, Any]: ...
-
 
 
 @dataclasses.dataclass

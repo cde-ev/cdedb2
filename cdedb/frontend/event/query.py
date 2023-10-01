@@ -436,7 +436,7 @@ class EventQueryMixin(EventBaseFrontend):
                 return self.send_json(rs, {})
             event = self.eventproxy.get_event(rs, aux)
             if not self.is_admin(rs):
-                if rs.user.persona_id not in event['orgas']:
+                if rs.user.persona_id not in event.orgas:
                     raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         else:
             return self.send_json(rs, {})
