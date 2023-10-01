@@ -102,8 +102,7 @@ class EventDataclass(CdEDataclass):
             obj.id: obj for obj in map(cls.from_database, list_of_data)
         }
 
-    def as_dict(self, *, dict_factory: Callable[[Any], dict[str, Any]] = dict
-                ) -> dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Return the fields of a dataclass instance as a new dictionary mapping
         field names to field values.
 
@@ -111,7 +110,7 @@ class EventDataclass(CdEDataclass):
         the backward references to avoid infinit recursion, so we need to dig into
         the implementation details here...
         """
-        return self._asdict_inner(self, dict_factory)
+        return self._asdict_inner(self, dict)
 
     def _asdict_inner(self, obj: Any, dict_factory: Any):  # type: ignore[no-untyped-def]
         if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]

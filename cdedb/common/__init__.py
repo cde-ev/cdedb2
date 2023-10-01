@@ -680,13 +680,16 @@ class CustomJSONEncoder(json.JSONEncoder):
     @overload
     def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
+    def default(self, obj: Any) -> Union[str, Tuple[Any, ...], Dict[str, Any]]:
+        import cdedb.models.common as models
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
             return str(obj)
         elif isinstance(obj, set):
             return tuple(obj)
+        elif isinstance(obj, models.CdEDataclass):
+            return obj.as_dict()
         return super().default(obj)
 
 
