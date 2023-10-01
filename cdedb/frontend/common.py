@@ -1525,47 +1525,40 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
                                     == a['pevent']['id'])),)),
         Scout(None, 'part_id', None,
-              ((lambda a: do_assert(rs.requestargs['part_id']
-                                    in a['event']['parts'])),)),
+              ((lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts)),)),
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
-              ((lambda a: do_assert(a['registration']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
               'group_id', 'group',
-              ((lambda a: do_assert(a['group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['group']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
-                                    in a['event']['fields'])),)),
+                                    in a['event'].fields)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
-              ((lambda a: do_assert(a['part_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['part_group']['event_id'] == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['track_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
               'track_group_id', 'track_group',
-              ((lambda a: do_assert(a['track_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['track_group']['event_id'] == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
               'fee_id', 'fee',
-              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
+              ((lambda a: do_assert(a['fee']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
-              ((lambda a: do_assert(a['orga_token'].event_id == a['event']['id'])),)),
+              ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
