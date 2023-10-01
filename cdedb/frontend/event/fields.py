@@ -43,7 +43,7 @@ class EventFieldMixin(EventBaseFrontend):
         current = {
             "{}_{}".format(key, field_id): formatter(key, value)
             for field_id, field in rs.ambience['event'].fields.items()
-            for key, value in field.items() if key != 'id'}
+            for key, value in field.as_dict().items() if key != 'id'}
         merge_dicts(rs.values, current)
         event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
             rs, event_id).fields
@@ -82,9 +82,9 @@ class EventFieldMixin(EventBaseFrontend):
         fields = process_dynamic_input(
             rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
 
-        def field_name(field_id: int, field: Optional[EventField]) -> str:
+        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
             """Helper to get the name of a (new or existing) field."""
-            return (field.field_name if field and 'field_name' in field
+            return (field['field_name'] if field and 'field_name' in field
                     else rs.ambience['event'].fields[field_id].field_name)
 
         count = Counter(
