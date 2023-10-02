@@ -390,6 +390,7 @@ class TestEventBackend(BackendTest):
         data['fees'][1003].update(updated_fees[1003])
         data['fees'][1005] = updated_fees[-1]
         data['fees'][1005].update({'id': 1005, 'event_id': new_id})
+        data['parts'][1003]['camping_mat_field'] = data['fields'][data['parts'][1003]['camping_mat_field']]
 
         self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
 
