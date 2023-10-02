@@ -158,6 +158,8 @@ class EventDataclass(CdEDataclass):
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
+        if field.metadata.get('dict_exclude'):
+            return False
         return field.repr
 
     def __lt__(self, other: "EventDataclass") -> bool:
@@ -245,8 +247,7 @@ class Event(EventDataclass):
         for part in self.parts.values():
             part.waitlist_field = self.fields.get(
                 part.waitlist_field)  # type: ignore[call-overload]
-            part.camping_mat_field = self.fields.get(
-                part.camping_mat_field)  # type: ignore[call-overload]
+            part.camping_mat_field = self.fields.get(part.camping_mat_field_id or 0)
             part.tracks = {
                 track_id: self.tracks[track_id]
                 for track_id in part.tracks
@@ -336,7 +337,9 @@ class EventPart(EventDataclass):
     part_end: datetime.date
 
     waitlist_field: Optional["EventField"]
-    camping_mat_field: Optional["EventField"]
+    camping_mat_field: Optional["EventField"] = dataclasses.field(
+        init=False, metadata={'dict_exclude': True})
+    camping_mat_field_id: Optional[vtypes.ID]
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
 

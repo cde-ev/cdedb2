@@ -97,7 +97,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                 },
                 -2: {
                     'tracks': {
@@ -113,7 +113,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                 },
             },
             'fees': {
@@ -257,14 +257,14 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'waitlist_field': None,
-            'camping_mat_field': 1003,
+            'camping_mat_field_id': 1003,
         }
         changed_part: CdEDBObject = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'waitlist_field': None,
-            'camping_mat_field': None,
+            'camping_mat_field_id': None,
             'tracks': {
                 1002: {
                     'title': "Second lecture v2",
@@ -390,7 +390,6 @@ class TestEventBackend(BackendTest):
         data['fees'][1003].update(updated_fees[1003])
         data['fees'][1005] = updated_fees[-1]
         data['fees'][1005].update({'id': 1005, 'event_id': new_id})
-        data['parts'][1003]['camping_mat_field'] = data['fields'][data['parts'][1003]['camping_mat_field']]
 
         self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
 
@@ -528,7 +527,7 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(3000, 1, 1),
             'part_end': datetime.date(3000, 2, 1),
             'waitlist_field': None,
-            'camping_mat_field': None,
+            'camping_mat_field_id': None,
             'tracks': {
                 6: {
                     'id': 6,
@@ -1593,7 +1592,7 @@ class TestEventBackend(BackendTest):
                     'title': "KreativAkademie",
                     'shortname': "KreAka",
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                 },
             },
         }
@@ -2358,7 +2357,7 @@ class TestEventBackend(BackendTest):
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'waitlist_field': None,
-            'camping_mat_field': None,
+            'camping_mat_field_id': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2592,7 +2591,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
             'waitlist_field': None,
-            'camping_mat_field': None,
+            'camping_mat_field_id': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -3565,7 +3564,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                 },
                 -2: {
                     'tracks': {
@@ -3580,7 +3579,7 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                 },
             },
             'fields': {
@@ -3648,7 +3647,7 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'waitlist_field': None,
-            'camping_mat_field': None,
+            'camping_mat_field_id': None,
         }
         changed_part = {
             'title': "Second coming",
@@ -4273,7 +4272,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "camping_mat_field_id": None,
                 },
                 -2: {
                     "title": "B",
@@ -4281,7 +4280,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "camping_mat_field_id": None,
                 },
                 -3: {
                     "title": "C",
@@ -4289,7 +4288,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "camping_mat_field_id": None,
                 },
                 -4: {
                     "title": "D",
@@ -4297,7 +4296,7 @@ class TestEventBackend(BackendTest):
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
                     "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "camping_mat_field_id": None,
                 },
             },
         }

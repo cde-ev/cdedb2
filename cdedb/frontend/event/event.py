@@ -353,11 +353,18 @@ class EventEventMixin(EventBaseFrontend):
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC[field]
-            fields[f"{field}_field"] = [
-                (field.id, field.field_name) for field in sorted_fields
-                if field.association in legal_assocs
-                   and field.kind in legal_datatypes
-            ]
+            if field == "camping_mat":
+                fields[f"{field}_field_id"] = [
+                    (field.id, field.field_name) for field in sorted_fields
+                    if field.association in legal_assocs
+                       and field.kind in legal_datatypes
+                ]
+            else:
+                fields[f"{field}_field"] = [
+                    (field.id, field.field_name) for field in sorted_fields
+                    if field.association in legal_assocs
+                       and field.kind in legal_datatypes
+                ]
         return fields
 
     @access("event")
@@ -386,7 +393,7 @@ class EventEventMixin(EventBaseFrontend):
 
         # check non-static dependencies
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field', 'camping_mat_field',):
+        for key in ('waitlist_field', 'camping_mat_field_id',):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -469,7 +476,7 @@ class EventEventMixin(EventBaseFrontend):
         # Check part specific stuff which can not be checked statically
         #
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field', 'camping_mat_field',):
+        for key in ('waitlist_field', 'camping_mat_field_id',):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -950,7 +957,7 @@ class EventEventMixin(EventBaseFrontend):
                     'part_begin': part_begin,
                     'part_end': part_end,
                     'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'camping_mat_field_id': None,
                     'tracks': (
                         {
                             -1: {

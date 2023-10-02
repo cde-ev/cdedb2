@@ -98,9 +98,9 @@ def update_event(cur: DictCursor, event: CdEDBObject) -> None:
 
 def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
     query = """UPDATE event.event_parts
-               SET (waitlist_field, camping_mat_field) = (%s, %s) WHERE id = %s"""
+               SET (waitlist_field, camping_mat_field_id) = (%s, %s) WHERE id = %s"""
     for part in parts:
-        params = (part['waitlist_field'], part['camping_mat_field'], part['id'])
+        params = (part['waitlist_field'], part['camping_mat_field_id'], part['id'])
         cur.execute(query, params)
 
 
@@ -211,7 +211,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:
-                        for key in ('waitlist_field', 'camping_mat_field'):
+                        for key in ('waitlist_field', 'camping_mat_field_id'):
                             values[part_id][key] = None
                 if table == 'event.course_tracks':
                     for track_id in data[table]:

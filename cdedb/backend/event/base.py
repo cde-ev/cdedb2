@@ -1406,9 +1406,15 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['id']
             del part['event_id']
             del part['part_group_ids']
-            for f in ('waitlist_field', 'camping_mat_field',):
+            for f in ('waitlist_field', 'camping_mat_field_id',):
                 if part[f]:
-                    part[f] = part[f]['field_name']
+                    if f == "waitlist_field":
+                        part[f] = part[f]['field_name']
+                    else:
+                        # TODO do we want to stick to the old naming here?
+                        new_key = f.removesuffix("_id")
+                        part[new_key] = ret['event']['fields'][part[f]]['field_name']
+                        del part[f]
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']

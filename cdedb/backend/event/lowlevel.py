@@ -269,7 +269,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         # Do some additional validation for any given course room field.
         course_room_fields: Set[int] = set(
-            filter(None, (t.get('camping_mat_field') for t in data.values() if t)))
+            filter(None, (t.get('camping_mat_field_id') for t in data.values() if t)))
         course_room_field_data = self._get_event_fields(rs, event_id,
                                                         course_room_fields)
         if len(course_room_fields) != len(course_room_field_data):
@@ -582,7 +582,7 @@ class EventLowLevelBackend(AbstractBackend):
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
         camping_mat_fields: Set[int] = set(
-            filter(None, (p.get('camping_mat_field') for p in parts.values() if p)))
+            filter(None, (p.get('camping_mat_field_id') for p in parts.values() if p)))
         camping_mat_field_data = self._get_event_fields(rs, event_id,
                                                         camping_mat_fields)
         if len(camping_mat_fields) != len(camping_mat_field_data):
@@ -1061,7 +1061,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         camping_mat_fields = self.sql_select(
             rs, "event.event_parts", ("id",), (field_id,),
-            entity_key="camping_mat_field")
+            entity_key="camping_mat_field_id")
         if camping_mat_fields:
             blockers["camping_mat_fields"] = [
                 e["id"] for e in camping_mat_fields]
@@ -1130,7 +1130,7 @@ class EventLowLevelBackend(AbstractBackend):
                 for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
-                        'camping_mat_field': None,
+                        'camping_mat_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:

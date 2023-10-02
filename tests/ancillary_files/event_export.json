@@ -1543,7 +1543,7 @@
             "shortname": "1.H.",
             "title": "Erste H\u00e4lfte",
             "waitlist_field": null,
-            "camping_mat_field": 4
+            "camping_mat_field_id": 4
         },
         "1": {
             "event_id": 1,
@@ -1553,7 +1553,7 @@
             "shortname": "Wu",
             "title": "Warmup",
             "waitlist_field": null,
-            "camping_mat_field": 4
+            "camping_mat_field_id": 4
         },
         "3": {
             "event_id": 1,
@@ -1563,7 +1563,7 @@
             "shortname": "2.H.",
             "title": "Zweite H\u00e4lfte",
             "waitlist_field": null,
-            "camping_mat_field": 4
+            "camping_mat_field_id": 4
         }
     },
     "event.part_groups": {

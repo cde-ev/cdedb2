@@ -48,7 +48,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: Dict[str, Tuple[str, ...]] = {
         "event.events": ("lodge_field",),
-        "event.event_parts": ("camping_mat_field",),
+        "event.event_parts": ("camping_mat_field_id",),
         "event.course_tracks": ("course_room_field",),
     }
 

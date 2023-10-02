@@ -2388,7 +2388,7 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'waitlist_field': Optional[ID],  # type: ignore[dict-item]
-    'camping_mat_field': Optional[ID],  # type: ignore[dict-item]
+    'camping_mat_field_id': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {

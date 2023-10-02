@@ -751,7 +751,7 @@ CREATE TABLE event.event_parts (
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
         waitlist_field          integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        camping_mat_field_id    integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
@@ -858,7 +858,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
