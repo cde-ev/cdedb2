@@ -1442,7 +1442,8 @@ class EventBaseBackend(EventLowLevelBackend):
             new_key = f.removesuffix("_id")
             if ret['event'][f]:
                 # TODO do we want to stick to the old naming here?
-                ret['event'][new_key] = ret['event']['fields'][ret['event'][f]]['field_name']
+                ret['event'][new_key] = ret['event']['fields'][
+                    ret['event'][f]]['field_name']
             else:
                 ret['event'][new_key] = None
             del ret['event'][f]

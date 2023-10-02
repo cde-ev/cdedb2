@@ -4022,7 +4022,8 @@ def _serialized_event_configuration(
                 if field.kind not in legal_kinds:
                     with errs:
                         raise ValidationSummary(ValueError(
-                            "lodge_field_id", n_("Lodge field must have type 'string'.")))
+                            "lodge_field_id",
+                            n_("Lodge field must have type 'string'.")))
 
     if errs:
         raise errs
