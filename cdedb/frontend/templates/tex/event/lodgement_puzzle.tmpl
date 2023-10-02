@@ -61,13 +61,11 @@
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u10 %>>U10<<% endif -%>>}%
                     {<<% if ambience['event']['parts'][part_id]['camping_mat_field'] and
-                            registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['parts'][part_id]['camping_mat_field']]['field_name']) -%>>
+                            registration['fields'].get(ambience['event']['parts'][part_id]['camping_mat_field']['field_name']) -%>>
                         <<% trans %>> camping mat <<% endtrans %>>
                      <<%- endif %>>}% ID <<< registration_id|te >>>
                     {<<% if ambience['event']['lodge_field']
-                            and registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
+                            and registration['fields'].get(ambience['event']['lodge_field']['field_name']) -%>>
                         <<% trans %>> Wish <<% endtrans %>>: <<< registration['fields'].get(
                                     ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
                      <<% endif -%>>}%

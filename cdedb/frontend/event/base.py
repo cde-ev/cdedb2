@@ -665,11 +665,10 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_camping_mat_field_names(
             event: models.Event
     ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
-        field_names: dict[int,
-            Optional[vtypes.RestrictiveIdentifier]] = {}
+        field_names: dict[int, Optional[vtypes.RestrictiveIdentifier]] = {}
         for part_id, part in event.parts.items():
             if f := part.camping_mat_field:
-                field_names[part_id] = event.fields[f.id].field_name
+                field_names[part_id] = f.field_name
             else:
                 field_names[part_id] = None
         return field_names

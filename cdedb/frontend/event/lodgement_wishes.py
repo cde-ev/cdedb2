@@ -95,7 +95,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         for registration_id, registration in registrations.items()
     ]
     if event.lodge_field:
-        wish_field_name = event.fields[event.lodge_field.id].field_name
+        wish_field_name = event.lodge_field.field_name
     else:
         return [], []
     wishes: Dict[Tuple[int, int], LodgementWish] = {}
@@ -391,7 +391,7 @@ def create_lodgement_wishes_graph(
             filter_part_id in present_parts if filter_part_id
             else bool(present_parts))
         if event.lodge_field:
-            wish_field_name = event.fields[event.lodge_field.id].field_name
+            wish_field_name = event.lodge_field.field_name
         else:
             return graph
         subgraph.node(
