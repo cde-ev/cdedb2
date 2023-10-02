@@ -1407,21 +1407,25 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['event_id']
             del part['part_group_ids']
             for f in ('waitlist_field_id', 'camping_mat_field_id',):
+                new_key = f.removesuffix("_id")
                 if part[f]:
                     # TODO do we want to stick to the old naming here?
-                    new_key = f.removesuffix("_id")
                     part[new_key] = ret['event']['fields'][part[f]]['field_name']
-                    del part[f]
+                else:
+                    part[new_key] = None
+                del part[f]
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
                 del track['track_group_ids']
                 for f in ('course_room_field_id',):
+                    new_key = f.removesuffix("_id")
                     if track[f]:
                         # TODO do we want to stick to the old naming here?
-                        new_key = f.removesuffix("_id")
                         track[new_key] = ret['event']['fields'][track[f]]['field_name']
-                        del track[f]
+                    else:
+                        track[new_key] = None
+                    del track[f]
         for pg in ret['event']['part_groups'].values():
             del pg['id']
             del pg['event_id']
@@ -1435,11 +1439,13 @@ class EventBaseBackend(EventLowLevelBackend):
             tg['track_ids'] = xsorted(tg['tracks'].keys())
             del tg['tracks']
         for f in ('lodge_field_id',):
+            new_key = f.removesuffix("_id")
             if ret['event'][f]:
                 # TODO do we want to stick to the old naming here?
-                new_key = f.removesuffix("_id")
                 ret['event'][new_key] = ret['event']['fields'][ret['event'][f]]['field_name']
-                del ret['event'][f]
+            else:
+                ret['event'][new_key] = None
+            del ret['event'][f]
         # Fields and questionnaire
         new_fields = {
             field['field_name']: field
