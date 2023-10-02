@@ -734,7 +734,10 @@ class TestEventBackend(BackendTest):
 
         reg_ids = self.event.list_registrations(self.key, event_id)
         self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
-        self.assertEqual(event, self.event.get_event(self.key, event_id))
+        self.assertEqual(
+            event,
+            self.event.get_event(self.key, event_id),
+        )
 
     @as_users("annika", "garcia")
     def test_aposteriori_track_deletion(self) -> None:

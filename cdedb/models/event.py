@@ -213,7 +213,7 @@ class Event(EventDataclass):
     use_additional_questionnaire: bool
 
     lodge_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, metadata={'dict_exclude': True})
+        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     lodge_field_id: Optional[vtypes.ID]
 
     parts: CdEDataclassMap["EventPart"]
@@ -336,10 +336,10 @@ class EventPart(EventDataclass):
     part_end: datetime.date
 
     waitlist_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, metadata={'dict_exclude': True})
+        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     waitlist_field_id: Optional[vtypes.ID]
     camping_mat_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, metadata={'dict_exclude': True})
+        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     camping_mat_field_id: Optional[vtypes.ID]
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
@@ -409,7 +409,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     part_id: vtypes.ProtoID
 
     course_room_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, metadata={'dict_exclude': True})
+        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     course_room_field_id: Optional[vtypes.ID]
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
