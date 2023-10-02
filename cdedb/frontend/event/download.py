@@ -105,8 +105,6 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/downloads')
         event = rs.ambience['event']
         tracks = event.tracks
-        tracks_sorted = [e.id for e in xsorted(tracks.values(),
-                                               key=EntitySorter.course_track)]
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -134,7 +132,7 @@ class EventDownloadMixin(EventBaseFrontend):
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
         tex = self.fill_template(rs, "tex", "course_puzzle", {
             'courses': courses, 'counts': counts,
-            'tracks_sorted': tracks_sorted, 'registrations': registrations,
+            'tracks': tracks, 'registrations': registrations,
             'personas': personas})
         file = self.serve_latex_document(
             rs, tex,
@@ -215,8 +213,6 @@ class EventDownloadMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
         tracks = rs.ambience['event'].tracks
-        tracks_sorted = [e.id for e in xsorted(tracks.values(),
-                                               key=EntitySorter.course_track)]
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -253,7 +249,7 @@ class EventDownloadMixin(EventBaseFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
             'instructors': instructors, 'course_room_fields': cr_field_names,
-            'tracks_sorted': tracks_sorted, })
+            'tracks': tracks, })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
