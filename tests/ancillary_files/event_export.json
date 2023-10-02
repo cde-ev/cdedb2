@@ -1431,7 +1431,7 @@
             "description": "Everybody come!",
             "website_url": "https://www.cde-ev.de/",
             "institution": 1,
-            "lodge_field": 3,
+            "lodge_field_id": 3,
             "offline_lock": false,
             "orga_address": "aka@example.cde",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",

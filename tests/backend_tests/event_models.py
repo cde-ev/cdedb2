@@ -51,7 +51,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
-            lodge_field=3,  # type: ignore[arg-type]
+            lodge_field_id=3,  # type: ignore[arg-type]
             parts={
                 1: models.EventPart(
                     id=1,  # type: ignore[arg-type]
@@ -351,7 +351,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
-            lodge_field=None,
+            lodge_field_id=None,
             parts={
                 6: models.EventPart(
                     id=6,  # type: ignore[arg-type]

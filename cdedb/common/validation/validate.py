@@ -2259,7 +2259,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
-    'lodge_field': Optional[ID],
+    'lodge_field_id': Optional[ID],
     'website_url': Optional[Url],
 }
 
@@ -4006,23 +4006,23 @@ def _serialized_event_configuration(
                 "registration_soft_limit", "Must be before or equal to hard limit."))
 
     if not skip_field_validation and current:
-        if lodge_field := val.get('lodge_field'):
+        if lodge_field := val.get('lodge_field_id'):
             if lodge_field not in current.fields:
                 with errs:
                     raise ValidationSummary(KeyError(
-                        "lodge_field", n_("Unknown lodge field.")))
+                        "lodge_field_id", n_("Unknown lodge field.")))
             else:
                 field = current.fields[lodge_field]
                 legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
                 if field.association not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
-                            "lodge_field",
+                            "lodge_field_id",
                             n_("Lodge field must be a registration field.")))
                 if field.kind not in legal_kinds:
                     with errs:
                         raise ValidationSummary(ValueError(
-                            "lodge_field", n_("Lodge field must have type 'string'.")))
+                            "lodge_field_id", n_("Lodge field must have type 'string'.")))
 
     if errs:
         raise errs

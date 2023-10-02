@@ -212,7 +212,9 @@ class Event(EventDataclass):
     is_course_assignment_visible: bool
     use_additional_questionnaire: bool
 
-    lodge_field: Optional["EventField"]
+    lodge_field: Optional["EventField"] = dataclasses.field(
+        init=False, metadata={'dict_exclude': True})
+    lodge_field_id: Optional[vtypes.ID]
 
     parts: CdEDataclassMap["EventPart"]
     tracks: CdEDataclassMap["CourseTrack"]
@@ -272,8 +274,7 @@ class Event(EventDataclass):
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
                 track.track_group_ids.add(track_group.id)
-        self.lodge_field = self.fields.get(
-            self.lodge_field)  # type: ignore[call-overload]
+        self.lodge_field = self.fields.get(self.lodge_field_id or 0)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

@@ -92,8 +92,8 @@ def make_meta_info(cur: DictCursor) -> None:
 
 
 def update_event(cur: DictCursor, event: CdEDBObject) -> None:
-    query = """UPDATE event.events SET lodge_field = %s"""
-    cur.execute(query, [event['lodge_field']])
+    query = """UPDATE event.events SET lodge_field_id = %s"""
+    cur.execute(query, [event['lodge_field_id']])
 
 
 def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
@@ -207,7 +207,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field',):
+                    for key in ('lodge_field_id',):
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:

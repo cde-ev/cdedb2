@@ -191,7 +191,7 @@ class TestEventBackend(BackendTest):
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False
         data['is_visible'] = False
-        data['lodge_field'] = None
+        data['lodge_field_id'] = None
         data['orga_address'] = None
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})

@@ -728,16 +728,16 @@ class EventBaseBackend(EventLowLevelBackend):
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
-                    edata[f] for f in ("lodge_field",) if f in edata
+                    edata[f] for f in ("lodge_field_id",) if f in edata
                 )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
                         rs, "event.field_definitions",
                         ("id", "event_id", "kind", "association"), indirect_fields)}
-                    if edata.get('lodge_field'):
+                    if edata.get('lodge_field_id'):
                         self._validate_special_event_field(
                             rs, data['id'], "lodge_field",
-                            indirect_data[edata['lodge_field']])
+                            indirect_data[edata['lodge_field_id']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'], change_note=change_note)
@@ -1431,9 +1431,12 @@ class EventBaseBackend(EventLowLevelBackend):
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
             tg['track_ids'] = xsorted(tg['tracks'].keys())
             del tg['tracks']
-        for f in ('lodge_field',):
+        for f in ('lodge_field_id',):
             if ret['event'][f]:
-                ret['event'][f] = ret['event'][f]['field_name']
+                # TODO do we want to stick to the old naming here?
+                new_key = f.removesuffix("_id")
+                ret['event'][new_key] = ret['event']['fields'][ret['event'][f]]['field_name']
+                del ret['event'][f]
         # Fields and questionnaire
         new_fields = {
             field['field_name']: field

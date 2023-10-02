@@ -1063,7 +1063,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.get("/event/event/1/change")
         f = self.response.forms['changeeventform']
-        f['lodge_field'] = ''
+        f['lodge_field_id'] = ''
         self.submit(f)
 
         # Change datatype of "transportation" field to datetime and delete

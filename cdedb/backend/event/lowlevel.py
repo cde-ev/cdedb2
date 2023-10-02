@@ -1055,7 +1055,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         lodge_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
-            entity_key="lodge_field")
+            entity_key="lodge_field_id")
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
@@ -1123,7 +1123,7 @@ class EventLowLevelBackend(AbstractBackend):
                 for anid in blockers["lodge_fields"]:
                     deletor = {
                         'id': anid,
-                        'lodge_field': None,
+                        'lodge_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "camping_mat_fields" in cascade:

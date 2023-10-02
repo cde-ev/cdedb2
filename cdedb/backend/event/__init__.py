@@ -239,7 +239,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
                         'id': event_id,
-                        'lodge_field': None,
+                        'lodge_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     with Silencer(rs):

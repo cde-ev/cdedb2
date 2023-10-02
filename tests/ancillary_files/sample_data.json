@@ -4255,7 +4255,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": 3
+            "lodge_field_id": 3
         },
         {
             "id": 2,
@@ -4283,7 +4283,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         },
         {
             "id": 3,
@@ -4311,7 +4311,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         },
         {
             "id": 4,
@@ -4339,7 +4339,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         }
     ],
     "event.event_fees": [
