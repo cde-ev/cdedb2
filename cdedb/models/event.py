@@ -6,7 +6,7 @@ event realm tables:
   - event.part_groups
   * event.part_group_parts
   - event.course_tracks
-  * event.track_groups
+  - event.track_groups
   * event.track_group_tracks
   - event.field_definitions
   - event.courses
@@ -43,7 +43,9 @@ from cdedb.uncommon.intenum import CdEIntEnum
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.database.query import DatabaseValue_s
+    from cdedb.database.query import (  # pylint: disable=ungrouped-imports
+        DatabaseValue_s,
+    )
 
 
 #
@@ -420,7 +422,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return {self.id: self}
 
     @tracks.setter
-    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:
+    def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:  # pylint: disable=no-self-use
         raise KeyError
 
 

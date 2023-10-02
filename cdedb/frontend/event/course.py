@@ -596,7 +596,8 @@ class EventCourseMixin(EventBaseFrontend):
                         # Let instructors instruct
                         tmp['tracks'][atrack_id] = {'course_id': instructor}
                         continue
-                    # I replaced a `track_id` with `atrack_id` below, which I am 95% sure is correct.
+                    # I replaced a `track_id` with `atrack_id` below, which I am
+                    # 95% sure is correct.
                     for choice in (
                             reg_track['choices'][:tracks[atrack_id].num_choices]):
                         if atrack_id in courses[choice]['active_segments']:

@@ -690,7 +690,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
 
     def default(self, obj: Any) -> Union[str, Tuple[Any, ...], Dict[str, Any]]:
-        import cdedb.models.common as models
+        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
