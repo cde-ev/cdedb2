@@ -794,7 +794,7 @@ CREATE TABLE event.course_tracks (
         num_choices             integer NOT NULL,
         min_choices             integer NOT NULL, -- required number of distinct course choices
         sortkey                 integer NOT NULL,
-        course_room_field       integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        course_room_field_id    integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
@@ -859,7 +859,7 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field_id) REFERENCES event.field_definitions(id);
 ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
-ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field_id) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,

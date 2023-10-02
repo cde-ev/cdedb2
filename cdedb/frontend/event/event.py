@@ -353,18 +353,11 @@ class EventEventMixin(EventBaseFrontend):
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC[field]
-            if field in {"camping_mat", "waitlist"}:
-                fields[f"{field}_field_id"] = [
-                    (field.id, field.field_name) for field in sorted_fields
-                    if field.association in legal_assocs
-                       and field.kind in legal_datatypes
-                ]
-            else:
-                fields[f"{field}_field"] = [
-                    (field.id, field.field_name) for field in sorted_fields
-                    if field.association in legal_assocs
-                       and field.kind in legal_datatypes
-                ]
+            fields[f"{field}_field_id"] = [
+                (field.id, field.field_name) for field in sorted_fields
+                if field.association in legal_assocs
+                   and field.kind in legal_datatypes
+            ]
         return fields
 
     @access("event")
@@ -510,7 +503,7 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
 
         for track_id, track in xsorted(track_data.items()):
-            for key in ('course_room_field',):
+            for key in ('course_room_field_id',):
                 field_ids = [field[0] for field in fields[key]]
                 if track and track[key] and track[key] not in field_ids:
                     rs.append_validation_error((key, ValueError(
@@ -966,7 +959,7 @@ class EventEventMixin(EventBaseFrontend):
                                 'num_choices': DEFAULT_NUM_COURSE_CHOICES,
                                 'min_choices': DEFAULT_NUM_COURSE_CHOICES,
                                 'sortkey': 0,
-                                'course_room_field': None,
+                                'course_room_field_id': None,
                             },
                         } if create_track else {}
                     ),

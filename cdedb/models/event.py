@@ -256,8 +256,7 @@ class Event(EventDataclass):
             for track in part.tracks.values():
                 track.part = part
         for track in self.tracks.values():
-            track.course_room_field = self.fields.get(
-                track.course_room_field)  # type: ignore[call-overload]
+            track.course_room_field = self.fields.get(track.course_room_field_id or 0)
         for part_group in self.part_groups.values():
             part_group.parts = {
                 part_id: self.parts[part_id]
@@ -409,7 +408,9 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
     part_id: vtypes.ProtoID
 
-    course_room_field: Optional["EventField"]
+    course_room_field: Optional["EventField"] = dataclasses.field(
+        init=False, metadata={'dict_exclude': True})
+    course_room_field_id: Optional[vtypes.ID]
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
         default_factory=dict, compare=False, repr=False)

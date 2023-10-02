@@ -105,9 +105,9 @@ def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
 
 
 def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
-    query = "UPDATE event.course_tracks SET course_room_field = %s WHERE id = %s"
+    query = "UPDATE event.course_tracks SET course_room_field_id = %s WHERE id = %s"
     for track in tracks:
-        cur.execute(query, (track['course_room_field'], track['id']))
+        cur.execute(query, (track['course_room_field_id'], track['id']))
 
 
 def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
@@ -215,7 +215,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                             values[part_id][key] = None
                 if table == 'event.course_tracks':
                     for track_id in data[table]:
-                        for key in ('course_room_field',):
+                        for key in ('course_room_field_id',):
                             values[track_id][key] = None
                 populate_table(cur, table, values)
             # Fix forward references

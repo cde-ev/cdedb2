@@ -4775,7 +4775,7 @@
             "num_choices": 4,
             "min_choices": 4,
             "sortkey": 1,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 2,
@@ -4785,7 +4785,7 @@
             "num_choices": 1,
             "min_choices": 1,
             "sortkey": 2,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 3,
@@ -4795,7 +4795,7 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 3,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 4,
@@ -4805,7 +4805,7 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 6,
@@ -4815,7 +4815,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 7,
@@ -4825,7 +4825,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 8,
@@ -4835,7 +4835,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 9,
@@ -4845,7 +4845,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 10,
@@ -4855,7 +4855,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 11,
@@ -4865,7 +4865,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 12,
@@ -4875,7 +4875,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 13,
@@ -4885,7 +4885,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 14,
@@ -4895,7 +4895,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 15,
@@ -4905,7 +4905,7 @@
             "num_choices": 1,
             "min_choices": 1,
             "sortkey": 2,
-            "course_room_field": null
+            "course_room_field_id": null
         }
     ],
     "event.track_groups": [

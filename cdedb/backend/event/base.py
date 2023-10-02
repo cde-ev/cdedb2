@@ -1416,9 +1416,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['id']
                 del track['part_id']
                 del track['track_group_ids']
-                for f in ('course_room_field',):
+                for f in ('course_room_field_id',):
                     if track[f]:
-                        track[f] = track[f]['field_name']
+                        # TODO do we want to stick to the old naming here?
+                        new_key = f.removesuffix("_id")
+                        track[new_key] = ret['event']['fields'][track[f]]['field_name']
+                        del track[f]
         for pg in ret['event']['part_groups'].values():
             del pg['id']
             del pg['event_id']

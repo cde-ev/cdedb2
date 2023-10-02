@@ -90,7 +90,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}
+                             'course_room_field_id': None}
                     },
                     'title': "First coming",
                     'shortname': "first",
@@ -106,7 +106,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 1,
                              'sortkey': 1,
-                             'course_room_field': None}
+                             'course_room_field_id': None}
                     },
                     'title': "Second coming",
                     'shortname': "second",
@@ -250,7 +250,7 @@ class TestEventBackend(BackendTest):
                      'num_choices': 2,
                      'min_choices': 2,
                      'sortkey': 2,
-                     'course_room_field': None}
+                     'course_room_field_id': None}
             },
             'title': "Third coming",
             'shortname': "third",
@@ -272,7 +272,7 @@ class TestEventBackend(BackendTest):
                     'num_choices': 5,
                     'min_choices': 4,
                     'sortkey': 3,
-                    'course_room_field': None,
+                    'course_room_field_id': None,
                 }
             },
         }
@@ -369,7 +369,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 5,
                 'min_choices': 4,
                 'sortkey': 3,
-                'course_room_field': None,
+                'course_room_field_id': None,
                 'track_group_ids': set(),
             },
             1003: {
@@ -380,7 +380,7 @@ class TestEventBackend(BackendTest):
                 'num_choices': 2,
                 'min_choices': 2,
                 'sortkey': 2,
-                'course_room_field': None,
+                'course_room_field_id': None,
                 'track_group_ids': set(),
             },
         }
@@ -537,7 +537,7 @@ class TestEventBackend(BackendTest):
                     'num_choices': 4,
                     'min_choices': 2,
                     'sortkey': 1,
-                    'course_room_field': None,
+                    'course_room_field_id': None,
                     'track_group_ids': {1},
                 },
             },
@@ -703,7 +703,7 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 1,
             'sortkey': 1,
-            'course_room_field': None,
+            'course_room_field_id': None,
         }
         update_event = {
             'parts': {
@@ -2372,7 +2372,7 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1,
-            'course_room_field': None}
+            'course_room_field_id': None}
         # lodgement groups
         new_data['event.lodgement_groups'][5000] = {
             'id': 5000,
@@ -2605,7 +2605,7 @@ class TestEventBackend(BackendTest):
             'min_choices': 2,
             'sortkey': 1,
             'title': 'Enlightnment',
-            'course_room_field': None}
+            'course_room_field_id': None}
         stored_data['event.lodgement_groups'][1001] = {
             'id': 1001,
             'event_id': 1,
@@ -3558,7 +3558,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}},
+                             'course_room_field_id': None}},
                     'title': "First coming",
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
@@ -3573,7 +3573,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}},
+                             'course_room_field_id': None}},
                     'title': "Second coming",
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
@@ -3641,7 +3641,7 @@ class TestEventBackend(BackendTest):
                      'num_choices': 2,
                      'min_choices': 2,
                      'sortkey': 2,
-                     'course_room_field': None}},
+                     'course_room_field_id': None}},
             'title': "Third coming",
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),

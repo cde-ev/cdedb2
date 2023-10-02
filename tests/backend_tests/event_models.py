@@ -97,7 +97,7 @@ class TestEventModels(BackendTest):
                     num_choices=4,
                     min_choices=4,
                     sortkey=1,
-                    course_room_field=5,  # type: ignore[arg-type]
+                    course_room_field_id=5,  # type: ignore[arg-type]
                 ),
                 2: models.CourseTrack(
                     id=2,  # type: ignore[arg-type]
@@ -107,7 +107,7 @@ class TestEventModels(BackendTest):
                     num_choices=1,
                     min_choices=1,
                     sortkey=2,
-                    course_room_field=5,  # type: ignore[arg-type]
+                    course_room_field_id=5,  # type: ignore[arg-type]
                 ),
                 3: models.CourseTrack(
                     id=3,  # type: ignore[arg-type]
@@ -117,7 +117,7 @@ class TestEventModels(BackendTest):
                     num_choices=3,
                     min_choices=2,
                     sortkey=3,
-                    course_room_field=5,  # type: ignore[arg-type]
+                    course_room_field_id=5,  # type: ignore[arg-type]
                 ),
             },
             fields={

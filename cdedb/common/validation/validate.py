@@ -2513,7 +2513,7 @@ EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
-    'course_room_field': Optional[ID],  # type: ignore[dict-item]
+    'course_room_field_id': Optional[ID],  # type: ignore[dict-item]
 }
 
 

@@ -111,12 +111,12 @@
                                     defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
-                        <td class={{ util.has_errors(drow_name("course_room_field", id, prefix="track")) }}>
-                            {{ util.input_select(drow_name("course_room_field", id, prefix="track"),
-                                    aclass='drow-input form-control', entries=fields['course_room_field'],
-                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field", prefix="track"),
+                        <td class={{ util.has_errors(drow_name("course_room_field_id", id, prefix="track")) }}>
+                            {{ util.input_select(drow_name("course_room_field_id", id, prefix="track"),
+                                    aclass='drow-input form-control', entries=fields['course_room_field_id'],
+                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field_id", prefix="track"),
                                     arialabel=gettext("Course Room Field")) }}
-                            {{ util.output_errors(drow_name("course_room_field", id, prefix="track")) }}
+                            {{ util.output_errors(drow_name("course_room_field_id", id, prefix="track")) }}
                         </td>
                         <td>
                             <span class="drow-buttonspace">

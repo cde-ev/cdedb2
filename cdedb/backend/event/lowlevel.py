@@ -1068,7 +1068,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         course_room_fields = self.sql_select(
             rs, "event.course_tracks", ("id",), (field_id,),
-            entity_key="course_room_field")
+            entity_key="course_room_field_id")
         if course_room_fields:
             blockers["course_room_fields"] = [
                 e["id"] for e in course_room_fields]
@@ -1137,7 +1137,7 @@ class EventLowLevelBackend(AbstractBackend):
                 for anid in blockers["course_room_fields"]:
                     deletor = {
                         'id': anid,
-                        'course_room_field': None,
+                        'course_room_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "waitlist_fields" in cascade:
