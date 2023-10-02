@@ -2233,16 +2233,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Veranstaltungsteile")
         self.traverse({"href": "/event/event/1/part/1/change"})
         f: webtest.Form = self.response.forms["changepartform"]
-        self.assertEqual([x[0] for x in f['waitlist_field'].options], ['', '8', '1001'])
-        f['waitlist_field'].force_value(1002)
+        self.assertEqual([x[0] for x in f['waitlist_field_id'].options], ['', '8', '1001'])
+        f['waitlist_field_id'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
-        f['waitlist_field'].force_value(1003)
+        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
+        f['waitlist_field_id'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field', "Unpassendes Datenfeld.")
+        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
 
         # Set the correct waitlist field.
-        f['waitlist_field'] = '1001'
+        f['waitlist_field_id'] = '1001'
         self.submit(f)
 
         # Check log

@@ -118,7 +118,7 @@ EVENT_FIELDS = (
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "waitlist_field", "camping_mat_field_id")
+                     "part_end", "waitlist_field_id", "camping_mat_field_id")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 

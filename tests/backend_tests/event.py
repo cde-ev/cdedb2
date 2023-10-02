@@ -96,7 +96,7 @@ class TestEventBackend(BackendTest):
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'waitlist_field': None,
+                    'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
                 -2: {
@@ -112,7 +112,7 @@ class TestEventBackend(BackendTest):
                     'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'waitlist_field': None,
+                    'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
             },
@@ -256,14 +256,14 @@ class TestEventBackend(BackendTest):
             'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': 1003,
         }
         changed_part: CdEDBObject = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': None,
             'tracks': {
                 1002: {
@@ -526,7 +526,7 @@ class TestEventBackend(BackendTest):
             'shortname': "O1",
             'part_begin': datetime.date(3000, 1, 1),
             'part_end': datetime.date(3000, 2, 1),
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': None,
             'tracks': {
                 6: {
@@ -1591,7 +1591,7 @@ class TestEventBackend(BackendTest):
                     'part_end': "2222-02-22",
                     'title': "KreativAkademie",
                     'shortname': "KreAka",
-                    'waitlist_field': None,
+                    'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
             },
@@ -2356,7 +2356,7 @@ class TestEventBackend(BackendTest):
         # event parts
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
@@ -2590,7 +2590,7 @@ class TestEventBackend(BackendTest):
         stored_data['event.events'][1]['description'] = "We are done!"
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
@@ -3387,15 +3387,15 @@ class TestEventBackend(BackendTest):
         edata = {
             'parts': {
                 1: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
 
                 2: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
 
                 3: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
             }
         }
@@ -3563,7 +3563,7 @@ class TestEventBackend(BackendTest):
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'waitlist_field': None,
+                    'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
                 -2: {
@@ -3578,7 +3578,7 @@ class TestEventBackend(BackendTest):
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'waitlist_field': None,
+                    'waitlist_field_id': None,
                     'camping_mat_field_id': None,
                 },
             },
@@ -3646,7 +3646,7 @@ class TestEventBackend(BackendTest):
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'waitlist_field': None,
+            'waitlist_field_id': None,
             'camping_mat_field_id': None,
         }
         changed_part = {
@@ -4271,7 +4271,7 @@ class TestEventBackend(BackendTest):
                     "shortname": "A",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
+                    "waitlist_field_id": None,
                     "camping_mat_field_id": None,
                 },
                 -2: {
@@ -4279,7 +4279,7 @@ class TestEventBackend(BackendTest):
                     "shortname": "B",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
+                    "waitlist_field_id": None,
                     "camping_mat_field_id": None,
                 },
                 -3: {
@@ -4287,7 +4287,7 @@ class TestEventBackend(BackendTest):
                     "shortname": "C",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
+                    "waitlist_field_id": None,
                     "camping_mat_field_id": None,
                 },
                 -4: {
@@ -4295,7 +4295,7 @@ class TestEventBackend(BackendTest):
                     "shortname": "D",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
+                    "waitlist_field_id": None,
                     "camping_mat_field_id": None,
                 },
             },

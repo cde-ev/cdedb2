@@ -574,7 +574,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         # Do some additional validation for any given waitlist and camping mat fields.
         waitlist_fields: Set[int] = set(
-            filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
+            filter(None, (p.get('waitlist_field_id') for p in parts.values() if p)))
         waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
         if len(waitlist_fields) != len(waitlist_field_data):
             raise ValueError(n_("Unknown field."))
@@ -1075,7 +1075,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         waitlist_fields = self.sql_select(
             rs, "event.event_parts", ("id",), (field_id,),
-            entity_key="waitlist_field")
+            entity_key="waitlist_field_id")
         if waitlist_fields:
             blockers["waitlist_fields"] = [
                 e["id"] for e in waitlist_fields]
@@ -1144,7 +1144,7 @@ class EventLowLevelBackend(AbstractBackend):
                 for anid in blockers["waitlist_fields"]:
                     deletor = {
                         'id': anid,
-                        'waitlist_field': None,
+                        'waitlist_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.event_parts", deletor)
             if "event_fees" in cascade:

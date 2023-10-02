@@ -245,8 +245,7 @@ class Event(EventDataclass):
                         obj.event = self
 
         for part in self.parts.values():
-            part.waitlist_field = self.fields.get(
-                part.waitlist_field)  # type: ignore[call-overload]
+            part.waitlist_field = self.fields.get(part.waitlist_field_id or 0)
             part.camping_mat_field = self.fields.get(part.camping_mat_field_id or 0)
             part.tracks = {
                 track_id: self.tracks[track_id]
@@ -336,7 +335,9 @@ class EventPart(EventDataclass):
     part_begin: datetime.date
     part_end: datetime.date
 
-    waitlist_field: Optional["EventField"]
+    waitlist_field: Optional["EventField"] = dataclasses.field(
+        init=False, metadata={'dict_exclude': True})
+    waitlist_field_id: Optional[vtypes.ID]
     camping_mat_field: Optional["EventField"] = dataclasses.field(
         init=False, metadata={'dict_exclude': True})
     camping_mat_field_id: Optional[vtypes.ID]

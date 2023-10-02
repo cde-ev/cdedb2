@@ -4480,7 +4480,7 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         },
         {
@@ -4490,7 +4490,7 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         },
         {
@@ -4500,7 +4500,7 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         },
         {
@@ -4510,7 +4510,7 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4520,7 +4520,7 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4530,7 +4530,7 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4540,7 +4540,7 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4550,7 +4550,7 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4560,7 +4560,7 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4570,7 +4570,7 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4580,7 +4580,7 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         },
         {
@@ -4590,7 +4590,7 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": null
         }
     ],

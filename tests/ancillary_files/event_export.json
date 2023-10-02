@@ -1542,7 +1542,7 @@
             "part_begin": "2222-11-01",
             "shortname": "1.H.",
             "title": "Erste H\u00e4lfte",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         },
         "1": {
@@ -1552,7 +1552,7 @@
             "part_begin": "2222-02-02",
             "shortname": "Wu",
             "title": "Warmup",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         },
         "3": {
@@ -1562,7 +1562,7 @@
             "part_begin": "2222-11-11",
             "shortname": "2.H.",
             "title": "Zweite H\u00e4lfte",
-            "waitlist_field": null,
+            "waitlist_field_id": null,
             "camping_mat_field_id": 4
         }
     },

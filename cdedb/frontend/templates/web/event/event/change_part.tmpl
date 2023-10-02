@@ -41,7 +41,7 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_select(name="waitlist_field", entries=fields['waitlist_field'],
+        {{ util.form_input_select(name="waitlist_field_id", entries=fields['waitlist_field_id'],
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(

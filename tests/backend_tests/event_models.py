@@ -60,7 +60,7 @@ class TestEventModels(BackendTest):
                     shortname="Wu",
                     part_begin=datetime.date(2222, 2, 2),
                     part_end=datetime.date(2222, 2, 2),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=4,  # type: ignore[arg-type]
                     tracks=(),  # type: ignore[arg-type]
                 ),
@@ -71,7 +71,7 @@ class TestEventModels(BackendTest):
                     shortname="1.H.",
                     part_begin=datetime.date(2222, 11, 1),
                     part_end=datetime.date(2222, 11, 11),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=4,  # type: ignore[arg-type]
                     tracks=(1, 2),  # type: ignore[arg-type]
                 ),
@@ -82,7 +82,7 @@ class TestEventModels(BackendTest):
                     shortname="2.H.",
                     part_begin=datetime.date(2222, 11, 11),
                     part_end=datetime.date(2222, 11, 30),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=4,  # type: ignore[arg-type]
                     tracks=(3,),  # type: ignore[arg-type]
                 ),
@@ -360,7 +360,7 @@ class TestEventModels(BackendTest):
                     shortname="O1",
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(6,),  # type: ignore[arg-type]
                 ),
@@ -371,7 +371,7 @@ class TestEventModels(BackendTest):
                     shortname="W1",
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(7,),  # type: ignore[arg-type]
                 ),
@@ -382,7 +382,7 @@ class TestEventModels(BackendTest):
                     shortname="K1",
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(8,),  # type: ignore[arg-type]
                 ),
@@ -393,7 +393,7 @@ class TestEventModels(BackendTest):
                     shortname="O2",
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(9, 10),  # type: ignore[arg-type]
                 ),
@@ -404,7 +404,7 @@ class TestEventModels(BackendTest):
                     shortname="W2",
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(11, 12),  # type: ignore[arg-type]
                 ),
@@ -415,7 +415,7 @@ class TestEventModels(BackendTest):
                     shortname="K2",
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(13, 14, 15),  # type: ignore[arg-type]
                 ),
@@ -426,7 +426,7 @@ class TestEventModels(BackendTest):
                     shortname="Feier",
                     part_begin=datetime.date(2999, 12, 31),
                     part_end=datetime.date(3000, 1, 1),
-                    waitlist_field=None,
+                    waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(),  # type: ignore[arg-type]
                 )
