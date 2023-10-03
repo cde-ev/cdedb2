@@ -158,8 +158,6 @@ class EventDataclass(CdEDataclass):
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        if field.metadata.get('dict_exclude'):
-            return False
         return field.repr
 
     def __lt__(self, other: "EventDataclass") -> bool:
@@ -212,8 +210,6 @@ class Event(EventDataclass):
     is_course_assignment_visible: bool
     use_additional_questionnaire: bool
 
-    lodge_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     lodge_field_id: Optional[vtypes.ID]
 
     parts: CdEDataclassMap["EventPart"]
@@ -247,16 +243,12 @@ class Event(EventDataclass):
                         obj.event = self
 
         for part in self.parts.values():
-            part.waitlist_field = self.fields.get(part.waitlist_field_id or 0)
-            part.camping_mat_field = self.fields.get(part.camping_mat_field_id or 0)
             part.tracks = {
                 track_id: self.tracks[track_id]
                 for track_id in part.tracks
             }
             for track in part.tracks.values():
                 track.part = part
-        for track in self.tracks.values():
-            track.course_room_field = self.fields.get(track.course_room_field_id or 0)
         for part_group in self.part_groups.values():
             part_group.parts = {
                 part_id: self.parts[part_id]
@@ -273,7 +265,6 @@ class Event(EventDataclass):
             for track in track_group.tracks.values():
                 track.track_groups[track_group.id] = track_group
                 track.track_group_ids.add(track_group.id)
-        self.lodge_field = self.fields.get(self.lodge_field_id or 0)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -310,6 +301,12 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
+    @property
+    def lodge_field(self) -> Optional["EventField"]:
+        if self.lodge_field_id is None:
+            return None
+        return self.fields[self.lodge_field_id]
+
     def is_visible_for(self, user: User) -> bool:
         return ("event_admin" in user.roles or user.persona_id in self.orgas
                 or self.is_visible)
@@ -335,11 +332,7 @@ class EventPart(EventDataclass):
     part_begin: datetime.date
     part_end: datetime.date
 
-    waitlist_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     waitlist_field_id: Optional[vtypes.ID]
-    camping_mat_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     camping_mat_field_id: Optional[vtypes.ID]
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(default_factory=dict)
@@ -367,6 +360,22 @@ class EventPart(EventDataclass):
         """
         params = (entities,)
         return query, params
+
+    @property
+    def waitlist_field(self) -> Optional["EventField"]:
+        if self.event is None:
+            raise RuntimeError
+        if self.waitlist_field_id is None:
+            return None
+        return self.event.fields[self.waitlist_field_id]
+
+    @property
+    def camping_mat_field(self) -> Optional["EventField"]:
+        if self.event is None:
+            raise RuntimeError
+        if self.camping_mat_field_id is None:
+            return None
+        return self.event.fields[self.camping_mat_field_id]
 
 
 @dataclasses.dataclass
@@ -408,8 +417,6 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
     part_id: vtypes.ProtoID
 
-    course_room_field: Optional["EventField"] = dataclasses.field(
-        init=False, compare=False, default=None, metadata={'dict_exclude': True})
     course_room_field_id: Optional[vtypes.ID]
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
@@ -430,6 +437,14 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     @tracks.setter
     def tracks(self, value: CdEDataclassMap["CourseTrack"]) -> None:  # pylint: disable=no-self-use
         raise KeyError
+
+    @property
+    def course_room_field(self) -> Optional["EventField"]:
+        if self.event is None:
+            raise RuntimeError
+        if self.course_room_field_id is None:
+            return None
+        return self.event.fields[self.course_room_field_id]
 
 
 @dataclasses.dataclass
