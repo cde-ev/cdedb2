@@ -299,7 +299,7 @@ class Event(EventDataclass):
 
     @property
     def end(self) -> datetime.date:
-        return min(p.part_end for p in self.parts.values())
+        return max(p.part_end for p in self.parts.values())
 
     @property
     def is_open(self) -> bool:
