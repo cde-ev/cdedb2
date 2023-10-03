@@ -28,6 +28,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import logging
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, TypeVar, get_args,
     get_origin,
@@ -39,6 +40,8 @@ from cdedb.common import CdEDBObject, User, cast_fields, now
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
+
+_LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -430,6 +433,8 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     @property
     def reference_track(self) -> "CourseTrack":
+        if any(tg.constraint_type.is_sync() for tg in self.track_groups.values()):
+            _LOGGER.warning("Recursive use of .reference_track detected.")
         return self
 
     @property  # type: ignore[misc]
