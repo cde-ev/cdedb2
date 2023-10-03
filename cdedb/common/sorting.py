@@ -86,7 +86,7 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
+Sortkey = Tuple[Union[str, int, datetime.datetime, datetime.date], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 

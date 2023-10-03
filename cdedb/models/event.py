@@ -160,14 +160,16 @@ class EventDataclass(CdEDataclass):
         """Should this field be part of the dict representation of this object?"""
         return field.repr
 
+    def get_sortkey(self) -> Sortkey:
+        return self.__class__.sorter(self.as_dict())
+
     def __lt__(self, other: "EventDataclass") -> bool:
         if not isinstance(other, self.__class__) and not (
                 isinstance(self, CourseChoiceObject)
                 and isinstance(other, CourseChoiceObject)
         ):
             return NotImplemented
-        return self.__class__.sorter(
-            self.as_dict()) < other.__class__.sorter(other.as_dict())
+        return self.get_sortkey() < other.get_sortkey()
 
 
 #
@@ -311,11 +313,8 @@ class Event(EventDataclass):
         return ("event_admin" in user.roles or user.persona_id in self.orgas
                 or self.is_visible)
 
-    def __lt__(self, other: "EventDataclass") -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        return (self.begin, self.end, self.title, self.id) < (
-            other.begin, other.end, other.title, other.id)
+    def get_sortkey(self) -> Sortkey:
+        return (self.begin, self.end, self.title, int(self.id))
 
 
 @dataclasses.dataclass
@@ -404,6 +403,10 @@ class CourseChoiceObject(abc.ABC):
 
     @abc.abstractmethod
     def as_dict(self) -> dict[str, Any]:
+        ...
+
+    @abc.abstractmethod
+    def get_sortkey(self) -> Sortkey:
         ...
 
 
