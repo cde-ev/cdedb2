@@ -3183,7 +3183,7 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 
 def _questionnaire_row(
     val: Any, argname: str = "questionnaire_row", *,
-    field_definitions: dict[int, models_event.EventField],
+    field_definitions: CdEDBObjectMap,
     fees_by_field: Mapping[int, Set[int]],
     kind: Optional[const.QuestionnaireUsages] = None,
     **kwargs: Any
@@ -3220,10 +3220,10 @@ def _questionnaire_row(
 
     field_definitions = {
         field_id: field for field_id, field in field_definitions.items()
-        if field.association == const.FieldAssociations.registration
+        if field['association'] == const.FieldAssociations.registration
            and (kind.allow_fee_condition() or not fees_by_field.get(field_id))
     }
-    fields_by_name = {f.field_name: f for f in field_definitions.values()}
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'field_name' in value:
         if not value['field_name']:
             del value['field_name']
@@ -3238,7 +3238,7 @@ def _questionnaire_row(
                     n_("No field with name '%(name)s' exists."),
                     {"name": value['field_name']}))
             else:
-                value['field_id'] = fields_by_name[value['field_name']].id
+                value['field_id'] = fields_by_name[value['field_name']].get('id')
                 if value['field_id']:
                     del value['field_name']
     if 'field_id' not in value:
@@ -3252,7 +3252,7 @@ def _questionnaire_row(
         if value['default_value']:
             value['default_value'] = _by_field_datatype(
                 value['default_value'], "default_value",
-                kind=field.kind, **kwargs)
+                kind=field.get('kind', FieldDatatypes.str), **kwargs)
 
     field_id = value['field_id']
     value['readonly'] = bool(value['readonly']) if field_id else None
@@ -3269,7 +3269,7 @@ def _questionnaire_row(
 @_add_typed_validator
 def _questionnaire(
     val: Any, argname: str = "questionnaire", *,
-    field_definitions: dict[int, models_event.EventField],
+    field_definitions: CdEDBObjectMap,
     fees_by_field: Mapping[int, Set[int]],
     **kwargs: Any,
 ) -> Questionnaire:
@@ -3303,7 +3303,7 @@ def _questionnaire(
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
             errs.append(ValueError(
                 'field_id', n_("Must not duplicate field ('%(field_name)s')."),
-                {'field_name': field_definitions[e1['field_id']].field_name}))
+                {'field_name': field_definitions[e1['field_id']]['field_name']}))
 
     if errs:
         raise errs

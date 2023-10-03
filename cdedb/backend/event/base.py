@@ -1131,9 +1131,10 @@ class EventBaseBackend(EventLowLevelBackend):
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
+            field_defitions = {k: v.as_dict() for k, v in event.fields.items()}
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
-                          field_definitions=event.fields,
+                          field_definitions=field_defitions,
                           fees_by_field=fees_by_field)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
