@@ -169,7 +169,7 @@ class EventDataclass(CdEDataclass):
                 and isinstance(other, CourseChoiceObject)
         ):
             return NotImplemented
-        return self.get_sortkey() < other.get_sortkey()
+        return (self.get_sortkey() + (self.id,)) < (other.get_sortkey() + (self.id,))
 
 
 #
@@ -314,7 +314,7 @@ class Event(EventDataclass):
                 or self.is_visible)
 
     def get_sortkey(self) -> Sortkey:
-        return (self.begin, self.end, self.title, int(self.id))
+        return (self.begin, self.end, self.title)
 
 
 @dataclasses.dataclass
