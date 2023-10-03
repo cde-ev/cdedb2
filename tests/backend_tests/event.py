@@ -335,8 +335,6 @@ class TestEventBackend(BackendTest):
                 self.assertEqual(
                     set(x['title'] for x in data['parts'][part]['tracks'].values()),
                     set(x.title for x in tmp.parts[part].tracks.values()))
-                for track in tmp.parts[part].tracks:
-                    tmp.parts[part].tracks[track].id = track
                 data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
