@@ -5734,41 +5734,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['changecourseform']
         # Disabled checkboxes have a `value` of None, but have their `_value` set.
         self.assertEqual(
-            f.get('active_segments', index=0).value, "6")
+            f.get('active_segments', index=0).value, "8")
         self.assertEqual(
             f.get('active_segments', index=0).checked, True)
         self.assertEqual(
-            f.get('active_segments', index=1)._value, "7")
+            f.get('active_segments', index=1)._value, "13")
         self.assertEqual(
             f.get('active_segments', index=1)._checked, False)
         self.assertEqual(
-            f.get('active_segments', index=2).value, "8")
+            f.get('active_segments', index=2)._value, "14")
         self.assertEqual(
-            f.get('active_segments', index=2).checked, True)
+            f.get('active_segments', index=2)._checked, False)
         self.assertEqual(
-            f.get('active_segments', index=3)._value, "9")
+            f.get('active_segments', index=3).value, "6")
         self.assertEqual(
-            f.get('active_segments', index=3)._checked, False)
+            f.get('active_segments', index=3).checked, True)
         self.assertEqual(
-            f.get('active_segments', index=4)._value, "10")
+            f.get('active_segments', index=4)._value, "9")
         self.assertEqual(
             f.get('active_segments', index=4)._checked, False)
         self.assertEqual(
-            f.get('active_segments', index=5).value, "11")
+            f.get('active_segments', index=5)._value, "10")
         self.assertEqual(
-            f.get('active_segments', index=5).checked, True)
+            f.get('active_segments', index=5)._checked, False)
         self.assertEqual(
-            f.get('active_segments', index=6)._value, "12")
+            f.get('active_segments', index=6)._value, "7")
         self.assertEqual(
-            f.get('active_segments', index=6)._checked, True)
+            f.get('active_segments', index=6)._checked, False)
         self.assertEqual(
-            f.get('active_segments', index=7)._value, "13")
+            f.get('active_segments', index=7).value, "11")
         self.assertEqual(
-            f.get('active_segments', index=7)._checked, False)
+            f.get('active_segments', index=7).checked, True)
         self.assertEqual(
-            f.get('active_segments', index=8)._value, "14")
+            f.get('active_segments', index=8)._value, "12")
         self.assertEqual(
-            f.get('active_segments', index=8)._checked, False)
+            f.get('active_segments', index=8)._checked, True)
         self.assertEqual(
             f.get('active_segments', index=9)._value, "15")
         self.assertEqual(
