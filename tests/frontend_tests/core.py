@@ -1655,6 +1655,32 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
 
+    def test_lockdown_web(self) -> None:
+        self.login('vera')
+        self.traverse("Metadaten")
+        f = self.response.forms['changeinfoform']
+        f['lockdown_web'].checked = True
+        self.submit(f)
+        self.assertNotification("nur, wenn du weißt, warum", 'warning')
+        self.traverse("Index", "Nutzer verwalten")  # test that admins can access
+        self.logout()
+        self.assertNotification("Wartungsarbeiten", 'info')
+        self.assertNotification("leider nicht verfügbar", 'info')
+        self.login('inga')  # forbidden
+        self.assertNonPresence("Inga", div='navbar-collapse-1')
+        self.login('annika')  # forbidden
+        self.assertNonPresence("Annika", div='navbar-collapse-1')
+        self.login('martin')  # meta admin, login allowed
+        self.assertPresence("Martin", div='navbar-collapse-1')
+        self.assertNotification("nur, wenn du weißt, warum", 'warning')
+        self.logout()
+        self.login('paul')
+        self.traverse("Metadaten")
+        f = self.response.forms['changeinfoform']
+        self.assertTrue(f['lockdown_web'].checked)
+        f['lockdown_web'].checked = False
+        self.assertNonPresence("Wartungsarbeiten")
+
     @as_users("berta")
     def test_changelog(self) -> None:
         self.traverse("Meine Daten", "Bearbeiten")
