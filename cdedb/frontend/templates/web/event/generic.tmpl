@@ -59,7 +59,7 @@
                 {% set course_choices = courses_per_track[cco.id] %}
                 {% set all_course_choices = all_courses_per_track[cco.id] %}
             {% endif %}
-            {{ select_course_choice(cco.reference_track, courses, course_choices, all_course_choices,
+            {{ select_course_choice(cco, courses, course_choices, all_course_choices,
                                     show_track_title=choice_objects|length > 1) }}
         {% endif %}
     {% endfor %}
