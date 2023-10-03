@@ -161,7 +161,7 @@ class EventDataclass(CdEDataclass):
 
     @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:
-        raise RuntimeError
+        ...
 
     def __lt__(self, other: "EventDataclass") -> bool:
         if not isinstance(other, self.__class__) and not (
@@ -529,6 +529,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
+        # TODO maybe sort by constraint_type first?
         return (self.title, )
 
 
