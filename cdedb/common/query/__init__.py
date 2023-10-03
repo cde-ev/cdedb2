@@ -18,7 +18,7 @@ import itertools
 import re
 from typing import (
     TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
-    Sequence, Tuple,
+    Sequence, Tuple, cast,
 )
 
 from typing_extensions import TypeAlias
@@ -947,15 +947,14 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
             },
         }
 
-    def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
-        track_id = track.id
-        prefix = "" if len(event.tracks) <= 1 else track.shortname
+    def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
+        prefix = "" if len(event.tracks) <= 1 else cco.shortname
         ret = {
-            f"course_choices{track_id}.rank{i}": QuerySpecEntry(
+            f"course_choices{cco.reference_track.id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
-            for i in range(track.num_choices)
+            for i in range(cco.num_choices)
         }
 
         # If there are course choices for the track, add an entry for any choice.
@@ -1030,12 +1029,8 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         if track_group.constraint_type != const.CourseTrackGroupType.course_choice_sync:
             continue  # type: ignore[unreachable]
 
-        # Randomly choose a track in the group to use for filtering.
-        #  Since all synced tracks have identical entries, this choice does not matter.
-        random_track = next(iter(track_group.tracks.values()))
-        fake_track = copy.copy(random_track)
-        random_track.shortname = track_group.shortname
-        spec.update(get_course_choice_spec(fake_track))
+        spec.update(get_course_choice_spec(
+            cast("models.SyncTrackGroup", track_group)))
 
     spec.update({
         f"reg_fields.xfield_{f.field_name}": QuerySpecEntry(
