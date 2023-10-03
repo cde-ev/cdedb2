@@ -29,14 +29,14 @@ import dataclasses
 import datetime
 import decimal
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Collection, Mapping, Optional, TypeVar,
-    get_args, get_origin,
+    TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, TypeVar, get_args,
+    get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, cast_fields, now
-from cdedb.common.sorting import EntitySorter, Sortkey
+from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -60,7 +60,6 @@ CdEDataclassMap = dict[int, T]
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass):
     entity_key: ClassVar[str] = "event_id"
-    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]] = lambda x: (x['id'],)
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],
@@ -160,8 +159,9 @@ class EventDataclass(CdEDataclass):
         """Should this field be part of the dict representation of this object?"""
         return field.repr
 
+    @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:
-        return self.__class__.sorter(self.as_dict())
+        raise RuntimeError
 
     def __lt__(self, other: "EventDataclass") -> bool:
         if not isinstance(other, self.__class__) and not (
@@ -180,7 +180,6 @@ class EventDataclass(CdEDataclass):
 class Event(EventDataclass):
     database_table = "event.events"
     entity_key = "id"
-    sorter = EntitySorter.event
 
     title: str
     shortname: str
@@ -314,13 +313,12 @@ class Event(EventDataclass):
                 or self.is_visible)
 
     def get_sortkey(self) -> Sortkey:
-        return (self.begin, self.end, self.title)
+        return self.begin, self.end, self.title
 
 
 @dataclasses.dataclass
 class EventPart(EventDataclass):
     database_table = "event.event_parts"
-    sorter = EntitySorter.event_part
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -376,11 +374,13 @@ class EventPart(EventDataclass):
             return None
         return self.event.fields[self.camping_mat_field_id]
 
+    def get_sortkey(self) -> Sortkey:
+        return self.part_begin, self.part_end, self.shortname
+
 
 @dataclasses.dataclass
 class CourseChoiceObject(abc.ABC):
     id: vtypes.ProtoID
-    sorter: ClassVar[Callable[[CdEDBObject], Sortkey]]
 
     title: str
     shortname: str
@@ -414,7 +414,6 @@ class CourseChoiceObject(abc.ABC):
 class CourseTrack(EventDataclass, CourseChoiceObject):
     database_table = "event.course_tracks"
     entity_key = "part_id"
-    sorter = EntitySorter.course_choice_object
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     part: EventPart = dataclasses.field(init=False, compare=False, repr=False)
@@ -449,11 +448,13 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
             return None
         return self.event.fields[self.course_room_field_id]
 
+    def get_sortkey(self) -> Sortkey:
+        return self.sortkey, 0, self.title
+
 
 @dataclasses.dataclass
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
-    sorter = EntitySorter.event_fee
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -464,11 +465,13 @@ class EventFee(EventDataclass):
     condition: vtypes.EventFeeCondition
     notes: Optional[str]
 
+    def get_sortkey(self) -> Sortkey:
+        return self.kind, self.title
+
 
 @dataclasses.dataclass
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
-    sorter = EntitySorter.event_field
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -487,11 +490,13 @@ class EventField(EventDataclass):
         data['entries'] = dict(data['entries'] or []) or None
         return super().from_database(data)
 
+    def get_sortkey(self) -> Sortkey:
+        return self.sortkey, self.field_name
+
 
 @dataclasses.dataclass
 class PartGroup(EventDataclass):
     database_table = "event.part_groups"
-    sorter = EntitySorter.event_part_group
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -523,11 +528,13 @@ class PartGroup(EventDataclass):
         params = (entities,)
         return query, params
 
+    def get_sortkey(self) -> Sortkey:
+        return (self.title, )
+
 
 @dataclasses.dataclass
 class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
-    sorter = EntitySorter.course_choice_object
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ProtoID
@@ -565,6 +572,9 @@ class TrackGroup(EventDataclass):
         """
         params = (entities,)
         return query, params
+
+    def get_sortkey(self) -> Sortkey:
+        return self.sortkey, self.constraint_type, self.title
 
 
 class SyncTrackGroup(TrackGroup, CourseChoiceObject):
@@ -613,6 +623,9 @@ class QuestionnaireRow(EventDataclass):
     event: Event
     field: Optional[EventField]
 
+    def get_sortkey(self) -> Sortkey:
+        return (0, )
+
 
 #
 # get_course
@@ -622,7 +635,6 @@ class QuestionnaireRow(EventDataclass):
 class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
-    sorter = EntitySorter.course
 
     # event: Event
     event_id: vtypes.ID
@@ -677,6 +689,9 @@ class Course(EventDataclass):
         data['active_segments'] = set(data['active_segments'])
         return super().from_database(data)
 
+    def get_sortkey(self) -> Sortkey:
+        return self.nr, self.shortname
+
 #
 # get_lodgement_group + get_lodgement
 #
@@ -685,7 +700,6 @@ class Course(EventDataclass):
 @dataclasses.dataclass
 class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
-    sorter = EntitySorter.lodgement_group
 
     # event: Event
     event_id: vtypes.ID
@@ -723,12 +737,14 @@ class LodgementGroup(EventDataclass):
         data['lodgement_ids'] = set(data['lodgement_ids'])
         return super().from_database(data)
 
+    def get_sortkey(self) -> Sortkey:
+        return (self.title, )
+
 
 @dataclasses.dataclass
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
-    sorter = lambda x: (x['group']['title'], x['group']['id'], x['title'], x['id'])
 
     # event: Event
     event_id: vtypes.ID
@@ -749,6 +765,9 @@ class Lodgement(EventDataclass):
             data['group'] = LodgementGroup.from_database(data.pop('group_data'))
         return super().from_database(data)
 
+    def get_sortkey(self) -> Sortkey:
+        return self.group.title, self.group.id, self.title
+
 
 #
 # get_registration
@@ -757,12 +776,14 @@ class Lodgement(EventDataclass):
 @dataclasses.dataclass
 class Registration(EventDataclass):
     database_table = "event.registrations"
-    sorter = EntitySorter.persona
 
     # event: Event
 
     parts: dict[EventPart, "RegistrationPart"]
     tracks: dict[CourseTrack, "RegistrationTrack"]
+
+    def get_sortkey(self) -> Sortkey:
+        return (0, )
 
 
 @dataclasses.dataclass
@@ -773,6 +794,9 @@ class RegistrationPart(EventDataclass):
     tracks: dict[CourseTrack, "RegistrationTrack"]
 
     lodgement: Optional[Lodgement]
+
+    def get_sortkey(self) -> Sortkey:
+        return (0, )
 
 
 @dataclasses.dataclass
@@ -786,3 +810,6 @@ class RegistrationTrack(EventDataclass):
     instructed: Optional[Course]
 
     choices: list[Course]
+
+    def get_sortkey(self) -> Sortkey:
+        return (0, )

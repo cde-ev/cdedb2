@@ -150,10 +150,6 @@ class EntitySorter:
         return (country, postal_code, location, address)
 
     @staticmethod
-    def event(event: CdEDBObject) -> Sortkey:
-        return (event['begin'], event['end'], event['title'], event['id'])
-
-    @staticmethod
     def course(course: CdEDBObject) -> Sortkey:
         return (course['nr'], course['shortname'], course['id'])
 
@@ -169,36 +165,6 @@ class EntitySorter:
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
         return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortkey:
-        return (event_part['part_begin'], event_part['part_end'],
-                event_part['shortname'], event_part['id'])
-
-    @staticmethod
-    def event_part_group(part_group: CdEDBObject) -> Sortkey:
-        return (part_group['title'], part_group['id'])
-
-    @staticmethod
-    def event_fee(event_fee: CdEDBObject) -> Sortkey:
-        return (event_fee['kind'], event_fee['title'], event_fee['id'])
-
-    @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortkey:
-        return (course_track['sortkey'], course_track['title'], course_track['id'])
-
-    @staticmethod
-    def course_track_group(track_group: CdEDBObject) -> Sortkey:
-        return (track_group['sortkey'], track_group['constraint_type'],
-                track_group['title'], track_group['shortname'], track_group['id'])
-
-    @staticmethod
-    def course_choice_object(cco: CdEDBObject) -> Sortkey:
-        return (cco['sortkey'], cco.get('constraint_type', 0), cco['title'], cco['id'])
-
-    @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
