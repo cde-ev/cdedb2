@@ -1294,7 +1294,6 @@ class EventBaseBackend(EventLowLevelBackend):
             for f in ('waitlist_field_id', 'camping_mat_field_id',):
                 new_key = f.removesuffix("_id")
                 if part[f]:
-                    # TODO do we want to stick to the old naming here?
                     part[new_key] = ret['event']['fields'][part[f]]['field_name']
                 else:
                     part[new_key] = None
@@ -1306,7 +1305,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 for f in ('course_room_field_id',):
                     new_key = f.removesuffix("_id")
                     if track[f]:
-                        # TODO do we want to stick to the old naming here?
                         track[new_key] = ret['event']['fields'][track[f]]['field_name']
                     else:
                         track[new_key] = None
@@ -1326,7 +1324,6 @@ class EventBaseBackend(EventLowLevelBackend):
         for f in ('lodge_field_id',):
             new_key = f.removesuffix("_id")
             if ret['event'][f]:
-                # TODO do we want to stick to the old naming here?
                 ret['event'][new_key] = ret['event']['fields'][
                     ret['event'][f]]['field_name']
             else:
