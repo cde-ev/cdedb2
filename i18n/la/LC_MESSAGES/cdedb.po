@@ -7104,7 +7104,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:91
 #: cdedb/frontend/templates/web/generic.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:52
-msgid "Street, Nr."
+msgid "Street and House Number"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:67
