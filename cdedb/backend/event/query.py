@@ -350,34 +350,61 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     ) AS segment ON c.id = segment.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=False, strict=False)}
+                            track, param_name='attendees')}
                     ) AS attendees ON c.id = attendees.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=True, strict=False)}
+                            track, param_name='attendees_and_guests')}
+                    ) AS attendees_and_guests ON c.id = attendees_and_guests.base_id
+                    LEFT OUTER JOIN (
+                        {registration_track_count_table(
+                            track, param_name='instructors')}
                     ) AS instructors ON c.id = instructors.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=True, strict=True)}
+                            track, param_name='assigned_instructors')}
                     ) AS assigned_instructors
                         ON c.id = assigned_instructors.base_id
+                    LEFT OUTER JOIN (
+                        {registration_track_count_table(
+                            track, param_name='potential_instructors')}
+                    ) AS potential_instructors
+                        ON c.id = potential_instructors.base_id
                     {course_choices_tables}
                 """
 
             # Step 3.2: Template for counting instructors and attendees.
-            def registration_track_count_table(track: CdEDBObject, instructor: bool,
-                                               strict: bool) -> str:
+            def registration_track_count_table(track: CdEDBObject, param_name: str
+                                               ) -> str:
                 """
                 Construct a table to gather registration track information.
 
-                :param instructor: If True, count instructors, otherwise attendees.
-                :param strict: If True, only count instructors that are assigned to
-                    their course.
+                Depending on `param_name` this does slightly different things:
+                * `attendees`: Attendees who are participants
+                * `attendees_and_guests`: Attendees who are present at the event
+                * `instructors`: Instructors who are participants for the track
+                * `assigned_instructors`:  Instructors who are participant and are
+                   assigned to the course
+                * 'potential_instructors': Instructors who are involved with the track
                 """
-                col = 'course_instructor' if instructor else 'course_id'
-                param_name = 'assigned_instructors' if strict else (
-                    'instructors' if instructor else 'attendees')
-                constraint = 'AND course_id = course_instructor' if strict else ''
+                constraint = ''
+                col = 'course_instructor'
+                stati = [const.RegistrationPartStati.participant]
+
+                if param_name == 'attendees':
+                    col = 'course_id'
+                elif param_name == 'attendees_and_guests':
+                    col = 'course_id'
+                    stati = [rps for rps in const.RegistrationPartStati
+                             if rps.is_present()]
+                elif param_name == 'instructors':
+                    pass
+                elif param_name == 'assigned_instructors':
+                    constraint = 'AND course_id = course_instructor'
+                elif param_name == 'potential_instructors':
+                    stati = list(const.RegistrationPartStati.involved_states())
+
+                stati_str = ','.join(map(str, map(int, stati)))
                 return f"""
                     SELECT id AS base_id, COUNT(registration_id) AS {param_name}
                     FROM (
@@ -388,7 +415,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             LEFT OUTER JOIN event.registration_parts AS rp
                                 ON rt.registration_id = rp.registration_id
                                 AND rp.part_id = {track['part_id']}
-                            WHERE rp.status = {int(const.RegistrationPartStati.participant)}
+                            WHERE rp.status = ANY(ARRAY[{stati_str}])
                             AND track_id = {track['id']} {constraint}
                         ) AS reg_track ON c.id = reg_track.{col}
                     )

@@ -689,6 +689,8 @@ CREATE TABLE event.events (
         --
         -- cut for past_event.events (modulo column tempus)
         --
+        -- URL of event specific page at the CdE homepage
+        website_url                  varchar,
         registration_start           timestamp WITH TIME ZONE,
         -- official end of registration
         registration_soft_limit      timestamp WITH TIME ZONE,

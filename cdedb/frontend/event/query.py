@@ -379,15 +379,12 @@ class EventQueryMixin(EventBaseFrontend):
         # Add choices that could not be automatically applied before.
         for k, v in spec.items():
             if k.endswith("gender"):
-                spec[k] = spec[k].replace_choices(
-                    dict(enum_entries_filter(const.Genders, rs.gettext)))
+                spec[k].choices = dict(enum_entries_filter(const.Genders, rs.gettext))
             if k.endswith(".status"):
-                spec[k] = spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.RegistrationPartStati, rs.gettext)))
+                spec[k].choices = dict(enum_entries_filter(
+                    const.RegistrationPartStati, rs.gettext))
             if k.endswith(("country", "country2")):
-                spec[k] = spec[k].replace_choices(
-                    dict(get_localized_country_codes(rs)))
+                spec[k].choices = dict(get_localized_country_codes(rs))
 
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: QueryScope, query: Query,
