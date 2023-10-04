@@ -4,18 +4,18 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(comitted) %}
+    {% trans name=util.persona_name(committed) %}
         Change History of {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, comitted['id']), util.persona_name(comitted), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, committed['id']), util.persona_name(committed), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Change History"), util.persona_name(comitted), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Change History"), util.persona_name(committed), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block static_notifications %}
@@ -137,7 +137,7 @@
 {% block content %}
     {% if pending|length > 0 %}
         <p>
-            {{ util.href(cdedblink('core/inspect_change', {'persona_id': comitted['id']}), gettext("Review Changes"),
+            {{ util.href(cdedblink('core/inspect_change', {'persona_id': committed['id']}), gettext("Review Changes"),
                     icon="check-square", aclass="btn btn-sm btn-info") }}
         </p>
     {% endif %}
