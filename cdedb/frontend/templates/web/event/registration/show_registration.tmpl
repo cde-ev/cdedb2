@@ -25,7 +25,7 @@
         {{ util.href(cdedblink("event/view_event_log",
                                {'event_id': ambience['event']['id'],
                                 'persona_id': ambience['registration']['persona_id']|cdedbid}),
-                     gettext("Log"), icon="list-alt") }}
+                     gettext("Log"), aclass="btn btn-default", icon="list-alt") }}
     </div>
     <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
     <dl class="dl-horizontal">
