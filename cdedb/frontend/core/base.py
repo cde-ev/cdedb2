@@ -712,10 +712,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         history = self.coreproxy.changelog_get_history(rs, persona_id, generations=None)
+        # retrieve the latest version of the changelog, including pending ones
+        current_generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        current = history[current_generation]
         # do not use the latest changelog version, since we want to highlight any
         # inconsistencies between latest changelog generation and core.personas
-        current = self.coreproxy.get_total_persona(rs, persona_id)
         inconsistencies = self.coreproxy.get_changelog_inconsistencies(rs, persona_id)
+        # to display the differences between the latest committed changelog generation
+        # and the state in core.personas
+        committed = self.coreproxy.get_total_persona(rs, persona_id)
         fields = current.keys()
         stati = const.PersonaChangeStati
         constants = {}
@@ -780,6 +785,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'pending': pending, 'eventual_status': eventual_status,
             'personas': personas, 'ADMIN_KEYS': ADMIN_KEYS,
             'inconsistencies': inconsistencies or [],
+            'committed': committed,
         })
 
     @access("core_admin")
