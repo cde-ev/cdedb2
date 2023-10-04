@@ -65,8 +65,7 @@
         <div class="row history-row panic" id="{{ f }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
-                {{ util.make_icon('exclamation-circle', title=gettext(
-                        "Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately.")) }}
+                {{ util.make_icon('exclamation-circle', title=gettext("Error: Inconsistent Changelog.")) }}
             </div>
             <div class="col-xs-9">
                 {% if caller %}{{ caller(committed) }}{% else %}{{ committed[f] }}{% endif %}
@@ -118,8 +117,7 @@
         <div class="row history-row panic" id="{{ fields|first }}-panic">
             <div class="col-xs-3">
                 {% trans %}Current{% endtrans %}
-                {{ util.make_icon('exclamation-circle', title=gettext(
-                        "Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately.")) }}
+                {{ util.make_icon('exclamation-circle', title=gettext("Error: Inconsistent Changelog.")) }}
             </div>
             <div class="col-xs-9">
                 {% if caller %}{{ caller(committed) }}{% endif %}

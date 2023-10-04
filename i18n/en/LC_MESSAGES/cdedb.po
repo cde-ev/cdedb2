@@ -9823,7 +9823,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_history.tmpl:68
 #: cdedb/frontend/templates/web/core/show_history.tmpl:121
 msgid ""
-"Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately."
+"Error: Inconsistent Changelog."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:142

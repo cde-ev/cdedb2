@@ -10316,9 +10316,9 @@ msgstr "Aktuell"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:68
 #: cdedb/frontend/templates/web/core/show_history.tmpl:121
 msgid ""
-"Error: Inconsistent Changelog. Contact <cdedb@lists.cde-ev.de> immediately."
+"Error: Inconsistent Changelog."
 msgstr ""
-"Fehler: Inkonsistente Historie. Kontaktiere umgehend <cdedb@lists.cde-ev.de>."
+"Fehler: Inkonsistente Historie."
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:142
 msgid "Review Changes"
