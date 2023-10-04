@@ -940,6 +940,25 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
+    def is_subscription_address_taken(self, rs: RequestState, email: str,
+                                      excluded_persona_id: int) -> bool:
+        """Is the given address already in use as a subscription address?
+
+        Take care that this does not take the usernames of core.personas into account!
+
+        :param excluded_persona_id: Ignore if this persona already used this address.
+        """
+        email = affirm(vtypes.Email, email)
+        excluded_persona_id = affirm(vtypes.ID, excluded_persona_id)
+
+        with Atomizer(rs):
+            query = ("SELECT 1 FROM ml.subscription_addresses"
+                     " WHERE address = %s AND persona_id != %s LIMIT 1")
+            params = (email, excluded_persona_id)
+            ret = self.query_exec(rs, query, params)
+        return bool(ret)
+
+    @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
                                  persona_id: int, email: str,
                                  ) -> DefaultReturnCode:
@@ -952,6 +971,9 @@ class MlBackend(AbstractBackend):
         if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
+
+        if self.is_subscription_address_taken(rs, email, persona_id):
+            raise ValueError(n_("Address already taken by another user."))
 
         with Atomizer(rs):
             query = ("INSERT INTO ml.subscription_addresses "
@@ -1515,9 +1537,7 @@ class MlBackend(AbstractBackend):
 
                 if clone_addresses:
                     address = self.get_subscription_address(
-                        rs, ml_id, explicits_only=False, persona_id=source_persona_id)
-                    # get_subscription_address returns only None if explicits_only=True
-                    assert address is not None
+                        rs, ml_id, explicits_only=True, persona_id=source_persona_id)
 
                 # set the target to the subscription state of the source
                 datum = {
@@ -1532,9 +1552,12 @@ class MlBackend(AbstractBackend):
 
                 # set the subscribing address of the target to the address of the source
                 if clone_addresses:
-                    assert address is not None
+                    if address:
+                        code *= self.remove_subscription_address(
+                            rs, ml_id, source_persona_id)
                     code *= self.set_subscription_address(
-                        rs, ml_id, persona_id=target_persona_id, email=address)
+                        rs, ml_id, persona_id=target_persona_id,
+                        email=address or source['username'])
 
             for ml_id in source_moderates:
                 # we do not mind if both users are currently moderator of a mailinglist

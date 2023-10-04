@@ -1621,6 +1621,24 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
         self._check_implicit_whitelist(mailinglist_id, expectation.keys())
 
+        # Set an address for another mailinglist with your own mailadress is allowed...
+        datum = {
+            'mailinglist_id': 64,
+            'persona_id': self.user['id'],
+            'email': "janis-ist-toll@example.cde",
+        }
+        self.ml.set_subscription_address(self.key, **datum)
+
+        # ... but using someone else's address is forbidden.
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': self.user['id'],
+            'email': "new-anton@example.cde",
+        }
+        with self.assertRaises(ValueError) as e:
+            self.ml.set_subscription_address(self.key, **datum)
+        self.assertEqual("Address already taken by another user.", str(e.exception))
+
         # Remove an address.
         datum = {
             'mailinglist_id': mailinglist_id,
