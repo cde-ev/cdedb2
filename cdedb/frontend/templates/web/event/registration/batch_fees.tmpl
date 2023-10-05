@@ -49,6 +49,9 @@
             {% trans %}e.g.{% endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
         </p>
         <p class="help-block">
+            {% trans %}
+                If checked, all affected users will be notified and the orgateam will receive a summary of all fees.
+            {% endtrans %}
             {% trans infolink=util.href(docurl("Handbuch_Email_Templates",
                                                anchor="email-templates-for-realm-event-template-transfer-received-tmpl"),
                                         gettext("email template list")) %}

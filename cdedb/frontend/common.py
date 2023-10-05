@@ -791,8 +791,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore[literal-required]
-        subject = headers["Prefix"] + " " + headers['Subject']  # type
-        msg["Subject"] = subject
+        if headers["Prefix"]:
+            msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
+        else:
+            msg["Subject"] = headers["Subject"]
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
