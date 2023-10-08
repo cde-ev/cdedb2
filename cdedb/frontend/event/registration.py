@@ -256,7 +256,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 headers: Headers = {
                     'To': (orga_address,),
                     'Reply-To': self.conf["FINANCE_ADMIN_ADDRESS"],
-                    'Subject': " Neue Überweisungen für Eure Veranstaltung",
+                    'Subject': "Neue Überweisungen für Eure Veranstaltung",
                     'Prefix': "",
                 }
                 self.do_mail(rs, "transfers_booked", headers, {'num': num})
