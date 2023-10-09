@@ -383,6 +383,14 @@ I18N_STRINGS = (
     n_("subman_managing_no-cleanup-necessary"),
 
     #
+    # schulze-condorcet localization
+    #
+    n_("A candidate contains a forbidden character."),
+    n_("Superfluous candidate in vote string."),
+    n_("Missing candidate in vote string."),
+    n_("Every candidate must occur exactly once in each vote."),
+
+    #
     # Default Strings
     #
     n_("Cancel"),

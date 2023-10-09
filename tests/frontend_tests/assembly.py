@@ -1360,11 +1360,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # invalid candidates - test validation errors
         f['vote'] = "Werner>Anton"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
         self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
-        f['vote'] = "e>pi>1=0>i>e"
+        f['vote'] = "_bar_=Akira=Anton>Berta>Willi"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Doppelte Kandidaten gefunden.")
+        self.assertValidationError('vote', "Unerwarteten Kandidaten gefunden.")
+        f['vote'] = "_bar_=Akira=Anton>Berta>Anton"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'vote', "Jeder Kandidat muss genau einmal vorhanden sein.")
 
     @storage
     @as_users("werner", "inga", "kalif")

@@ -3209,6 +3209,18 @@ msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
+msgid "A candidate contains a forbidden character."
+msgstr "Ein Kandidat enthält ein verbotenes Zeichen."
+
+msgid "Every candidate must occur exactly once in each vote."
+msgstr "Jeder Kandidat muss genau einmal vorhanden sein."
+
+msgid "Missing candidate in vote string."
+msgstr "Nicht alle Kandidaten vorhanden."
+
+msgid "Superfluous candidate in vote string."
+msgstr "Unerwarteten Kandidaten gefunden."
+
 #: cdedb/common/validation/validate.py:4470
 msgid "Duplicate candidates."
 msgstr "Doppelte Kandidaten gefunden."
