@@ -253,7 +253,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if success:
             rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
             if send_notifications and (
-                    orga_address := rs.ambience['event']['orga_address']):
+                    orga_address := rs.ambience['event'].orga_address):
                 headers: Headers = {
                     'To': (orga_address,),
                     'Reply-To': self.conf["FINANCE_ADMIN_ADDRESS"],
