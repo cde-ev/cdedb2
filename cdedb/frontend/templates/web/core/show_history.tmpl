@@ -4,18 +4,37 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(current) %}
+    {% trans name=util.persona_name(committed) %}
         Change History of {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, current['id']), util.persona_name(current), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, committed['id']), util.persona_name(committed), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
+    {{ util.context_heading(gettext("Change History"), util.persona_name(committed), 'user', gettext("User")) }}
+{% endblock %}
+
+{% block static_notifications %}
+    {% if inconsistencies %}
+        {% call util.notification('error') %}
+            {% trans mailto=util.href(util.mailto('cdedb@lists.cde-ev.de'), 'cdedb@lists.cde-ev.de') %}
+                Inconsistent Changelog. Contact {{ mailto }} immediately.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% elif not ambience['persona']['is_active'] %}
+        {% call util.notification('info', id='deactivated') %}
+            {% trans %}The user is deactivated.{% endtrans %}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
 
 {% set STATUS={enums["PersonaChangeStati"].pending: ('pending','user-clock',gettext("pending")),
@@ -27,20 +46,32 @@
 {% macro print_history(f) %}
     {% for c in entries|sort %}
         {% if c not in constants[f] %}
-            <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
+            <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}" id="{{ f }}-{{ c }}">
                 <div class="col-xs-3">
-                    Gen {{ c }}
+                    {% trans %}Gen{% endtrans %} {{ c }}
                     {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
                         {{ util.make_icon(STATUS[eventual_status[f][c]][1],
                                 title=STATUS[eventual_status[f][c]][2]) }}
                     {% endif %}
                 </div>
                 <div class="col-xs-9">
-                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[c][f] }}{% endif %}
+                    {% if caller %}{{ caller(entries[c]) }}{% else %}{{ entries[c][f] }}{% endif %}
                 </div>
             </div>
         {% endif %}
     {% endfor %}
+    {# Print a panic entry if the latest committed changelog generation is inconsistent with core.personas #}
+    {% if f in inconsistencies %}
+        <div class="row history-row panic" id="{{ f }}-panic">
+            <div class="col-xs-3">
+                {% trans %}Current{% endtrans %}
+                {{ util.make_icon('exclamation-circle', title=gettext("Error: Inconsistent Changelog.")) }}
+            </div>
+            <div class="col-xs-9">
+                {% if caller %}{{ caller(committed) }}{% else %}{{ committed[f] }}{% endif %}
+            </div>
+        </div>
+    {% endif %}
 {% endmacro %}
 {% macro print_multifield_history(fields=[]) %}
     {% for c in entries|sort %}
@@ -60,7 +91,7 @@
             {% endif %}
         {% endfor %}
         {% if vars['has_nonconstant'] %}
-            <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
+            <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}" id="{{ fields|first }}-{{ c }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
                     {% if entries[c]['code'] != enums['PersonaChangeStati'].committed %}
@@ -69,11 +100,30 @@
                     {% endif %}
                 </div>
                 <div class="col-xs-9">
-                    {% if caller %}{{ caller(c) }}{% endif %}
+                    {% if caller %}{{ caller(entries[c]) }}{% endif %}
                 </div>
             </div>
         {% endif %}
     {% endfor %}
+    {# Print a panic entry if the latest committed changelog generation is inconsistent with core.personas #}
+    {% set is_inconsistent = {} %}
+    {% for f in fields %}
+        {% if f in inconsistencies %}
+            {# Not sure why this does not work with set and bools... #}
+            {% do is_inconsistent.update({'inconsistent': True}) %}
+        {% endif %}
+    {% endfor %}
+    {% if is_inconsistent %}
+        <div class="row history-row panic" id="{{ fields|first }}-panic">
+            <div class="col-xs-3">
+                {% trans %}Current{% endtrans %}
+                {{ util.make_icon('exclamation-circle', title=gettext("Error: Inconsistent Changelog.")) }}
+            </div>
+            <div class="col-xs-9">
+                {% if caller %}{{ caller(committed) }}{% endif %}
+            </div>
+        </div>
+    {% endif %}
 {% endmacro %}
 {% macro history_field(title) %}
     <div class="form-group">
@@ -87,13 +137,8 @@
 {% block content %}
     {% if pending|length > 0 %}
         <p>
-            {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
+            {{ util.href(cdedblink('core/inspect_change', {'persona_id': committed['id']}), gettext("Review Changes"),
                     icon="check-square", aclass="btn btn-sm btn-info") }}
-        </p>
-    {% endif %}
-    {% if not current['is_active'] %}
-        <p class="text-danger">
-            {% trans %}The user is deactivated.{% endtrans %}
         </p>
     {% endif %}
 
@@ -108,9 +153,9 @@
     <div class="form-horizontal">
         <h4 class="heading-underline">Person</h4>
         {% call history_field(gettext("Name")) %}
-            {% call(c) print_multifield_history(
+            {% call(entry) print_multifield_history(
                     ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
-                {{ util.persona_name(entries[c], given_and_display_names=True, with_titles=True) }}
+                {{ util.persona_name(entry, given_and_display_names=True, with_titles=True) }}
             {% endcall %}
         {% endcall %}
 
@@ -120,15 +165,15 @@
 
         {% if current['is_cde_realm'] or current['is_event_realm'] %}
             {% call history_field(gettext("Birthday")) %}
-                {% call(c) print_history('birthday') %}
-                     {{ entries[c]['birthday']|date(lang=lang) }}
+                {% call(entry) print_history('birthday') %}
+                     {{ entry['birthday']|date(lang=lang) }}
                 {% endcall %}
             {% endcall %}
 
             {% call history_field(gettext("Gender")) %}
-                {% call(c) print_history('gender') %}
-		    {% if entries[c]['gender'] %}
-                        {{ gettext(enums['Genders'](entries[c]['gender'])|string) }}
+                {% call(entry) print_history('gender') %}
+		    {% if entry['gender'] %}
+                        {{ gettext(enums['Genders'](entry['gender'])|string) }}
 		    {% else %}
                         {# leave empty #}
 		    {% endif %}
@@ -156,16 +201,16 @@
 
         {% call history_field(gettext("Realms")) %}
             {% set realm_bits = ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm'] %}
-            {% call(c) print_multifield_history(realm_bits) %}
-                {% for bit in realm_bits if entries[c][bit] %}
+            {% call(entry) print_multifield_history(realm_bits) %}
+                {% for bit in realm_bits if entry[bit] %}
                     {{ util.realm_icon(bit, desc=True) }}
                 {% endfor %}
             {% endcall %}
         {% endcall %}
 
         {% call history_field(gettext("Admin Privileges")) %}
-            {% call(c) print_multifield_history(ADMIN_KEYS) %}
-                {% for key in ADMIN_KEYS if entries[c][key] %}
+            {% call(entry) print_multifield_history(ADMIN_KEYS) %}
+                {% for key in ADMIN_KEYS if entry[key] %}
                     {{ util.privilege_icon(key, desc=True) }}
                 {% else %}
                     <i>{{ gettext("None") }}</i>
@@ -175,9 +220,9 @@
 
         {% if current['is_cde_realm'] %}
             {% call history_field(gettext("CdE-Membership")) %}
-                {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
-                    {% if entries[c]['is_member'] %}
-                        {% if entries[c]['trial_member'] %}
+                {% call(entry) print_multifield_history(['is_member', 'trial_member']) %}
+                    {% if entry['is_member'] %}
+                        {% if entry['trial_member'] %}
                             {% trans %}Trial Membership{% endtrans %}
                         {% else %}
                             {% trans %}CdE-Member{% endtrans %}
@@ -189,9 +234,9 @@
             {% endcall %}
 
             {% call history_field(gettext("Searchability")) %}
-                {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
-                    {% if entries[c]['decided_search'] %}
-                        {% if entries[c]['is_searchable'] %}
+                {% call(entry) print_multifield_history(['is_searchable', 'decided_search']) %}
+                    {% if entry['decided_search'] %}
+                        {% if entry['is_searchable'] %}
                             {% trans %}Searchable{% endtrans %}
                         {% else %}
                             {% trans %}Not Searchable{% endtrans %}
@@ -218,11 +263,11 @@
                                (gettext("Mobile Phone"), 'mobile'),
                                (gettext("WWW"), 'weblink')) %}
             {% call history_field(name) %}
-                {% call(c) print_history(field) %}
+                {% call(entry) print_history(field) %}
                     {% if field == 'telephone' or field == 'mobile' %}
-                        {{ entries[c][field]|phone }}
+                        {{ entry[field]|phone }}
                     {% else %}
-                        {{ entries[c][field] }}
+                        {{ entry[field] }}
                     {% endif %}
                 {% endcall %}
             {% endcall %}
@@ -230,26 +275,26 @@
 
         {% if current['is_event_realm'] or current['is_cde_realm'] %}
             {% call history_field(gettext("Address")) %}
-                {% call(c) print_multifield_history(
+                {% call(entry) print_multifield_history(
                         ['address','address_supplement', 'postal_code', 'location', 'country']) %}
-                    {{ entries[c]['address'] }}{% if entries[c]['address'] %}<br />{% endif %}
-                    {{ entries[c]['address_supplement'] }}{% if entries[c]['address_supplement'] %}<br />{% endif %}
-                    {{ entries[c]['postal_code'] }} {{ entries[c]['location'] }}
-                    {% if entries[c]['location'] %}<br />{% endif %}
-                    {{ util.gettext_country(entries[c]['country']) }}
+                    {{ entry['address'] }}{% if entry['address'] %}<br />{% endif %}
+                    {{ entry['address_supplement'] }}{% if entry['address_supplement'] %}<br />{% endif %}
+                    {{ entry['postal_code'] }} {{ entry['location'] }}
+                    {% if entry['location'] %}<br />{% endif %}
+                    {{ util.gettext_country(entry['country']) }}
                 {% endcall %}
             {% endcall %}
         {% endif %}
 
         {% if current['is_cde_realm'] %}
             {% call history_field(gettext("Second Address")) %}
-                {% call(c) print_multifield_history(
+                {% call(entry) print_multifield_history(
                         ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
-                    {{ entries[c]['address2'] }}{% if entries[c]['address2'] %}<br />{% endif %}
-                    {{ entries[c]['address_supplement2'] }}{% if entries[c]['address_supplement2'] %}<br />{% endif %}
-                    {{ entries[c]['postal_code2'] }} {{ entries[c]['location2'] }}
-                    {% if entries[c]['location2'] %}<br />{% endif %}
-                    {{ util.gettext_country(entries[c]['country2']) }}
+                    {{ entry['address2'] }}{% if entry['address2'] %}<br />{% endif %}
+                    {{ entry['address_supplement2'] }}{% if entry['address_supplement2'] %}<br />{% endif %}
+                    {{ entry['postal_code2'] }} {{ entry['location2'] }}
+                    {% if entry['location2'] %}<br />{% endif %}
+                    {{ util.gettext_country(entry['country2']) }}
                 {% endcall %}
             {% endcall %}
         {% endif %}
