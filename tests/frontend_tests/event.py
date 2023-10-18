@@ -2625,12 +2625,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
-        for i in range(3):
+        for i in range(4):
             text = self.fetch_mail_content(i)
             if i == 1:
                 self.assertIn("589,49", text)
-            self.assertIn("Überweisung für die Veranstaltung", text)
-            self.assertIn('"Große Testakademie 2222"', text)
+            if i == 3:
+                self.assertIn("Für Eure Veranstaltung in der CdE-Datenbank wurden"
+                              " 3 neue Überweisungen eingetragen.", text)
+            else:
+                self.assertIn("Überweisung für die Veranstaltung", text)
+                self.assertIn('"Große Testakademie 2222"', text)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},
