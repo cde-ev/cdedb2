@@ -252,6 +252,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         success, num = self.book_fees(rs, data, send_notifications)
         if success:
             rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
+            if send_notifications and (
+                    orga_address := rs.ambience['event']['orga_address']):
+                headers: Headers = {
+                    'To': (orga_address,),
+                    'Reply-To': self.conf["FINANCE_ADMIN_ADDRESS"],
+                    'Subject': "Neue Überweisungen für Eure Veranstaltung",
+                    'Prefix': "",
+                }
+                self.do_mail(rs, "transfers_booked", headers, {'num': num})
             return self.redirect(rs, "event/show_event")
         else:
             if num is None:
