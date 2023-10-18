@@ -17,10 +17,10 @@ import pytz
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.common import cast_fields
+import cdedb.models.event as models_event
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    RequestState, nearly_now, now, unwrap,
+    RequestState, cast_fields, nearly_now, now, unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -90,14 +90,14 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}
+                             'course_room_field_id': None}
                     },
                     'title': "First coming",
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'waitlist_field_id': None,
+                    'camping_mat_field_id': None,
                 },
                 -2: {
                     'tracks': {
@@ -106,14 +106,14 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 1,
                              'sortkey': 1,
-                             'course_room_field': None}
+                             'course_room_field_id': None}
                     },
                     'title': "Second coming",
                     'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'waitlist_field_id': None,
+                    'camping_mat_field_id': None,
                 },
             },
             'fees': {
@@ -162,8 +162,10 @@ class TestEventBackend(BackendTest):
                     'title': "Bevorzugtes Ausflugsdatum",
                     'sortkey': 0,
                     'kind': const.FieldDatatypes.date,
-                    'entries': [["2109-08-16", "In the first coming"],
-                                ["2110-08-16", "During the second coming"]],
+                    'entries': {
+                        "2109-08-16": "In the first coming",
+                        "2110-08-16": "During the second coming"
+                    },
                     'checkin': True,
                 },
                 -3: {
@@ -189,11 +191,8 @@ class TestEventBackend(BackendTest):
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False
         data['is_visible'] = False
-        data['lodge_field'] = None
+        data['lodge_field_id'] = None
         data['orga_address'] = None
-        data['begin'] = datetime.date(2109, 8, 7)
-        data['end'] = datetime.date(2110, 8, 20)
-        data['is_open'] = True
         # TODO dynamically adapt ids from the database result
         data['parts'][-1].update({'id': 1001})
         data['parts'][-2].update({'id': 1002})
@@ -206,43 +205,43 @@ class TestEventBackend(BackendTest):
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
-        for part in tmp['parts']:
+        for part in tmp.parts:
             for oldpart in data['parts']:
-                if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
-                    part_map[tmp['parts'][part]['title']] = part
+                if tmp.parts[part].title == data['parts'][oldpart]['title']:
+                    part_map[tmp.parts[part].title] = part
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
-                    data['parts'][part]['part_groups'] = {}
+                    data['parts'][part]['part_group_ids'] = set()
                     self.assertEqual(
                         set(x['title'] for x in data['parts'][part]['tracks'].values()),
-                        set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
-                    data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
+                        set(x.title for x in tmp.parts[part].tracks.values()))
+                    data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
                     del data['parts'][oldpart]
                     break
         for track in data['tracks'].values():
-            track['track_groups'] = {}
-        field_map = {}
-        for field in tmp['fields']:
+            track['track_group_ids'] = set()
+        field_map: dict[str, int] = {}
+        for field in tmp.fields:
             for oldfield in data['fields']:
-                if (tmp['fields'][field]['field_name']
+                if (tmp.fields[field].field_name
                         == data['fields'][oldfield]['field_name']):
-                    field_map[tmp['fields'][field]['field_name']] = field
+                    field_map[tmp.fields[field].field_name] = field
                     data['fields'][field] = data['fields'][oldfield]
                     data['fields'][field]['id'] = field
                     data['fields'][field]['event_id'] = new_id
                     del data['fields'][oldfield]
                     break
-        for fee_id in tmp['fees']:
+        for fee_id in tmp.fees:
             for old_fee_id in data['fees']:
-                if tmp['fees'][fee_id]['title'] == data['fees'][old_fee_id]['title']:
+                if tmp.fees[fee_id].title == data['fees'][old_fee_id]['title']:
                     data['fees'][fee_id] = data['fees'][old_fee_id]
                     data['fees'][fee_id]['id'] = fee_id
                     data['fees'][fee_id]['event_id'] = new_id
                     del data['fees'][old_fee_id]
                     break
 
-        self.assertEqual(data, self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
         data['title'] = "Alternate Universe Academy"
         newpart = {
             'tracks': {
@@ -251,21 +250,21 @@ class TestEventBackend(BackendTest):
                      'num_choices': 2,
                      'min_choices': 2,
                      'sortkey': 2,
-                     'course_room_field': None}
+                     'course_room_field_id': None}
             },
             'title': "Third coming",
             'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'waitlist_field': None,
-            'camping_mat_field': 1003,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': 1003,
         }
         changed_part: CdEDBObject = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
-            'waitlist_field': None,
-            'camping_mat_field': None,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': None,
             'tracks': {
                 1002: {
                     'title': "Second lecture v2",
@@ -273,7 +272,7 @@ class TestEventBackend(BackendTest):
                     'num_choices': 5,
                     'min_choices': 4,
                     'sortkey': 3,
-                    'course_room_field': None,
+                    'course_room_field_id': None,
                 }
             },
         }
@@ -305,10 +304,10 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
-            'entries': [
-                ["2110-08-15", "early second coming"],
-                ["2110-08-17", "late second coming"],
-            ],
+            'entries': {
+                "2110-08-15": "early second coming",
+                "2110-08-17": "late second coming",
+            },
             'checkin': True,
         }
         self.event.set_event(self.key, new_id, {
@@ -327,18 +326,16 @@ class TestEventBackend(BackendTest):
         self.event.set_event_fees(self.key, new_id, updated_fees)
         # fixup parts and fields
         tmp = self.event.get_event(self.key, new_id)
-        for part in tmp['parts']:
-            if tmp['parts'][part]['title'] == "Third coming":
-                part_map[tmp['parts'][part]['title']] = part
+        for part in tmp.parts:
+            if tmp.parts[part].title == "Third coming":
+                part_map[tmp.parts[part].title] = part
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
                 self.assertEqual(
                     set(x['title'] for x in data['parts'][part]['tracks'].values()),
-                    set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
-                for track in tmp['parts'][part]['tracks']:
-                    tmp['parts'][part]['tracks'][track]['id'] = track
-                data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
+                    set(x.title for x in tmp.parts[part].tracks.values()))
+                data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
@@ -346,12 +343,12 @@ class TestEventBackend(BackendTest):
         changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
         data['parts'][part_map["Second coming"]] = changed_part
         for part in data['parts'].values():
-            part['part_groups'] = {}
+            part['part_group_ids'] = set()
             for track in part['tracks'].values():
-                track['track_groups'] = {}
-        for field in tmp['fields']:
-            if tmp['fields'][field]['field_name'] == "kuea":
-                field_map[tmp['fields'][field]['field_name']] = field
+                track['track_group_ids'] = set()
+        for field in tmp.fields:
+            if tmp.fields[field].field_name == "kuea":
+                field_map[tmp.fields[field].field_name] = field
                 data['fields'][field] = newfield
                 data['fields'][field]['id'] = field
                 data['fields'][field]['event_id'] = new_id
@@ -360,8 +357,6 @@ class TestEventBackend(BackendTest):
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
         data['fields'][field_map["preferred_excursion_date"]].update(changed_field)
-        data['begin'] = datetime.date(2110, 9, 8)
-        data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1002: {
@@ -372,8 +367,8 @@ class TestEventBackend(BackendTest):
                 'num_choices': 5,
                 'min_choices': 4,
                 'sortkey': 3,
-                'course_room_field': None,
-                'track_groups': {},
+                'course_room_field_id': None,
+                'track_group_ids': set(),
             },
             1003: {
                 'id': 1003,
@@ -383,8 +378,8 @@ class TestEventBackend(BackendTest):
                 'num_choices': 2,
                 'min_choices': 2,
                 'sortkey': 2,
-                'course_room_field': None,
-                'track_groups': {},
+                'course_room_field_id': None,
+                'track_group_ids': set(),
             },
         }
         data['part_groups'] = {}
@@ -394,7 +389,7 @@ class TestEventBackend(BackendTest):
         data['fees'][1005] = updated_fees[-1]
         data['fees'][1005].update({'id': 1005, 'event_id': new_id})
 
-        self.assertEqual(data, self.event.get_event(self.key, new_id))
+        self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_events(self.key)
@@ -488,7 +483,8 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, new_reg_id)
 
         scope = QueryScope.registration
-        query = Query(scope, scope.get_spec(event=data),
+        event = self.event.get_event(self.key, data['id'])
+        query = Query(scope, scope.get_spec(event=event),
                       ['reg.notes'], [('reg.notes', QueryOperators.nonempty, None)],
                       [('reg.notes', True)], name="test_query")
         self.assertTrue(self.event.store_event_query(self.key, new_id, query))
@@ -528,8 +524,8 @@ class TestEventBackend(BackendTest):
             'shortname': "O1",
             'part_begin': datetime.date(3000, 1, 1),
             'part_end': datetime.date(3000, 2, 1),
-            'waitlist_field': None,
-            'camping_mat_field': None,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': None,
             'tracks': {
                 6: {
                     'id': 6,
@@ -539,74 +535,22 @@ class TestEventBackend(BackendTest):
                     'num_choices': 4,
                     'min_choices': 2,
                     'sortkey': 1,
-                    'course_room_field': None,
-                    'track_groups': {
-                        1: {
-                            'id': 1,
-                            'event_id': 4,
-                            'title': "Kurs 1. Hälfte",
-                            'shortname': "Kurs1",
-                            'notes': None,
-                            'constraint_type':
-                                const.CourseTrackGroupType.course_choice_sync,
-                            'track_ids': {6, 7, 8},
-                            'sortkey': 1,
-                        }
-                    },
+                    'course_room_field_id': None,
+                    'track_group_ids': {1},
                 },
             },
-            'part_groups': {
-                1: {
-                    'id': 1,
-                    'title': "1. Hälfte",
-                    'shortname': "1.H.",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type': const.EventPartGroupType.Statistic,
-                    'part_ids': {6, 7, 8},
-                },
-                3: {
-                    'id': 3,
-                    'title': "Oberwesel",
-                    'shortname': "OW",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type': const.EventPartGroupType.Statistic,
-                    'part_ids': {6, 9},
-                },
-                6: {
-                    'id': 6,
-                    'title': "Teilnehmer 1. Hälfte",
-                    'shortname': "TN 1H",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type':
-                        const.EventPartGroupType.mutually_exclusive_participants,
-                    'part_ids': {6, 7, 8},
-                },
-                8: {
-                    'id': 8,
-                    'title': "Kurse 1. Hälfte",
-                    'shortname': "Kurs 1H",
-                    'notes': None,
-                    'event_id': 4,
-                    'constraint_type':
-                        const.EventPartGroupType.mutually_exclusive_courses,
-                    'part_ids': {6, 7, 8},
-                },
-            }
+            'part_group_ids': {1, 3, 6, 8},
         }
         self.assertEqual(
             expectation_part,
-            self.event.get_event(self.key, 4)['parts'][6]
+            self.event.get_event(self.key, 4).parts[6].as_dict()
         )
 
     @as_users("annika")
     def test_track_groups(self) -> None:
         event_id = 4
         event = self.event.get_event(self.key, event_id)
-        track_group_ids = self.event.get_event(
-            self.key, event_id)['track_groups'].keys()
+        track_group_ids = self.event.get_event(self.key, event_id).track_groups.keys()
         self.assertTrue(self.event.set_track_groups(self.key, event_id, {
             tg_id: None
             for tg_id in track_group_ids
@@ -617,7 +561,7 @@ class TestEventBackend(BackendTest):
                 'shortname': "Test",
                 'constraint_type': const.CourseTrackGroupType.course_choice_sync,
                 'notes': None,
-                'track_ids': event['tracks'].keys(),
+                'track_ids': event.tracks.keys(),
                 'sortkey': 1,
             },
         }
@@ -637,11 +581,16 @@ class TestEventBackend(BackendTest):
         # Test correct tracks.
         tg_data[-1]['track_ids'] = {6, 7}
         self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_data))
+        event = self.event.get_event(self.key, event_id)
         tg = tg_data[-1].copy()
         tg['id'] = 1003
         tg['event_id'] = event_id
+        tg['tracks'] = {
+            track_id: event.tracks[track_id].as_dict()
+            for track_id in tg.pop('track_ids')
+        }
         self.assertEqual(
-            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
 
         # Test duplicate tracks.
         with self.assertRaises(ValueError):
@@ -662,9 +611,14 @@ class TestEventBackend(BackendTest):
         }
         assert tg_update[1003] is not None
         self.assertTrue(self.event.set_track_groups(self.key, event_id, tg_update))
+        event = self.event.get_event(self.key, event_id)
         tg.update(tg_update[1003])
+        tg['tracks'] = {
+            track_id: event.tracks[track_id].as_dict()
+            for track_id in tg.pop('track_ids')
+        }
         self.assertEqual(
-            tg, self.event.get_event(self.key, event_id)['track_groups'][1003])
+            tg, self.event.get_event(self.key, event_id).track_groups[1003].as_dict())
 
     @as_users("emilia")
     def test_course_choice_sync(self) -> None:
@@ -672,11 +626,11 @@ class TestEventBackend(BackendTest):
         registration_id = 10
         track_id = 6
         event = self.event.get_event(self.key, event_id)
-        self.assertTrue(event['tracks'][track_id]['track_groups'])
+        self.assertTrue(event.tracks[track_id].track_groups)
         self.assertTrue(unwrap(
-            event['tracks'][track_id]['track_groups'])['constraint_type'].is_sync())
+            event.tracks[track_id].track_groups).constraint_type.is_sync())
         self.assertGreater(
-            len(unwrap(event['tracks'][track_id]['track_groups'])), 1)
+            len(unwrap(event.tracks[track_id].track_groups).tracks), 1)
         reg_data = {
             'id': registration_id,
             'tracks': {
@@ -747,7 +701,7 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 1,
             'sortkey': 1,
-            'course_room_field': None,
+            'course_room_field_id': None,
         }
         update_event = {
             'parts': {
@@ -772,12 +726,16 @@ class TestEventBackend(BackendTest):
                 'track_id': new_track_id,
             }
 
-        event['tracks'][new_track_id] = new_track
-        event['parts'][part_id]['tracks'][new_track_id] = new_track
+        new_track_obj = models_event.CourseTrack.from_database(new_track)
+        event.tracks[new_track_id] = new_track_obj
+        event.parts[part_id].tracks[new_track_id] = new_track_obj
 
         reg_ids = self.event.list_registrations(self.key, event_id)
         self.assertEqual(regs, self.event.get_registrations(self.key, reg_ids))
-        self.assertEqual(event, self.event.get_event(self.key, event_id))
+        self.assertEqual(
+            event,
+            self.event.get_event(self.key, event_id),
+        )
 
     @as_users("annika", "garcia")
     def test_aposteriori_track_deletion(self) -> None:
@@ -792,8 +750,8 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
 
         expectation = {1, 2, 3}
-        self.assertEqual(expectation, event["tracks"].keys())
-        self.assertIn(track_id, event["parts"][part_id]["tracks"])
+        self.assertEqual(expectation, event.tracks.keys())
+        self.assertIn(track_id, event.parts[part_id].tracks)
         for reg in regs.values():
             self.assertIn(track_id, reg["tracks"])
 
@@ -816,7 +774,7 @@ class TestEventBackend(BackendTest):
             self.assertNotIn(track_id, reg["tracks"])
 
         expectation -= {track_id}
-        self.assertEqual(expectation, event["tracks"].keys())
+        self.assertEqual(expectation, event.tracks.keys())
 
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self) -> None:
@@ -1634,8 +1592,8 @@ class TestEventBackend(BackendTest):
                     'part_end': "2222-02-22",
                     'title': "KreativAkademie",
                     'shortname': "KreAka",
-                    'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'waitlist_field_id': None,
+                    'camping_mat_field_id': None,
                 },
             },
         }
@@ -1957,7 +1915,7 @@ class TestEventBackend(BackendTest):
     def test_queries_without_fields(self) -> None:
         # Check that the query views work if there are no custom fields.
         event = self.event.get_event(self.key, 3)
-        self.assertFalse(event["fields"])
+        self.assertFalse(event.fields)
         query = Query(
             scope=QueryScope.registration,
             spec=QueryScope.registration.get_spec(event=event),
@@ -2353,7 +2311,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
-        self.assertTrue(self.event.get_event(self.key, 1)['offline_lock'])
+        self.assertTrue(self.event.get_event(self.key, 1).offline_lock)
 
     def cleanup_event_export(self, data: CdEDBObject) -> CdEDBObject:
         ret = json_keys_to_int(data)
@@ -2399,8 +2357,8 @@ class TestEventBackend(BackendTest):
         # event parts
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
-            'waitlist_field': None,
-            'camping_mat_field': None,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': None,
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2415,7 +2373,7 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1,
-            'course_room_field': None}
+            'course_room_field_id': None}
         # lodgement groups
         new_data['event.lodgement_groups'][5000] = {
             'id': 5000,
@@ -2566,9 +2524,11 @@ class TestEventBackend(BackendTest):
         new_data['event.field_definitions'].update({
             11000: {
                 'association': const.FieldAssociations.registration,
-                'entries': [['good', 'good'],
-                            ['neutral', 'so so'],
-                            ['bad', 'not good']],
+                'entries': {
+                    'good': 'good',
+                    'neutral': 'so so',
+                    'bad': 'not good',
+                },
                 'event_id': 1,
                 'field_name': "behaviour",
                 'title': "Benehmen",
@@ -2631,8 +2591,8 @@ class TestEventBackend(BackendTest):
         stored_data['event.events'][1]['description'] = "We are done!"
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
-            'waitlist_field': None,
-            'camping_mat_field': None,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': None,
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2646,7 +2606,7 @@ class TestEventBackend(BackendTest):
             'min_choices': 2,
             'sortkey': 1,
             'title': 'Enlightnment',
-            'course_room_field': None}
+            'course_room_field_id': None}
         stored_data['event.lodgement_groups'][1001] = {
             'id': 1001,
             'event_id': 1,
@@ -2918,7 +2878,7 @@ class TestEventBackend(BackendTest):
                              hint: str = None) -> None:
             """Helper function to replace some placeholder values inside of a dict."""
             if hint == 'fields':
-                new = cast_fields(new, event['fields'])
+                new = cast_fields(new, event.fields)
             deletions = [key for key, val in new.items()
                          if val is None and key in old]
             for key in deletions:
@@ -3364,7 +3324,7 @@ class TestEventBackend(BackendTest):
         for field_id, error, error_msg in field_links:
             data = {
                 'parts': {
-                    list(event['parts'])[0]: {
+                    list(event.parts)[0]: {
                         'fee_modifiers': {
                             -1: {
                                 'modifier_name': 'solidarity',
@@ -3428,15 +3388,15 @@ class TestEventBackend(BackendTest):
         edata = {
             'parts': {
                 1: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
 
                 2: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
 
                 3: {
-                    'waitlist_field': 1001,
+                    'waitlist_field_id': 1001,
                 },
             }
         }
@@ -3504,14 +3464,14 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_set_event_orgas(self) -> None:
         event_id = 1
-        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertEqual({7}, self.event.get_event(self.key, event_id).orgas)
         self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
-        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
         self.assertLess(
             0, self.event.remove_event_orga(self.key, event_id, 1))
         self.assertLess(
             0, self.event.add_event_orgas(self.key, event_id, {1}))
-        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
 
         with self.assertRaises(ValueError) as cm:
             self.event.add_event_orgas(self.key, event_id, {8})
@@ -3599,13 +3559,13 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}},
+                             'course_room_field_id': None}},
                     'title': "First coming",
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'waitlist_field_id': None,
+                    'camping_mat_field_id': None,
                 },
                 -2: {
                     'tracks': {
@@ -3614,13 +3574,13 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 3,
                              'sortkey': 1,
-                             'course_room_field': None}},
+                             'course_room_field_id': None}},
                     'title': "Second coming",
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'waitlist_field': None,
-                    'camping_mat_field': None,
+                    'waitlist_field_id': None,
+                    'camping_mat_field_id': None,
                 },
             },
             'fields': {
@@ -3653,21 +3613,21 @@ class TestEventBackend(BackendTest):
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
-        for part in tmp['parts']:
+        for part in tmp.parts:
             for oldpart in data['parts']:
-                if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
-                    part_map[tmp['parts'][part]['title']] = part
+                if tmp.parts[part].title == data['parts'][oldpart]['title']:
+                    part_map[tmp.parts[part].title] = part
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
                     del data['parts'][oldpart]
                     break
-        field_map = {}
-        for field in tmp['fields']:
+        field_map: dict[str, int] = {}
+        for field in tmp.fields:
             for oldfield in data['fields']:
-                if (tmp['fields'][field]['field_name']
+                if (tmp.fields[field].field_name
                         == data['fields'][oldfield]['field_name']):
-                    field_map[tmp['fields'][field]['field_name']] = field
+                    field_map[tmp.fields[field].field_name] = field
                     data['fields'][field] = data['fields'][oldfield]
                     data['fields'][field]['id'] = field
                     data['fields'][field]['event_id'] = new_id
@@ -3682,13 +3642,13 @@ class TestEventBackend(BackendTest):
                      'num_choices': 2,
                      'min_choices': 2,
                      'sortkey': 2,
-                     'course_room_field': None}},
+                     'course_room_field_id': None}},
             'title': "Third coming",
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'waitlist_field': None,
-            'camping_mat_field': None,
+            'waitlist_field_id': None,
+            'camping_mat_field_id': None,
         }
         changed_part = {
             'title': "Second coming",
@@ -4060,17 +4020,17 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, event_id)
         return self.event.create_registration(self.key, {
             'persona_id': persona_id,
-            'event_id': event['id'],
+            'event_id': event.id,
             'mixed_lodging': True,
             'list_consent': True,
             'notes': None,
             'parts': {
                 p_id: {'status': const.RegistrationPartStati.applied}
-                for p_id in event['parts']
+                for p_id in event.parts
             },
             'tracks': {
                 t_id: {}
-                for p_id in event['parts'] for t_id in event['parts'][p_id]['tracks']
+                for p_id in event.parts for t_id in event.parts[p_id].tracks
             }
         })
 
@@ -4122,7 +4082,13 @@ class TestEventBackend(BackendTest):
             part_group['constraint_type'] = const.EventPartGroupType(
                 part_group['constraint_type'])
         # Compare to retrieved data.
-        self.assertEqual(event['part_groups'], part_group_expectation)
+        reality = event.as_dict()['part_groups']
+        for pg in reality.values():
+            pg['part_ids'] = set(pg.pop('parts'))
+        self.assertEqual(
+            part_group_expectation,
+            reality,
+        )
 
         # Check setting of part groups.
 
@@ -4130,7 +4096,7 @@ class TestEventBackend(BackendTest):
             'title': "Everything",
             'shortname': "all",
             'notes': "Let's see what happens",
-            'part_ids': set(event['parts']),
+            'part_ids': set(event.parts),
             'constraint_type': const.EventPartGroupType.Statistic,
         }
 
@@ -4190,7 +4156,7 @@ class TestEventBackend(BackendTest):
             },
             4: None,
             1006: {
-                'part_ids': set(list(event['parts'])[:len(event['parts']) // 2])
+                'part_ids': set(list(event.parts)[:len(event.parts) // 2])
             }
         }
         self.assertTrue(self.event.set_part_groups(self.key, event_id, update))
@@ -4198,9 +4164,12 @@ class TestEventBackend(BackendTest):
         del part_group_expectation[4]
         part_group_expectation[1006].update(update[1006])  # type: ignore[arg-type]
 
+        reality = self.event.get_event(self.key, event_id).as_dict()['part_groups']
+        for pg in reality.values():
+            pg['part_ids'] = set(pg.pop('parts'))
         self.assertEqual(
-            self.event.get_event(self.key, event_id)['part_groups'],
-            part_group_expectation
+            part_group_expectation,
+            reality,
         )
 
         # ValueError is raised when trying to update or delete a nonexisting part group.
@@ -4217,7 +4186,7 @@ class TestEventBackend(BackendTest):
 
         # Delete a part still linked to a part group.
         self.assertTrue(self.event.set_event(
-            self.key, event_id, {'parts': {min(event['parts']): None}}))
+            self.key, event_id, {'parts': {min(event.parts): None}}))
 
         export_expectation = {
             1: {'constraint_type': const.EventPartGroupType.Statistic,
@@ -4303,32 +4272,32 @@ class TestEventBackend(BackendTest):
                     "shortname": "A",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "waitlist_field_id": None,
+                    "camping_mat_field_id": None,
                 },
                 -2: {
                     "title": "B",
                     "shortname": "B",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "waitlist_field_id": None,
+                    "camping_mat_field_id": None,
                 },
                 -3: {
                     "title": "C",
                     "shortname": "C",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "waitlist_field_id": None,
+                    "camping_mat_field_id": None,
                 },
                 -4: {
                     "title": "D",
                     "shortname": "D",
                     "part_begin": "3000-01-01",
                     "part_end": "3000-01-02",
-                    "waitlist_field": None,
-                    "camping_mat_field": None,
+                    "waitlist_field_id": None,
+                    "camping_mat_field_id": None,
                 },
             },
         }
@@ -4538,7 +4507,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, event_data)
         event = self.event.get_event(self.key, event_id)
         self.assertEqual(
-            "part.2.H. and not part.1.H.", event['fees'][1001]['condition'])
+            "part.2.H. and not part.1.H.", event.fees[1001].condition)
 
     @as_users("garcia")
     def test_rcw_mechanism(self) -> None:

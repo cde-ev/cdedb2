@@ -62,7 +62,7 @@
                     {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         {{ util.form_input_checkboxes('track_ids', label=gettext("Show only courses in tracks:"),
-                            entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                            entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
                             horizontal=False) }}
                     {% endif %}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
@@ -110,8 +110,7 @@
                     {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-                                if track_id in entry['segments'] -%}
+                        {% for track in ambience['event']['tracks'].values()|sort if track.id in entry['segments'] -%}
                             {% if not loop.first %}
                                 {%- if loop.last %}
                                     {% trans %}and{% endtrans %}
@@ -119,7 +118,7 @@
                                     ,
                                 {% endif %}
                             {%- endif %}
-                            {%- if track_id not in entry['active_segments'] and show_course_state %}
+                            {%- if track.id not in entry['active_segments'] and show_course_state %}
                                 <i><s>{{ track['title'] }}</s></i>{# -#}
                                 <span class="sr-only"> ({% trans %}cancelled{% endtrans %})</span>
                             {%- else %}

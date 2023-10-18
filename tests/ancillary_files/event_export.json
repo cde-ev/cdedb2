@@ -768,7 +768,7 @@
     "id": 1,
     "event.course_tracks": {
         "2": {
-            "course_room_field": 5,
+            "course_room_field_id": 5,
             "min_choices": 1,
             "num_choices": 1,
             "shortname": "Kaffee",
@@ -778,7 +778,7 @@
             "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)"
         },
         "1": {
-            "course_room_field": 5,
+            "course_room_field_id": 5,
             "min_choices": 4,
             "num_choices": 4,
             "shortname": "Morgenkreis",
@@ -788,7 +788,7 @@
             "title": "Morgenkreis (Erste H\u00e4lfte)"
         },
         "3": {
-            "course_room_field": 5,
+            "course_room_field_id": 5,
             "min_choices": 2,
             "num_choices": 3,
             "shortname": "Sitzung",
@@ -1431,7 +1431,7 @@
             "description": "Everybody come!",
             "website_url": "https://www.cde-ev.de/",
             "institution": 1,
-            "lodge_field": 3,
+            "lodge_field_id": 3,
             "offline_lock": false,
             "orga_address": "aka@example.cde",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
@@ -1542,8 +1542,8 @@
             "part_begin": "2222-11-01",
             "shortname": "1.H.",
             "title": "Erste H\u00e4lfte",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         },
         "1": {
             "event_id": 1,
@@ -1552,8 +1552,8 @@
             "part_begin": "2222-02-02",
             "shortname": "Wu",
             "title": "Warmup",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         },
         "3": {
             "event_id": 1,
@@ -1562,8 +1562,8 @@
             "part_begin": "2222-11-11",
             "shortname": "2.H.",
             "title": "Zweite H\u00e4lfte",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         }
     },
     "event.part_groups": {

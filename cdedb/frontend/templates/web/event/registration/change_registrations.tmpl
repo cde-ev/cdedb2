@@ -119,28 +119,28 @@
             {{ util.input_text(name="reg.checkin", type="datetime-local", anid="input_reg_checkin") }}
         {% endcall %}
 
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
-            {% call form_input_optional("part{}.status".format(part_id), label=gettext("Status"),
-                                        anid="part{}_status".format(part_id)) %}
-                {{ util.input_select(name="part{}.status".format(part_id),
+            {% call form_input_optional("part{}.status".format(part.id), label=gettext("Status"),
+                                        anid="part{}_status".format(part.id)) %}
+                {{ util.input_select(name="part{}.status".format(part.id),
                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                                     anid="part{}_status".format(part_id)) }}
+                                     anid="part{}_status".format(part.id)) }}
             {% endcall %}
 
-            {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                        anid="part{}_lodgement_id".format(part_id)) %}
-                {{ util.input_select(name="part{}.lodgement_id".format(part_id),
+            {% call form_input_optional("part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                        anid="part{}_lodgement_id".format(part.id)) %}
+                {{ util.input_select(name="part{}.lodgement_id".format(part.id),
                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp,
-                                     anid="part{}_lodgement_id".format(part_id)) }}
+                                     anid="part{}_lodgement_id".format(part.id)) }}
             {% endcall %}
-            {% call form_input_optional("part{}.is_camping_mat".format(part_id),
-                                        anid="part{}_is_camping_mat".format(part_id)) %}
+            {% call form_input_optional("part{}.is_camping_mat".format(part.id),
+                                        anid="part{}_is_camping_mat".format(part.id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat"),
-                                           anid="part{}_is_camping_mat".format(part_id)) }}
+                    {{ util.input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat"),
+                                           anid="part{}_is_camping_mat".format(part.id)) }}
                 </div>
             {% endcall %}
 
@@ -148,23 +148,23 @@
 
         {% if choice_objects %}
             <h3 class="heading-underline">{% trans %}Courses{% endtrans %}</h3>
-            {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+            {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
         {% endif %}
         {% for cco in choice_objects %}
             {% if choice_objects|length > 1 %}
                 <h5 class="mosp">{{ cco['title'] }}</h5>
             {% endif %}
-            {% if 'constraint_type' in cco %}
+            {% if cco.is_complex() %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}',
                                          include=courses_per_track_group[cco['id']]) %}
                 {% set prefix = "group{}".format(cco['id']) %}
-                {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
-                    {% call form_input_optional("track{}.course_id".format(track_id),
-                                                label=gettext("Course %s")|format(ambience['event']['tracks'][track_id]['shortname']),
-                                                anid="track{}_course_id".format(track_id)) %}
-                        {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                             nulloption=nbsp, anid="track{}_course_id".format(track_id)) }}
+                {% for track in sorted_tracks if track.id in cco['tracks'] %}
+                    {% call form_input_optional("track{}.course_id".format(track.id),
+                                                label=gettext("Course %s")|format(ambience['event']['tracks'][track.id]['shortname']),
+                                                anid="track{}_course_id".format(track.id)) %}
+                        {{ util.input_select(name="track{}.course_id".format(track.id), entries=course_entries,
+                                             nulloption=nbsp, anid="track{}_course_id".format(track.id)) }}
                     {% endcall %}
                 {% endfor %}
             {% else %}
@@ -208,7 +208,7 @@
 
         {% if ambience['event']['fields']|length > 0 %}
             <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-            {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+            {% for field in ambience['event']['fields'].values()|sort
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),
                                             anid="input_fields_{}".format(field['field_name']),

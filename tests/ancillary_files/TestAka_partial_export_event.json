@@ -816,20 +816,11 @@
             "transportation": {
                 "kind": 1,
                 "association": 1,
-                "entries": [
-                    [
-                        "pedes",
-                        "by feet"
-                    ],
-                    [
-                        "car",
-                        "own car available"
-                    ],
-                    [
-                        "etc",
-                        "anything else"
-                    ]
-                ],
+                "entries": {
+                    "pedes": "by feet",
+                    "car": "own car available",
+                    "etc": "anything else"
+                },
                 "checkin": false,
                 "title": "Reist an mit",
                 "sortkey": 0
@@ -861,24 +852,12 @@
             "contamination": {
                 "kind": 1,
                 "association": 3,
-                "entries": [
-                    [
-                        "high",
-                        "lots of radiation"
-                    ],
-                    [
-                        "medium",
-                        "elevated level of radiation"
-                    ],
-                    [
-                        "low",
-                        "some radiation"
-                    ],
-                    [
-                        "none",
-                        "no radiation"
-                    ]
-                ],
+                "entries": {
+                    "high": "lots of radiation",
+                    "medium": "elevated level of radiation",
+                    "low": "some radiation",
+                    "none": "no radiation"
+                },
                 "checkin": false,
                 "title": "Verseuchung",
                 "sortkey": 0

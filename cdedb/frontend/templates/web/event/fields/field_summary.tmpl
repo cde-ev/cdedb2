@@ -132,9 +132,9 @@
                     <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     {% set relevant_fields = [] %}
                     {# Old items, already stored in the database #}
-                    {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+                    {% for entry in ambience['event']['fields'].values()|sort
                             if entry['association'] == association %}
-                        {% do relevant_fields.append((field_id, entry)) %}
+                        {% do relevant_fields.append((entry.id, entry)) %}
                     {% endfor %}
 
                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}

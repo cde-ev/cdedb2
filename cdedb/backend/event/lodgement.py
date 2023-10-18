@@ -10,14 +10,15 @@ from typing import Any, Collection, Dict, Iterator, List, Optional, Protocol, Tu
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    cast_fields, read_conditional_write_composer, singularize,
+    read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, unwrap,
+    RequestState, cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
@@ -102,6 +103,15 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         def __call__(self, rs: RequestState, group_id: int) -> CdEDBObject: ...
     get_lodgement_group: _GetLodgementGroupProtocol = singularize(
         get_lodgement_groups, "group_ids", "group_id")
+
+    @access("event")
+    def new_get_lodgement_groups(self, rs: RequestState, event_id: int
+                                 ) -> models.CdEDataclassMap[models.LodgementGroup]:
+        event_id = affirm(vtypes.ID, event_id)
+        with Atomizer(rs):
+            group_data = self.query_all(
+                rs, *models.LodgementGroup.get_select_query((event_id,)))
+        return models.LodgementGroup.many_from_database(group_data)
 
     @access("event")
     def set_lodgement_group(self, rs: RequestState,
@@ -249,13 +259,52 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             event_fields = self._get_event_fields(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
-                entry['fields'] = cast_fields(entry['fields'], event_fields)
+                entry['fields'] = cast_fields(
+                    entry['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):
         def __call__(self, rs: RequestState, lodgement_id: int) -> CdEDBObject: ...
     get_lodgement: _GetLodgementProtocol = singularize(
         get_lodgements, "lodgement_ids", "lodgement_id")
+
+    @access("event")
+    def new_get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int]
+                           ) -> models.CdEDataclassMap[models.Lodgement]:
+        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+        with Atomizer(rs):
+            lodgement_data = self.query_all(
+                rs, *models.Lodgement.get_select_query(lodgement_ids))
+            if not lodgement_data:
+                return {}
+            events = {e['event_id'] for e in lodgement_data}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only lodgements from exactly one event allowed!"))
+            event_id = unwrap(events)
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            group_data = {
+                e['id']: e for e in self.query_all(
+                    rs, *models.LodgementGroup.get_select_query(
+                        [lodge['group_id'] for lodge in lodgement_data], "id"))
+            }
+            event_fields = self._get_event_fields(rs, event_id)
+        return models.Lodgement.many_from_database([
+            {
+                **lodge,
+                'group_data': group_data[lodge['group_id']],
+                'event_fields': models.EventField.many_from_database(
+                    event_fields.values()),
+            }
+            for lodge in lodgement_data
+        ])
+
+    class _NewGetLodgementProtocol(Protocol):
+        def __call__(self, rs: RequestState, lodgement_id: int) -> models.Lodgement: ...
+    new_get_lodgement: _NewGetLodgementProtocol = singularize(
+        new_get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
     def set_lodgement(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
@@ -283,8 +332,9 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 event_fields = self._get_event_fields(rs, event_id)
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event_fields,
-                    association=const.FieldAssociations.lodgement)
+                    fields=models.EventField.many_from_database(event_fields.values()),
+                    association=const.FieldAssociations.lodgement,
+                )
 
                 fupdate = {
                     'id': data['id'],
@@ -306,8 +356,10 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         event_fields = self._get_event_fields(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            vtypes.EventAssociatedFields, fdata, fields=event_fields,
-            association=const.FieldAssociations.lodgement)
+            vtypes.EventAssociatedFields, fdata,
+            fields=models.EventField.many_from_database(event_fields.values()),
+            association=const.FieldAssociations.lodgement,
+        )
         data['fields'] = PsycoJson(fdata)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):

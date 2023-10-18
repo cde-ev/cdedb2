@@ -13,6 +13,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, build_msg, make_persona_name,
     merge_dicts,
@@ -38,11 +39,13 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         formatter = lambda k, v: (v if k != 'entries' or not v else
-                                  '\n'.join(';'.join(line) for line in v))
+                                  '\n'.join(f'{value};{description}'
+                                            for value, description in v.items()))
         current = {
             "{}_{}".format(key, field_id): formatter(key, value)
-            for field_id, field in rs.ambience['event']['fields'].items()
-            for key, value in field.items() if key != 'id'}
+            for field_id, field in rs.ambience['event'].fields.items()
+            for key, value in field.as_dict().items() if key != 'id'
+        }
         merge_dicts(rs.values, current)
         event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
             rs, event_id).fields
@@ -56,16 +59,16 @@ class EventFieldMixin(EventBaseFrontend):
             for row in v:
                 if row['field_id']:
                     referenced.add(row['field_id'])
-        if rs.ambience['event']['lodge_field']:
-            referenced.add(rs.ambience['event']['lodge_field'])
-        for part in rs.ambience['event']['parts'].values():
-            if part['waitlist_field']:
-                referenced.add(part['waitlist_field'])
-            if part['camping_mat_field']:
-                referenced.add(part['camping_mat_field'])
-        for track in rs.ambience['event']['tracks'].values():
-            if track['course_room_field']:
-                referenced.add(track['course_room_field'])
+        if rs.ambience['event'].lodge_field:
+            referenced.add(rs.ambience['event'].lodge_field.id)
+        for part in rs.ambience['event'].parts.values():
+            if part.waitlist_field:
+                referenced.add(part.waitlist_field.id)
+            if part.camping_mat_field:
+                referenced.add(part.camping_mat_field.id)
+        for track in rs.ambience['event'].tracks.values():
+            if track.course_room_field:
+                referenced.add(track.course_room_field.id)
         return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'locked': locked})
 
@@ -77,14 +80,14 @@ class EventFieldMixin(EventBaseFrontend):
         """Manipulate the fields of an event."""
         spec = EVENT_FIELD_ALL_FIELDS
         creation_spec: vtypes.TypeMapping = {**spec, 'field_name': str}
-        existing_fields = rs.ambience['event']['fields'].keys()
+        existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
             rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
 
         def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
             """Helper to get the name of a (new or existing) field."""
             return (field['field_name'] if field and 'field_name' in field
-                    else rs.ambience['event']['fields'][field_id]['field_name'])
+                    else rs.ambience['event'].fields[field_id].field_name)
 
         count = Counter(
             field_name(f_id, field) for f_id, field in fields.items() if field)
@@ -96,7 +99,7 @@ class EventFieldMixin(EventBaseFrontend):
 
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
-        for field_id, field in rs.ambience['event']['fields'].items():
+        for field_id, field in rs.ambience['event'].fields.items():
             if fields.get(field_id) == field:
                 # remove unchanged
                 del fields[field_id]
@@ -116,9 +119,10 @@ class EventFieldMixin(EventBaseFrontend):
         const.FieldAssociations.lodgement: "event/lodgement_query",
     }
 
-    def field_set_aux(self, rs: RequestState, event_id: int, field_id: Optional[int],
-                      ids: Collection[int], kind: const.FieldAssociations) \
-            -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[CdEDBObject]]:
+    def field_set_aux(
+            self, rs: RequestState, event_id: int, field_id: Optional[int],
+            ids: Collection[int], kind: const.FieldAssociations
+    ) -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
@@ -175,10 +179,10 @@ class EventFieldMixin(EventBaseFrontend):
             raise NotImplementedError(f"Unknown kind {kind}")
 
         if field_id:
-            if field_id not in rs.ambience['event']['fields']:
+            if field_id not in rs.ambience['event'].fields:
                 raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-            field = rs.ambience['event']['fields'][field_id]
-            if field['association'] != kind:
+            field = rs.ambience['event'].fields[field_id]
+            if field.association != kind:
                 raise werkzeug.exceptions.NotFound(n_("Wrong associated field."))
         else:
             field = None
@@ -207,10 +211,9 @@ class EventFieldMixin(EventBaseFrontend):
                     'field_id': field_id, 'kind': kind.value})
         _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
                                                        kind)
-        fields = [(field['id'], field['title'])
-                  for field in xsorted(rs.ambience['event']['fields'].values(),
-                                       key=EntitySorter.event_field)
-                  if field['association'] == kind]
+        fields = [(field.id, field.title)
+                  for field in xsorted(rs.ambience['event'].fields.values())
+                  if field.association == kind]
         return self.render(
             rs, "fields/field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
@@ -239,7 +242,7 @@ class EventFieldMixin(EventBaseFrontend):
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
-        values = {f"input{anid}": entity['fields'].get(field['field_name'])
+        values = {f"input{anid}": entity['fields'].get(field.field_name)
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "fields/field_set", {
@@ -268,14 +271,14 @@ class EventFieldMixin(EventBaseFrontend):
 
         msg = ""
         if kind == const.FieldAssociations.registration:
-            msg = build_msg(f"{field['field_name']} gesetzt", change_note)
+            msg = build_msg(f"{field.field_name} gesetzt", change_note)
         elif change_note:
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
         data_params: vtypes.TypeMapping = {
             f"input{anid}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)
@@ -296,14 +299,14 @@ class EventFieldMixin(EventBaseFrontend):
 
         code = 1
         pre_msg = build_msg(
-            f"Snapshot vor Setzen von Feld {field['field_name']}", change_note)
-        post_msg = build_msg(f"Setze Feld {field['field_name']}", change_note)
+            f"Snapshot vor Setzen von Feld {field.field_name}", change_note)
+        post_msg = build_msg(f"Setze Feld {field.field_name}", change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
-            if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
+            if data[f"input{anid}"] != entity['fields'].get(field.field_name):
                 new = {
                     'id': anid,
-                    'fields': {field['field_name']: data[f"input{anid}"]}
+                    'fields': {field.field_name: data[f"input{anid}"]}
                 }
                 if msg:
                     code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
@@ -317,7 +320,7 @@ class EventFieldMixin(EventBaseFrontend):
                 QueryScope.registration,
                 QueryScope.registration.get_spec(event=rs.ambience['event']),
                 ("persona.given_names", "persona.family_name", "persona.username",
-                 "reg.id", f"reg_fields.xfield_{field['field_name']}"),
+                 "reg.id", f"reg_fields.xfield_{field.field_name}"),
                 (("reg.id", QueryOperators.oneof, entities),),
                 (("persona.family_name", True), ("persona.given_names", True))
             )
@@ -326,7 +329,7 @@ class EventFieldMixin(EventBaseFrontend):
                 QueryScope.lodgement,
                 QueryScope.lodgement.get_spec(event=rs.ambience['event']),
                 ("course.nr", "course.shortname", "course.title", "course.id",
-                 f"course_fields.xfield_{field['field_name']}"),
+                 f"course_fields.xfield_{field.field_name}"),
                 (("course.id", QueryOperators.oneof, entities),),
                 (("course.nr", True), ("course.shortname", True))
             )
@@ -335,7 +338,7 @@ class EventFieldMixin(EventBaseFrontend):
                 QueryScope.lodgement,
                 QueryScope.lodgement.get_spec(event=rs.ambience['event']),
                 ("lodgement.title", "lodgement_group.title", "lodgement.id",
-                 f"lodgement_fields.xfield_{field['field_name']}"),
+                 f"lodgement_fields.xfield_{field.field_name}"),
                 (("lodgement.id", QueryOperators.oneof, entities),),
                 (("lodgement.title", True), ("lodgement.id", True))
             )

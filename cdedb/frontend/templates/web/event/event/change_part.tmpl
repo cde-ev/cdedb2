@@ -41,15 +41,15 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_select(name="waitlist_field", entries=fields['waitlist_field'],
+        {{ util.form_input_select(name="waitlist_field_id", entries=fields['waitlist_field_id'],
                                   label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
                                                               gettext("Waitlist")))|s
                                   ) }}
-        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"),
-                                  entries=fields['camping_mat_field'], nulloption=nbsp,
+        {{ util.form_input_select(name="camping_mat_field_id", label=gettext("Field for Camping Mat"),
+                                  entries=fields['camping_mat_field_id'], nulloption=nbsp,
                                   info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is displayed on "
                                   "lodgement and inhabitant pages. Fieldtype: Yes/No")) }}
@@ -111,12 +111,12 @@
                                     defaultvalue="0", arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
-                        <td class={{ util.has_errors(drow_name("course_room_field", id, prefix="track")) }}>
-                            {{ util.input_select(drow_name("course_room_field", id, prefix="track"),
-                                    aclass='drow-input form-control', entries=fields['course_room_field'],
-                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field", prefix="track"),
+                        <td class={{ util.has_errors(drow_name("course_room_field_id", id, prefix="track")) }}>
+                            {{ util.input_select(drow_name("course_room_field_id", id, prefix="track"),
+                                    aclass='drow-input form-control', entries=fields['course_room_field_id'],
+                                    nulloption=nbsp, attributes=util.drow_basename("course_room_field_id", prefix="track"),
                                     arialabel=gettext("Course Room Field")) }}
-                            {{ util.output_errors(drow_name("course_room_field", id, prefix="track")) }}
+                            {{ util.output_errors(drow_name("course_room_field_id", id, prefix="track")) }}
                         </td>
                         <td>
                             <span class="drow-buttonspace">
