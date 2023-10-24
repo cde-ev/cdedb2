@@ -546,7 +546,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
 
             # Step 4.2: Template for counting inhabitants.
-            def registration_part_count_table(p_id: int, is_camping_mat: Optional[bool]
+            def registration_part_count_table(p_id: int, is_camping_mat: Optional[bool],
                                               ) -> str:
                 if is_camping_mat is None:
                     param_name = 'total_inhabitants'
@@ -725,7 +725,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return new_id
 
     @access("event")
-    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -739,7 +739,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             return {e["id"]: e for e in data}
 
     @access("event")
-    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                             ) -> int:
         """Delete invalid stored event queries."""
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):

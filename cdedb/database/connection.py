@@ -46,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _create_connection(dbname: str, dbuser: str, password: str, host: str,
-                       port: int, isolation_level: Optional[int] = SERIALIZABLE
+                       port: int, isolation_level: Optional[int] = SERIALIZABLE,
                        ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
@@ -63,7 +63,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
             "host": host,
             "port": port,
             "connection_factory": IrradiatedConnection,
-            "cursor_factory": psycopg2.extras.RealDictCursor
+            "cursor_factory": psycopg2.extras.RealDictCursor,
     }
     conn = psycopg2.connect(**connection_parameters)
     conn.set_client_encoding("UTF8")
@@ -74,7 +74,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
 
 def connection_pool_factory(dbname: str, roles: Collection[Role],
                             secrets: SecretsConfig, host: str, port: int,
-                            isolation_level: Optional[int] = SERIALIZABLE
+                            isolation_level: Optional[int] = SERIALIZABLE,
                             ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).

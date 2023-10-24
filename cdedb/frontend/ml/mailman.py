@@ -299,7 +299,7 @@ The original message as received by Mailman is attached.
 
     def mailman_sync_list_whites(
             self, rs: RequestState, mailman: mmc.Client, db_list: Mailinglist,
-            mm_list: mmc.MailingList
+            mm_list: mmc.MailingList,
     ) -> None:
         db_whitelist = set(db_list.whitelist)
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}

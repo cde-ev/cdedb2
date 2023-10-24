@@ -22,7 +22,7 @@ def format_country_code(code: str) -> str:
     return f'CountryCodes.{code}'
 
 
-def get_localized_country_codes(rs: RequestState, lang: str = None
+def get_localized_country_codes(rs: RequestState, lang: str = None,
                                 ) -> list[tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
@@ -31,7 +31,7 @@ def get_localized_country_codes(rs: RequestState, lang: str = None
             lang: xsorted(
                 ((cc, rs.translations[lang].gettext(format_country_code(cc)))
                  for cc in COUNTRY_CODES),
-                key=lambda x: x[1]
+                key=lambda x: x[1],
             )
             for lang in rs.translations
         }

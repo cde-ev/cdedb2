@@ -93,7 +93,7 @@ class MEPViolation(PartGroupConstraintViolation):
 
     @property
     def constraint_type(
-            self
+            self,
     ) -> Literal[const.EventPartGroupType.mutually_exclusive_participants]:
         return const.EventPartGroupType.mutually_exclusive_participants
 
@@ -111,7 +111,7 @@ class MECViolation(PartGroupConstraintViolation):
 
     @property
     def constraint_type(
-            self
+            self,
     ) -> Literal[const.EventPartGroupType.mutually_exclusive_courses]:
         return const.EventPartGroupType.mutually_exclusive_courses
 
@@ -350,7 +350,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'reg_counts': reg_counts,
         }
 
-    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int
+    def _get_user_lodgement_wishes(self, rs: RequestState, event_id: int,
                                    ) -> CdEDBObject:
         assert rs.user.persona_id is not None
         wish_data: dict[str, Any] = {}
@@ -393,7 +393,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_event")
         return self.render(rs, "base/participant_info")
 
-    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
+    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages,
                               ) -> vtypes.TypeMapping:
         """Helper to construct a TypeMapping to extract questionnaire data."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
@@ -418,7 +418,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def calculate_groups(entity_ids: Collection[int], event: models.Event,
                          registrations: CdEDBObjectMap, key: str,
                          personas: CdEDBObjectMap = None,
-                         instructors: bool = True
+                         instructors: bool = True,
                          ) -> dict[tuple[int, int], Collection[int]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
@@ -662,7 +662,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @staticmethod
     def _get_camping_mat_field_names(
-            event: models.Event
+            event: models.Event,
     ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
         field_names: dict[int, Optional[vtypes.RestrictiveIdentifier]] = {}
         for part_id, part in event.parts.items():

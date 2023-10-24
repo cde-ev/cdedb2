@@ -77,7 +77,7 @@ def generate_event_registration_default_queries(
             ("persona.given_names", "persona.family_name", "reg.payment"),
             (("reg.payment", QueryOperators.nonempty, None),),
             (("reg.payment", False), ("persona.family_name", True),
-             ("persona.given_names", True),)),
+             ("persona.given_names", True))),
         n_("14_query_event_registration_participants"): Query(
             QueryScope.registration, spec,
             all_part_stati_column.split(",") +
@@ -106,7 +106,7 @@ def generate_event_registration_default_queries(
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event.begin, 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True),)),
+             ("persona.given_names", True))),
         n_("42_query_event_registration_u16"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
@@ -137,7 +137,7 @@ def generate_event_registration_default_queries(
             QueryScope.registration, spec, dokuteam_dokuforge_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),
-             ("reg.list_consent", QueryOperators.equal, True),), default_sort),
+             ("reg.list_consent", QueryOperators.equal, True)), default_sort),
         n_("62_query_dokuteam_address_export"): Query(
             QueryScope.registration, spec, dokuteam_address_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
@@ -197,14 +197,14 @@ DEFAULT_QUERIES = {
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 (("is_archived", QueryOperators.equal, False),
-                 ("is_member", QueryOperators.equal, True),),
+                 ("is_member", QueryOperators.equal, True)),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_cde_user_trial_members"): Query(
                 QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 (("is_archived", QueryOperators.equal, False),
-                 ("trial_member", QueryOperators.equal, True),),
+                 ("trial_member", QueryOperators.equal, True)),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("20_query_cde_user_expuls"): Query(
@@ -231,7 +231,7 @@ DEFAULT_QUERIES = {
                  "birthday"),
                 (("is_archived", QueryOperators.equal, False),
                  ("birthday", QueryOperators.greater,
-                  deduct_years(now().date(), 18)),),
+                  deduct_years(now().date(), 18))),
                 (("birthday", True), ("family_name", True),
                  ("given_names", True))),
         },
@@ -245,7 +245,7 @@ DEFAULT_QUERIES = {
                 QueryScope.core_user, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
                 (("is_archived", QueryOperators.equal, False),
-                 (",".join(ADMIN_KEYS), QueryOperators.equal, True),),
+                 (",".join(ADMIN_KEYS), QueryOperators.equal, True)),
                 (("family_name", True), ("given_names", True), ("personas.id", True))),
         },
         QueryScope.all_assembly_users: {

@@ -76,7 +76,7 @@ class EventFieldMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("active_tab")
-    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
+    def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
                       ) -> Response:
         """Manipulate the fields of an event."""
         spec = EVENT_FIELD_ALL_FIELDS
@@ -122,7 +122,7 @@ class EventFieldMixin(EventBaseFrontend):
 
     def field_set_aux(
             self, rs: RequestState, event_id: int, field_id: Optional[int],
-            ids: Collection[int], kind: const.FieldAssociations
+            ids: Collection[int], kind: const.FieldAssociations,
     ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
@@ -226,7 +226,7 @@ class EventFieldMixin(EventBaseFrontend):
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
                        ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-                       change_note: Optional[str] = None, internal: bool = False
+                       change_note: Optional[str] = None, internal: bool = False,
                        ) -> Response:
         """Render form.
 
@@ -307,7 +307,7 @@ class EventFieldMixin(EventBaseFrontend):
             if data[f"input{anid}"] != entity['fields'].get(field.field_name):
                 new = {
                     'id': anid,
-                    'fields': {field.field_name: data[f"input{anid}"]}
+                    'fields': {field.field_name: data[f"input{anid}"]},
                 }
                 if msg:
                     code *= entity_setter(rs, new, msg)  # type: ignore[call-arg]
@@ -323,7 +323,7 @@ class EventFieldMixin(EventBaseFrontend):
                 ("persona.given_names", "persona.family_name", "persona.username",
                  "reg.id", f"reg_fields.xfield_{field.field_name}"),
                 (("reg.id", QueryOperators.oneof, entities),),
-                (("persona.family_name", True), ("persona.given_names", True))
+                (("persona.family_name", True), ("persona.given_names", True)),
             )
         elif kind == const.FieldAssociations.course:
             query = Query(
@@ -332,7 +332,7 @@ class EventFieldMixin(EventBaseFrontend):
                 ("course.nr", "course.shortname", "course.title", "course.id",
                  f"course_fields.xfield_{field.field_name}"),
                 (("course.id", QueryOperators.oneof, entities),),
-                (("course.nr", True), ("course.shortname", True))
+                (("course.nr", True), ("course.shortname", True)),
             )
         elif kind == const.FieldAssociations.lodgement:
             query = Query(
@@ -341,7 +341,7 @@ class EventFieldMixin(EventBaseFrontend):
                 ("lodgement.title", "lodgement_group.title", "lodgement.id",
                  f"lodgement_fields.xfield_{field.field_name}"),
                 (("lodgement.id", QueryOperators.oneof, entities),),
-                (("lodgement.title", True), ("lodgement.id", True))
+                (("lodgement.title", True), ("lodgement.id", True)),
             )
         else:
             # this can not happen, since kind was validated successfully

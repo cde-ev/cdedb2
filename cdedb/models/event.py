@@ -93,7 +93,7 @@ class EventDataclass(CdEDataclass):
         return super().from_database(data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject]
+    def many_from_database(cls, list_of_data: Collection[CdEDBObject],
                            ) -> CdEDataclassMap["Self"]:
         return {
             obj.id: obj for obj in map(cls.from_database, list_of_data)

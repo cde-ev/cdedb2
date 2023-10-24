@@ -199,7 +199,7 @@ class Application(BaseApp):
                             "core/index", "wants", request.url,
                             user.persona_id,
                             timeout=self.conf[
-                                "UNCRITICAL_PARAMETER_TIMEOUT"])
+                                "UNCRITICAL_PARAMETER_TIMEOUT"]),
                     }
                     ret = construct_redirect(
                         request, urls.build("core/index", params))

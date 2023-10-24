@@ -75,7 +75,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
             grouped[group_id][mailinglist_id] = {
                 'title': title,
-                'id': mailinglist_id
+                'id': mailinglist_id,
             }
         return self.render(rs, "index", {
             'groups': MailinglistGroup,
@@ -181,7 +181,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         additional_infos = {
             ml_id: {
                 "num_subscribers": len(subs[ml_id]),
-                "held_mails": mailman.get_held_message_count(ml)
+                "held_mails": mailman.get_held_message_count(ml),
             } for ml_id, ml in mailinglist_infos.items()
         }
 
@@ -485,7 +485,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("ml_type", "domain")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
-        domain: const.MailinglistDomain, data: CdEDBObject
+        domain: const.MailinglistDomain, data: CdEDBObject,
     ) -> Response:
         update = {"id": mailinglist_id, "domain": domain}
         new_type = get_ml_type(ml_type)
@@ -807,7 +807,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         action_map = {
             'accept': SubscriptionAction.approve_request,
             'reject': SubscriptionAction.deny_request,
-            'block': SubscriptionAction.block_request
+            'block': SubscriptionAction.block_request,
         }
         if rs.has_validation_errors() or action not in action_map:
             return self.management(rs, mailinglist_id)
@@ -939,7 +939,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modunsubscriber_ids")
     def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                     modunsubscriber_ids: vtypes.CdedbIDList
+                                     modunsubscriber_ids: vtypes.CdedbIDList,
                                      ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
@@ -1098,7 +1098,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             if ml_store is None:
                 ml_store = {
                     'persona_ids': requests,
-                    'tstamp': 0
+                    'tstamp': 0,
                 }
 
             if requests:

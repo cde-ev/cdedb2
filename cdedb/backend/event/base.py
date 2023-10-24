@@ -105,7 +105,7 @@ class EventBaseBackend(EventLowLevelBackend):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    def orga_infos(self, rs: RequestState, persona_ids: Collection[int]
+    def orga_infos(self, rs: RequestState, persona_ids: Collection[int],
                    ) -> dict[int, set[int]]:
         """List events organized by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -179,7 +179,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_events(self, rs: RequestState, event_ids: Collection[int]
+    def get_events(self, rs: RequestState, event_ids: Collection[int],
                    ) -> models.CdEDataclassMap[models.Event]:
         event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
@@ -356,12 +356,12 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
             raise PrivilegeError
-        data = self.sql_select(rs, OrgaToken.database_table, ("id", "title",),
+        data = self.sql_select(rs, OrgaToken.database_table, ("id", "title"),
                                (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_orga_tokens(self, rs: RequestState, orga_token_ids: Collection[int]
+    def get_orga_tokens(self, rs: RequestState, orga_token_ids: Collection[int],
                         ) -> dict[int, OrgaToken]:
         """Retrieve information about orga tokens."""
         orga_token_ids = affirm_set(vtypes.ID, orga_token_ids)
@@ -390,7 +390,7 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id")
 
     @access("event")
-    def create_orga_token(self, rs: RequestState, data: OrgaToken
+    def create_orga_token(self, rs: RequestState, data: OrgaToken,
                           ) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
@@ -419,7 +419,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return new_id, secret
 
     @access("event")
-    def change_orga_token(self, rs: RequestState, data: CdEDBObject
+    def change_orga_token(self, rs: RequestState, data: CdEDBObject,
                           ) -> DefaultReturnCode:
         """Change some keys of an existing orga token.
 
@@ -452,7 +452,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def revoke_orga_token(self, rs: RequestState, orga_token_id: int
+    def revoke_orga_token(self, rs: RequestState, orga_token_id: int,
                           ) -> DefaultReturnCode:
         """Revoke an existing orga token and delete its hashed secret."""
         orga_token_id = affirm(vtypes.ID, orga_token_id)
@@ -482,7 +482,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def delete_orga_token_blockers(self, rs: RequestState, orga_token_id: int
+    def delete_orga_token_blockers(self, rs: RequestState, orga_token_id: int,
                                    ) -> DeletionBlockers:
         """Determine what keeps an orga  token from being deleted.
 
@@ -881,7 +881,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap,
                        ) -> DefaultReturnCode:
         """Create, delete and/or update fees for one event."""
         event_id = affirm(vtypes.ID, event_id)
@@ -942,7 +942,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @abc.abstractmethod
-    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
                                           ) -> DefaultReturnCode: ...
 
     @access("event")
@@ -973,7 +973,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event", "droid_quick_partial_export", "droid_orga")
     def get_questionnaire(self, rs: RequestState, event_id: int,
-                          kinds: Collection[const.QuestionnaireUsages] = None
+                          kinds: Collection[const.QuestionnaireUsages] = None,
                           ) -> CdEDBQuestionnaire:
         """Retrieve the questionnaire rows for a specific event.
 
@@ -1103,7 +1103,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     "track_group_id", "track_id")),
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
-                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
+                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
                 ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
                 ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
@@ -1112,7 +1112,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 ('event.course_choices', "track_id", (
-                    'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
+                    'id', 'registration_id', 'track_id', 'course_id', 'rank')),
                 (OrgaToken.database_table, "event_id", tuple(
                     OrgaToken.database_fields())),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
@@ -1292,7 +1292,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del part['id']
             del part['event_id']
             del part['part_group_ids']
-            for f in ('waitlist_field_id', 'camping_mat_field_id',):
+            for f in ('waitlist_field_id', 'camping_mat_field_id'):
                 new_key = f.removesuffix("_id")
                 if part[f]:
                     part[new_key] = ret['event']['fields'][part[f]]['field_name']
@@ -1407,7 +1407,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
-                            after_change: bool = False, is_initial: bool = False
+                            after_change: bool = False, is_initial: bool = False,
                             ) -> Optional[CdEDBObject]:
         """Commit the current state of the event to its git repository.
 

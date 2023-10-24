@@ -50,7 +50,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def check_lodgement_problems(
             cls, event: models.Event, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
-            all_inhabitants: dict[int, dict[int, LodgementInhabitants]]
+            all_inhabitants: dict[int, dict[int, LodgementInhabitants]],
     ) -> list[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
@@ -142,7 +142,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 part_id: sum(
                     (inhabitants[lodgement_id][part_id]
                      for lodgement_id in group['lodgement_ids']),
-                    start=LodgementInhabitants()
+                    start=LodgementInhabitants(),
                 )
                 for part_id in parts
             }
@@ -153,7 +153,7 @@ class EventLodgementMixin(EventBaseFrontend):
         total_inhabitants = {
             part_id: sum(
                 (inhabitants_per_group[group_id][part_id] for group_id in groups),
-                start=LodgementInhabitants()
+                start=LodgementInhabitants(),
             )
             for part_id in parts
         }
@@ -176,10 +176,10 @@ class EventLodgementMixin(EventBaseFrontend):
                                 and p.camping_mat is not False]
             problems_condensed[(lodgement_id, part_id, False)] = (
                 max(p.severeness for p in problems_here_rg) if problems_here_rg else 0,
-                "; ".join(rs.gettext(p.description) for p in problems_here_rg),)
+                "; ".join(rs.gettext(p.description) for p in problems_here_rg))
             problems_condensed[(lodgement_id, part_id, True)] = (
                 max(p.severeness for p in problems_here_cm) if problems_here_cm else 0,
-                "; ".join(rs.gettext(p.description) for p in problems_here_cm),)
+                "; ".join(rs.gettext(p.description) for p in problems_here_cm))
 
         def sort_lodgement(lodgement: CdEDBObject) -> Sortkey:
             primary_sort: Sortkey
@@ -239,7 +239,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def lodgement_group_summary_form(self, rs: RequestState, event_id: int
+    def lodgement_group_summary_form(self, rs: RequestState, event_id: int,
                                      ) -> Response:
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
@@ -258,7 +258,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def lodgement_group_summary(self, rs: RequestState, event_id: int
+    def lodgement_group_summary(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -323,7 +323,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 order=[
                     ('persona.family_name', True),
                     ('persona.given_names', True),
-                ]
+                ],
             )
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id).keys()
@@ -349,7 +349,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int
+    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int,
                                     ) -> Response:
         event = rs.ambience['event']
         if event.lodge_field:
@@ -373,7 +373,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def lodgement_wishes_graph(
             self, rs: RequestState, event_id: int, all_participants: bool,
             part_id: Optional[int], show_lodgements: bool, show_lodgement_groups: bool,
-            show_full_assigned_edges: bool
+            show_full_assigned_edges: bool,
     ) -> Response:
         if rs.has_validation_errors():
             return self.lodgement_wishes_graph_form(rs, event_id)
@@ -577,7 +577,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     if _check_without_lodgement(registration_id, part_id)
                 ),
                 key=lambda tpl: EntitySorter.persona(
-                    personas[registrations[tpl[0]]['persona_id']])
+                    personas[registrations[tpl[0]]['persona_id']]),
             )
             for part_id in rs.ambience['event'].parts
         }
@@ -602,7 +602,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 key=lambda x: (
                     x['group_id'] is not None,
                     EntitySorter.persona(
-                        personas[registrations[x['id']]['persona_id']]))
+                        personas[registrations[x['id']]['persona_id']])),
             )
             for part_id in rs.ambience['event'].parts
         }
@@ -649,7 +649,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 f"is_camping_mat_{part_id}_{reg_id}": bool
                 for part_id in rs.ambience['event'].parts
                 for reg_id in current_inhabitants[part_id]
-            }
+            },
         }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
@@ -675,13 +675,13 @@ class EventLodgementMixin(EventBaseFrontend):
                                      False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'lodgement_id': lodgement_id if new_inhabitant else None
+                        'lodgement_id': lodgement_id if new_inhabitant else None,
                     }
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
                         'is_camping_mat': data.get(
                             f"is_camping_mat_{part_id}_{reg_id}",
-                            False)
+                            False),
                     }
             if new_reg['parts']:
                 reg_data.append(new_reg)
@@ -738,7 +738,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int
+    def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int,
                              ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)

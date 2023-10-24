@@ -277,7 +277,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return ret
 
     @periodic("deactivate_old_sessions", period=4 * 24)
-    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject
+    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Once per day deactivate old sessions."""
         count = self.coreproxy.deactivate_old_sessions(rs)
@@ -365,7 +365,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
-    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int,
                        ) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
@@ -676,7 +676,7 @@ class CoreBaseFrontend(AbstractFrontend):
                              {'persona_id': rs.user.persona_id})
 
     @access("ml")
-    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID
+    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID,
                                ) -> Response:
         """Render overview of mailinglist data of a certain user."""
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
@@ -796,7 +796,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata("phrase", "include_archived")
-    def admin_show_user(self, rs: RequestState, phrase: str, include_archived: bool
+    def admin_show_user(self, rs: RequestState, phrase: str, include_archived: bool,
                         ) -> Response:
         """Allow admins to view any user data set.
 
@@ -1101,7 +1101,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'username': data['username'],
             'shown_fields': shown_fields,
             'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
-            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"],
         })
 
     @access("persona", modi={"POST"})
@@ -1292,14 +1292,14 @@ class CoreBaseFrontend(AbstractFrontend):
         for admin in admins:
             admins[admin] = xsorted(
                 admins[admin],
-                key=lambda anid: EntitySorter.persona(personas[anid])
+                key=lambda anid: EntitySorter.persona(personas[anid]),
             )
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("meta_admin")
-    def change_privileges_form(self, rs: RequestState, persona_id: int
+    def change_privileges_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
@@ -1399,7 +1399,7 @@ class CoreBaseFrontend(AbstractFrontend):
                            {"cases": cases, "personas": personas})
 
     @access("meta_admin")
-    def show_privilege_change(self, rs: RequestState, privilege_change_id: int
+    def show_privilege_change(self, rs: RequestState, privilege_change_id: int,
                               ) -> Response:
         """Show detailed infromation about pending privilege change."""
         privilege_change = rs.ambience['privilege_change']
@@ -1477,7 +1477,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
-    def privilege_change_remind(self, rs: RequestState, store: CdEDBObject
+    def privilege_change_remind(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Cron job for privilege changes to review.
 
@@ -1609,7 +1609,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
-    def modify_membership_form(self, rs: RequestState, persona_id: int
+    def modify_membership_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
@@ -1655,7 +1655,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("finance_admin")
-    def modify_balance_form(self, rs: RequestState, persona_id: int
+    def modify_balance_form(self, rs: RequestState, persona_id: int,
                             ) -> Response:
         """Serve form to manually modify a personas balance."""
         if rs.ambience['persona']['is_archived']:
@@ -1812,7 +1812,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("email")
-    def send_password_reset_link(self, rs: RequestState, email: vtypes.Email
+    def send_password_reset_link(self, rs: RequestState, email: vtypes.Email,
                                  ) -> Response:
         """Send a confirmation mail.
 
@@ -1923,7 +1923,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdata("#email", "new_password", "new_password2", "cookie")
     def do_password_reset(self, rs: RequestState, email: vtypes.Email,
-                          new_password: str, new_password2: str, cookie: str
+                          new_password: str, new_password2: str, cookie: str,
                           ) -> Response:
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
@@ -1934,7 +1934,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if new_password != new_password2:
             rs.extend_validation_errors(
                 (("new_password", ValueError(n_("Passwords don’t match."))),
-                 ("new_password2", ValueError(n_("Passwords don’t match."))),))
+                 ("new_password2", ValueError(n_("Passwords don’t match.")))))
             rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
             return self.do_password_reset_form(rs, email=email, cookie=cookie,
@@ -1993,7 +1993,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("persona")
     @REQUESTdata("#new_username")
-    def do_username_change_form(self, rs: RequestState, new_username: vtypes.Email
+    def do_username_change_form(self, rs: RequestState, new_username: vtypes.Email,
                                 ) -> Response:
         """Email is now verified or we are admin."""
         if rs.has_validation_errors():
@@ -2026,7 +2026,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
 
     @access(*REALM_ADMINS)
-    def admin_username_change_form(self, rs: RequestState, persona_id: int
+    def admin_username_change_form(self, rs: RequestState, persona_id: int,
                                    ) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -2057,7 +2057,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("activity")
-    def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
+    def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool,
                         ) -> Response:
         """Enable/disable an account."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -2086,7 +2086,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
-    def pending_changelog_remind(self, rs: RequestState, store: CdEDBObject
+    def pending_changelog_remind(self, rs: RequestState, store: CdEDBObject,
                                  ) -> CdEDBObject:
         """Cron job for pending changlog entries to decide.
 
@@ -2203,7 +2203,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
-    def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool
+    def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool,
                       ) -> Response:
         """Delete all identifying information for a persona."""
         if not ack_delete:
@@ -2219,7 +2219,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("core_admin", "auditor")
-    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool,
                             ) -> Response:
         """View changelog activity."""
         return self.generic_view_log(
@@ -2264,13 +2264,13 @@ class CoreBaseFrontend(AbstractFrontend):
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         return self.coreproxy.get_cron_store(rs, name)
 
-    def set_cron_store(self, rs: RequestState, name: str, data: CdEDBObject
+    def set_cron_store(self, rs: RequestState, name: str, data: CdEDBObject,
                        ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
     @access("droid_resolve")
     @REQUESTdata("username")
-    def api_resolve_username(self, rs: RequestState, username: vtypes.Email
+    def api_resolve_username(self, rs: RequestState, username: vtypes.Email,
                              ) -> Response:
         """API to resolve username to that users given names and family name."""
         if rs.has_validation_errors():

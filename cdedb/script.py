@@ -192,7 +192,7 @@ class Script:
         self._request_states: dict[int, RequestState] = {}
         self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor
+    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor,
                  ) -> None:
         """Create and save a database connection."""
         if self._conn:

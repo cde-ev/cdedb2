@@ -84,7 +84,7 @@ class EventImportMixin(EventBaseFrontend):
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
                        json_file: Optional[werkzeug.datastructures.FileStorage],
-                       partial_import_data: Optional[str], token: Optional[str]
+                       partial_import_data: Optional[str], token: Optional[str],
                        ) -> Response:
         """Further steps of partial import process
 
@@ -294,7 +294,7 @@ class EventImportMixin(EventBaseFrontend):
     @staticmethod
     def _make_partial_import_diff_aux(
             rs: RequestState, event: models.Event, courses: CdEDBObjectMap,
-            lodgements: CdEDBObjectMap
+            lodgements: CdEDBObjectMap,
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """ Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation

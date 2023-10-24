@@ -37,7 +37,7 @@ GENESIS_REALM_OPTION_NAMES = (
 class CoreGenesisMixin(CoreBaseFrontend):
     @access("anonymous")
     @REQUESTdata("realm")
-    def genesis_request_form(self, rs: RequestState, realm: Optional[str] = None
+    def genesis_request_form(self, rs: RequestState, realm: Optional[str] = None,
                              ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -156,7 +156,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
     @access("anonymous")
     @REQUESTdata("#genesis_case_id")
-    def genesis_verify(self, rs: RequestState, genesis_case_id: int
+    def genesis_verify(self, rs: RequestState, genesis_case_id: int,
                        ) -> Response:
         """Verify the email address entered in :py:meth:`genesis_request`.
 
@@ -170,14 +170,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
                        "You will be notified by mail."),
-            info=n_("This account request was already verified.")
+            info=n_("This account request was already verified."),
         )
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
         return self.redirect(rs, "core/index")
 
     @periodic("genesis_remind")
-    def genesis_remind(self, rs: RequestState, store: CdEDBObject
+    def genesis_remind(self, rs: RequestState, store: CdEDBObject,
                        ) -> CdEDBObject:
         """Cron job for genesis cases to review.
 
@@ -225,7 +225,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return store
 
     @periodic("genesis_forget", period=96)
-    def genesis_forget(self, rs: RequestState, store: CdEDBObject
+    def genesis_forget(self, rs: RequestState, store: CdEDBObject,
                        ) -> CdEDBObject:
         """Cron job for deleting successful, unconfirmed or rejected genesis cases.
 
@@ -255,7 +255,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                             for realm, fields in
                             REALM_SPECIFIC_GENESIS_FIELDS.items()
                             if "attachment_hash" in fields))
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Response:
         """Retrieve attachment for genesis case."""
         data = self.coreproxy.genesis_get_attachment(rs, attachment_hash)
@@ -290,7 +290,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
     @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
-    def genesis_show_case(self, rs: RequestState, genesis_case_id: int
+    def genesis_show_case(self, rs: RequestState, genesis_case_id: int,
                           ) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
@@ -332,7 +332,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
     @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
-    def genesis_modify_form(self, rs: RequestState, genesis_case_id: int
+    def genesis_modify_form(self, rs: RequestState, genesis_case_id: int,
                             ) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
@@ -401,7 +401,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             modi={"POST"})
     @REQUESTdata("decision", "persona_id")
     def genesis_decide(self, rs: RequestState, genesis_case_id: int,
-                       decision: GenesisDecision, persona_id: Optional[int]
+                       decision: GenesisDecision, persona_id: Optional[int],
                        ) -> Response:
         """Approve or decline a genensis case.
 

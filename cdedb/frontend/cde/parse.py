@@ -153,7 +153,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct columns."),
-                                {'lineno': i + 1}
+                                {'lineno': i + 1},
                                 ))
                 rs.append_validation_error(p)
                 continue
@@ -177,7 +177,7 @@ class CdEParseMixin(CdEBaseFrontend):
                        validate: Optional[str] = None,
                        event: Optional[vtypes.ID] = None,
                        membership: Optional[str] = None, excel: Optional[str] = None,
-                       gnucash: Optional[str] = None, ignore_warnings: bool = False
+                       gnucash: Optional[str] = None, ignore_warnings: bool = False,
                        ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
@@ -260,7 +260,7 @@ class CdEParseMixin(CdEBaseFrontend):
             'data': data, 'csvfields': csv_position, 'saldo': saldo,
         })
 
-    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject
+    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject,
                                ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -303,7 +303,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if family_name is not None and not re.search(
                     diacritic_patterns(re.escape(family_name)),
                     persona['family_name'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('family_name', ValueError(
                         n_("Family name doesn’t match."))))
@@ -311,7 +311,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if given_names is not None and not re.search(
                     diacritic_patterns(re.escape(given_names)),
                     persona['given_names'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('given_names', ValueError(
                         n_("Given names don’t match."))))
@@ -329,7 +329,7 @@ class CdEParseMixin(CdEBaseFrontend):
     @REQUESTdata("sendmail", "transfers", "checksum")
     def money_transfers(self, rs: RequestState, sendmail: bool,
                         transfers: Optional[str], checksum: Optional[str],
-                        transfers_file: Optional[FileStorage]
+                        transfers_file: Optional[FileStorage],
                         ) -> Response:
         """Update member balances.
 

@@ -41,7 +41,7 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
 
 
 def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-                 other_values: dict[str, bool], outer_operator: Optional[str] = None, top_level: bool = True
+                 other_values: dict[str, bool], outer_operator: Optional[str] = None, top_level: bool = True,
                  ) -> tuple[bool, str]:
     functions: dict[str, Callable[[list[tuple[bool, str]]], tuple[bool, str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),

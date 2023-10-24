@@ -240,7 +240,7 @@ def get_event_name_pattern(event: models_event.Event) -> str:
     return result_pattern
 
 
-def format_events(events: CdEDataclassMap[models_event.Event]
+def format_events(events: CdEDataclassMap[models_event.Event],
                   ) -> list[tuple[(models_event.Event, str)]]:
     return [
         (e, get_event_name_pattern(e)) for e in xsorted(events.values(), reverse=True)
@@ -386,7 +386,7 @@ class Transaction:
 
         try:
             data["transaction_date"] = datetime.datetime.strptime(
-                raw[StatementCSVKeys.transaction_date], STATEMENT_INPUT_DATEFORMAT
+                raw[StatementCSVKeys.transaction_date], STATEMENT_INPUT_DATEFORMAT,
             ).date()
         except ValueError:
             errors.append((StatementCSVKeys.transaction_date,
@@ -431,7 +431,7 @@ class Transaction:
         return Transaction(data)
 
     @staticmethod
-    def get_request_params(index: int = None, *, hidden_only: bool = False
+    def get_request_params(index: int = None, *, hidden_only: bool = False,
                            ) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.
@@ -468,7 +468,7 @@ class Transaction:
             })
         return ret
 
-    def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
+    def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full,
                        ) -> dict[int, ConfidenceLevel]:
         """Find db_ids in a reference.
 
@@ -712,7 +712,7 @@ class Transaction:
                 self.persona_confidence = best_confidence
                 self.persona = best_match.persona
 
-    def _match_event(self, events: models_event.CdEDataclassMap[models_event.Event]
+    def _match_event(self, events: models_event.CdEDataclassMap[models_event.Event],
                      ) -> None:
         """
         Assign all matching Events to self.event_matches.

@@ -113,7 +113,7 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: Sequence[CdEDBObject] = None
+               may_drop: bool = True, logs: Sequence[CdEDBObject] = None,
                ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 

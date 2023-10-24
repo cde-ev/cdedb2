@@ -253,7 +253,7 @@ class CoreBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "auditor")
-    def retrieve_changelog_meta(self, rs: RequestState, log_filter: ChangelogLogFilter
+    def retrieve_changelog_meta(self, rs: RequestState, log_filter: ChangelogLogFilter,
                                 ) -> CdEDBLog:
         """Get changelog activity.
 
@@ -551,7 +551,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def changelog_get_generations(
-            self, rs: RequestState, ids: Collection[int], committed_only: bool = False
+            self, rs: RequestState, ids: Collection[int], committed_only: bool = False,
     ) -> dict[int, int]:
         """Retrieve the current generation of the persona ids in the
         changelog. This includes committed and pending changelog entries.
@@ -600,7 +600,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def changelog_get_history(self, rs: RequestState, persona_id: int,
-                              generations: Optional[Collection[int]]
+                              generations: Optional[Collection[int]],
                               ) -> CdEDBObjectMap:
         """Retrieve history of a data set.
 
@@ -636,7 +636,7 @@ class CoreBaseBackend(AbstractBackend):
     @internal
     @access("persona", "droid")
     def retrieve_personas(self, rs: RequestState, persona_ids: Collection[int],
-                          columns: tuple[str, ...] = PERSONA_CORE_FIELDS
+                          columns: tuple[str, ...] = PERSONA_CORE_FIELDS,
                           ) -> CdEDBObjectMap:
         """Helper to access a persona dataset.
 
@@ -670,7 +670,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState, is_active: bool = False
+    def list_current_members(self, rs: RequestState, is_active: bool = False,
                              ) -> set[int]:
         """Helper to list all current members.
 
@@ -686,7 +686,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def list_all_moderators(self, rs: RequestState,
                             ml_types: Optional[
-                                Collection[const.MailinglistTypes]] = None
+                                Collection[const.MailinglistTypes]] = None,
                             ) -> set[int]:
         """List all moderators of any mailinglists.
 
@@ -744,7 +744,7 @@ class CoreBaseBackend(AbstractBackend):
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
-                'fulltext': fulltext
+                'fulltext': fulltext,
             }
             self.sql_update(rs, "core.personas", fulltext_update)
         return num
@@ -1017,7 +1017,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("meta_admin")
     def finalize_privilege_change(self, rs: RequestState, privilege_change_id: int,
-                                  case_status: const.PrivilegeChangeStati
+                                  case_status: const.PrivilegeChangeStati,
                                   ) -> DefaultReturnCode:
         """Finalize a pending change to a users admin bits.
 
@@ -1063,7 +1063,7 @@ class CoreBaseBackend(AbstractBackend):
 
                 old = self.get_persona(rs, case["persona_id"])
                 data = {
-                    "id": case["persona_id"]
+                    "id": case["persona_id"],
                 }
                 for key in ADMIN_KEYS:
                     if case[key] is not None:
@@ -1104,7 +1104,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("meta_admin")
     def list_privilege_changes(self, rs: RequestState, persona_id: int = None,
                                stati: Collection[
-                                   const.PrivilegeChangeStati] = None
+                                   const.PrivilegeChangeStati] = None,
                                ) -> CdEDBObjectMap:
         """List privilge changes.
 
@@ -1147,7 +1147,7 @@ class CoreBaseBackend(AbstractBackend):
         return ret
 
     class _GetPrivilegeChangeProtocol(Protocol):
-        def __call__(self, rs: RequestState, privilege_change_id: int
+        def __call__(self, rs: RequestState, privilege_change_id: int,
                      ) -> CdEDBObject: ...
     get_privilege_change: _GetPrivilegeChangeProtocol = singularize(
         get_privilege_changes, "privilege_change_ids", "privilege_change_id")
@@ -1185,7 +1185,7 @@ class CoreBaseBackend(AbstractBackend):
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
                                change_note: str = None,
-                               transaction_date: datetime.date = None
+                               transaction_date: datetime.date = None,
                                ) -> DefaultReturnCode:
         """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1217,7 +1217,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
-                                    is_member: bool = None, trial_member: bool = None
+                                    is_member: bool = None, trial_member: bool = None,
                                     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1326,7 +1326,7 @@ class CoreBaseBackend(AbstractBackend):
         return ret
 
     @access("core_admin")
-    def get_persona_latest_session(self, rs: RequestState, persona_id: int
+    def get_persona_latest_session(self, rs: RequestState, persona_id: int,
                                    ) -> Optional[datetime.datetime]:
         """Retrieve the time of a users latest session.
 
@@ -1339,7 +1339,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin")
     def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
-                                            reference_date: datetime.date = None
+                                            reference_date: datetime.date = None,
                                             ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
@@ -1685,7 +1685,7 @@ class CoreBaseBackend(AbstractBackend):
             return ret
 
     @access(*REALM_ADMINS)
-    def dearchive_persona(self, rs: RequestState, persona_id: int, new_username: str
+    def dearchive_persona(self, rs: RequestState, persona_id: int, new_username: str,
                           ) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
 
@@ -1780,7 +1780,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: str, password: Optional[str]
+                        new_username: str, password: Optional[str],
                         ) -> tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1825,7 +1825,7 @@ class CoreBaseBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (foto,))) or 0
 
     @access("persona")
-    def get_personas(self, rs: RequestState, persona_ids: Collection[int]
+    def get_personas(self, rs: RequestState, persona_ids: Collection[int],
                      ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -1833,7 +1833,7 @@ class CoreBaseBackend(AbstractBackend):
 
     class _GetPersonaProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
-        def __call__(self, rs: RequestState, persona_id: Optional[int]
+        def __call__(self, rs: RequestState, persona_id: Optional[int],
                      ) -> CdEDBObject: ...
     get_persona: _GetPersonaProtocol = singularize(
         get_personas, "persona_ids", "persona_id")
@@ -1990,7 +1990,7 @@ class CoreBaseBackend(AbstractBackend):
                 and not {"cde_admin", "core_admin"} & rs.user.roles)
 
     @access("cde")
-    def get_cde_users(self, rs: RequestState, persona_ids: Collection[int]
+    def get_cde_users(self, rs: RequestState, persona_ids: Collection[int],
                       ) -> CdEDBObjectMap:
         """Get an cde view on some data sets."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -2012,7 +2012,7 @@ class CoreBaseBackend(AbstractBackend):
         get_cde_users, "persona_ids", "persona_id")
 
     @access("ml")
-    def get_ml_users(self, rs: RequestState, persona_ids: Collection[int]
+    def get_ml_users(self, rs: RequestState, persona_ids: Collection[int],
                      ) -> CdEDBObjectMap:
         """Get an ml view on some data sets."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -2024,7 +2024,7 @@ class CoreBaseBackend(AbstractBackend):
         get_ml_users, "persona_ids", "persona_id")
 
     @access("assembly")
-    def get_assembly_users(self, rs: RequestState, persona_ids: Collection[int]
+    def get_assembly_users(self, rs: RequestState, persona_ids: Collection[int],
                            ) -> CdEDBObjectMap:
         """Get an assembly view on some data sets."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -2036,7 +2036,7 @@ class CoreBaseBackend(AbstractBackend):
         get_assembly_users, "persona_ids", "persona_id")
 
     @access("persona")
-    def get_total_personas(self, rs: RequestState, persona_ids: Collection[int]
+    def get_total_personas(self, rs: RequestState, persona_ids: Collection[int],
                            ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids.
 
@@ -2279,7 +2279,7 @@ class CoreBaseBackend(AbstractBackend):
     @internal
     @access("anonymous")
     def get_roles_multi(self, rs: RequestState, persona_ids: Collection[int],
-                        introspection_only: bool = False
+                        introspection_only: bool = False,
                         ) -> dict[Optional[int], set[Role]]:
         """Resolve ids into roles.
 
@@ -2347,7 +2347,7 @@ class CoreBaseBackend(AbstractBackend):
 
     def _generate_reset_cookie(
             self, rs: RequestState, persona_id: int, salt: str,
-            timeout: datetime.timedelta = datetime.timedelta(seconds=60)
+            timeout: datetime.timedelta = datetime.timedelta(seconds=60),
     ) -> str:
         """Create a cookie which authorizes a specific reset action.
 
@@ -2470,7 +2470,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def check_password_strength(
         self, rs: RequestState, password: str, *,
-        email: str = None, persona_id: int = None, argname: str = None
+        email: str = None, persona_id: int = None, argname: str = None,
     ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
         """Check the password strength using some additional userdate.
 
@@ -2616,7 +2616,7 @@ class CoreBaseBackend(AbstractBackend):
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
             (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
-             (persona['given_names'], persona['given_names'], persona['family_name'],)),
+             (persona['given_names'], persona['given_names'], persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

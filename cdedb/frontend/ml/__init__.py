@@ -22,7 +22,7 @@ __all__ = ['MlFrontend']
 class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
-    def message_moderation_form(self, rs: RequestState, mailinglist_id: int
+    def message_moderation_form(self, rs: RequestState, mailinglist_id: int,
                                 ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]

@@ -40,7 +40,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_courses(self, rs: RequestState, course_ids: Collection[int]
+    def get_courses(self, rs: RequestState, course_ids: Collection[int],
                     ) -> CdEDBObjectMap:
         """Retrieve data for some courses organized via DB.
 
@@ -80,7 +80,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def new_get_courses(self, rs: RequestState, course_ids: Collection[int]
+    def new_get_courses(self, rs: RequestState, course_ids: Collection[int],
                         ) -> models.CdEDataclassMap[models.Course]:
         course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):

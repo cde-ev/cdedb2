@@ -272,7 +272,7 @@ class Mailinglist(CdEDataclass):
             rs, bc, (persona_id,))[persona_id]
 
     def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
-                                  persona_ids: Collection[int]
+                                  persona_ids: Collection[int],
                                   ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -299,7 +299,7 @@ class Mailinglist(CdEDataclass):
                 ret[persona_id] = SubscriptionPolicy.none
         return ret
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer  # pylint: disable=no-self-use
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,  # pylint: disable=no-self-use
                                  ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
@@ -319,7 +319,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with all users as implicit subscribers."""
     maxsize_default: ClassVar = vtypes.PositiveInt(64)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Return a set of all personas.
 
@@ -423,7 +423,7 @@ class MemberMailinglist(CdEMailinglist):
 @dataclass
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable),
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -434,7 +434,7 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 @dataclass
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable),
     ])
     # Disallow management by cde admins.
     relevant_admins: ClassVar[set[str]] = set()
@@ -443,21 +443,21 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 @dataclass
 class MemberOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable),
     ])
 
 
 @dataclass
 class MemberModeratedOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", SubscriptionPolicy.moderated_opt_in)
+        ("member", SubscriptionPolicy.moderated_opt_in),
     ])
 
 
 @dataclass
 class MemberInvitationOnlyMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", SubscriptionPolicy.invitation_only)
+        ("member", SubscriptionPolicy.invitation_only),
     ])
 
 
@@ -515,7 +515,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             for k, v in data.items()
         }
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -569,7 +569,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
 
         return super().get_subscription_policies(rs, bc, persona_ids)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -652,7 +652,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
         return super().get_subscription_policies(rs, bc, persona_ids)
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -666,14 +666,14 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 @dataclass
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = OrderedDict([
-        ("assembly", SubscriptionPolicy.subscribable)
+        ("assembly", SubscriptionPolicy.subscribable),
     ])
 
 
 @dataclass
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.subscribable)
+        ("ml", SubscriptionPolicy.subscribable),
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -689,21 +689,21 @@ class GeneralMeta(GeneralMailinglist):
 @dataclass
 class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.subscribable)
+        ("ml", SubscriptionPolicy.subscribable),
     ])
 
 
 @dataclass
 class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.moderated_opt_in)
+        ("ml", SubscriptionPolicy.moderated_opt_in),
     ])
 
 
 @dataclass
 class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.invitation_only)
+        ("ml", SubscriptionPolicy.invitation_only),
     ])
 
 
@@ -712,7 +712,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
 
-    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
+    def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
                                  ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
@@ -740,7 +740,7 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
 class SemiPublicMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
         ("member", SubscriptionPolicy.subscribable),
-        ("ml", SubscriptionPolicy.moderated_opt_in)
+        ("ml", SubscriptionPolicy.moderated_opt_in),
     ])
 
 

@@ -50,7 +50,7 @@ DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 @overload
 def singularize(function: Callable[..., Mapping[Any, T]],
                 array_param_name: str = "",
-                singular_param_name: str = ""
+                singular_param_name: str = "",
                 ) -> Callable[..., T]: ...
 
 
@@ -137,7 +137,7 @@ def batchify(function: Callable[..., T],
 def read_conditional_write_composer(
         reader: Callable[..., Any], writer: Callable[..., int],
         id_param_name: str = "anid", datum_param_name: str = "data",
-        id_key_name: str = "id",) -> Callable[..., int]:
+        id_key_name: str = "id") -> Callable[..., int]:
     """This takes two functions and returns a combined version.
 
     The overall semantics are similar to the writer. However the write is
@@ -193,7 +193,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),
                     {"user_roles": rs.user.roles, "roles": roles,
-                     "method": function.__name__}
+                     "method": function.__name__},
                 )
             return function(self, rs, *args, **kwargs)
 
@@ -294,7 +294,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             pass
 
     def general_query(self, rs: RequestState, query: Query,
-                      distinct: bool = True, view: str = None, aggregate: bool = False
+                      distinct: bool = True, view: str = None, aggregate: bool = False,
                       ) -> tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
@@ -483,7 +483,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return q, params
 
-    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter
+    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter,
                              ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -658,7 +658,7 @@ def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
 
 
 def affirm_validation_optional(
-    assertion: type[T], value: Any, **kwargs: Any
+    assertion: type[T], value: Any, **kwargs: Any,
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -670,7 +670,7 @@ def affirm_validation_optional(
 
 
 def affirm_array_validation(
-    assertion: type[T], values: Iterable[Any], **kwargs: Any
+    assertion: type[T], values: Iterable[Any], **kwargs: Any,
 ) -> tuple[T, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return tuple(
@@ -680,7 +680,7 @@ def affirm_array_validation(
 
 
 def affirm_set_validation(
-    assertion: type[T], values: Iterable[T], **kwargs: Any
+    assertion: type[T], values: Iterable[T], **kwargs: Any,
 ) -> set[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
     return set(
@@ -690,7 +690,7 @@ def affirm_set_validation(
 
 
 def inspect_validation(
-    type_: type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
+    type_: type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
 ) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 

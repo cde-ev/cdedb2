@@ -509,7 +509,7 @@ def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
             personas[registrations[edge.wishing]['persona_id']]),
         name2=make_persona_name(
             personas[registrations[edge.wished]['persona_id']]),
-        sign="↔" if edge.bidirectional else "→"
+        sign="↔" if edge.bidirectional else "→",
     )
 
 

@@ -151,7 +151,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
-    def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
+    def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
         """Modify an event organized via DB."""
         data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
@@ -160,8 +160,8 @@ class EventEventMixin(EventBaseFrontend):
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
-                    n_("Shortname already in use for another event.")
-                ))
+                    n_("Shortname already in use for another event."),
+                )),
             )
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
@@ -188,7 +188,7 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
-                          minor_form: werkzeug.datastructures.FileStorage, delete: bool
+                          minor_form: werkzeug.datastructures.FileStorage, delete: bool,
                           ) -> Response:
         """Replace the form for parental agreement for minors.
 
@@ -211,7 +211,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("orga_id")
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID
+    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
                  ) -> Response:
         """Make an additional persona become orga."""
         if rs.has_validation_errors():
@@ -233,7 +233,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("orga_id")
-    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID
+    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ) -> Response:
         """Remove a persona as orga of an event.
 
@@ -348,7 +348,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @staticmethod
     def _valid_event_part_fields(
-            fields: models.CdEDataclassMap[models.EventField]
+            fields: models.CdEDataclassMap[models.EventField],
     ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
@@ -387,7 +387,7 @@ class EventEventMixin(EventBaseFrontend):
 
         # check non-static dependencies
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id',):
+        for key in ('waitlist_field_id', 'camping_mat_field_id'):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -411,7 +411,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def change_part_form(self, rs: RequestState, event_id: int, part_id: int
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int,
                          ) -> Response:
         part = rs.ambience['event'].parts[part_id]
 
@@ -470,7 +470,7 @@ class EventEventMixin(EventBaseFrontend):
         # Check part specific stuff which can not be checked statically
         #
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id',):
+        for key in ('waitlist_field_id', 'camping_mat_field_id'):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -542,7 +542,7 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None
+        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None,
                         ) -> RemainingOwedQuery:
             query = Query(
                 QueryScope.registration,
@@ -551,7 +551,7 @@ class EventEventMixin(EventBaseFrontend):
                  "persona.username", "reg.remaining_owed", "reg.amount_owed",
                  "reg.amount_paid"],
                 constraints,
-                (("persona.family_name", True), ("persona.given_names", True),)
+                (("persona.family_name", True), ("persona.given_names", True)),
             )
             count = len(self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id))
@@ -566,11 +566,11 @@ class EventEventMixin(EventBaseFrontend):
         incomplete_paid = _paid_query(
             (("reg.remaining_owed", QueryOperators.greater, 0.00),
              ("reg.amount_paid", QueryOperators.greater, 0.00)),
-            "reg.amount_paid"
+            "reg.amount_paid",
         )
         not_paid = _paid_query(
             (("reg.remaining_owed", QueryOperators.greater, 0.00),
-             ("reg.amount_paid", QueryOperators.less, 0.01))
+             ("reg.amount_paid", QueryOperators.less, 0.01)),
         )
         surplus = _paid_query(
             (("reg.remaining_owed", QueryOperators.less, 0.00),),
@@ -586,7 +586,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None
+    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None,
                            ) -> Response:
         """Render form to change or create one event fee."""
         if fee_id:
@@ -752,14 +752,14 @@ class EventEventMixin(EventBaseFrontend):
                 rs.append_validation_error((
                     "track_ids",
                     ValueError(n_("Cannot have more than one course choice sync"
-                                  " track group per track."))
+                                  " track group per track.")),
                 ))
             if not len(set(
                     (tracks[track_id].num_choices, tracks[track_id].min_choices)
-                    for track_id in track_ids)
+                    for track_id in track_ids),
             ) == 1:
                 rs.append_validation_error((
-                    "track_ids", ValueError(n_("Incompatible tracks."))
+                    "track_ids", ValueError(n_("Incompatible tracks.")),
                 ))
             if not self.eventproxy.may_create_ccs_group(rs, track_ids):
                 rs.append_validation_error((
@@ -822,7 +822,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/group_summary")
 
     @periodic("mail_orgateam_reminders", period=4*24)  # once per day
-    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
+    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Send halftime and past event mails to orgateams."""
         event_ids = self.eventproxy.list_events(rs)
@@ -851,7 +851,7 @@ class EventEventMixin(EventBaseFrontend):
 
             headers: Headers = {
                 "To": (event.orga_address,),
-                "Reply-To": "akademien@lists.cde-ev.de"
+                "Reply-To": "akademien@lists.cde-ev.de",
             }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event.parts.values()):
@@ -938,7 +938,7 @@ class EventEventMixin(EventBaseFrontend):
                      fee: vtypes.NonNegativeDecimal,
                      nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
-                     create_participant_list: bool, data: CdEDBObject
+                     create_participant_list: bool, data: CdEDBObject,
                      ) -> Response:
         """Create a new event, organized via DB."""
         # multi part events will have to edit this later on
@@ -980,37 +980,37 @@ class EventEventMixin(EventBaseFrontend):
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
                     'condition': "any_part and not is_member",
-                }
+                },
             },
         })
         if (data and data['shortname']
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
-                    n_("Shortname already in use for another event.")
-                ))
+                    n_("Shortname already in use for another event."),
+                )),
             )
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
                 rs.append_validation_error(
                     ('orga_ids', ValueError(
-                        n_("Some of these users do not exist or are archived.")
-                    ))
+                        n_("Some of these users do not exist or are archived."),
+                    )),
                 )
             if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
                 rs.append_validation_error(
                     ('orga_ids', ValueError(
-                        n_("Some of these users are not event users.")
-                    ))
+                        n_("Some of these users are not event users."),
+                    )),
                 )
         else:
             if create_orga_list or create_participant_list:
                 # mailinglists require moderators
                 rs.append_validation_error(
                     ("orga_ids", ValueError(
-                        n_("Must not be empty in order to create a mailinglist.")
-                    ))
+                        n_("Must not be empty in order to create a mailinglist."),
+                    )),
                 )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
@@ -1142,7 +1142,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("ack_delete")
-    def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool
+    def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool,
                      ) -> Response:
         """Remove an event."""
         if not ack_delete:
@@ -1235,7 +1235,7 @@ class EventEventMixin(EventBaseFrontend):
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
-            (("persona.family_name", True), ("persona.given_names", True))
+            (("persona.family_name", True), ("persona.given_names", True)),
         )
         regex = "({})".format("|".join(terms))
         given_names_constraint = (

@@ -357,7 +357,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_bill(self, rs: RequestState, period_id: int,
-                                  addresscheck: bool, testrun: bool
+                                  addresscheck: bool, testrun: bool,
                                   ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to bill one persona.
 
@@ -392,7 +392,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_prearchival(self, rs: RequestState, period_id: int,
-                                         testrun: bool
+                                         testrun: bool,
                                          ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to warn one persona prior to archival.
 
@@ -560,7 +560,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs: RequestState, period_id: int
+    def remove_exmember_balance(self, rs: RequestState, period_id: int,
                                 ) -> DefaultReturnCode:
         """Set the balance of all former members to zero.
 

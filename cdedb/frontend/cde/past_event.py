@@ -43,7 +43,7 @@ COURSESEARCH_DEFAULTS = {
     'qord_0': 'courses.title',
     'qord_0_ascending': True,
     'qord_1': 'events.tempus',
-    'qord_1_ascending': False
+    'qord_1_ascending': False,
 }
 
 
@@ -80,7 +80,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'spec': spec, 'result': result, 'count': count})
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
-                              pcourse_id: int = None, orgas_only: bool = False
+                              pcourse_id: int = None, orgas_only: bool = False,
                               ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
@@ -173,7 +173,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             scope, scope.get_spec(),
             ("personas.id", "given_names", "display_name", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id), ],
+            [("pevent_id", QueryOperators.equal, pevent_id)],
             (("family_name", True), ("given_names", True),
              ("personas.id", True)))
 
@@ -258,7 +258,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         })
 
     @access("cde_admin")
-    def change_past_event_form(self, rs: RequestState, pevent_id: int
+    def change_past_event_form(self, rs: RequestState, pevent_id: int,
                                ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
@@ -359,7 +359,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_course")
 
     @access("cde_admin")
-    def create_past_course_form(self, rs: RequestState, pevent_id: int
+    def create_past_course_form(self, rs: RequestState, pevent_id: int,
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "past_event/create_past_course")
@@ -440,7 +440,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id")
     def remove_participant(self, rs: RequestState, pevent_id: int,
-                           persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID]
+                           persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID],
                            ) -> Response:
         """Remove participant."""
         if rs.has_validation_errors():
@@ -457,7 +457,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool,
                       ) -> Response:
         """View activities concerning concluded events."""
         pevent_ids = self.pasteventproxy.list_past_events(rs)

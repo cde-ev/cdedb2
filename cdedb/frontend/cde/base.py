@@ -279,7 +279,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")
-    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool
+    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
                     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -322,7 +322,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_active': True,
             'decided_search': False,
             'paper_expuls': True,
-            'donation': decimal.Decimal(0)
+            'donation': decimal.Decimal(0),
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -357,7 +357,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'data': data, 'pevents': pevents, 'pcourses': pcourses,
             'csvfields': csv_position})
 
-    def examine_for_admission(self, rs: RequestState, datum: CdEDBObject
+    def examine_for_admission(self, rs: RequestState, datum: CdEDBObject,
                               ) -> CdEDBObject:
         """Check one line of batch admission.
 
@@ -524,7 +524,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         return datum
 
     def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
-                                trial_membership: bool, consent: bool, sendmail: bool
+                                trial_membership: bool, consent: bool, sendmail: bool,
                                 ) -> tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the batch admission form.
 
@@ -739,7 +739,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     def determine_open_permits(self, rs: RequestState,
-                               lastschrift_ids: Collection[int] = None
+                               lastschrift_ids: Collection[int] = None,
                                ) -> set[int]:
         """Find ids, which to debit this period.
 
@@ -772,7 +772,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool,
                          ) -> Response:
         """View financial activity."""
         return self.generic_view_log(

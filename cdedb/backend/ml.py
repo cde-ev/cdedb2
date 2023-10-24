@@ -59,7 +59,7 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("ml")
-    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int]
+    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int],
                      ) -> dict[int, MLType]:
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         data = self.sql_select(rs, "ml.mailinglists",
@@ -212,7 +212,7 @@ class MlBackend(AbstractBackend):
         return is_subscribed or ml.may_view(rs) or ml.id in rs.user.moderator
 
     @access("persona")
-    def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
+    def moderator_infos(self, rs: RequestState, persona_ids: Collection[int],
                         ) -> dict[int, set[int]]:
         """List mailing lists moderated by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
@@ -231,7 +231,7 @@ class MlBackend(AbstractBackend):
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
-               change_note: Optional[str] = None, atomized: bool = True
+               change_note: Optional[str] = None, atomized: bool = True,
                ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -367,7 +367,7 @@ class MlBackend(AbstractBackend):
         return {e['id']: e['address'] for e in data}
 
     @access("ml", "droid")
-    def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int]
+    def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int],
                          ) -> dict[int, Mailinglist]:
         """Retrieve data for some mailinglists.
 
@@ -434,7 +434,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def add_moderators(self, rs: RequestState, mailinglist_id: int,
-                       persona_ids: Collection[int], change_note: Optional[str] = None
+                       persona_ids: Collection[int], change_note: Optional[str] = None,
                        ) -> DefaultReturnCode:
         """Add moderators to a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
@@ -468,7 +468,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
-                         persona_id: int, change_note: Optional[str] = None
+                         persona_id: int, change_note: Optional[str] = None,
                          ) -> DefaultReturnCode:
         """Remove moderators from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
@@ -538,7 +538,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, update: CdEDBObject = None
+                       ml_type: const.MailinglistTypes, update: CdEDBObject = None,
                        ) -> DefaultReturnCode:
         """Change the type of a mailinglist.
 
@@ -851,7 +851,7 @@ class MlBackend(AbstractBackend):
         return num
 
     class _SetSubscriptionProtocol(Protocol):
-        def __call__(self, rs: RequestState, datum: CdEDBObject
+        def __call__(self, rs: RequestState, datum: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     _set_subscription: _SetSubscriptionProtocol = singularize(
         _set_subscriptions, "data", "datum", passthrough=True)
@@ -886,7 +886,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     class _RemoveSubscriptionProtocol(Protocol):
-        def __call__(self, rs: RequestState, datum: CdEDBObject
+        def __call__(self, rs: RequestState, datum: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     _remove_subscription: _RemoveSubscriptionProtocol = singularize(
         _remove_subscriptions, "data", "datum", passthrough=True)
@@ -1036,7 +1036,7 @@ class MlBackend(AbstractBackend):
 
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
-                     states: SubStates = None
+                     states: SubStates = None,
                      ) -> dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
@@ -1086,7 +1086,7 @@ class MlBackend(AbstractBackend):
         return {entry["persona_id"] for entry in self.query_all(rs, query, params)}
 
     @access("ml")
-    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
+    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int,
                                       ) -> set[int]:
         """Retrieve all unsubscribed users who's unsubscriptions have no effect.
 
@@ -1144,7 +1144,7 @@ class MlBackend(AbstractBackend):
             for e in data}
 
     @access("ml")
-    def get_subscription(self, rs: RequestState, persona_id: int, mailinglist_id: int
+    def get_subscription(self, rs: RequestState, persona_id: int, mailinglist_id: int,
                          ) -> const.SubscriptionState:
         """Returns state of a persona with regard to a mailinglist."""
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1260,7 +1260,7 @@ class MlBackend(AbstractBackend):
                 explicits_only=explicits_only))
 
     @access("ml")
-    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int
+    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int,
                                         ) -> dict[int, str]:
         """Retrieve explicit email addresses of the given persona for all mailinglists.
 
@@ -1290,7 +1290,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
+    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int,
                                ) -> set[vtypes.Email]:
         """Get all usernames of users which have a custom subscription address
         configured for the mailinglist.

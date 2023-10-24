@@ -66,7 +66,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgement_groups(self, rs: RequestState, group_ids: Collection[int]
+    def get_lodgement_groups(self, rs: RequestState, group_ids: Collection[int],
                              ) -> CdEDBObjectMap:
         """Retrieve data for some lodgement groups.
 
@@ -106,7 +106,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         get_lodgement_groups, "group_ids", "group_id")
 
     @access("event")
-    def new_get_lodgement_groups(self, rs: RequestState, event_id: int
+    def new_get_lodgement_groups(self, rs: RequestState, event_id: int,
                                  ) -> models.CdEDataclassMap[models.LodgementGroup]:
         event_id = affirm(vtypes.ID, event_id)
         with Atomizer(rs):
@@ -137,7 +137,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     class _RCWLodgementGroupProtocol(Protocol):
-        def __call__(self, rs: RequestState, data: CdEDBObject
+        def __call__(self, rs: RequestState, data: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
         get_lodgement_group, set_lodgement_group, id_param_name='group_id')
@@ -167,7 +167,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement_group(self, rs: RequestState, group_id: int,
-                               cascade: Collection[str] = None
+                               cascade: Collection[str] = None,
                                ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
@@ -211,7 +211,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     @access("event")
-    def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None
+    def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None,
                         ) -> dict[int, str]:
         """List all lodgements for an event.
 
@@ -237,7 +237,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int]
+    def get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int],
                        ) -> CdEDBObjectMap:
         """Retrieve data for some lodgements.
 
@@ -271,7 +271,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
-    def new_get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int]
+    def new_get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int],
                            ) -> models.CdEDataclassMap[models.Lodgement]:
         lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
         with Atomizer(rs):
@@ -485,7 +485,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def move_lodgements(self, rs: RequestState, group_id: int,
-                        target_group_id: Optional[int], delete_group: bool
+                        target_group_id: Optional[int], delete_group: bool,
                         ) -> DefaultReturnCode:
         """Move lodgements from one group to another or delete them with the group."""
         ret = 1

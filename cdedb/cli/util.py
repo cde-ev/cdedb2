@@ -78,7 +78,7 @@ def switch_user(user: str) -> Generator[None, None, None]:
         yield
     except PermissionError as e:
         raise PermissionError(
-            f"Insufficient permissions to switch to user {user}."
+            f"Insufficient permissions to switch to user {user}.",
         ) from e
     finally:
         os.setegid(original_gid)

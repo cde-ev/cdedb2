@@ -328,7 +328,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         return User(
             droid_class=self.__class__,
             droid_token_id=self.id,
-            roles=droid_roles(self.name)
+            roles=droid_roles(self.name),
         )
 
     def __str__(self) -> str:
@@ -374,7 +374,7 @@ class OrgaToken(DynamicAPIToken):
 
 
 def resolve_droid_name(
-        droid_name: str
+        droid_name: str,
 ) -> Union[
     tuple[type[StaticAPIToken], None],
     tuple[type[DynamicAPIToken], int],

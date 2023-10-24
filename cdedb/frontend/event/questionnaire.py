@@ -32,7 +32,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
     @event_guard(check_offline=True)
-    def configure_registration_form(self, rs: RequestState, event_id: int
+    def configure_registration_form(self, rs: RequestState, event_id: int,
                                     ) -> Response:
         """Render form."""
         reg_questionnaire, reg_fields = self._prepare_questionnaire_form(
@@ -53,7 +53,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             'registration_fields': reg_fields})
 
     def _prepare_questionnaire_form(
-            self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+            self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages,
     ) -> tuple[list[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
@@ -73,7 +73,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def configure_registration(self, rs: RequestState, event_id: int
+    def configure_registration(self, rs: RequestState, event_id: int,
                                ) -> Response:
         """Manipulate the questionnaire form.
 
@@ -105,7 +105,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs, "event/configure_additional_questionnaire_form")
 
     def _set_questionnaire(self, rs: RequestState, event_id: int,
-                           kind: const.QuestionnaireUsages
+                           kind: const.QuestionnaireUsages,
                            ) -> Optional[DefaultReturnCode]:
         """Deduplicated code to set questionnaire rows of one kind."""
         other_kinds = set(const.QuestionnaireUsages) - {kind}
@@ -174,7 +174,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    def additional_questionnaire(self, rs: RequestState, event_id: int
+    def additional_questionnaire(self, rs: RequestState, event_id: int,
                                  ) -> Response:
         """Fill in additional fields.
 
@@ -216,7 +216,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def process_questionnaire_input(
             rs: RequestState, num: int,
             reg_fields: models.CdEDataclassMap[models.EventField],
-            kind: const.QuestionnaireUsages, other_used_fields: Collection[int]
+            kind: const.QuestionnaireUsages, other_used_fields: Collection[int],
     ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
         """This handles input to configure questionnaires.
 
@@ -243,7 +243,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         readonly_key = lambda anid: f"readonly_{anid}"
         default_value_key = lambda anid: f"default_value_{anid}"
 
-        def duplicate_constraint(idx1: int, idx2: int
+        def duplicate_constraint(idx1: int, idx2: int,
                                  ) -> Optional[RequestConstraint]:
             if idx1 == idx2:
                 return None

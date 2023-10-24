@@ -67,7 +67,7 @@ implicit_columns = {
 }
 
 
-def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False
+def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
              ) -> dict[str, list[dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
     conn = connect(config, secrets)

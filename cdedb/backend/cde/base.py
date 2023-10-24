@@ -58,7 +58,7 @@ class CdEBaseBackend(AbstractBackend):
         return super().is_admin(rs)
 
     def cde_log(self, rs: RequestState, code: const.CdeLogCodes,
-                persona_id: int = None, change_note: str = None
+                persona_id: int = None, change_note: str = None,
                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -89,7 +89,7 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter
+    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter,
                              ) -> CdEDBLog:
         """Get financial activity.
 
@@ -100,7 +100,7 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
-    def perform_money_transfers(self, rs: RequestState, data: list[CdEDBObject]
+    def perform_money_transfers(self, rs: RequestState, data: list[CdEDBObject],
                                 ) -> tuple[bool, Optional[int], Optional[int]]:
         """Resolve all money transfer entries.
 
@@ -182,7 +182,7 @@ class CdEBaseBackend(AbstractBackend):
         return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState
+    def get_member_stats(self, rs: RequestState,
                          ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
@@ -227,7 +227,7 @@ class CdEBaseBackend(AbstractBackend):
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
             n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
-        def query_stats(select: str, condition: str, order: str, limit: int = 0
+        def query_stats(select: str, condition: str, order: str, limit: int = 0,
                         ) -> OrderedDict[str, int]:
             query = (f"SELECT COUNT(*) AS num, {select} AS datum"
                      f" FROM core.personas"
@@ -319,7 +319,7 @@ class CdEBaseBackend(AbstractBackend):
         return simple_stats, other_stats, year_stats
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
-                                     trial_membership: bool, consent: bool
+                                     trial_membership: bool, consent: bool,
                                      ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
@@ -440,7 +440,7 @@ class CdEBaseBackend(AbstractBackend):
 
     @access("cde_admin")
     def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
-                                trial_membership: bool, consent: bool
+                                trial_membership: bool, consent: bool,
                                 ) -> tuple[bool, Optional[int], Optional[int]]:
         """Atomized call to recruit new members.
 

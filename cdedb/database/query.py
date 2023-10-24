@@ -154,8 +154,8 @@ class SqlQueryBackend:
         return self.query_all(container, query, (entities,))
 
     def sql_select_one(self, container: ConnectionContainer, table: str,
-                       columns: Sequence[str], entity: EntityKey, entity_key: str = "id"
-                       ) -> Optional[CdEDBObject]:
+                       columns: Sequence[str], entity: EntityKey,
+                       entity_key: str = "id") -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -183,7 +183,7 @@ class SqlQueryBackend:
         return self.query_exec(container, query, params)
 
     def sql_json_inplace_update(self, container: ConnectionContainer, table: str,
-                                data: CdEDBObject, entity_key: str = "id"
+                                data: CdEDBObject, entity_key: str = "id",
                                 ) -> int:
         """Generic SQL update query for JSON fields storing a dict.
 
@@ -226,7 +226,7 @@ class SqlQueryBackend:
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(container, query, (entity,))
 
-    def sql_defer_constraints(self, container: ConnectionContainer, *constraints: str
+    def sql_defer_constraints(self, container: ConnectionContainer, *constraints: str,
                               ) -> DefaultReturnCode:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"

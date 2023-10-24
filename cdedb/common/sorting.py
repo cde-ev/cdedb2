@@ -211,7 +211,7 @@ class EntitySorter:
         return (mailinglist['title'], mailinglist['id'])
 
 
-def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
+def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]],
                            ) -> Generator[int, None, None]:
     """Iterate over a set of indices in the relevant way.
 

@@ -851,7 +851,7 @@ def deduct_years(date: datetime.date, years: int) -> datetime.date:
         return date.replace(year=date.year - years, day=28)
 
 
-def determine_age_class(birth: datetime.date, reference: datetime.date
+def determine_age_class(birth: datetime.date, reference: datetime.date,
                         ) -> AgeClasses:
     """Basically a constructor for :py:class:`AgeClasses`.
 
@@ -1087,7 +1087,7 @@ class TransactionType(CdEIntEnum):
     def is_unknown(self) -> bool:
         return self in {TransactionType.Unknown,
                         TransactionType.Other,
-                        TransactionType.OtherPayment
+                        TransactionType.OtherPayment,
                         }
 
     def old(self) -> str:
@@ -1341,7 +1341,7 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
 
 
 def decode_parameter(salt: str, target: str, name: str, param: str,
-                     persona_id: Optional[int]
+                     persona_id: Optional[int],
                      ) -> Union[tuple[bool, None], tuple[None, str]]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
@@ -1393,7 +1393,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: datetime.date = None
+    val: str, default_date: datetime.date = None,
 ) -> datetime.date:
     """Make a string into a datetime.
 
@@ -1405,7 +1405,7 @@ def parse_datetime(
         "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
     formats = itertools.chain(
         map("".join, itertools.product(date_formats, connectors, time_formats)),
-        map(" ".join, itertools.product(time_formats, date_formats))
+        map(" ".join, itertools.product(time_formats, date_formats)),
     )
     ret = None
     for fmt in formats:
@@ -1434,7 +1434,7 @@ def parse_datetime(
     return ret.astimezone(pytz.utc)
 
 
-def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
+def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
                 ) -> CdEDBObject:
     """Helper to deserialize json fields.
 

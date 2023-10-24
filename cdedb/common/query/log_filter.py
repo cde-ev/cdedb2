@@ -190,7 +190,7 @@ class CdELogFilter(GenericLogFilter):
 class ChangelogLogFilter(GenericLogFilter):
     log_table = "core.changelog"
     log_code_class = const.PersonaChangeStati
-    additional_columns = ("reviewed_by", "generation", "automated_change",)
+    additional_columns = ("reviewed_by", "generation", "automated_change")
     additional_persona_columns = ("reviewed_by",)
 
     reviewed_by: Optional[int] = None  # ID of the reviewer.

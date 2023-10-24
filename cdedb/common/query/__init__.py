@@ -118,10 +118,14 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
 QueryConstraint = tuple[str, QueryOperators, Any]
+
+
 class QueryConstraintType(NamedTuple):
     field: str
     op: QueryOperators
     value: Any
+
+
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
 # is ASC (i.e. True -> ASC, False -> DESC).
 QueryOrder = tuple[str, bool]
@@ -163,7 +167,7 @@ class QueryScope(CdEIntEnum):
     realm: str
     includes_archived: bool
 
-    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False
+    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False,
                 ) -> "QueryScope":
         """Custom creation method for this enum.
 
@@ -751,7 +755,7 @@ class Query:
         return QueryResultEntryFormat.other
 
 
-def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
+def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]",
                        ) -> dict[const.FieldAssociations, list["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
     sorted_fields: dict[const.FieldAssociations, list["models.EventField"]] = {
@@ -811,7 +815,7 @@ def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
+def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -1143,7 +1147,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
                 'shortname': part_group.shortname,
             }
             for part_group in sorted_part_groups
-        )
+        ),
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']

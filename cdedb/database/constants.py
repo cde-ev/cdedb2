@@ -60,7 +60,7 @@ class RegistrationPartStati(CdEIntEnum):
         return (RegistrationPartStati.applied,
                 RegistrationPartStati.participant,
                 RegistrationPartStati.waitlist,
-                RegistrationPartStati.guest,)
+                RegistrationPartStati.guest)
 
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
@@ -69,7 +69,7 @@ class RegistrationPartStati(CdEIntEnum):
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
         return self in (RegistrationPartStati.participant,
-                        RegistrationPartStati.guest,)
+                        RegistrationPartStati.guest)
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""

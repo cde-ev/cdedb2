@@ -34,7 +34,7 @@ from cdedb.database.connection import Atomizer
 
 class CoreGenesisBackend(CoreBaseBackend):
     @access("anonymous")
-    def genesis_set_attachment(self, rs: RequestState, attachment: bytes
+    def genesis_set_attachment(self, rs: RequestState, attachment: bytes,
                                ) -> str:
         """Store a file for genesis usage. Returns the file hash."""
         attachment = affirm(vtypes.PDFFile, attachment, file_storage=False)
@@ -46,7 +46,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return myhash
 
     @access("anonymous")
-    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str
+    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str,
                                  ) -> bool:
         """Check whether a genesis attachment with the given hash is available.
 
@@ -58,7 +58,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return path.is_file()
 
     @access(*REALM_ADMINS)
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Optional[bytes]:
         """Retrieve a stored genesis attachment."""
         attachment_hash = affirm(str, attachment_hash)
@@ -88,7 +88,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret
 
     @access("anonymous")
-    def genesis_request(self, rs: RequestState, data: CdEDBObject
+    def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         ) -> Optional[DefaultReturnCode]:
         """Log a request for a new account.
 
@@ -141,7 +141,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
-                            cascade: Collection[str] = None
+                            cascade: Collection[str] = None,
                             ) -> DefaultReturnCode:
         """Remove a genesis case."""
 
@@ -206,7 +206,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return -unwrap(data) if data else None  # pylint: disable=invalid-unary-operand-type
 
     @access("anonymous")
-    def genesis_verify(self, rs: RequestState, case_id: int
+    def genesis_verify(self, rs: RequestState, case_id: int,
                        ) -> tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
@@ -273,7 +273,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return {e['id']: e for e in data}
 
     @access(*REALM_ADMINS)
-    def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
+    def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int],
                           ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
@@ -297,7 +297,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
         data = affirm(vtypes.GenesisCase, data)

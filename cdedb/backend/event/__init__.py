@@ -369,7 +369,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: str = None
+                             dryrun: bool, token: str = None,
                              ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
@@ -393,7 +393,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
-        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any]
+        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any],
                       ) -> tuple[dict[Any, Any], dict[Any, Any]]:
             delta = {}
             previous = {}
@@ -739,7 +739,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
             result = get_hash(
                 json_serialize(total_delta, sort_keys=True).encode('utf-8'),
-                json_serialize(total_previous, sort_keys=True).encode('utf-8')
+                json_serialize(total_previous, sort_keys=True).encode('utf-8'),
             )
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")

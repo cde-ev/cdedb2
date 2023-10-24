@@ -164,7 +164,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 @pass_secrets
 @pass_config
 def populate_database_cmd(
-    config: TestConfig, secrets: SecretsConfig, xss: bool
+    config: TestConfig, secrets: SecretsConfig, xss: bool,
 ) -> None:
     """Populate the database tables with sample data."""
     click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
@@ -215,7 +215,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
 @pass_config
 def compile_sample_data_sql(
     config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
-    outfile: pathlib.Path, xss: bool
+    outfile: pathlib.Path, xss: bool,
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -282,7 +282,7 @@ def serve_debugger_cmd(test: bool) -> None:
 @pass_config
 def execute_sql_script_cmd(
         config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
+        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool,
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
         execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
@@ -340,7 +340,7 @@ def main() -> None:
     except PermissionError as e:
         raise PermissionError(
             "Unable to perform this command due to missing permissions."
-            " Some commands allow invoking them as root and passing a --owner."
+            " Some commands allow invoking them as root and passing a --owner.",
         ) from e
 
 

@@ -78,7 +78,7 @@ class EventQueryMixin(EventBaseFrontend):
                         if reg_stat.test_part_group(
                             rs.ambience['event'], reg, part_group_id))
                     for part_group_id in stat_part_groups
-                }
+                },
             }
         # Needed for formatting in template. We do it here since it's ugly in jinja
         # without list comprehension.
@@ -111,7 +111,7 @@ class EventQueryMixin(EventBaseFrontend):
                             if course_stat.test_part_group(
                                 rs.ambience['event'], course, part_group_id))
                         for part_group_id in stat_part_groups
-                    }
+                    },
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
                 per_track_statistics[reg_track_stat] = {
@@ -134,7 +134,7 @@ class EventQueryMixin(EventBaseFrontend):
                             if reg_track_stat.test_part_group(
                                 rs.ambience['event'], reg, part_group_id))
                         for part_group_id in stat_part_groups
-                    }
+                    },
                 }
 
             grouper = EventRegistrationInXChoiceGrouper(
@@ -249,7 +249,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event", query_input)
 
     @periodic("validate_stored_event_queries", 4 * 24)
-    def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject
+    def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject,
                                       ) -> CdEDBObject:
         """Validate all stored event queries, to ensure nothing went wrong."""
         data = {}

@@ -25,7 +25,7 @@ Realm = str
 AdminView = str
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False
+def extract_roles(session: CdEDBObject, introspection_only: bool = False,
                   ) -> set[Role]:
     """Associate some roles to a data set.
 
@@ -145,7 +145,7 @@ def implying_realms(realm: Realm) -> set[Realm]:
                if realm in implied)
 
 
-def privilege_tier(roles: set[Role], conjunctive: bool = False
+def privilege_tier(roles: set[Role], conjunctive: bool = False,
                    ) -> list[set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
@@ -383,5 +383,5 @@ GENESIS_REALM_OVERRIDE: dict[str, dict[str, Any]] = {
         'bub_search': False,
         'paper_expuls': True,
         'donation': decimal.Decimal(0),
-    }
+    },
 }

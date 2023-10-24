@@ -109,7 +109,7 @@ def date_filter(val: Union[datetime.date, str, None],
         }
         locale = icu.Locale(lang)
         date_formatter = icu.DateFormat.createDateInstance(
-            verbosity_mapping[verbosity], locale
+            verbosity_mapping[verbosity], locale,
         )
         effective = datetime.datetime.combine(val, datetime.time())
         if not hasattr(effective, '_date_to_freeze'):
@@ -157,12 +157,12 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
 
 
 @overload
-def money_filter(val: None, currency: str = "EUR", lang: str = "de"
+def money_filter(val: None, currency: str = "EUR", lang: str = "de",
                  ) -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de",
                  ) -> str: ...
 
 
@@ -346,7 +346,7 @@ def enum_filter(val: Optional[int], enum_: type[enum.Enum]) -> Optional[str]:
 
 
 @overload
-def genus_filter(val: None, female: str, male: str, unknown: Optional[str]
+def genus_filter(val: None, female: str, male: str, unknown: Optional[str],
                  ) -> None: ...
 
 
@@ -601,7 +601,7 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str]
+def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
                     ) -> ItemsView[str, str]:
     """
     Processes the values of some string using processing function
@@ -688,7 +688,7 @@ def entries_filter(items: list["CdEDataclass"], *args: str) -> list[tuple[Any, .
 
 
 def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
-                         include: Container[str] = None
+                         include: Container[str] = None,
                          ) -> list[tuple[str, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of

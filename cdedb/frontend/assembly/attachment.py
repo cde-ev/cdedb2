@@ -187,7 +187,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.render(
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
-                'is_deletable': is_deletable
+                'is_deletable': is_deletable,
             })
 
     @access("assembly", modi={"POST"})
@@ -259,7 +259,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.render(
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
-                'is_deletable': True
+                'is_deletable': True,
             })
 
     @access("assembly", modi={"POST"})

@@ -250,7 +250,7 @@ class EventDownloadMixin(EventBaseFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
             'instructors': instructors, 'course_room_fields': cr_field_names,
-            'tracks': tracks, })
+            'tracks': tracks})
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
@@ -356,7 +356,7 @@ class EventDownloadMixin(EventBaseFrontend):
         active_courses = filter(lambda c: c["active_segments"], courses.values())
         sorted_courses = xsorted(active_courses, key=EntitySorter.course)
         data = self.fill_template(rs, "other", "dokuteam_courselist", {
-            "sorted_courses": sorted_courses
+            "sorted_courses": sorted_courses,
         })
         return self.send_file(
             rs, data=data, inline=False,
@@ -435,7 +435,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_csv_lodgements(self, rs: RequestState, event_id: int
+    def download_csv_lodgements(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Create CSV file with all courses"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -457,7 +457,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_csv_registrations(self, rs: RequestState, event_id: int
+    def download_csv_registrations(self, rs: RequestState, event_id: int,
                                    ) -> Response:
         """Create CSV file with all registrations"""
         # Get data
@@ -507,7 +507,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_partial_export(self, rs: RequestState, event_id: int
+    def download_partial_export(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Retrieve data for third-party applications."""
         data = self.eventproxy.partial_export_event(rs, event_id)

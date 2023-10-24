@@ -123,7 +123,7 @@ Headers = typing.TypedDict(
         "Bcc": Collection[str],
         "To": Collection[str],
     },
-    total=False
+    total=False,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -177,7 +177,7 @@ class BaseApp(metaclass=abc.ABCMeta):
 
         def local_encode(
                 target: str, name: str, param: str, persona_id: Optional[int],
-                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
+                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"],
         ) -> str:
             return encode_parameter(url_parameter_salt, target, name,
                                     param, persona_id, timeout)
@@ -217,7 +217,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             persona_id=rs.user.persona_id,
             timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
-    def decode_notification(self, rs: RequestState, note: str
+    def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
         timeout, message = self.decode_parameter(
@@ -233,7 +233,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return ntype, nmessage, nparams
 
     def redirect(self, rs: RequestState, target: str,
-                 params: CdEDBObject = None, anchor: str = None
+                 params: CdEDBObject = None, anchor: str = None,
                  ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
@@ -275,7 +275,7 @@ class PeriodicJob(Protocol):
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
-def periodic(name: str, period: int = 1
+def periodic(name: str, period: int = 1,
              ) -> Callable[[PeriodicMethod], PeriodicJob]:
     """This decorator marks a function of a frontend for periodic execution.
 
@@ -1009,7 +1009,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     return None
 
     def serve_latex_document(self, rs: RequestState, data: str, filename: str,
-                             runs: int = 2, errormsg: str = None
+                             runs: int = 2, errormsg: str = None,
                              ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1037,7 +1037,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def serve_complex_latex_document(self, rs: RequestState,
                                      tmp_dir: Union[str, pathlib.Path],
                                      work_dir_name: str, tex_file_name: str,
-                                     runs: int = 2, errormsg: str = None
+                                     runs: int = 2, errormsg: str = None,
                                      ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1134,7 +1134,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                          filter_class: type[GenericLogFilter],
                          log_retriever: Callable[..., CdEDBLog],
                          *, download: bool, template: str,
-                         template_kwargs: CdEDBObject = None
+                         template_kwargs: CdEDBObject = None,
                          ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
@@ -1197,7 +1197,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return self.render(rs, template, {
                 'log': log, 'total': total, 'length': log_filter.length,
                 'personas': personas, 'loglinks': loglinks,
-                **(template_kwargs or {})
+                **(template_kwargs or {}),
             })
 
 
@@ -1613,7 +1613,7 @@ class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
 
-    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any
+    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any,
                  ) -> werkzeug.Response: ...
 
 
@@ -1654,7 +1654,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
-                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
                     }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
@@ -2200,7 +2200,7 @@ def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
 
 
 def inspect_validation(
-    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
 ) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2213,7 +2213,7 @@ def inspect_validation(
 
 
 def inspect_validation_optional(
-    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
 ) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2319,7 +2319,7 @@ def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
         donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
-        cdedbid=cdedbid_filter(persona['id'])
+        cdedbid=cdedbid_filter(persona['id']),
     )
 
 
@@ -2509,7 +2509,7 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
 
 
 def calculate_loglinks(rs: RequestState, total: int,
-                       offset: Optional[int], length: int
+                       offset: Optional[int], length: int,
                        ) -> dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
