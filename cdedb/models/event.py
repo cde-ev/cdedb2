@@ -58,18 +58,10 @@ if TYPE_CHECKING:
 class EventDataclass(CdEDataclass, abc.ABC):
     entity_key: ClassVar[str] = "event_id"
 
-    def __lt__(self, other: "CdEDataclass") -> bool:
-        if not isinstance(other, self.__class__) and not (
-                isinstance(self, CourseChoiceObject)
-                and isinstance(other, CourseChoiceObject)
-        ):
-            return NotImplemented
-        return (self.get_sortkey() + (self.id,)) < (other.get_sortkey() + (self.id,))
-
-
 #
 # get_event
 #
+
 
 @dataclasses.dataclass
 class Event(EventDataclass):
@@ -304,6 +296,11 @@ class CourseChoiceObject(abc.ABC):
     def get_sortkey(self) -> Sortkey:
         ...
 
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
+            return (self.get_sortkey() + (self.id,)) < (other.get_sortkey() + (other.id,))
+        return NotImplemented
+
 
 @dataclasses.dataclass
 class CourseTrack(EventDataclass, CourseChoiceObject):
@@ -347,6 +344,11 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 
     def get_sortkey(self) -> Sortkey:
         return self.sortkey, 0, self.title
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, CourseChoiceObject):
+            return CourseChoiceObject.__lt__(self, other)
+        return super().__lt__(other)
 
 
 @dataclasses.dataclass
@@ -502,6 +504,11 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     def min_choices(self, value: int) -> None:
         for track in self.tracks.values():
             track.min_choices = value
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, CourseChoiceObject):
+            return CourseChoiceObject.__lt__(self, other)
+        return super().__lt__(other)
 
 
 #
