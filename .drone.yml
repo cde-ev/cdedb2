@@ -87,6 +87,9 @@ steps:
     - failure
     - success
   commands:
+    - mkdir .ruff_cache -p
+    - sudo chown cdedb -R .ruff_cache
+    - sudo -u cdedb python3 -m ruff check --config /cdedb2/pyproject.toml cdedb tests
     - make --keep-going lint
 - name: testsuite-setup
   image: cdedb

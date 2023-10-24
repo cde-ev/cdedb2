@@ -38,6 +38,7 @@ PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
+RUFF ?= $(PYTHONBIN) -m ruff
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -136,6 +137,14 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	$(PYLINT) cdedb tests
+	@echo ""
+
+.PHONY: ruff
+ruff:
+	@echo $(BANNERLINE)
+	@echo "All of ruff"
+	@echo $(BANNERLINE)
+	$(RUFF) cdedb
 	@echo ""
 
 .PHONY: template-line-length
