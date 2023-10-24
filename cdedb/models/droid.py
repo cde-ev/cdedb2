@@ -336,11 +336,6 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     def get_sortkey(self) -> Sortkey:
         return (self.name, self.title, self.ctime, self.id)
 
-    def __lt__(self, other: "DynamicAPIToken") -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        return self.get_sortkey() < other.get_sortkey()
-
 
 @dataclass
 class OrgaToken(DynamicAPIToken):
