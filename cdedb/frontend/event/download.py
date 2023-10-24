@@ -10,7 +10,8 @@ import pathlib
 import shutil
 import tempfile
 from collections import OrderedDict
-from typing import Collection, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -81,7 +82,7 @@ class EventDownloadMixin(EventBaseFrontend):
             shutil.copy(src, work_dir / "minor-pictogram.png")
             shutil.copy(src, work_dir / "multicourse-logo.png")
             for course_id in courses:
-                shutil.copy(src, work_dir / "logo-{}.png".format(course_id))
+                shutil.copy(src, work_dir / f"logo-{course_id}.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event'].shortname,
                 "{}_nametags.tex".format(rs.ambience['event'].shortname),
@@ -260,7 +261,7 @@ class EventDownloadMixin(EventBaseFrontend):
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
             for course_id in courses:
-                dest = work_dir / "course-logo-{}.png".format(course_id)
+                dest = work_dir / f"course-logo-{course_id}.png"
                 path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
                 if path.exists():
                     shutil.copy(path, dest)

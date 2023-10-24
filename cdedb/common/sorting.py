@@ -5,10 +5,8 @@
 import collections
 import collections.abc
 import datetime
-from typing import (
-    Any, Callable, Collection, Dict, Generator, Iterable, KeysView, List, Tuple,
-    TypeVar, Union,
-)
+from collections.abc import Collection, Generator, Iterable, KeysView
+from typing import Any, Callable, TypeVar, Union
 
 import icu
 
@@ -23,13 +21,13 @@ LOCALE = 'de-u-kn-true'
 COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 
 T = TypeVar("T")
 
 
 def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> List[T]:
+            reverse: bool = False) -> list[T]:
     """Wrapper for sorted() to achieve a natural sort.
 
     This replaces all strings in possibly nested objects with a sortkey
@@ -86,7 +84,7 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-Sortkey = Tuple[Union[str, int, datetime.datetime, datetime.date], ...]
+Sortkey = tuple[Union[str, int, datetime.datetime, datetime.date], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 

@@ -2,7 +2,6 @@
 
 """SQL field names of all entities."""
 
-from typing import Dict, Set, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common.n_ import n_
@@ -83,7 +82,7 @@ GENESIS_CASE_FIELDS = (
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
 # realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
+REALM_SPECIFIC_GENESIS_FIELDS: dict[Realm, tuple[str, ...]] = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",
@@ -222,8 +221,8 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
     "issued_at", "payment_date", "processed_at", "tally")
 
 #: Datatype and Association of special purpose event fields
-EVENT_FIELD_SPEC: Dict[
-    str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
+EVENT_FIELD_SPEC: dict[
+    str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]] = {
     'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
     'camping_mat': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),

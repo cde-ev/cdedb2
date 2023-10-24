@@ -5,7 +5,7 @@
 import datetime
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import nearly_now
@@ -68,7 +68,7 @@ implicit_columns = {
 
 
 def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False
-             ) -> Dict[str, List[Dict[str, Any]]]:
+             ) -> dict[str, list[dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
     conn = connect(config, secrets)
     rs = fake_rs(conn)
@@ -79,7 +79,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False
     sql = SqlQueryBackend(logger)
 
     # extract the tables to be created from the database tables
-    with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
+    with open("/cdedb2/cdedb/database/cdedb-tables.sql") as f:
         tables = [
             table.group('name')
             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
@@ -104,7 +104,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved
-            sorted_entity: Dict[str, Any] = dict()
+            sorted_entity: dict[str, Any] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
                     pass

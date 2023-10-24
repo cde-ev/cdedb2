@@ -3,7 +3,8 @@
 """Base class providing fundamental ml services."""
 
 import collections
-from typing import Any, Collection, Dict, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
@@ -68,7 +69,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending})
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
@@ -113,7 +114,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['ml']))
-    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
+    def create_user(self, rs: RequestState, data: dict[str, Any]) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -162,7 +163,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending})
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
@@ -234,7 +235,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
-    def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
+    def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
                            ml_type: const.MailinglistTypes,
                            moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""

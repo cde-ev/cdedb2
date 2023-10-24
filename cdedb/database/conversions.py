@@ -2,7 +2,7 @@
 
 import collections.abc
 import enum
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone ldaptor mode
@@ -31,7 +31,7 @@ def from_db_output(
 
 # mypy cannot really understand the intricacies of what this function does, so
 # we keep this simple. instead of overloading the definition.
-def to_db_input(obj: Any) -> Union[Any, List[Any]]:
+def to_db_input(obj: Any) -> Union[Any, list[Any]]:
     """Mangle data to make psycopg happy.
 
     Convert :py:class:`tuple`s (and all other iterables, but not strings

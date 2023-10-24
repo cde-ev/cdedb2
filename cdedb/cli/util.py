@@ -6,8 +6,9 @@ import io
 import os
 import pathlib
 import pwd
+from collections.abc import Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Generator, Iterator, Union
+from typing import Any, Callable, Union
 
 import click
 import psycopg2.extensions

@@ -19,7 +19,8 @@ import abc
 import datetime
 import enum
 import itertools
-from typing import Collection, Dict, Iterator, List, Optional, Sequence, Set, Tuple
+from collections.abc import Collection, Iterator, Sequence
+from typing import Optional
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -32,7 +33,7 @@ from cdedb.common.sorting import xsorted
 
 RPS = const.RegistrationPartStati
 
-StatQueryAux = Tuple[List[str], List[QueryConstraint], List[QueryOrder]]
+StatQueryAux = tuple[list[str], list[QueryConstraint], list[QueryOrder]]
 
 __all__ = ['EventRegistrationPartStatistic', 'EventCourseStatistic',
            'EventRegistrationTrackStatistic', 'EventRegistrationInXChoiceGrouper']
@@ -85,7 +86,7 @@ def _age_constraint(part: models.EventPart, max_age: int, min_age: int = None
 
 
 # Helper function to construct ordering for waitlist queries.
-def _waitlist_order(event: models.Event, part: models.EventPart) -> List[QueryOrder]:
+def _waitlist_order(event: models.Event, part: models.EventPart) -> list[QueryOrder]:
     ret = []
     if field := part.waitlist_field:
         ret.append((f'reg_fields.xfield_{field.field_name}', True))
@@ -114,7 +115,7 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     """
     # Fields will be collected via the keys of this dict, with all values being None.
     # This ensures uniqueness, while preserving order, which is not possible with sets.
-    fields: Dict[str, None] = {}
+    fields: dict[str, None] = {}
     operators, values = set(), set()
     for con in constraints:
         field, op, value = con
@@ -803,7 +804,7 @@ class EventRegistrationInXChoiceGrouper:
             for part_group in self._sorted_part_groups
         }
 
-        self.choice_track_map: Dict[int, Dict[int, Optional[Set[int]]]] = {
+        self.choice_track_map: dict[int, dict[int, Optional[set[int]]]] = {
             x: {
                 track.id: set() if track.num_choices > x else None
                 for track in self._sorted_tracks
@@ -832,7 +833,7 @@ class EventRegistrationInXChoiceGrouper:
                 and len(track['choices']) > x
                 and track['choices'][x] == track['course_id'])
 
-    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[Set[int]]:
+    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[set[int]]:
         """Uninlined helper to determine the number of fitting entries across tracks.
 
         If all given tracks do not offer an xth choice, return None, otherwise return
@@ -840,7 +841,7 @@ class EventRegistrationInXChoiceGrouper:
         is easily done by unioning the values per track, but special care needs to be
         given to the None values.
         """
-        result: Optional[Set[int]] = None
+        result: Optional[set[int]] = None
         for track_id in track_ids:
             tmp = self.choice_track_map[x][track_id]
             if tmp is not None:

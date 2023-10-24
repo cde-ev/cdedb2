@@ -5,7 +5,8 @@ The `EventCourseBackend` subclasses the `EventBaseBackend` and provides function
 for managing courses belonging to an event.
 """
 
-from typing import Collection, Dict, List, Protocol
+from collections.abc import Collection
+from typing import Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -28,7 +29,7 @@ from cdedb.database.connection import Atomizer
 class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("anonymous")
     def list_courses(self, rs: RequestState,
-                        event_id: int) -> Dict[int, str]:
+                        event_id: int) -> dict[int, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
@@ -364,7 +365,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                         rs, "event.course_choices", blockers["course_choices"])
 
                     # Construct list of inserts.
-                    choices: List[CdEDBObject] = []
+                    choices: list[CdEDBObject] = []
                     for track_id, reg_ids in data_by_tracks.items():
                         query = (
                             "SELECT id, course_id, track_id, registration_id"

@@ -2,11 +2,10 @@
 
 import dataclasses
 import itertools
+from collections import OrderedDict
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Collection, Dict, List, Literal, Mapping, Optional,
-    OrderedDict, Set, Tuple, Type, cast,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
 
 from subman.machine import SubscriptionPolicy
 
@@ -30,9 +29,9 @@ if TYPE_CHECKING:
 else:
     CdEDBObject = RequestState = User = None
 
-SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
+SubscriptionPolicyMap = dict[int, SubscriptionPolicy]
 
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 
 
 class BackendContainer:
@@ -86,8 +85,8 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: Set[vtypes.ID]
-    whitelist: Set[vtypes.Email]
+    moderators: set[vtypes.ID]
+    whitelist: set[vtypes.Email]
 
     description: Optional[str]
     additional_footer: Optional[str]
@@ -98,7 +97,7 @@ class Mailinglist(CdEDataclass):
     # some mailinglist types define additional fields
 
     sortkey: ClassVar[MailinglistGroup] = MailinglistGroup.public
-    available_domains: ClassVar[List[MailinglistDomain]] = [MailinglistDomain.lists]
+    available_domains: ClassVar[list[MailinglistDomain]] = [MailinglistDomain.lists]
     # default value for maxsize in KB
     maxsize_default: ClassVar = vtypes.PositiveInt(2048)
     allow_unsub: ClassVar[bool] = True
@@ -138,12 +137,12 @@ class Mailinglist(CdEDataclass):
         return self.domain.get_domain()
 
     @classmethod
-    def database_fields(cls) -> List[str]:
+    def database_fields(cls) -> list[str]:
         return [field.name for field in fields(cls)
                 if field.name not in {"moderators", "whitelist"}]
 
     @classmethod
-    def validation_fields(cls, *, creation: bool) -> Tuple[TypeMapping, TypeMapping]:
+    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
         # make whitelist optional during Mailinglist creation
         if "whitelist" in mandatory:
@@ -157,7 +156,7 @@ class Mailinglist(CdEDataclass):
         return {field.name: requestdict_field_spec(field)
                 for field in additional_fields}
 
-    viewer_roles: ClassVar[Set[str]] = {"ml"}
+    viewer_roles: ClassVar[set[str]] = {"ml"}
 
     @classmethod
     def may_view(cls, rs: RequestState) -> bool:
@@ -175,15 +174,15 @@ class Mailinglist(CdEDataclass):
                 or cls.is_relevant_admin(rs.user))
 
     # This fields may be changed by all moderators, even restricted ones.
-    restricted_moderator_fields: ClassVar[Set[str]] = {
+    restricted_moderator_fields: ClassVar[set[str]] = {
         "description", "mod_policy", "notes", "attachment_policy", "convert_html",
         "subject_prefix", "maxsize", "additional_footer"}
 
     # This fields require non-restricted moderator access to be changed.
-    full_moderator_fields: ClassVar[Set[str]] = set()
+    full_moderator_fields: ClassVar[set[str]] = set()
 
     @classmethod
-    def get_moderator_fields(cls) -> Set[str]:
+    def get_moderator_fields(cls) -> set[str]:
         """This fields may be changed by non-restricted moderators."""
         return cls.restricted_moderator_fields | cls.full_moderator_fields
 
@@ -204,7 +203,7 @@ class Mailinglist(CdEDataclass):
         """
         return False
 
-    relevant_admins: ClassVar[Set[str]] = set()
+    relevant_admins: ClassVar[set[str]] = set()
 
     @classmethod
     def is_relevant_admin(cls, user: User) -> bool:
@@ -227,7 +226,7 @@ class Mailinglist(CdEDataclass):
     role_map: ClassVar = OrderedDict()  # type: ignore[no-redef]
 
     @classmethod
-    def moderator_admin_views(cls) -> Set[str]:
+    def moderator_admin_views(cls) -> set[str]:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
@@ -237,7 +236,7 @@ class Mailinglist(CdEDataclass):
                 for admin in cls.relevant_admins} | {"ml_mod"}
 
     @classmethod
-    def management_admin_views(cls) -> Set[str]:
+    def management_admin_views(cls) -> set[str]:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
@@ -301,7 +300,7 @@ class Mailinglist(CdEDataclass):
         return ret
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer  # pylint: disable=no-self-use
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Retrieve a set of personas, which should be subscribers."""
         return set()
 
@@ -321,7 +320,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
     maxsize_default: ClassVar = vtypes.PositiveInt(64)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Return a set of all personas.
 
         Leave out personas which are archived or have no valid email set.."""
@@ -334,7 +333,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
     maxsize_default = vtypes.PositiveInt(64)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Return a set of all current members."""
         return bc.core.list_current_members(rs, is_active=False)
 
@@ -429,7 +428,7 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
     # Disallow management by cde admins.
-    relevant_admins: ClassVar[Set[str]] = set()
+    relevant_admins: ClassVar[set[str]] = set()
 
 
 @dataclass
@@ -438,7 +437,7 @@ class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
         ("member", SubscriptionPolicy.subscribable)
     ])
     # Disallow management by cde admins.
-    relevant_admins: ClassVar[Set[str]] = set()
+    relevant_admins: ClassVar[set[str]] = set()
 
 
 @dataclass
@@ -474,11 +473,11 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    registration_stati: List[const.RegistrationPartStati] = dataclasses.field(
+    registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
 
     # This fields require non-restricted moderator access to be changed.
-    full_moderator_fields: ClassVar[Set[str]] = {"registration_stati"}
+    full_moderator_fields: ClassVar[set[str]] = {"registration_stati"}
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
@@ -517,7 +516,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         }
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventAssociatedMailinglist` this means registrations with
@@ -621,7 +620,7 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
@@ -654,7 +653,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyPresiderMailignlist` this means the presiders of the
@@ -679,7 +678,7 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
     # Disallow management by cde admins.
-    relevant_admins: ClassVar[Set[str]] = set()
+    relevant_admins: ClassVar[set[str]] = set()
 
 
 @dataclass
@@ -714,7 +713,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     allow_unsub = False
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `GeneralModeratorMailinglist` this means mandatory for all users who
@@ -728,7 +727,7 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer,
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `CdELokalModeratorMailinglist` this means mandatory for all users who
@@ -757,14 +756,14 @@ class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailin
     pass
 
 
-MLType = Type[Mailinglist]
+MLType = type[Mailinglist]
 
 
 def get_ml_type(val: MailinglistTypes) -> MLType:
     return ML_TYPE_MAP[val]
 
 
-ML_TYPE_MAP: Mapping[MailinglistTypes, Type[Mailinglist]] = {
+ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.member_mandatory: MemberMandatoryMailinglist,
     MailinglistTypes.member_opt_out: MemberOptOutMailinglist,
     MailinglistTypes.member_opt_in: MemberOptInMailinglist,

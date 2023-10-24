@@ -4,7 +4,8 @@
 The `CoreGenesisBackend` subclasses the `CoreBaseBackend` and provides functionality
 for "genesis", that is for account creation via anonymous account requests.
 """
-from typing import Any, Collection, List, Optional, Protocol, Tuple
+from collections.abc import Collection
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -206,7 +207,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access("anonymous")
     def genesis_verify(self, rs: RequestState, case_id: int
-                       ) -> Tuple[DefaultReturnCode, str]:
+                       ) -> tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before
@@ -252,13 +253,13 @@ class CoreGenesisBackend(CoreBaseBackend):
         stati = affirm_set(const.GenesisStati, stati)
         if not realms and "core_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged."))
-        elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
+        elif not all({f"{realm}_admin", "core_admin"} & rs.user.roles
                      for realm in realms):
             raise PrivilegeError(n_("Not privileged."))
         query = ("SELECT id, ctime, username, given_names, family_name,"
                  " case_status FROM core.genesis_cases")
         conditions = []
-        params: List[Any] = []
+        params: list[Any] = []
         if realms:
             conditions.append("realm = ANY(%s)")
             params.append(realms)

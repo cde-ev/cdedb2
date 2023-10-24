@@ -2,7 +2,7 @@
 
 """All about translations."""
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES
@@ -23,7 +23,7 @@ def format_country_code(code: str) -> str:
 
 
 def get_localized_country_codes(rs: RequestState, lang: str = None
-                                ) -> List[Tuple[str, str]]:
+                                ) -> list[tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
     if not hasattr(get_localized_country_codes, "localized_country_codes"):

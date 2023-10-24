@@ -6,7 +6,7 @@ querying registrations, courses and lodgements.
 """
 import collections
 import pprint
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -61,8 +61,8 @@ class EventQueryMixin(EventBaseFrontend):
                     personas[reg['persona_id']]['birthday'],
                     event_parts[part_id].part_begin)
 
-        per_part_statistics: Dict[
-            EventRegistrationPartStatistic, Dict[str, Dict[int, Set[int]]]]
+        per_part_statistics: dict[
+            EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
@@ -84,9 +84,9 @@ class EventQueryMixin(EventBaseFrontend):
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
-        per_track_statistics: Dict[
+        per_track_statistics: dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
-            Dict[str, Dict[int, Set[int]]]]
+            dict[str, dict[int, set[int]]]]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
@@ -185,7 +185,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'has_registrations': has_registrations,
         }
@@ -300,7 +300,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }
@@ -423,7 +423,7 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        search_additions: List[QueryConstraint] = []
+        search_additions: list[QueryConstraint] = []
         event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin", "meta_admin"} & rs.user.roles
@@ -453,7 +453,7 @@ class EventQueryMixin(EventBaseFrontend):
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
-        terms: List[str] = []
+        terms: list[str] = []
         if data is None:
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
@@ -485,7 +485,7 @@ class EventQueryMixin(EventBaseFrontend):
             return "{} {}".format(x['given_names'], x['family_name'])
 
         # Check if name occurs multiple times to add email address in this case
-        counter: Dict[str, int] = collections.defaultdict(int)
+        counter: dict[str, int] = collections.defaultdict(int)
         for entry in data:
             counter[name(entry)] += 1
 

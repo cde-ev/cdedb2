@@ -9,7 +9,6 @@ Only exception are the per-event-queries, since they need some dynamic informati
 about the event to be created. They can be obtained by calling the respective functions.
 """
 
-from typing import Dict
 
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
@@ -20,7 +19,7 @@ from cdedb.common.roles import ADMIN_KEYS
 
 
 def generate_event_registration_default_queries(
-        event: models_event.Event, spec: QuerySpec) -> Dict[str, Query]:
+        event: models_event.Event, spec: QuerySpec) -> dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -161,7 +160,7 @@ def generate_event_registration_default_queries(
 
 
 def generate_event_course_default_queries(
-        event: models_event.Event, spec: QuerySpec) -> Dict[str, Query]:
+        event: models_event.Event, spec: QuerySpec) -> dict[str, Query]:
     """
     Generate default queries for course_queries.
 

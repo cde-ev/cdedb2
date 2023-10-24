@@ -6,7 +6,8 @@ functionality for managing lodgements and lodgement groups belonging to an event
 """
 import collections
 import dataclasses
-from typing import Any, Collection, Dict, Iterator, List, Optional, Protocol, Tuple
+from collections.abc import Collection, Iterator
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -31,11 +32,11 @@ from cdedb.database.query import DatabaseValue_s
 @dataclasses.dataclass(frozen=True)
 class LodgementInhabitants:
     """Small helper class to store and add inhabitants of a lodgement."""
-    regular: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
-    camping_mat: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    regular: tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    camping_mat: tuple[int, ...] = dataclasses.field(default_factory=tuple)
 
     @property
-    def all(self) -> Tuple[int, ...]:
+    def all(self) -> tuple[int, ...]:
         return self.regular + self.camping_mat
 
     def __add__(self, other: Any) -> "LodgementInhabitants":
@@ -44,7 +45,7 @@ class LodgementInhabitants:
         return self.__class__(self.regular + other.regular,
                               self.camping_mat + other.camping_mat)
 
-    def __iter__(self) -> Iterator[Tuple[int, ...]]:
+    def __iter__(self) -> Iterator[tuple[int, ...]]:
         """Enable tuple unpacking."""
         return iter((self.regular, self.camping_mat))
 
@@ -52,7 +53,7 @@ class LodgementInhabitants:
 class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event")
     def list_lodgement_groups(self, rs: RequestState,
-                              event_id: int) -> Dict[int, str]:
+                              event_id: int) -> dict[int, str]:
         """List all lodgement groups for an event.
 
         :returns: dict mapping ids to names
@@ -211,7 +212,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None
-                        ) -> Dict[int, str]:
+                        ) -> dict[int, str]:
         """List all lodgements for an event.
 
         :param group_id: If given, limit to lodgements in this group.
@@ -450,12 +451,12 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
             lodgement_ids: Collection[int] = None,
-    ) -> Dict[int, Dict[int, LodgementInhabitants]]:
+    ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
             raise PrivilegeError
-        params: List[DatabaseValue_s] = [event_id]
+        params: list[DatabaseValue_s] = [event_id]
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
         else:
@@ -471,7 +472,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             WHERE ep.event_id = %s AND {condition}
             GROUP BY lodgement_id, part_id, is_camping_mat
         """
-        ret: Dict[int, Dict[int, LodgementInhabitants]]
+        ret: dict[int, dict[int, LodgementInhabitants]]
         ret = collections.defaultdict(
             lambda: collections.defaultdict(LodgementInhabitants))
         for e in self.query_all(rs, query, params):

@@ -14,7 +14,8 @@ import decimal
 import itertools
 import operator
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from collections.abc import Collection, Sequence
+from typing import Any, Optional
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -202,14 +203,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} {:0<5}".format(
-                pl, pu)
+            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
         elif pl:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} 99999".format(
-                pl)
+            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} 99999"
         elif pu:
-            defaults['qval_postal_code,postal_code2'] = "00000 {:0<5}".format(
-                pu)
+            defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         scope = QueryScope.cde_member
@@ -225,7 +223,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 pevent_id = int(pevent_id)
             except ValueError:
                 pass
-        courses: Dict[int, str] = {}
+        courses: dict[int, str] = {}
         if pevent_id:
             courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
         choices = {"pevent_id": events, 'pcourse_id': courses}
@@ -244,7 +242,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 def restrict(constraint: QueryConstraint) -> QueryConstraint:
                     field, operation, value = constraint
                     if field == 'fulltext':
-                        value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                        value = [fr"\m{val}\M" if len(val) <= 3 else val
                                  for val in value]
                     elif len(str(value)) <= 3:
                         operation = QueryOperators.equal
@@ -286,7 +284,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         courses = self.pasteventproxy.list_past_courses(rs)
-        choices: Dict[str, OrderedDict[Any, str]] = {
+        choices: dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'pcourse_id': OrderedDict(
@@ -331,8 +329,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     def batch_admission_form(self, rs: RequestState,
-                             data: List[CdEDBObject] = None,
-                             csvfields: Tuple[str, ...] = None) -> Response:
+                             data: list[CdEDBObject] = None,
+                             csvfields: tuple[str, ...] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -368,8 +366,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         :returns: The processed input datum.
         """
-        warnings: List[Error] = []
-        problems: List[Error]
+        warnings: list[Error] = []
+        problems: list[Error]
 
         # short-circuit if additional fields like the resolution are error prone
         problems = [
@@ -525,9 +523,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
+    def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
                                 trial_membership: bool, consent: bool, sendmail: bool
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+                                ) -> tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -742,7 +740,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     def determine_open_permits(self, rs: RequestState,
                                lastschrift_ids: Collection[int] = None
-                               ) -> Set[int]:
+                               ) -> set[int]:
         """Find ids, which to debit this period.
 
         Helper to find out which of the passed lastschrift permits has

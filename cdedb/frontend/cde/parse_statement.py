@@ -5,7 +5,7 @@ import datetime
 import decimal
 import json
 import re
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
@@ -241,7 +241,7 @@ def get_event_name_pattern(event: models_event.Event) -> str:
 
 
 def format_events(events: CdEDataclassMap[models_event.Event]
-                  ) -> List[Tuple[(models_event.Event, str)]]:
+                  ) -> list[tuple[(models_event.Event, str)]]:
     return [
         (e, get_event_name_pattern(e)) for e in xsorted(events.values(), reverse=True)
     ]
@@ -266,7 +266,7 @@ def parse_amount(amount: str) -> decimal.Decimal:
     return ret
 
 
-def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
+def _reconstruct_cdedbid(db_id: str) -> tuple[Optional[int], list[Error]]:
     """
     Uninlined code from `Transaction._find_cdedb_ids`.
 
@@ -292,7 +292,7 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
 def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert an input to a number in german format."""
     if isinstance(number, decimal.Decimal):
-        ret = "{:,.2f}".format(number)
+        ret = f"{number:,.2f}"
     else:
         ret = str(number)
     ret = ret.replace(",", "").replace(".", ",")
@@ -469,12 +469,12 @@ class Transaction:
         return ret
 
     def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
-                       ) -> Dict[int, ConfidenceLevel]:
+                       ) -> dict[int, ConfidenceLevel]:
         """Find db_ids in a reference.
 
         Check the reference parts in order of relevancy.
         """
-        ret: Dict[int, ConfidenceLevel] = {}
+        ret: dict[int, ConfidenceLevel] = {}
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
@@ -820,7 +820,7 @@ class Transaction:
     @property
     def amount_english(self) -> str:
         """English way of writing the amount."""
-        return "{:.2f}".format(self.amount)
+        return f"{self.amount:.2f}"
 
     @property
     def amount_simplified(self) -> str:

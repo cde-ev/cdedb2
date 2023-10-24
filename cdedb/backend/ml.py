@@ -4,7 +4,8 @@
 event and assembly realm in the form of specific mailing lists.
 """
 import itertools
-from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
+from collections.abc import Collection
+from typing import Any, Optional, Protocol, overload
 
 import subman
 
@@ -59,7 +60,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int]
-                     ) -> Dict[int, MLType]:
+                     ) -> dict[int, MLType]:
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         data = self.sql_select(rs, "ml.mailinglists",
                                ["id", "ml_type"], mailinglist_ids)
@@ -130,7 +131,7 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs: RequestState) -> Set[const.MailinglistTypes]:  # pylint: disable=no-self-use
+    def get_available_types(self, rs: RequestState) -> set[const.MailinglistTypes]:  # pylint: disable=no-self-use
         """Get a list of MailinglistTypes the user is allowed to manage."""
         ret = {enum_member for enum_member, atype in ML_TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -178,7 +179,7 @@ class MlBackend(AbstractBackend):
     def filter_personas_by_policy(self, rs: RequestState, ml: Mailinglist,
                                   data: Collection[CdEDBObject],
                                   allowed_pols: Collection[SubscriptionPolicy],
-                                  ) -> Tuple[CdEDBObject, ...]:
+                                  ) -> tuple[CdEDBObject, ...]:
         """Restrict persona sample to eligibles.
 
         This additional endpoint checking for interaction policies is
@@ -212,7 +213,7 @@ class MlBackend(AbstractBackend):
 
     @access("persona")
     def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
-                        ) -> Dict[int, Set[int]]:
+                        ) -> dict[int, set[int]]:
         """List mailing lists moderated by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
@@ -224,7 +225,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     class _ModeratorInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     moderator_info: _ModeratorInfoProtocol = singularize(
         moderator_infos, "persona_ids", "persona_id")
 
@@ -284,7 +285,7 @@ class MlBackend(AbstractBackend):
 
     @access("core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -310,7 +311,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
-                          managed: str = None) -> Dict[vtypes.ID, str]:
+                          managed: str = None) -> dict[vtypes.ID, str]:
         """List all mailinglists you may view
 
         :param active_only: Toggle whether inactive lists should be included.
@@ -324,7 +325,7 @@ class MlBackend(AbstractBackend):
         active_only = affirm(bool, active_only)
         query = "SELECT id, title FROM ml.mailinglists"
         constraints = []
-        params: List[Any] = []
+        params: list[Any] = []
         if active_only:
             constraints.append("is_active = True")
 
@@ -352,7 +353,7 @@ class MlBackend(AbstractBackend):
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
 
-    def list_mailinglist_addresses(self, rs: RequestState) -> Dict[int, str]:
+    def list_mailinglist_addresses(self, rs: RequestState) -> dict[int, str]:
         """List all mailinglist adresses
 
         This is for the purpose of preventing duplicate mail adresses,
@@ -367,7 +368,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml", "droid")
     def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int]
-                         ) -> Dict[int, Mailinglist]:
+                         ) -> dict[int, Mailinglist]:
         """Retrieve data for some mailinglists.
 
         This provides the following additional attributes:
@@ -382,7 +383,7 @@ class MlBackend(AbstractBackend):
             fields.extend(ADDITIONAL_TYPE_FIELDS)
             data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
 
-            ret: Dict[int, Mailinglist] = {}
+            ret: dict[int, Mailinglist] = {}
             for e in data:
                 ml_type = ml_types[e["id"]]
                 ml = ml_type(
@@ -876,7 +877,7 @@ class MlBackend(AbstractBackend):
             query = "DELETE FROM ml.subscription_states"
             phrase = "mailinglist_id = %s AND persona_id = %s"
             query = query + " WHERE " + " OR ".join((phrase,) * len(data))
-            params: List[Any] = []
+            params: list[Any] = []
             for datum in data:
                 params.extend((datum['mailinglist_id'], datum['persona_id']))
 
@@ -995,7 +996,7 @@ class MlBackend(AbstractBackend):
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
             states: SubStates = None,
-    ) -> Dict[int, Dict[int, const.SubscriptionState]]:
+    ) -> dict[int, dict[int, const.SubscriptionState]]:
         """Get all users related to a given mailinglist and their sub state.
 
         :param states: Defaults to DatabseStates
@@ -1016,7 +1017,7 @@ class MlBackend(AbstractBackend):
                  "ml.subscription_states")
 
         constraints = ["mailinglist_id = ANY(%s)"]
-        params: List[Any] = [mailinglist_ids]
+        params: list[Any] = [mailinglist_ids]
 
         if states:
             constraints.append("subscription_state = ANY(%s)")
@@ -1025,7 +1026,7 @@ class MlBackend(AbstractBackend):
             query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, Dict[int, const.SubscriptionState]]
+        ret: dict[int, dict[int, const.SubscriptionState]]
         ret = {ml_id: {} for ml_id in mailinglist_ids}
         for e in data:
             state = const.SubscriptionState(e["subscription_state"])
@@ -1036,7 +1037,7 @@ class MlBackend(AbstractBackend):
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
                      states: SubStates = None
-                     ) -> Dict[int, const.SubscriptionState]: ...
+                     ) -> dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
@@ -1070,7 +1071,7 @@ class MlBackend(AbstractBackend):
             raise RuntimeError
 
     @access("ml")
-    def get_roster(self, rs: RequestState, mailinglist_id: int) -> Set[int]:
+    def get_roster(self, rs: RequestState, mailinglist_id: int) -> set[int]:
         """Retrieve the roster of a given mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         mailinglist = self.get_mailinglist(rs, mailinglist_id)
@@ -1086,7 +1087,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
-                                      ) -> Set[int]:
+                                      ) -> set[int]:
         """Retrieve all unsubscribed users who's unsubscriptions have no effect.
 
         This is the case if and only if the user is no implicit subscriber of the
@@ -1109,7 +1110,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_user_subscriptions(
             self, rs: RequestState, persona_id: int, states: SubStates = None,
-    ) -> Dict[int, const.SubscriptionState]:
+    ) -> dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
         :param states: If given only relations with these states are returned.
@@ -1129,7 +1130,7 @@ class MlBackend(AbstractBackend):
                  "FROM ml.subscription_states")
 
         constraints = ["persona_id = %s"]
-        params: List[Any] = [persona_id]
+        params: list[Any] = [persona_id]
 
         if states:
             constraints.append("subscription_state = ANY(%s)")
@@ -1164,7 +1165,7 @@ class MlBackend(AbstractBackend):
     def get_subscription_addresses(self, rs: RequestState, mailinglist_id: int,
                                    persona_ids: Collection[int] = None,
                                    explicits_only: bool = False,
-                                   ) -> Dict[int, Optional[str]]:
+                                   ) -> dict[int, Optional[str]]:
         """Retrieve email addresses of the given personas for the mailinglist.
 
         With `explicits_only = False`, this returns a dict mapping all
@@ -1184,7 +1185,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
-        ret: Dict[int, Optional[str]] = {}
+        ret: dict[int, Optional[str]] = {}
         with Atomizer(rs):
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError(n_("Not privileged."))
@@ -1260,7 +1261,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_user_subscription_addresses(self, rs: RequestState, persona_id: int
-                                        ) -> Dict[int, str]:
+                                        ) -> dict[int, str]:
         """Retrieve explicit email addresses of the given persona for all mailinglists.
 
         :returns: Returns dict mapping mailinglist_id with explicit addresses to the
@@ -1277,7 +1278,7 @@ class MlBackend(AbstractBackend):
         return {e["mailinglist_id"]: e["address"] for e in data}
 
     @access("ml")
-    def get_persona_addresses(self, rs: RequestState) -> Set[str]:
+    def get_persona_addresses(self, rs: RequestState) -> set[str]:
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
@@ -1290,7 +1291,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
-                               ) -> Set[vtypes.Email]:
+                               ) -> set[vtypes.Email]:
         """Get all usernames of users which have a custom subscription address
         configured for the mailinglist.
 
@@ -1457,7 +1458,7 @@ class MlBackend(AbstractBackend):
         non_implicit_states = {state for state in SS
                                if state not in {SS.implicit, SS.none}}
 
-        state_to_log: Dict[const.SubscriptionState, const.MlLogCodes] = {
+        state_to_log: dict[const.SubscriptionState, const.MlLogCodes] = {
             SS.subscribed: log.from_subman(SA.add_subscriber),
             SS.unsubscribed: log.from_subman(SA.remove_subscriber),
             SS.subscription_override: log.from_subman(SA.add_subscription_override),

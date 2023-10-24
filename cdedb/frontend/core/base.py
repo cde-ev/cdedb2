@@ -11,7 +11,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import magic
 import segno
@@ -98,7 +98,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # genesis cases
             genesis_realms = []
             for realm in REALM_SPECIFIC_GENESIS_FIELDS:
-                if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
+                if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
@@ -136,7 +136,7 @@ class CoreBaseFrontend(AbstractFrontend):
             if moderator_info:
                 mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 mailman = self.get_mailman()
-                moderator: Dict[int, Dict[str, Any]] = {}
+                moderator: dict[int, dict[str, Any]] = {}
                 for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, ml_id, states=(const.SubscriptionState.pending,))
@@ -659,8 +659,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
-        registration_ids: Dict[int, int] = {}
-        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
+        registration_ids: dict[int, int] = {}
+        registration_parts: dict[int, dict[int, const.RegistrationPartStati]] = {}
         for event_id, reg in registrations.items():
             registration_ids[event_id] = unwrap(reg.keys())
             registration_parts[event_id] = unwrap(reg.values())
@@ -691,7 +691,7 @@ class CoreBaseFrontend(AbstractFrontend):
         mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
 
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
             grouped[ml.sortkey][mailinglist_id] = {
@@ -731,8 +731,8 @@ class CoreBaseFrontend(AbstractFrontend):
         stati = const.PersonaChangeStati
         constants = {}
         for f in fields:
-            total_const: List[int] = []
-            tmp: List[int] = []
+            total_const: list[int] = []
+            tmp: list[int] = []
             already_committed = False
             for x, y in pairwise(xsorted(history.keys())):
                 if history[x]['code'] == stati.committed:
@@ -961,7 +961,7 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             return self.send_json(rs, {})
 
-        data: Optional[Tuple[CdEDBObject, ...]] = None
+        data: Optional[tuple[CdEDBObject, ...]] = None
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
@@ -984,7 +984,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
-        terms: Tuple[str, ...] = tuple()
+        terms: tuple[str, ...] = tuple()
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
@@ -995,7 +995,7 @@ class CoreBaseFrontend(AbstractFrontend):
             if not valid:
                 data = tuple()
             else:
-                search: List[Tuple[str, QueryOperators, Any]]
+                search: list[tuple[str, QueryOperators, Any]]
                 key = "username,family_name,given_names,display_name"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
@@ -1019,7 +1019,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
         # Check if name occurs multiple times to add email address in this case
-        counter: Dict[str, int] = collections.defaultdict(lambda: 0)
+        counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
             counter[make_persona_name(entry)] += 1
 
@@ -1046,14 +1046,14 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     def _changeable_persona_fields(self, rs: RequestState, user: User,
-                                   restricted: bool = True) -> Set[str]:
+                                   restricted: bool = True) -> set[str]:
         """Helper to retrieve the appropriate fields for (admin_)change_user.
 
         :param restricted: If True, only return fields the user may change
             themselves, i.e. remove the restricted fields.
         """
         assert user.persona_id is not None
-        ret: Set[str] = set()
+        ret: set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
         hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
@@ -1154,7 +1154,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
+        choices: dict[str, dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1189,7 +1189,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, realm + "/create_user")
 
     @staticmethod
-    def admin_bits(rs: RequestState) -> Set[Realm]:
+    def admin_bits(rs: RequestState) -> set[Realm]:
         """Determine realms this admin can see.
 
         This is somewhat involved due to realm inheritance.
@@ -1198,7 +1198,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if "core_admin" in rs.user.roles:
             ret |= REALM_INHERITANCE.keys()
         for realm in REALM_INHERITANCE:
-            if "{}_admin".format(realm) in rs.user.roles:
+            if f"{realm}_admin" in rs.user.roles:
                 ret |= {realm} | implied_realms(realm)
         return ret
 
@@ -1528,7 +1528,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
-        if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
+        if target_realm and rs.ambience['persona'][f'is_{target_realm}_realm']:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         past_events = self.pasteventproxy.list_past_events(rs)
@@ -1574,9 +1574,9 @@ class CoreBaseFrontend(AbstractFrontend):
         # trial membership implies membership
         if data.get("trial_member"):
             data["is_member"] = True
-        data['is_{}_realm'.format(target_realm)] = True
+        data[f'is_{target_realm}_realm'] = True
         for realm in implied_realms(target_realm):
-            data['is_{}_realm'.format(realm)] = True
+            data[f'is_{realm}_realm'] = True
         data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(
@@ -2255,7 +2255,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
-                                "cdedb-mail-{}.txt".format(token))
+                                f"cdedb-mail-{token}.txt")
         with open(filename, 'rb') as f:
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')

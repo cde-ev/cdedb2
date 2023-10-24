@@ -4,7 +4,8 @@
 
 import email.parser
 import urllib.error
-from typing import Collection, Mapping, Optional
+from collections.abc import Collection, Mapping
+from typing import Optional
 
 from werkzeug import Response
 

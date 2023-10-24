@@ -1,10 +1,10 @@
 # pylint: disable=line-too-long,missing-module-docstring
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Optional
 
 import pyparsing as pp
 
 
-def serialize(result: pp.ParseResults, *, part_substitutions: Dict[str, str] = None) -> str:
+def serialize(result: pp.ParseResults, *, part_substitutions: dict[str, str] = None) -> str:
     """Public serialization interface, to get a normalized condition string.
 
     :param part_substitutions: Replace each part name in the dict with it's value.
@@ -12,7 +12,7 @@ def serialize(result: pp.ParseResults, *, part_substitutions: Dict[str, str] = N
     return _serialize(result, outer_operator=None, ps=part_substitutions or {})
 
 
-def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: Dict[str, str]) -> str:
+def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[str, str]) -> str:
     """Internal recursive normalizer.
 
     :param outer_operator: If given, put parentheses around current operation, if
@@ -40,10 +40,10 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: Dict[
         return functions[name](result)
 
 
-def visual_debug(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool],
-                 other_values: Dict[str, bool], outer_operator: Optional[str] = None, top_level: bool = True
-                 ) -> Tuple[bool, str]:
-    functions: Dict[str, Callable[[List[Tuple[bool, str]]], Tuple[bool, str]]] = {
+def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
+                 other_values: dict[str, bool], outer_operator: Optional[str] = None, top_level: bool = True
+                 ) -> tuple[bool, str]:
+    functions: dict[str, Callable[[list[tuple[bool, str]]], tuple[bool, str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
         'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),
         'xor': lambda sr: (sub_results[0][0] != sub_results[1][0], f"{sub_results[0][1]} <b>xor</b> {sub_results[1][1]}"),

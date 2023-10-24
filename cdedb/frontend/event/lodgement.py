@@ -5,7 +5,8 @@ for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
 import dataclasses
 import itertools
-from typing import Collection, Dict, List, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -49,15 +50,15 @@ class EventLodgementMixin(EventBaseFrontend):
     def check_lodgement_problems(
             cls, event: models.Event, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
-            all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
-    ) -> List[LodgementProblem]:
+            all_inhabitants: dict[int, dict[int, LodgementInhabitants]]
+    ) -> list[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """
-        ret: List[LodgementProblem] = []
+        ret: list[LodgementProblem] = []
         camping_mat_field_names = cls._get_camping_mat_field_names(event)
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
@@ -555,7 +556,7 @@ class EventLodgementMixin(EventBaseFrontend):
             key="lodgement_id", personas=personas)
         for part_id in rs.ambience['event'].parts:
             merge_dicts(rs.values, {
-                'is_camping_mat_{}_{}'.format(part_id, registration_id):
+                f'is_camping_mat_{part_id}_{registration_id}':
                     registrations[registration_id]['parts'][part_id][
                         'is_camping_mat']
                 for registration_id in inhabitants[(lodgement_id, part_id)]
@@ -666,7 +667,7 @@ class EventLodgementMixin(EventBaseFrontend):
             for part_id in rs.ambience['event'].parts:
                 new_inhabitant = (reg_id in data[f"new_{part_id}"])
                 deleted_inhabitant = data.get(
-                    "delete_{}_{}".format(part_id, reg_id), False)
+                    f"delete_{part_id}_{reg_id}", False)
                 is_camping_mat = reg['parts'][part_id]['is_camping_mat']
                 changed_inhabitant = (
                         reg_id in current_inhabitants[part_id]

@@ -6,7 +6,8 @@ managing and using custom datafields.
 """
 
 from collections import Counter
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, cast
+from collections.abc import Collection
+from typing import Any, Callable, Optional, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -30,7 +31,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
-EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
+EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
 
 class EventFieldMixin(EventBaseFrontend):
@@ -42,7 +43,7 @@ class EventFieldMixin(EventBaseFrontend):
                                   '\n'.join(f'{value};{description}'
                                             for value, description in v.items()))
         current = {
-            "{}_{}".format(key, field_id): formatter(key, value)
+            f"{key}_{field_id}": formatter(key, value)
             for field_id, field in rs.ambience['event'].fields.items()
             for key, value in field.as_dict().items() if key != 'id'
         }
@@ -122,7 +123,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_set_aux(
             self, rs: RequestState, event_id: int, field_id: Optional[int],
             ids: Collection[int], kind: const.FieldAssociations
-    ) -> Tuple[CdEDBObjectMap, List[int], Dict[int, str], Optional[models.EventField]]:
+    ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in

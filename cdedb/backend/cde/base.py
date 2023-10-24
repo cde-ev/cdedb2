@@ -15,7 +15,7 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import psycopg2.extensions
 
@@ -100,8 +100,8 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
-    def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+    def perform_money_transfers(self, rs: RequestState, data: list[CdEDBObject]
+                                ) -> tuple[bool, Optional[int], Optional[int]]:
         """Resolve all money transfer entries.
 
         :returns: A bool indicating success and:
@@ -183,7 +183,7 @@ class CdEBaseBackend(AbstractBackend):
 
     @access("member", "cde_admin")
     def get_member_stats(self, rs: RequestState
-                         ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
+                         ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
@@ -439,9 +439,9 @@ class CdEBaseBackend(AbstractBackend):
         return ret
 
     @access("cde_admin")
-    def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
+    def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
                                 trial_membership: bool, consent: bool
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+                                ) -> tuple[bool, Optional[int], Optional[int]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
@@ -496,7 +496,7 @@ class CdEBaseBackend(AbstractBackend):
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """

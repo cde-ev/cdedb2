@@ -4,7 +4,7 @@
 
 import collections
 import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import magic
 import werkzeug.exceptions
@@ -251,7 +251,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return store
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm, fields in
                             REALM_SPECIFIC_GENESIS_FIELDS.items()
                             if "attachment_hash" in fields))
@@ -264,12 +264,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             mimetype = magic.from_buffer(data, mime=True)
         return self.send_file(rs, data=data, mimetype=mimetype)
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
         realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
-                  if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
+                  if {f"{realm}_admin", 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, realms=realms, stati={
                 const.GenesisStati.to_review, const.GenesisStati.successful,
@@ -288,7 +288,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'current_cases_by_realm': current_cases_by_realm,
             'concluded_cases': concluded_cases, 'personas': personas})
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int
                           ) -> Response:
@@ -330,7 +330,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'disabled_radios': non_editable_doppelgangers, 'title_map': title_map,
         })
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int
                             ) -> Response:
@@ -347,7 +347,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
 
-        courses: Dict[int, str] = {}
+        courses: dict[int, str] = {}
         if case['pevent_id']:
             courses = self.pasteventproxy.list_past_courses(rs, case['pevent_id'])
         choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
@@ -357,7 +357,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options, 'choices': choices})
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
     @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
@@ -396,7 +396,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *("{}_admin".format(realm)
+    @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
     @REQUESTdata("decision", "persona_id")

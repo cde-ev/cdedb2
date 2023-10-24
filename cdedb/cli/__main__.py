@@ -7,7 +7,7 @@ import difflib
 import json
 import pathlib
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 import click
 
@@ -225,8 +225,8 @@ def compile_sample_data_sql(
     The xss-switch decides if the sample data should be contaminated with script
     tags, to check proper escaping afterwards.
     """
-    with open(infile, "r", encoding="utf8") as f:
-        data: Dict[str, List[Any]] = json.load(f)
+    with open(infile, encoding="utf8") as f:
+        data: dict[str, list[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
     commands = json2sql(config, secrets, data, xss_payload=xss_payload)
@@ -320,9 +320,9 @@ def check_sample_data_consistency(ctx: click.Context) -> None:
     ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
 
     # compare the fresh one with the current one
-    with open(clean_data, "r", encoding='UTF-8') as f:
+    with open(clean_data, encoding='UTF-8') as f:
         fresh = f.readlines()
-    with open(current_data, "r", encoding='UTF-8') as f:
+    with open(current_data, encoding='UTF-8') as f:
         current = f.readlines()
     diff = "".join(difflib.unified_diff(
         fresh, current, fromfile="Cleanly generated sampledata.",

@@ -8,7 +8,8 @@ transactions.
 
 import datetime
 import decimal
-from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
+from collections.abc import Collection
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -32,7 +33,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: bool = None,
             trial_member: bool = None
-    ) -> Tuple[DefaultReturnCode, Optional[int], Optional[int]]:
+    ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -79,7 +80,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
-                         active: Optional[bool] = True) -> Dict[int, int]:
+                         active: Optional[bool] = True) -> dict[int, int]:
         """List all direct debit permits.
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
@@ -256,7 +257,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     def list_lastschrift_transactions(
             self, rs: RequestState, lastschrift_ids: Collection[int] = None,
             stati: Collection[const.LastschriftTransactionStati] = None,
-            periods: Collection[int] = None) -> Dict[int, int]:
+            periods: Collection[int] = None) -> dict[int, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.
@@ -277,7 +278,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
-        params: List[Any] = []
+        params: list[Any] = []
         constraints = []
         if lastschrift_ids:
             constraints.append("lastschrift_id = ANY(%s)")
@@ -335,7 +336,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     def issue_lastschrift_transaction_batch(
             self, rs: RequestState, lastschrift_ids: Collection[int],
             payment_date: datetime.date
-    ) -> Dict[int, int]:
+    ) -> dict[int, int]:
         """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be

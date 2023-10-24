@@ -16,10 +16,8 @@ import datetime
 import enum
 import itertools
 import re
-from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
-    Sequence, Tuple, cast,
-)
+from collections.abc import Collection, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
 
 from typing_extensions import TypeAlias
 
@@ -75,7 +73,7 @@ class QueryOperators(CdEIntEnum):
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
-VALID_QUERY_OPERATORS: Dict[str, Tuple[QueryOperators, ...]] = {
+VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
             _ops.equalornull, _ops.unequalornull, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
@@ -119,12 +117,14 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
-QueryConstraint = Tuple[str, QueryOperators, Any]
-QueryConstraintType = NamedTuple(
-    "QueryConstraintType", [("field", str), ("op", QueryOperators), ("value", Any)])
+QueryConstraint = tuple[str, QueryOperators, Any]
+class QueryConstraintType(NamedTuple):
+    field: str
+    op: QueryOperators
+    value: Any
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
 # is ASC (i.e. True -> ASC, False -> DESC).
-QueryOrder = Tuple[str, bool]
+QueryOrder = tuple[str, bool]
 
 QueryChoices = Mapping[Any, str]
 
@@ -136,7 +136,7 @@ class QuerySpecEntry:
     type: str
     title_base: str
     title_prefix: str = ""
-    title_params: Dict[str, str] = dataclasses.field(default_factory=dict)
+    title_params: dict[str, str] = dataclasses.field(default_factory=dict)
     choices: QueryChoices = dataclasses.field(default_factory=dict)
     translate_prefix: bool = True
 
@@ -151,7 +151,7 @@ class QuerySpecEntry:
         return ret
 
 
-QuerySpec = Dict[str, QuerySpecEntry]
+QuerySpec = dict[str, QuerySpecEntry]
 
 
 class QueryScope(CdEIntEnum):
@@ -277,7 +277,7 @@ class QueryScope(CdEIntEnum):
         return target
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
-                           ) -> Dict[str, str]:
+                           ) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -629,20 +629,20 @@ class Query:
         """Custom columns may contain upper case, this wraps them in qoutes."""
         self.fields_of_interest = [
             ",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(","))
             for column in self.fields_of_interest]
         self.constraints = [
             (",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(",")),
              operator, value)
             for column, operator, value in self.constraints
         ]
         self.order = [
-            (".".join(atom if atom.islower() else '"{}"'.format(atom)
+            (".".join(atom if atom.islower() else f'"{atom}"'
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
@@ -752,9 +752,9 @@ class Query:
 
 
 def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
-                       ) -> Dict[const.FieldAssociations, List["models.EventField"]]:
+                       ) -> dict[const.FieldAssociations, list["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: Dict[const.FieldAssociations, List["models.EventField"]] = {
+    sorted_fields: dict[const.FieldAssociations, list["models.EventField"]] = {
         association: []
         for association in const.FieldAssociations
     }
@@ -763,7 +763,7 @@ def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
     return sorted_fields
 
 
-def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
+def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
                    prefix: str, translate_prefix: bool = False) -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 

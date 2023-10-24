@@ -6,7 +6,6 @@ import json
 import os
 import pathlib
 import types
-from typing import Set
 
 import jinja2
 import psycopg2.extensions
@@ -252,8 +251,7 @@ class Application(BaseApp):
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
                     handler.modi,
-                    "Unsupported request method {}.".format(
-                        request.method))
+                    f"Unsupported request method {request.method}.")
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and 'droid' not in user.roles:
@@ -276,14 +274,14 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Insert orga and moderator status context
-                orga: Set[int] = set()
+                orga: set[int] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
-                moderator: Set[int] = set()
+                moderator: set[int] = set()
                 if "ml" in user.roles:
                     moderator = self.mlproxy.moderator_info(
                         rs, user.persona_id)
-                presider: Set[int] = set()
+                presider: set[int] = set()
                 if "assembly" in user.roles:
                     presider = self.assemblyproxy.presider_info(
                         rs, user.persona_id)

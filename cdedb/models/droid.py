@@ -91,8 +91,9 @@ import datetime
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
+from re import Pattern
 from secrets import token_hex
-from typing import TYPE_CHECKING, ClassVar, Optional, Pattern, Type, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import User, n_, now
@@ -125,7 +126,7 @@ class APIToken(abc.ABC):
     """
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         """
         Return a regex pattern matching all droid names for this class.
@@ -307,7 +308,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Implementations of inherited methods.
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         return re.compile(rf"{cls.name}/(\d+)")
 
@@ -375,8 +376,8 @@ class OrgaToken(DynamicAPIToken):
 def resolve_droid_name(
         droid_name: str
 ) -> Union[
-    tuple[Type[StaticAPIToken], None],
-    tuple[Type[DynamicAPIToken], int],
+    tuple[type[StaticAPIToken], None],
+    tuple[type[DynamicAPIToken], int],
     tuple[None, None],
 ]:
     """Determine the class of token from the given droid name.

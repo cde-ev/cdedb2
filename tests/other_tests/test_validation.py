@@ -5,9 +5,8 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import (
-    Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Type, TypeVar, Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Dict, List, Tuple, Type, TypeVar, Union
 
 import pytz
 

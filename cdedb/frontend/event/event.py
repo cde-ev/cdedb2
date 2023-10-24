@@ -12,7 +12,8 @@ import dataclasses
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Collection, Optional, Set
+from collections.abc import Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -271,7 +272,7 @@ class EventEventMixin(EventBaseFrontend):
                       {'address': ml_data.address})
         return self.redirect(rs, "event/show_event")
 
-    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
+    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> set[int]:
         """Returns all part_ids from parts of a given event which must not be deleted.
 
         Extracts all parts of the given event from the database and checks if there are
@@ -279,7 +280,7 @@ class EventEventMixin(EventBaseFrontend):
 
         :returns: All part_ids whose deletion is blocked.
         """
-        blocked_parts: Set[int] = set()
+        blocked_parts: set[int] = set()
         if len(rs.ambience['event'].parts) == 1:
             blocked_parts.add(unwrap(rs.ambience['event'].parts.keys()))
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -294,7 +295,7 @@ class EventEventMixin(EventBaseFrontend):
                 blocked_parts.add(part_id)
         return blocked_parts
 
-    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
+    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> set[int]:
         """Returns all track_ids from tracks of a given event which must not be deleted.
 
         Extracts all tracks of the given event from the database and checks if there are
@@ -302,7 +303,7 @@ class EventEventMixin(EventBaseFrontend):
 
         :returns: All track_ids whose deletion is blocked.
         """
-        blocked_tracks: Set[int] = set()
+        blocked_tracks: set[int] = set()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():

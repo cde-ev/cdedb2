@@ -64,11 +64,12 @@ import re
 import string
 import typing
 import urllib.parse
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
-    Callable, Iterable, Optional, Protocol, Sequence, Set, Tuple, TypeVar, Union, cast,
-    get_args, get_origin, get_type_hints, overload,
+    Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
+    get_type_hints, overload,
 )
 
 import magic
@@ -123,7 +124,7 @@ DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
-    args: Tuple[Exception, ...]
+    args: tuple[Exception, ...]
 
     def __len__(self) -> int:
         return len(self.args)
@@ -148,7 +149,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     def __enter__(self) -> None:
         pass
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],
+    def __exit__(self, exc_type: Optional[type[Exception]],
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         if isinstance(exc_val, self.__class__):
@@ -157,11 +158,11 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
-    def __setitem__(self, type_: Type[T], validator: Callable[..., T]) -> None:
+class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
+    def __setitem__(self, type_: type[T], validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
+    def __getitem__(self, type_: type[T]) -> Callable[..., T]:
         if typing.get_origin(type_) is Union:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
@@ -186,15 +187,15 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 
 _ALL_TYPED = ValidatorStorage()
 
-DATACLASS_TO_VALIDATORS: Mapping[Type[Any], Type[CdEDBObject]] = {
+DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
 }
 
 
-def _validate_dataclass_preprocess(type_: Type[DC], value: Any
-                                   ) -> Tuple[Type[DC], Type[CdEDBObject]]:
+def _validate_dataclass_preprocess(type_: type[DC], value: Any
+                                   ) -> tuple[type[DC], type[CdEDBObject]]:
     # Keep subclassing intact if possible.
     if isinstance(value, type_):
         subtype = type(value)
@@ -214,14 +215,14 @@ def _validate_dataclass_preprocess(type_: Type[DC], value: Any
     return subtype, validator
 
 
-def _validate_dataclass_postprocess(subtype: Type[DC], validated: CdEDBObject) -> DC:
+def _validate_dataclass_postprocess(subtype: type[DC], validated: CdEDBObject) -> DC:
     dataclass_keys = {field.name for field in dataclasses.fields(subtype)
                       if field.init}
     validated = {k: v for k, v in validated.items() if k in dataclass_keys}
     return cast(DC, subtype(**validated))
 
 
-def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool,
+def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool,
                               **kwargs: Any) -> DC:
     """Wrapper of validate_assert that accepts dataclasses.
 
@@ -237,7 +238,7 @@ def validate_assert_dataclass(type_: Type[DC], value: Any, ignore_warnings: bool
     return _validate_dataclass_postprocess(subtype, validated)
 
 
-def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
+def validate_assert(type_: type[T], value: Any, ignore_warnings: bool,
                     **kwargs: Any) -> T:
     """Check if value is of type type_ – otherwise, raise an error.
 
@@ -258,19 +259,19 @@ def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
             f" with input {value}, {kwargs}."
         )
         e = errs[0]
-        e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
+        e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
         raise e from errs  # pylint: disable=raising-bad-type
 
 
-def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
+def validate_assert_optional(type_: type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
-def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
+def validate_check(type_: type[T], value: Any, ignore_warnings: bool,
                    field_prefix: str = "", field_postfix: str = "", **kwargs: Any
-                   ) -> Tuple[Optional[T], List[Error]]:
+                   ) -> tuple[Optional[T], list[Error]]:
     """Checks if value is of type type_.
 
     This is mostly used in the frontend to check if the given input is valid. To display
@@ -301,17 +302,17 @@ def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
 
 
 def validate_check_optional(
-    type_: Type[T], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
+) -> tuple[Optional[T], list[Error]]:
     """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[arg-type]
 
 
-def is_optional(type_: Type[T]) -> bool:
+def is_optional(type_: type[T]) -> bool:
     return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
-def get_errors(errors: List[Error]) -> List[Error]:
+def get_errors(errors: list[Error]) -> list[Error]:
     """Returns those errors which are not considered as warnings."""
     def is_error(e: Error) -> bool:
         _, exception = e
@@ -319,7 +320,7 @@ def get_errors(errors: List[Error]) -> List[Error]:
     return list(filter(is_error, errors))
 
 
-def get_warnings(errors: List[Error]) -> List[Error]:
+def get_warnings(errors: list[Error]) -> list[Error]:
     """Returns those errors which are considered as warnings."""
     def is_warning(e: Error) -> bool:
         _, exception = e
@@ -351,7 +352,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     return new_fun
 
 
-def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
+def _add_typed_validator(fun: F, return_type: type[Any] = None) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
     if not return_type:
@@ -372,7 +373,7 @@ def _examine_dictionary_fields(
     argname: str = "",
     allow_superfluous: bool = False,
     **kwargs: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check more complex dictionaries.
 
     :param adict: the dictionary to check
@@ -387,7 +388,7 @@ def _examine_dictionary_fields(
     """
     optional_fields = optional_fields or {}
     errs = ValidationSummary()
-    retval: Dict[str, Any] = {}
+    retval: dict[str, Any] = {}
     for key, value in adict.items():
         sub_argname = argname + "." + key if argname else key
         if key in mandatory_fields:
@@ -441,12 +442,12 @@ def _augment_dict_validator(
     @functools.wraps(validator)
     def new_validator(
         val: Any, argname: str = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
 
         errs = ValidationSummary()
-        ret: Dict[str, Any] = {}
+        ret: dict[str, Any] = {}
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
@@ -474,7 +475,7 @@ def _augment_dict_validator(
     return new_validator
 
 
-def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
+def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
     """Helper function for advanced list splitting.
 
     Split the list at every delimiter, except if it is escaped (and
@@ -500,7 +501,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
     return ret
 
 
-def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
+def filter_none(data: dict[str, Any]) -> dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
 
@@ -1028,13 +1029,13 @@ def _token_string(
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
 @_add_typed_validator
 def _list_of(
-    val: Any, atype: Type[T],
+    val: Any, atype: type[T],
     argname: str = None,
     *,
     _parse_csv: bool = False,
     _allow_empty: bool = True,
     **kwargs: Any,
-) -> List[T]:
+) -> list[T]:
     """
     Apply another validator to all entries of of a list.
 
@@ -1047,7 +1048,7 @@ def _list_of(
         val = [v for v in val.split(",") if v]
     # TODO raise ValueError if val is string and _parse_csv is False?
     val = _iterable(val, argname, **kwargs)
-    vals: List[T] = []
+    vals: list[T] = []
     errs = ValidationSummary()
     for v in val:
         with errs:
@@ -1062,14 +1063,14 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> List[T]:
+    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> list[T]:
         ...
 
 
-def make_list_validator(type_: Type[T]) -> ListValidator[T]:
+def make_list_validator(type_: type[T]) -> ListValidator[T]:
 
     @functools.wraps(_list_of)
-    def list_validator(val: Any, argname: str = None, **kwargs: Any) -> List[T]:
+    def list_validator(val: Any, argname: str = None, **kwargs: Any) -> list[T]:
         return _list_of(val, type_, argname, **kwargs)
 
     return list_validator
@@ -1077,36 +1078,36 @@ def make_list_validator(type_: Type[T]) -> ListValidator[T]:
 
 class PairValidator(Protocol[T_Co]):
     def __call__(self, val: Any, argname: str = None, **kargs: Any
-                 ) -> Tuple[T_Co, T_Co]:
+                 ) -> tuple[T_Co, T_Co]:
         ...
 
 
-def make_pair_validator(type_: Type[T]) -> PairValidator[T]:
+def make_pair_validator(type_: type[T]) -> PairValidator[T]:
 
     @functools.wraps(_range)
-    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> Tuple[T, T]:
+    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> tuple[T, T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
 
 
 def _set_of(
-    val: Any, atype: Type[T], argname: str = None, **kwargs: Any
-) -> Set[T]:
+    val: Any, atype: type[T], argname: str = None, **kwargs: Any
+) -> set[T]:
     # TODO maybe disallow strings here (see also _list_of)
     val = _iterable(val, argname=argname, **kwargs)
     return {_ALL_TYPED[atype](v, argname, **kwargs) for v in val}
 
 
 class SetValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+    def __call__(self, val: Any, argname: str = None, **kwargs: Any) -> set[T]:
         ...
 
 
-def make_set_validator(type_: Type[T]) -> SetValidator[T]:
+def make_set_validator(type_: type[T]) -> SetValidator[T]:
 
     @functools.wraps(_set_of)
-    def set_validator(val: Any, argname: str = None, **kwargs: Any) -> Set[T]:
+    def set_validator(val: Any, argname: str = None, **kwargs: Any) -> set[T]:
         return _set_of(val, type_, argname, **kwargs)
 
     return set_validator
@@ -1132,7 +1133,7 @@ def _cdedbid_csv_list(
 @_add_typed_validator  # TODO split into Password and AdminPassword?
 def _password_strength(
     val: Any, argname: str = None, *,
-    admin: bool = False, inputs: List[str] = None, **kwargs: Any
+    admin: bool = False, inputs: list[str] = None, **kwargs: Any
 ) -> PasswordStrength:
     """Implement a password policy.
 
@@ -1153,7 +1154,7 @@ def _password_strength(
     # actually enforced for admins of the old db. Afterwards,
     # meta admins are intended to do a password reset.
     if results['score'] < 2:
-        feedback: List[str] = [results['feedback']['warning']]
+        feedback: list[str] = [results['feedback']['warning']]
         feedback.extend(results['feedback']['suggestions'][:2])
         for fb in filter(None, feedback):
             errors.append(ValueError(argname, fb))
@@ -1349,7 +1350,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'country': Optional[Country],
 }
 
-PERSONA_FULL_CREATION: Mapping[str, Dict[str, Any]] = {
+PERSONA_FULL_CREATION: Mapping[str, dict[str, Any]] = {
     'ml': {**PERSONA_BASE_CREATION},
     'assembly': {**PERSONA_BASE_CREATION},
     'event': {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION},
@@ -1357,7 +1358,7 @@ PERSONA_FULL_CREATION: Mapping[str, Dict[str, Any]] = {
             'is_member': bool, 'is_searchable': bool}
 }
 
-PERSONA_COMMON_FIELDS: Dict[str, Any] = {
+PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1448,7 +1449,7 @@ def _persona(
         temp.update({k: False for k in ADMIN_KEYS})
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
-        mandatory_fields: Dict[str, Any] = {**PERSONA_TYPE_FIELDS,
+        mandatory_fields: dict[str, Any] = {**PERSONA_TYPE_FIELDS,
                                             **PERSONA_BASE_CREATION}
         if "cde" in roles:
             mandatory_fields.update(PERSONA_CDE_CREATION)
@@ -1502,7 +1503,7 @@ def _batch_admission_entry(
     val: Any, argname: str = None, **kwargs: Any
 ) -> BatchAdmissionEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields: Dict[str, Any] = {
+    mandatory_fields: dict[str, Any] = {
         'resolution': LineResolutions,
         'doppelganger_id': Optional[int],
         'pevent_id': Optional[int],
@@ -1862,10 +1863,10 @@ def _pdffile(
 @_add_typed_validator
 def _pair_of_int(
     val: Any, argname: str = "pair", **kwargs: Any
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Validate a pair of integers."""
 
-    val: List[int] = _list_of(val, int, argname, **kwargs)
+    val: list[int] = _list_of(val, int, argname, **kwargs)
 
     try:
         a, b = val
@@ -1963,7 +1964,7 @@ def _lastschrift(
 def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
                        **kwargs: Any) -> MoneyTransferEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields: Dict[str, Any] = {
+    mandatory_fields: dict[str, Any] = {
         'persona_id': int,
         'amount': decimal.Decimal,
         'note': Optional[str],
@@ -2182,7 +2183,7 @@ def _safe_str(
 
 @_add_typed_validator
 def _meta_info(
-    val: Any, keys: List[str], argname: str = "meta_info", **kwargs: Any
+    val: Any, keys: list[str], argname: str = "meta_info", **kwargs: Any
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
@@ -2282,7 +2283,7 @@ EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {
 
 
 def _optional_object_mapping_helper(
-    val_dict: Mapping[Any, Any], atype: Type[T], argname: str,
+    val_dict: Mapping[Any, Any], atype: type[T], argname: str,
     creation_only: bool, **kwargs: Any
 ) -> Mapping[int, Optional[T]]:
     """Helper to validate a `CdEDBOptionalMap` of a given type.
@@ -2465,7 +2466,7 @@ EVENT_PART_GROUP_COMMON_FIELDS: TypeMapping = {
     'shortname': Shortname,
     'constraint_type': const.EventPartGroupType,
     'notes': Optional[str],  # type: ignore[dict-item]
-    'part_ids': List[ID],
+    'part_ids': list[ID],
 }
 
 
@@ -2551,7 +2552,7 @@ EVENT_TRACK_GROUP_COMMON_FIELDS: TypeMapping = {
     'shortname': Shortname,
     'constraint_type': const.CourseTrackGroupType,
     'notes': Optional[str],  # type: ignore[dict-item]
-    'track_ids': List[ID],
+    'track_ids': list[ID],
     'sortkey': int,
 }
 
@@ -2733,7 +2734,7 @@ def _event_fee(
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
     event: CdEDBObject,
-    questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
+    questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any
 ) -> EventFeeCondition:
 
@@ -3014,7 +3015,7 @@ def _registration_track(
 @_add_typed_validator
 def _event_associated_fields(
     val: Any, argname: str = "fields", *,
-    fields: Dict[int, models_event.EventField],
+    fields: dict[int, models_event.EventField],
     association: FieldAssociations, **kwargs: Any
 ) -> EventAssociatedFields:
     """Check fields associated to an event entity.
@@ -3031,12 +3032,12 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: Dict[str, Type[Any]] = {}
+    datatypes: dict[str, type[Any]] = {}
     for field in fields.values():
         if field.association == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field.kind, field.field_name, **kwargs)
-            datatypes[field.field_name] = cast(Type[Any], eval(  # pylint: disable=eval-used
+            datatypes[field.field_name] = cast(type[Any], eval(  # pylint: disable=eval-used
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -3052,7 +3053,7 @@ def _event_associated_fields(
         val, {}, optional_fields, **kwargs)
 
     errs = ValidationSummary()
-    lookup: Dict[str, int] = {v.field_name: k for k, v in fields.items()}
+    lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
     for field in val:
         field_id = lookup[field]
         entries = fields[field_id].entries
@@ -3070,7 +3071,7 @@ def _event_associated_fields(
 def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
                        **kwargs: Any) -> FeeBookingEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields: Dict[str, Any] = {
+    mandatory_fields: dict[str, Any] = {
         'registration_id': int,
         'date': Optional[datetime.date],
         'original_date': datetime.date,
@@ -3184,7 +3185,7 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 def _questionnaire_row(
     val: Any, argname: str = "questionnaire_row", *,
     field_definitions: CdEDBObjectMap,
-    fees_by_field: Mapping[int, Set[int]],
+    fees_by_field: Mapping[int, set[int]],
     kind: Optional[const.QuestionnaireUsages] = None,
     **kwargs: Any
 ) -> QuestionnaireRow:
@@ -3270,14 +3271,14 @@ def _questionnaire_row(
 def _questionnaire(
     val: Any, argname: str = "questionnaire", *,
     field_definitions: CdEDBObjectMap,
-    fees_by_field: Mapping[int, Set[int]],
+    fees_by_field: Mapping[int, set[int]],
     **kwargs: Any,
 ) -> Questionnaire:
 
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
-    ret: Dict[int, List[QuestionnaireRow]] = {}
+    ret: dict[int, list[QuestionnaireRow]] = {}
     for k, v in copy.deepcopy(val).items():
         try:
             k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
@@ -3366,7 +3367,7 @@ def _serialized_event(
             KeyError(argname, n_("Only full exports are supported.")))
 
     mandatory_fields: TypeMapping = {
-        'EVENT_SCHEMA_VERSION': Tuple[int, int],  # type: ignore[dict-item]
+        'EVENT_SCHEMA_VERSION': tuple[int, int],
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
@@ -3551,7 +3552,7 @@ def _serialized_partial_event(
             "Only partial exports are supported.")))
 
     mandatory_fields: TypeMapping = {
-        'EVENT_SCHEMA_VERSION': Tuple[int, int],  # type: ignore[dict-item]
+        'EVENT_SCHEMA_VERSION': tuple[int, int],
         'kind': str,
         'id': ID,
         'timestamp': datetime.datetime,
@@ -3888,8 +3889,8 @@ def _serialized_event_questionnaire_upload(
 @_add_typed_validator
 def _serialized_event_questionnaire(
     val: Any, argname: str = "serialized_event_questionnaire", *,
-    field_definitions: CdEDBObjectMap, fees_by_field: Dict[int, Set[int]],
-    questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
+    field_definitions: CdEDBObjectMap, fees_by_field: dict[int, set[int]],
+    questionnaire: dict[const.QuestionnaireUsages, list[QuestionnaireRow]],
     extend_questionnaire: bool, skip_existing_fields: bool,
     **kwargs: Any
 ) -> SerializedEventQuestionnaire:
@@ -4203,7 +4204,7 @@ BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'extended': Optional[bool],
     'is_tallied': bool,
     'candidates': Mapping,
-    'linked_attachments': Optional[List[Optional[ID]]]
+    'linked_attachments': Optional[list[Optional[ID]]]
 }
 
 
@@ -4506,15 +4507,14 @@ def _query_input(
         query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
     constraints = []
-    order: List[QueryOrder] = []
+    order: list[QueryOrder] = []
     errs = ValidationSummary()
 
     for field, spec_entry in spec.items():
         validator = spec_entry.type
         # First the selection of fields of interest
         try:
-            selected = _bool(val.get("qsel_{}".format(
-                field), "False"), field, **kwargs)
+            selected = _bool(val.get(f"qsel_{field}", "False"), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             selected = False
@@ -4529,7 +4529,7 @@ def _query_input(
             operator: Optional[QueryOperators] = _ALL_TYPED[
                 Optional[QueryOperators]  # type: ignore[index]
             ](
-                val.get("qop_{}".format(field)), field, **kwargs)
+                val.get(f"qop_{field}"), field, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4547,7 +4547,7 @@ def _query_input(
             continue
 
         # Get value
-        value = val.get("qval_{}".format(field))
+        value = val.get(f"qval_{field}")
         if value is None or value == "":
             # No value supplied means no constraint
             # TODO: make empty string a valid constraint
@@ -4774,8 +4774,8 @@ def _query(
 
 
 def _range(
-    val: Any, type_: Type[T], argname: str = None, **kwargs: Any
-) -> Tuple[T, T]:
+    val: Any, type_: type[T], argname: str = None, **kwargs: Any
+) -> tuple[T, T]:
     """Validate val to be a tuple of exactly two values of the given type.
 
     Used to specify a range to filter for.
@@ -4801,7 +4801,7 @@ def _range(
 @_add_typed_validator
 def _log_filter(
     val: Any, argname: str = None,
-    *, subtype: Type[GenericLogFilter],
+    *, subtype: type[GenericLogFilter],
     **kwargs: Any
 ) -> LogFilter:
 
@@ -4822,7 +4822,7 @@ E = TypeVar('E', bound=Enum)
 
 
 def _enum_validator_maker(
-    anenum: Type[E], name: str = None, internal: bool = False
+    anenum: type[E], name: str = None, internal: bool = False
 ) -> Callable[..., E]:
     """Automate validator creation for enums.
 
@@ -4885,7 +4885,7 @@ def _db_subscription_state(
 IE = TypeVar("IE", bound=IntEnum)
 
 
-def _infinite_enum_validator_maker(anenum: Type[IE], name: str = None) -> None:
+def _infinite_enum_validator_maker(anenum: type[IE], name: str = None) -> None:
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.

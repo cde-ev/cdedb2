@@ -29,10 +29,8 @@ import dataclasses
 import datetime
 import decimal
 import logging
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, TypeVar, get_args,
-    get_origin,
-)
+from collections.abc import Collection, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeVar, get_args, get_origin
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const

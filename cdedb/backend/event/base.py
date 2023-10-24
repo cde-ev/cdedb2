@@ -17,7 +17,8 @@ import abc
 import collections
 import copy
 import datetime
-from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
+from collections.abc import Collection, Iterable
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -51,7 +52,7 @@ from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 
 # type alias for questionnaire specification.
-CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
+CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
 
 
 class EventBaseBackend(EventLowLevelBackend):
@@ -105,7 +106,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("persona")
     def orga_infos(self, rs: RequestState, persona_ids: Collection[int]
-                   ) -> Dict[int, Set[int]]:
+                   ) -> dict[int, set[int]]:
         """List events organized by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
@@ -116,7 +117,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     class _OrgaInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
@@ -143,7 +144,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
                        current: bool = None,
-                       archived: bool = None) -> Dict[int, str]:
+                       archived: bool = None) -> dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
@@ -154,7 +155,7 @@ class EventBaseBackend(EventLowLevelBackend):
             "FROM event.events AS e JOIN event.event_parts AS p",
             "ON p.event_id = e.id",
             "GROUP BY e.id")
-        query = "SELECT e.* from ({}) as e".format(subquery)
+        query = f"SELECT e.* from ({subquery}) as e"
         constraints = []
         params = []
         if visible is not None:
@@ -985,7 +986,7 @@ class EventBaseBackend(EventLowLevelBackend):
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
         query = f"SELECT {columns} FROM event.questionnaire_rows"
         constraints = ["event_id = %s"]
-        params: List[Any] = [event_id]
+        params: list[Any] = [event_id]
         if kinds:
             constraints.append("kind = ANY(%s)")
             params.append(kinds)
@@ -1092,7 +1093,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 'timestamp': now(),
             }
             # Table name; column to scan; fields to extract
-            tables: List[Tuple[str, str, Tuple[str, ...]]] = [
+            tables: list[tuple[str, str, tuple[str, ...]]] = [
                 ('event.event_parts', "event_id", EVENT_PART_FIELDS),
                 ('event.part_groups', "event_id", PART_GROUP_FIELDS),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
@@ -1210,7 +1211,7 @@ class EventBaseBackend(EventLowLevelBackend):
             'timestamp': now(),
         }
         # courses
-        lookup: Dict[int, Dict[int, bool]] = collections.defaultdict(dict)
+        lookup: dict[int, dict[int, bool]] = collections.defaultdict(dict)
         for e in course_segments:
             lookup[e['course_id']][e['track_id']] = e['is_active']
         for course_id, course in courses.items():
@@ -1233,11 +1234,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
-        part_lookup: Dict[int, Dict[int, CdEDBObject]]
+        part_lookup: dict[int, dict[int, CdEDBObject]]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
             part_lookup[e['registration_id']][e['part_id']] = e
-        track_lookup: Dict[int, Dict[int, CdEDBObject]]
+        track_lookup: dict[int, dict[int, CdEDBObject]]
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
@@ -1447,7 +1448,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     def _process_event_keeper_logs(self, rs: RequestState,
-                                   event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
+                                   event_id: int) -> Optional[tuple[CdEDBObject, ...]]:
         """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)

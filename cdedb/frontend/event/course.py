@@ -7,7 +7,8 @@ and courses' attendees.
 """
 
 from collections import OrderedDict
-from typing import Collection, Optional, cast
+from collections.abc import Collection
+from typing import Optional, cast
 
 from werkzeug import Response
 
@@ -154,7 +155,7 @@ class EventCourseMixin(EventBaseFrontend):
             rs.values.setlist('active_segments',
                               rs.ambience['course']['active_segments'])
         field_values = {
-            "fields.{}".format(key): value
+            f"fields.{key}": value
             for key, value in rs.ambience['course']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['course'], field_values)
         return self.render(rs, "course/change_course")
@@ -464,7 +465,7 @@ class EventCourseMixin(EventBaseFrontend):
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"] + [
-                "course{0}.id".format(track_id)
+                f"course{track_id}.id"
                 for track_id in tracks],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True),)

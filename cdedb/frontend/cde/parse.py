@@ -13,7 +13,8 @@ import itertools
 import pathlib
 import re
 from collections import defaultdict
-from typing import List, Optional, Sequence, Tuple, cast
+from collections.abc import Sequence
+from typing import Optional, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -63,12 +64,12 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @staticmethod
     def organize_transaction_data(
-        rs: RequestState, transactions: List[parse.Transaction],
+        rs: RequestState, transactions: list[parse.Transaction],
         date: datetime.date,
-    ) -> Tuple[CdEDBObject, CdEDBObject]:
+    ) -> tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
 
-        data = {"{}{}".format(k, t.t_id): v
+        data = {f"{k}{t.t_id}": v
                 for t in transactions
                 for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
@@ -242,8 +243,8 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def money_transfers_form(self, rs: RequestState,
-                             data: List[CdEDBObject] = None,
-                             csvfields: Tuple[str, ...] = None,
+                             data: list[CdEDBObject] = None,
+                             csvfields: tuple[str, ...] = None,
                              saldo: decimal.Decimal = None) -> Response:
         """Render form.
 

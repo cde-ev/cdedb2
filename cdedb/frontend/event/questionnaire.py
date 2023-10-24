@@ -7,7 +7,8 @@ event.
 """
 
 import itertools
-from typing import Callable, Collection, Dict, List, Optional, Tuple
+from collections.abc import Collection
+from typing import Callable, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -53,7 +54,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
             self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
-    ) -> Tuple[List[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
+    ) -> tuple[list[CdEDBObject], models.CdEDataclassMap[models.EventField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
@@ -216,7 +217,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs: RequestState, num: int,
             reg_fields: models.CdEDataclassMap[models.EventField],
             kind: const.QuestionnaireUsages, other_used_fields: Collection[int]
-    ) -> Dict[const.QuestionnaireUsages, List[CdEDBObject]]:
+    ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
         """This handles input to configure questionnaires.
 
         Since this covers a variable number of rows, we cannot do this
@@ -227,7 +228,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         :param kind: For which kind of questionnaire are these rows?
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
-        deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
+        deletes = {i for i in range(num) if del_flags[f'delete_{i}']}
         spec: vtypes.TypeMapping = dict(QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
                                         field_id=Optional[vtypes.ID])  # type: ignore[arg-type]
         marker = 1
@@ -269,7 +270,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             return (lambda d: d[key] not in other_used_fields,
                     (key, ValueError(msg)))
 
-        constraints: List[Tuple[Callable[[CdEDBObject], bool], Error]]
+        constraints: list[tuple[Callable[[CdEDBObject], bool], Error]]
         constraints = list(filter(
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
@@ -293,7 +294,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 data[dv_key], dv_key, kind=reg_fields[field_id].kind)
         questionnaire = {
             kind: list(
-                {key: data["{}_{}".format(key, i)] for key in spec}
+                {key: data[f"{key}_{i}"] for key in spec}
                 for i in mixed_existence_sorter(indices))}
         return questionnaire
 

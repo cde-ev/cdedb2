@@ -11,7 +11,8 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Set, Tuple
+from collections.abc import Collection
+from typing import Optional
 
 import segno.helpers
 import werkzeug.exceptions
@@ -58,8 +59,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                             'saldo': saldo})
 
     def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                     expected_fees: Dict[int, decimal.Decimal],
-                     seen_reg_ids: Set[int], full_payment: bool = True,
+                     expected_fees: dict[int, decimal.Decimal],
+                     seen_reg_ids: set[int], full_payment: bool = True,
                      ) -> CdEDBObject:
         """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
@@ -161,7 +162,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def book_fees(self, rs: RequestState,
                   data: Collection[CdEDBObject], send_notifications: bool = False
-                  ) -> Tuple[bool, Optional[int]]:
+                  ) -> tuple[bool, Optional[int]]:
         """Book all paid fees.
 
         :returns: Success information and
@@ -227,7 +228,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        seen_reg_ids: Set[int] = set()
+        seen_reg_ids: set[int] = set()
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(self._examine_fee(
@@ -309,7 +310,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         sync_track_groups: dict[int, models.SyncTrackGroup] = {
             tg_id: tg for tg_id, tg in track_groups.items()  # type: ignore[misc]
             if tg.constraint_type.is_sync()}
-        ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
+        ccos_per_part: dict[int, list[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
             if not track_group.constraint_type == ccs:
                 continue  # type: ignore[unreachable]
@@ -1040,7 +1041,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         defaults = {
-            "part{}.status".format(part_id):
+            f"part{part_id}.status":
                 const.RegistrationPartStati.participant
             for part_id in rs.ambience['event'].parts
         }

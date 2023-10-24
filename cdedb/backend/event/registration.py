@@ -11,10 +11,8 @@ import dataclasses
 import decimal
 import typing
 from collections import defaultdict
-from typing import (
-    Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
-    Tuple, TypeVar,
-)
+from collections.abc import Collection, Mapping, Sequence
+from typing import Any, NamedTuple, Optional, Protocol, TypeVar
 
 import psycopg2.extensions
 
@@ -45,15 +43,13 @@ from cdedb.filter import date_filter, money_filter
 
 T = TypeVar("T")
 
-CourseChoiceValidationAux = NamedTuple(
-    "CourseChoiceValidationAux", [
-        ("course_segments", Mapping[int, Set[int]]),
-        ("synced_tracks", Mapping[int, Set[int]]),
-        ("involved_tracks", Set[int]),
-        ("orga_input", bool),
-    ])
+class CourseChoiceValidationAux(NamedTuple):
+    course_segments: Mapping[int, set[int]]
+    synced_tracks: Mapping[int, set[int]]
+    involved_tracks: set[int]
+    orga_input: bool
 
-FeeStats = Dict[str, Dict[const.EventFeeType, decimal.Decimal]]
+FeeStats = dict[str, dict[const.EventFeeType, decimal.Decimal]]
 
 
 @dataclasses.dataclass
@@ -93,7 +89,7 @@ class RegistrationFeeData:
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
-                                        event_id: int) -> Dict[int, Set[int]]:
+                                        event_id: int) -> dict[int, set[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
@@ -118,7 +114,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 for row in self.query_all(rs, query, (event_id,))}
 
     def _get_involved_tracks(self, rs: RequestState, registration_id: int
-                             ) -> Set[int]:
+                             ) -> set[int]:
         """Return the track ids of all tracks the registration is involved with."""
         q = """
             SELECT course_tracks.id
@@ -133,7 +129,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return {e['id'] for e in self.query_all(rs, q, p)}
 
     def _get_synced_tracks(self, rs: RequestState, event_id: int
-                           ) -> Dict[int, Set[int]]:
+                           ) -> dict[int, set[int]]:
         """Return a mapping of track id to ids of tracks synced to that track.
 
         The value will be an empty set for unsynced tracks.
@@ -229,7 +225,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
                                       active_only: bool = False,
-                                      ) -> Dict[int, Set[int]]:
+                                      ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -261,7 +257,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
                                             active_only: bool = False,
                                             involved_parts: Collection[int] = None,
-                                            ) -> Dict[int, Set[int]]:
+                                            ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track group.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -282,7 +278,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
 
-        params: List[Any] = []
+        params: list[Any] = []
 
         if involved_parts is not None:
             involved_parts = affirm_set(vtypes.ID, involved_parts)
@@ -346,7 +342,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def list_persona_registrations(
         self, rs: RequestState, persona_id: int
-    ) -> Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]]:
+    ) -> dict[int, dict[int, dict[int, const.RegistrationPartStati]]]:
         """List all events a given user has a registration for.
 
         :returns: Mapping of event ids to
@@ -363,7 +359,7 @@ class EventRegistrationBackend(EventBaseBackend):
                  " ON registrations.id = registration_parts.registration_id"
                  " WHERE persona_id = %s")
         data = self.query_all(rs, query, (persona_id,))
-        ret: Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]] = {}
+        ret: dict[int, dict[int, dict[int, const.RegistrationPartStati]]] = {}
         for e in data:
             ret.setdefault(
                 e['event_id'], {}
@@ -375,7 +371,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event", "ml_admin")
     def list_registrations_personas(self, rs: RequestState, event_id: int,
                                     persona_ids: Collection[int] = None
-                                    ) -> Dict[int, int]:
+                                    ) -> dict[int, int]:
         """List all registrations of an event.
 
         :param persona_ids: If passed restrict to registrations by these personas.
@@ -396,7 +392,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
-        params: List[Any] = [event_id]
+        params: list[Any] = [event_id]
         if persona_ids:
             conditions.append("persona_id = ANY(%s)")
             params.append(persona_ids)
@@ -406,7 +402,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def list_registrations(self, rs: RequestState, event_id: int, persona_id: int = None
-                           ) -> Dict[int, int]:
+                           ) -> dict[int, int]:
         """Manual singularization of list_registrations_personas
 
         Handles default values properly.
@@ -417,7 +413,7 @@ class EventRegistrationBackend(EventBaseBackend):
             return self.list_registrations_personas(rs, event_id)
 
     @access("event")
-    def list_participants(self, rs: RequestState, event_id: int) -> Dict[int, int]:
+    def list_participants(self, rs: RequestState, event_id: int) -> dict[int, int]:
         """List all participants of an event.
 
         Just participants of this event are returned and the requester himself must
@@ -451,7 +447,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("persona")
     def check_registrations_status(
             self, rs: RequestState, persona_ids: Collection[int], event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> Dict[int, bool]:
+            stati: Collection[const.RegistrationPartStati]) -> dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -497,7 +493,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
-                             ) -> Dict[Tuple[int, int], int]:
+                             ) -> dict[tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set(vtypes.ID, event_ids)
         if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
@@ -515,7 +511,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def _get_waitlist(self, rs: RequestState, event_id: int,
                       part_ids: Collection[int] = None
-                      ) -> Dict[int, Optional[List[int]]]:
+                      ) -> dict[int, Optional[list[int]]]:
         """Compute the waitlist in order for the given parts.
 
         :returns: Part id maping to None, if no waitlist ordering is defined
@@ -529,7 +525,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 part_ids = set(event.parts.keys())
             elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
-            ret: Dict[int, Optional[List[int]]] = {}
+            ret: dict[int, Optional[list[int]]] = {}
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
@@ -556,7 +552,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
                      part_ids: Collection[int] = None
-                     ) -> Dict[int, Optional[List[int]]]:
+                     ) -> dict[int, Optional[list[int]]]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
         if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
@@ -566,7 +562,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_waitlist_position(self, rs: RequestState, event_id: int,
                               part_ids: Collection[int] = None,
                               persona_id: int = None
-                              ) -> Dict[int, Optional[int]]:
+                              ) -> dict[int, Optional[int]]:
         """Compute the waitlist position of a user for the given parts.
 
         :returns: Mapping of part id to position on waitlist or None if user is
@@ -583,7 +579,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not reg_ids:
             raise ValueError(n_("Not registered for this event."))
         reg_id = unwrap(reg_ids.keys())
-        ret: Dict[int, Optional[int]] = {}
+        ret: dict[int, Optional[int]] = {}
         for part_id, waitlist in full_waitlist.items():
             try:
                 # If `reg_id` is not in the list, a ValueError will be raised.
@@ -599,7 +595,7 @@ class EventRegistrationBackend(EventBaseBackend):
             track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
             reg_ids: Collection[int] = None,
             reg_states: Collection[const.RegistrationPartStati] =
-            (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
+            (const.RegistrationPartStati.participant,)) -> dict[int, int]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -636,7 +632,7 @@ class EventRegistrationBackend(EventBaseBackend):
             AS choices ON choices.registration_id = regs.id
                 AND choices.track_id = course_tracks.id"""
         conditions = ["regs.event_id = %s", "rparts.status = ANY(%s)"]
-        params: List[Any] = [event_id, reg_states]
+        params: list[Any] = [event_id, reg_states]
         if track_id:
             conditions.append("course_tracks.id = %s")
             params.append(track_id)
@@ -689,7 +685,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_num_registrations_by_part(self, rs: RequestState, event_id: int,
                                       stati: Collection[const.RegistrationPartStati],
                                       include_total: bool = False
-                                      ) -> Dict[Optional[int], int]:
+                                      ) -> dict[Optional[int], int]:
         """Count registrations per part.
 
         If selected, count total registration count (returned with part_id `None`).
@@ -721,7 +717,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_payment_info(self, rs: RequestState, event_id: int
-                                      ) -> Tuple[Optional[bool], bool]:
+                                      ) -> tuple[Optional[bool], bool]:
         """Small helper to get information for the dashboard pages.
 
         The first returned flag is None iff there is no registration for the user.
@@ -1262,9 +1258,9 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             amount = decimal.Decimal(0)
             active_fees = set()
-            fees_by_kind: Dict[const.EventFeeType, decimal.Decimal] = defaultdict(
+            fees_by_kind: dict[const.EventFeeType, decimal.Decimal] = defaultdict(
                 decimal.Decimal)
-            visual_debug_data: Dict[int, str] = {}
+            visual_debug_data: dict[int, str] = {}
             for fee in event.fees.values():
                 parse_result = fcp_parsing.parse(fee.condition)
                 if fcp_evaluation.evaluate(
@@ -1356,7 +1352,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]
-                       ) -> Dict[int, decimal.Decimal]:
+                       ) -> dict[int, decimal.Decimal]:
         """Calculate the total fees for some registrations.
 
         This should be called once for multiple registrations, as it would be
@@ -1389,7 +1385,7 @@ class EventRegistrationBackend(EventBaseBackend):
             personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
 
-            ret: Dict[int, decimal.Decimal] = {}
+            ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
                 is_member = personas[reg['persona_id']]['is_member']
                 ret[reg_id] = self._calculate_single_fee(
@@ -1437,7 +1433,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
-                  ) -> Tuple[bool, Optional[int]]:
+                  ) -> tuple[bool, Optional[int]]:
         """Book all paid fees.
 
         :returns: Success information and

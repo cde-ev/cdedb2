@@ -18,10 +18,9 @@ import abc
 import itertools
 import operator
 from collections import OrderedDict
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
-from typing import (
-    Any, Collection, Dict, Iterable, List, Literal, Optional, Set, Tuple, Type, Union,
-)
+from typing import Any, Literal, Optional, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -84,7 +83,7 @@ class TrackGroupConstraintViolation(ConstraintViolation):
 class MEPViolation(PartGroupConstraintViolation):
     registration_id: int
     persona_id: int
-    part_ids: List[int]  # Sorted IDs of the parts in violation.
+    part_ids: list[int]  # Sorted IDs of the parts in violation.
     parts_str: str  # Locale agnostic string representation of said parts.
     guest_violation: bool = False  # Whether the violation is cause by a "Guest" status.
 
@@ -102,7 +101,7 @@ class MEPViolation(PartGroupConstraintViolation):
 @dataclass(frozen=True)
 class MECViolation(PartGroupConstraintViolation):
     course_id: int
-    track_ids: List[int]  # Sorted IDs of the tracks in violation.
+    track_ids: list[int]  # Sorted IDs of the tracks in violation.
     tracks_str: str  # Locale agnostic string representation of said tracks.
 
     @property
@@ -207,7 +206,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, OrderedDict[Any, str]] = {
+        choices: dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
@@ -400,7 +399,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, rs.ambience['event'].id, kinds=(kind,)))
 
-        def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
+        def get_validator(row: CdEDBObject) -> tuple[str, type[Any]]:
             field = rs.ambience['event'].fields[row['field_id']]
             type_ = vtypes.VALIDATOR_LOOKUP[field.kind.name]
             if kind == const.QuestionnaireUsages.additional:
@@ -420,7 +419,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                          registrations: CdEDBObjectMap, key: str,
                          personas: CdEDBObjectMap = None,
                          instructors: bool = True
-                         ) -> Dict[Tuple[int, int], Collection[int]]:
+                         ) -> dict[tuple[int, int], Collection[int]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
@@ -478,7 +477,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
     @staticmethod
-    def _get_track_ids(event: models.Event, part_group_id: int) -> Set[int]:
+    def _get_track_ids(event: models.Event, part_group_id: int) -> set[int]:
         parts = event.part_groups[part_group_id].parts.values()
         return set(itertools.chain.from_iterable(part.tracks for part in parts))
 
@@ -495,8 +494,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         :return: A collection of data pertaining to the constraint violations.
         """
 
-        PartGroupsByType = Dict[const.EventPartGroupType,
-                                List[Tuple[int, models.PartGroup]]]
+        PartGroupsByType = dict[const.EventPartGroupType,
+                                list[tuple[int, models.PartGroup]]]
         pgs_by_type: PartGroupsByType = {
             constraint: [
                 (pg.id, pg) for pg in xsorted(rs.ambience['event'].part_groups.values())
@@ -525,7 +524,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             registrations,
             lambda reg: EntitySorter.persona(personas[reg['persona_id']])))
 
-        def part_id_sorter(part_ids: Collection[int]) -> List[int]:
+        def part_id_sorter(part_ids: Collection[int]) -> list[int]:
             return xsorted(part_ids,
                            key=lambda part_id: rs.ambience['event'].parts[part_id])
 
@@ -589,7 +588,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for track_id, track in rs.ambience['event'].tracks.items()
         }
 
-        def track_id_sorter(track_ids: Iterable[int]) -> List[int]:
+        def track_id_sorter(track_ids: Iterable[int]) -> list[int]:
             return xsorted(track_ids,
                            key=lambda track_id: rs.ambience['event'].tracks[track_id])
 

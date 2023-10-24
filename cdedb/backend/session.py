@@ -10,7 +10,7 @@ special in here.
 """
 
 import logging
-from typing import Optional, Type
+from typing import Optional
 
 import psycopg2.extensions
 from passlib.utils import consteq
@@ -183,7 +183,7 @@ class SessionBackend:
 
         return ret
 
-    def _validate_dynamic_droid_secret(self, droid_class: Type[DynamicAPIToken],
+    def _validate_dynamic_droid_secret(self, droid_class: type[DynamicAPIToken],
                                        token_id: int, secret: str) -> User:
 
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:

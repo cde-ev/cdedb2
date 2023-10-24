@@ -18,10 +18,9 @@ import pathlib
 import re
 import string
 import sys
+from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, Generic, Iterable, List, Mapping,
-    MutableMapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    overload,
+    TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extras
@@ -49,7 +48,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
     from cdedb.models.droid import APIToken
@@ -59,12 +58,12 @@ else:
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
 
-CdEDBObjectMap = Dict[int, CdEDBObject]
+CdEDBObjectMap = dict[int, CdEDBObject]
 
 # Same as above, but we also allow negative ints (for creation, not reflected
 # in the type] and None (for deletion). Used in `_set_tracks` and partial
 # import diff.
-CdEDBOptionalMap = Dict[int, Optional[CdEDBObject]]
+CdEDBOptionalMap = dict[int, Optional[CdEDBObject]]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -75,17 +74,17 @@ DefaultReturnCode = int
 # The key specifies the kind of blocker, the value is a list of blocking ids.
 # For some blockers the value might have a different type, mostly when that
 # blocker blocks deletion without the option to cascadingly delete.
-DeletionBlockers = Dict[str, List[int]]
+DeletionBlockers = dict[str, list[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = Tuple[Optional[str], Exception]
+Error = tuple[Optional[str], Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
 # Third argument are format parameters to be spplied to the message (post i18n).
 NotificationType = str
-Notification = Tuple[NotificationType, str, CdEDBObject]
+Notification = tuple[NotificationType, str, CdEDBObject]
 
 # A set of roles a user may have.
 Role = str
@@ -96,7 +95,7 @@ Realm = str
 # Admin views a user may activate/deactivate.
 AdminView = str
 
-CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
+CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = Union[pathlib.Path, str]
 Path = pathlib.Path
@@ -108,9 +107,9 @@ class User:
     """Container for a persona."""
 
     def __init__(self, *, persona_id: Optional[int] = None,
-                 droid_class: Optional[Type["APIToken"]] = None,
+                 droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Set[Role] = None, display_name: str = "",
+                 roles: set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
@@ -125,13 +124,13 @@ class User:
         self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
-        self.orga: Set[int] = set(orga) if orga else set()
-        self.moderator: Set[int] = set(moderator) if moderator else set()
-        self.presider: Set[int] = set(presider) if presider else set()
-        self.admin_views: Set[AdminView] = set()
+        self.orga: set[int] = set(orga) if orga else set()
+        self.moderator: set[int] = set(moderator) if moderator else set()
+        self.presider: set[int] = set(presider) if presider else set()
+        self.admin_views: set[AdminView] = set()
 
     @property
-    def available_admin_views(self) -> Set[AdminView]:
+    def available_admin_views(self) -> set[AdminView]:
         return roles_to_admin_views(self.roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
@@ -154,7 +153,7 @@ class RequestState(ConnectionContainer):
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[Dict[str, int]],
+                 requestargs: Optional[dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
@@ -310,7 +309,7 @@ class RequestState(ConnectionContainer):
         """
         self.validation_appraised = True
 
-    def retrieve_validation_errors(self) -> List[Error]:
+    def retrieve_validation_errors(self) -> list[Error]:
         """Take a look at the queued validation errors.
 
         This does not cause the validation tracking to register a
@@ -375,7 +374,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def get_backend_class() -> Type[B]:
+        def get_backend_class() -> type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -687,9 +686,9 @@ class CustomJSONEncoder(json.JSONEncoder):
                                  decimal.Decimal]) -> str: ...
 
     @overload
-    def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
+    def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, Tuple[Any, ...], Dict[str, Any]]:
+    def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
         import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
@@ -718,7 +717,7 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
+def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
@@ -962,7 +961,7 @@ class InfiniteEnum(Generic[E]):
 
     def __str__(self) -> str:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
-            return "{}({})".format(self.enum, self.int)
+            return f"{self.enum}({self.int})"
         return str(self.enum)
 
     def __eq__(self, other: Any) -> bool:
@@ -1198,7 +1197,7 @@ def sanitize_filename(name: str) -> str:
     return name.translate(FILENAME_SANITIZE_MAP)
 
 
-MaybeStr = TypeVar("MaybeStr", str, Type[None])
+MaybeStr = TypeVar("MaybeStr", str, type[None])
 
 
 def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
@@ -1268,7 +1267,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
-def abbreviation_mapper(data: Sequence[T]) -> Dict[T, str]:
+def abbreviation_mapper(data: Sequence[T]) -> dict[T, str]:
     """Assign an unique combination of ascii letters to each element."""
     num_letters = ((len(data) - 1) // 26) + 1
     return {item: "".join(shortname) for item, shortname in zip(
@@ -1335,15 +1334,15 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = now() + timeout
         timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
-    message = "{}--{}".format(timestamp, param)
-    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
+    message = f"{timestamp}--{param}"
+    tohash = f"{target}--{str(persona_id)}--{name}--{message}"
     h.update(tohash.encode("utf-8"))
-    return "{}--{}".format(h.hexdigest(), message)
+    return f"{h.hexdigest()}--{message}"
 
 
 def decode_parameter(salt: str, target: str, name: str, param: str,
                      persona_id: Optional[int]
-                     ) -> Union[Tuple[bool, None], Tuple[None, str]]:
+                     ) -> Union[tuple[bool, None], tuple[None, str]]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 
@@ -1353,7 +1352,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     """
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     mac, message = param[0:128], param[130:]
-    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
+    tohash = f"{target}--{str(persona_id)}--{name}--{message}"
     h.update(tohash.encode("utf-8"))
     if not hmac.compare_digest(h.hexdigest(), mac):
         if persona_id:
@@ -1466,7 +1465,7 @@ def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventFi
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
-NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
+NOTIFICATION_TYPES: set[NotificationType] = {"success", "info", "question",
                                              "warning", "error"}
 
 #: The form field name used for the anti CSRF token.

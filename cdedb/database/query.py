@@ -9,7 +9,8 @@ import datetime
 import decimal
 import enum
 import logging
-from typing import Collection, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Collection, Sequence
+from typing import Optional, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
@@ -82,7 +83,7 @@ class SqlQueryBackend:
                 return from_db_output(cur.fetchone())
 
     def query_all(self, container: ConnectionContainer, query: str,
-                  params: Sequence[DatabaseValue_s]) -> Tuple[CdEDBObject, ...]:
+                  params: Sequence[DatabaseValue_s]) -> tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -124,7 +125,7 @@ class SqlQueryBackend:
             return 0
         keys = tuple(data[0].keys())
         key_set = set(keys)
-        params: List[DatabaseValue] = []
+        params: list[DatabaseValue] = []
         for entry in data:
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
@@ -137,7 +138,7 @@ class SqlQueryBackend:
 
     def sql_select(self, container: ConnectionContainer, table: str,
                    columns: Sequence[str], entities: EntityKeys, *,
-                   entity_key: str = "id") -> Tuple[CdEDBObject, ...]:
+                   entity_key: str = "id") -> tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
         This is one of a set of functions which provides formatting and
@@ -196,7 +197,7 @@ class SqlQueryBackend:
         if not keys:
             # no input is an automatic success
             return 1
-        commands = ", ".join("{key} = {key} || %s".format(key=key)
+        commands = ", ".join(f"{key} = {key} || %s"
                              for key in keys)
         query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
         params = tuple(PsycoJson(data[key]) for key in keys)

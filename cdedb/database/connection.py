@@ -9,8 +9,9 @@ This should be the only module which makes subsistantial use of psycopg.
 """
 
 import logging
+from collections.abc import Collection, Mapping
 from types import TracebackType
-from typing import Any, Collection, Literal, Mapping, NoReturn, Optional, Type
+from typing import Any, Literal, NoReturn, Optional
 
 import psycopg2
 import psycopg2.extensions
@@ -168,7 +169,7 @@ class Atomizer:
         self.rs._conn.contaminate()
         return self.rs._conn.__enter__()
 
-    def __exit__(self, atype: Optional[Type[Exception]],
+    def __exit__(self, atype: Optional[type[Exception]],
                  value: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         self.rs._conn.decontaminate()
@@ -189,7 +190,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
         # keep a copy of any exception we encounter.
-        self._saved_etype: Optional[Type[Exception]] = None
+        self._saved_etype: Optional[type[Exception]] = None
         self._saved_evalue: Optional[Exception] = None
         self._saved_tb: Optional[TracebackType] = None
 
@@ -205,7 +206,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             self._saved_tb = None
             return super().__enter__()
 
-    def __exit__(self, etype: Optional[Type[Exception]],
+    def __exit__(self, etype: Optional[type[Exception]],
                  evalue: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         if self._radiation_level:

@@ -14,7 +14,8 @@ import shutil
 import string
 import tempfile
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import dateutil.easter
 import werkzeug.exceptions
@@ -263,7 +264,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         return payment_date
 
-    def create_sepapain(self, rs: RequestState, transactions: List[CdEDBObject]
+    def create_sepapain(self, rs: RequestState, transactions: list[CdEDBObject]
                         ) -> Optional[str]:
         """Create an XML document for submission to a bank.
 
@@ -282,7 +283,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return None
         assert sanitized_transactions is not None
-        sorted_transactions: Dict[str, List[CdEDBObject]] = {}
+        sorted_transactions: dict[str, list[CdEDBObject]] = {}
         for transaction in sanitized_transactions:
             sorted_transactions.setdefault(transaction['type'], []).append(
                 transaction)
@@ -363,7 +364,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             else:
                 transaction['account_owner'] = "{} {}".format(
                     persona['given_names'], persona['family_name'])
-            timestamp = "{:.6f}".format(now().timestamp())
+            timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
             transaction['subject'] = asciificator(glue(

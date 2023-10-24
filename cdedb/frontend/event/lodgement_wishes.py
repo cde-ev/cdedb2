@@ -6,8 +6,10 @@ wishes heuristics.
 """
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Pattern, Set, Tuple
+from re import Pattern
+from typing import Optional
 
 import graphviz
 
@@ -51,7 +53,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             restrict_registration_id: int = None,
                             check_edges: bool = True,
                             ) \
-        -> Tuple[List[LodgementWish], List[Notification]]:
+        -> tuple[list[LodgementWish], list[Notification]]:
     """ Detect lodgement wish graph edges from all registrations' raw rooming
     preferences text.
 
@@ -89,7 +91,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         a list of localizable problem notification messages.
     """
     # Create a list of regex patterns, referencing the other personas, to search
-    lookup_map: List[Tuple[Pattern[str], int]] = [
+    lookup_map: list[tuple[Pattern[str], int]] = [
         (make_identifying_regex(personas[registration['persona_id']]),
          registration_id)
         for registration_id, registration in registrations.items()
@@ -98,8 +100,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         wish_field_name = event.lodge_field.field_name
     else:
         return [], []
-    wishes: Dict[Tuple[int, int], LodgementWish] = {}
-    problems: List[Notification] = []
+    wishes: dict[tuple[int, int], LodgementWish] = {}
+    problems: list[Notification] = []
 
     # Limit registrations to check for matches if necessary.
     registrations_to_check = list(registrations.items())
@@ -115,7 +117,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         # Skip registrations with emtpy wishes field
         if not registration['fields'].get(wish_field_name):
             continue
-        match_positions: List[Tuple[Tuple[int, int], int]] = []
+        match_positions: list[tuple[tuple[int, int], int]] = []
         # Check each of the regex patterns against the wishes field
         for pattern, other_registration_id in lookup_map:
             # Self-wishes are not allowed
@@ -232,7 +234,7 @@ ACTIVE_STATI = PRESENT_STATI | {RegistrationPartStati.waitlist}
 
 
 def _parts_with_status(registration: CdEDBObject,
-                       stati: Set[RegistrationPartStati]) -> Set[int]:
+                       stati: set[RegistrationPartStati]) -> set[int]:
     """ Return a set of event part ids in which the given registration/
     participant has one of the given stati"""
     return {
@@ -242,7 +244,7 @@ def _parts_with_status(registration: CdEDBObject,
     }
 
 
-def _sort_parts(part_ids: Set[int], event: models.Event) -> List[int]:
+def _sort_parts(part_ids: set[int], event: models.Event) -> list[int]:
     """Sort the given parts accordingly to EntitySorter."""
     sorted_parts = xsorted(event.parts.values())
     return [part.id for part in sorted_parts if part.id in part_ids]
@@ -270,7 +272,7 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
 
 def create_lodgement_wishes_graph(
         rs: RequestState,
-        registrations: CdEDBObjectMap, wishes: List[LodgementWish],
+        registrations: CdEDBObjectMap, wishes: list[LodgementWish],
         lodgements: CdEDBObjectMap,
         lodgement_groups: CdEDBObjectMap,
         event: models.Event,
@@ -342,13 +344,13 @@ def create_lodgement_wishes_graph(
     # dynamically based on the `cluster_by_lodgement_in_part` parameter.
 
     # Gather wishing and wished paticipants (required later if not show_all)
-    referenced_registraion_ids: Set[int] = set()
+    referenced_registraion_ids: set[int] = set()
     for wish in wishes:
         referenced_registraion_ids.add(wish.wished)
         referenced_registraion_ids.add(wish.wishing)
 
     # We offer clustering by lodgement and/or by lodgement group.
-    lodgement_clusters: Dict[int, graphviz.Digraph] = {}
+    lodgement_clusters: dict[int, graphviz.Digraph] = {}
     if cluster_by_lodgement:
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
@@ -356,7 +358,7 @@ def create_lodgement_wishes_graph(
                 graph_attr={'label': lodgement['title'],
                             'URL': cdedburl(rs, 'event/show_lodgement',
                                             {'lodgement_id': lodgement_id})})
-    lodgement_group_clusters: Dict[int, graphviz.Digraph] = {}
+    lodgement_group_clusters: dict[int, graphviz.Digraph] = {}
     if cluster_by_lodgement_group:
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(

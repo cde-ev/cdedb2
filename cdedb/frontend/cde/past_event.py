@@ -10,7 +10,8 @@ administrative tasks, like creating and modifying past events and courses requir
 import copy
 import csv
 from collections import OrderedDict
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 from werkzeug import Response
 
@@ -80,7 +81,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
                               pcourse_id: int = None, orgas_only: bool = False
-                              ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
+                              ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -177,7 +178,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
              ("personas.id", True)))
 
         result = self.cdeproxy.submit_general_query(rs, query)
-        fields: List[str] = []
+        fields: list[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
         csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
@@ -243,7 +244,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
-        years: Dict[int, List[int]] = {}
+        years: dict[int, list[int]] = {}
         for anid in stats_sorter:
             if institution and stats[anid]['institution'] != institution:
                 continue
@@ -289,7 +290,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                           data: CdEDBObject) -> Response:
         """Add new concluded event."""
         data = check(rs, vtypes.PastEvent, data, creation=True)
-        thecourses: List[CdEDBObject] = []
+        thecourses: list[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
             reader = csv.DictReader(
