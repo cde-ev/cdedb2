@@ -267,11 +267,11 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
-    ctime: datetime.datetime = field(default_factory=now, init=False)
+    ctime: datetime.datetime = field(default_factory=now, init=False, metadata={'database_include': True})
     #: Revocation time. Automatically set by event backend on revocation.
-    rtime: Optional[datetime.datetime] = field(default=None, init=False)
+    rtime: Optional[datetime.datetime] = field(default=None, init=False, metadata={'database_include': True})
     #: Last access time. Automatically updated by session backend on every request.
-    atime: Optional[datetime.datetime] = field(default=None, init=False)
+    atime: Optional[datetime.datetime] = field(default=None, init=False, metadata={'database_include': True})
 
     # Special fields and methods for datacase storage using `CdEDataclass` interface.
 

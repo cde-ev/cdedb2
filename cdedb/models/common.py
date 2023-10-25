@@ -140,6 +140,7 @@ class CdEDataclass:
                and get_origin(field.type) is not dict
                and get_origin(field.type) is not set
                and not field.metadata.get('database_exclude')
+            or field.metadata.get('database_include')
         ]
 
     def as_dict(self) -> dict[str, Any]:
