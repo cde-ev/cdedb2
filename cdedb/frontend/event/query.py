@@ -272,18 +272,6 @@ class EventQueryMixin(EventBaseFrontend):
             self._send_mail(msg)
         return state
 
-    def get_spec(self, rs: RequestState, event_id: int, scope: QueryScope) -> QuerySpec:
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
-        return scope.get_spec(
-            event=rs.ambience['event'], courses=courses,
-            lodgements=lodgements, lodgement_groups=lodgement_groups)
-
     @staticmethod
     def retrieve_custom_filter_fields(rs: RequestState, spec: QuerySpec) -> set[str]:
         field_spec = {f"cf_{f}": bool for f in spec}
@@ -336,7 +324,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     def configure_custom_filter_form(self, rs: RequestState, event_id: int,
                                      scope: QueryScope) -> Response:
-        spec = self.get_spec(rs, event_id, scope)
+        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
         fields_by_kind = collections.defaultdict(list)
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
@@ -353,7 +341,7 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not scope:
             rs.notify("error", "Invalid Scope.")
             return self.redirect(rs, "event/custom_filter_summary")
-        spec = self.get_spec(rs, event_id, scope)
+        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
 
         data.update({
             'fields': self.retrieve_custom_filter_fields(rs, spec),
@@ -398,7 +386,7 @@ class EventQueryMixin(EventBaseFrontend):
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
         custom_filter = rs.ambience['custom_filter']
-        spec = self.get_spec(rs, event_id, custom_filter.scope)
+        spec = self.eventproxy.get_query_spec(rs, event_id, custom_filter.scope)
 
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id

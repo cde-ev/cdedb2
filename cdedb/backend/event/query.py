@@ -22,7 +22,9 @@ from cdedb.common.fields import (
     REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
+)
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -725,14 +727,10 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
 
     @access("event")
-    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter
-                                ) -> DefaultReturnCode:
-        if not isinstance(data, CustomQueryFilter):
-            raise ValueError
-
-        event_id = affirm(vtypes.ID, data.event_id)
-        scope = affirm(QueryScope, data.scope)
-
+    def get_query_spec(self, rs: RequestState, event_id: int, scope: QueryScope,
+                       ) -> QuerySpec:
+        event_id = affirm(vtypes.ID, event_id)
+        scope = affirm(QueryScope, scope)
         with Atomizer(rs):
             if not self.is_orga(rs, event_id=event_id):
                 raise PrivilegeError
@@ -745,12 +743,25 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             lodgement_group_ids = self.list_lodgement_groups(rs, event_id)
             lodgement_groups = self.get_lodgement_groups(rs, lodgement_group_ids)
 
-            spec = scope.get_spec(
-                event=event, courses=courses, lodgements=lodgements,
-                lodgement_groups=lodgement_groups)
+        return scope.get_spec(
+            event=event, courses=courses, lodgements=lodgements,
+            lodgement_groups=lodgement_groups)
+
+    @access("event")
+    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter
+                                ) -> DefaultReturnCode:
+        if not isinstance(data, CustomQueryFilter):
+            raise ValueError
+
+        event_id = affirm(vtypes.ID, data.event_id)
+        scope = affirm(QueryScope, data.scope)
+
+        with Atomizer(rs):
+            spec = self.get_query_spec(rs, event_id, scope)
 
             custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
                                              creation=True)
+
             new_id = self.sql_insert_dataclass(rs, custom_filter)
             # TODO logging
         return new_id
@@ -772,17 +783,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             if not self.is_orga(rs, event_id=current.event_id):
                 raise PrivilegeError
 
-            event = self.get_event(rs, event_id)
-            course_ids = self.list_courses(rs, event_id)
-            courses = self.get_courses(rs, course_ids)
-            lodgement_ids = self.list_lodgements(rs, event_id)
-            lodgements = self.get_lodgements(rs, lodgement_ids)
-            lodgement_group_ids = self.list_lodgement_groups(rs, event_id)
-            lodgement_groups = self.get_lodgement_groups(rs, lodgement_group_ids)
-
-            spec = current.scope.get_spec(
-                event=event, courses=courses, lodgements=lodgements,
-                lodgement_groups=lodgement_groups)
+            spec = self.get_query_spec(rs, event_id, current.scope)
 
             affirm(vtypes.CustomQueryFilter, data, query_spec=spec)
 
@@ -796,3 +797,25 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     change_note = current.title
                 # TODO logging
             return ret
+
+    @access("event")
+    def delete_custom_query_filter(self, rs: RequestState, custom_filter_id: int,
+                                   ) -> DefaultReturnCode:
+        custom_filter_id = affirm(vtypes.ID, custom_filter_id)
+        with Atomizer(rs):
+            current_data = self.sql_select_one(
+                rs, CustomQueryFilter.database_table,
+                CustomQueryFilter.database_fields(), entity=custom_filter_id)
+
+            if not current_data:
+                raise KeyError(n_("Unknown custom filter."))
+            current = CustomQueryFilter.from_database(current_data)
+            event_id = current.event_id
+
+            if not self.is_orga(rs, event_id=current.event_id):
+                raise PrivilegeError
+
+            ret = self.sql_delete_one(
+                rs, CustomQueryFilter.database_table, custom_filter_id)
+            # TODO logging
+        return ret

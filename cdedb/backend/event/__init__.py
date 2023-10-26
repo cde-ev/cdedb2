@@ -32,6 +32,7 @@ from cdedb.database.connection import Atomizer
 __all__ = ['EventBackend']
 
 from cdedb.models.droid import OrgaToken
+from cdedb.models.event import CustomQueryFilter
 
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
@@ -45,6 +46,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         * orga_tokens: An orga token granting API access to the event.
         * field_definitions: A custom datafield associated with the event.
+        * custom_query_filters: A custom filter for queries associated with the event.
         * courses: A course associated with the event. This can have it's own
                    blockers.
         * event_fees: A fee of the event.
@@ -83,6 +85,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
         if field_definitions:
             blockers["field_definitions"] = [e["id"] for e in field_definitions]
+
+        custom_query_filters = self.sql_select(
+            rs, CustomQueryFilter.database_table, ("id",), (event_id,), entity_key="event_id")
+        if custom_query_filters:
+            blockers["custom_query_filters"] = [e["id"] for e in custom_query_filters]
 
         courses = self.sql_select(
             rs, "event.courses", ("id",), (event_id,), entity_key="event_id")
@@ -247,6 +254,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
                             ret *= self._delete_event_field(rs, anid)
+                if "custom_query_filters" in cascade:
+                    with Silencer(rs):
+                        for anid in blockers["custom_query_filters"]:
+                            ret *= self.delete_custom_query_filter(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
                 if "orga_tokens" in cascade:
