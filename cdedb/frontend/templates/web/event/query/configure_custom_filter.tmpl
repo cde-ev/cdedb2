@@ -1,4 +1,10 @@
-{% set sidenav_active='event_configure' %}
+{% if scope.name == "registration" %}
+    {% set sidenav_active='event_registration' %}
+{% elif scope.name == "event_course" %}
+    {% set sidenav_active='event_course_stats' %}
+{% elif scope.name == "lodgement" %}
+    {% set sidenav_active='event_lodgements' %}
+{% endif %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
@@ -43,7 +49,8 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {% if ambience['custom_filter'] %}
-        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': ambience['custom_filter'].scope}), gettext("Custom Filters")) }}
+        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configuration")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters")) }}
         {{ util.breadcrumb_link(cdedblink("event/change_custom_filter"), gettext("Change Custom Filter"), active=True) }}
     {% elif scope.name == "registration" %}
         {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
@@ -84,6 +91,13 @@
         {{ util.input_hidden('scope', scope) }}
         <hr />
 
+
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Only fields of the same type are allowed.
+            {% endtrans %}
+        </p>
         {% call util.output_errors('field', wrapper=True) %}
             {% for type, fields in fields_by_kind.items() %}
                 <h5>{{ type }}</h5>

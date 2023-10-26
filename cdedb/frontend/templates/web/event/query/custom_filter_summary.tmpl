@@ -1,4 +1,12 @@
-{% set sidenav_active='event_config' %}
+{% if scope is none %}
+    {% set sidenav_active='event_field_summary' %}
+{% elif scope.name == "registration" %}
+    {% set sidenav_active='event_registration' %}
+{% elif scope.name == "event_course" %}
+    {% set sidenav_active='event_course_stats' %}
+{% elif scope.name == "lodgement" %}
+    {% set sidenav_active='event_lodgements' %}
+{% endif %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
@@ -36,7 +44,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {% if scope is none %}
-        {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
+        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
         {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), active=True) }}
     {% elif scope.name == "registration" %}
         {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
