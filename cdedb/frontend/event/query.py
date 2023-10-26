@@ -5,6 +5,7 @@ The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints 
 querying registrations, courses and lodgements.
 """
 import collections
+import itertools
 import pprint
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -271,9 +272,34 @@ class EventQueryMixin(EventBaseFrontend):
             self._send_mail(msg)
         return state
 
+    def get_spec(self, rs: RequestState, event_id: int, scope: QueryScope) -> QuerySpec:
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(
+            rs, lodgement_group_ids)
+        return scope.get_spec(
+            event=rs.ambience['event'], courses=courses,
+            lodgements=lodgements, lodgement_groups=lodgement_groups)
+
+    @staticmethod
+    def retrieve_custom_filter_fields(rs: RequestState, spec: QuerySpec) -> set[str]:
+        field_spec = {f"cf_{f}": bool for f in spec}
+        return set(itertools.chain.from_iterable(
+            k.removeprefix("cf_").split(",")
+            for k, v in request_extractor(rs, field_spec).items()
+            if v
+        ))
+
     @access("event")
     @event_guard()
-    def custom_filter_summary(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("scope")
+    def custom_filter_summary(self, rs: RequestState, event_id: int,
+                              scope: QueryScope = None) -> Response:
+        rs.ignore_validation_errors()
+
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -290,110 +316,104 @@ class EventQueryMixin(EventBaseFrontend):
             ]
         }
         return self.render(rs, "query/custom_filter_summary", {
-            'query_specs': query_specs,
+            'query_specs': query_specs, 'scope': scope,
         })
 
     @access("event")
     @event_guard()
-    @REQUESTdata("scope")
+    def create_registration_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
+
+    @access("event")
+    @event_guard()
+    def create_course_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
+
+    @access("event")
+    @event_guard()
+    def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
+
     def configure_custom_filter_form(self, rs: RequestState, event_id: int,
-                                     scope: QueryScope, custom_filter_id: int = None
-                                     ) -> Response:
-        rs.ignore_validation_errors()
-
-        if custom_filter_id:
-            if custom_filter_id not in rs.ambience['event']['custom_query_filters']:
-                rs.notify("error", "Unknown custom filter.")
-                return self.redirect(rs, "event/custom_filter_summary")
-            custom_filter = rs.ambience['custom_filter']
-            scope = custom_filter.scope
-            values = custom_filter.to_database()
-            del values['field']
-            values.update({
-                f"cf_{f}": True for f in custom_filter.split_fields
-            })
-            merge_dicts(rs.values, values)
-
-        if scope:
-            course_ids = self.eventproxy.list_courses(rs, event_id)
-            courses = self.eventproxy.get_courses(rs, course_ids)
-            lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-            lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-            lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-            lodgement_groups = self.eventproxy.get_lodgement_groups(
-                rs, lodgement_group_ids)
-            spec = scope.get_spec(
-                event=rs.ambience['event'], courses=courses,
-                lodgements=lodgements, lodgement_groups=lodgement_groups)
-        else:
-            rs.replace_validation_errors([])
-            spec = None
+                                     scope: QueryScope) -> Response:
+        spec = self.get_spec(rs, event_id, scope)
+        fields_by_kind = collections.defaultdict(list)
+        for field, field_spec in spec.items():
+            fields_by_kind[field_spec.type].append(field)
 
         return self.render(rs, "query/configure_custom_filter", {
-            'scope': scope, 'spec': spec, 'available_scopes': [
-                QueryScope.registration, QueryScope.event_course, QueryScope.lodgement
-            ],
+            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
         })
 
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdatadict(*CustomQueryFilter.requestdict_fields())
-    def configure_custom_filter(self, rs: RequestState, event_id: int,
-                                data: CdEDBObject, custom_filter_id: int = None
-                                ) -> Response:
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
-
+    def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject):
         scope = check(rs, QueryScope, data['scope'])
-        if not scope:
-            rs.notify("info", "No scope!")
-            return self.configure_custom_filter_form(rs, event_id)
-        spec = scope.get_spec(
-            event=rs.ambience['event'], courses=courses,
-            lodgements=lodgements, lodgement_groups=lodgement_groups)
+        if rs.has_validation_errors() or not scope:
+            rs.notify("error", "Invalid Scope.")
+            return self.redirect(rs, "event/custom_filter_summary")
+        spec = self.get_spec(rs, event_id, scope)
 
-        field_spec = {f"cf_{f}": bool for f in spec}
-        data['field'] = ",".join(
-            k.removeprefix("cf_")
-            for k, v in request_extractor(rs, field_spec).items()
-            if v
-        )
+        data.update({
+            'fields': self.retrieve_custom_filter_fields(rs, spec),
+            'id': -1,
+            'event_id': event_id,
+        })
+        data = check(rs, vtypes.CustomQueryFilter, data, creation=True, query_spec=spec)
+        if data:
+            if any(cf.title == data['title']
+                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                rs.append_validation_error(
+                    ('title', KeyError(n_("A filter with this title already exists."))))
+            if any(cf.field == data['fields']
+                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                rs.append_validation_error(
+                    ('field', KeyError(n_(
+                        "A filter with this selection of fields already exists."))))
+        if rs.has_validation_errors() or not data:
+            return self.configure_custom_filter_form(rs, event_id, scope)
+        code = self.eventproxy.add_custom_query_filter(rs, CustomQueryFilter(**data))
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
-        if custom_filter_id:
-            data['id'] = custom_filter_id
-            del data['event_id']
-            del data['scope']
-            data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
-            if rs.has_validation_errors() or not data:
-                return self.configure_custom_filter_form(
-                    rs, event_id)
-            code = self.eventproxy.change_custom_query_filter(rs, data)
-        else:
-            data['id'] = -1
-            data['event_id'] = event_id
-            data = check(rs, vtypes.CustomQueryFilter, data, creation=True,
-                         query_spec=spec)
-            if data:
-                if any(cf.title == data['title']
-                       for cf in rs.ambience['event']['custom_query_filters'].values()):
-                    rs.append_validation_error(
-                        ('title', KeyError(n_(
-                            "A filter with this title already exists."))))
-                if any(cf.field == data['field']
-                       for cf in rs.ambience['event']['custom_query_filters'].values()):
-                    rs.append_validation_error(
-                        ('field', KeyError(n_(
-                            "A filter with this selection of fields already exists."))))
-            if rs.has_validation_errors() or not data:
-                return self.configure_custom_filter_form(
-                    rs, event_id)
-            code = self.eventproxy.add_custom_query_filter(
-                rs, CustomQueryFilter(**data))
-        return self.redirect(rs, "event/custom_filter_summary")
+    @access("event")
+    @event_guard()
+    def change_custom_filter_form(self, rs: RequestState, event_id: int,
+                                  custom_filter_id: int) -> Response:
+        custom_filter = rs.ambience['custom_filter']
+
+        values = custom_filter.to_database()
+        del values['fields']
+        values.update({
+            f"cf_{f}": True for f in custom_filter.fields
+        })
+        merge_dicts(rs.values, values)
+
+        return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*CustomQueryFilter.requestdict_fields())
+    def change_custom_filter(self, rs: RequestState, event_id: int,
+                             custom_filter_id: int, data: CdEDBObject) -> Response:
+        custom_filter = rs.ambience['custom_filter']
+        spec = self.get_spec(rs, event_id, custom_filter.scope)
+
+        data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
+        data['id'] = custom_filter_id
+        del data['event_id']
+        del data['scope']
+
+        data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
+        if rs.has_validation_errors() or not data:
+            return self.change_custom_filter_form(rs, event_id, custom_filter_id)
+
+        code = self.eventproxy.change_custom_query_filter(rs, data)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {
+            'scope': custom_filter.scope,
+        })
 
     @access("event")
     @event_guard()

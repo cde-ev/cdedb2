@@ -4496,29 +4496,32 @@ def _custom_query_filter(
 ) -> CustomQueryFilter:
     val = _mapping(val, argname, **kwargs)
 
+    if (fields := val.get('fields')) and isinstance(fields, str):
+        val = dict(val)
+        val['fields'] = set(fields.split(","))
+
     mandatory, optional = models_event.CustomQueryFilter.validation_fields(
         creation=creation)
     val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
     errs = ValidationSummary()
 
-    split_fields = val['field'].split(',')
-    if len(split_fields) < 2:
+    if len(val['fields']) < 2:
         with errs:
             raise ValidationSummary(ValueError('field', n_(
                 "Combine a minimum of two fields.")))
-    if any(field not in query_spec for field in split_fields):
+    if any(field not in query_spec for field in val['fields']):
         with errs:
             raise ValidationSummary(KeyError('field', n_(
                 "Unknown field(s): %(fields)s."), {
-                'fields': ", ".join(set(split_fields) - set(query_spec)),
+                'fields': ", ".join(val['fields'] - set(query_spec)),
             }))
-    elif len({query_spec[f].type for f in split_fields}) != 1:
+    elif len({query_spec[f].type for f in val['fields']}) != 1:
         with errs:
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['field'] = ",".join(xsorted(split_fields))
+    val['fields'] = ",".join(xsorted(val['fields']))
 
     if errs:
         raise errs

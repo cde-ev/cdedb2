@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import cdedb.common.validation.types as vtypes
 from cdedb.common import unwrap
 from cdedb.common.query import QueryScope, QuerySpec, QuerySpecEntry
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.types import TypeMapping
 from cdedb.models.common import CdEDataclass
 
@@ -15,13 +15,14 @@ if TYPE_CHECKING:
 
     from cdedb.common import CdEDBObject  # pylint: disable=ungrouped-imports
 
+
 @dataclasses.dataclass
 class CustomQueryFilter(CdEDataclass):
     event_id: vtypes.ID
     scope: QueryScope
     title: str
     notes: Optional[str]
-    field: str  # TODO: create a new more specific type? Probably unnecessary, because this is constrained by existing query fields anyway.
+    fields: set[str]
 
     database_table = "event.custom_query_filters"
 
@@ -40,17 +41,25 @@ class CustomQueryFilter(CdEDataclass):
         data['scope'] = QueryScope(data['scope'])
         return cls(**data)  # TODO: use super instead.
 
+    def __post_init__(self) -> None:
+        if isinstance(self.fields, str):
+            self.fields = set(self.fields.split(','))
+
+    def to_database(self) -> "CdEDBObject":
+        ret = super().to_database()
+        ret['fields'] = self.field
+        return ret
+
     @property
-    def split_fields(self) -> list[str]:
-        return self.field.split(',')
+    def field(self) -> str:
+        return ",".join(xsorted(self.fields))
 
     def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
         if self.scope != scope:
             return
-        split_fields = self.field.split(",")
-        if any(f not in spec for f in split_fields):
+        if any(f not in spec for f in self.fields):
             return
-        types = {spec[f].type for f in split_fields}
+        types = {spec[f].type for f in self.fields}
         if len(types) != 1:
             return
         spec[self.field] = QuerySpecEntry(unwrap(types), self.title)

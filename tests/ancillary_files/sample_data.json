@@ -6512,25 +6512,25 @@
         {
             "event_id": 1,
             "scope": 30,
-            "field": "reg_fields.xfield_brings_balls,reg_fields.xfield_is_child",
+            "fields": "reg_fields.xfield_brings_balls,reg_fields.xfield_is_child",
             "title": "Bälle oder Kind?"
         },
         {
             "event_id": 1,
             "scope": 30,
-            "field": "reg_fields.xfield_is_child,reg_fields.xfield_brings_balls",
+            "fields": "reg_fields.xfield_is_child,reg_fields.xfield_brings_balls",
             "title": "Kind oder Bälle?"
         },
         {
             "event_id": 1,
             "scope": 30,
-            "field": "reg.notes,reg.orga_notes",
+            "fields": "reg.notes,reg.orga_notes",
             "title": "Alle Notizen"
         },
         {
             "event_id": 1,
             "scope": 30,
-            "field": "reg.amount_paid,persona.birthday",
+            "fields": "reg.amount_paid,persona.birthday",
             "title": "Bad Combo!"
         }
     ],
