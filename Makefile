@@ -38,7 +38,7 @@ PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
-RUFF ?= $(PYTHONBIN) -m ruff
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -144,7 +144,9 @@ ruff:
 	@echo $(BANNERLINE)
 	@echo "All of ruff"
 	@echo $(BANNERLINE)
-	$(RUFF) cdedb
+	sudo mkdir .ruff_cache -p
+	sudo chown cdedb -R .ruff_cache
+	$(RUFF) cdedb tests
 	@echo ""
 
 .PHONY: template-line-length
@@ -156,7 +158,7 @@ template-line-length:
 	@echo ""
 
 .PHONY: lint
-lint: isort flake8 pylint
+lint: ruff isort flake8 pylint
 
 
 ################
