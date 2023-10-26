@@ -406,6 +406,16 @@ class EventQueryMixin(EventBaseFrontend):
         del data['scope']
 
         data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
+        if data:
+            if any(cf.title == data['title'] and cf.id != custom_filter_id
+                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                rs.append_validation_error(
+                    ('title', KeyError(n_("A filter with this title already exists."))))
+            if any(cf.field == data['fields'] and cf.id != custom_filter_id
+                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                rs.append_validation_error(
+                    ('field', KeyError(n_(
+                        "A filter with this selection of fields already exists."))))
         if rs.has_validation_errors() or not data:
             return self.change_custom_filter_form(rs, event_id, custom_filter_id)
 
