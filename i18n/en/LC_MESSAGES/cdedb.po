@@ -16845,6 +16845,10 @@ msgstr "BASF"
 msgid "PastInstitutions.van"
 msgstr "VereinsAustausch Neugieriger"
 
+#: cdedb/i18n_additional.py:262
+msgid "PastInstitutions.eisenberg"
+msgstr "Förderverein Feriendorf Eisenberg"
+
 #: cdedb/i18n_additional.py:264
 msgid "QueryOperators.empty"
 msgstr "is empty"
