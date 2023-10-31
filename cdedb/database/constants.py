@@ -357,6 +357,7 @@ class PastInstitutions(CdEIntEnum):
     jgw = 60  #:
     basf = 80  #:
     van = 200  #:
+    eisenberg = 400  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -371,6 +372,7 @@ class PastInstitutions(CdEIntEnum):
             self.jgw: "JGW",
             self.basf: "BASF",
             self.van: "VAN",
+            self.eisenberg: "FV Eisenberg",
         }
         return shortnames[self]
 
