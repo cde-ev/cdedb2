@@ -102,3 +102,9 @@ class CdEDataclass:
     def database_fields(cls) -> List[str]:
         """List all fields of this entity which are saved to the database."""
         return [field.name for field in dataclasses.fields(cls)]
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return the fields of a dataclass instance as a new dictionary mapping
+        field names to field values.
+        """
+        return dataclasses.asdict(self)

@@ -1511,7 +1511,8 @@ class FrontendTest(BackendTest):
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
-            entities = self.event.get_events(self.key, entity_ids)
+            entities = {event_id: event.to_database() for event_id, event
+                        in self.event.get_events(self.key, entity_ids).items()}
             if event_id := kwargs.get('event_id'):
                 specific_log = True
                 self.get(f"/event/event/{event_id}/log")

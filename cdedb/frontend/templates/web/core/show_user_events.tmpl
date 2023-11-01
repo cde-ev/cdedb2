@@ -22,22 +22,22 @@
         {% endtrans %}
     </p>
     <ul>
-        {% for event_id, event in events|keydictsort(EntitySorter.event) %}
+        {% for event in events.values()|sort %}
             <li>
                 {% if 'event_admin' in user.roles %}
                     {{ util.href(cdedblink("event/show_registration",
-                                           {'event_id': event_id, 'registration_id': registration_ids[event_id]}),
+                                           {'event_id': event.id, 'registration_id': registration_ids[event.id]}),
                                  event['title']) }}
                 {% else %}
-                    {{ util.href(cdedblink("event/registration_status", {'event_id': event_id}), event['title']) }}
+                    {{ util.href(cdedblink("event/registration_status", {'event_id': event.id}), event['title']) }}
                 {% endif %}
                 <br />
                 <small class="text-muted">
-                {% for part_id, part in event['parts']|keydictsort(EntitySorter.event_part) %}
-                    {% if registration_parts[event_id]|length != 1 %}
-                        {{ event['parts'][part_id]['title'] }}:
+                {% for part in event['parts'].values()|sort %}
+                    {% if registration_parts[event.id]|length != 1 %}
+                        {{ event['parts'][part.id]['title'] }}:
                     {% endif %}
-                    {{ gettext(registration_parts[event_id][part_id]|enum(enums['RegistrationPartStati'])) }}
+                    {{ gettext(registration_parts[event.id][part.id]|enum(enums['RegistrationPartStati'])) }}
                     {%- if not loop.last %}, {% endif -%}
                 {% endfor %}
                 </small>

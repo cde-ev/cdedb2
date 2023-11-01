@@ -170,17 +170,17 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
-            rs.add_validation_error(("persona_id", ValueError(
+            rs.append_validation_error(("persona_id", ValueError(
                 n_("Persona must have cde realm."))))
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         if (persona["donation"] and persona["donation"] != donation
                 and not rs.ignore_warnings):
-            rs.add_validation_error(("donation", ValidationWarning(
+            rs.append_validation_error(("donation", ValidationWarning(
                 n_("User already set a different donation of %(donation)s."),
                 {"donation": money_filter(persona["donation"])})))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         if donation < min_donation:
-            rs.add_validation_error(("donation", ValueError(
+            rs.append_validation_error(("donation", ValueError(
                 n_("Lastschrift donation must be at least %(min)s."),
                 {"min": money_filter(min_donation)})))
         if rs.has_validation_errors():

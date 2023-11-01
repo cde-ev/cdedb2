@@ -689,6 +689,8 @@ CREATE TABLE event.events (
         --
         -- cut for past_event.events (modulo column tempus)
         --
+        -- URL of event specific page at the CdE homepage
+        website_url                  varchar,
         registration_start           timestamp WITH TIME ZONE,
         -- official end of registration
         registration_soft_limit      timestamp WITH TIME ZONE,
@@ -715,7 +717,7 @@ CREATE TABLE event.events (
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- reference to special purpose custom data fields
-        lodge_field                  integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        lodge_field_id               integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
@@ -748,12 +750,12 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
-        waitlist_field          integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        waitlist_field_id       integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field_id    integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
-CREATE INDEX event_parts_partial_waitlist_field_idx ON event.event_parts(waitlist_field) WHERE waitlist_field IS NOT NULL;
+CREATE INDEX event_parts_partial_waitlist_field_id_idx ON event.event_parts(waitlist_field_id) WHERE waitlist_field_id IS NOT NULL;
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 GRANT SELECT ON event.event_parts TO cdb_anonymous;
@@ -792,7 +794,7 @@ CREATE TABLE event.course_tracks (
         num_choices             integer NOT NULL,
         min_choices             integer NOT NULL, -- required number of distinct course choices
         sortkey                 integer NOT NULL,
-        course_room_field       integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        course_room_field_id    integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
@@ -854,10 +856,10 @@ GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
 GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
-ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (lodge_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field_id) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
@@ -1305,6 +1307,8 @@ CREATE TABLE ml.mailinglists (
         convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
+        -- see cdedb.database.constants.MailinglistRosterVisibility
+        roster_visibility       integer NOT NULL,
         subject_prefix          varchar,
         -- in kB
         maxsize                 integer,

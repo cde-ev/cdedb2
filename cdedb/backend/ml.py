@@ -22,7 +22,6 @@ from cdedb.common import (
     make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
@@ -394,6 +393,8 @@ class MlBackend(AbstractBackend):
                     mod_policy=const.ModerationPolicy(e['mod_policy']),
                     attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
                     convert_html=e["convert_html"],
+                    roster_visibility=const.MailinglistRosterVisibility(
+                        e["roster_visibility"]),
                     is_active=e["is_active"],
                     moderators=set(),
                     whitelist=set(),
@@ -622,9 +623,9 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= MOD_ALLOWED_FIELDS:
+                if not changed <= current.get_moderator_fields():
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not changed <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
+                if not changed <= current.restricted_moderator_fields and is_restricted:
                     raise PrivilegeError(n_(
                         "Restricted moderators are not allowed to change this."))
 
@@ -1038,6 +1039,50 @@ class MlBackend(AbstractBackend):
                      ) -> Dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
+
+    @access("ml")
+    def may_view_roster(self, rs: RequestState, ml: Mailinglist) -> bool:
+        """Determine if the user is privileged to view the roster of this mailinglist.
+
+        This is needed to determine the visibility of "roster" in the navbar. Therefore,
+        we take the is_active of the mailinglist into account.
+        """
+        ml = affirm_dataclass(Mailinglist, ml)
+        mrv = const.MailinglistRosterVisibility
+        assert rs.user.persona_id is not None
+
+        if not ml.is_active:
+            return False
+        elif self.may_manage(rs, ml.id):
+            return True
+        elif ml.roster_visibility == mrv.none:
+            return False
+        elif ml.roster_visibility == mrv.subscribable:
+            return (self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
+        elif ml.roster_visibility == mrv.viewers:
+            return (self.may_view(rs, ml)
+                    or self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
+        else:
+            raise RuntimeError
+
+    @access("ml")
+    def get_roster(self, rs: RequestState, mailinglist_id: int) -> Set[int]:
+        """Retrieve the roster of a given mailinglist."""
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        mailinglist = self.get_mailinglist(rs, mailinglist_id)
+
+        # Check if the user is privileged to view the roster list
+        if not self.may_view_roster(rs, mailinglist):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = ("SELECT persona_id FROM ml.subscription_states"
+                 " WHERE mailinglist_id = %s AND subscription_state = ANY(%s)")
+        params = (mailinglist_id, const.SubscriptionState.subscribing_states())
+        return {entry["persona_id"] for entry in self.query_all(rs, query, params)}
 
     @access("ml")
     def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int

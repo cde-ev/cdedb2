@@ -14,14 +14,14 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for course_id, course in courses|keydictsort(EntitySorter.course) %>>
-        <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
-        <<% set key = (course_id, track_id) %>>
+        <<% for track in tracks.values()|sort if track.id in course['active_segments'] %>>
+        <<% set key = (course_id, track.id) %>>
             \begin{minipage}[c][\logosize\linewidth][c]{0.8\linewidth}
                 \raggedright
                 \Huge\textbf{<<< course['shortname']|te >>>}\\
                 \normalsize <<< course['title']|te >>>\\
                 <<% if ambience['event']['tracks']|length > 1 -%>>
-                    \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
+                    \emph{<<< ambience['event']['tracks'][track.id]['shortname']|te >>>}\\
                 <<%- endif %>>
                 <<< (attendees[key]|length - instructors[key]|length)|te >>> <<% trans %>> Participants <<%- endtrans -%>>
                 , <<< instructors[key]|length|te >>> <<% trans %>> Instructors <<% endtrans %>>
@@ -30,10 +30,10 @@
                 \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-<<< course_id|te >>>}
             \end{minipage}
             \begin{itemize}
-                <<% for reg_id, reg in registrations.items() if reg_id in attendees[(course_id, track_id)] %>>
+                <<% for reg_id, reg in registrations.items() if reg_id in attendees[(course_id, track.id)] %>>
                     <<% with p = personas[registrations[reg_id]['persona_id']] %>>
                         \item
-                            <<% if reg_id in instructors[(course_id, track_id)] %>>
+                            <<% if reg_id in instructors[(course_id, track.id)] %>>
                                 \emph{
                                     <<<- personas[registrations[reg_id]['persona_id']]|persona_name|te ->>>
                                 }
@@ -50,9 +50,9 @@
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
-                <<% if course_room_fields[track_id] -%>>
+                <<% if course_room_fields[track.id] -%>>
                     <<% trans %>> Course room <<% endtrans %>>:
-                    <<< course['fields'].get(course_room_fields[track_id], "")|te >>>
+                    <<< course['fields'].get(course_room_fields[track.id], "")|te >>>
                 <<%- endif %>>
             \end{minipage}
             \clearpage

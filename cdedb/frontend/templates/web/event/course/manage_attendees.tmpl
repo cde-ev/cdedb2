@@ -23,9 +23,8 @@
     <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
         {{ util.anti_csrf_token('event/manage_attendees') }}
         {% set relevant_tracks = [] %}
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-                if track_id in ambience['course']['segments'] %}
-            {% do relevant_tracks.append((track_id, track)) %}
+        {% for track in ambience['event']['tracks'].values()|sort if track.id in ambience['course']['segments'] %}
+            {% do relevant_tracks.append((track.id, track)) %}
         {% endfor %}
         {% for batch in relevant_tracks|batch(3) %}
             <div class="row">

@@ -27,6 +27,10 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True,
                                     info=gettext("This description is visible to all event users, if “Visibility "
                                                   "of the Event” is set.")) }}
+        {{ util.form_input_text(name="website_url", label=gettext("Website Link"),
+                                    info=gettext("URL of the corresponding page of this event at the CdE website."
+                                                 " This is cross linked on the overview and on the course list,"
+                                                 " if “Visibility of the Courselist” is set.")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
@@ -89,7 +93,7 @@
         {{ util.form_input_textarea(name="field_definition_notes", label=gettext("Custom Fields Notes"), markdown=True,
                                     info=gettext("This will be shown on the '%(field_summary)s' page.")|format(
                                         field_summary=gettext("Configure Custom Fields")))  }}
-        {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
+        {{ util.form_input_select(name="lodge_field_id", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the automatic detection "
                                   "of lodgement wishes and the lodgement graph. Fieldtype: Text")) }}

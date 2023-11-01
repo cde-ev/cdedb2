@@ -65,7 +65,8 @@ class CdESemesterMixin(CdEBaseFrontend):
             self.cdeproxy.advance_semester(rs)
 
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).billing:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not (allowed_steps.billing or allowed_steps.archival_notification):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -153,7 +154,8 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).ejection:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not (allowed_steps.ejection or allowed_steps.automated_archival):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
