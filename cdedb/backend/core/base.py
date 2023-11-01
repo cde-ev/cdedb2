@@ -805,7 +805,7 @@ class CoreBaseBackend(AbstractBackend):
                     n_("Admin privilege modification prevented."))
         if (("is_member" in data or "trial_member" in data)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
-                     or "membership" not in allow_specials)):
+                     or not {"membership", "purge"} & set(allow_specials))):
             raise PrivilegeError(n_("Membership modification prevented."))
         if (current['decided_search'] and not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
@@ -820,7 +820,7 @@ class CoreBaseBackend(AbstractBackend):
             # Allow setting balance to 0 or None during archival or membership change.
             if not ((data["balance"] is None or data["balance"] == 0)
                     and REALM_ADMINS & rs.user.roles
-                    and {"archive", "membership"} & set(allow_specials)):
+                    and {"archive", "purge", "membership"} & set(allow_specials)):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1642,11 +1642,11 @@ class CoreBaseBackend(AbstractBackend):
                 ml_ids = set(unwrap(self.query_one(
                     rs, query, (moderated_mailinglists,))) or [])
                 # Check the difference.
-                unmodearated_mailinglists = moderated_mailinglists - ml_ids
-                if unmodearated_mailinglists:
+                unmoderated_mailinglists = moderated_mailinglists - ml_ids
+                if unmoderated_mailinglists:
                     raise ArchiveError(
                         n_("Sole moderator of a mailinglist %(ml_ids)s."),
-                        {'ml_ids': unmodearated_mailinglists})
+                        {'ml_ids': unmoderated_mailinglists})
             #
             # 9. Clear logs
             #
@@ -1743,6 +1743,12 @@ class CoreBaseBackend(AbstractBackend):
                 'is_ml_realm': True,
                 'is_assembly_realm': True,
                 'is_purged': True,
+                'balance': 0,
+                'donation': 0,
+                'decided_search': False,
+                'trial_member': False,
+                'bub_search': False,
+                'paper_expuls': True,
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,

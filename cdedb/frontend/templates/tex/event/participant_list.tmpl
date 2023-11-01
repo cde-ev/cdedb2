@@ -32,7 +32,7 @@
     \begin{longtable}{
     |llll
     <<%- if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
-        <<%- for ep_id, ep in parts.items() -%>>
+        <<%- for ep in parts.values()|sort -%>>
             <<%- if ep['tracks']|length > 1 -%>>
                 <<<- ('l'*ep['tracks']|length) ->>>
             <<%- else -%>>
@@ -48,11 +48,11 @@
 			& \head{<<% trans %>> Email Address <<% endtrans %>>}
 			& \head{<<% trans %>> Postal Code, City <<% endtrans %>>}
             % Kursschienen/Eventparts
-            <<% for ep_id, ep in parts|keydictsort(EntitySorter.event_part) if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep in parts.values()|sort if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
 			    <<% if ep['tracks']|length < 1 -%>>
                     & \head{<<< ep.shortname|te >>>}
                 <<% endif -%>>
-                <<% for t_id, t in ep['tracks']|keydictsort(EntitySorter.course_track) -%>>
+                <<% for t in ep['tracks'].values()|sort -%>>
 				    & \head{<<< t.shortname|te >>>}
 			    <<% endfor -%>>
             <<% endfor -%>>
@@ -77,26 +77,26 @@
                 <<<- gettext("CountryCodes." + personas[registration['persona_id']]['country'])|te ->>>
             <<% endif -%>>
             % Kurse
-            <<% for ep_id, ep in parts|keydictsort(EntitySorter.event_part) if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep in parts.values()|sort if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
                 <<% if ep['tracks']|length < 1 -%>>
-                    <<% if registration['parts'][ep_id]['status'] == participant -%>>
+                    <<% if registration['parts'][ep.id]['status'] == participant -%>>
                         & \checkmark
                     <<%- else -%>>
                         & ---
                     <<%- endif -%>>
                     % <<< ep['shortname']|te >>>
                 <<% endif -%>>
-                <<% for t_id, t in ep['tracks']|keydictsort(EntitySorter.course_track) -%>>
+                <<% for t in ep['tracks'].values()|sort -%>>
                     & % <<< t['shortname']|te >>>
                     <<% if registration['parts'][t['part_id']]['status'] == participant -%>>
-                        <<% if registration['tracks'][t_id]['course_id'] -%>>
-                            <<% if registration['tracks'][t_id]['course_instructor']
-                                    == registration['tracks'][t_id]['course_id'] -%>>
+                        <<% if registration['tracks'][t.id]['course_id'] -%>>
+                            <<% if registration['tracks'][t.id]['course_instructor']
+                                    == registration['tracks'][t.id]['course_id'] -%>>
                                 \emph{
-                                    <<<- courses[registration['tracks'][t_id]['course_id']]['shortname']|te ->>>
+                                    <<<- courses[registration['tracks'][t.id]['course_id']]['shortname']|te ->>>
                                 }
                             <<%- else -%>>
-                                <<<- courses[registration['tracks'][t_id]['course_id']]['shortname']|te ->>>
+                                <<<- courses[registration['tracks'][t.id]['course_id']]['shortname']|te ->>>
                             <<% endif -%>>
                         <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                             \emph{<<% trans %>> Orga <<% endtrans %>>}

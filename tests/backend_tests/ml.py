@@ -211,6 +211,7 @@ class TestMlBackend(BackendTest):
                 description="Einer geht noch ...",
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(3),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(2048),
@@ -228,6 +229,7 @@ class TestMlBackend(BackendTest):
                 assembly_id=self.as_id(1),
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(5),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
@@ -244,6 +246,7 @@ class TestMlBackend(BackendTest):
                 description=None,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(7),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
@@ -304,6 +307,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=False,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -335,6 +339,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -1312,6 +1317,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=False,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -1414,6 +1420,7 @@ class TestMlBackend(BackendTest):
             description=None,
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             event_id=self.as_id(2),
             is_active=True,
             maxsize=None,
@@ -1879,6 +1886,8 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
+        type_change_err_msg = (
+            "Not privileged to change to this mailinglist type for this mailinglist.")
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
@@ -1890,6 +1899,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -1928,8 +1938,7 @@ class TestMlBackend(BackendTest):
                     self.ml.change_ml_type(
                         self.key, new_id, ml_type,
                         update={"domain": const.MailinglistDomain.lists})
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(
                     self.ml.change_ml_type(
@@ -1952,6 +1961,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -1982,8 +1992,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2001,6 +2010,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -2029,8 +2039,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2057,6 +2066,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,

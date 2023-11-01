@@ -6,11 +6,19 @@
 {% endblock %}
 {% block content %}
     {% if "assembly_mgmt" in user.admin_views %}
+        <div class="p button-par">
         {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
                 aclass="btn btn-sm btn-success") }}
-    {% else %}
-        {% trans %}Here You can find the CdE’s general assemblies.{% endtrans %}
+        </div>
     {% endif %}
+    <p>
+        {% trans general_info=util.href("https://www.cde-ev.de/vereinsleben/mgv/", gettext("general information")),
+                 howtomgv=util.href("https://www.cde-ev.de/vereinsleben/mgv/how-to/", gettext("How to MGV")) %}
+            Here you can find the CdE’s general assemblies.
+            More {{ general_info }} about CdE assemblies are provided on the CdE website.
+            Hints how to participate in an assembly are provided on the “{{ howtomgv }}” page of the CdE website.
+        {% endtrans %}
+    </p>
     {{ util.h(n_("Active Assemblies")) }}
     <ul class="spaced" id="active-assemblies">
         {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}

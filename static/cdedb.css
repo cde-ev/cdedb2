@@ -83,6 +83,9 @@ body{
 .table-log {
     margin-bottom: 0;
 }
+.col-border-right {
+    border-right: 2px solid #ddd
+}
 .crosstable {
     width: unset;
 }
@@ -737,6 +740,9 @@ tr.drow-delete>td, tr.drow-delete1>td {
 }
 .history-row.complicated {
     background-color: #ff9900;
+}
+.history-row.panic {
+    background-color: #d9534f;
 }
 .history-row .collapse-button {
     position: absolute;

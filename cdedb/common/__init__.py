@@ -26,19 +26,27 @@ from typing import (
 
 import psycopg2.extras
 import pytz
+import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
+import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
+from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEIntEnum
 
+if TYPE_CHECKING:
+    import cdedb.models.event as models_event
+    from cdedb.models.event import CdEDataclassMap
+
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
@@ -256,41 +264,32 @@ class RequestState(ConnectionContainer):
                 self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
-        """Register a new  error.
+        """Register a new error, if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
-
-        However in general the method extend_validation_errors()
-        should be preferred since it activates the validation tracking
-        even if no errors are present.
         """
         self.validation_appraised = False
-        self._errors.append(error)
-
-    def add_validation_error(self, error: Error) -> None:
-        """Register a new error, if the same error is not already present."""
         for k, e in self._errors:
             if k == error[0]:
                 if e.args == error[1].args:
                     break
         else:
-            self.append_validation_error(error)
+            self._errors.append(error)
 
     def extend_validation_errors(self, errors: Iterable[Error]) -> None:
         """Register a new (maybe empty) set of errors.
+
+        Errors are only added if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
         """
         self.validation_appraised = False
-        self._errors.extend(errors)
-
-    def add_validation_errors(self, errors: Iterable[Error]) -> None:
         for e in errors:
-            self.add_validation_error(e)
+            self.append_validation_error(e)
 
     def has_validation_errors(self) -> bool:
         """Check whether validation errors exists.
@@ -459,7 +458,11 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
                 if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    targetdict.setlist(key, adict[key])
+                    value = adict[key]
+                    if isinstance(value, dict) and "id" in value:
+                        targetdict[key] = value["id"]
+                    else:
+                        targetdict.setlist(key, adict[key])
                 else:
                     targetdict[key] = adict[key]
 
@@ -686,13 +689,16 @@ class CustomJSONEncoder(json.JSONEncoder):
     @overload
     def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
+    def default(self, obj: Any) -> Union[str, Tuple[Any, ...], Dict[str, Any]]:
+        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
             return str(obj)
         elif isinstance(obj, set):
             return tuple(obj)
+        elif isinstance(obj, models.CdEDataclass):
+            return obj.as_dict()
         return super().default(obj)
 
 
@@ -809,17 +815,26 @@ class AgeClasses(CdEIntEnum):
     full = 1  #: at least 18 years old
     u18 = 2  #: between 16 and 18 years old
     u16 = 3  #: between 14 and 16 years old
-    u14 = 4  #: less than 14 years old
+    u14 = 4  #: between 10 and 14 years old
+    u10 = 5  #: under 10 years old, presumed child with parents
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required."""
+        """Checks whether permission by a legal guardian is required.
+
+        This excludes young children which are assumed to be accompanied.
+        """
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+
+    def with_guardian(self) -> bool:
+        """Whether we assume that the child is accompanied by a legal guardian
+        at the event, usually a parent."""
+        return self == AgeClasses.u10
 
 
 def deduct_years(date: datetime.date, years: int) -> datetime.date:
@@ -850,7 +865,9 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
         return AgeClasses.u18
     if birth <= deduct_years(reference, 14):
         return AgeClasses.u16
-    return AgeClasses.u14
+    if birth <= deduct_years(reference, 10):
+        return AgeClasses.u14
+    return AgeClasses.u10
 
 
 @enum.unique
@@ -1355,6 +1372,97 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     return None, message[26:]
 
 
+def parse_date(val: str) -> datetime.date:
+    """Make a string into a date.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
+               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    for fmt, _ in formats:
+        try:
+            return datetime.datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
+    # Shorten strings to allow datetimes as inputs
+    for fmt, length in formats:
+        try:
+            return datetime.datetime.strptime(val[:length], fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(n_("Invalid date string."))
+
+
+def parse_datetime(
+    val: str, default_date: datetime.date = None
+) -> datetime.date:
+    """Make a string into a datetime.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
+    connectors = ("T", " ")
+    time_formats = (
+        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    formats = itertools.chain(
+        map("".join, itertools.product(date_formats, connectors, time_formats)),
+        map(" ".join, itertools.product(time_formats, date_formats))
+    )
+    ret = None
+    for fmt in formats:
+        try:
+            ret = datetime.datetime.strptime(val, fmt)
+            break
+        except ValueError:
+            pass
+    if ret is None and default_date:
+        for fmt in time_formats:
+            try:
+                # TODO if we get to here this should be unparseable?
+                ret = datetime.datetime.strptime(val, fmt)
+                ret = ret.replace(
+                    year=default_date.year, month=default_date.month,
+                    day=default_date.day)
+                break
+            except ValueError:
+                pass
+    if ret is None:
+        ret = datetime.datetime.fromisoformat(val)
+    if ret.tzinfo is None:
+        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = timezone.localize(ret)
+        assert ret is not None
+    return ret.astimezone(pytz.utc)
+
+
+def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
+                ) -> CdEDBObject:
+    """Helper to deserialize json fields.
+
+    We serialize some classes as strings and need to undo this upon
+    retrieval from the database.
+    """
+    spec: dict[str, const.FieldDatatypes]
+    spec = {f.field_name: f.kind for f in fields.values()}
+    casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
+        const.FieldDatatypes.int: lambda x: x,
+        const.FieldDatatypes.str: lambda x: x,
+        const.FieldDatatypes.float: lambda x: x,
+        const.FieldDatatypes.date: parse_date,
+        const.FieldDatatypes.datetime: parse_datetime,
+        const.FieldDatatypes.bool: lambda x: x,
+    }
+
+    def _do_cast(key: str, val: Any) -> Any:
+        if val is None:
+            return None
+        if key in spec:
+            return casters[spec[key]](val)
+        return val
+
+    return {key: _do_cast(key, val) for key, val in data.items()}
+
+
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
@@ -1377,7 +1485,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (16, 0)
+EVENT_SCHEMA_VERSION = (16, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

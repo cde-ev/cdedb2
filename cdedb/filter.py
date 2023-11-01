@@ -667,6 +667,25 @@ def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDatacl
     return [tuple(value[k] for k in args) for value in values]
 
 
+def entries_filter(items: List["CdEDataclass"], *args: str) -> List[Tuple[Any, ...]]:
+    """Transform a list of dataclasses into a list of tuples of specified fields.
+
+    Example::
+
+        >>> items = [Dataclass(id=1, name=a, active=True),
+                     Dataclass(id=2, name=b, active=False)]
+        >>> entries_filter(items, 'name', 'active')
+        [('a', True), ('b', False)]
+
+    :param items: A list of CdEDataclasses.
+    :param args: Additional positional arguments describing which keys of
+      the dataclasses should be inserted in the resulting tuple
+    :return: A list of tuples (e.g. to be used in the input_checkboxes or
+      input_select macros), built from the selected fields of the dataclasses
+    """
+    return [tuple(v.to_database()[k] for k in args) for v in items]
+
+
 def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
                          include: Container[str] = None
                          ) -> List[Tuple[str, ...]]:
@@ -726,4 +745,5 @@ JINJA_FILTERS = {
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
+    'entries': entries_filter,
 }

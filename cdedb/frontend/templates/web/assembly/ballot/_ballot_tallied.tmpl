@@ -72,7 +72,7 @@
         {% if ballot['use_bar'] %}
             <tr
                 {% if is_classical %}
-                    {# If there is any other candidate with an equal number of votes, we do not print an upper boarder. #}
+                    {# If there is any other candidate with an equal number of votes, we do not print an upper border. #}
                     {% if (result['counts'] | dictcount)[result['counts'][ASSEMBLY_BAR_SHORTNAME]] > 1 %}
                         class="no-upper-border"
                     {% endif %}

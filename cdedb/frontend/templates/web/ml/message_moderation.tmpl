@@ -27,7 +27,7 @@
             {% endtrans %}
         </p>
     {% else %}
-        <p class="text-info">
+        <p class="text-info" id="help-text-box">
          {{ util.make_icon('info-circle') }}
          {% trans %}
              If you reject a message, its author will receive a notification message. If you discard a message, no
@@ -46,13 +46,15 @@
                             ('accept', gettext('Accept All'), 'check', 'success'),
                             ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
                         {{ util.input_submit(label=label, icon=icon, value=action, name="action",
-                                             aclass="btn btn-xs btn-" + coloring) }}
+                                             aclass="btn btn-sm btn-" + coloring) }}
                     {% endfor %}
                 </form>
             </p>
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">
+                        {{ email.sender }} / {{ email.subject }}
+                        <br />
                         <form action="{{ cdedblink('ml/message_moderation') }}"
                                   method="POST"
                                   id="msg{{ email.request_id }}"
@@ -60,19 +62,27 @@
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
                             {{ util.input_hidden(name="sender", value=email.sender) }}
-                            <div class="pull-right button-par">
-                                {% for action, label, icon, coloring in (
-                                        ('whitelist', gettext('Whitelist_[[verb]]'), 'plus', 'success'),
-                                        ('accept', gettext('Accept'), 'check', 'success'),
-                                        ('reject', gettext('Reject'), 'reply', 'warning'),
-                                        ('discard', gettext('Discard'), 'trash-alt', 'danger')) %}
-                                    {{ util.input_submit(label=label, icon=icon, value=action,name="action",
-                                                         aclass=("btn btn-xs btn-" + coloring)) }}
-                                {% endfor %}
+                            <div class="button-par">
+                                {{ util.input_submit(label=gettext('Whitelist_[[verb]]'), icon='plus',
+                                                     value='whitelist', name="action",
+                                                     aclass=("btn btn-sm btn-success")) }}
+                                {{ util.input_submit(label=gettext('Accept'), icon='check', value='accept',
+                                                     name="action", aclass=("btn btn-sm btn-success")) }}
+                                {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
+                                                     name="action", aclass=("btn btn-sm btn-warning"),
+                                                     anid=('mlmod-button-reject-' + (email.request_id | string))) }}
+                                {{ util.input_submit(label=gettext('Discard'), icon='trash-alt', value='discard',
+                                                     name="action", aclass=("btn btn-sm btn-danger")) }}
                             </div>
+                            <div>
+                                {{ util.input_textarea('reason', aclass='form-control  input-sm', rows=2,
+                                                       anid=('mlmod-noscript-reason-' + (email.request_id | string))) }}
+                            </div>
+                            <script nonce="{{ csp_nonce }}">
+                                $(document).ready(function() {mlmod_bind_modal({{email.request_id}})});
+                            </script>
                         </form>
-                        {{ email.sender }} / {{ email.subject }}
-                        <br />
+
                         <details>
                             <summary>{% trans %}Message details{% endtrans %}</summary>
                             <pre>{{ email.msg }}</pre>
@@ -84,4 +94,75 @@
             <p>{% trans %}No held messages.{% endtrans %}</p>
         {% endif %}
     {% endif %}
+    <script nonce="{{ csp_nonce }}">
+        function mlmod_bind_modal(request_id) {
+            const button = `
+               {{ util.input_submit(label=gettext('Reject with cause ...'), icon='reply', value='none',
+                                    name="action", aclass=("btn btn-sm btn-warning"),
+                                    anid=('mlmod-button-cause-${ request_id }')) }}
+            `;
+            const hidden_input = `
+                <input type="hidden" name="reason" value="" id="mlmod-hidden-reason-${ request_id }"/>
+            `
+            if (!$("#mlmod-button-cause-" + request_id).length) {
+                $("#mlmod-button-reject-" + request_id).after(button);
+                $("#mlmod-button-reject-" + request_id).after(hidden_input);
+                $("#mlmod-noscript-reason-" + request_id).remove();
+                $("#mlmod-button-cause-" + request_id).on("click", function(e) {
+                    return false;
+                });
+            }
+            $("#mlmod-button-cause-" + request_id).on("click", function() {
+                mlmod_show_modal(request_id);
+            });
+        }
+
+        function mlmod_show_modal(request_id) {
+            const modal = `
+    <div class="modal" id="mlmod-modal-${ request_id }" role="textbox">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        {{ gettext('Rejection reason') }}
+                    </h4>
+                </div>
+                <div class="modal-body" id="mlmod-modal-content">
+                    <textarea id="mlmod-textarea-reason-${ request_id }" class="form-control" rows="7"></textarea>
+                </div>
+                <div class="modal-footer">
+                    {{ util.input_submit(label=gettext('Cancel'), icon='times', value='none',
+                                         name="action", aclass=("btn btn-default"),
+                                         anid=('mlmod-modal-cancel-${ request_id }')) }}
+                    {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
+                                         name="action", aclass=("btn btn-warning"),
+                                         anid=('mlmod-modal-reject-${ request_id }')) }}
+                </div>
+            </div>
+        </div>
+    </div>
+            `;
+            if (!$("#mlmod-modal-" + request_id).length) {
+                $("body").append(modal);
+                $("#mlmod-modal-reject-" + request_id).on("click", function() {
+                    $("#mlmod-hidden-reason-" + request_id).val(
+                        $("#mlmod-textarea-reason-" + request_id).val());
+                    $("#mlmod-button-reject-" + request_id).click();
+                });
+                $("#mlmod-modal-cancel-" + request_id).on("click", function() {
+                    $("#mlmod-textarea-reason-" + request_id).val("");
+                    $("#mlmod-modal-" + request_id).modal("hide");
+                });
+                $("#mlmod-textarea-reason-" + request_id).on("keydown", function(event) {
+                    if (event.key == "Enter" && event.ctrlKey) {
+                        $("#mlmod-modal-reject-" + request_id).click();
+                        return true;
+                    }
+                });
+            }
+            $("#mlmod-modal-" + request_id).modal("show");
+            $("#mlmod-textarea-reason-" + request_id).focus();
+        }
+    </script>
 {% endblock %}
+

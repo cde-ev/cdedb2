@@ -266,6 +266,17 @@ class EventLowLevelBackend(AbstractBackend):
         new = {x for x in data if x < 0}
         updated = {x for x in data if x > 0 and data[x] is not None}
         deleted = {x for x in data if x > 0 and data[x] is None}
+
+        # Do some additional validation for any given course room field.
+        course_room_fields: Set[int] = set(
+            filter(None, (t.get('camping_mat_field_id') for t in data.values() if t)))
+        course_room_field_data = self._get_event_fields(rs, event_id,
+                                                        course_room_fields)
+        if len(course_room_fields) != len(course_room_field_data):
+            raise ValueError(n_("Unknown field."))
+        for field in course_room_field_data.values():
+            self._validate_special_event_field(rs, event_id, "course_room", field)
+
         # new
         for x in mixed_existence_sorter(new):
             new_track = copy.copy(data[x])
@@ -561,14 +572,23 @@ class EventLowLevelBackend(AbstractBackend):
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
 
-        # Do some additional validation for any given waitlist fields.
+        # Do some additional validation for any given waitlist and camping mat fields.
         waitlist_fields: Set[int] = set(
-            filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
+            filter(None, (p.get('waitlist_field_id') for p in parts.values() if p)))
         waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
         if len(waitlist_fields) != len(waitlist_field_data):
             raise ValueError(n_("Unknown field."))
         for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
+
+        camping_mat_fields: Set[int] = set(
+            filter(None, (p.get('camping_mat_field_id') for p in parts.values() if p)))
+        camping_mat_field_data = self._get_event_fields(rs, event_id,
+                                                        camping_mat_fields)
+        if len(camping_mat_fields) != len(camping_mat_field_data):
+            raise ValueError(n_("Unknown field."))
+        for field in camping_mat_field_data.values():
+            self._validate_special_event_field(rs, event_id, "camping_mat", field)
 
         self.sql_defer_constraints(rs, "event.event_parts_event_id_shortname_key")
 
@@ -1004,9 +1024,9 @@ class EventLowLevelBackend(AbstractBackend):
         * event_fees:         An event fee referencing this field.
         * questionnaire_rows: A questionnaire row that uses this field.
         * lodge_fields:       An event that uses this field for lodging wishes.
-        * camping_mat_fields: An event that uses this field for camping mat
+        * camping_mat_fields: An event_part that uses this field for camping mat
                               wishes.
-        * course_room_fields: An event that uses this field for course room
+        * course_room_fields: A course_track that uses this field for course room
                               assignment.
         * waitlist_fields:    An event_part that uses this field for waitlist
                               management.
@@ -1035,27 +1055,27 @@ class EventLowLevelBackend(AbstractBackend):
 
         lodge_fields = self.sql_select(
             rs, "event.events", ("id",), (field_id,),
-            entity_key="lodge_field")
+            entity_key="lodge_field_id")
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
         camping_mat_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,),
-            entity_key="camping_mat_field")
+            rs, "event.event_parts", ("id",), (field_id,),
+            entity_key="camping_mat_field_id")
         if camping_mat_fields:
             blockers["camping_mat_fields"] = [
                 e["id"] for e in camping_mat_fields]
 
         course_room_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,),
-            entity_key="course_room_field")
+            rs, "event.course_tracks", ("id",), (field_id,),
+            entity_key="course_room_field_id")
         if course_room_fields:
             blockers["course_room_fields"] = [
                 e["id"] for e in course_room_fields]
 
         waitlist_fields = self.sql_select(
             rs, "event.event_parts", ("id",), (field_id,),
-            entity_key="waitlist_field")
+            entity_key="waitlist_field_id")
         if waitlist_fields:
             blockers["waitlist_fields"] = [
                 e["id"] for e in waitlist_fields]
@@ -1103,28 +1123,28 @@ class EventLowLevelBackend(AbstractBackend):
                 for anid in blockers["lodge_fields"]:
                     deletor = {
                         'id': anid,
-                        'lodge_field': None,
+                        'lodge_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "camping_mat_fields" in cascade:
                 for anid in blockers["camping_mat_fields"]:
                     deletor = {
                         'id': anid,
-                        'camping_mat_field': None,
+                        'camping_mat_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "course_room_fields" in cascade:
                 for anid in blockers["course_room_fields"]:
                     deletor = {
                         'id': anid,
-                        'course_room_field': None,
+                        'course_room_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
             if "waitlist_fields" in cascade:
                 for anid in blockers["waitlist_fields"]:
                     deletor = {
                         'id': anid,
-                        'waitlist_field': None,
+                        'waitlist_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.event_parts", deletor)
             if "event_fees" in cascade:
@@ -1180,6 +1200,9 @@ class EventLowLevelBackend(AbstractBackend):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
             new_field['event_id'] = event_id
+            # TODO: Special-case this in EventField.to_database()
+            if new_field['entries']:
+                new_field['entries'] = list(new_field['entries'].items())
             ret *= self.sql_insert(rs, "event.field_definitions", new_field)
             self.event_log(rs, const.EventLogCodes.field_added, event_id,
                            change_note=new_field['field_name'])
@@ -1192,6 +1215,8 @@ class EventLowLevelBackend(AbstractBackend):
                 assert updated_field is not None
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
+                if entries := updated_field.get('entries'):
+                    updated_field['entries'] = list(map(list, entries.items()))
                 current = current_field_data[x]
                 if any(updated_field[k] != current[k] for k in updated_field):
                     if event_fees_per_field[x]:

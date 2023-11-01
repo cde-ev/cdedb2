@@ -246,9 +246,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
                         'id': event_id,
-                        'course_room_field': None,
-                        'lodge_field': None,
-                        'camping_mat_field': None,
+                        'lodge_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     with Silencer(rs):
@@ -286,7 +284,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 ret *= self.sql_delete_one(
                     rs, "event.events", event_id)
                 self.event_log(rs, const.EventLogCodes.event_deleted,
-                               event_id=None, change_note=event["title"])
+                               event_id=None, change_note=event.title)
                 # Delete non-pseudonymized event keeper only after internal work has
                 # been concluded successfully. This is inside the Atomizer to
                 # guarantee event keeper deletion if the deletion goes through.
@@ -333,6 +331,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if reg['real_persona_id']:
                     translations['persona_id'][reg['persona_id']] = \
                         reg['real_persona_id']
+            for field in data['event.field_definitions'].values():
+                if field.get('entries'):
+                    field['entries'] = list(field['entries'].items())
             extra_translations = {'course_instructor': 'course_id'}
             # Table name; name of foreign keys referencing this table
             tables = (('event.events', None),
@@ -439,14 +440,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 key for registration in data.get('registrations', {}).values()
                 if registration
                 for key in registration.get('tracks', {})}
-            if not all_track_ids <= set(event['tracks']):
+            if not all_track_ids <= set(event.tracks):
                 raise ValueError("Referential integrity of tracks violated.")
 
             all_part_ids = {
                 key for registration in data.get('registrations', {}).values()
                 if registration
                 for key in registration.get('parts', {})}
-            if not all_part_ids <= set(event['parts']):
+            if not all_part_ids <= set(event.parts):
                 raise ValueError("Referential integrity of parts violated.")
 
             used_lodgement_group_ids = {
@@ -636,14 +637,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if segments:
                                 orig_seg = current['segments']
                                 new_segments = [
-                                    x for x in event['tracks']
+                                    x for x in event.tracks
                                     if check_seg(x, segments, orig_seg)]
                                 changed_course['segments'] = new_segments
                                 orig_active = [
                                     s for s, a in current['segments'].items()
                                     if a]
                                 new_active = [
-                                    x for x in event['tracks']
+                                    x for x in event.tracks
                                     if segments.get(x, x in orig_active)]
                                 changed_course['active_segments'] = new_active
                             changed_course['id'] = course_id

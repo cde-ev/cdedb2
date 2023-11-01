@@ -19,30 +19,29 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for course_id, course in courses|keydictsort(EntitySorter.course) %>>
-        <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
-            \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
+        <<% for track in tracks.values()|sort if track.id in course['active_segments'] %>>
+            \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track.id]['title']|te >>>}%
                    {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
-                   {<<< course['notes']|te >>>}{<<< counts[course_id].get((track_id, 0), 0)|te >>>/%
-                                                <<< counts[course_id].get((track_id, 1), 0)|te >>>/%
-                                                <<< counts[course_id].get((track_id, 2), 0)|te >>>}
+                   {<<< course['notes']|te >>>}{<<< counts[course_id].get((track.id, 0), 0)|te >>>/%
+                                                <<< counts[course_id].get((track.id, 1), 0)|te >>>/%
+                                                <<< counts[course_id].get((track.id, 2), 0)|te >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
     <<% for registration_id, registration in registrations.items() %>>
-        <<% for track_id in tracks_sorted %>>
-            <<% set track = ambience['event']['tracks'][track_id] %>>
-                <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
+        <<% for track in tracks.values()|sort %>>
+                <<% if registration['parts'][ambience['event']['tracks'][track.id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
                     \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
                                 {<<< track['title']|te >>>}%
-                                {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
+                                {<<% if registration['tracks'][track.id]['course_instructor'] -%>>
                                     <<% trans %>> Instructor <<% endtrans %>>:
-                                    <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
+                                    <<< courses[registration['tracks'][track.id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
                     <<% for label in (gettext("First choice"), gettext("Second choice"), gettext("Third choice")) -%>>
-                                {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
+                                {<<% if registration['tracks'][track.id]['choices']|length > loop.index0 -%>>
                                     <<< label|te >>>:
-                                    <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
+                                    <<< courses[registration['tracks'][track.id]['choices'][loop.index0]]['title']|te >>>
                                     \par
                                  <<% endif %>>}%
                     <<% endfor %>>

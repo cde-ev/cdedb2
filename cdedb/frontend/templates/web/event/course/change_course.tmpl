@@ -38,7 +38,7 @@
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
             {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
-                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
                                           aclass='checkbox_segment', slice=2,
                                           info=gettext('Course tracks, in which the Course was originally offered.'
                                                        ' Should only be altered if the course offers has been rescinded.'
@@ -60,7 +60,7 @@
                                                 "cancelled courses.")) }}
         {% else %}
             {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
-                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
                                           aclass='checkbox_active_segment', slice=2,
                                           info=gettext("Cancelled courses are no longer choosable by participants and "
                                                        "are marked in the courselist and the course assignment view.")
