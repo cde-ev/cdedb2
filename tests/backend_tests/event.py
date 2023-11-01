@@ -202,6 +202,7 @@ class TestEventBackend(BackendTest):
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
         data['track_groups'] = {}
+        data['custom_query_filters'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}

@@ -4511,6 +4511,7 @@ def _custom_query_filter(
 
     return CustomQueryFilter(val)
 
+
 @_add_typed_validator
 def _query_input(
     val: Any, argname: str = None, *,

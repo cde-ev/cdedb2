@@ -47,6 +47,7 @@ implicit_columns = {
     "past_event.participants": {"id"},
     "past_event.log": {"id"},
     "event.course_segments": {"id"},
+    "event.custom_query_filters": {"id"},
     "event.event_fees": {"id"},
     "event.lodgement_groups": {"id"},
     "event.log": {"id"},

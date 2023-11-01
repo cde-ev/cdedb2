@@ -788,7 +788,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                                              creation=True)
 
             new_id = self.sql_insert_dataclass(rs, custom_filter)
-            # TODO logging
+            self.event_log(rs, const.EventLogCodes.custom_filter_created, event_id,
+                           change_note=data.title)
         return new_id
 
     @access("event")
@@ -820,7 +821,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     change_note = f"'{current.title}' -> '{data['title']}'"
                 else:
                     change_note = current.title
-                # TODO logging
+                self.event_log(rs, const.EventLogCodes.custom_filter_changed,
+                               event_id, change_note=change_note)
             return ret
 
     @access("event")
@@ -842,5 +844,6 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             ret = self.sql_delete_one(
                 rs, CustomQueryFilter.database_table, custom_filter_id)
-            # TODO logging
+            self.event_log(rs, const.EventLogCodes.custom_filter_deleted,
+                           event_id, change_note=current.title)
         return ret

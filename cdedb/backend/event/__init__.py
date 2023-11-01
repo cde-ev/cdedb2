@@ -87,7 +87,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             blockers["field_definitions"] = [e["id"] for e in field_definitions]
 
         custom_query_filters = self.sql_select(
-            rs, CustomQueryFilter.database_table, ("id",), (event_id,), entity_key="event_id")
+            rs, CustomQueryFilter.database_table, ("id",), (event_id,),
+            entity_key="event_id")
         if custom_query_filters:
             blockers["custom_query_filters"] = [e["id"] for e in custom_query_filters]
 

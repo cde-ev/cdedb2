@@ -1080,7 +1080,8 @@ CREATE TABLE event.custom_query_filters (
         UNIQUE (event_id, title),
         UNIQUE (event_id, fields)
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.custom_query_filters TO cdb_persona;
+GRANT SELECT ON event.custom_query_filters TO cdb_anonymous;
+GRANT INSERT, UPDATE, DELETE ON event.custom_query_filters TO cdb_persona;
 GRANT SELECT, UPDATE ON event.custom_query_filters_id_seq TO cdb_persona;
 
 CREATE TABLE event.log (
