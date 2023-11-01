@@ -536,9 +536,6 @@ class EventRegistrationBackend(EventBaseBackend):
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
-            fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event.fields)
-                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event.parts[part_id]
                 if not part.waitlist_field:
