@@ -47,7 +47,6 @@ _LOGGER = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from cdedb.common import CdEDBObject  # pylint: disable=ungrouped-imports
     from cdedb.database.query import (  # pylint: disable=ungrouped-imports
         DatabaseValue_s,
     )
@@ -86,6 +85,7 @@ class EventDataclass(CdEDataclass):
                 and get_origin(field.type) is not dict
                 and get_origin(field.type) is not set
                 and not field.metadata.get('database_exclude')
+            or field.metadata.get('database_include')
         ]
 
     @classmethod
@@ -222,6 +222,7 @@ class Event(EventDataclass):
     tracks: CdEDataclassMap["CourseTrack"]
 
     fields: CdEDataclassMap["EventField"]
+    custom_query_filters: CdEDataclassMap["CustomQueryFilter"]
     fees: CdEDataclassMap["EventFee"]
 
     part_groups: CdEDataclassMap["PartGroup"]
@@ -235,6 +236,8 @@ class Event(EventDataclass):
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
+        data['custom_query_filters'] = CustomQueryFilter.many_from_database(
+            data['custom_query_filters'])
         data['fees'] = EventFee.many_from_database(data['fees'])
         data['part_groups'] = PartGroup.many_from_database(data['part_groups'])
         data['track_groups'] = TrackGroup.many_from_database(data['track_groups'])
@@ -503,13 +506,15 @@ class EventField(EventDataclass):
 
 @dataclasses.dataclass
 class CustomQueryFilter(EventDataclass):
-    event_id: vtypes.ID
+    database_table = "event.custom_query_filters"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
+
     scope: QueryScope
     title: str
     notes: Optional[str]
-    fields: set[str]
-
-    database_table = "event.custom_query_filters"
+    fields: set[str] = dataclasses.field(metadata={'database_include': True})
 
     fixed_fields = ("event_id", "scope")
 
@@ -525,11 +530,11 @@ class CustomQueryFilter(EventDataclass):
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['scope'] = QueryScope(data['scope'])
-        return super().from_database(**data)
+        return super().from_database(data)
 
     def __post_init__(self) -> None:
-        if isinstance(self.fields, str):
-            self.fields = set(self.fields.split(','))
+        if isinstance(self.fields, str):  # type: ignore[unreachable]
+            self.fields = set(self.fields.split(','))  # type: ignore[unreachable]
 
     def to_database(self) -> "CdEDBObject":
         ret = super().to_database()
@@ -552,11 +557,6 @@ class CustomQueryFilter(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (self.event_id, self.scope, self.title)
-
-    def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        return self.get_sortkey() < other.get_sortkey()
 
 
 @dataclasses.dataclass

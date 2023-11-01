@@ -1045,7 +1045,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         for f in sorted_fields[const.FieldAssociations.registration]
     })
 
-    for custom_filter in event['custom_query_filters'].values():
+    for custom_filter in event.custom_query_filters.values():
         custom_filter.add_to_spec(spec, QueryScope.registration)
 
     return spec
@@ -1173,7 +1173,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
         for field in sorted_course_fields
     })
 
-    for custom_filter in event['custom_query_filters'].values():
+    for custom_filter in event.custom_query_filters.values():
         custom_filter.add_to_spec(spec, QueryScope.event_course)
 
     return spec
@@ -1254,7 +1254,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
         for f in sorted_lodgement_fields
     })
 
-    for custom_filter in event['custom_query_filters'].values():
+    for custom_filter in event.custom_query_filters.values():
         custom_filter.add_to_spec(spec, QueryScope.lodgement)
 
     return spec

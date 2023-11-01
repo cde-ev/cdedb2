@@ -761,12 +761,12 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 raise PrivilegeError
 
             event = self.get_event(rs, event_id)
-            course_ids = self.list_courses(rs, event_id)
-            courses = self.get_courses(rs, course_ids)
-            lodgement_ids = self.list_lodgements(rs, event_id)
-            lodgements = self.get_lodgements(rs, lodgement_ids)
-            lodgement_group_ids = self.list_lodgement_groups(rs, event_id)
-            lodgement_groups = self.get_lodgement_groups(rs, lodgement_group_ids)
+            course_ids = self.list_courses(rs, event_id)  # type: ignore[attr-defined]
+            courses = self.new_get_courses(rs, course_ids)  # type: ignore[attr-defined]
+            lodgement_ids = self.list_lodgements(rs, event_id)  # type: ignore[attr-defined]
+            lodgements = self.new_get_lodgements(rs, lodgement_ids)  # type: ignore[attr-defined]
+            lodgement_group_ids = self.list_lodgement_groups(rs, event_id)  # type: ignore[attr-defined]
+            lodgement_groups = self.new_get_lodgement_groups(rs, lodgement_group_ids)  # type: ignore[attr-defined]
 
         return scope.get_spec(
             event=event, courses=courses, lodgements=lodgements,

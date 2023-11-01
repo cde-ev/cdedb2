@@ -438,7 +438,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                             rule("/lodgement", methods=_GET,
                                  endpoint="create_lodgement_filter"),
                         )),
-                        sub('/<int:custom_filter_id>',(
+                        sub('/<int:custom_filter_id>', (
                             rule("/change", methods=_GET,
                                  endpoint="change_custom_filter_form"),
                             rule("/change", methods=_POST,

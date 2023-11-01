@@ -288,11 +288,10 @@ class EventQueryMixin(EventBaseFrontend):
         rs.ignore_validation_errors()
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
+        courses = self.eventproxy.new_get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
 
         query_specs = {
             scope: scope.get_spec(
@@ -335,7 +334,8 @@ class EventQueryMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdatadict(*CustomQueryFilter.requestdict_fields())
-    def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject):
+    def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                             ) -> Response:
         scope = check(rs, QueryScope, data['scope'])
         if rs.has_validation_errors() or not scope:
             rs.notify("error", "Invalid Scope.")
@@ -350,11 +350,11 @@ class EventQueryMixin(EventBaseFrontend):
         data = check(rs, vtypes.CustomQueryFilter, data, creation=True, query_spec=spec)
         if data:
             if any(cf.title == data['title']
-                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                   for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('title', KeyError(n_("A filter with this title already exists."))))
             if any(cf.field == data['fields']
-                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                   for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('field', KeyError(n_(
                         "A filter with this selection of fields already exists."))))
@@ -395,11 +395,11 @@ class EventQueryMixin(EventBaseFrontend):
         data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
         if data:
             if any(cf.title == data['title'] and cf.id != custom_filter_id
-                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                   for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('title', KeyError(n_("A filter with this title already exists."))))
             if any(cf.field == data['fields'] and cf.id != custom_filter_id
-                   for cf in rs.ambience['event']['custom_query_filters'].values()):
+                   for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('field', KeyError(n_(
                         "A filter with this selection of fields already exists."))))

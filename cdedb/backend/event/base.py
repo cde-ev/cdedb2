@@ -208,7 +208,7 @@ class EventBaseBackend(EventLowLevelBackend):
             e['track_groups'] = []
             e['fees'] = []
             e['fields'] = []
-            e['custom_filters'] = []
+            e['custom_query_filters'] = []
         for p in part_data:
             event_data[p['event_id']]['parts'].append(p)
         for pg in part_group_data:
@@ -222,7 +222,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for field in field_data:
             event_data[field['event_id']]['fields'].append(field)
         for custom_filter in custom_filter_data:
-            event_data[custom_filter['event_id']]['custom_filters'].append(
+            event_data[custom_filter['event_id']]['custom_query_filters'].append(
                 custom_filter)
         return models.Event.many_from_database(event_data.values())
 
@@ -1287,6 +1287,7 @@ class EventBaseBackend(EventLowLevelBackend):
         # Delete this later.
         # del ret['event']['orgas']
         del ret['event']['tracks']
+        del ret['event']['custom_query_filters']
         ret['event']['fees'] = {
             fee['title']: fee for fee in ret['event']['fees'].values()}
         for fee in ret['event']['fees'].values():
