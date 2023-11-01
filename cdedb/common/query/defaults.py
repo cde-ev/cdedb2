@@ -145,18 +145,6 @@ def generate_event_registration_default_queries(
               const.RegistrationPartStati.participant.value),), default_sort),
     }
 
-    if len(event.parts) > 1:
-        queries.update({
-            n_("16_query_event_registration_waitlist"): Query(
-                QueryScope.registration, spec,
-                all_part_stati_column.split(",") +
-                ["persona.given_names", "persona.family_name",
-                 "ctime.creation_time", "reg.payment"],
-                ((all_part_stati_column, QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                (("ctime.creation_time", True),)),
-        })
-
     return queries
 
 
