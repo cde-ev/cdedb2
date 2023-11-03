@@ -3445,17 +3445,17 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_registration(self.key, reg_data)
-        # The altered registration will be placed first in the waitlist, because
-        # it defaults to 0.
+        # The altered registration will be placed last in the waitlist, because
+        # it defaults to 2**31.
         for waitlist in expectation.values():
             if reg_id in waitlist:
                 waitlist.remove(reg_id)
-                waitlist.insert(0, reg_id)
+                waitlist.append(reg_id)
         self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
 
         # Check that users can check their own waitlist position.
         self.login(USER_DICT["emilia"])
-        self.assertEqual({1: 4, 2: 2, 3: 2},
+        self.assertEqual({1: 3, 2: 2, 3: 2},
                          self.event.get_waitlist_position(self.key, event_id=1))
         with self.assertRaises(PrivilegeError):
             self.event.get_waitlist_position(

@@ -518,7 +518,10 @@ class EventRegistrationBackend(EventBaseBackend):
                       ) -> Dict[int, Optional[List[int]]]:
         """Compute the waitlist in order for the given parts.
 
-        :returns: Part id maping to None, if no waitlist ordering is defined
+        Registrations with an empty waitlist field wil be placed at the end of the
+        waitlist. The registration id is used as a tie breaker.
+
+        :returns: Part id mapping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
         event_id = affirm(vtypes.ID, event_id)
@@ -533,24 +536,23 @@ class EventRegistrationBackend(EventBaseBackend):
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
-            fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event.fields)
-                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event.parts[part_id]
                 if not part.waitlist_field:
                     ret[part_id] = None
                     continue
                 field_name = part.waitlist_field.field_name
-                query = ("SELECT reg.id, rparts.status"
-                         " FROM event.registrations AS reg"
-                         " LEFT OUTER JOIN event.registration_parts AS rparts"
-                         " ON reg.id = rparts.registration_id"
-                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                query = f"""
+                    SELECT reg.id
+                    FROM event.registrations AS reg
+                        LEFT JOIN event.registration_parts AS rparts
+                            ON reg.id = rparts.registration_id
+                    WHERE rparts.part_id = %s AND rparts.status = %s
+                    ORDER BY
+                        COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
+                """
                 data = self.query_all(rs, query, (part_id, waitlist))
-                ret[part_id] = xsorted(
-                    (reg['id'] for reg in data),
-                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
+                ret[part_id] = [e['id'] for e in data]
             return ret
 
     @access("event")

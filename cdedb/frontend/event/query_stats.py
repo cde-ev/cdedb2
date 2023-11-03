@@ -151,10 +151,12 @@ def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
         if new_constraint is None or new_constraint[0] not in base_query.spec:
             return None
         merged_constraints.append(new_constraint)
+    query_orders = {tuple(q.order) for q in queries}
     return Query(
         scope=base_query.scope, spec=base_query.spec,
         fields_of_interest=set(base_query.fields_of_interest) | set(all_fields),
-        constraints=merged_constraints, order=base_query.order
+        constraints=merged_constraints,
+        order=unwrap(query_orders) if len(query_orders) == 1 else base_query.order,
     )
 
 
@@ -522,7 +524,9 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.waitlist:
             return (
-                ['reg.payment', 'ctime.creation_time'],
+                ['reg.payment', 'ctime.creation_time'] + [
+                    f'reg_fields.xfield_{part.waitlist_field.field_name}'
+                ] if part.waitlist_field else [],
                 [_status_constraint(part, RPS.waitlist)],
                 _waitlist_order(event, part)
             )
