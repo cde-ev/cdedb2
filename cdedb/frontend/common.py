@@ -65,6 +65,9 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
+import cdedb.models.droid as models_droid
+import cdedb.models.event as models_event
+import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -99,8 +102,6 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.models.droid import OrgaToken
-from cdedb.models.ml import Mailinglist
 
 Attachment = typing.TypedDict(
     "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
@@ -791,8 +792,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore[literal-required]
-        subject = headers["Prefix"] + " " + headers['Subject']  # type
-        msg["Subject"] = subject
+        if headers["Prefix"]:
+            msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
+        else:
+            msg["Subject"] = headers["Subject"]
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
@@ -1293,7 +1296,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: Mailinglist) -> Optional[
+    def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
             List[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
@@ -1316,7 +1319,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
+    def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1467,22 +1470,22 @@ AmbienceDict = typing.TypedDict(
         'genesis_case': CdEDBObject,
         'lastschrift': CdEDBObject,
         'transaction':  CdEDBObject,
-        'event': CdEDBObject,
+        'event': models_event.Event,
         'pevent': CdEDBObject,
         'course': CdEDBObject,
         'pcourse': CdEDBObject,
         'registration': CdEDBObject,
         'group': CdEDBObject,
         'lodgement': CdEDBObject,
-        'part_group': CdEDBObject,
-        'track_group': CdEDBObject,
-        'fee': CdEDBObject,
-        'orga_token': OrgaToken,
+        'part_group': models_event.PartGroup,
+        'track_group': models_event.TrackGroup,
+        'fee': models_event.EventFee,
+        'orga_token': models_droid.OrgaToken,
         'attachment': CdEDBObject,
         'attachment_version': CdEDBObject,
         'assembly': CdEDBObject,
         'ballot': CdEDBObject,
-        'mailinglist': Mailinglist,
+        'mailinglist': models_ml.Mailinglist,
     }
 )
 
@@ -1522,47 +1525,40 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
                                     == a['pevent']['id'])),)),
         Scout(None, 'part_id', None,
-              ((lambda a: do_assert(rs.requestargs['part_id']
-                                    in a['event']['parts'])),)),
+              ((lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts)),)),
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
-              ((lambda a: do_assert(a['registration']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
               'group_id', 'group',
-              ((lambda a: do_assert(a['group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['group']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
-                                    in a['event']['fields'])),)),
+                                    in a['event'].fields)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
-              ((lambda a: do_assert(a['part_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['part_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['track_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
               'track_group_id', 'track_group',
-              ((lambda a: do_assert(a['track_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['track_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
               'fee_id', 'fee',
-              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
+              ((lambda a: do_assert(a['fee'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
-              ((lambda a: do_assert(a['orga_token'].event_id == a['event']['id'])),)),
+              ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1782,7 +1778,6 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1815,7 +1810,6 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
@@ -2314,14 +2308,14 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject,
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
                              donation: decimal.Decimal = decimal.Decimal(0)) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
     return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
-        event=asciificator(event['title']),
+        event=asciificator(event.title),
         donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),

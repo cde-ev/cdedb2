@@ -337,7 +337,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
-            if not expuls['addresscheck_done'] is None:
+            if expuls['addresscheck_done'] is not None:
                 raise RuntimeError(n_(
                     "Addresscheck already done for this expuls."))
             expuls_update = {

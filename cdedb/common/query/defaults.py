@@ -12,14 +12,15 @@ about the event to be created. They can be obtained by calling the respective fu
 from typing import Dict
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, deduct_years, now
+import cdedb.models.event as models_event
+from cdedb.common import deduct_years, now
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpec
 from cdedb.common.roles import ADMIN_KEYS
 
 
 def generate_event_registration_default_queries(
-        event: CdEDBObject, spec: QuerySpec) -> Dict[str, Query]:
+        event: models_event.Event, spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -35,18 +36,18 @@ def generate_event_registration_default_queries(
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        f"part{part_id}.status" for part_id in event['parts'])
+        f"part{part_id}.status" for part_id in event.parts)
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]
-    for track_id in event['tracks']:
+    for track_id in event.tracks:
         dokuteam_course_picture_fields_of_interest.append(f"course{track_id}.nr")
         dokuteam_course_picture_fields_of_interest.append(
             f"track{track_id}.is_course_instructor")
 
     dokuteam_dokuforge_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name", "persona.username"]
-    for track_id in event['tracks']:
+    for track_id in event.tracks:
         dokuteam_dokuforge_fields_of_interest.append(f"course{track_id}.nr")
         dokuteam_dokuforge_fields_of_interest.append(
             f"track{track_id}.is_course_instructor")
@@ -65,7 +66,7 @@ def generate_event_registration_default_queries(
         n_("02_query_event_registration_orgas"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name"),
-            (("persona.id", QueryOperators.oneof, event['orgas']),),
+            (("persona.id", QueryOperators.oneof, event.orgas),),
             default_sort),
         n_("10_query_event_registration_not_paid"): Query(
             QueryScope.registration, spec,
@@ -104,28 +105,28 @@ def generate_event_registration_default_queries(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 18)),),
+              deduct_years(event.begin, 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True),)),
         n_("42_query_event_registration_u16"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 16)),),
+              deduct_years(event.begin, 16)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("44_query_event_registration_u14"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 14)),),
+              deduct_years(event.begin, 14)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("50_query_event_registration_minors_no_consent"): Query(
             QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
-              deduct_years(event['begin'], 18)),
+              deduct_years(event.begin, 18)),
              ("reg.parental_agreement", QueryOperators.equal, False)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
@@ -144,23 +145,11 @@ def generate_event_registration_default_queries(
               const.RegistrationPartStati.participant.value),), default_sort),
     }
 
-    if len(event['parts']) > 1:
-        queries.update({
-            n_("16_query_event_registration_waitlist"): Query(
-                QueryScope.registration, spec,
-                all_part_stati_column.split(",") +
-                ["persona.given_names", "persona.family_name",
-                 "ctime.creation_time", "reg.payment"],
-                ((all_part_stati_column, QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                (("ctime.creation_time", True),)),
-        })
-
     return queries
 
 
 def generate_event_course_default_queries(
-        event: CdEDBObject, spec: QuerySpec) -> Dict[str, Query]:
+        event: models_event.Event, spec: QuerySpec) -> Dict[str, Query]:
     """
     Generate default queries for course_queries.
 
@@ -172,7 +161,7 @@ def generate_event_course_default_queries(
     :return: Dict of default queries
     """
 
-    takes_place = ",".join(f"track{anid}.takes_place" for anid in event["tracks"])
+    takes_place = ",".join(f"track{anid}.takes_place" for anid in event.tracks)
 
     queries = {
         n_("50_query_dokuteam_courselist"): Query(

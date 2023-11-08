@@ -170,10 +170,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'title': mailinglist_infos[ml_id].title, 'id': ml_id}
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
-        for event in events.values():
-            event['is_visible'] = ("event_admin" in rs.user.roles
-                                   or rs.user.persona_id in event['orgas']
-                                   or event['is_visible'])
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for assembly_id, assembly in assemblies.items():
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
@@ -368,10 +364,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         event = None
         if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
-            event['is_visible'] = (
-                "event_admin" in rs.user.roles
-                or rs.user.persona_id in event['orgas']
-                or event['is_visible'])
 
         assembly = None
         if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
@@ -402,8 +394,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
-            sorted_events = keydictsort_filter(events, EntitySorter.event)
-            event_entries = [(k, v['title']) for k, v in sorted_events]
+            event_entries = [(e.id, e.title) for e in xsorted(events.values())]
         else:
             event_entries = []
         if "assembly_id" in additional_fields:

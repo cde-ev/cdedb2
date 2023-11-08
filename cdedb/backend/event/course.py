@@ -9,14 +9,15 @@ from typing import Collection, Dict, List, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    cast_fields, singularize,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, glue, unwrap,
+    RequestState, cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
@@ -68,12 +69,41 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 if 'active_segments' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['active_segments'] = active_segments
-                ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+                ret[anid]['fields'] = cast_fields(
+                    ret[anid]['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
         return ret
 
     class _GetCourseProtocol(Protocol):
         def __call__(self, rs: RequestState, course_id: int) -> CdEDBObject: ...
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
+
+    @access("event")
+    def new_get_courses(self, rs: RequestState, course_ids: Collection[int]
+                        ) -> models.CdEDataclassMap[models.Course]:
+        course_ids = affirm_set(vtypes.ID, course_ids)
+        with Atomizer(rs):
+            course_data = self.query_all(
+                rs, *models.Course.get_select_query(course_ids))
+            if not course_data:
+                return {}
+            events = {e['event_id'] for e in course_data}
+            if len(events) > 1:
+                raise ValueError(n_("Only courses from one event allowed."))
+            event_id = unwrap(events)
+            event_fields = self._get_event_fields(rs, event_id)
+        return models.Course.many_from_database([
+            {
+                **course,
+                'event_fields': event_fields.values(),
+            }
+            for course in course_data
+        ])
+
+    class _NewGetCourseProtocol(Protocol):
+        def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
+    new_get_course: _NewGetCourseProtocol = singularize(
+        new_get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(self, rs: RequestState,
@@ -109,8 +139,9 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 event_fields = self._get_event_fields(rs, current['event_id'])
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event_fields,
-                    association=const.FieldAssociations.course)
+                    fields=models.EventField.many_from_database(event_fields.values()),
+                    association=const.FieldAssociations.course,
+                )
 
                 fupdate = {
                     'id': data['id'],
@@ -194,22 +225,19 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         """Make a new course organized via DB."""
         data = affirm(vtypes.Course, data, creation=True)
         # direct validation since we already have an event_id
-        event_fields = self._get_event_fields(rs, data['event_id'])
-        fdata = data.get('fields') or {}
-        fdata = affirm(
-            vtypes.EventAssociatedFields, fdata,
-            fields=event_fields, association=const.FieldAssociations.course)
-        data['fields'] = PsycoJson(fdata)
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
-            # Check for existence of course tracks
+            self.assert_offline_lock(rs, event_id=data['event_id'])
             event = self.get_event(rs, data['event_id'])
-            if not event['tracks']:
+            # Check for existence of course tracks
+            if not event.tracks:
                 raise RuntimeError(n_("Event without tracks forbids courses."))
-
+            fdata = affirm(
+                vtypes.EventAssociatedFields, data.get('fields') or {},
+                fields=event.fields, association=const.FieldAssociations.course)
+            data['fields'] = PsycoJson(fdata)
+            if (not self.is_orga(rs, event_id=data['event_id'])
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}
             new_id = self.sql_insert(rs, "event.courses", cdata)
