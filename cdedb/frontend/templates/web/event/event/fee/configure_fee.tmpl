@@ -46,8 +46,8 @@
 
     <form action="{{ cdedblink('event/configure_fee') }}" method="POST" id="configureeventfeeform" class="form-horizontal">
         {{ util.anti_csrf_token('event/configure_fee') }}
-        {{ util.form_input_select(name="kind", label=gettext("Type"), entries=enums['EventFeeType']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_select(name="kind", label=gettext("Type"), entries=enums['EventFeeType']|enum_entries(processing=gettext)) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True) }}
         {{ util.form_input_text(name="amount", label=gettext("Amount"), addon='€') }}
         {{ util.form_input_text(name="condition", label=gettext("Condition")) }}

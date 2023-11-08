@@ -25,7 +25,7 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -49,8 +49,8 @@ class CdEParseMixin(CdEBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'], event['title']) for event in events.values()],
-            key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
+            [(event.id, event.title) for event in events.values()],
+            key=lambda e: events[e[0]], reverse=True)
         params = {
             'params': params or None,
             'data': data,
@@ -98,7 +98,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
-                params["events"][t.event['id']] += 1
+                params["events"][t.event.id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
         return data, params
@@ -212,9 +212,9 @@ class CdEParseMixin(CdEBaseFrontend):
         elif event is not None:
             aux = int(event)
             event_data = self.eventproxy.get_event(rs, aux)
-            filename = event_data["shortname"]
+            filename = event_data.shortname
             transactions = [t for t in transactions
-                            if t.event and t.event['id'] == aux
+                            if t.event and t.event.id == aux
                             and t.type == TransactionType.EventFee]
             fields = parse.EVENT_EXPORT_FIELDS
             write_header = False

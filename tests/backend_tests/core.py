@@ -1203,13 +1203,20 @@ class TestCoreBackend(BackendTest):
             self.core.archive_persona(self.key, 14, "Admins can not be archived.")
 
     @as_users("vera")
+    @prepsql("DELETE FROM ml.moderators WHERE persona_id = 10")
     def test_purge(self) -> None:
-        data = self.core.get_total_persona(self.key, 8)
-        self.assertEqual("Hades", data['given_names'])
-        ret = self.core.purge_persona(self.key, 8)
-        self.assertLess(0, ret)
-        data = self.core.get_total_persona(self.key, 8)
-        self.assertEqual("N.", data['given_names'])
+        purged_personas = {}
+        for p_id, name in ((8, "Hades"), (3, "Charly C."), (10, "Janis")):
+            if p_id != 8:
+                self.core.archive_persona(self.key, p_id, "Archived for testing.")
+            data = self.core.get_total_persona(self.key, p_id)
+            self.assertEqual(name, data['given_names'])
+            ret = self.core.purge_persona(self.key, p_id)
+            self.assertLess(0, ret)
+            purged_personas[p_id] = self.core.get_total_persona(self.key, p_id)
+            del purged_personas[p_id]['id']
+            self.assertEqual("N.", purged_personas[p_id]['given_names'])
+        self.assertEqual(purged_personas[3], purged_personas[10])
 
     def test_privilege_change(self) -> None:
         # This is somewhat hacky for now, because we need a second meta admin

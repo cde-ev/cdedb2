@@ -7,16 +7,17 @@ wishes heuristics.
 
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Pattern, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Pattern, Set, Tuple
 
 import graphviz
 
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
     make_persona_name, unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.frontend.common import cdedburl
 
@@ -45,7 +46,7 @@ class LodgementWish:
 
 def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
-                            event: CdEDBObject,
+                            event: models.Event,
                             restrict_part_id: Optional[int],
                             restrict_registration_id: int = None,
                             check_edges: bool = True,
@@ -93,7 +94,10 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
          registration_id)
         for registration_id, registration in registrations.items()
     ]
-    wish_field_name = event['fields'][event['lodge_field']]['field_name']
+    if event.lodge_field:
+        wish_field_name = event.lodge_field.field_name
+    else:
+        return [], []
     wishes: Dict[Tuple[int, int], LodgementWish] = {}
     problems: List[Notification] = []
 
@@ -238,10 +242,10 @@ def _parts_with_status(registration: CdEDBObject,
     }
 
 
-def _sort_parts(part_ids: Set[int], event: CdEDBObject) -> List[int]:
+def _sort_parts(part_ids: Set[int], event: models.Event) -> List[int]:
     """Sort the given parts accordingly to EntitySorter."""
-    sorted_parts = xsorted(event['parts'].values(), key=EntitySorter.event_part)
-    return [part["id"] for part in sorted_parts if part["id"] in part_ids]
+    sorted_parts = xsorted(event.parts.values())
+    return [part.id for part in sorted_parts if part.id in part_ids]
 
 
 def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
@@ -269,9 +273,9 @@ def create_lodgement_wishes_graph(
         registrations: CdEDBObjectMap, wishes: List[LodgementWish],
         lodgements: CdEDBObjectMap,
         lodgement_groups: CdEDBObjectMap,
-        event: CdEDBObject,
+        event: models.Event,
         personas: CdEDBObjectMap,
-        camping_mat_field_names: dict[int, Optional[str]],
+        camping_mat_field_names: Mapping[int, Optional[str]],
         filter_part_id: Optional[int], show_all: bool,
         cluster_part_id: Optional[int],
         cluster_by_lodgement: bool,
@@ -386,7 +390,10 @@ def create_lodgement_wishes_graph(
         is_present = (
             filter_part_id in present_parts if filter_part_id
             else bool(present_parts))
-        wish_field_name = event['fields'][event['lodge_field']]['field_name']
+        if event.lodge_field:
+            wish_field_name = event.lodge_field.field_name
+        else:
+            return graph
         subgraph.node(
             str(registration['id']),
             _make_node_label(registration, personas, event, camping_mat_field_names),
@@ -448,28 +455,28 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
 
 
 def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: CdEDBObject,
-                     camping_mat_field_names: dict[int, Optional[str]]) -> str:
+                     event: models.Event,
+                     camping_mat_field_names: Mapping[int, Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {p: _camping_mat_icon(
         registration['fields'].get(camping_mat_field_names[p]),
         registration['parts'][p]['is_camping_mat'])
         for p in presence_parts}
-    parts = (', '.join(f"{event['parts'][p]['shortname']}{icons[p]}"
+    parts = (', '.join(f"{event.parts[p].shortname}{icons[p]}"
                        for p in _sort_parts(presence_parts, event))
-             if len(event['parts']) > 1 else unwrap(icons.values()))
+             if len(event.parts) > 1 else unwrap(icons.values()))
     linebreak = "\n" if parts else ""
     return (f"{make_persona_name(personas[registration['persona_id']])}"
             f"{linebreak}{parts}")
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                       personas: CdEDBObjectMap, event: CdEDBObject) -> str:
+                       personas: CdEDBObjectMap, event: models.Event) -> str:
     parts = ""
-    if len(event['parts']) > 1:
+    if len(event.parts) > 1:
         parts = "\n"
         present_parts = _parts_with_status(registration, PRESENT_STATI)
-        parts += ', '.join(event['parts'][p]['title']
+        parts += ', '.join(event.parts[p].title
                            for p in _sort_parts(present_parts, event))
         waitlist_parts = _parts_with_status(registration,
                                             {RegistrationPartStati.waitlist})
@@ -477,11 +484,11 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
             if present_parts:
                 parts += "  |  "
             parts += (rs.gettext("Waitlist: ")
-                      + ', '.join(event['parts'][p]['title']
+                      + ', '.join(event.parts[p].title
                                   for p in _sort_parts(waitlist_parts, event)))
 
     persona = personas[registration['persona_id']]
-    lodge_field_name = event['fields'][event['lodge_field']]['field_name']
+    lodge_field_name = event.fields[event.lodge_field.id].field_name  # type: ignore[union-attr]
     wishes = ""
     if raw_wishes := registration['fields'].get(lodge_field_name):
         wishes = f"\n\n{raw_wishes}"
@@ -505,7 +512,7 @@ def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
 
 
 def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: CdEDBObject) -> str:
+                     event: models.Event) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
     age = _get_age(personas[registration['persona_id']], event)
@@ -529,7 +536,7 @@ def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
         return "#87d0ff"
 
 
-def _get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
+def _get_age(persona: CdEDBObject, event: models.Event) -> float:
     """
     Roughly calculate the age of a persona at the begin of a given event in
     years as a fractional number.
@@ -538,4 +545,4 @@ def _get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
     does not consider leapyaers correctly. For other purposes, consider using
     :func:`cdedb.common.deduct_years` instead.
     """
-    return float((event['begin'] - persona['birthday']).days) / 365
+    return float((event.begin - persona['birthday']).days) / 365

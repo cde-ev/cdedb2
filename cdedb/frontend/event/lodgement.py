@@ -12,6 +12,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, make_persona_name,
@@ -46,7 +47,7 @@ class LodgementProblem:
 class EventLodgementMixin(EventBaseFrontend):
     @classmethod
     def check_lodgement_problems(
-            cls, event: CdEDBObject, lodgements: CdEDBObjectMap,
+            cls, event: models.Event, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
             all_inhabitants: Dict[int, Dict[int, LodgementInhabitants]]
     ) -> List[LodgementProblem]:
@@ -61,19 +62,17 @@ class EventLodgementMixin(EventBaseFrontend):
 
         # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group: Collection[int]) -> bool:
-            """Un-inlined check whether both genders are present.
+            """Un-inlined check whether multiple genders are present."""
+            genders = list(personas[registrations[reg_id]['persona_id']]['gender']
+                           for reg_id in group)
+            if genders.count(const.Genders.not_specified) > 1:
+                # We can not tell whether not specified genders align.
+                return True
+            return len(set(genders)) > 1
 
-            This ignores non-binary people.
-            """
-            return set(
-                personas[registrations[reg_id]['persona_id']]['gender']
-                for reg_id in group
-            ) >= {const.Genders.male, const.Genders.female}
-
-        complex_genders = {const.Genders.other, const.Genders.not_specified}
         # now the actual work
         for lodgement_id in lodgements:
-            for part_id in event['parts']:
+            for part_id in event.parts:
                 lodgement = lodgements[lodgement_id]
                 inhabitants = all_inhabitants[lodgement_id][part_id]
                 reg, cm = inhabitants
@@ -108,14 +107,6 @@ class EventLodgementMixin(EventBaseFrontend):
                     ret.append(LodgementProblem(
                         n_("Mixed lodgement with non-mixing participants."),
                         lodgement_id, part_id, non_mixed_lodging_people, 3))
-                complex_gender_people = tuple(
-                    reg_id for reg_id in reg + cm
-                    if (personas[registrations[reg_id]['persona_id']]['gender']
-                        in complex_genders))
-                if complex_gender_people:
-                    ret.append(LodgementProblem(
-                        n_("Non-Binary Participant."),
-                        lodgement_id, part_id, complex_gender_people, 1))
         return ret
 
     @access("event")
@@ -131,7 +122,7 @@ class EventLodgementMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "event/lodgements")
-        parts = rs.ambience['event']['parts']
+        parts = rs.ambience['event'].parts
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -228,7 +219,7 @@ class EventLodgementMixin(EventBaseFrontend):
             for group_id, group in keydictsort_filter(
                 groups, EntitySorter.lodgement_group)
         }
-        sorted_parts = keydictsort_filter(parts, EntitySorter.event_part)
+        sorted_parts = xsorted(parts.values())
 
         return self.render(rs, "lodgement/lodgements", {
             'sorted_event_parts': sorted_parts,
@@ -300,7 +291,7 @@ class EventLodgementMixin(EventBaseFrontend):
             rs, event_id, lodgement_ids=(lodgement_id,))
         inhabitants = {
             part_id: raw_inhabitants[lodgement_id][part_id].all
-            for part_id in rs.ambience['event']['parts']
+            for part_id in rs.ambience['event'].parts
         }
         registrations = self.eventproxy.get_registrations(
             rs, tuple(itertools.chain.from_iterable(inhabitants.values())))
@@ -360,7 +351,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int
                                     ) -> Response:
         event = rs.ambience['event']
-        if event['lodge_field']:
+        if event.lodge_field:
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             registrations = self.eventproxy.get_registrations(rs, registration_ids)
             personas = self.coreproxy.get_event_users(rs, tuple(
@@ -387,7 +378,7 @@ class EventLodgementMixin(EventBaseFrontend):
             return self.lodgement_wishes_graph_form(rs, event_id)
         event = rs.ambience['event']
 
-        if not event['lodge_field']:
+        if not event.lodge_field:
             rs.notify('error', n_("Lodgement wishes graph is only available if "
                                   "the Field for Rooming Preferences is set in "
                                   "event configuration."))
@@ -452,10 +443,10 @@ class EventLodgementMixin(EventBaseFrontend):
         """Add a new lodgement."""
         data['event_id'] = event_id
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement
+            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+            for field in rs.ambience['event'].fields.values()
+            if field.association == const.FieldAssociations.lodgement
         }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
@@ -511,10 +502,10 @@ class EventLodgementMixin(EventBaseFrontend):
         """
         data['id'] = lodgement_id
         field_params: vtypes.TypeMapping = {
-            f"fields.{field['field_name']}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement
+            f"fields.{field.field_name}": Optional[  # type: ignore[misc]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+            for field in rs.ambience['event'].fields.values()
+            if field.association == const.FieldAssociations.lodgement
         }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
@@ -562,7 +553,7 @@ class EventLodgementMixin(EventBaseFrontend):
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in rs.ambience['event'].parts:
             merge_dicts(rs.values, {
                 'is_camping_mat_{}_{}'.format(part_id, registration_id):
                     registrations[registration_id]['parts'][part_id][
@@ -587,7 +578,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 key=lambda tpl: EntitySorter.persona(
                     personas[registrations[tpl[0]]['persona_id']])
             )
-            for part_id in rs.ambience['event']['parts']
+            for part_id in rs.ambience['event'].parts
         }
 
         # Generate data to be encoded to json and used by the
@@ -612,7 +603,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     EntitySorter.persona(
                         personas[registrations[x['id']]['persona_id']]))
             )
-            for part_id in rs.ambience['event']['parts']
+            for part_id in rs.ambience['event'].parts
         }
         lodgement_names = self.eventproxy.list_lodgements(rs, event_id)
         other_lodgements = {
@@ -641,21 +632,21 @@ class EventLodgementMixin(EventBaseFrontend):
             part_id: [reg_id for reg_id, registration in registrations.items()
                       if registration['parts'][part_id]['lodgement_id']
                       == lodgement_id]
-            for part_id in rs.ambience['event']['parts']}
+            for part_id in rs.ambience['event'].parts}
         # Parse request data
         params: vtypes.TypeMapping = {
             **{
                 f"new_{part_id}": Collection[Optional[vtypes.ID]]
-                for part_id in rs.ambience['event']['parts']
+                for part_id in rs.ambience['event'].parts
             },
             **{
                 f"delete_{part_id}_{reg_id}": bool
-                for part_id in rs.ambience['event']['parts']
+                for part_id in rs.ambience['event'].parts
                 for reg_id in current_inhabitants[part_id]
             },
             **{
                 f"is_camping_mat_{part_id}_{reg_id}": bool
-                for part_id in rs.ambience['event']['parts']
+                for part_id in rs.ambience['event'].parts
                 for reg_id in current_inhabitants[part_id]
             }
         }
@@ -672,7 +663,7 @@ class EventLodgementMixin(EventBaseFrontend):
             }
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
-            for part_id in rs.ambience['event']['parts']:
+            for part_id in rs.ambience['event'].parts:
                 new_inhabitant = (reg_id in data[f"new_{part_id}"])
                 deleted_inhabitant = data.get(
                     "delete_{}_{}".format(part_id, reg_id), False)
@@ -705,7 +696,7 @@ class EventLodgementMixin(EventBaseFrontend):
         """Swap inhabitants of two lodgements of the same part."""
         params: vtypes.TypeMapping = {
             f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore[misc]
-            for part_id in rs.ambience['event']['parts']
+            for part_id in rs.ambience['event'].parts
         }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
@@ -719,7 +710,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
         new_regs: CdEDBObjectMap = {}
         change_notes = []
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in rs.ambience['event'].parts:
             if data[f"swap_with_{part_id}"]:
                 swap_lodgement_id: int = data[f"swap_with_{part_id}"]
                 current_inhabitants = inhabitants[(lodgement_id, part_id)]
@@ -736,7 +727,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 change_notes.append(
                     f"Bewohner von {lodgements[lodgement_id]} und"
                     f" {lodgements[swap_lodgement_id]} für"
-                    f" {rs.ambience['event']['parts'][part_id]['title']} getauscht")
+                    f" {rs.ambience['event'].parts[part_id].title} getauscht")
 
         code = 1
         change_note = ", ".join(change_notes) + "."

@@ -8,14 +8,16 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cdedb.common.validation.types as vtypes
+import cdedb.models.event as models_event
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    Error, TransactionType, diacritic_patterns, now,
+    PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, ConfidenceLevel, Error,
+    TransactionType, diacritic_patterns, now,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
+from cdedb.models.event import CdEDataclassMap
 
 
 class StatementCSVKeys:
@@ -183,7 +185,7 @@ def date_from_filename(filename: str) -> datetime.date:
     return now().date()
 
 
-def get_event_name_pattern(event: CdEDBObject) -> str:
+def get_event_name_pattern(event: models_event.Event) -> str:
     """
     Turn event_name into a re pattern that hopefully matches most
     variants of the event name.
@@ -215,7 +217,7 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
         ("Aka(demie)?", r"Aka(demie)?"),
     ]
     result_parts = []
-    search_title = event["title"]
+    search_title = event.title
     for pattern, replacement in replacements:
         result = re.search(pattern, search_title, flags=re.IGNORECASE)
         if result:
@@ -223,26 +225,25 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
             result_parts.append(replacement)
 
     if result_parts:
-        if event.get("begin") and event.get("end"):
-            if event["begin"].year == event["end"].year:
-                x = "(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + ")?"
-                result_parts.append(x)
-            else:
-                x = ("(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + "/"
-                     + y_p.sub(r"(\1)?\2", str(event["end"].year)) + ")?")
-                result_parts.append(x)
+        if event.begin.year == event.end.year:
+            x = "(" + y_p.sub(r"(\1)?\2", str(event.begin.year)) + ")?"
+            result_parts.append(x)
+        else:
+            x = ("(" + y_p.sub(r"(\1)?\2", str(event.begin.year)) + "/"
+                 + y_p.sub(r"(\1)?\2", str(event.end.year)) + ")?")
+            result_parts.append(x)
 
         result_pattern = r"[-\s]*".join(result_parts)
     else:
-        result_pattern = y_p.sub(r"(\1)?\2", event["title"])
+        result_pattern = y_p.sub(r"(\1)?\2", event.title)
 
     return result_pattern
 
 
-def format_events(events: CdEDBObjectMap) -> List[Tuple[(CdEDBObject, str)]]:
+def format_events(events: CdEDataclassMap[models_event.Event]
+                  ) -> List[Tuple[(models_event.Event, str)]]:
     return [
-        (e, get_event_name_pattern(e))
-        for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
+        (e, get_event_name_pattern(e)) for e in xsorted(events.values(), reverse=True)
     ]
 
 
@@ -336,7 +337,7 @@ class Transaction:
         self.warnings = data.get("warnings", [])
         self.type: Optional[TransactionType] = data.get("type")
         self._event_id = data.get("event_id")
-        self.event: Optional[CdEDBObject] = None
+        self.event: Optional[models_event.Event] = None
         self._persona_id = data.get("cdedbid")
         self.persona: Optional[CdEDBObject] = None
 
@@ -492,7 +493,8 @@ class Transaction:
 
         return ret
 
-    def analyze(self, events: CdEDBObjectMap, get_persona: BackendGetter) -> None:
+    def analyze(self, events: CdEDataclassMap[models_event.Event],
+                get_persona: BackendGetter) -> None:
         """
         Try to guess the TransactionType.
 
@@ -609,7 +611,7 @@ class Transaction:
             raise RuntimeError(n_("Impossible."))
 
     def get_data(self, *, get_persona: BackendGetter = None,
-                 events: CdEDBObjectMap = None) -> None:
+                 events: CdEDataclassMap[models_event.Event] = None) -> None:
         """Try retrieving the persona and event belonging to this transaction."""
         if self._persona_id and get_persona:
             try:
@@ -710,7 +712,8 @@ class Transaction:
                 self.persona_confidence = best_confidence
                 self.persona = best_match.persona
 
-    def _match_event(self, events: CdEDBObjectMap) -> None:
+    def _match_event(self, events: models_event.CdEDataclassMap[models_event.Event]
+                     ) -> None:
         """
         Assign all matching Events to self.event_matches.
 
@@ -730,7 +733,7 @@ class Transaction:
 
         matched_events = []
         for e, pattern in format_events(events):
-            if re.search(re.escape(e["title"]), self.reference, flags=re.IGNORECASE):
+            if re.search(re.escape(e.title), self.reference, flags=re.IGNORECASE):
                 # Exact match to Event Name
                 matched_events.append(Event(e, confidence))
                 continue
@@ -848,16 +851,16 @@ class Transaction:
             "account_holder": self.account_holder,
             "posting": self.posting,
             "type": self.type,
-            "category": ((self.event['shortname'] + '-') if self.event else '')
+            "category": ((self.event.shortname + '-') if self.event else '')
                         + self.type.display_str(),
             "type_confidence": self.type_confidence,
             "cdedbid": cdedbid_filter(self.persona['id']) if self.persona else None,
             "persona_confidence": self.persona_confidence,
             "given_names": self.persona['given_names'] if self.persona else "",
             "family_name": self.persona['family_name'] if self.persona else "",
-            "event_id": self.event['id'] if self.event else None,
+            "event_id": self.event.id if self.event else None,
             "event_confidence": self.event_confidence,
-            "event_name": self.event['shortname'] if self.event else None,
+            "event_name": self.event.shortname if self.event else None,
             "errors_str": ", ".join("{}: {}".format(
                 key, e.args[0].format(**e.args[1]) if len(e.args) == 2 else e)
                                     for key, e in self.errors),
@@ -867,7 +870,7 @@ class Transaction:
             "iban": self.iban,
             "bic": self.bic,
             "t_id": self.t_id,
-            "category_old": self.event['shortname'] if self.event else self.type.old(),
+            "category_old": self.event.shortname if self.event else self.type.old(),
         }
         ret["summary"] = json.dumps(ret)
         ret["persona"] = self.persona

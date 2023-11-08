@@ -104,7 +104,7 @@
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "event_id" %}
                 {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
-                        entries=all_events|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
+                        entries=all_events.values()|sort|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "mailinglist_id" %}
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
                         entries=all_mailinglists|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}

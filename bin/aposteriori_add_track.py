@@ -21,7 +21,6 @@ script = Script(persona_id=admin_id, dbuser="cdb_admin")
 event = script.make_backend("event")
 
 update_event = {
-    'id': event_id,
     'parts': {
         part_id: {
             'tracks': {
@@ -33,4 +32,4 @@ update_event = {
 
 # Execution
 
-event.set_event(script.rs(), update_event)
+event.set_event(script.rs(), event_id, update_event)

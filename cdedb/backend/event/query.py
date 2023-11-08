@@ -8,6 +8,7 @@ from typing import Collection, Dict, List, Optional, Tuple
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
@@ -28,13 +29,13 @@ from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
 
 
-def _get_field_select_columns(fields: CdEDBObjectMap,
+def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
                               association: const.FieldAssociations) -> Tuple[str, ...]:
     """Construct SELECT column entries for the given fields of the given association."""
     colum_template = '''(fields->>'{name}')::{kind} AS "xfield_{name}"'''
     return tuple(
-        colum_template.format(name=e['field_name'], kind=PYTHON_TO_SQL_MAP[e['kind']])
-        for e in fields.values() if e['association'] == association
+        colum_template.format(name=e.field_name, kind=PYTHON_TO_SQL_MAP[e.kind])
+        for e in fields.values() if e.association == association
     )
 
 
@@ -65,8 +66,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # For more details about this see `doc/Registration_Query`.
             def registration_view_template() -> str:
                 reg_part_tables = {
-                    part['id']: registration_part_table(part['id'])
-                    for part in event['parts'].values()
+                    part.id: registration_part_table(part.id)
+                    for part in event.parts.values()
                 }
                 lodgement_view = registration_lodgement_view()
                 lodgement_groups_view = registration_lodgement_group_view()
@@ -80,8 +81,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                         ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
                     """ for part_id, reg_part_table in reg_part_tables.items())
                 reg_track_tables = {
-                    track['id']: registration_track_table(track['id'])
-                    for track in event['tracks'].values()
+                    track.id: registration_track_table(track.id)
+                    for track in event.tracks.values()
                 }
                 course_view = registration_course_view()
                 full_track_tables = "\n".join(f"""
@@ -93,8 +94,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                         ON track{t_id}.course_instructor = course_instructor{t_id}.id
                     """ for t_id, reg_track_table in reg_track_tables.items())
                 course_choices_track_tables = {
-                    track['id']: course_choices_track_table(track)
-                    for track in event['tracks'].values()
+                    track.id: course_choices_track_table(track)
+                    for track in event.tracks.values()
                 }
                 course_choices_tables = "\n".join(
                     f"LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}"
@@ -128,7 +129,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # Step 2: Dynamically construct custom datafield table.
             def registration_fields_table() -> str:
                 reg_field_columns = _get_field_select_columns(
-                    event['fields'], const.FieldAssociations.registration)
+                    event.fields, const.FieldAssociations.registration)
                 return f"""
                     SELECT {', '.join(reg_field_columns + ('id',))}
                     FROM event.registrations
@@ -151,7 +152,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # Step 3.2: Prepare view for lodgement information.
             def registration_lodgement_view() -> str:
                 lodge_field_columns = _get_field_select_columns(
-                    event['fields'], const.FieldAssociations.lodgement)
+                    event.fields, const.FieldAssociations.lodgement)
                 columns = LODGEMENT_FIELDS + lodge_field_columns
                 return f"""
                     SELECT {', '.join(columns)}
@@ -175,21 +176,21 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             # Step 4.1: Template for selecting a single course choice of a given rank
             # for a given track.
-            def single_choice_table(track: CdEDBObject, rank: int) -> str:
+            def single_choice_table(track: models.CourseTrack, rank: int) -> str:
                 return f"""
                     SELECT registration_id, track_id, course_id as rank{rank}
                     FROM event.course_choices
-                    WHERE track_id = {track['id']} AND rank = {rank}
+                    WHERE track_id = {track.id} AND rank = {rank}
                 """
 
             # Step 4.2: Template for the final course choices table for a track.
-            def course_choices_track_table(track: CdEDBObject) -> Optional[str]:
-                if track['num_choices'] <= 0:
+            def course_choices_track_table(track: models.CourseTrack) -> Optional[str]:
+                if track.num_choices <= 0:
                     return None
                 # noinspection PyUnboundLocalVariable
                 single_choice_tables = {
                     rank: single_choice_table(track, rank)
-                    for rank in range(track['num_choices'])
+                    for rank in range(track.num_choices)
                 }
                 course_choices_tables = "\n".join(
                     f"LEFT OUTER JOIN ({single_choice_table}) AS cc{rank}"
@@ -224,7 +225,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # Step 5.2: Prepare view for course information.
             def registration_course_view() -> str:
                 course_field_columns = _get_field_select_columns(
-                    event['fields'], const.FieldAssociations.course)
+                    event.fields, const.FieldAssociations.course)
                 columns = COURSE_FIELDS + course_field_columns
                 return f"""
                     SELECT {', '.join(columns)}
@@ -286,8 +287,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             # For more in depth information see `doc/Course_Query`.
             def course_view() -> str:
                 course_track_tables = {
-                    track['id']: course_track_table(track)
-                    for track in event['tracks'].values()
+                    track.id: course_track_table(track)
+                    for track in event.tracks.values()
                 }
                 track_tables = "\n".join(
                     f"LEFT OUTER JOIN ({ctt}) AS track{t} ON course.id = track{t}.id"
@@ -307,7 +308,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             # Step 2: Dynamically construct custom datafield table.
             course_field_columns = _get_field_select_columns(
-                event['fields'], const.FieldAssociations.course)
+                event.fields, const.FieldAssociations.course)
             course_fields_table = f"""
                 SELECT {', '.join(course_field_columns + ('id',))}
                 FROM event.courses
@@ -322,11 +323,10 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             base = f"(SELECT id FROM event.courses WHERE event_id = {event_id}) AS c"
 
             # Step 3.1: Template for combining all course track information.
-            def course_track_table(track: CdEDBObject) -> str:
-                track_id = track['id']
+            def course_track_table(track: models.CourseTrack) -> str:
                 single_choice_tables = {
                     rank: single_choice_table(track, rank)
-                    for rank in range(track['num_choices'])
+                    for rank in range(track.num_choices)
                 }
                 course_choices_tables = "\n".join(
                     f"LEFT OUTER JOIN ({sct}) AS cc{r} ON c.id = cc{r}.base_id"
@@ -344,40 +344,67 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             LEFT OUTER JOIN (
                                 SELECT *
                                 FROM event.course_segments
-                                WHERE track_id = {track_id}
+                                WHERE track_id = {track.id}
                             ) AS segment ON c.id = segment.course_id
                         )
                     ) AS segment ON c.id = segment.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=False, strict=False)}
+                            track, param_name='attendees')}
                     ) AS attendees ON c.id = attendees.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=True, strict=False)}
+                            track, param_name='attendees_and_guests')}
+                    ) AS attendees_and_guests ON c.id = attendees_and_guests.base_id
+                    LEFT OUTER JOIN (
+                        {registration_track_count_table(
+                            track, param_name='instructors')}
                     ) AS instructors ON c.id = instructors.base_id
                     LEFT OUTER JOIN (
                         {registration_track_count_table(
-                            track, instructor=True, strict=True)}
+                            track, param_name='assigned_instructors')}
                     ) AS assigned_instructors
                         ON c.id = assigned_instructors.base_id
+                    LEFT OUTER JOIN (
+                        {registration_track_count_table(
+                            track, param_name='potential_instructors')}
+                    ) AS potential_instructors
+                        ON c.id = potential_instructors.base_id
                     {course_choices_tables}
                 """
 
             # Step 3.2: Template for counting instructors and attendees.
-            def registration_track_count_table(track: CdEDBObject, instructor: bool,
-                                               strict: bool) -> str:
+            def registration_track_count_table(track: models.CourseTrack,
+                                               param_name: str) -> str:
                 """
                 Construct a table to gather registration track information.
 
-                :param instructor: If True, count instructors, otherwise attendees.
-                :param strict: If True, only count instructors that are assigned to
-                    their course.
+                Depending on `param_name` this does slightly different things:
+                * `attendees`: Attendees who are participants
+                * `attendees_and_guests`: Attendees who are present at the event
+                * `instructors`: Instructors who are participants for the track
+                * `assigned_instructors`:  Instructors who are participant and are
+                   assigned to the course
+                * 'potential_instructors': Instructors who are involved with the track
                 """
-                col = 'course_instructor' if instructor else 'course_id'
-                param_name = 'assigned_instructors' if strict else (
-                    'instructors' if instructor else 'attendees')
-                constraint = 'AND course_id = course_instructor' if strict else ''
+                constraint = ''
+                col = 'course_instructor'
+                stati = [const.RegistrationPartStati.participant]
+
+                if param_name == 'attendees':
+                    col = 'course_id'
+                elif param_name == 'attendees_and_guests':
+                    col = 'course_id'
+                    stati = [rps for rps in const.RegistrationPartStati
+                             if rps.is_present()]
+                elif param_name == 'instructors':
+                    pass
+                elif param_name == 'assigned_instructors':
+                    constraint = 'AND course_id = course_instructor'
+                elif param_name == 'potential_instructors':
+                    stati = list(const.RegistrationPartStati.involved_states())
+
+                stati_str = ','.join(map(str, map(int, stati)))
                 return f"""
                     SELECT id AS base_id, COUNT(registration_id) AS {param_name}
                     FROM (
@@ -387,9 +414,9 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             FROM event.registration_tracks AS rt
                             LEFT OUTER JOIN event.registration_parts AS rp
                                 ON rt.registration_id = rp.registration_id
-                                AND rp.part_id = {track['part_id']}
-                            WHERE rp.status = {int(const.RegistrationPartStati.participant)}
-                            AND track_id = {track['id']} {constraint}
+                                AND rp.part_id = {track.part_id}
+                            WHERE rp.status = ANY(ARRAY[{stati_str}])
+                            AND track_id = {track.id} {constraint}
                         ) AS reg_track ON c.id = reg_track.{col}
                     )
                     GROUP BY id
@@ -401,7 +428,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             stati = [int(x) for x in const.RegistrationPartStati.involved_states()]
 
             # Template for a specific course choice in a specific track.
-            def single_choice_table(track: CdEDBObject, rank: int) -> str:
+            def single_choice_table(track: models.CourseTrack, rank: int) -> str:
                 return f"""
                     SELECT id AS base_id, COUNT(registration_id) AS num_choices{rank}
                     FROM (
@@ -411,8 +438,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             FROM event.course_choices AS cc
                             LEFT OUTER JOIN event.registration_parts AS rp
                                 ON cc.registration_id = rp.registration_id
-                            WHERE cc.rank = {rank} AND cc.track_id = {track['id']}
-                                AND rp.part_id = {track['part_id']}
+                            WHERE cc.rank = {rank} AND cc.track_id = {track.id}
+                                AND rp.part_id = {track.part_id}
                                 AND rp.status = ANY(ARRAY{stati})
                         ) AS choices ON c.id = choices.course_id
                     )
@@ -435,8 +462,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 lodgement_id = 'id AS lodgement_id'
                 columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id)
                 event_part_tables = {
-                    part['id']: event_part_table(part)
-                    for part in event['parts'].values()
+                    part.id: event_part_table(part)
+                    for part in event.parts.values()
                 }
                 part_tables = "\n".join(
                     f"LEFT OUTER JOIN ({ept}) AS part{p} ON lodgement.id = part{p}.id"
@@ -460,7 +487,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             # Step 2: Dynamically construct custom datafield table.
             lodgement_field_columns = _get_field_select_columns(
-                event['fields'], const.FieldAssociations.lodgement)
+                event.fields, const.FieldAssociations.lodgement)
             lodgement_fields_table = f"""
                 SELECT {', '.join(lodgement_field_columns + ('id',))}
                 FROM event.lodgements
@@ -505,14 +532,14 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     f" FROM event.lodgements WHERE event_id = {event_id}) AS base")
 
             # Step 4.1: Template for combining all event part information.
-            def event_part_table(part: CdEDBObject) -> str:
+            def event_part_table(part: models.EventPart) -> str:
                 return f"""
                     {base}
                     LEFT OUTER JOIN (
-                        {lodgement_inhabitants_view(part['id'])}
+                        {lodgement_inhabitants_view(part.id)}
                     ) AS inhabitants ON base.id = inhabitants.base_id
                     LEFT OUTER JOIN (
-                        {group_inhabitants_view(part['id'])}
+                        {group_inhabitants_view(part.id)}
                     ) AS group_inhabitants
                         ON base.tmp_group_id = group_inhabitants.tmp_group_id
                 """

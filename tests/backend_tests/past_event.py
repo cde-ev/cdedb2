@@ -322,19 +322,15 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
-        update = {
-            'id': 2,
-            'is_cancelled': True
-        }
-        self.event.set_event(self.key, update)
+        self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
         new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
+        event_id = 1
         update = {
-            'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
                                                          tzinfo=pytz.utc),
             'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
@@ -354,8 +350,8 @@ class TestPastEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        self.event.set_event(self.key, event_id, update)
+        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(

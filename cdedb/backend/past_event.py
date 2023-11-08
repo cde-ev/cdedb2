@@ -9,6 +9,7 @@ from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, 
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models_event
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -621,7 +622,7 @@ class PastEventBackend(AbstractBackend):
         else:
             return unwrap(unwrap(ret)), warnings, []
 
-    def archive_one_part(self, rs: RequestState, event: CdEDBObject,
+    def archive_one_part(self, rs: RequestState, event: models_event.Event,
                          part_id: int) -> DefaultReturnCode:
         """Uninlined code from :py:meth:`archive_event`
 
@@ -629,20 +630,19 @@ class PastEventBackend(AbstractBackend):
 
         :returns: ID of the newly created past event.
         """
-        part = event['parts'][part_id]
-        pevent = {k: v for k, v in event.items()
-                  if k in PAST_EVENT_FIELDS}
-        pevent['tempus'] = part['part_begin']
+        part = event.parts[part_id]
+        pevent = {k: v for k, v in event.as_dict().items() if k in PAST_EVENT_FIELDS}
+        pevent['tempus'] = part.part_begin
         # The event field 'participant_info' usually contains information
         # no longer relevant, so we do not keep it here
         pevent['participant_info'] = None
-        if len(event['parts']) > 1:
+        if len(event.parts) > 1:
             # Add part designation in case of events with multiple parts
-            pevent['title'] += " ({})".format(part['title'])
-            pevent['shortname'] += " ({})".format(part['shortname'])
+            pevent['title'] += " ({})".format(part.title)
+            pevent['shortname'] += " ({})".format(part.shortname)
         del pevent['id']
         new_id = self.create_past_event(rs, pevent)
-        course_ids = self.event.list_courses(rs, event['id'])
+        course_ids = self.event.list_courses(rs, event.id)
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
         for course_id, course in courses.items():
@@ -652,7 +652,7 @@ class PastEventBackend(AbstractBackend):
             pcourse['pevent_id'] = new_id
             pcourse_id = self.create_past_course(rs, pcourse)
             course_map[course_id] = pcourse_id
-        reg_ids = self.event.list_registrations(rs, event['id'])
+        reg_ids = self.event.list_registrations(rs, event.id)
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
         # Remember if there were registrations for this part.
         registrations_seen = False
@@ -666,8 +666,8 @@ class PastEventBackend(AbstractBackend):
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
             registrations_seen = True
-            is_orga = reg['persona_id'] in event['orgas']
-            for track_id in part['tracks']:
+            is_orga = reg['persona_id'] in event.orgas
+            for track_id in part.tracks:
                 rtrack = reg['tracks'][track_id]
                 is_instructor = False
                 if rtrack['course_id']:
@@ -681,7 +681,7 @@ class PastEventBackend(AbstractBackend):
                     self.add_participant(
                         rs, new_id, course_map.get(rtrack['course_id']),
                         reg['persona_id'], is_instructor, is_orga)
-            if not part['tracks']:
+            if not part.tracks:
                 # parts without courses
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
@@ -727,17 +727,16 @@ class PastEventBackend(AbstractBackend):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
-            if not event['is_cancelled'] and any(now().date() < part['part_end']
-                                                 for part in event['parts'].values()):
+            if not event.is_cancelled and any(now().date() < part.part_end
+                                                 for part in event.parts.values()):
                 return None, "Event not concluded."
-            if event['offline_lock']:
+            if event.offline_lock:
                 return None, "Event locked."
-            self.event.set_event_archived(rs, {'id': event_id,
-                                               'is_archived': True})
+            self.event.set_event_archived(rs, event_id)
             new_ids = None
             if create_past_event:
                 new_ids = []
-                for part_id in xsorted(event['parts']):
+                for part_id in xsorted(event.parts):
                     new_id = self.archive_one_part(rs, event, part_id)
                     if new_id:
                         new_ids.append(new_id)

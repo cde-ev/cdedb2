@@ -312,7 +312,7 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Feriendorf Bau'})
         everyone = {"Mailinglisten-Übersicht", "Übersicht"}
         moderator = {"Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Nachrichtenmoderation", "Log"}
+                     "Nachrichtenmoderation", "Log", "Abonnenten"}
 
         # Moderators:
         out = set()
@@ -781,6 +781,41 @@ class TestMlFrontend(FrontendTest):
                 self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
                 f = self.response.forms[f'remove{state}form{anid}']
                 self.submit(f)
+
+    @as_users("charly")
+    def test_roster(self) -> None:
+        self.traverse("Mailinglisten", "Gutscheine")
+        self.assertPresence("Du kannst diese Mailingliste nicht abonnieren,"
+                            " da Du von ihren Moderatoren blockiert wurdest.")
+        # Charly may not subscribe to the mailinglist, but may view it.
+        self.assertNonPresence("Abonnenten", div="sidebar-navigation")
+        with self.switch_user("anton"):
+            self.traverse("Mailinglisten", "Gutscheine", "Konfiguration")
+            f = self.response.forms['changelistform']
+            self.assertEqual(f['roster_visibility'].value,
+                             str(const.MailinglistRosterVisibility.subscribable))
+            f['roster_visibility'] = const.MailinglistRosterVisibility.viewers
+            self.submit(f)
+        self.traverse("Mailinglisten", "Gutscheine", "Abonnenten")
+        self.assertNonPresence("Die Abonnenten sind aktuell nur für Moderatoren",
+                               div='static-notifications')
+        self.assertPresence("Akira Abukara")
+
+        self.traverse("Mailinglisten", "Allumfassende Liste")
+        # Roster visibility is None, so he can not see the roster
+        self.assertPresence("Du hast diese Mailingliste abonniert.")
+        self.assertNonPresence("Abonnenten", div="sidebar-navigation")
+        with self.switch_user("anton"):
+            self.traverse("Mailinglisten", "Allumfassende Liste", "Konfiguration")
+            f = self.response.forms['changelistform']
+            self.assertEqual(f['roster_visibility'].value,
+                             str(const.MailinglistRosterVisibility.none))
+            # but Anton can see the roster, since he is an admin
+            self.assertPresence("Abonnenten", div="sidebar-navigation")
+            self.traverse("Abonnenten")
+            self.assertPresence("Die Abonnenten sind aktuell nur für Moderatoren und"
+                                " Admins sichtbar.", div='static-notifications')
+            self.assertPresence("Charly Clown")
 
     @as_users("nina")
     def test_create_mailinglist(self) -> None:
@@ -1462,6 +1497,7 @@ class TestMlFrontend(FrontendTest):
         client.get_held_messages.return_value = messages[2:]
         client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
+        f['reason'] = 'naughty joke'
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
@@ -1482,7 +1518,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'reject', comment='naughty joke'),
+             umcall(3, 'discard', comment=None)])
 
         self.traverse("Log")
         self.assertPresence("Nachricht akzeptiert", div="1-1001")
@@ -1530,7 +1568,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept'), umcall(2, 'accept'), umcall(3, 'accept')])
+            [umcall(1, 'accept', comment=None),
+             umcall(2, 'accept', comment=None),
+             umcall(3, 'accept', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
@@ -1567,7 +1607,9 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'discard'), umcall(2, 'discard'), umcall(3, 'discard')])
+            [umcall(1, 'discard', comment=None),
+             umcall(2, 'discard', comment=None),
+             umcall(3, 'discard', comment=None)])
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")

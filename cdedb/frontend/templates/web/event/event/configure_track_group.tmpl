@@ -56,12 +56,12 @@
                                                                 + nbsp + gettext(ambience['track_group']['constraint_type']|string)) }}
             {{ util.form_input_checkboxes(
                     name="track_ids", label=gettext("Course Tracks"), slice=2, actualreadonly=True,
-                    entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
+                    entries=ambience['event']['tracks'].values()|sort|entries('id', 'title')) }}
         {% else %}
             {{ util.form_input_select(name="constraint_type", label=gettext("Type"), entries=enums['CourseTrackGroupType']|enum_entries(processing=gettext), info=gettext("Note: This cannot be changed later.")) }}
             {{ util.form_input_checkboxes(
                     name="track_ids", label=gettext("Course Tracks"), slice=2, info=gettext("Note: This cannot be changed later."),
-                    entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
+                    entries=ambience['event']['tracks'].values()|sort|entries('id', 'title')) }}
         {% endif %}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/group_summary")) }}
     </form>
