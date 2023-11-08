@@ -180,9 +180,11 @@ if (!String.prototype.format) {
             var $new_spacer = createSpacer();
             if ($spacer.hasClass('positive')) {
                 $new_stage.addClass('positive');
+                $new_stage.append($('<div></div>', {'class': 'label'}).text(labels['accepted']));
                 $new_spacer.addClass('positive');
             } else if ($spacer.hasClass('negative')) {
                 $new_stage.addClass('negative');
+                $new_stage.append($('<div></div>', {'class': 'label'}).text(labels['rejected']));
                 $new_spacer.addClass('negative');
             }
             
@@ -359,10 +361,13 @@ if (!String.prototype.format) {
                     }
                 }
                 if (bar_shortname && !is_neutral) {
-                    if (bar_option)
+                    if (bar_option) {
                         $stage.addClass('negative');
-                    else 
+                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['rejected']));
+                    } else {
                         $stage.addClass('positive');
+                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['accepted']));
+                    }
                 }
                 
                 var $sp = createSpacer().appendTo($container);
@@ -420,10 +425,9 @@ if (!String.prototype.format) {
      *
      * parameters:
      * candidates: List of all candidates in form: [ [id, {'id', 'shortname', 'title'}] ]
-     * bar_shortname: shortname of bar option, null if bar is not used
-     * bar_name: Label of bar option / neutral stage box
+     * bar_shortname: shortname of bar option, null if bar is not used, used as Label of bar option / neutral stage box
      * labels : Object mapping some strings to internationalized/translated strings. It should contain the following
-     *          keys: bar_name, box, box_highest, box_lowest, spacer, spacer_highest, spacer_lowest
+     *          keys: bar_name, box, box_highest, box_lowest, spacer, spacer_highest, spacer_lowest, accepted, rejected
      * $input_preferencelist: jQuery object of text only voting form input field
      */
     $.fn.cdedbPrefVote = function(candidates, bar_shortname, $input_preferencelist, labels) {

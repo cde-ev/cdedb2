@@ -845,10 +845,8 @@ tr.drow-delete>td, tr.drow-delete1>td {
     background: -o-linear-gradient(top, #ffeeee, #f8e5e5);
     background: linear-gradient(top, #ffeeee, #f8e5e5);
 }
-}
-.prefvote_stage.neutral .label {
+.prefvote_stage .label {
     margin-right: 10px;
-    margin-top: -5px;
     float: right;
     font-size: 0.9em;
     color: #888;
