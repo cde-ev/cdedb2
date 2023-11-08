@@ -789,7 +789,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
     padding: 0 15px 0 30px;
     position: relative;
-    min-height: 130px; /* So .indicator fits into box */
+    min-height: 140px; /* So .indicator fits into box */
     /* Disable text selection: */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
