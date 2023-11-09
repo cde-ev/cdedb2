@@ -6690,6 +6690,12 @@ msgstr "Steigende Präferenz"
 msgid "neutral"
 msgstr "neutral"
 
+msgid "accepted"
+msgstr "angenommen"
+
+msgid "rejected"
+msgstr "abgelehnt"
+
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:284
 msgid "Box {0}"
 msgstr "Box {0}"
