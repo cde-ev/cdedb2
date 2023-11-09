@@ -3359,6 +3359,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Unterkünfte")
         # check the new lodgement was created
         self.assertPresence("Testzimmer")
+        # check the lodgement can be changed
+        self.traverse("Testzimmer", "Bearbeiten")
+        f = self.response.forms["changelodgementform"]
+        f["regular_capacity"] = 10
+        self.submit(f)
 
         self.traverse("Veranstaltungen", "TripelAkademie", "Unterkünfte",
                       "Unterkunftsgruppen verwalten")
