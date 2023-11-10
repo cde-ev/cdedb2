@@ -520,8 +520,10 @@ class AssemblyBackend(AbstractBackend):
                 entity_key="assembly_id")
         }
         attendee_data = {
-            e['id']: e for e in xsorted(self.core.get_assembly_users(
-                rs, all_attendees).values(), key=EntitySorter.persona)}
+            e['id']: e for e in xsorted(
+                self.core.get_assembly_users(rs, all_attendees).values(),
+                key=EntitySorter.persona)
+        }
 
         q = """
             SELECT persona_id FROM assembly.log
