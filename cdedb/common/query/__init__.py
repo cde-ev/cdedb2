@@ -949,8 +949,9 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
 
     def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else cco.shortname
+        reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
-            f"course_choices{cco.reference_track.id}.rank{i}": QuerySpecEntry(
+            f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )

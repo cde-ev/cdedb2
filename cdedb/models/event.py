@@ -434,7 +434,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     @property
     def reference_track(self) -> "CourseTrack":
         if any(tg.constraint_type.is_sync() for tg in self.track_groups.values()):
-            _LOGGER.warning("Recursive use of .reference_track detected.")
+            _LOGGER.warning(f"Recursive use of .reference_track detected: {self}.")
         return self
 
     @property  # type: ignore[misc]
