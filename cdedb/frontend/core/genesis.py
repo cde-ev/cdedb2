@@ -12,6 +12,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.attachment import AttachmentStorageBackend
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
@@ -66,25 +67,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This initiates the genesis process.
         """
-        attachment_data = None
-        if attachment:
-            attachment_filename = attachment.filename
-            attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
-        if attachment_data:
-            myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
-            data['attachment_hash'] = myhash
-            rs.values['attachment_hash'] = myhash
-            rs.values['attachment_filename'] = attachment_filename
-        elif data['attachment_hash']:
-            attachment_stored = self.coreproxy.genesis_check_attachment(
-                rs, data['attachment_hash'])
-            if not attachment_stored:
-                data['attachment_hash'] = None
-                e = ("attachment", ValueError(n_(
-                    "It seems like you took too long and "
-                    "your previous upload was deleted.")))
-                rs.append_validation_error(e)
-        elif 'attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
+        rs.values['attachment_hash'], rs.values['attachment_filename'] =\
+            self.localize_attachment(rs, self.genesis_attachment_store, attachment,
+                                     data['attachment_hash'], attachment_filename)
+        if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
+                and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
 
@@ -243,7 +230,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        attachment_count = self.coreproxy.genesis_forget_attachments(rs)
+        attachment_count = self.genesis_attachment_store.forget()
 
         if count or attachment_count:
             self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"
@@ -258,7 +245,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        data = self.coreproxy.genesis_get_attachment(rs, attachment_hash)
+        data = self.genesis_attachment_store.get(rs, attachment_hash)
         mimetype = None
         if data:
             mimetype = magic.from_buffer(data, mime=True)

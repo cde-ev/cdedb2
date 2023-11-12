@@ -38,9 +38,6 @@ from cdedb.uncommon.submanshim import SubscriptionAction
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def render(self, rs: RequestState, templatename: str,
                params: CdEDBObject = None) -> Response:
         params = params or {}

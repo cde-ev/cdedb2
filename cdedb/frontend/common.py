@@ -69,6 +69,7 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.attachment import AttachmentStorageBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
@@ -553,6 +554,29 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
+
+    def localize_attachment(self, rs: RequestState, store: AttachmentStorageBackend,
+                            attachment: Optional[werkzeug.datastructures.FileStorage],
+                            attachment_hash: Optional[str],
+                            attachment_filename: Optional[str] = None
+                            ) -> Tuple[Optional[str], Optional[str]]:
+        """Localize an attachment by hash and upload it, if necessary"""
+        attachment_data = None
+        if attachment:
+            attachment_filename = attachment.filename
+            attachment_data = check_validation(rs, vtypes.PDFFile, attachment,
+                                         'attachment')
+        if attachment_data:
+            attachment_hash = store.set(rs, attachment_data)
+        elif attachment_hash:
+            attachment_stored = store.check(rs, attachment_hash)
+            if not attachment_stored:
+                attachment_hash = None
+                e = ("attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
+        return attachment_hash, attachment_filename
 
     @staticmethod
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
