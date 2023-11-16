@@ -24,7 +24,7 @@ services:
       - cert:/etc/ssl/apache2 # dynamic self-signed certificate
       - ldap:/etc/ssl/ldap:ro # dynamic self-signed ldap certificate
       - ../..:/cdedb2:z,ro # the :z is for SELinux (see #2053)
-      - i18nwritable:/cdedb2/i18n-output:z # the :z is for SELinux (see #2053)
+      - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
     ports:
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
       - 8443:443 # apache
