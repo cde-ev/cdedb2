@@ -2598,7 +2598,8 @@ class TransactionObserver:
 def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
-        lang: gettext.translation('cdedb', languages=[lang],
-                                  localedir=conf["REPOSITORY_PATH"] / 'i18n')
+        lang: gettext.translation(
+            'cdedb', languages=[lang],
+            localedir=conf["REPOSITORY_PATH"] / 'i18n-output')
         for lang in conf["I18N_LANGUAGES"]
     }
