@@ -388,10 +388,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
+        # finance_admins are allowed here to book event fees.
         if (persona_ids != {rs.user.persona_id}
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)
-                and "ml_admin" not in rs.user.roles):
+                and {"ml_admin", "finance_admin"}.isdisjoint(rs.user.roles)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
@@ -782,9 +783,10 @@ class EventRegistrationBackend(EventBaseBackend):
             # orgas and admins have full access to all data
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
-            is_privileged = (self.is_orga(rs, event_id=event_id)
-                             or self.is_admin(rs)
-                             or "ml_admin" in rs.user.roles)
+            # finance_admins are allowed here to book event fees.
+            is_privileged = (
+                self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
+                or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
             if not is_privileged:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
@@ -1383,8 +1385,10 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
+            # finance_admins are allowed here to book event fees.
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
+                    and "finance_admin" not in rs.user.roles
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
@@ -1437,7 +1441,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
-    @access("event")
+    @access("finance_admin")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
@@ -1450,9 +1454,6 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         data = affirm_array(vtypes.FeeBookingEntry, data)
 
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
         index = 0
@@ -1481,7 +1482,13 @@ class EventRegistrationBackend(EventBaseBackend):
                     change_note = "{} am {} gezahlt.".format(
                         money_filter(datum['amount']),
                         date_filter(datum['original_date'], lang="de"))
-                    count += self.set_registration(rs, update, change_note)
+                    # perform the change directly instead of using set_registration
+                    # to avoid privilege conflicts and use custom log code
+                    count += self.sql_update(rs, "event.registrations", update)
+                    self.event_log(
+                        rs, const.EventLogCodes.registration_payment_received, event_id,
+                        persona_id=all_regs[reg_id]['persona_id'],
+                        change_note=change_note)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.

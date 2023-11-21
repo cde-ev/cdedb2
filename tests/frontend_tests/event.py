@@ -2587,7 +2587,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             self.traverse({'href': '/event/event/list'})
             self.assertPresence("(3 Teile, wurde abgesagt)")
 
-    @as_users("garcia")
+    @as_users("farin")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_batch_fee(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2635,7 +2636,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             else:
                 self.assertIn("Überweisung für die Veranstaltung", text)
                 self.assertIn('"Große Testakademie 2222"', text)
-        self.traverse({'href': '/event/event/1/show'},
+        self.logout()
+
+        # Now, test the results. To do so, switch to Garcia (Orga of this event)
+        self.login("garcia")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
@@ -2666,7 +2672,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("451,00 € am 30.12.2019 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
 
-    @as_users("garcia")
+    @as_users("farin")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_batch_fee_regex(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2677,7 +2684,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
-    @as_users("garcia")
+    @as_users("farin")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_batch_fee_duplicate(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2704,7 +2712,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Mehrere Überweisungen für diese Person.",
                             div="line1_warnings")
 
-    @as_users("garcia")
+    @as_users("farin")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_batch_fee_twice(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2723,15 +2732,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
             self.assertIn('"Große Testakademie 2222"', text)
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/2/show'})
-        self.assertTitle(
-            "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertNonPresence("Bezahlt am 01.04.2018")
-        self.assertNonPresence("Bezahlt am 02.02.2014")
-        self.assertPresence("Bereits Bezahlt 266,49 €")
+
+        with self.switch_user("garcia"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                          "Anmeldungen", "Alle Anmeldungen",
+                          {'href': '/event/event/1/registration/2/show'})
+            self.assertTitle(
+                "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+            self.assertNonPresence("Bezahlt am 01.04.2018")
+            self.assertNonPresence("Bezahlt am 02.02.2014")
+            self.assertPresence("Bereits Bezahlt 266,49 €")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2748,7 +2758,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
             self.assertIn('"Große Testakademie 2222"', text)
-        self.traverse({'href': '/event/event/1/show'},
+        self.logout()
+
+        # Now, test the results. To do so, switch to Garcia (Orga of this event)
+        self.login("garcia")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
