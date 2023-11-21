@@ -321,7 +321,7 @@ I18N_STRINGS = (
     n_("EventFeeType.common"),
     n_("EventFeeType.storno"),
     n_("EventFeeType.external"),
-    n_("EventFeeType.solidarity"),
+    n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
 
     #

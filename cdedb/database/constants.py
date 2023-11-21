@@ -158,7 +158,7 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
-    solidarity = 10
+    solidary_reduction = 10
     donation = 11
 
     def get_icon(self) -> str:
@@ -166,7 +166,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
-            EventFeeType.solidarity: "hands-helping",
+            EventFeeType.solidary_reduction: "hand-holding-usd",
             EventFeeType.donation: "donate",
         }[self]
 

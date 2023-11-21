@@ -18007,7 +18007,7 @@ msgid "EventFeeType.external"
 msgstr "Externenbeitrag"
 
 #: cdedb/i18n_additional.py:323
-msgid "EventFeeType.solidarity"
+msgid "EventFeeType.solidary_reduction"
 msgstr "Solidarische Reduktion"
 
 #: cdedb/i18n_additional.py:324

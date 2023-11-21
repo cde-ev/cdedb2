@@ -132,7 +132,7 @@ class TestEventBackend(BackendTest):
                     "condition": "part.second",
                 },
                 -3: {
-                    "kind": const.EventFeeType.solidarity,
+                    "kind": const.EventFeeType.solidary_reduction,
                     "title": "Is Child",
                     "notes": None,
                     "amount": decimal.Decimal("-7.00"),
