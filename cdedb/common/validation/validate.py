@@ -2884,8 +2884,6 @@ REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
