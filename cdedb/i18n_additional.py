@@ -323,6 +323,7 @@ I18N_STRINGS = (
     n_("EventFeeType.external"),
     n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
+    n_("EventFeeType.solidary_increase"),
 
     #
     # Validation errors

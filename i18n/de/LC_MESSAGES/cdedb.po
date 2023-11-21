@@ -18010,6 +18010,9 @@ msgstr "Externenbeitrag"
 msgid "EventFeeType.solidary_reduction"
 msgstr "Solidarische Reduktion"
 
+msgid "EventFeeType.solidary_increase"
+msgstr "Solidarische Erhöhung"
+
 #: cdedb/i18n_additional.py:324
 msgid "EventFeeType.donation"
 msgstr "Spende"
