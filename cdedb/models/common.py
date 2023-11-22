@@ -10,7 +10,7 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, collate
 from cdedb.common.validation.types import TypeMapping
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -212,4 +212,7 @@ class CdEDataclass:
     def __lt__(self, other: "CdEDataclass") -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return (self.get_sortkey() + (self.id,)) < (other.get_sortkey() + (self.id,))
+
+        # Ensure natural sort. See xsorted for details.
+        return (tuple(map(collate, self.get_sortkey())) + (self.id,)
+                ) < (tuple(map(collate, other.get_sortkey())) + (other.id,))

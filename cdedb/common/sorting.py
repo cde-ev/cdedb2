@@ -28,9 +28,8 @@ CdEDBObject = Dict[str, Any]
 T = TypeVar("T")
 
 
-def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> List[T]:
-    """Wrapper for sorted() to achieve a natural sort.
+def collate(sortkey: Any) -> Any:
+    """Key function for sorting.
 
     This replaces all strings in possibly nested objects with a sortkey
     matching an collation from the Unicode Collation Algorithm, provided
@@ -40,21 +39,23 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
     (ints and decimals) are sorted correctly, even in midst of strings.
     However, negative numbers in strings are sorted by absolute value, before
-    positive numbers, as minus and hyphens can not be distinguished.
+    positive numbers, as minus and hyphens can not be distinguished."""
+    if isinstance(sortkey, str):
+        return COLLATOR.getSortKey(sortkey)
+    if isinstance(sortkey, collections.abc.Iterable):
+        # Make sure strings in nested Iterables are sorted
+        # correctly as well.
+        return tuple(map(collate, sortkey))
+    return sortkey
+
+
+def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
+            reverse: bool = False) -> List[T]:
+    """Wrapper for sorted() to achieve a natural sort.
 
     For users, the interface of this function should be identical
     to sorted().
     """
-
-    def collate(sortkey: Any) -> Any:
-        if isinstance(sortkey, str):
-            return COLLATOR.getSortKey(sortkey)
-        if isinstance(sortkey, collections.abc.Iterable):
-            # Make sure strings in nested Iterables are sorted
-            # correctly as well.
-            return tuple(map(collate, sortkey))
-        return sortkey
-
     return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
