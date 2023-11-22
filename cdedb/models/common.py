@@ -209,10 +209,13 @@ class CdEDataclass:
     def get_sortkey(self) -> Sortkey:
         ...
 
+    def _lt_inner(self, other: "CdEDataclass") -> bool:
+        # Ensure natural sort. See xsorted for details.
+        return (tuple(map(collate, self.get_sortkey())) + (self.id,)
+                ) < (tuple(map(collate, other.get_sortkey())) + (other.id,))
+
     def __lt__(self, other: "CdEDataclass") -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
 
-        # Ensure natural sort. See xsorted for details.
-        return (tuple(map(collate, self.get_sortkey())) + (self.id,)
-                ) < (tuple(map(collate, other.get_sortkey())) + (other.id,))
+        return self._lt_inner(other)
