@@ -97,7 +97,7 @@ apt-get install --yes python3-coverage
 python3 -m pip install --no-cache-dir --break-system-packages \
     ldaptor==21.2.0 \
     schulze_condorcet==2.0.0 \
-    subman==0.1.0 \
+    subman==0.1.1 \
     segno==1.5.2
 
 # devtools
