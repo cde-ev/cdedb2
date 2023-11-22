@@ -208,10 +208,6 @@ class EntitySorter:
         return (changelog_entry['ctime'], changelog_entry['generation'],
                 changelog_entry['persona_id'])
 
-    @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
-        return (mailinglist['title'], mailinglist['id'])
-
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:

@@ -50,19 +50,18 @@
         {% if mailinglists[group] %}
             {{ util.h(group|string, level=5, underline=true) }}
             <div class="row">
-                {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
-                        |slice(2 if mailinglists[group]|length > 5 else 1) %}
+                {% for list in mailinglists[group].values()|sort|slice(2 if mailinglists[group]|length > 5 else 1) %}
                     <ul class="styleless col-md-6">
-                        {% for mailinglist_id, ml in list %}
-                            {% set state = subscriptions[mailinglist_id] %}
-                            {% if is_relevant_admin(mailinglist_id=mailinglist_id) or mailinglist_id in user.moderator %}
+                        {% for ml in list %}
+                            {% set state = subscriptions[ml.id] %}
+                            {% if is_relevant_admin(mailinglist_id=ml.id) or ml.id in user.moderator %}
                                 {% set link = "ml/management" %}
                             {% else %}
                                 {% set link = "ml/show_mailinglist" %}
                             {% endif %}
                             <li class="hide-hover-container clearfix-after{% if not ml['is_active'] %} text-muted{% endif %}">
                                 {{ util.state_checkbox(state) }}
-                                {{ util.href(cdedblink(link, {'mailinglist_id': mailinglist_id}), ml["title"]) }}
+                                {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"]) }}
                             {% if state == enums["SubscriptionState"].subscription_override %}
                                 {{ gettext("(override)") }}
                             {% elif state == enums["SubscriptionState"].unsubscription_override %}
