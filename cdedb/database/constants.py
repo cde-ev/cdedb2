@@ -170,6 +170,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.external: "external-link-alt",
             EventFeeType.solidary_reduction: "hand-holding-usd",
             EventFeeType.donation: "donate",
+            # TODO replace with hand-holding-medical
             EventFeeType.solidary_increase: "hands-helping",
         }[self]
 
