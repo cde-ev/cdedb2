@@ -4256,7 +4256,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": 3
+            "lodge_field_id": 3
         },
         {
             "id": 2,
@@ -4284,7 +4284,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         },
         {
             "id": 3,
@@ -4312,7 +4312,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         },
         {
             "id": 4,
@@ -4340,7 +4340,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
-            "lodge_field": null
+            "lodge_field_id": null
         }
     ],
     "event.event_fees": [
@@ -4481,8 +4481,8 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         },
         {
             "id": 2,
@@ -4491,8 +4491,8 @@
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         },
         {
             "id": 3,
@@ -4501,8 +4501,8 @@
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "waitlist_field": null,
-            "camping_mat_field": 4
+            "waitlist_field_id": null,
+            "camping_mat_field_id": 4
         },
         {
             "id": 4,
@@ -4511,8 +4511,8 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 5,
@@ -4521,8 +4521,8 @@
             "shortname": "cyta",
             "part_begin": "2003-01-02",
             "part_end": "2003-03-04",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 6,
@@ -4531,8 +4531,8 @@
             "shortname": "O1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 7,
@@ -4541,8 +4541,8 @@
             "shortname": "W1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 8,
@@ -4551,8 +4551,8 @@
             "shortname": "K1",
             "part_begin": "3000-01-01",
             "part_end": "3000-02-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 9,
@@ -4561,8 +4561,8 @@
             "shortname": "O2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 10,
@@ -4571,8 +4571,8 @@
             "shortname": "W2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 11,
@@ -4581,8 +4581,8 @@
             "shortname": "K2",
             "part_begin": "3000-02-01",
             "part_end": "3000-03-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         },
         {
             "id": 12,
@@ -4591,8 +4591,8 @@
             "shortname": "Feier",
             "part_begin": "2999-12-31",
             "part_end": "3000-01-01",
-            "waitlist_field": null,
-            "camping_mat_field": null
+            "waitlist_field_id": null,
+            "camping_mat_field_id": null
         }
     ],
     "event.part_groups": [
@@ -4776,7 +4776,7 @@
             "num_choices": 4,
             "min_choices": 4,
             "sortkey": 1,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 2,
@@ -4786,7 +4786,7 @@
             "num_choices": 1,
             "min_choices": 1,
             "sortkey": 2,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 3,
@@ -4796,7 +4796,7 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 3,
-            "course_room_field": 5
+            "course_room_field_id": 5
         },
         {
             "id": 4,
@@ -4806,7 +4806,7 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 6,
@@ -4816,7 +4816,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 7,
@@ -4826,7 +4826,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 8,
@@ -4836,7 +4836,7 @@
             "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 9,
@@ -4846,7 +4846,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 10,
@@ -4856,7 +4856,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 11,
@@ -4866,7 +4866,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 12,
@@ -4876,7 +4876,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 13,
@@ -4886,7 +4886,7 @@
             "num_choices": 5,
             "min_choices": 2,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 14,
@@ -4896,7 +4896,7 @@
             "num_choices": 3,
             "min_choices": 1,
             "sortkey": 1,
-            "course_room_field": null
+            "course_room_field_id": null
         },
         {
             "id": 15,
@@ -4906,7 +4906,7 @@
             "num_choices": 1,
             "min_choices": 1,
             "sortkey": 2,
-            "course_room_field": null
+            "course_room_field_id": null
         }
     ],
     "event.track_groups": [
@@ -6573,15 +6573,15 @@
             "scope": 30,
             "serialized_query": {
                 "scope": 30,
+                "qord_0": "persona.birthday",
                 "is_search": true,
                 "query_name": "Test-Query",
                 "qsel_reg.id": true,
-                "qord_primary": "persona.birthday",
                 "qsel_persona.id": true,
+                "qord_0_ascending": true,
                 "qop_persona.birthday": 20,
                 "qsel_persona.birthday": true,
-                "qval_persona.birthday": "2000-01-01",
-                "qord_primary_ascending": true
+                "qval_persona.birthday": "2000-01-01"
             }
         }
     ],
@@ -6707,9 +6707,9 @@
             "assembly_id": 1,
             "title": "Farbe des Logos",
             "description": "Ulitmativ letzte Entscheidung",
-            "vote_begin": "2222-02-02T20:22:22.222222+00:00",
-            "vote_end": "2222-02-03T20:22:22.222222+00:00",
-            "vote_extension_end": "2222-02-04T20:22:22.222222+00:00",
+            "vote_begin": "2222-02-02T20:22:22+00:00",
+            "vote_end": "2222-02-03T20:22:22+00:00",
+            "vote_extension_end": "2222-02-04T20:22:22+00:00",
             "extended": null,
             "use_bar": false,
             "abs_quorum": 0,

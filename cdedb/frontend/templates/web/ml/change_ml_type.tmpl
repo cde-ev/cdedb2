@@ -44,7 +44,7 @@
             <script nonce="{{ csp_nonce }}">
                 $('.non-js-hint').hide()
             </script>
-            {{ util.form_input_select(name="event_id", entries=events|dictsort|dict_entries('id', 'title'),
+            {{ util.form_input_select(name="event_id", entries=events.values()|sort|entries('id', 'title'),
                                       nulloption=nbsp, label=gettext("Event"), sort=True,
                                       info=gettext("The participants of this event will be subscribers of this "
                                                    "mailinglist. (Opt-Out)")) }}

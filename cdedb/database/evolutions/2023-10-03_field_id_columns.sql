@@ -1,0 +1,16 @@
+BEGIN;
+    ALTER TABLE event.events RENAME COLUMN lodge_field TO lodge_field_id;
+    ALTER TABLE event.events DROP CONSTRAINT events_lodge_field_fkey;
+    ALTER TABLE event.events ADD FOREIGN KEY (lodge_field_id) REFERENCES event.field_definitions(id);
+    ALTER TABLE event.event_parts RENAME COLUMN waitlist_field TO waitlist_field_id;
+    ALTER TABLE event.event_parts DROP CONSTRAINT event_parts_waitlist_field_fkey;
+    ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field_id) REFERENCES event.field_definitions(id);
+    DROP INDEX event.event_parts_partial_waitlist_field_idx;
+    CREATE INDEX event_parts_partial_waitlist_field_id_idx ON event.event_parts(waitlist_field_id) WHERE event_parts.waitlist_field_id IS NOT NULL;
+    ALTER TABLE event.event_parts RENAME COLUMN camping_mat_field TO camping_mat_field_id;
+    ALTER TABLE event.event_parts DROP CONSTRAINT event_parts_camping_mat_field_fkey;
+    ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
+    ALTER TABLE event.course_tracks RENAME COLUMN course_room_field TO course_room_field_id;
+    ALTER TABLE event.course_tracks DROP CONSTRAINT course_tracks_course_room_field_fkey;
+    ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field_id) REFERENCES event.field_definitions(id);
+COMMIT;

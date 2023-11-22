@@ -119,16 +119,17 @@ class CoreBaseFrontend(AbstractFrontend):
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
                 orga = {}
+                orga_registrations = {}
                 events = self.eventproxy.get_events(rs, orga_info)
                 present = now()
                 for event_id, event in events.items():
-                    begin = event['begin']
-                    if (not begin or begin >= present.date()
-                            or abs(begin.year - present.year) < 2):
-                        regs = self.eventproxy.list_registrations(rs, event['id'])
-                        event['registrations'] = len(regs)
+                    if (event.begin >= present.date()
+                            or abs(event.begin.year - present.year) < 2):
+                        regs = self.eventproxy.list_registrations(rs, event.id)
+                        orga_registrations[event_id] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
+                dashboard['orga_registrations'] = orga_registrations
                 dashboard['present'] = present
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
@@ -153,24 +154,29 @@ class CoreBaseFrontend(AbstractFrontend):
                 event_ids = self.eventproxy.list_events(
                     rs, visible=True, current=True, archived=False)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
-                final = {}
+                final: dict[int, Any] = {}
+                events_registration: dict[int, Optional[bool]] = {}
+                events_payment_pending: dict[int, bool] = {}
                 for event_id, event in events.items():
-                    event['registration'], event['payment_pending'] = (
+                    registration, payment_pending = (
                         self.eventproxy.get_registration_payment_info(rs, event_id))
                     # Skip event, if the registration begins more than 2 weeks in future
-                    if event['registration_start'] and \
+                    if event.registration_start and \
                             now() + datetime.timedelta(weeks=2) < \
-                            event['registration_start']:
+                            event.registration_start:
                         continue
                     # Skip events, that are over or are not registerable anymore
-                    if (event['registration_hard_limit']
-                            and now() > event['registration_hard_limit']
-                            and not event['registration']
-                            or now().date() > event['end']):
+                    if (event.registration_hard_limit
+                            and now() > event.registration_hard_limit
+                            and not registration
+                            or now().date() > event.end):
                         continue
                     final[event_id] = event
-                if final:
-                    dashboard['events'] = final
+                    events_registration[event_id] = registration
+                    events_payment_pending[event_id] = payment_pending
+                dashboard['events'] = final
+                dashboard['events_registration'] = events_registration
+                dashboard['events_payment_pending'] = events_payment_pending
             # open assemblies
             if "assembly" in rs.user.roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
@@ -712,14 +718,16 @@ class CoreBaseFrontend(AbstractFrontend):
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.ambience['persona']['is_archived']:
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
-        history = self.coreproxy.changelog_get_history(rs, persona_id,
-                                                       generations=None)
-        current_generation = self.coreproxy.changelog_get_generation(
-            rs, persona_id)
+        history = self.coreproxy.changelog_get_history(rs, persona_id, generations=None)
+        # retrieve the latest version of the changelog, including pending ones
+        current_generation = self.coreproxy.changelog_get_generation(rs, persona_id)
         current = history[current_generation]
+        # do not use the latest changelog version, since we want to highlight any
+        # inconsistencies between latest changelog generation and core.personas
+        inconsistencies = self.coreproxy.get_changelog_inconsistencies(rs, persona_id)
+        # to display the differences between the latest committed changelog generation
+        # and the state in core.personas
+        committed = self.coreproxy.get_total_persona(rs, persona_id)
         fields = current.keys()
         stati = const.PersonaChangeStati
         constants = {}
@@ -783,6 +791,8 @@ class CoreBaseFrontend(AbstractFrontend):
             'entries': history, 'constants': constants, 'current': current,
             'pending': pending, 'eventual_status': eventual_status,
             'personas': personas, 'ADMIN_KEYS': ADMIN_KEYS,
+            'inconsistencies': inconsistencies or [],
+            'committed': committed,
         })
 
     @access("core_admin")

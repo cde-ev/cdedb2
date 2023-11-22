@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-    {% set has_lodge_field = ambience['event'].get('lodge_field') is not none %}
+    {% set has_lodge_field = ambience['event']['lodge_field'] is not none %}
     <p>
         {% trans %}
             The Lodgement Wishes Graph provides a visual representation of the roommate wishes entered by the
@@ -78,7 +78,7 @@
 
     <form action="{{ cdedblink('event/lodgement_wishes_graph') }}" method="GET" id="settingsform" class="form-horizontal">
         {% if ambience['event']['parts']|length > 1 %}
-            {{ util.form_input_select('part_id', ambience['event']['parts'].items()|dict_entries('id', 'title'),
+            {{ util.form_input_select('part_id', ambience['event']['parts'].values()|sort|entries('id', 'title'),
                                       gettext("Event Parts"), nulloption=gettext("— All Parts —"))}}
         {% else %}
             {{ util.input_hidden('part_id', (ambience['event']['parts']|list)[0]) }}

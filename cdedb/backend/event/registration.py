@@ -23,15 +23,16 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.event as models
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, glue, unwrap,
+    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -58,7 +59,7 @@ FeeStats = Dict[str, Dict[const.EventFeeType, decimal.Decimal]]
 @dataclasses.dataclass
 class RegistrationFee:
     amount: decimal.Decimal
-    active_fees: set[int]
+    active_fees: set[vtypes.ProtoID]
     visual_debug: dict[int, str]
     by_kind: dict[const.EventFeeType, decimal.Decimal]
 
@@ -517,7 +518,10 @@ class EventRegistrationBackend(EventBaseBackend):
                       ) -> Dict[int, Optional[List[int]]]:
         """Compute the waitlist in order for the given parts.
 
-        :returns: Part id maping to None, if no waitlist ordering is defined
+        Registrations with an empty waitlist field wil be placed at the end of the
+        waitlist. The registration id is used as a tie breaker.
+
+        :returns: Part id mapping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
         event_id = affirm(vtypes.ID, event_id)
@@ -525,31 +529,30 @@ class EventRegistrationBackend(EventBaseBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             if not part_ids:
-                part_ids = event['parts'].keys()
-            elif not part_ids <= event['parts'].keys():
+                part_ids = set(event.parts.keys())
+            elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
             ret: Dict[int, Optional[List[int]]] = {}
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
-            fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event['fields'])
-                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
-                part = event['parts'][part_id]
-                if not part['waitlist_field']:
+                part = event.parts[part_id]
+                if not part.waitlist_field:
                     ret[part_id] = None
                     continue
-                field_name = event['fields'][part['waitlist_field']]['field_name']
-                query = ("SELECT reg.id, rparts.status"
-                         " FROM event.registrations AS reg"
-                         " LEFT OUTER JOIN event.registration_parts AS rparts"
-                         " ON reg.id = rparts.registration_id"
-                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                field_name = part.waitlist_field.field_name
+                query = f"""
+                    SELECT reg.id
+                    FROM event.registrations AS reg
+                        LEFT JOIN event.registration_parts AS rparts
+                            ON reg.id = rparts.registration_id
+                    WHERE rparts.part_id = %s AND rparts.status = %s
+                    ORDER BY
+                        COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
+                """
                 data = self.query_all(rs, query, (part_id, waitlist))
-                ret[part_id] = xsorted(
-                    (reg['id'] for reg in data),
-                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
+                ret[part_id] = [e['id'] for e in data]
             return ret
 
     @access("event")
@@ -826,7 +829,9 @@ class EventRegistrationBackend(EventBaseBackend):
                                and e['track_id'] == track_id)}
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+                ret[anid]['fields'] = cast_fields(
+                    ret[anid]['fields'], models.EventField.many_from_database(
+                        event_fields.values()))
 
         return ret
 
@@ -937,7 +942,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 # delayed validation since we need additional info
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event['fields'],
+                    fields=event.fields,
                     association=const.FieldAssociations.registration)
 
                 fupdate = {
@@ -948,7 +953,7 @@ class EventRegistrationBackend(EventBaseBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not event['parts'].keys() >= parts.keys():
+                if not event.parts.keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
@@ -973,7 +978,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                if not set(tracks).issubset(event['tracks']):
+                if not set(tracks).issubset(event.tracks):
                     raise ValueError(n_("Non-existing tracks specified."))
                 aux = self.get_course_choice_validation_aux(
                     rs, event_id, registration_id=data['id'], orga_input=orga_input)
@@ -1034,7 +1039,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            vtypes.EventAssociatedFields, fdata, fields=event['fields'],
+            vtypes.EventAssociatedFields, fdata, fields=event.fields,
             association=const.FieldAssociations.registration)
         if (data['persona_id'] != rs.user.persona_id
                 and not self.is_orga(rs, event_id=data['event_id'])
@@ -1073,7 +1078,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 new_part['part_id'] = part_id
                 self.sql_insert(rs, "event.registration_parts", new_part)
             aux = self.get_course_choice_validation_aux(
-                rs, event['id'], registration_id=new_id, orga_input=orga_input)
+                rs, event.id, registration_id=new_id, orga_input=orga_input)
             # insert tracks
             for track_id, track in data['tracks'].items():
                 new_track = copy.deepcopy(track)
@@ -1211,14 +1216,14 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._calculate_complex_fee(rs, registration, event=event)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: CdEDBObject, is_member: bool = None
+                              event: models.Event, is_member: bool = None
                               ) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
         return self._calculate_complex_fee(
             rs, reg, event=event, is_member=is_member).amount
 
     def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: CdEDBObject, is_member: bool = None,
+                               event: models.Event, is_member: bool = None,
                                is_orga: bool = None, visual_debug: bool = False,
                                ) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
@@ -1239,20 +1244,20 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = {}
 
         reg_part_involvement = {
-            event['parts'][part_id]['shortname']: rp['status'].has_to_pay()
+            event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
         }
         reg_bool_fields = {
-            f['field_name']: reg['fields'].get(f['field_name'], False)
-            for f in event['fields'].values()
-            if f['association'] == const.FieldAssociations.registration
-               and f['kind'] == const.FieldDatatypes.bool
+            str(f.field_name): reg['fields'].get(f.field_name, False)
+            for f in event.fields.values()
+            if f.association == const.FieldAssociations.registration
+               and f.kind == const.FieldDatatypes.bool
         }
         for tmp_is_member in (True, False):
             # Other bools can be added here, but also require adjustment to the parser.
             other_bools = {
                 'is_orga':
-                    reg['persona_id'] in event['orgas'] if is_orga is None else is_orga,
+                    reg['persona_id'] in event.orgas if is_orga is None else is_orga,
                 'is_member': tmp_is_member,
                 'any_part': any(reg_part_involvement.values()),
                 'all_parts': all(reg_part_involvement.values()),
@@ -1262,16 +1267,16 @@ class EventRegistrationBackend(EventBaseBackend):
             fees_by_kind: Dict[const.EventFeeType, decimal.Decimal] = defaultdict(
                 decimal.Decimal)
             visual_debug_data: Dict[int, str] = {}
-            for fee in event['fees'].values():
-                parse_result = fcp_parsing.parse(fee['condition'])
+            for fee in event.fees.values():
+                parse_result = fcp_parsing.parse(fee.condition)
                 if fcp_evaluation.evaluate(
                         parse_result, reg_bool_fields, reg_part_involvement,
                         other_bools):
-                    amount += fee['amount']
-                    active_fees.add(fee['id'])
-                    fees_by_kind[fee['kind']] += fee['amount']
+                    amount += fee.amount
+                    active_fees.add(fee.id)
+                    fees_by_kind[fee.kind] += fee.amount
                 if visual_debug:
-                    visual_debug_data[fee['id']] = fcp_roundtrip.visual_debug(
+                    visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
                         parse_result, reg_bool_fields, reg_part_involvement,
                         other_bools
                     )[1]
@@ -1316,7 +1321,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if self.is_orga(rs, event_id=event_id):
             pass
         elif persona_id and persona_id == rs.user.persona_id and (
-                event['is_open'] or registration_id):
+                event.is_open or registration_id):
             pass
         else:
             raise PrivilegeError
@@ -1326,13 +1331,13 @@ class EventRegistrationBackend(EventBaseBackend):
             reg = self.get_registration(rs, registration_id)
 
         fields = {}
-        for field_id, field in event['fields'].items():
-            fn = field['field_name']
+        for field_id, field in event.fields.items():
+            fn = field.field_name
             fields[fn] = field_values.get(f"field.{field_id}")
             if fields[fn] is None and reg:
                 fields[fn] = bool(reg['fields'].get(fn, False))
             else:
-                field[fn] = False
+                fields[fn] = False
 
         fake_registration = {
             'persona_id': persona_id,
@@ -1343,7 +1348,7 @@ class EventRegistrationBackend(EventBaseBackend):
                         if part_id in part_ids
                         else const.RegistrationPartStati.not_applied
                 }
-                for part_id in event['parts']
+                for part_id in event.parts
             },
             'fields': fields,
         }

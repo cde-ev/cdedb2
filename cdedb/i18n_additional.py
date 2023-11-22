@@ -260,6 +260,7 @@ I18N_STRINGS = (
     n_("PastInstitutions.jgw"),
     n_("PastInstitutions.basf"),
     n_("PastInstitutions.van"),
+    n_("PastInstitutions.eisenberg"),
 
     n_("QueryOperators.empty"),
     n_("QueryOperators.nonempty"),

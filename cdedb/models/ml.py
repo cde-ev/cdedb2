@@ -15,6 +15,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
+from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
@@ -108,6 +109,9 @@ class Mailinglist(CdEDataclass):
     def __post_init__(self) -> None:
         if self.__class__ not in ML_TYPE_MAP_INV:
             raise TypeError("Cannot instantiate abstract class.")
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.title, )
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -529,14 +533,14 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         event = bc.event.get_event(rs, self.event_id)
 
         spec = QueryScope.registration.get_spec(event=event)
-        target = {f"part{part_id}.status" for part_id in event['parts']}
+        target = {f"part{part_id}.status" for part_id in event.parts}
         for column in spec:
             if set(column.split(',')) == target:
                 status_column = column
                 break
         else:
             status_column = ",".join(
-                f"part{part_id}.status" for part_id in event['parts'])
+                f"part{part_id}.status" for part_id in event.parts)
         query = Query(
             scope=QueryScope.registration,
             spec=spec,
@@ -545,7 +549,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                 (status_column, QueryOperators.oneof, self.registration_stati),
             ],
             order=tuple())
-        data = bc.event.submit_general_query(rs, query, event_id=event["id"])
+        data = bc.event.submit_general_query(rs, query, event_id=event.id)
 
         return {e["persona.id"] for e in data}
 
@@ -571,7 +575,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
         return super().get_subscription_policies(rs, bc, persona_ids)
 
     def get_implicit_subscribers(self, rs: RequestState, bc: BackendContainer
-                                 ) -> Set[int]:
+                                 ) -> set[int]:
         """Get a list of people that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
@@ -580,7 +584,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
             return set()
 
         event = bc.event.get_event(rs, self.event_id)
-        return event["orgas"]
+        return cast(set[int], event.orgas)
 
 
 @dataclass

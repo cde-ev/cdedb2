@@ -113,14 +113,14 @@
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
-                    {% for event_id, event in dashboard['orga']|keydictsort(EntitySorter.event) %}
+                    {% for event in dashboard['orga'].values()|sort %}
                         <li>
-                            {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
+                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event['title'],
                                     icon='chalkboard-teacher') }}
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count=event['registrations'] %}
+                                    {% trans count=dashboard['orga_registrations'][event.id] %}
                                     	{{ count }} Registrations
                                     {% endtrans %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
@@ -154,14 +154,14 @@
                             {% endif %}
                             <br />
                             <span class="small">
-                                {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
+                                {{ util.href(cdedblink('event/registration_query', {'event_id': event.id}),
                                              gettext("Registrations"), icon='list') }}
                                 &bull;
-                                {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
+                                {{ util.href(cdedblink('event/stats', {'event_id': event.id}),
                                              gettext("Statistics"), icon='chart-bar') }}
                                 {% if event['tracks'] %}
                                     &bull;
-                                    {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
+                                    {{ util.href(cdedblink('event/course_stats', {'event_id': event.id}),
                                                  gettext("Courses"), icon='book') }}
                                 {% endif %}
                             </span>
@@ -177,7 +177,7 @@
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
                 <ul class="slim spaced">
-                    {% for mailinglist_id, mailinglist in dashboard['moderator']|keydictsort(EntitySorter.mailinglist) %}
+                    {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
@@ -207,25 +207,25 @@
             {% call util.bootstrap_panel(title=gettext("Current Events"), icon='chalkboard-teacher',
                                          aclass='panel-success', anid='event-box') %}
                 <ul class="slim spaced">
-                    {% for event_id, event in dashboard['events']|keydictsort(EntitySorter.event) %}
+                    {% for event in dashboard['events'].values()|sort %}
                         <li>
-                            {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
+                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event['title'],
                                          icon='chalkboard-teacher') }}
                             <br />
                             {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                             <br />
-                            {% if event['registration'] is not none %}
-                                {% set link=cdedblink('event/registration_status', {'event_id': event_id}) %}
-                                    {% if event['registration'] %}
+                            {% if dashboard['events_registration'][event.id] is not none %}
+                                {% set link=cdedblink('event/registration_status', {'event_id': event.id}) %}
+                                    {% if dashboard['events_registration'][event.id] %}
                                         ({% trans registered=util.href(link, gettext("registered")) -%}
                                             already {{ registered }}
                                         {% endtrans %}
-                                        {%- if event['payment_pending'] -%}
+                                        {%- if dashboard['events_payment_pending'][event.id] -%}
                                             , {% trans %}payment pending{% endtrans %}
                                         {%- endif %})
                                         {%- if event['use_additional_questionnaire'] %}
                                             &bull;
-                                            {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event_id}),
+                                            {{ util.href(cdedblink('event/additional_questionnaire', {'event_id': event.id}),
                                                          gettext("Questionnaire"), icon='edit') -}}
                                         {% endif -%}
                                     {% else %}
@@ -234,7 +234,7 @@
                                         {%- endtrans %})
                                     {% endif %}
                             {% elif event['is_open'] %}
-                                {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
+                                {{ util.href(cdedblink('event/register_form', {'event_id': event.id}),
                                     gettext("Register"), icon='sign-in-alt') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}

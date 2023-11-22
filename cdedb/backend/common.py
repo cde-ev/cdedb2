@@ -15,8 +15,8 @@ import sys
 import uuid
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Dict, Iterable, List, Literal, Mapping, Optional, Set,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Iterable, List, Literal, Mapping, Optional, Set, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
@@ -26,7 +26,7 @@ from passlib.hash import sha512_crypt
 
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
+    CdEDBLog, CdEDBObject, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -34,7 +34,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -712,33 +711,6 @@ def verify_password(password: str, password_hash: str) -> bool:
 def encrypt_password(password: str) -> str:
     """We currently use passlib for password protection."""
     return sha512_crypt.hash(password)
-
-
-def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
-    """Helper to deserialize json fields.
-
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
-    """
-    spec: Dict[str, FieldDatatypes]
-    spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
-        FieldDatatypes.int: lambda x: x,
-        FieldDatatypes.str: lambda x: x,
-        FieldDatatypes.float: lambda x: x,
-        FieldDatatypes.date: parse_date,
-        FieldDatatypes.datetime: parse_datetime,
-        FieldDatatypes.bool: lambda x: x,
-    }
-
-    def _do_cast(key: str, val: Any) -> Any:
-        if val is None:
-            return None
-        if key in spec:
-            return casters[spec[key]](val)
-        return val
-
-    return {key: _do_cast(key, val) for key, val in data.items()}
 
 
 #: Translate between validator names and sql data types.

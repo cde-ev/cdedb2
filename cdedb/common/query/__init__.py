@@ -11,24 +11,38 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import copy
+import dataclasses
 import datetime
 import enum
 import itertools
 import re
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Tuple, Union,
+    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
+    Sequence, Tuple, cast,
 )
 
+from typing_extensions import TypeAlias
+
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState
+from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.config import LazyConfig
-from cdedb.filter import keydictsort_filter
 from cdedb.uncommon.intenum import CdEIntEnum
 
+if TYPE_CHECKING:
+    import cdedb.models.event as models
+
+
 _CONFIG = LazyConfig()
+
+# The maximal number of sorting criteria that can be used for queries
+MAX_QUERY_ORDERS = 20
+
+CourseMap: TypeAlias = "models.CdEDataclassMap[models.Course]"
+LodgementMap: TypeAlias = "models.CdEDataclassMap[models.Lodgement]"
+LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
 
 
 @enum.unique
@@ -112,32 +126,29 @@ QueryConstraintType = NamedTuple(
 # is ASC (i.e. True -> ASC, False -> DESC).
 QueryOrder = Tuple[str, bool]
 
-QueryChoices = Mapping[Union[int, str, enum.Enum], str]
+QueryChoices = Mapping[Any, str]
 
 QUERY_VALUE_SEPARATOR = ","
 
 
-class QuerySpecEntry(NamedTuple):
+@dataclasses.dataclass
+class QuerySpecEntry:
     type: str
     title_base: str
     title_prefix: str = ""
-    title_params: Dict[str, str] = {}
-    choices: QueryChoices = {}
+    title_params: Dict[str, str] = dataclasses.field(default_factory=dict)
+    choices: QueryChoices = dataclasses.field(default_factory=dict)
+    translate_prefix: bool = True
 
     # Mask gettext so pybabel doesn't try to extract the f-string.
     def get_title(self, g: Callable[[str], str]) -> str:
-        ret_prefix = g(f"{self.title_prefix}: ") if self.title_prefix else ""
-        ret_title = g(self.title_base).format(**self.title_params)
-        return ret_prefix + ret_title
-
-    def replace_choices(self, choices: QueryChoices) -> "QuerySpecEntry":
-        return self.__class__(
-            type=self.type,
-            title_base=self.title_base,
-            title_prefix=self.title_prefix,
-            title_params=self.title_params,
-            choices=choices,
-        )
+        ret = g(self.title_base).format(**self.title_params)
+        if self.title_prefix:
+            if self.translate_prefix:
+                ret = f"{g(self.title_prefix)}: {ret}"
+            else:
+                ret = f"{self.title_prefix}: {ret}"
+        return ret
 
 
 QuerySpec = Dict[str, QuerySpecEntry]
@@ -203,9 +214,10 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: CdEDBObject = None, courses: CdEDBObjectMap = None,
-                 lodgements: CdEDBObjectMap = None,
-                 lodgement_groups: CdEDBObjectMap = None) -> QuerySpec:
+    def get_spec(self, *, event: "models.Event" = None, courses: CourseMap = None,
+                 lodgements: LodgementMap = None,
+                 lodgement_groups: LodgementGroupMap = None,
+                 ) -> QuerySpec:
         """Return the query spec for this scope.
 
         These may be enriched by ext-fields. Order is important for UI purposes.
@@ -291,13 +303,13 @@ class QueryScope(CdEIntEnum):
                 name = prefix + field
                 if name in rs.request.values:
                     params[name] = rs.values[name] = rs.request.values[name]
-        for postfix in ("primary", "secondary", "tertiary"):
-            name = "qord_" + postfix
+        for postfix in range(MAX_QUERY_ORDERS):
+            name = f"qord_{postfix}"
             if name in rs.request.values:
                 params[name] = rs.values[name] = rs.request.values[name]
-            name = "qord_" + postfix + "_ascending"
-            if name in rs.request.values:
-                params[name] = rs.values[name] = rs.request.values[name]
+                name = f"qord_{postfix}_ascending"
+                if name in rs.request.values:
+                    params[name] = rs.values[name] = rs.request.values[name]
         for key, value in defaults.items():
             if key not in params:
                 params[key] = rs.values[key] = value
@@ -582,7 +594,7 @@ class Query:
     def __init__(self, scope: QueryScope, spec: QuerySpec,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Collection[QueryOrder],
+                 order: Sequence[QueryOrder],
                  name: str = None, query_id: int = None,
                  ):
         """
@@ -693,7 +705,7 @@ class Query:
                     serialize_value(x) for x in value)
             else:
                 params[f'qval_{field}'] = serialize_value(value)
-        for entry, postfix in zip(self.order, ("primary", "secondary", "tertiary")):
+        for entry, postfix in zip(self.order, range(MAX_QUERY_ORDERS)):
             field, ascending = entry
             params[f'qord_{postfix}'] = field
             params[f'qord_{postfix}_ascending'] = ascending
@@ -739,18 +751,20 @@ class Query:
         return QueryResultEntryFormat.other
 
 
-def _sort_event_fields(fields: CdEDBObjectMap
-                       ) -> Dict[const.FieldAssociations, List[CdEDBObject]]:
+def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
+                       ) -> Dict[const.FieldAssociations, List["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: Dict[const.FieldAssociations, List[CdEDBObject]] = {
-        association: [] for association in const.FieldAssociations}
-    for field in xsorted(fields.values(), key=EntitySorter.event_field):
-        sorted_fields[field['association']].append(field)
+    sorted_fields: Dict[const.FieldAssociations, List["models.EventField"]] = {
+        association: []
+        for association in const.FieldAssociations
+    }
+    for field in xsorted(fields.values()):
+        sorted_fields[field.association].append(field)
     return sorted_fields
 
 
 def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
-                   prefix: str) -> QuerySpec:
+                   prefix: str, translate_prefix: bool = False) -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 
     Entries are grouped by their position in the individual spec. Thus the individual
@@ -780,51 +794,44 @@ def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
         ret[key] = QuerySpecEntry(
             type=entry.type, title_base=entry.title_base, title_prefix=prefix,
             title_params=entry.title_params, choices=entry.choices,
+            translate_prefix=translate_prefix,
         )
     return ret
 
 
-def _get_course_choices(courses: Optional[CdEDBObjectMap]) -> QueryChoices:
+def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
     if courses is None:
         return {}
-    course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
-    return dict((c_id, course_identifier(c))
-                for c_id, c in keydictsort_filter(courses, EntitySorter.course))
+    return dict((c.id, f"{c.nr} {c.shortname}") for c in xsorted(courses.values()))
 
 
-def _get_lodgement_choices(lodgements: Optional[CdEDBObjectMap]) -> QueryChoices:
+def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
     if lodgements is None:
         return {}
-    lodge_identifier = lambda l: l["title"]
-    return dict(
-        (l_id, lodge_identifier(l))
-        for l_id, l in keydictsort_filter(lodgements, EntitySorter.lodgement))
+    return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[CdEDBObjectMap]
+def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
-    lodgement_group_identifier = lambda g: g["title"]
-    return dict(
-        (g_id, lodgement_group_identifier(g))
-        for g_id, g in keydictsort_filter(
-            lodgement_groups, EntitySorter.lodgement_group))
+    return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
-                                 lodgements: CdEDBObjectMap = None,
-                                 lodgement_groups: CdEDBObjectMap = None) -> QuerySpec:
+def make_registration_query_spec(event: "models.Event", courses: CourseMap = None,
+                                 lodgements: LodgementMap = None,
+                                 lodgement_groups: LodgementGroupMap = None,
+                                 ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
     Since each event has dynamic columns for parts and extra fields we
     have amend the query spec on the fly.
     """
 
-    sorted_fields = _sort_event_fields(event['fields'])
+    sorted_fields = _sort_event_fields(event.fields)
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else {}
-        for field in event['fields'].values()
+        field.field_name: field.entries or {}
+        for field in event.fields.values()
     }
     course_choices = _get_course_choices(courses)
     lodgement_choices = _get_lodgement_choices(lodgements)
@@ -867,39 +874,38 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             QuerySpecEntry("datetime", n_("Last Modification Time")),
     }
 
-    def get_part_spec(part: CdEDBObject) -> QuerySpec:
-        part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else part['shortname']
+    def get_part_spec(part: "models.EventPart") -> QuerySpec:
+        prefix = "" if len(event.parts) <= 1 else part.shortname
         return {
             # Choices for the status will be manually set.
-            f"part{part_id}.status": QuerySpecEntry(
+            f"part{part.id}.status": QuerySpecEntry(
                 "int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
-            f"part{part_id}.is_camping_mat": QuerySpecEntry(
+            f"part{part.id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
-            f"part{part_id}.lodgement_id": QuerySpecEntry(
+            f"part{part.id}.lodgement_id": QuerySpecEntry(
                 "id", n_("lodgement"), prefix, choices=lodgement_choices),
-            f"lodgement{part_id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
-            f"lodgement{part_id}.group_id": QuerySpecEntry(
+            f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
+            f"lodgement{part.id}.group_id": QuerySpecEntry(
                 "id", n_("lodgement group"), prefix, choices=lodgement_group_choices),
-            f"lodgement{part_id}.title": QuerySpecEntry(
+            f"lodgement{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement title"), prefix),
-            f"lodgement{part_id}.notes": QuerySpecEntry(
+            f"lodgement{part.id}.notes": QuerySpecEntry(
                 "str", n_("lodgement notes"), prefix),
             **{
-                f"lodgement{part_id}.xfield_{f['field_name']}": QuerySpecEntry(
-                    f['kind'].name, n_("lodgement {field}"), prefix,
-                    {'field': f['field_name']})
+                f"lodgement{part.id}.xfield_{f.field_name}": QuerySpecEntry(
+                    f.kind.name, n_("lodgement {field}"), prefix,
+                    {'field': f.field_name})
                 for f in sorted_fields[const.FieldAssociations.lodgement]
             },
-            f"lodgement_group{part_id}.id": QuerySpecEntry(
+            f"lodgement_group{part.id}.id": QuerySpecEntry(
                 "id", n_("lodgement group ID"), prefix),
-            f"lodgement_group{part_id}.title": QuerySpecEntry(
+            f"lodgement_group{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement group title"), prefix),
         }
 
-    def get_track_spec(track: CdEDBObject) -> QuerySpec:
-        track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
+    def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
+        track_id = track.id
+        prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
@@ -916,9 +922,9 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             f"course{track_id}.notes": QuerySpecEntry(
                 "str", n_("course notes"), prefix),
             **{
-                f"course{track_id}.xfield_{f['field_name']}": QuerySpecEntry(
-                    f['kind'].name, n_("course {field}"), prefix,
-                    {'field': f['field_name']}, choices=field_choices[f['field_name']],
+                f"course{track_id}.xfield_{f.field_name}": QuerySpecEntry(
+                    f.kind.name, n_("course {field}"), prefix,
+                    {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
             },
@@ -933,23 +939,23 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             f"course_instructor{track_id}.notes": QuerySpecEntry(
                 "str", n_("instructed course notes"), prefix),
             **{
-                f"course_instructor{track_id}.xfield_{f['field_name']}": QuerySpecEntry(
-                    f['kind'].name, n_("instructed course {field}"), prefix,
-                    {'field': f['field_name']}, choices=field_choices[f['field_name']],
+                f"course_instructor{track_id}.xfield_{f.field_name}": QuerySpecEntry(
+                    f.kind.name, n_("instructed course {field}"), prefix,
+                    {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
             },
         }
 
-    def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
-        track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
+    def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
+        prefix = "" if len(event.tracks) <= 1 else cco.shortname
+        reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
-            f"course_choices{track_id}.rank{i}": QuerySpecEntry(
+            f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
-            for i in range(track['num_choices'])
+            for i in range(cco.num_choices)
         }
 
         # If there are course choices for the track, add an entry for any choice.
@@ -964,102 +970,91 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
 
     # Presort part specs, so we can iterate over them in order.
     part_specs = {
-        part_id: get_part_spec(part)
-        for part_id, part in keydictsort_filter(event['parts'], EntitySorter.event_part)
+        int(part.id): get_part_spec(part)
+        for part in xsorted(event.parts.values())
     }
     track_specs = {
-        track_id: get_track_spec(track)
-        for track_id, track in keydictsort_filter(
-            event['tracks'], EntitySorter.course_track)
+        int(track.id): get_track_spec(track)
+        for track in xsorted(event.tracks.values())
     }
     course_choice_specs = {
-        track_id: get_course_choice_spec(track)
-        for track_id, track in keydictsort_filter(
-            event['tracks'], EntitySorter.course_track)
+        int(track.id): get_course_choice_spec(track)
+        for track in xsorted(event.tracks.values())
     }
 
     # Add entries for individual parts and tracks in those parts.
     for part_id, part_spec in part_specs.items():
-        part = event['parts'][part_id]
+        part = event.parts[part_id]
         spec.update(part_spec)
 
         # Add entries for individual tracks.
-        for track_id, track in keydictsort_filter(part['tracks'],
-                                                  EntitySorter.course_track):
-            spec.update(track_specs[track_id])
+        for track in xsorted(part.tracks.values()):
+            spec.update(track_specs[track.id])
 
             # Skip course choice filters if track is synced.
-            if any(tg['constraint_type']
-                   == const.CourseTrackGroupType.course_choice_sync
-                   for tg in track['track_groups'].values()):
+            if any(tg.constraint_type == const.CourseTrackGroupType.course_choice_sync
+                   for tg in track.track_groups.values()):
                 continue
-            spec.update(course_choice_specs[track_id])
+            spec.update(course_choice_specs[track.id])
 
         # Add Entries for all tracks in this part.
         spec.update(_combine_specs(
-            track_specs, part['tracks'], prefix=part['shortname']))
+            track_specs, part.tracks, prefix=part.shortname))
         spec.update(_combine_specs(
-            course_choice_specs, part['tracks'], prefix=part['shortname']))
+            course_choice_specs, part.tracks, prefix=part.shortname))
 
     # Add entries for groups of parts and tracks in those parts.
-    sorted_part_groups = xsorted(
-        event['part_groups'].values(), key=EntitySorter.event_part_group)
-    sorted_part_groups.append({'part_ids': event['parts'].keys(), 'shortname': None})
+    sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
+    sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
         if constraint := part_group.get('constraint_type'):
             if constraint != const.EventPartGroupType.Statistic:
                 continue
-        part_ids = part_group['part_ids']
+        part_ids = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
-            part_specs, part_ids, prefix=prefix or n_("any part")))
+            part_specs, part_ids, prefix=prefix or n_("any part"),
+            translate_prefix=not prefix))
         # Add entries for track combinations.
         track_ids = tuple(itertools.chain.from_iterable(
-            event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
+            event.parts[part_id].tracks.keys() for part_id in part_ids))
         spec.update(_combine_specs(
-            track_specs, track_ids, prefix=prefix or n_("any track")))
+            track_specs, track_ids, prefix=prefix or n_("any track"),
+            translate_prefix=not prefix))
         spec.update(_combine_specs(
-            course_choice_specs, track_ids, prefix=prefix or n_("any track")))
+            course_choice_specs, track_ids, prefix=prefix or n_("any track"),
+            translate_prefix=not prefix))
 
     # Add entries for track groups.
-    sorted_track_groups = xsorted(
-        event['track_groups'].values(), key=EntitySorter.course_track_group)
-    for track_group in sorted_track_groups:
-        if (track_group['constraint_type']
-                != const.CourseTrackGroupType.course_choice_sync):
-            continue
+    for track_group in xsorted(event.track_groups.values()):
+        if track_group.constraint_type != const.CourseTrackGroupType.course_choice_sync:
+            continue  # type: ignore[unreachable]
 
-        # Randomly choose a track in the group to use for filtering.
-        #  Since all synced tracks have identical entries, this choice does not matter.
-        track_id = next(iter(track_group['track_ids']))
-        fake_track = {
-            'id': track_id,
-            'num_choices': event['tracks'][track_id]['num_choices'],
-            'shortname': track_group['shortname'],
-        }
-        spec.update(get_course_choice_spec(fake_track))
+        spec.update(get_course_choice_spec(
+            cast("models.SyncTrackGroup", track_group)))
 
     spec.update({
-        f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
+        f"reg_fields.xfield_{f.field_name}": QuerySpecEntry(
+            f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
     return spec
 
 
-def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
-                           lodgements: CdEDBObjectMap = None,
-                           lodgement_groups: CdEDBObjectMap = None) -> QuerySpec:
+def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
+                           lodgements: LodgementMap = None,
+                           lodgement_groups: LodgementGroupMap = None,
+                           ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
     Since each event has custom course fields and an arbitrary number
     of course tracks we have to extend this spec on the fly.
     """
-    sorted_tracks = keydictsort_filter(event['tracks'], EntitySorter.course_track)
-    sorted_course_fields = _sort_event_fields(event['fields'])[
+    sorted_tracks = xsorted(event.tracks.values())
+    sorted_course_fields = _sort_event_fields(event.fields)[
         const.FieldAssociations.course]
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else {}
+        field.field_name: dict(field.entries) if field.entries else {}
         for field in sorted_course_fields
     }
 
@@ -1079,40 +1074,42 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
         # This will be augmented with additional fields in the fly.
     }
 
-    def get_track_spec(track: CdEDBObject) -> QuerySpec:
-        track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
+    def get_track_spec(track: "models.CourseTrack") -> QuerySpec:
+        prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
-            f"track{track_id}.is_offered": QuerySpecEntry(
+            f"track{track.id}.is_offered": QuerySpecEntry(
                 "bool", n_("is offered"), prefix),
-            f"track{track_id}.takes_place": QuerySpecEntry(
+            f"track{track.id}.takes_place": QuerySpecEntry(
                 "bool", n_("takes place"), prefix),
-            f"track{track_id}.is_cancelled": QuerySpecEntry(
+            f"track{track.id}.is_cancelled": QuerySpecEntry(
                 "bool", n_("is cancelled"), prefix),
-            f"track{track_id}.attendees": QuerySpecEntry(
+            f"track{track.id}.attendees": QuerySpecEntry(
                 "int", n_("attendee count"), prefix),
-            f"track{track_id}.instructors": QuerySpecEntry(
-                "int", n_("potential instructor count"), prefix),
-            f"track{track_id}.assigned_instructors": QuerySpecEntry(
+            f"track{track.id}.attendees_and_guests": QuerySpecEntry(
+                "int", n_("attendee count (incl. guests)"), prefix),
+            f"track{track.id}.instructors": QuerySpecEntry(
                 "int", n_("instructor count"), prefix),
+            f"track{track.id}.assigned_instructors": QuerySpecEntry(
+                "int", n_("assigned instructor count"), prefix),
+            f"track{track.id}.potential_instructors": QuerySpecEntry(
+                "int", n_("potential instructor count (incl. open)"), prefix),
         }
 
-    def get_course_choice_spec(track: CdEDBObject) -> QuerySpec:
-        track_id = track['id']
-        prefix = "" if len(event['tracks']) <= 1 else track['shortname']
+    def get_course_choice_spec(track: "models.CourseTrack") -> QuerySpec:
+        prefix = "" if len(event.tracks) <= 1 else track.shortname
         return {
-            f"track{track_id}.num_choices{i}": QuerySpecEntry(
+            f"track{track.id}.num_choices{i}": QuerySpecEntry(
                 "int", n_("{rank}. choices"), prefix, {'rank': str(i + 1)})
-            for i in range(track['num_choices'])
+            for i in range(track.num_choices)
         }
 
     track_specs = {
-        track_id: get_track_spec(track)
-        for track_id, track in sorted_tracks
+        int(track.id): get_track_spec(track)
+        for track in sorted_tracks
     }
     course_choice_specs = {
-        track_id: get_course_choice_spec(track)
-        for track_id, track in sorted_tracks
+        int(track.id): get_course_choice_spec(track)
+        for track in sorted_tracks
     }
     # Add entries for individual tracks.
     for track_id, track_spec in track_specs.items():
@@ -1124,60 +1121,65 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
             # Don't overwrite a potential existing spec.
             # This happens if there is exactly one choice.
             if key not in course_choice_spec:
-                prefix = ("" if len(event['tracks']) <= 1
-                          else event['tracks'][track_id]['shortname'])
+                prefix = ("" if len(event.tracks) <= 1
+                          else event.tracks[track_id].shortname)
                 spec[key] = QuerySpecEntry("id", n_("Any Choice"), prefix)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
-    sorted_parts = xsorted(event['parts'].values(), key=EntitySorter.event_part)
-    sorted_part_groups = xsorted(
-        event['part_groups'].values(), key=EntitySorter.event_part_group)
-    track_groups = (
-        {'track_ids': event['tracks'].keys(), 'shortname': n_("any track")},
+    sorted_parts = xsorted(event.parts.values())
+    sorted_part_groups = xsorted(event.part_groups.values())
+    track_groups: tuple[CdEDBObject, ...] = (
+        {'track_ids': event.tracks.keys(), 'shortname': None},
         *(
-            {'track_ids': part['tracks'].keys(), 'shortname': part['shortname']}
+            {'track_ids': part.tracks.keys(), 'shortname': part.shortname}
             for part in sorted_parts
         ),
         *(
             {
                 'track_ids': tuple(itertools.chain.from_iterable(
-                    event['parts'][part_id]['tracks'].keys()
-                    for part_id in part_group['part_ids'])),
-                'shortname': part_group['shortname'],
+                    part.tracks.keys()
+                    for part in part_group.parts.values()
+                )),
+                'shortname': part_group.shortname,
             }
             for part_group in sorted_part_groups
         )
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']
-        prefix = track_group['shortname'] or n_("any track")
-        spec.update(_combine_specs(track_specs, track_ids, prefix))
-        spec.update(_combine_specs(course_choice_specs, track_ids, prefix))
+        prefix = track_group['shortname']
+        spec.update(_combine_specs(
+            track_specs, track_ids, prefix or n_("any track"),
+            translate_prefix=not prefix))
+        spec.update(_combine_specs(
+            course_choice_specs, track_ids, prefix or n_("any track"),
+            translate_prefix=not prefix))
 
     spec.update({
-        f"course_fields.xfield_{field['field_name']}": QuerySpecEntry(
-            field['kind'].name, field['title'],
-            choices=field_choices[field['field_name']])
+        f"course_fields.xfield_{field.field_name}": QuerySpecEntry(
+            field.kind.name, field.title,
+            choices=field_choices[field.field_name])
         for field in sorted_course_fields
     })
 
     return spec
 
 
-def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
-                              lodgements: CdEDBObjectMap = None,
-                              lodgement_groups: CdEDBObjectMap = None) -> QuerySpec:
+def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
+                              lodgements: LodgementMap = None,
+                              lodgement_groups: LodgementGroupMap = None,
+                              ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
     Since each event has custom lodgement fields and an arbitrary number
     of event parts, we have to expand this spec on the fly.
     """
-    sorted_parts = keydictsort_filter(event['parts'], EntitySorter.event_part)
-    sorted_lodgement_fields = _sort_event_fields(event['fields'])[
+    sorted_parts = xsorted(event.parts.values())
+    sorted_lodgement_fields = _sort_event_fields(event.fields)[
         const.FieldAssociations.lodgement]
     field_choices = {
-        field['field_name']: dict(field['entries']) if field['entries'] else {}
+        field.field_name: dict(field.entries) if field.entries else {}
         for field in sorted_lodgement_fields
     }
     lodgement_choices = _get_lodgement_choices(lodgements)
@@ -1199,46 +1201,43 @@ def make_lodgement_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None
         # This will be augmented with additional fields in the fly.
     }
 
-    def get_part_spec(part: CdEDBObject) -> QuerySpec:
-        part_id = part['id']
-        prefix = "" if len(event['parts']) <= 1 else part['shortname']
+    def get_part_spec(part: "models.EventPart") -> QuerySpec:
+        prefix = "" if len(event.parts) <= 1 else part.shortname
         return {
-            f"part{part_id}.regular_inhabitants": QuerySpecEntry(
+            f"part{part.id}.regular_inhabitants": QuerySpecEntry(
                 "int", n_("Regular Inhabitants"), prefix),
-            f"part{part_id}.camping_mat_inhabitants": QuerySpecEntry(
+            f"part{part.id}.camping_mat_inhabitants": QuerySpecEntry(
                 "int", n_("Camping Mat Inhabitants"), prefix),
-            f"part{part_id}.total_inhabitants": QuerySpecEntry(
+            f"part{part.id}.total_inhabitants": QuerySpecEntry(
                 "int", n_("Total Inhabitants"), prefix),
-            f"part{part_id}.group_regular_inhabitants": QuerySpecEntry(
+            f"part{part.id}.group_regular_inhabitants": QuerySpecEntry(
                 "int", n_("Group Regular Inhabitants"), prefix),
-            f"part{part_id}.group_camping_mat_inhabitants": QuerySpecEntry(
+            f"part{part.id}.group_camping_mat_inhabitants": QuerySpecEntry(
                 "int", n_("Group Camping Mat Inhabitants"), prefix),
-            f"part{part_id}.group_total_inhabitants": QuerySpecEntry(
+            f"part{part.id}.group_total_inhabitants": QuerySpecEntry(
                 "int", n_("Group Total Inhabitants"), prefix),
         }
 
     # Presort part specs so we can iterate over them in order.
-    part_specs = {
-        part_id: get_part_spec(part)
-        for part_id, part in sorted_parts
-    }
+    part_specs = {int(part.id): get_part_spec(part) for part in sorted_parts}
 
     # Add entries for individual parts.
     for part_id, part_spec in part_specs.items():
         spec.update(part_spec)
 
     # Add entries for groups of parts.
-    sorted_part_groups = xsorted(
-        event['part_groups'].values(), key=EntitySorter.event_part_group)
-    sorted_part_groups.append({'part_ids': event['parts'].keys(), 'shortname': None})
+    sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
+    sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
-        part_ids = part_group['part_ids']
-        prefix = part_group['shortname'] or n_("any part")
-        spec.update(_combine_specs(part_specs, part_ids, prefix=prefix))
+        part_ids = part_group['parts'].keys()
+        prefix = part_group['shortname']
+        spec.update(_combine_specs(
+            part_specs, part_ids, prefix=prefix or n_("any part"),
+            translate_prefix=not prefix))
 
     spec.update({
-        f"lodgement_fields.xfield_{f['field_name']}": QuerySpecEntry(
-            f['kind'].name, f['title'], choices=field_choices[f['field_name']])
+        f"lodgement_fields.xfield_{f.field_name}": QuerySpecEntry(
+            f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
 

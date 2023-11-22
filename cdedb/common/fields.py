@@ -112,13 +112,13 @@ EVENT_FIELDS = (
     "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
-    "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
+    "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field_id",
     "field_definition_notes", "website_url",
 )
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
-                     "part_end", "waitlist_field", "camping_mat_field")
+                     "part_end", "waitlist_field_id", "camping_mat_field_id")
 
 PART_GROUP_FIELDS = ("id", "event_id", "title", "shortname", "notes", "constraint_type")
 
@@ -128,7 +128,7 @@ TRACK_GROUP_FIELDS = (
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "min_choices", "sortkey", "course_room_field")
+                       "min_choices", "sortkey", "course_room_field_id")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (

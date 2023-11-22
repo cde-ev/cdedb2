@@ -85,14 +85,6 @@ class AssembyAttendees:
 
 
 @dataclasses.dataclass(frozen=True)
-class ConfigurationGroupedBallots:
-    ballots: Dict[BallotConfiguration, Set[int]]
-
-    def __iter__(self) -> Iterator[Tuple[BallotConfiguration, Set[int]]]:
-        return iter(xsorted(self.ballots.items()))
-
-
-@dataclasses.dataclass(frozen=True)
 class GroupedBallots:
     concluded: CdEDBObjectMap
     extended: CdEDBObjectMap
@@ -527,37 +519,47 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.attendees", ("persona_id",), (assembly_id,),
                 entity_key="assembly_id")
         }
-        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+        attendee_data = {
+            e['id']: e for e in xsorted(
+                self.core.get_assembly_users(rs, all_attendees).values(),
+                key=EntitySorter.persona)
+        }
 
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime < %s
         """
-        early_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        early_list = [
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
-        }
+        ]
+        early_attendees = {
+            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)}
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime >= %s
         """
-        late_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        late_list = {
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
+        late_attendees = {
+            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)}
         if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_list = [
+            attendee_data[persona_id]
+            for persona_id in (all_attendees - early_attendees.keys()
+                               - late_attendees.keys())
+        ]
+        undetermined_attendees = {
+             e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)}
 
         return AssembyAttendees(
             all=attendee_data, early=early_attendees, late=late_attendees,
-            undetermined={
-                persona_id: attendee_data[persona_id]
-                for persona_id in (all_attendees - early_attendees.keys()
-                                   - late_attendees.keys())
-            },
-            cutoff=cutoff
+            undetermined=undetermined_attendees, cutoff=cutoff
         )
 
     @access("persona")
@@ -2362,7 +2364,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def group_ballots_by_config(self, rs: RequestState, assembly_id: int
-                                ) -> ConfigurationGroupedBallots:
+                                ) -> Dict[BallotConfiguration, Set[int]]:
         """Group ballot ids by their configuration."""
         query = """
             SELECT
@@ -2371,17 +2373,18 @@ class AssemblyBackend(AbstractBackend):
             FROM assembly.ballots
             WHERE assembly_id = %s
             GROUP BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
+            ORDER BY vote_begin, vote_end, vote_extension_end, abs_quorum, rel_quorum
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         params = (assembly_id,)
-        return ConfigurationGroupedBallots({
+        return {
             BallotConfiguration(
                 e['vote_begin'], e['vote_end'], e['vote_extension_end'],
                 e['abs_quorum'], e['rel_quorum'],
             ):
                 set(e['ballot_ids'])
             for e in self.query_all(rs, query, params)
-        })
+        }
 
     @access("assembly")
     def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
