@@ -2933,14 +2933,14 @@ class TestEventBackend(BackendTest):
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
         expectation['registrations'][1]['mtime'] = nearly_now()
-        updated['registrations'][2]['amount_owed'] = str(
-            updated['registrations'][2]['amount_owed'])
+        # amount_owed is recalculated
+        expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
-        updated['registrations'][1002]['amount_paid'] = str(
-            updated['registrations'][1002]['amount_paid'])
-        updated['registrations'][1002]['amount_owed'] = str(
-            updated['registrations'][1002]['amount_owed'])
+        # add default values
+        expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
+        expectation['registrations'][1002]['payment'] = None
+        expectation['registrations'][1002]['amount_owed'] = decimal.Decimal("573.99")
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(

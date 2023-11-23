@@ -3742,9 +3742,6 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
-    'amount_owed': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
