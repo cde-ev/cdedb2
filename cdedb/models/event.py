@@ -303,7 +303,7 @@ class CourseChoiceObject(abc.ABC):
     def __lt__(self, other: Any) -> bool:
         # pylint: disable=line-too-long
         if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
-            self._lt_inner(other)
+            return self._lt_inner(other)
         return NotImplemented
 
 
