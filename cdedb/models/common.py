@@ -211,8 +211,9 @@ class CdEDataclass:
 
     def _lt_inner(self, other: "CdEDataclass") -> bool:
         # Ensure natural sort. See xsorted for details.
-        return (tuple(map(collate, self.get_sortkey())) + (self.id,)
-                ) < (tuple(map(collate, other.get_sortkey())) + (other.id,))
+        self_sort = self.get_sortkey() + (self.id,)
+        other_sort = other.get_sortkey() + (other.id,)
+        return tuple(map(collate, self_sort)) < tuple(map(collate, other_sort))
 
     def __lt__(self, other: "CdEDataclass") -> bool:
         if not isinstance(other, self.__class__):
