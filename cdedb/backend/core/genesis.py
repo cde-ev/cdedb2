@@ -100,7 +100,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         if self.verify_existence(rs, data['username']):
             return None
-        if self.conf["LOCKDOWN"] and not self.is_admin(rs):
+        if self.is_locked_down(rs) and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
         with Atomizer(rs):

@@ -2139,8 +2139,8 @@ class CoreBaseBackend(AbstractBackend):
             # log message to be picked up by fail2ban
             self.logger.warning(f"CdEDB login failure from {ip} for {username}")
             return None
-        if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
-                                          or data['is_core_admin']):
+        if self.is_locked_down(rs) and not (data['is_meta_admin']
+                                            or data['is_core_admin']):
             # Short circuit in case of lockdown
             return None
         sessionkey = token_hex()
@@ -2576,7 +2576,7 @@ class CoreBaseBackend(AbstractBackend):
                                    entity_key="username")
         if not data:
             return False, n_("Nonexistent user.")
-        if self.conf["LOCKDOWN"]:
+        if self.is_locked_down(rs):
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
         success, msg = self.modify_password(
@@ -2664,6 +2664,11 @@ class CoreBaseBackend(AbstractBackend):
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
             return self.query_exec(rs, query, (PsycoJson(meta_info),))
+
+    @access("anonymous")
+    def is_locked_down(self, rs: RequestState) -> bool:
+        """Helper to determine whether the CdEDB is currently locked."""
+        return bool(self.conf["LOCKDOWN"] or self.get_meta_info(rs).get("lockdown_web"))
 
     @access("core_admin")
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
