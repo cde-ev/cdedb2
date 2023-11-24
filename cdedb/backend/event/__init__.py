@@ -6,6 +6,7 @@ variant for external participants.
 
 import collections
 import copy
+import decimal
 from typing import Any, Collection, Dict, Mapping, Set, Tuple
 
 import cdedb.common.validation.types as vtypes
@@ -361,6 +362,13 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 raise ValueError(n_("Unprivileged change of amount_paid detected."))
             if any(reg['payment'] != old_regs[reg['id']]['payment']
                    for reg in regs.values() if reg['id'] in old_regs):
+                raise ValueError(n_("Unprivileged change of payment detected."))
+            # check that amount_paid and payment of new registrations are default vals
+            if any(reg['amount_paid'] != decimal.Decimal("0.00")
+                   for reg in regs.values() if reg['id'] not in old_regs):
+                raise ValueError(n_("Unprivileged change of amount_paid detected."))
+            if any(reg['payment'] is not None
+                   for reg in regs.values() if reg['id'] not in old_regs):
                 raise ValueError(n_("Unprivileged change of payment detected."))
 
             # Forth unlock the event
