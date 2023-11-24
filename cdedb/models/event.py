@@ -293,13 +293,17 @@ class CourseChoiceObject(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def _lt_inner(self, other: Any) -> bool:
+        ...
+
+    @abc.abstractmethod
     def get_sortkey(self) -> Sortkey:
         ...
 
     def __lt__(self, other: Any) -> bool:
         # pylint: disable=line-too-long
         if isinstance(self, CourseChoiceObject) and isinstance(other, CourseChoiceObject):
-            return (self.get_sortkey() + (self.id,)) < (other.get_sortkey() + (other.id,))
+            return self._lt_inner(other)
         return NotImplemented
 
 
