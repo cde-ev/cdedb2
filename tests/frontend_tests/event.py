@@ -6353,6 +6353,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Stornokosten 0,00 € 0,00 €")
         self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
         self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
+        self.assertPresence("Solidarische Erhöhung 0,00 € 0,00 €")
         self.assertPresence("Spende 1.260,00 € 420,00 €")
         self.assertPresence("Überschuss – 0,00 €")
         self.assertPresence("Gesamtsumme 1.297,01 € 437,01 €")

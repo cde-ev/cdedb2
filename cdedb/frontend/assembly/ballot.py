@@ -472,7 +472,8 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         extended = tallied = unchanged = 0
 
         timestamp = now()
-        for ballot_id, ballot in ballots.items():
+        # sort ballots, so especially tallying is done in a meaningful order
+        for ballot in xsorted(ballots.values(), key=EntitySorter.ballot):
             # check for extension
             if ballot['extended'] is None and timestamp > ballot['vote_end']:
                 if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
@@ -488,6 +489,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                              or timestamp > ballot['vote_extension_end']))
             # check whether we need to initiate tallying
             # tally_ballot returns None if ballot was already tallied
+            ballot_id = ballot['id']
             if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)

@@ -21,7 +21,7 @@ META_INFO_FIELDS = (
     n_("CdE_Konto_Inhaber"), n_("CdE_Konto_IBAN"), n_("CdE_Konto_BIC"),
     n_("CdE_Konto_Institut"), n_("Vorstand"),
     n_("banner_before_login"), n_("banner_after_login"), n_("banner_genesis"),
-    n_("cde_misc")
+    n_("cde_misc"), n_("lockdown_web")
 )
 
 #: All columns deciding on the current status of a persona
