@@ -76,7 +76,7 @@ import phonenumbers
 import PIL.Image
 import werkzeug.datastructures
 import zxcvbn
-from schulze_condorcet.util import as_vote_tuple
+from schulze_condorcet.util import as_vote_tuple, validate_votes
 
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
@@ -4405,24 +4405,17 @@ def _vote(
             n_("Must specify ballot in order to validate vote.")))
         raise errs
 
-    # First check for duplicates
-    raw_entries = as_vote_tuple(val)
-    # TODO: Implement `as_vote_list` into schulze_condorcet
-    all_entries = list(itertools.chain.from_iterable(raw_entries))
-    if len(all_entries) > len(set(all_entries)):
-        errs.append(ValueError(argname, n_("Duplicate candidates.")))
-
-    entries = {candidate for level in raw_entries for candidate in level}
-    reference = set(e['shortname'] for e in ballot['candidates'].values())
+    candidates = [e['shortname'] for e in ballot['candidates'].values()]
     if ballot['use_bar'] or ballot['votes']:
-        reference.add(ASSEMBLY_BAR_SHORTNAME)
-    if entries - reference:
-        errs.append(KeyError(argname, n_("Superfluous candidates.")))
-    if reference - entries:
-        errs.append(KeyError(argname, n_("Missing candidates.")))
-    if errs:
-        raise errs
-    # ordinary voting has more constraints
+        candidates.append(ASSEMBLY_BAR_SHORTNAME)
+
+    # Check that the vote passes schulze_condorcet requirements
+    try:
+        [val] = validate_votes([val], candidates)
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
+
+    # votes for classical voting have more constraints
     # votes without '>' are valid abstentions
     if ballot['votes'] and '>' in val:
         vote_tuple = as_vote_tuple(val)
