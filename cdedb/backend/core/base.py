@@ -22,7 +22,7 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.attachment import AttachmentStorageBackend
+from cdedb.backend.attachment import AttachmentStore
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -72,8 +72,8 @@ class CoreBaseBackend(AbstractBackend):
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
         self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
-        self.genesis_attachment_store: AttachmentStorageBackend(
-            self.conf['STORAGE_DIR'] / 'genesis_attachment', "core.genesis_cases")
+        self.genesis_attachment_store = AttachmentStore(
+            self.conf['STORAGE_DIR'] / 'genesis_attachment', 'core.genesis_cases')
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

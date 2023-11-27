@@ -978,13 +978,14 @@ class TestCoreBackend(BackendTest):
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
         self.assertEqual(
-            pdfhash, self.core.genesis_attachment_store.set(self.key, pdfdata))
+            pdfhash, self.core.genesis_attachment_store.set(pdfdata))
         with self.assertRaises(PrivilegeError):
-            self.core.genesis_attachment_store.usage(self.key, pdfhash)
+            self.core.genesis_attachment_store._usage(self.key, self.core, pdfhash)
         self.login(USER_DICT["anton"])
         self.assertEqual(
-            0, self.core.genesis_attachment_store.usage(self.key, pdfhash))
-        self.assertEqual(1, self.core.genesis_attachment_store.forget(self.key))
+            0, self.core.genesis_attachment_store._usage(self.key, pdfhash))
+        self.assertEqual(1, self.core.genesis_attachment_store.forget(self.key,
+                                                                      self.core))
 
     def test_genesis_verify_multiple(self) -> None:
         self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))

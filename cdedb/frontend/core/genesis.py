@@ -12,7 +12,6 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.attachment import AttachmentStorageBackend
 from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts, now
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
@@ -68,8 +67,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This initiates the genesis process.
         """
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
-            self.localize_attachment(rs, self.genesis_attachment_store, attachment,
-                                     data['attachment_hash'], attachment_filename)
+            self.localize_attachment(
+                rs, self.coreproxy.genesis_attachment_store, attachment,
+                data['attachment_hash'], attachment_filename)
         if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
                 and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
@@ -230,7 +230,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        attachment_count = self.genesis_attachment_store.forget()
+        attachment_count = self.coreproxy.genesis_attachment_store.forget(rs, self)
 
         if count or attachment_count:
             self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"
@@ -245,7 +245,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        data = self.genesis_attachment_store.get(rs, attachment_hash)
+        data = self.coreproxy.genesis_attachment_store.get(attachment_hash)
         mimetype = None
         if data:
             mimetype = magic.from_buffer(data, mime=True)

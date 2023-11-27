@@ -69,7 +69,7 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.attachment import AttachmentStorageBackend
+from cdedb.backend.attachment import AttachmentStore
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
@@ -555,7 +555,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
-    def localize_attachment(self, rs: RequestState, store: AttachmentStorageBackend,
+    def localize_attachment(self, rs: RequestState, store: AttachmentStore,
                             attachment: Optional[werkzeug.datastructures.FileStorage],
                             attachment_hash: Optional[str],
                             attachment_filename: Optional[str] = None
@@ -567,9 +567,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             attachment_data = check_validation(rs, vtypes.PDFFile, attachment,
                                          'attachment')
         if attachment_data:
-            attachment_hash = store.set(rs, attachment_data)
+            attachment_hash = store.set(attachment_data)
         elif attachment_hash:
-            attachment_stored = store.check(rs, attachment_hash)
+            attachment_stored = store.check(attachment_hash)
             if not attachment_stored:
                 attachment_hash = None
                 e = ("attachment", ValueError(n_(
