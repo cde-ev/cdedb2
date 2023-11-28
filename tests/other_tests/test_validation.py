@@ -787,6 +787,7 @@ class TestValidation(unittest.TestCase):
                 {1: None, -1: -1, 2: 2}, int, "int", creation_only=True)
 
     def test_serialized_event_configuration(self) -> None:
+        # pylint: disable=protected-access
         with self.assertRaises(validate.ValidationSummary):
             validate._serialized_event_configuration({
                 'id': -1,
