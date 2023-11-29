@@ -942,9 +942,9 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def is_subscription_address_taken(self, rs: RequestState, email: str,
                                       excluded_persona_id: int) -> bool:
-        """Is the given address already in use as a subscription address?
+        """Is the given address already in use as an explicit subscription address?
 
-        Take care that this does not take the usernames of core.personas into account!
+        Beware that this does not take the usernames of core.personas into account!
 
         :param excluded_persona_id: Ignore if this persona already used this address.
         """
@@ -1535,8 +1535,9 @@ class MlBackend(AbstractBackend):
                 # to get_subscription_states
                 assert state is not None
 
+                explicit_address = None
                 if clone_addresses:
-                    address = self.get_subscription_address(
+                    explicit_address = self.get_subscription_address(
                         rs, ml_id, explicits_only=True, persona_id=source_persona_id)
 
                 # set the target to the subscription state of the source
@@ -1552,12 +1553,12 @@ class MlBackend(AbstractBackend):
 
                 # set the subscribing address of the target to the address of the source
                 if clone_addresses:
-                    if address:
+                    if explicit_address:
                         code *= self.remove_subscription_address(
                             rs, ml_id, source_persona_id)
                     code *= self.set_subscription_address(
                         rs, ml_id, persona_id=target_persona_id,
-                        email=address or source['username'])
+                        email=explicit_address or source['username'])
 
             for ml_id in source_moderates:
                 # we do not mind if both users are currently moderator of a mailinglist

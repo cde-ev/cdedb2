@@ -1083,8 +1083,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         are fulfilled."""
         persona_id = rs.user.persona_id
         assert persona_id
-        is_subscribed = self.mlproxy.is_subscribed(rs, persona_id, mailinglist_id)
-        if not is_subscribed:
+        if not self.mlproxy.is_subscribed(rs, persona_id, mailinglist_id):
             rs.notify("error", n_("Not subscribed."))
             return False
         if setting and not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
