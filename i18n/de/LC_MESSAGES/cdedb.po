@@ -1063,12 +1063,12 @@ msgid "Non-transferred persona found"
 msgstr "Nicht alle Accounts zurückübertragen."
 
 #: cdedb/backend/event/__init__.py:362 cdedb/backend/event/__init__.py:369
-msgid "Unprivileged change of amount_paid detected."
-msgstr "Änderung des bereits bezahlten Betrags ohne die nötigen Zugriffsrechte."
+msgid "Change of amount_paid detected."
+msgstr "Änderung des bereits bezahlten Betrags."
 
 #: cdedb/backend/event/__init__.py:365 cdedb/backend/event/__init__.py:372
-msgid "Unprivileged change of payment detected."
-msgstr "Änderung des Bezahlt Feldes ohne die nötigen Zugriffsrechte."
+msgid "Change of payment detected."
+msgstr "Änderung des Bezahlt-Feldes."
 
 #: cdedb/backend/event/__init__.py:453 cdedb/backend/event/__init__.py:456
 msgid "Referential integrity of lodgement groups violated."

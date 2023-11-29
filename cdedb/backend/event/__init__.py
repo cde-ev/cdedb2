@@ -359,17 +359,17 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             old_regs = current['event.registrations']
             if any(reg['amount_paid'] != old_regs[reg['id']]['amount_paid']
                    for reg in regs.values() if reg['id'] in old_regs):
-                raise ValueError(n_("Unprivileged change of amount_paid detected."))
+                raise ValueError(n_("Change of amount_paid detected."))
             if any(reg['payment'] != old_regs[reg['id']]['payment']
                    for reg in regs.values() if reg['id'] in old_regs):
-                raise ValueError(n_("Unprivileged change of payment detected."))
+                raise ValueError(n_("Change of payment detected."))
             # check that amount_paid and payment of new registrations are default vals
             if any(reg['amount_paid'] != decimal.Decimal("0.00")
                    for reg in regs.values() if reg['id'] not in old_regs):
-                raise ValueError(n_("Unprivileged change of amount_paid detected."))
+                raise ValueError(n_("Change of amount_paid detected."))
             if any(reg['payment'] is not None
                    for reg in regs.values() if reg['id'] not in old_regs):
-                raise ValueError(n_("Unprivileged change of payment detected."))
+                raise ValueError(n_("Change of payment detected."))
 
             # Forth unlock the event
             update = {
