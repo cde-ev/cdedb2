@@ -120,6 +120,14 @@
                         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
                     </div>
                 </div>
+                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                    <div class="text-muted">
+                        {% trans %}
+                            The CdEDB will automatically send a welcome email to the promoted user.
+                            If the user gets no trial membership, this also includes payment instructions.
+                        {% endtrans %}
+                    </div>
+                {% endif %}
                 {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>
