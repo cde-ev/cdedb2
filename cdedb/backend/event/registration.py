@@ -386,10 +386,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
+        # finance_admins are allowed here to book event fees.
         if (persona_ids != {rs.user.persona_id}
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)
-                and "ml_admin" not in rs.user.roles):
+                and {"ml_admin", "finance_admin"}.isdisjoint(rs.user.roles)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
@@ -516,7 +517,10 @@ class EventRegistrationBackend(EventBaseBackend):
                       ) -> dict[int, Optional[list[int]]]:
         """Compute the waitlist in order for the given parts.
 
-        :returns: Part id maping to None, if no waitlist ordering is defined
+        Registrations with an empty waitlist field wil be placed at the end of the
+        waitlist. The registration id is used as a tie breaker.
+
+        :returns: Part id mapping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
         event_id = affirm(vtypes.ID, event_id)
@@ -531,24 +535,23 @@ class EventRegistrationBackend(EventBaseBackend):
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
-            fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event.fields)
-                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event.parts[part_id]
                 if not part.waitlist_field:
                     ret[part_id] = None
                     continue
                 field_name = part.waitlist_field.field_name
-                query = ("SELECT reg.id, rparts.status"
-                         " FROM event.registrations AS reg"
-                         " LEFT OUTER JOIN event.registration_parts AS rparts"
-                         " ON reg.id = rparts.registration_id"
-                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                query = f"""
+                    SELECT reg.id
+                    FROM event.registrations AS reg
+                        LEFT JOIN event.registration_parts AS rparts
+                            ON reg.id = rparts.registration_id
+                    WHERE rparts.part_id = %s AND rparts.status = %s
+                    ORDER BY
+                        COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
+                """
                 data = self.query_all(rs, query, (part_id, waitlist))
-                ret[part_id] = xsorted(
-                    (reg['id'] for reg in data),
-                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
+                ret[part_id] = [e['id'] for e in data]
             return ret
 
     @access("event")
@@ -778,9 +781,10 @@ class EventRegistrationBackend(EventBaseBackend):
             # orgas and admins have full access to all data
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
-            is_privileged = (self.is_orga(rs, event_id=event_id)
-                             or self.is_admin(rs)
-                             or "ml_admin" in rs.user.roles)
+            # finance_admins are allowed here to book event fees.
+            is_privileged = (
+                self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
+                or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
             if not is_privileged:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
@@ -1330,10 +1334,8 @@ class EventRegistrationBackend(EventBaseBackend):
         for field_id, field in event.fields.items():
             fn = field.field_name
             fields[fn] = field_values.get(f"field.{field_id}")
-            if fields[fn] is None and reg:
-                fields[fn] = bool(reg['fields'].get(fn, False))
-            else:
-                fields[fn] = False
+            if fields[fn] is None:
+                fields[fn] = bool(reg['fields'].get(fn, False)) if reg else False
 
         fake_registration = {
             'persona_id': persona_id,
@@ -1379,8 +1381,10 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
+            # finance_admins are allowed here to book event fees.
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
+                    and "finance_admin" not in rs.user.roles
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
@@ -1433,7 +1437,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
-    @access("event")
+    @access("finance_admin")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
                   ) -> tuple[bool, Optional[int]]:
         """Book all paid fees.
@@ -1446,9 +1450,6 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         data = affirm_array(vtypes.FeeBookingEntry, data)
 
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
         index = 0
@@ -1477,7 +1478,13 @@ class EventRegistrationBackend(EventBaseBackend):
                     change_note = "{} am {} gezahlt.".format(
                         money_filter(datum['amount']),
                         date_filter(datum['original_date'], lang="de"))
-                    count += self.set_registration(rs, update, change_note)
+                    # perform the change directly instead of using set_registration
+                    # to avoid privilege conflicts and use custom log code
+                    count += self.sql_update(rs, "event.registrations", update)
+                    self.event_log(
+                        rs, const.EventLogCodes.registration_payment_received, event_id,
+                        persona_id=all_regs[reg_id]['persona_id'],
+                        change_note=change_note)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.

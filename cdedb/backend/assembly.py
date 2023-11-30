@@ -514,37 +514,47 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.attendees", ("persona_id",), (assembly_id,),
                 entity_key="assembly_id")
         }
-        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+        attendee_data = {
+            e['id']: e for e in xsorted(
+                self.core.get_assembly_users(rs, all_attendees).values(),
+                key=EntitySorter.persona)
+        }
 
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime < %s
         """
-        early_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        early_list = [
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
-        }
+        ]
+        early_attendees = {
+            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)}
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime >= %s
         """
-        late_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        late_list = {
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
+        late_attendees = {
+            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)}
         if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_list = [
+            attendee_data[persona_id]
+            for persona_id in (all_attendees - early_attendees.keys()
+                               - late_attendees.keys())
+        ]
+        undetermined_attendees = {
+             e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)}
 
         return AssembyAttendees(
             all=attendee_data, early=early_attendees, late=late_attendees,
-            undetermined={
-                persona_id: attendee_data[persona_id]
-                for persona_id in (all_attendees - early_attendees.keys()
-                                   - late_attendees.keys())
-            },
-            cutoff=cutoff,
+            undetermined=undetermined_attendees, cutoff=cutoff,
         )
 
     @access("persona")

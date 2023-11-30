@@ -53,6 +53,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import collections
 import copy
 import dataclasses
+import datetime
 import distutils.util
 import functools
 import io
@@ -77,7 +78,7 @@ import phonenumbers
 import PIL.Image
 import werkzeug.datastructures
 import zxcvbn
-from schulze_condorcet.util import as_vote_tuple
+from schulze_condorcet.util import as_vote_tuple, validate_votes
 
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
@@ -2885,8 +2886,6 @@ REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
@@ -3440,7 +3439,11 @@ def _serialized_event(
             _lodgement, {'event_id': ID}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': ID, 'persona_id': ID,
-                            'amount_owed': NonNegativeDecimal}),
+                            'amount_owed': NonNegativeDecimal,
+                            # allow amount_paid and payment for better UX, we check
+                            # inside the import that they have not changed
+                            'amount_paid': NonNegativeDecimal,
+                            'payment': Optional[datetime.date]}),   # type: ignore[dict-item]
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': ID, 'part_id': ID,
                                  'registration_id': ID}),
@@ -3745,9 +3748,6 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
-    'amount_owed': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
@@ -4406,24 +4406,17 @@ def _vote(
             n_("Must specify ballot in order to validate vote.")))
         raise errs
 
-    # First check for duplicates
-    raw_entries = as_vote_tuple(val)
-    # TODO: Implement `as_vote_list` into schulze_condorcet
-    all_entries = list(itertools.chain.from_iterable(raw_entries))
-    if len(all_entries) > len(set(all_entries)):
-        errs.append(ValueError(argname, n_("Duplicate candidates.")))
-
-    entries = {candidate for level in raw_entries for candidate in level}
-    reference = set(e['shortname'] for e in ballot['candidates'].values())
+    candidates = [e['shortname'] for e in ballot['candidates'].values()]
     if ballot['use_bar'] or ballot['votes']:
-        reference.add(ASSEMBLY_BAR_SHORTNAME)
-    if entries - reference:
-        errs.append(KeyError(argname, n_("Superfluous candidates.")))
-    if reference - entries:
-        errs.append(KeyError(argname, n_("Missing candidates.")))
-    if errs:
-        raise errs
-    # ordinary voting has more constraints
+        candidates.append(ASSEMBLY_BAR_SHORTNAME)
+
+    # Check that the vote passes schulze_condorcet requirements
+    try:
+        [val] = validate_votes([val], candidates)
+    except ValueError as e:
+        raise ValidationSummary(ValueError(argname, *e.args)) from e
+
+    # votes for classical voting have more constraints
     # votes without '>' are valid abstentions
     if ballot['votes'] and '>' in val:
         vote_tuple = as_vote_tuple(val)

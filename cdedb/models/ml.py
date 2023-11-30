@@ -14,6 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.roles import extract_roles
+from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
@@ -107,6 +108,9 @@ class Mailinglist(CdEDataclass):
     def __post_init__(self) -> None:
         if self.__class__ not in ML_TYPE_MAP_INV:
             raise TypeError("Cannot instantiate abstract class.")
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.title, )
 
     @property
     def ml_type(self) -> MailinglistTypes:

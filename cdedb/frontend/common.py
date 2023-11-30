@@ -700,9 +700,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if not rs.notifications:
             rs.notify_validation()
-        if self.conf["LOCKDOWN"]:
-            rs.notify("info", n_("The database currently undergoes "
-                                 "maintenance and is unavailable."))
+        if self.coreproxy.is_locked_down(rs):
+            if {'core_admin', 'meta_admin'} & rs.user.roles:
+                rs.notify(
+                    'warning',
+                    n_("The CdEDB is curently locked for maintenance. You can still"
+                       " access it as admin. Only use the CdEDB if you know why it was"
+                       " locked!"))
+            else:
+                rs.notify("info", n_("The CdE database is currently under"
+                                     " maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -2598,7 +2605,8 @@ class TransactionObserver:
 def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
-        lang: gettext.translation('cdedb', languages=[lang],
-                                  localedir=conf["REPOSITORY_PATH"] / 'i18n')
+        lang: gettext.translation(
+            'cdedb', languages=[lang],
+            localedir=conf["REPOSITORY_PATH"] / 'i18n-output')
         for lang in conf["I18N_LANGUAGES"]
     }

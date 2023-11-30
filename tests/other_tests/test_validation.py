@@ -567,11 +567,11 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(Vote, (
             ("A>B>C=D>E>_bar_", "A>B>C=D>E>_bar_", None),
             ("_bar_=B>E=C=D>A", "_bar_=B>E=C=D>A", None),
-            ("_bar_=B>F=C=D>A", None, KeyError),
+            ("_bar_=B>F=C=D>A", None, ValueError),
             ("", None, ValueError),
-            ("_bar_=B<E=C=D<A", None, KeyError),
-            ("_bar_=B>E=C>A", None, KeyError),
-            ("_bar_=B>E=C>A>F=D", None, KeyError),
+            ("_bar_=B<E=C=D<A", None, ValueError),
+            ("_bar_=B>E=C>A", None, ValueError),
+            ("_bar_=B>E=C>A>F=D", None, ValueError),
             ("=>=>>=", None, ValueError),
             ("_bar_=B>E=C>A>F=D>A", None, ValueError),
         ), extraparams={'ballot': ballot})

@@ -48,8 +48,12 @@ MYPY ?= $(PYTHONBIN) -m mypy
 #####################
 
 # Use makes command-line arguments to override the following default variables
-# Directory where the translation files are stored. Especially used by the i18n-targets.
+# Directory where the translation input files are stored.
+# Especially used by the i18n-targets.
 I18NDIR = ./i18n
+# Directory where the translation output files are stored.
+# Especially used by the i18n-targets.
+I18NOUTDIR = ./i18n-output
 # Available languages, by default detected as subdirectories of the translation targets.
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
@@ -80,24 +84,31 @@ endif
 # Translations #
 ################
 
+.PHONY: i18n-output-dirs
+i18n-output-dirs:
+	for lang in $(I18N_LANGUAGES) ; do \
+		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
+	done
+
 .PHONY: i18n-refresh
 i18n-refresh: i18n-extract i18n-update
 
 .PHONY: i18n-extract
-i18n-extract:
+i18n-extract: i18n-output-dirs
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
+		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
 i18n-update: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.po)
 
-$(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NDIR)/cdedb.pot
+$(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NOUTDIR)/cdedb.pot
 	msgmerge --lang=$* --update $@ $<
 	msgattrib --no-obsolete --sort-by-file -o $@ $@
 
-i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.mo)
+i18n-compile: i18n-output-dirs
+i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NOUTDIR)/$(lang)/LC_MESSAGES/cdedb.mo)
 
-$(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
+$(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $@ $<
 
 

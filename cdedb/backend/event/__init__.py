@@ -6,6 +6,7 @@ variant for external participants.
 
 import collections
 import copy
+import decimal
 from collections.abc import Collection, Mapping
 from typing import Any
 
@@ -350,8 +351,26 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 ret *= self._synchronize_table(
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
-            # Third fix the amounts owed for all registrations.
+
+            # Third fix the amounts owed for all registrations and check that
+            # amount paid and payment were not changed.
             self._update_registrations_amount_owed(rs, data['id'])
+            reg_ids = self.list_registrations(rs, data['id'])
+            regs = self.get_registrations(rs, reg_ids)
+            old_regs = current['event.registrations']
+            if any(reg['amount_paid'] != old_regs[reg['id']]['amount_paid']
+                   for reg in regs.values() if reg['id'] in old_regs):
+                raise ValueError(n_("Change of amount_paid detected."))
+            if any(reg['payment'] != old_regs[reg['id']]['payment']
+                   for reg in regs.values() if reg['id'] in old_regs):
+                raise ValueError(n_("Change of payment detected."))
+            # check that amount_paid and payment of new registrations are default vals
+            if any(reg['amount_paid'] != decimal.Decimal("0.00")
+                   for reg in regs.values() if reg['id'] not in old_regs):
+                raise ValueError(n_("Change of amount_paid detected."))
+            if any(reg['payment'] is not None
+                   for reg in regs.values() if reg['id'] not in old_regs):
+                raise ValueError(n_("Change of payment detected."))
 
             # Forth unlock the event
             update = {
