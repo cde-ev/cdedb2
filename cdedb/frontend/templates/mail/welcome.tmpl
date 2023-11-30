@@ -8,6 +8,7 @@ kannst Du Deine persönlichen Zugangsdaten erstellen.
 Viele Grüße
 das Verwaltungsteam
 {% else %}
+{% if data['is_member'] %}
 Ein herzliches Willkommen im Club der Ehemaligen der Deutschen
 SchülerAkademien (CdE)!
 
@@ -70,6 +71,26 @@ Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die
 den CdE betreffen, besprochen werden, inklusive Wahlen und
 Abstimmungen, finden jährlich im Oktober online statt. Du erhältst dazu
 rechtzeitig eine Einladung per E-Mail.
+{% else %}
+Du hast vor kurzem die Aufnahmeberechtigung in den Club der
+Ehemaligen der Deutschen SchülerAkademien (CdE) erlangt!
+
+Noch bist du zwar kein Mitglied, aber du kannst jederzeit eines werden:
+Überweise einfach den halbjährlichen Mitgliedsbeitrag von {{ fee|money }},
+gerne auch ein beliebiges Vielfaches davon, an das folgende Konto:
+
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck: {{ transaction_subject }}
+
+Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
+Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter
+{{ cdedblink("cde/i25p_index") }}
+{% endif %}
 
 Uns, den Vorstand des CdE, kannst Du bei Problemen, Fragen oder
 Anregungen jederzeit unter <vorstand@cde-ev.de> erreichen.

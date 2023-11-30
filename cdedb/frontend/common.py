@@ -1243,16 +1243,24 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", data['username'],
                 persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            transaction_subject = make_membership_fee_reference(data)
+            if data['is_member']:
+                subject = "Aufnahme in den CdE"
+            elif data['is_cde_realm']:
+                subject = "Aufnahmeberechtigung für den CdE"
+            else:
+                subject = "CdEDB Account erstellt"
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
                          {'To': (data['username'],),
-                          'Subject': "CdEDB Account erstellt",
+                          'Subject': subject,
                           },
                          {'data': data,
                           'fee': self.conf["MEMBERSHIP_FEE"],
                           'email': email if success else "",
                           'cookie': message if success else "",
                           'meta_info': meta_info,
+                          'transaction_subject': transaction_subject
                           })
 
             rs.notify_return_code(new_id, success=n_("User created."))
