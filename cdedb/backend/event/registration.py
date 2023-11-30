@@ -1336,10 +1336,8 @@ class EventRegistrationBackend(EventBaseBackend):
         for field_id, field in event.fields.items():
             fn = field.field_name
             fields[fn] = field_values.get(f"field.{field_id}")
-            if fields[fn] is None and reg:
-                fields[fn] = bool(reg['fields'].get(fn, False))
-            else:
-                fields[fn] = False
+            if fields[fn] is None:
+                fields[fn] = bool(reg['fields'].get(fn, False)) if reg else False
 
         fake_registration = {
             'persona_id': persona_id,
