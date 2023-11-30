@@ -103,6 +103,7 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_created"),
     n_("EventLogCodes.registration_changed"),
     n_("EventLogCodes.registration_deleted"),
+    n_("EventLogCodes.registration_payment_received"),
     n_("EventLogCodes.event_locked"),
     n_("EventLogCodes.event_unlocked"),
     n_("EventLogCodes.event_partial_import"),

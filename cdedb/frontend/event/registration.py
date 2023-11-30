@@ -38,8 +38,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 
 
 class EventRegistrationMixin(EventBaseFrontend):
-    @access("event")
-    @event_guard(check_offline=True)
+    @access("finance_admin")
     def batch_fees_form(self, rs: RequestState, event_id: int,
                         data: Collection[CdEDBObject] = None,
                         csvfields: Collection[str] = None,
@@ -49,6 +48,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
         """
+        # manual check for offline log, since we can not use event_guard here
+        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
+        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            raise werkzeug.exceptions.Forbidden(
+                n_("This event is locked for offline usage."))
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
@@ -192,8 +196,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                         'persona': persona, 'amount': persona_amounts[persona['id']]})
             return success, number
 
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @access("finance_admin", modi={"POST"})
     @REQUESTfile("fee_data_file")
     @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
@@ -201,7 +204,16 @@ class EventRegistrationMixin(EventBaseFrontend):
                    fee_data_file: Optional[werkzeug.datastructures.FileStorage],
                    checksum: Optional[str], send_notifications: bool,
                    full_payment: bool) -> Response:
-        """Allow orgas to add lots paid of participant fee at once."""
+        """Allow finance admins to add payment information of participants.
+
+        This is the only entry point for those information.
+        """
+        # manual check for offline log, since we can not use event_guard here
+        is_locked = self.eventproxy.is_offline_locked(rs, event_id=event_id)
+        if is_locked != self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            raise werkzeug.exceptions.Forbidden(
+                n_("This event is locked for offline usage."))
+
         fee_data_file = check_optional(
             rs, vtypes.CSVFile, fee_data_file, "fee_data_file")
         if rs.has_validation_errors():
@@ -507,11 +519,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         if orga_input:
             standard_params.update({
-                "reg.amount_paid": vtypes.NonNegativeDecimal,
                 "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
                 "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
                 "reg.parental_agreement": bool,
-                "reg.payment": Optional[datetime.date],  # type: ignore[dict-item]
             })
             if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 standard_params.update({

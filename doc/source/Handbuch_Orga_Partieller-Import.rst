@@ -170,6 +170,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (17, 0): Der bereits bezahlte Betrag und das Zahlungsdatum können jetzt nicht
+  mehr durch den partiellen Import geändert werden, sind aber weiterhin im Export vorhanden.
 * Version (16, 2): Gespeicherte Suchabfragen verwenden nun ein anderes Schema zur
   Angabe ihrer Sortierungsschlüssel.
 * Version (16, 1): Das Isomattenfeld wird jetzt pro Veranstaltungsteil, der Kursraum pro

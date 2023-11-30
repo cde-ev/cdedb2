@@ -1180,6 +1180,14 @@ msgstr ""
 msgid "Non-transferred persona found"
 msgstr ""
 
+#: cdedb/backend/event/__init__.py:362 cdedb/backend/event/__init__.py:369
+msgid "Change of amount_paid detected."
+msgstr ""
+
+#: cdedb/backend/event/__init__.py:365 cdedb/backend/event/__init__.py:372
+msgid "Change of payment detected."
+msgstr ""
+
 #: cdedb/backend/event/__init__.py:453 cdedb/backend/event/__init__.py:456
 msgid "Referential integrity of lodgement groups violated."
 msgstr ""
@@ -17036,6 +17044,9 @@ msgstr "Registration changed"
 #: cdedb/i18n_additional.py:105
 msgid "EventLogCodes.registration_deleted"
 msgstr "Registration deleted"
+
+msgid "EventLogCodes.registration_payment_received"
+msgstr "Payment received"
 
 #: cdedb/i18n_additional.py:106
 msgid "EventLogCodes.event_locked"

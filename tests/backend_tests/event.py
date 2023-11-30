@@ -475,7 +475,6 @@ class TestEventBackend(BackendTest):
                     'course_instructor': None
                 },
             },
-            'payment': None,
             'persona_id': 2,
             'real_persona_id': None
         }
@@ -1075,7 +1074,6 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "paul")
     def test_registering(self) -> None:
         new_reg: CdEDBObject = {
-            'amount_paid': decimal.Decimal("42.00"),
             'checkin': None,
             'event_id': 1,
             'list_consent': True,
@@ -1115,7 +1113,6 @@ class TestEventBackend(BackendTest):
                 },
             },
             'notes': "Some bla.",
-            'payment': None,
             'persona_id': 16,
             'real_persona_id': None}
         # try to create a registration for paul
@@ -1125,6 +1122,8 @@ class TestEventBackend(BackendTest):
             new_reg['id'] = new_id
             # amount_owed include non-member additional fee
             new_reg['amount_owed'] = decimal.Decimal("589.48")
+            new_reg['amount_paid'] = decimal.Decimal("0.00")
+            new_reg['payment'] = None
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -1361,7 +1360,6 @@ class TestEventBackend(BackendTest):
         data = self.event.get_registrations(self.key, (1, 2, 4))
         self.assertEqual(expectation, data)
         new_reg: CdEDBObject = {
-            'amount_paid': decimal.Decimal("0.00"),
             'checkin': None,
             'event_id': event_id,
             'list_consent': True,
@@ -1398,7 +1396,6 @@ class TestEventBackend(BackendTest):
                     'course_instructor': None,
                 },
             },
-            'payment': None,
             'persona_id': 999,
             'real_persona_id': None
         }
@@ -1421,6 +1418,8 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
         new_reg['amount_owed'] = decimal.Decimal("584.48")
+        new_reg['amount_paid'] = decimal.Decimal("0.00")
+        new_reg['payment'] = None
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
@@ -2405,7 +2404,7 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 2000,
             'real_persona_id': 3,
-            'amount_paid': decimal.Decimal("42.00"),
+            'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
         # registration parts
@@ -2635,7 +2634,7 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 3,
             'real_persona_id': None,
-            'amount_paid': decimal.Decimal("42.00"),
+            'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
         stored_data['event.registrations'][3]['amount_owed'] += decimal.Decimal("0.01")
@@ -2933,14 +2932,14 @@ class TestEventBackend(BackendTest):
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
         expectation['registrations'][1]['mtime'] = nearly_now()
-        updated['registrations'][2]['amount_owed'] = str(
-            updated['registrations'][2]['amount_owed'])
+        # amount_owed is recalculated
+        expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
-        updated['registrations'][1002]['amount_paid'] = str(
-            updated['registrations'][1002]['amount_paid'])
-        updated['registrations'][1002]['amount_owed'] = str(
-            updated['registrations'][1002]['amount_owed'])
+        # add default values
+        expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
+        expectation['registrations'][1002]['payment'] = None
+        expectation['registrations'][1002]['amount_owed'] = decimal.Decimal("573.99")
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
@@ -3751,7 +3750,6 @@ class TestEventBackend(BackendTest):
                 },
             },
             'notes': "Some bla.",
-            'payment': None,
             'persona_id': 3,
             'real_persona_id': None}
         new_id = self.event.create_registration(self.key, new_reg)

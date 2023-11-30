@@ -1208,6 +1208,14 @@ msgstr "Versionen stimmen nicht überein."
 msgid "Non-transferred persona found"
 msgstr "Nicht alle Accounts zurückübertragen."
 
+#: cdedb/backend/event/__init__.py:362 cdedb/backend/event/__init__.py:369
+msgid "Change of amount_paid detected."
+msgstr "Änderung des bereits bezahlten Betrags."
+
+#: cdedb/backend/event/__init__.py:365 cdedb/backend/event/__init__.py:372
+msgid "Change of payment detected."
+msgstr "Änderung des Bezahlt-Feldes."
+
 #: cdedb/backend/event/__init__.py:453 cdedb/backend/event/__init__.py:456
 msgid "Referential integrity of lodgement groups violated."
 msgstr "Referentielle Integrität der Unterkunftsgruppen wurde verletzt."
@@ -17976,6 +17984,9 @@ msgstr "Anmeldung geändert"
 #: cdedb/i18n_additional.py:105
 msgid "EventLogCodes.registration_deleted"
 msgstr "Anmeldung gelöscht"
+
+msgid "EventLogCodes.registration_payment_received"
+msgstr "Zahlung eingegangen"
 
 #: cdedb/i18n_additional.py:106
 msgid "EventLogCodes.event_locked"

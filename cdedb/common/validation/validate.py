@@ -53,6 +53,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import collections
 import copy
 import dataclasses
+import datetime
 import distutils.util
 import functools
 import io
@@ -2884,8 +2885,6 @@ REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
@@ -3439,7 +3438,11 @@ def _serialized_event(
             _lodgement, {'event_id': ID}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': ID, 'persona_id': ID,
-                            'amount_owed': NonNegativeDecimal}),
+                            'amount_owed': NonNegativeDecimal,
+                            # allow amount_paid and payment for better UX, we check
+                            # inside the import that they have not changed
+                            'amount_paid': NonNegativeDecimal,
+                            'payment': Optional[datetime.date]}),   # type: ignore[dict-item]
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': ID, 'part_id': ID,
                                  'registration_id': ID}),
@@ -3744,9 +3747,6 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'payment': Optional[datetime.date],
-    'amount_paid': NonNegativeDecimal,
-    'amount_owed': NonNegativeDecimal,
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
