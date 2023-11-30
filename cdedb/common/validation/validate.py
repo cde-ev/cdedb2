@@ -3988,6 +3988,13 @@ def _serialized_event_configuration(
 
     errs = ValidationSummary()
 
+    # Check IBAN to be valid
+    valid_ibans = {v[0] for v in _CONFIG['EVENT_BANK_ACCOUNTS']}
+    if val.get('iban') and val['iban'] not in valid_ibans:
+        with errs:
+            raise ValidationSummary(ValueError(
+                "iban", n_("Must be a registered event IBAN.")))
+
     # Check registration time compatibility.
     start = val.get('registration_start')
     soft = val.get('registration_soft_limit')
@@ -4005,6 +4012,7 @@ def _serialized_event_configuration(
             raise ValidationSummary(ValueError(
                 "registration_soft_limit", "Must be before or equal to hard limit."))
 
+    # Check field association
     if not skip_field_validation and current:
         if lodge_field := val.get('lodge_field_id'):
             if lodge_field not in current.fields:
