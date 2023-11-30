@@ -100,9 +100,9 @@ class CdESemesterMixin(CdEBaseFrontend):
                                   and not persona['trial_member']
                                   and not lastschrift)
                     if endangered:
-                        subject = "Mitgliedschaft verlängern"
+                        subject = "Deine Mitgliedschaft läuft aus"
                     else:
-                        subject = "Mitgliedschaft verlängert"
+                        subject = "Deine Mitgliedschaft wird verlängert"
 
                     self.do_mail(
                         rrs, "semester/billing",
