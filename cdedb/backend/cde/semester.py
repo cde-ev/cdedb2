@@ -592,7 +592,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,
                                  testrun: bool) -> Tuple[bool, Optional[CdEDBObject]]:
-        """Atomized call to initiate addres check.
+        """Atomized call to initiate address check.
 
         :returns: A tuple consisting of a boolean signalling whether there
             is more work to do and an optional persona which is present if
@@ -604,7 +604,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             expuls = self.get_expuls(rs, expuls_id)
             persona_id = self.core.next_persona(
                 rs, expuls['addresscheck_state'],
-                is_member=True, is_archived=False)
+                is_member=True, is_archived=False, paper_expuls=True)
             if testrun:
                 persona_id = rs.user.persona_id
             # We are finished if we reached the end or if this was previously done.

@@ -703,18 +703,20 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
-                     is_member: Optional[bool],
-                     is_archived: Optional[bool]) -> Optional[int]:
+                     is_member: Optional[bool], is_archived: Optional[bool],
+                     paper_expuls: Optional[bool]) -> Optional[int]:
         """Look up the following persona.
 
         :param is_member: If not None, only consider personas with a matching flag.
         :param is_archived: If not None, only consider personas with a matching flag.
+        :param paper_expuls: If not None, only consider personas with a matching flag.
 
         :returns: Next valid id in table core.personas
         """
         persona_id = affirm_optional(int, persona_id)
         is_member = affirm_optional(bool, is_member)
         is_archived = affirm_optional(bool, is_archived)
+        paper_expuls = affirm_optional(bool, paper_expuls)
         query = "SELECT MIN(id) FROM core.personas"
         constraints = []
         params: List[Any] = []
@@ -727,6 +729,9 @@ class CoreBaseBackend(AbstractBackend):
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
+        if paper_expuls is not None:
+            constraints.append("paper_expuls = %s")
+            params.append(paper_expuls)
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
