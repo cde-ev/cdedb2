@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, User, cast_fields, now
+from cdedb.common import User, cast_fields, now
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
@@ -42,6 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing_extensions import Self  # pylint: disable=ungrouped-imports
 
+    from cdedb.common import CdEDBObject
     from cdedb.database.query import (  # pylint: disable=ungrouped-imports
         DatabaseValue_s,
     )
