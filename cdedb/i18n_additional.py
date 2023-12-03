@@ -130,6 +130,9 @@ I18N_STRINGS = (
     n_("EventLogCodes.orga_token_changed"),
     n_("EventLogCodes.orga_token_revoked"),
     n_("EventLogCodes.orga_token_deleted"),
+    n_("EventLogCodes.custom_filter_created"),
+    n_("EventLogCodes.custom_filter_changed"),
+    n_("EventLogCodes.custom_filter_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
