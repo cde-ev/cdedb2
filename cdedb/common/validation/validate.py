@@ -90,7 +90,7 @@ import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, now, parse_date, parse_datetime,
+    compute_checkdigit, now, parse_date, parse_datetime
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
@@ -674,6 +674,17 @@ def _float(
         raise ValidationSummary(
             ValueError(argname, n_("Must be smaller than a million.")))
     return val
+
+
+@_add_typed_validator
+def _non_negative_float(
+    val: Any, argname: str = None, **kwargs: Any
+) -> NonNegativeFloat:
+    val = _float(val, argname, **kwargs)
+    if val < 0:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must not be negative.")))
+    return NonNegativeFloat(val)
 
 
 @_add_typed_validator
@@ -3042,6 +3053,7 @@ def _event_associated_fields(
                     'Optional': Optional,
                     'date': datetime.date,
                     'datetime': datetime.datetime,
+                    'phone': str,
                 }))
     optional_fields = {
         str(field.field_name): datatypes[field.field_name]

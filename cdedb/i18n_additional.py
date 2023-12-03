@@ -163,6 +163,9 @@ I18N_STRINGS = (
     n_("FieldDatatypes.float"),
     n_("FieldDatatypes.date"),
     n_("FieldDatatypes.datetime"),
+    n_("FieldDatatypes.non_negative_int"),
+    n_("FieldDatatypes.non_negative_float"),
+    n_("FieldDatatypes.non_negative_phonenumber"),
 
     n_("Genders.female"),
     n_("Genders.male"),

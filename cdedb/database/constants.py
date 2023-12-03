@@ -103,6 +103,19 @@ class FieldDatatypes(CdEIntEnum):
     float = 4  #:
     date = 5  #:
     datetime = 6  #:
+    non_negative_int = 10  #:
+    non_negative_float = 12  #:
+    phone = 20  #:
+
+    @property
+    def spec_type(self) -> str:
+        if self == FieldDatatypes.phone:
+            return 'str'
+        if self == FieldDatatypes.non_negative_float:
+            return 'float'
+        if self == FieldDatatypes.non_negative_int:
+            return 'int'
+        return self.name
 
 
 @enum.unique

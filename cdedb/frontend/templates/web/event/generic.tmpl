@@ -179,6 +179,9 @@
             datatypes.float: 'number',
             datatypes.date: 'date',
             datatypes.datetime: 'datetime-local',
+            datatypes.non_negative_int: 'number',
+            datatypes.non_negative_float: 'number',
+            datatypes.phone: 'tel',
         } %}
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">

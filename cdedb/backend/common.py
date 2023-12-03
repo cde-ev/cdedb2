@@ -718,8 +718,11 @@ def encrypt_password(password: str) -> str:
 #: This is utilized during handling jsonb columns.
 PYTHON_TO_SQL_MAP = {
     FieldDatatypes.int: "integer",
+    FieldDatatypes.non_negative_int: "integer",
     FieldDatatypes.str: "varchar",
+    FieldDatatypes.phone: "varchar",
     FieldDatatypes.float: "double precision",
+    FieldDatatypes.non_negative_float: "double precision",
     FieldDatatypes.date: "date",
     FieldDatatypes.datetime: "timestamp with time zone",
     FieldDatatypes.bool: "boolean",

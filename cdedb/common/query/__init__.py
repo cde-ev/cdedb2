@@ -897,7 +897,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
                 "str", n_("lodgement notes"), prefix),
             **{
                 f"lodgement{part.id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("lodgement {field}"), prefix,
+                    f.kind.spec_type, n_("lodgement {field}"), prefix,
                     {'field': f.field_name})
                 for f in sorted_fields[const.FieldAssociations.lodgement]
             },
@@ -927,7 +927,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
                 "str", n_("course notes"), prefix),
             **{
                 f"course{track_id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("course {field}"), prefix,
+                    f.kind.spec_type, n_("course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
@@ -944,7 +944,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
                 "str", n_("instructed course notes"), prefix),
             **{
                 f"course_instructor{track_id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("instructed course {field}"), prefix,
+                    f.kind.spec_type, n_("instructed course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
@@ -1039,7 +1039,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
 
     spec.update({
         f"reg_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.name, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
     return spec
@@ -1162,7 +1162,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
 
     spec.update({
         f"course_fields.xfield_{field.field_name}": QuerySpecEntry(
-            field.kind.name, field.title,
+            field.kind.spec_type, field.title,
             choices=field_choices[field.field_name])
         for field in sorted_course_fields
     })
@@ -1241,7 +1241,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
 
     spec.update({
         f"lodgement_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.name, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
 

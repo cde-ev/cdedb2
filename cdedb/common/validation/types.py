@@ -31,6 +31,8 @@ CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validato
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
 
+NonNegativeFloat = _NewType("NonNegativeFloat", float)
+
 NonNegativeDecimal = _NewType("NonNegativeDecimal", decimal.Decimal)
 NonNegativeLargeDecimal = _NewType(
     "NonNegativeLargeDecimal", NonNegativeDecimal)
@@ -166,4 +168,7 @@ VALIDATOR_LOOKUP: dict[str, type[Any]] = {
     "date": datetime.date,
     "datetime": datetime.datetime,
     "bool": bool,
+    "non_negative_int": NonNegativeInt,
+    "non_negtative_float": NonNegativeFloat,
+    "phone": Phone,
 }
