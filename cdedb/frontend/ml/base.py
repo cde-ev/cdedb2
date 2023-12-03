@@ -1069,7 +1069,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def _check_address_change_requirements(
         self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email],
-        setting: bool
+        setting: bool,
     ) -> bool:
         """Check if all conditions required to change a subscription address
         are fulfilled."""
