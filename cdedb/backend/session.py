@@ -10,7 +10,7 @@ special in here.
 """
 
 import logging
-from typing import Optional, Type
+from typing import Optional
 
 import psycopg2.extensions
 from passlib.utils import consteq
@@ -194,7 +194,7 @@ class SessionBackend:
 
         return ret
 
-    def _validate_dynamic_droid_secret(self, droid_class: Type[DynamicAPIToken],
+    def _validate_dynamic_droid_secret(self, droid_class: type[DynamicAPIToken],
                                        token_id: int, secret: str) -> User:
 
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -218,7 +218,7 @@ class SessionBackend:
                         f" token id: {token_id}.")
                     raise APITokenError(
                         n_("Unknown %(droid_name)s token."),
-                        {'droid_name': droid_class.name}
+                        {'droid_name': droid_class.name},
                     )
 
                 data = dict(data)
@@ -230,21 +230,21 @@ class SessionBackend:
                         f"Access using inactive {droid_class.name} token {token}.")
                     raise APITokenError(
                         n_("This %(droid_name)s token has been revoked."),
-                        {'droid_name': droid_class.name}
+                        {'droid_name': droid_class.name},
                     )
                 if not verify_password(secret, secret_hash):
                     self.logger.warning(
                         f"Invalid secret for {droid_class.name} token {token}.")
                     raise APITokenError(
                         n_("Invalid %(droid_name)s token."),
-                        {'droid_name': droid_class.name}
+                        {'droid_name': droid_class.name},
                     )
                 if now() > token.etime:
                     self.logger.warning(
                         f"Access using expired {droid_class.name} token {token}.")
                     raise APITokenError(
                         n_("This %(droid_name)s token has expired."),
-                        {'droid_name': droid_class.name}
+                        {'droid_name': droid_class.name},
                     )
 
                 # Log latest access time.

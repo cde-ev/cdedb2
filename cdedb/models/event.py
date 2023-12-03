@@ -28,9 +28,8 @@ import dataclasses
 import datetime
 import decimal
 import logging
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Collection, Mapping, Optional, get_args, get_origin,
-)
+from collections.abc import Collection, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -57,6 +56,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass, abc.ABC):
     entity_key: ClassVar[str] = "event_id"
+
 
 #
 # get_event
