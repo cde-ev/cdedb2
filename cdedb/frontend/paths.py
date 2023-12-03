@@ -443,6 +443,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                                  endpoint="change_custom_filter_form"),
                             rule("/change", methods=_POST,
                                  endpoint="change_custom_filter"),
+                            rule("/delete", methods=_POST,
+                                 endpoint="delete_custom_filter"),
                         )),
                     )),
                     rule("/store", methods=_POST,

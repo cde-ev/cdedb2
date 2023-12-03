@@ -67,10 +67,13 @@
             {{ util.href(cdedblink("event/create_lodgement_filter"), gettext("Add Custom Lodgement Filter"), icon="plus", aclass="btn btn-small btn-success") }}
         {% elif scope.name == "registration" %}
             {{ util.href(cdedblink("event/create_registration_filter"), gettext("Add Custom Registration Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
         {% elif scope.name == "event_course" %}
             {{ util.href(cdedblink("event/create_course_filter"), gettext("Add Custom Course Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
         {% elif scope.name == "lodgement" %}
             {{ util.href(cdedblink("event/create_lodgement_filter"), gettext("Add Custom Lodgement Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
         {% endif %}
     </p>
     <table id="custom-filter-summary" class="table table-stats">
@@ -100,6 +103,11 @@
                     </td>
                     <td class="text-right text-nowrap">
                         {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning") }}
+                        <form action="{{ cdedblink('event/delete_custom_filter', {'custom_filter_id': custom_filter.id}) }}"
+                              method="POST" class="display-inline" id="deletecustomfilterform{{ custom_filter.id }}">
+                            {{ util.anti_csrf_token('event/delete_custom_filter') }}
+                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

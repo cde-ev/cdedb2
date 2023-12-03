@@ -412,6 +412,16 @@ class EventQueryMixin(EventBaseFrontend):
             'scope': custom_filter.scope,
         })
 
+    @access("event", modi={"POST"})
+    @event_guard()
+    def delete_custom_filter(self, rs: RequestState, event_id: int,
+                             custom_filter_id: int) -> Response:
+        code = self.eventproxy.delete_custom_query_filter(rs, custom_filter_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {
+            'scope': rs.ambience['custom_filter'].scope,
+        })
+
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")

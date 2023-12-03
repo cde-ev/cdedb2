@@ -15,7 +15,7 @@
 {% block title %}
     {% if ambience['custom_filter'] %}
         {% trans filter_title=ambience['custom_filter']['title'], event_title=ambience['event']['title'] %}
-            Edit Custom Filter {{ filter_title }} ({{ event_title }})
+            Change Custom Filter {{ filter_title }} ({{ event_title }})
         {% endtrans %}
     {% elif scope.name == "registration" %}
         {% trans event_title=ambience['event']['title'] %}
