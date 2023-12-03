@@ -44,7 +44,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("addresscheck", "testrun")
-    def semester_bill(self, rs: RequestState, addresscheck: bool, testrun: bool
+    def semester_bill(self, rs: RequestState, addresscheck: bool, testrun: bool,
                       ) -> Response:
         """Send billing mail to all members and archival notification to inactive users.
 
@@ -242,7 +242,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("testrun", "skip")
-    def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool
+    def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool,
                             ) -> Response:
         """Send address check mail to all members.
 
@@ -299,7 +299,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @REQUESTdatadict(*CdELogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_cde_log(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_cde_log(self, rs: RequestState, data: CdEDBObject, download: bool,
                      ) -> Response:
         """View semester activity."""
         return self.generic_view_log(

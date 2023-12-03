@@ -3,7 +3,7 @@ import json
 import os
 import pathlib
 import shutil
-from typing import Collection, Tuple
+from collections.abc import Collection
 
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.cli.util import (
@@ -141,7 +141,7 @@ def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
 @sanity_check
 def populate_sample_event_keepers(conf: Config) -> None:
     """Initialize the event keeper git for all events from the sample data."""
-    with open(conf["REPOSITORY_PATH"] / SAMPLE_DATA_JSON, "r", encoding="UTF-8") as f:
+    with open(conf["REPOSITORY_PATH"] / SAMPLE_DATA_JSON, encoding="UTF-8") as f:
         sample_data = json.load(f)
     max_event_id = len(sample_data.get('event.events'))
     populate_event_keeper(conf, range(1, max_event_id + 1))
@@ -159,7 +159,7 @@ def create_log(conf: Config) -> None:
 
 
 @sanity_check
-def reset_config(conf: Config) -> Tuple[Config, SecretsConfig]:
+def reset_config(conf: Config) -> tuple[Config, SecretsConfig]:
     """Replace the current config file with the sample config."""
     sample_config_path: pathlib.Path = (
         conf["REPOSITORY_PATH"] / "related/auto-build/files/stage3/localconfig.py")

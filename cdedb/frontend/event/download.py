@@ -10,7 +10,8 @@ import pathlib
 import shutil
 import tempfile
 from collections import OrderedDict
-from typing import Collection, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -81,7 +82,7 @@ class EventDownloadMixin(EventBaseFrontend):
             shutil.copy(src, work_dir / "minor-pictogram.png")
             shutil.copy(src, work_dir / "multicourse-logo.png")
             for course_id in courses:
-                shutil.copy(src, work_dir / "logo-{}.png".format(course_id))
+                shutil.copy(src, work_dir / f"logo-{course_id}.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event'].shortname,
                 "{}_nametags.tex".format(rs.ambience['event'].shortname),
@@ -249,7 +250,7 @@ class EventDownloadMixin(EventBaseFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
             'instructors': instructors, 'course_room_fields': cr_field_names,
-            'tracks': tracks, })
+            'tracks': tracks})
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
@@ -260,7 +261,7 @@ class EventDownloadMixin(EventBaseFrontend):
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
             for course_id in courses:
-                dest = work_dir / "course-logo-{}.png".format(course_id)
+                dest = work_dir / f"course-logo-{course_id}.png"
                 path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
                 if path.exists():
                     shutil.copy(path, dest)
@@ -355,7 +356,7 @@ class EventDownloadMixin(EventBaseFrontend):
         active_courses = filter(lambda c: c["active_segments"], courses.values())
         sorted_courses = xsorted(active_courses, key=EntitySorter.course)
         data = self.fill_template(rs, "other", "dokuteam_courselist", {
-            "sorted_courses": sorted_courses
+            "sorted_courses": sorted_courses,
         })
         return self.send_file(
             rs, data=data, inline=False,
@@ -434,7 +435,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_csv_lodgements(self, rs: RequestState, event_id: int
+    def download_csv_lodgements(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Create CSV file with all courses"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -456,7 +457,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_csv_registrations(self, rs: RequestState, event_id: int
+    def download_csv_registrations(self, rs: RequestState, event_id: int,
                                    ) -> Response:
         """Create CSV file with all registrations"""
         # Get data
@@ -506,7 +507,7 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def download_partial_export(self, rs: RequestState, event_id: int
+    def download_partial_export(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Retrieve data for third-party applications."""
         data = self.eventproxy.partial_export_event(rs, event_id)

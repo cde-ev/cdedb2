@@ -10,7 +10,8 @@ administrative tasks, like creating and modifying past events and courses requir
 import copy
 import csv
 from collections import OrderedDict
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 from werkzeug import Response
 
@@ -42,7 +43,7 @@ COURSESEARCH_DEFAULTS = {
     'qord_0': 'courses.title',
     'qord_0_ascending': True,
     'qord_1': 'events.tempus',
-    'qord_1_ascending': False
+    'qord_1_ascending': False,
 }
 
 
@@ -79,8 +80,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'spec': spec, 'result': result, 'count': count})
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
-                              pcourse_id: int = None, orgas_only: bool = False
-                              ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
+                              pcourse_id: int = None, orgas_only: bool = False,
+                              ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -172,12 +173,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
             scope, scope.get_spec(),
             ("personas.id", "given_names", "display_name", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id), ],
+            [("pevent_id", QueryOperators.equal, pevent_id)],
             (("family_name", True), ("given_names", True),
              ("personas.id", True)))
 
         result = self.cdeproxy.submit_general_query(rs, query)
-        fields: List[str] = []
+        fields: list[str] = []
         for csvfield in query.fields_of_interest:
             fields.extend(csvfield.split(','))
         csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
@@ -243,7 +244,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
-        years: Dict[int, List[int]] = {}
+        years: dict[int, list[int]] = {}
         for anid in stats_sorter:
             if institution and stats[anid]['institution'] != institution:
                 continue
@@ -257,7 +258,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         })
 
     @access("cde_admin")
-    def change_past_event_form(self, rs: RequestState, pevent_id: int
+    def change_past_event_form(self, rs: RequestState, pevent_id: int,
                                ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'])
@@ -289,7 +290,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                           data: CdEDBObject) -> Response:
         """Add new concluded event."""
         data = check(rs, vtypes.PastEvent, data, creation=True)
-        thecourses: List[CdEDBObject] = []
+        thecourses: list[CdEDBObject] = []
         if courses:
             courselines = courses.split('\n')
             reader = csv.DictReader(
@@ -358,7 +359,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_course")
 
     @access("cde_admin")
-    def create_past_course_form(self, rs: RequestState, pevent_id: int
+    def create_past_course_form(self, rs: RequestState, pevent_id: int,
                                 ) -> Response:
         """Render form."""
         return self.render(rs, "past_event/create_past_course")
@@ -439,7 +440,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id")
     def remove_participant(self, rs: RequestState, pevent_id: int,
-                           persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID]
+                           persona_id: vtypes.ID, pcourse_id: Optional[vtypes.ID],
                            ) -> Response:
         """Remove participant."""
         if rs.has_validation_errors():
@@ -456,7 +457,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_past_log(self, rs: RequestState, data: CdEDBObject, download: bool,
                       ) -> Response:
         """View activities concerning concluded events."""
         pevent_ids = self.pasteventproxy.list_past_events(rs)

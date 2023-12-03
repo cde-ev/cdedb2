@@ -3,7 +3,7 @@
 """Services for the assembly realm."""
 
 import pathlib
-from typing import Optional, Tuple
+from typing import Optional
 
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
@@ -41,7 +41,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
 
-        def sortkey(att: CdEDBObject) -> Tuple[str, int]:
+        def sortkey(att: CdEDBObject) -> tuple[str, int]:
             """This is an inline function and not in EntitySorter since its only used
             here and needs some extra context."""
             latest_version = attachments_versions[att["id"]][att["latest_version_nr"]]
@@ -187,7 +187,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.render(
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
-                'is_deletable': is_deletable
+                'is_deletable': is_deletable,
             })
 
     @access("assembly", modi={"POST"})
@@ -259,7 +259,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.render(
             rs, "attachment/configure_attachment_version", {
                 'latest_version': latest_version,
-                'is_deletable': True
+                'is_deletable': True,
             })
 
     @access("assembly", modi={"POST"})

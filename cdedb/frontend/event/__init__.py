@@ -35,6 +35,6 @@ class EventFrontend(
     EventDroidMixin,
     EventDownloadMixin,
     EventCourseMixin,
-    EventBaseFrontend
+    EventBaseFrontend,
 ):
     pass

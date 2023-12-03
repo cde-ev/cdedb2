@@ -11,7 +11,8 @@ import decimal
 import io
 import re
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional, Set, Tuple
+from collections.abc import Collection
+from typing import Optional
 
 import segno.helpers
 import werkzeug.exceptions
@@ -62,8 +63,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                             'saldo': saldo})
 
     def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
-                     expected_fees: Dict[int, decimal.Decimal],
-                     seen_reg_ids: Set[int], full_payment: bool = True,
+                     expected_fees: dict[int, decimal.Decimal],
+                     seen_reg_ids: set[int], full_payment: bool = True,
                      ) -> CdEDBObject:
         """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
@@ -139,7 +140,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if family_name is not None and not re.search(
                     diacritic_patterns(re.escape(family_name)),
                     persona['family_name'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     warnings.append(('family_name', ValueError(
                         n_("Family name doesn’t match."))))
@@ -147,7 +148,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if given_names is not None and not re.search(
                     diacritic_patterns(re.escape(given_names)),
                     persona['given_names'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     warnings.append(('given_names', ValueError(
                         n_("Given names don’t match."))))
@@ -164,8 +165,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         return datum
 
     def book_fees(self, rs: RequestState,
-                  data: Collection[CdEDBObject], send_notifications: bool = False
-                  ) -> Tuple[bool, Optional[int]]:
+                  data: Collection[CdEDBObject], send_notifications: bool = False,
+                  ) -> tuple[bool, Optional[int]]:
         """Book all paid fees.
 
         :returns: Success information and
@@ -239,7 +240,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        seen_reg_ids: Set[int] = set()
+        seen_reg_ids: set[int] = set()
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(self._examine_fee(
@@ -321,7 +322,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         sync_track_groups: dict[int, models.SyncTrackGroup] = {
             tg_id: tg for tg_id, tg in track_groups.items()  # type: ignore[misc]
             if tg.constraint_type.is_sync()}
-        ccos_per_part: Dict[int, List[str]] = {part_id: [] for part_id in event.parts}
+        ccos_per_part: dict[int, list[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
             if not track_group.constraint_type == ccs:
                 continue  # type: ignore[unreachable]
@@ -459,7 +460,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                          " (already included in the above figure).")
         nonmember_msg = msg % {
             'additional_fee': money_filter(
-                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or ""
+                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or "",
         }
 
         ret = {
@@ -525,7 +526,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             })
             if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 standard_params.update({
-                    "reg.real_persona_id": Optional[vtypes.ID]  # type: ignore[dict-item]
+                    "reg.real_persona_id": Optional[vtypes.ID],  # type: ignore[dict-item]
                 })
         standard_params = filter_params(standard_params)
         registration = {
@@ -563,7 +564,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             part_ids = set(request_extractor(rs, {"parts": Collection[int]})["parts"])
             registration['parts'] = {
                 part_id: {
-                    "status": rps.applied if part_id in part_ids else rps.not_applied
+                    "status": rps.applied if part_id in part_ids else rps.not_applied,
                 }
                 for part_id in event.parts
             }
@@ -656,7 +657,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                         choice_key(rank),
                         ValueError(n_("Instructed course must not be chosen."))
                         if orga_input else
-                        ValueError(n_("You may not choose your own course."))
+                        ValueError(n_("You may not choose your own course.")),
                     ))
                 # Check for duplicated course choices.
                 for x in range(rank):
@@ -669,14 +670,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                                  if orga_input else
                                  n_("You cannot have the same course as %(i)s."
                                     " and %(j)s. choice."),
-                                 {'i': x + 1, 'j': rank + 1})
+                                 {'i': x + 1, 'j': rank + 1}),
                         ))
                 # Check that the course choice is allowed for this track.
                 if not self.eventproxy.validate_single_course_choice(
                         rs, course_id, track_id, aux):
                     rs.append_validation_error((
                         choice_key(rank),
-                        ValueError(n_("Invalid course choice for this track."))
+                        ValueError(n_("Invalid course choice for this track.")),
                     ))
 
             # Check for unfilled mandatory course choices, but only if not orga.
@@ -864,7 +865,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return values
 
     @access("event")
-    def amend_registration_form(self, rs: RequestState, event_id: int
+    def amend_registration_form(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Render form."""
         event = rs.ambience['event']
@@ -985,7 +986,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @REQUESTdata("skip", "change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
-                                 change_note: Optional[str], internal: bool = False
+                                 change_note: Optional[str], internal: bool = False,
                                  ) -> Response:
         """Render form.
 
@@ -1043,14 +1044,14 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def add_registration_form(self, rs: RequestState, event_id: int
+    def add_registration_form(self, rs: RequestState, event_id: int,
                               ) -> Response:
         """Render form."""
         registrations = self.eventproxy.list_registrations(rs, event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         defaults = {
-            "part{}.status".format(part_id):
+            f"part{part_id}.status":
                 const.RegistrationPartStati.participant
             for part_id in rs.ambience['event'].parts
         }
@@ -1258,7 +1259,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             ("reg.id", "persona.given_names", "persona.family_name",
              "persona.username"),
             (("reg.id", QueryOperators.oneof, reg_ids),),
-            (("persona.family_name", True), ("persona.given_names", True),)
+            (("persona.family_name", True), ("persona.given_names", True)),
         )
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
