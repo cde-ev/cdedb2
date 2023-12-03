@@ -198,7 +198,7 @@
             {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
                                 type="datetime-local") }}
         {%- else %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {%- endif %}
     {%- endif %}
 {%- endmacro %}
