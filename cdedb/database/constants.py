@@ -108,7 +108,7 @@ class FieldDatatypes(CdEIntEnum):
     phone = 20  #:
 
     @property
-    def spec_type(self) -> str:
+    def spec_type(self) -> str:  # type: ignore[valid-type]
         if self == FieldDatatypes.phone:
             return 'str'
         if self == FieldDatatypes.non_negative_float:

@@ -31,7 +31,6 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.common.validation.validate import _non_negative_int, _non_negative_float
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
 
@@ -374,8 +373,10 @@ class EventLowLevelBackend(AbstractBackend):
             const.FieldDatatypes.date: parse_date,
             const.FieldDatatypes.datetime: parse_datetime,
             const.FieldDatatypes.bool: bool,
-            const.FieldDatatypes.non_negative_int: _non_negative_int,
-            const.FieldDatatypes.non_negative_float: _non_negative_float,
+            const.FieldDatatypes.non_negative_int: (
+                lambda x: affirm(vtypes.NonNegativeInt, x)),
+            const.FieldDatatypes.non_negative_float: (
+                lambda x: affirm(vtypes.NonNegativeFloat, x)),
             # normalized string: normalize on write
             const.FieldDatatypes.phone: parse_phone,
         }
