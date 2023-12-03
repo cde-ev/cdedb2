@@ -6258,6 +6258,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
     @as_users("garcia")
+    def test_custom_query_filter(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Datenfelder konfigurieren", "Custom Filters",
+                      "Add Custom Course Filter")
+        f = self.response.forms['configurecustomfilterform']
+        f['title'] = "Kur(s|z)titel"
+        f['cf_course.title'] = f['cf_course.shortname'] = True
+        self.submit(f)
+        self.traverse("Kurse", "Kurssuche")
+        f = self.response.forms['queryform']
+        f['qop_course.shortname,course.title'] = QueryOperators.match.value
+        f['qval_course.shortname,course.title'] = "rett"
+        self.submit(f)
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Heldentum", div="query-result")
+        self.assertPresence("Kabarett", div="query-result")
+        self.traverse("Custom Filters", {'href': r'filter/\d+/change'})
+        self.assertTitle("Change Custom Filter Kur(s|z)titel (Große Testakademie 2222)")
+        f = self.response.forms['configurecustomfilterform']
+        f['notes'] = "abc"
+        self.submit(f)
+        f = self.response.forms['deletecustomfilterform1001']
+        self.submit(f)
+        self.assertNonPresence("Kur(s|z)titel")
+
+    @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
