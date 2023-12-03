@@ -516,7 +516,7 @@ class CustomQueryFilter(EventDataclass):
     notes: Optional[str]
     fields: set[str] = dataclasses.field(metadata={'database_include': True})
 
-    fixed_fields = ("event_id", "scope")
+    fixed_fields = ("event_id", "event", "scope")
 
     @classmethod
     def validation_fields(cls, *, creation: bool
@@ -525,6 +525,7 @@ class CustomQueryFilter(EventDataclass):
         for key in cls.fixed_fields:
             if key in optional:
                 del optional[key]
+        optional['event'] = Any
         return mandatory, optional
 
     @classmethod

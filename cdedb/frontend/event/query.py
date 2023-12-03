@@ -360,7 +360,9 @@ class EventQueryMixin(EventBaseFrontend):
                         "A filter with this selection of fields already exists."))))
         if rs.has_validation_errors() or not data:
             return self.configure_custom_filter_form(rs, event_id, scope)
-        code = self.eventproxy.add_custom_query_filter(rs, CustomQueryFilter(**data))
+        custom_filter = CustomQueryFilter(**data)
+        custom_filter.event = None
+        code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
