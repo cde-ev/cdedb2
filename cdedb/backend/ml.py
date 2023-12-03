@@ -566,7 +566,7 @@ class MlBackend(AbstractBackend):
                 del new_ml[field]
             affirm(vtypes.Mailinglist, new_ml, subtype=new_type)
 
-            # Delete all unsubscriptions for mandatory list.
+            # Delete all unsubscriptions and explicit addresses for mandatory list.
             if not new_type.allow_unsub:
                 query = ("DELETE FROM ml.subscription_states "
                          "WHERE mailinglist_id = %s "
@@ -575,6 +575,13 @@ class MlBackend(AbstractBackend):
                 params = (mailinglist_id, self.subman.written_states -
                           const.SubscriptionState.subscribing_states())
                 self.query_exec(rs, query, params)
+
+                explicits = self.get_subscription_addresses(rs, mailinglist_id,
+                                                            explicits_only=True)
+                for persona_id, explicit_address in explicits.items():
+                    if explicit_address:
+                        ret *= self.remove_subscription_address(rs, mailinglist_id,
+                                                                persona_id)
 
             # delete all obsolete additional fields
             if obsolete_fields:
