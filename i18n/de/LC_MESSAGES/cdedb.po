@@ -6462,6 +6462,9 @@ msgstr "Nicht abonniert."
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
+msgid "Address already taken by another user."
+msgstr "Adresse wird bereits von einem anderen Nutzer verwendet."
+
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:33

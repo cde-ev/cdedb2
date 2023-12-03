@@ -1363,7 +1363,8 @@ CREATE TABLE ml.subscription_addresses (
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar NOT NULL,
-        UNIQUE (persona_id, mailinglist_id)
+        UNIQUE (persona_id, mailinglist_id),
+        UNIQUE (address, mailinglist_id)
 );
 CREATE INDEX subscription_addresses_mailinglist_id_idx ON ml.subscription_addresses(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_addresses TO cdb_persona;
