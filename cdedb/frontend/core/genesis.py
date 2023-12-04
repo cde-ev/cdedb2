@@ -457,24 +457,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # Send notification to the user, depending on decision.
         if decision.is_create():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            success, cookie = self.coreproxy.make_reset_cookie(
-                rs, persona['username'],
-                timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter(
-                "core/do_password_reset_form", "email", persona['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            if case['realm'] == "cde":
-                meta_info = self.coreproxy.get_meta_info(rs)
-                self.do_mail(
-                    rs, "welcome",
-                    {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
-                    {'data': persona, 'email': email, 'cookie': cookie,
-                     'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
-            else:
-                self.do_mail(
-                    rs, "genesis/genesis_approved",
-                    {'To': (persona['username'],), 'Subject': "CdEDB-Account erstellt"},
-                    {'persona': persona, 'email': email, 'cookie': cookie})
+            self.send_welcome_mail(rs, persona)
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)

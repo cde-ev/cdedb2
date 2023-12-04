@@ -1596,23 +1596,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, pevent_id, pcourse_id, persona_id,
                     is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
-            meta_info = self.coreproxy.get_meta_info(rs)
-            transaction_subject = make_membership_fee_reference(persona)
-            if persona['is_member']:
-                subject = "Aufnahme in den CdE"
-            else:
-                subject = "Aufnahmeberechtigung für den CdE"
-            self.do_mail(rs, "welcome",
-                         {'To': (persona['username'],),
-                          'Subject': subject,
-                          },
-                         {'data': persona,
-                          'fee': self.conf['MEMBERSHIP_FEE'],
-                          'email': "",
-                          'cookie': "",
-                          'meta_info': meta_info,
-                          'transaction_subject': transaction_subject
-                          })
+            self.send_welcome_mail(rs, persona)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")

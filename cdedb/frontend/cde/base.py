@@ -548,25 +548,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if sendmail:
                 for datum in data:
                     if datum['resolution'] == LineResolutions.create:
-                        success, message = self.coreproxy.make_reset_cookie(
-                            rs, datum['raw']['username'],
-                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                        email = self.encode_parameter(
-                            "core/do_password_reset_form", "email",
-                            datum['raw']['username'],
-                            persona_id=None,
-                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                        meta_info = self.coreproxy.get_meta_info(rs)
-                        self.do_mail(rs, "welcome",
-                                     {'To': (datum['raw']['username'],),
-                                      'Subject': "Aufnahme in den CdE",
-                                      },
-                                     {'data': datum['persona'],
-                                      'fee': self.conf["MEMBERSHIP_FEE"],
-                                      'email': email if success else "",
-                                      'cookie': message if success else "",
-                                      'meta_info': meta_info,
-                                      })
+                        self.send_welcome_mail(rs, datum['persona'])
             return True, count_new, count_renewed
 
     @staticmethod
