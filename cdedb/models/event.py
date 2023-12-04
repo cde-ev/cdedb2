@@ -525,7 +525,7 @@ class CustomQueryFilter(EventDataclass):
         for key in cls.fixed_fields:
             if key in optional:
                 del optional[key]
-        optional['event'] = Any
+        optional['event'] = Any  # type: ignore[assignment]
         return mandatory, optional
 
     @classmethod

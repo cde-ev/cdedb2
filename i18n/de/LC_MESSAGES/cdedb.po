@@ -14170,7 +14170,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:17
 #, python-format
 msgid "Change Custom Filter %(filter_title)s (%(event_title)s)"
-msgstr "Eigenen Filter %(filter_title)s bearbeiten (%(event_title)s)"
+msgstr "Eigenen Filter %(filter_title)s ändern (%(event_title)s)"
 
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:21
 #, python-format

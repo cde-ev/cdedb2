@@ -361,7 +361,7 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not data:
             return self.configure_custom_filter_form(rs, event_id, scope)
         custom_filter = CustomQueryFilter(**data)
-        custom_filter.event = None
+        custom_filter.event = None  # type: ignore[assignment]
         code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
