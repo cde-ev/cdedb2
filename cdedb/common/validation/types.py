@@ -2,8 +2,9 @@
 
 import datetime
 import decimal
-from typing import (  # noqa: F401  # pylint: disable=unused-import
-    TYPE_CHECKING, Any, Dict, List, Mapping, MutableMapping, NewType as _NewType, Type,
+from collections.abc import MutableMapping
+from typing import (  # pylint: disable=unused-import
+    TYPE_CHECKING, Any, NewType as _NewType,
 )
 
 from subman import SubscriptionState
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 else:
     CdEDBObject = CdEDBOptionalMap = None
 
-TypeMapping = MutableMapping[str, Type[Any]]
+TypeMapping = MutableMapping[str, type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -35,8 +36,8 @@ NonNegativeLargeDecimal = _NewType(
     "NonNegativeLargeDecimal", NonNegativeDecimal)
 PositiveDecimal = _NewType("PositiveDecimal", decimal.Decimal)
 
-EmptyDict = _NewType("EmptyDict", Dict[Any, Any])
-EmptyList = _NewType("EmptyList", List[Any])
+EmptyDict = _NewType("EmptyDict", dict[Any, Any])
+EmptyList = _NewType("EmptyList", list[Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
@@ -64,8 +65,8 @@ Vote = _NewType("Vote", str)
 Regex = _NewType("Regex", str)
 NonRegex = _NewType("NonRegex", str)
 
-IntCSVList = _NewType("IntCSVList", List[int])
-CdedbIDList = _NewType("CdedbIDList", List[CdedbID])
+IntCSVList = _NewType("IntCSVList", list[int])
+CdedbIDList = _NewType("CdedbIDList", list[CdedbID])
 
 OrgaToken = _NewType("OrgaToken", CdEDBObject)
 APITokenString = _NewType("APITokenString", tuple[str, str])
@@ -95,7 +96,7 @@ Period = _NewType("Period", CdEDBObject)
 ExPuls = _NewType("ExPuls", CdEDBObject)
 MoneyTransferEntry = _NewType("MoneyTransferEntry", CdEDBObject)
 Lastschrift = _NewType("Lastschrift", CdEDBObject)
-SepaTransactions = _NewType("SepaTransactions", List[CdEDBObject])
+SepaTransactions = _NewType("SepaTransactions", list[CdEDBObject])
 SepaMeta = _NewType("SepaMeta", CdEDBObject)
 MetaInfo = _NewType("MetaInfo", CdEDBObject)
 Institution = _NewType("Institution", CdEDBObject)
@@ -123,7 +124,7 @@ LodgementGroup = _NewType("LodgementGroup", CdEDBObject)
 Lodgement = _NewType("Lodgement", CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", CdEDBObject)
 # TODO maybe cast keys to str
-Questionnaire = _NewType("Questionnaire", Dict[int, List[QuestionnaireRow]])
+Questionnaire = _NewType("Questionnaire", dict[int, list[QuestionnaireRow]])
 
 SerializedEvent = _NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)
@@ -158,7 +159,7 @@ CustomQueryFilter = _NewType("CustomQueryFilter", CdEDBObject)
 
 # This is used for places where transitioning to the new API is not yet feasible
 # e.g. query specifications
-VALIDATOR_LOOKUP: Dict[str, Type[Any]] = {
+VALIDATOR_LOOKUP: dict[str, type[Any]] = {
     "str": str,
     "id": ID,
     "int": int,

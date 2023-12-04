@@ -5,10 +5,8 @@
 import collections
 import collections.abc
 import datetime
-from typing import (
-    Any, Callable, Collection, Dict, Generator, Iterable, KeysView, List, Tuple,
-    TypeVar, Union,
-)
+from collections.abc import Collection, Generator, Iterable, KeysView
+from typing import Any, Callable, TypeVar, Union
 
 import icu
 
@@ -23,14 +21,13 @@ LOCALE = 'de-u-kn-true'
 COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 
 T = TypeVar("T")
 
 
-def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> List[T]:
-    """Wrapper for sorted() to achieve a natural sort.
+def collate(sortkey: Any) -> Any:
+    """Key function for sorting.
 
     This replaces all strings in possibly nested objects with a sortkey
     matching an collation from the Unicode Collation Algorithm, provided
@@ -40,21 +37,23 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
     (ints and decimals) are sorted correctly, even in midst of strings.
     However, negative numbers in strings are sorted by absolute value, before
-    positive numbers, as minus and hyphens can not be distinguished.
+    positive numbers, as minus and hyphens can not be distinguished."""
+    if isinstance(sortkey, str):
+        return COLLATOR.getSortKey(sortkey)
+    if isinstance(sortkey, collections.abc.Iterable):
+        # Make sure strings in nested Iterables are sorted
+        # correctly as well.
+        return tuple(map(collate, sortkey))
+    return sortkey
+
+
+def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
+            reverse: bool = False) -> list[T]:
+    """Wrapper for sorted() to achieve a natural sort.
 
     For users, the interface of this function should be identical
     to sorted().
     """
-
-    def collate(sortkey: Any) -> Any:
-        if isinstance(sortkey, str):
-            return COLLATOR.getSortKey(sortkey)
-        if isinstance(sortkey, collections.abc.Iterable):
-            # Make sure strings in nested Iterables are sorted
-            # correctly as well.
-            return tuple(map(collate, sortkey))
-        return sortkey
-
     return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
@@ -86,7 +85,7 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-Sortkey = Tuple[Union[str, int, datetime.datetime, datetime.date], ...]
+Sortkey = tuple[Union[str, int, datetime.datetime, datetime.date], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
@@ -208,12 +207,8 @@ class EntitySorter:
         return (changelog_entry['ctime'], changelog_entry['generation'],
                 changelog_entry['persona_id'])
 
-    @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
-        return (mailinglist['title'], mailinglist['id'])
 
-
-def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
+def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]],
                            ) -> Generator[int, None, None]:
     """Iterate over a set of indices in the relevant way.
 

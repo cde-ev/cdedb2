@@ -5,7 +5,8 @@ concluded events.
 """
 
 import datetime
-from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
+from collections.abc import Collection
+from typing import Any, Optional, Protocol, Union
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -46,8 +47,8 @@ class PastEventBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("cde", "event")
-    def participation_infos(self, rs: RequestState, persona_ids: Collection[int]
-                            ) -> Dict[int, CdEDBObjectMap]:
+    def participation_infos(self, rs: RequestState, persona_ids: Collection[int],
+                            ) -> dict[int, CdEDBObjectMap]:
         """List concluded events visited by specific personas.
 
         :returns: First keys are the ids, second are the pevent_ids.
@@ -106,7 +107,7 @@ class PastEventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("cde_admin", "event_admin", "auditor")
-    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter
+    def retrieve_past_log(self, rs: RequestState, log_filter: PastEventLogFilter,
                           ) -> CdEDBLog:
         """Get recorded activity for concluded events.
 
@@ -117,7 +118,7 @@ class PastEventBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("persona")
-    def list_past_events(self, rs: RequestState) -> Dict[int, str]:
+    def list_past_events(self, rs: RequestState) -> dict[int, str]:
         """List all concluded events.
 
         :returns: Mapping of event ids to titles.
@@ -173,7 +174,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde", "event")
-    def get_past_events(self, rs: RequestState, pevent_ids: Collection[int]
+    def get_past_events(self, rs: RequestState, pevent_ids: Collection[int],
                         ) -> CdEDBObjectMap:
         """Retrieve data for some concluded events."""
         pevent_ids = affirm_set(vtypes.ID, pevent_ids)
@@ -191,7 +192,7 @@ class PastEventBackend(AbstractBackend):
         get_past_events, "pevent_ids", "pevent_id")
 
     @access("cde_admin", "event_admin")
-    def set_past_event(self, rs: RequestState, data: CdEDBObject
+    def set_past_event(self, rs: RequestState, data: CdEDBObject,
                        ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
         data = affirm(vtypes.PastEvent, data)
@@ -201,7 +202,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde_admin", "event_admin")
-    def create_past_event(self, rs: RequestState, data: CdEDBObject
+    def create_past_event(self, rs: RequestState, data: CdEDBObject,
                           ) -> DefaultReturnCode:
         """Make a new concluded event."""
         data = affirm(vtypes.PastEvent, data, creation=True)
@@ -211,7 +212,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde_admin")
-    def delete_past_event_blockers(self, rs: RequestState, pevent_id: int
+    def delete_past_event_blockers(self, rs: RequestState, pevent_id: int,
                                    ) -> DeletionBlockers:
         """Determine what keeps a past event from being deleted.
 
@@ -309,8 +310,8 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    def list_past_courses(self, rs: RequestState, pevent_id: Optional[int] = None
-                          ) -> Dict[int, str]:
+    def list_past_courses(self, rs: RequestState, pevent_id: Optional[int] = None,
+                          ) -> dict[int, str]:
         """List all relevant past courses.
 
         If a `pevent_id` is given, list only courses from a concluded event,
@@ -328,7 +329,7 @@ class PastEventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
-    def get_past_courses(self, rs: RequestState, pcourse_ids: Collection[int]
+    def get_past_courses(self, rs: RequestState, pcourse_ids: Collection[int],
                          ) -> CdEDBObjectMap:
         """Retrieve data for some concluded courses.
 
@@ -345,7 +346,7 @@ class PastEventBackend(AbstractBackend):
         get_past_courses, "pcourse_ids", "pcourse_id")
 
     @access("cde_admin", "event_admin")
-    def set_past_course(self, rs: RequestState, data: CdEDBObject
+    def set_past_course(self, rs: RequestState, data: CdEDBObject,
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
         data = affirm(vtypes.PastCourse, data)
@@ -362,7 +363,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde_admin", "event_admin")
-    def create_past_course(self, rs: RequestState, data: CdEDBObject
+    def create_past_course(self, rs: RequestState, data: CdEDBObject,
                            ) -> DefaultReturnCode:
         """Make a new concluded course."""
         data = affirm(vtypes.PastCourse, data, creation=True)
@@ -373,7 +374,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde_admin")
-    def delete_past_course_blockers(self, rs: RequestState, pcourse_id: int
+    def delete_past_course_blockers(self, rs: RequestState, pcourse_id: int,
                                     ) -> DeletionBlockers:
         """Determine what keeps a past course from being deleted.
 
@@ -401,7 +402,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_course(self, rs: RequestState, pcourse_id: int,
-                           cascade: Collection[str] = None
+                           cascade: Collection[str] = None,
                            ) -> DefaultReturnCode:
         """Remove past course.
 
@@ -447,7 +448,7 @@ class PastEventBackend(AbstractBackend):
     @access("core_admin", "cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool = False, is_orga: bool = False
+                        is_instructor: bool = False, is_orga: bool = False,
                         ) -> DefaultReturnCode:
         """Add a participant to a concluded event.
 
@@ -487,7 +488,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin")
     def remove_participant(self, rs: RequestState, pevent_id: int,
-                           pcourse_id: Optional[int], persona_id: int
+                           pcourse_id: Optional[int], persona_id: int,
                            ) -> DefaultReturnCode:
         """Remove a participant from a concluded event.
 
@@ -509,8 +510,8 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde", "event")
     def list_participants(self, rs: RequestState, *, pevent_id: int = None,
-                          pcourse_id: int = None
-                          ) -> Dict[Tuple[int, Optional[int]], CdEDBObject]:
+                          pcourse_id: int = None,
+                          ) -> dict[tuple[int, Optional[int]], CdEDBObject]:
         """List all participants of a concluded event or course.
 
         Exactly one of the inputs has to be provided.
@@ -544,8 +545,8 @@ class PastEventBackend(AbstractBackend):
         return bool(self.query_one(rs, query, (persona_id, pevent_id)))
 
     @access("cde_admin", "event_admin")
-    def find_past_event(self, rs: RequestState, shortname: str
-                        ) -> Tuple[Optional[int], List[Error], List[Error]]:
+    def find_past_event(self, rs: RequestState, shortname: str,
+                        ) -> tuple[Optional[int], list[Error], list[Error]]:
         """Look for events with a certain name.
 
         This is mainly for batch admission, where we want to
@@ -565,7 +566,7 @@ class PastEventBackend(AbstractBackend):
         reference = today - datetime.timedelta(days=200)
         reference = reference.replace(day=1, month=1)
         ret = self.query_all(rs, query, (shortname, shortname, reference))
-        warnings: List[Error] = []
+        warnings: list[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
         if not ret:
@@ -583,8 +584,8 @@ class PastEventBackend(AbstractBackend):
             return unwrap(unwrap(ret)), warnings, []
 
     @access("cde_admin", "event_admin")
-    def find_past_course(self, rs: RequestState, phrase: str, pevent_id: int
-                         ) -> Tuple[Optional[int], List[Error], List[Error]]:
+    def find_past_course(self, rs: RequestState, phrase: str, pevent_id: int,
+                         ) -> tuple[Optional[int], list[Error], list[Error]]:
         """Look for courses with a certain number/name.
 
         This is mainly for batch admission, where we want to
@@ -602,9 +603,9 @@ class PastEventBackend(AbstractBackend):
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
         q3 = query + " AND similarity(title, %s) > %s"
-        params: Tuple[Any, ...] = (pevent_id, phrase)
+        params: tuple[Any, ...] = (pevent_id, phrase)
         ret = self.query_all(rs, q1, params)
-        warnings: List[Error] = []
+        warnings: list[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
         if not ret:
@@ -638,8 +639,8 @@ class PastEventBackend(AbstractBackend):
         pevent['participant_info'] = None
         if len(event.parts) > 1:
             # Add part designation in case of events with multiple parts
-            pevent['title'] += " ({})".format(part.title)
-            pevent['shortname'] += " ({})".format(part.shortname)
+            pevent['title'] += f" ({part.title})"
+            pevent['shortname'] += f" ({part.shortname})"
         del pevent['id']
         new_id = self.create_past_event(rs, pevent)
         course_ids = self.event.list_courses(rs, event.id)
@@ -660,7 +661,7 @@ class PastEventBackend(AbstractBackend):
         courses_seen = set()
         # we want to add each participant/course combination at
         # most once
-        combinations_seen: Set[Tuple[int, Optional[int]]] = set()
+        combinations_seen: set[tuple[int, Optional[int]]] = set()
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
@@ -700,9 +701,9 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin", "event_admin")
     def archive_event(self, rs: RequestState, event_id: int,
-                      create_past_event: bool = True
-                      ) -> Union[Tuple[None, str],
-                                 Tuple[Optional[List[int]], None]]:
+                      create_past_event: bool = True,
+                      ) -> Union[tuple[None, str],
+                                 tuple[Optional[list[int]], None]]:
         """Archive a concluded event.
 
         This optionally creates a follow-up past event by transferring data from
@@ -746,7 +747,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("member", "cde_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """

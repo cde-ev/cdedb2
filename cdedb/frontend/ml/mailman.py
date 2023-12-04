@@ -5,7 +5,6 @@
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
-from typing import Set
 
 import mailmanclient as mmc
 
@@ -67,7 +66,7 @@ class MlMailmanMixin(MlBaseFrontend):
         if db_list.subject_prefix:
             prefix = f"[{db_list.subject_prefix or ''}] "
 
-        alias_domains: Set[str] = db_list.domain.get_acceptable_aliases()
+        alias_domains: set[str] = db_list.domain.get_acceptable_aliases()
         acceptable_aliases = \
             ([db_list.local_part + '@' + d for d in alias_domains] +
              self.conf["MAILMAN_ACCEPTABLE_ALIASES"].get(db_list.address, [])) or ""
@@ -300,7 +299,7 @@ The original message as received by Mailman is attached.
 
     def mailman_sync_list_whites(
             self, rs: RequestState, mailman: mmc.Client, db_list: Mailinglist,
-            mm_list: mmc.MailingList
+            mm_list: mmc.MailingList,
     ) -> None:
         db_whitelist = set(db_list.whitelist)
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}

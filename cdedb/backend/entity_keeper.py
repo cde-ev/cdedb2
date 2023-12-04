@@ -16,8 +16,9 @@ import logging
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Optional, Union
 
 import tabulate
 
@@ -52,7 +53,7 @@ class EntityKeeper:
         self.logger = logging.getLogger(logger_name)
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
-    def _run(self, args: List[Union[Path, str, bytes]], cwd: Optional[Path] = None,
+    def _run(self, args: list[Union[Path, str, bytes]], cwd: Optional[Path] = None,
              check: Optional[bool] = True) -> subprocess.CompletedProcess[bytes]:
         """Custom wrapper of subprocess.run to include proper logging.
 
@@ -112,7 +113,7 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: Sequence[CdEDBObject] = None
+               may_drop: bool = True, logs: Sequence[CdEDBObject] = None,
                ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
@@ -138,7 +139,7 @@ class EntityKeeper:
             # actual git directory.
             self._run(["git", f"--work-tree={td}", "add", td / filename], cwd=full_dir)
             # Then commit everything as if we were in the repository directory.
-            commit: List[Union[PathLike, bytes]]
+            commit: list[Union[PathLike, bytes]]
             commit = ["git", "-C", full_dir, "commit", "-m", commit_msg.encode("utf8")]
             if logs and (formated_logs := self._format_logs(logs)):
                 commit.append("-m")
@@ -156,7 +157,7 @@ class EntityKeeper:
                 commit.append(formated_timestamp.encode("utf-8"))
             if author_name or author_email:
                 commit.append("--author")
-                commit.append(f"{author_name} <{author_email}>".encode("utf8"))
+                commit.append(f"{author_name} <{author_email}>".encode())
 
             # Take care of potential empty commits
             if may_drop:

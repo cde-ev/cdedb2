@@ -4,7 +4,8 @@
 The `EventQueryBackend` subclasses the `EventBaseBackend` and provides functionality
 for querying information about an event aswell as storing and retrieving such queries.
 """
-from typing import Collection, Dict, List, Optional, Tuple
+from collections.abc import Collection
+from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -33,7 +34,7 @@ from cdedb.models.event import CustomQueryFilter
 
 
 def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
-                              association: const.FieldAssociations) -> Tuple[str, ...]:
+                              association: const.FieldAssociations) -> tuple[str, ...]:
     """Construct SELECT column entries for the given fields of the given association."""
     colum_template = '''(fields->>'{name}')::{kind} AS "xfield_{name}"'''
     return tuple(
@@ -45,7 +46,7 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
 class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query, event_id: int = None,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
@@ -548,7 +549,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 """
 
             # Step 4.2: Template for counting inhabitants.
-            def registration_part_count_table(p_id: int, is_camping_mat: Optional[bool]
+            def registration_part_count_table(p_id: int, is_camping_mat: Optional[bool],
                                               ) -> str:
                 if is_camping_mat is None:
                     param_name = 'total_inhabitants'
@@ -616,7 +617,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     def get_event_queries(self, rs: RequestState, event_id: int,
                           scopes: Collection[QueryScope] = None,
                           query_ids: Collection[int] = None,
-                          ) -> Dict[str, Query]:
+                          ) -> dict[str, Query]:
         """Retrieve all stored queries for the given event and scope.
 
         If no scopes are given, all queries are returned instead.
@@ -636,7 +637,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
                           f" FROM event.stored_queries"
                           f" WHERE event_id = %s")
-                params: List[DatabaseValue_s] = [event_id]
+                params: list[DatabaseValue_s] = [event_id]
                 if scopes:
                     select += " AND scope = ANY(%s)"
                     params.append(scopes)
@@ -727,7 +728,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return new_id
 
     @access("event")
-    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                          ) -> CdEDBObjectMap:
         """Retrieve raw data for stored event queries that cannot be deserialized."""
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -741,7 +742,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             return {e["id"]: e for e in data}
 
     @access("event")
-    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+    def delete_invalid_stored_event_queries(self, rs: RequestState, event_id: int,
                                             ) -> int:
         """Delete invalid stored event queries."""
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -772,7 +773,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             lodgement_groups=lodgement_groups)
 
     @access("event")
-    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter
+    def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter,
                                 ) -> DefaultReturnCode:
         if not isinstance(data, CustomQueryFilter):
             raise ValueError
@@ -792,7 +793,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return new_id
 
     @access("event")
-    def change_custom_query_filter(self, rs: RequestState, data: CdEDBObject
+    def change_custom_query_filter(self, rs: RequestState, data: CdEDBObject,
                                    ) -> DefaultReturnCode:
         custom_filter_id = affirm(vtypes.ID, data['id'])
         with Atomizer(rs):

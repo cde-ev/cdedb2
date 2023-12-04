@@ -106,8 +106,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     psycopg[binary]==3.0.15 \
     psycopg_pool==3.1.1 \
     pyparsing==3.0.9 \
-    schulze_condorcet==2.0.0 \
-    subman==0.1.0 \
+    schulze_condorcet==2.0.1 \
+    subman==0.1.1 \
     segno==1.5.2 \
     \
     && python3 -m pip --no-cache-dir install \
@@ -184,3 +184,7 @@ WORKDIR /cdedb2
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]
+
+USER cdedb
+RUN pip install ruff==0.1.1
+USER root

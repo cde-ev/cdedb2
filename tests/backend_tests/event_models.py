@@ -333,7 +333,7 @@ class TestEventModels(BackendTest):
                 8: models.EventFee(
                     id=8,  # type: ignore[arg-type]
                     event_id=vtypes.ProtoID(1),
-                    kind=const.EventFeeType.solidarity,
+                    kind=const.EventFeeType.solidary_reduction,
                     title='Mengenrabatt',
                     amount=decimal.Decimal('-0.01'),
                     condition='all_parts',  # type: ignore[arg-type]

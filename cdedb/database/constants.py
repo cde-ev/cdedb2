@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict, Optional, Set
+from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -60,7 +60,7 @@ class RegistrationPartStati(CdEIntEnum):
         return (RegistrationPartStati.applied,
                 RegistrationPartStati.participant,
                 RegistrationPartStati.waitlist,
-                RegistrationPartStati.guest,)
+                RegistrationPartStati.guest)
 
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
@@ -69,7 +69,7 @@ class RegistrationPartStati(CdEIntEnum):
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
         return self in (RegistrationPartStati.participant,
-                        RegistrationPartStati.guest,)
+                        RegistrationPartStati.guest)
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""
@@ -158,7 +158,9 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
-    solidarity = 10
+    # sorting is not quite nice for historical reasons
+    solidary_reduction = 10
+    solidary_increase = 12
     donation = 11
 
     def get_icon(self) -> str:
@@ -166,7 +168,9 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
-            EventFeeType.solidarity: "hands-helping",
+            EventFeeType.solidary_reduction: "hand-holding-usd",
+            # TODO replace with hand-holding-medical
+            EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.donation: "donate",
         }[self]
 
@@ -188,7 +192,7 @@ class GenesisStati(CdEIntEnum):
     rejected = 10
 
     @classmethod
-    def finalized_stati(cls) -> Set["GenesisStati"]:
+    def finalized_stati(cls) -> set["GenesisStati"]:
         return {cls.successful, cls.existing_updated, cls.rejected}
 
     def is_finalized(self) -> bool:
@@ -276,7 +280,7 @@ class MailinglistDomain(CdEIntEnum):
         """Return a readable string representation to be displayed in the UI."""
         return self.get_domain()
 
-    def get_acceptable_aliases(self) -> Set[str]:
+    def get_acceptable_aliases(self) -> set[str]:
         """Return alias domains which might exist for a given type.
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
@@ -289,7 +293,7 @@ class MailinglistDomain(CdEIntEnum):
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
-_DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
+_DOMAIN_STR_MAP: dict[MailinglistDomain, str] = {
     MailinglistDomain.lists: "lists.cde-ev.de",
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
@@ -357,6 +361,7 @@ class PastInstitutions(CdEIntEnum):
     jgw = 60  #:
     basf = 80  #:
     van = 200  #:
+    eisenberg = 400  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -371,6 +376,7 @@ class PastInstitutions(CdEIntEnum):
             self.jgw: "JGW",
             self.basf: "BASF",
             self.van: "VAN",
+            self.eisenberg: "FV Eisenberg",
         }
         return shortnames[self]
 
@@ -473,6 +479,7 @@ class EventLogCodes(CdEIntEnum):
     registration_created = 50  #:
     registration_changed = 51  #:
     registration_deleted = 52  #:
+    registration_payment_received = 55  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:

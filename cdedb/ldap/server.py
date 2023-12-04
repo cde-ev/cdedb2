@@ -3,7 +3,8 @@
 import asyncio
 import logging
 from asyncio.transports import BaseTransport, Transport
-from typing import Any, Callable, Coroutine, List, Optional, Tuple
+from collections.abc import Coroutine
+from typing import Any, Callable, Optional
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
@@ -84,7 +85,7 @@ class LdapServer(asyncio.Protocol):
         logger.error(f"Got unsolicited notification: f{repr(msg)}")
 
     @staticmethod
-    def check_controls(controls: Optional[Tuple[Any, Any, Any]]) -> None:
+    def check_controls(controls: Optional[tuple[Any, Any, Any]]) -> None:
         """Check controls which are sent together with the current request.
 
         Controls are an ldap mechanism to give additional parameters or information
@@ -303,7 +304,7 @@ class LdapServer(asyncio.Protocol):
             bound_dn=self.bound_user.dn if self.bound_user else None,
         )
 
-        def filter_entry(entry: CdEDBBaseLDAPEntry) -> Optional[List[Any]]:
+        def filter_entry(entry: CdEDBBaseLDAPEntry) -> Optional[list[Any]]:
             """Filter an entry before sending it to the client.
 
             This is the main place where our security restrictions are implemented.

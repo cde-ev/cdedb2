@@ -19,7 +19,8 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping, MutableMapping, Union
+from collections.abc import Iterator, Mapping, MutableMapping
+from typing import Any, Union
 
 import pytz
 

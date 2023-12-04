@@ -47,9 +47,6 @@
                 minors – the status of the parental consent at “{{ my_registration }}”.
             {% endtrans %}
         </p>
-        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
-                                placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number", attributes='step="0.01"'|s) }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
         {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 readonly='reg.checkin' in skip) }}

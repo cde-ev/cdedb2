@@ -8,7 +8,8 @@ transactions.
 
 import datetime
 import decimal
-from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
+from collections.abc import Collection
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -31,8 +32,8 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: bool = None,
-            trial_member: bool = None
-    ) -> Tuple[DefaultReturnCode, Optional[int], Optional[int]]:
+            trial_member: bool = None,
+    ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -79,7 +80,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
-                         active: Optional[bool] = True) -> Dict[int, int]:
+                         active: Optional[bool] = True) -> dict[int, int]:
         """List all direct debit permits.
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
@@ -105,7 +106,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("cde")
-    def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
+    def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int],
                          ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
@@ -163,7 +164,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         return new_id
 
     @access("finance_admin")
-    def delete_lastschrift_blockers(self, rs: RequestState, lastschrift_id: int
+    def delete_lastschrift_blockers(self, rs: RequestState, lastschrift_id: int,
                                     ) -> DeletionBlockers:
         """Determine what keeps a lastschrift from being revoked.
 
@@ -205,7 +206,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def delete_lastschrift(self, rs: RequestState, lastschrift_id: int,
-                           cascade: Collection[str] = None
+                           cascade: Collection[str] = None,
                            ) -> DefaultReturnCode:
         """Remove data about an old lastschrift.
 
@@ -256,7 +257,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     def list_lastschrift_transactions(
             self, rs: RequestState, lastschrift_ids: Collection[int] = None,
             stati: Collection[const.LastschriftTransactionStati] = None,
-            periods: Collection[int] = None) -> Dict[int, int]:
+            periods: Collection[int] = None) -> dict[int, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.
@@ -277,7 +278,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
-        params: List[Any] = []
+        params: list[Any] = []
         constraints = []
         if lastschrift_ids:
             constraints.append("lastschrift_id = ANY(%s)")
@@ -334,8 +335,8 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("finance_admin")
     def issue_lastschrift_transaction_batch(
             self, rs: RequestState, lastschrift_ids: Collection[int],
-            payment_date: datetime.date
-    ) -> Dict[int, int]:
+            payment_date: datetime.date,
+    ) -> dict[int, int]:
         """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be
@@ -368,7 +369,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                     'submitted_by': rs.user.persona_id,
                     'period_id': period,
                     'status': stati.issued,
-                    'amount': self.transaction_amount(rs, persona_id)
+                    'amount': self.transaction_amount(rs, persona_id),
                 }
                 ret[lastschrift_id] = self.sql_insert(
                     rs, "cde.lastschrift_transactions", data)
@@ -456,7 +457,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("finance_admin")
     def finalize_lastschrift_transactions(
             self, rs: RequestState, transaction_ids: Collection[int],
-            status: const.LastschriftTransactionStati
+            status: const.LastschriftTransactionStati,
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
         transaction_ids = affirm_set(vtypes.ID, transaction_ids)

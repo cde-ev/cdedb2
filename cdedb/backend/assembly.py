@@ -31,12 +31,10 @@ import dataclasses
 import datetime
 import hmac
 import math
+from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import (
-    Any, Collection, Dict, Iterator, List, NamedTuple, Optional, Protocol, Set, Tuple,
-    Union,
-)
+from typing import Any, NamedTuple, Optional, Protocol, Union
 
 from schulze_condorcet import schulze_evaluate
 
@@ -63,16 +61,13 @@ from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 
-BallotConfiguration = NamedTuple(
-    'BallotConfiguration',
-    [
-        ('vote_begin', datetime.datetime),
-        ('vote_end', datetime.datetime),
-        ('vote_extension_end', Optional[datetime.datetime]),
-        ('abs_quorum', int),
-        ('rel_quorum', int),
-    ]
-)
+
+class BallotConfiguration(NamedTuple):
+    vote_begin: datetime.datetime
+    vote_end: datetime.datetime
+    vote_extension_end: Optional[datetime.datetime]
+    abs_quorum: int
+    rel_quorum: int
 
 
 @dataclasses.dataclass
@@ -126,8 +121,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def are_assemblies_locked(self, rs: RequestState,
-                              assembly_ids: Collection[int]
-                              ) -> Dict[int, bool]:
+                              assembly_ids: Collection[int],
+                              ) -> dict[int, bool]:
         """Helper to check, whether the assemblies may be modified."""
         assembly_ids = affirm_set(vtypes.ID, assembly_ids)
         q = "SELECT id, is_active FROM assembly.assemblies WHERE id = ANY(%s)"
@@ -142,8 +137,8 @@ class AssemblyBackend(AbstractBackend):
         are_assemblies_locked, "assembly_ids", "assembly_id")
 
     @access("persona")
-    def presider_infos(self, rs: RequestState, persona_ids: Collection[int]
-                       ) -> Dict[int, Set[int]]:
+    def presider_infos(self, rs: RequestState, persona_ids: Collection[int],
+                       ) -> dict[int, set[int]]:
         """List assemblies managed by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
@@ -156,8 +151,8 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     class _PresiderInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int
-                     ) -> Set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int,
+                     ) -> set[int]: ...
     presider_info: _PresiderInfoProtocol = singularize(
         presider_infos, "persona_ids", "persona_id")
 
@@ -215,7 +210,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def may_assemble(self, rs: RequestState, *, assembly_id: int = None,
-                     ballot_id: int = None, attachment_id: int = None
+                     ballot_id: int = None, attachment_id: int = None,
                      ) -> bool:
         """Check authorization of this persona.
 
@@ -338,7 +333,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("core_admin", "assembly_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -368,12 +363,12 @@ class AssemblyBackend(AbstractBackend):
     @access("persona")
     def get_assembly_ids(self, rs: RequestState, *,
                          ballot_ids: Collection[int] = None,
-                         attachment_ids: Collection[int] = None
-                         ) -> Set[int]:
+                         attachment_ids: Collection[int] = None,
+                         ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids or set())
         attachment_ids = affirm_set(vtypes.ID, attachment_ids or set())
-        ret: Set[int] = set()
+        ret: set[int] = set()
         if attachment_ids:
             attachment_data = self.sql_select(
                 rs, "assembly.attachments", ("assembly_id",), attachment_ids)
@@ -395,11 +390,11 @@ class AssemblyBackend(AbstractBackend):
 
         Providing no inputs or unused ids will also result in an error."""
         if ballot_id is None:
-            ballot_ids: Set[int] = set()
+            ballot_ids: set[int] = set()
         else:
             ballot_ids = {affirm(vtypes.ID, ballot_id)}
         if attachment_id is None:
-            attachment_ids: Set[int] = set()
+            attachment_ids: set[int] = set()
         else:
             attachment_ids = {affirm(vtypes.ID, attachment_id)}
         ret = self.get_assembly_ids(
@@ -484,8 +479,8 @@ class AssemblyBackend(AbstractBackend):
             rs, assembly_id=assembly_id, persona_id=persona_id)
 
     @access("assembly", "ml_admin")
-    def list_attendees(self, rs: RequestState, assembly_id: int
-                       ) -> Set[int]:
+    def list_attendees(self, rs: RequestState, assembly_id: int,
+                       ) -> set[int]:
         """Everybody who has subscribed for a specific assembly.
 
         This is an unprivileged operation in that everybody (with access
@@ -519,37 +514,47 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.attendees", ("persona_id",), (assembly_id,),
                 entity_key="assembly_id")
         }
-        attendee_data = self.core.get_assembly_users(rs, all_attendees)
+        attendee_data = {
+            e['id']: e for e in xsorted(
+                self.core.get_assembly_users(rs, all_attendees).values(),
+                key=EntitySorter.persona)
+        }
 
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime < %s
         """
-        early_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        early_list = [
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
-        }
+        ]
+        early_attendees = {
+            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)}
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime >= %s
         """
-        late_attendees = {
-            e['persona_id']: attendee_data[e['persona_id']]
+        late_list = {
+            attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
         }
+        late_attendees = {
+            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)}
         if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_list = [
+            attendee_data[persona_id]
+            for persona_id in (all_attendees - early_attendees.keys()
+                               - late_attendees.keys())
+        ]
+        undetermined_attendees = {
+             e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)}
 
         return AssembyAttendees(
             all=attendee_data, early=early_attendees, late=late_attendees,
-            undetermined={
-                persona_id: attendee_data[persona_id]
-                for persona_id in (all_attendees - early_attendees.keys()
-                                   - late_attendees.keys())
-            },
-            cutoff=cutoff
+            undetermined=undetermined_attendees, cutoff=cutoff,
         )
 
     @access("persona")
@@ -692,7 +697,7 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("ml_admin", "assembly")
-    def list_assembly_presiders(self, rs: RequestState, assembly_id: int) -> Set[int]:
+    def list_assembly_presiders(self, rs: RequestState, assembly_id: int) -> set[int]:
         """Retrieve a list of assembly presiders.
 
         This is a helper so that "ml_admin" may retrieve this list even without
@@ -704,7 +709,7 @@ class AssemblyBackend(AbstractBackend):
         return {e["persona_id"] for e in data}
 
     @access("assembly_admin")
-    def create_assembly(self, rs: RequestState, data: CdEDBObject
+    def create_assembly(self, rs: RequestState, data: CdEDBObject,
                         ) -> DefaultReturnCode:
         """Make a new assembly."""
         data = affirm(vtypes.Assembly, data, creation=True)
@@ -868,7 +873,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def list_ballots(self, rs: RequestState,
-                     assembly_id: int) -> Dict[int, str]:
+                     assembly_id: int) -> dict[int, str]:
         """List all ballots of an assembly.
 
         :returns: Mapping of ballot ids to titles.
@@ -881,8 +886,8 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int]
-                           ) -> Dict[int, bool]:
+    def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int],
+                           ) -> dict[int, bool]:
         """Helper to check whether the given ballots may be modified."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
         q = ("SELECT id, vote_begin < %s AS is_locked"
@@ -896,7 +901,7 @@ class AssemblyBackend(AbstractBackend):
         are_ballots_locked, "ballot_ids", "ballot_id")
 
     @access("assembly")
-    def is_any_ballot_locked(self, rs: RequestState, ballot_ids: Collection[int]
+    def is_any_ballot_locked(self, rs: RequestState, ballot_ids: Collection[int],
                              ) -> bool:
         """Helper to check whether the given ballots may all be modified.
 
@@ -906,8 +911,8 @@ class AssemblyBackend(AbstractBackend):
         return any(lock for lock in self.are_ballots_locked(rs, ballot_ids).values())
 
     @access("assembly")
-    def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int]
-                           ) -> Dict[int, bool]:
+    def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int],
+                           ) -> dict[int, bool]:
         """Helper to check whether the given ballots are (partially) open for voting.
 
         This uses non-obvious logic to catch some edge cases, since extended is None
@@ -1438,7 +1443,7 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': ballot_id,
                     'vote': vote,
                     'salt': salt,
-                    'hash': self.encrypt_vote(salt, secret, vote)
+                    'hash': self.encrypt_vote(salt, secret, vote),
                 }
                 ret = self.sql_insert(rs, "assembly.votes", entry)
                 query = glue(
@@ -1451,7 +1456,7 @@ class AssemblyBackend(AbstractBackend):
                 update = {
                     'id': current['id'],
                     'vote': vote,
-                    'hash': self.encrypt_vote(current['salt'], secret, vote)
+                    'hash': self.encrypt_vote(current['salt'], secret, vote),
                 }
                 ret = self.sql_update(rs, "assembly.votes", update)
         return ret
@@ -1664,7 +1669,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly(self, rs: RequestState, assembly_id: int,
-                          cascade: Set[str] = None
+                          cascade: set[str] = None,
                           ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
@@ -1706,7 +1711,7 @@ class AssemblyBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "assembly.assemblies", update)
                 update = {
                     'assembly_id': assembly_id,
-                    'secret': None
+                    'secret': None,
                 }
                 # Don't include in ret, because this may be empty.
                 self.sql_update(
@@ -1976,8 +1981,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def are_attachment_versions_creatable(self, rs: RequestState,
-                                          attachment_ids: Collection[int]
-                                          ) -> Dict[int, bool]:
+                                          attachment_ids: Collection[int],
+                                          ) -> dict[int, bool]:
         """An attachment_version may be created at any time during an assembly."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
@@ -1996,8 +2001,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def are_attachment_versions_deletable(self, rs: RequestState,
-                                          attachment_ids: Collection[int]
-                                          ) -> Dict[int, bool]:
+                                          attachment_ids: Collection[int],
+                                          ) -> dict[int, bool]:
         """An attachment_version must not be deleted if its attachment has at least one
         attachment_ballot_link which voting phase had started."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
@@ -2040,7 +2045,7 @@ class AssemblyBackend(AbstractBackend):
                 AND max_version.version_nr = version_data.version_nr
             WHERE max_version.attachment_id = ANY(%s)"""
         # Be careful here, because the `attachment_ids` param needs to be at the end.
-        params: List[Any] = []
+        params: list[Any] = []
         conditions = ["dtime IS NULL"]
         if timestamp:
             conditions.append("ctime < %s")
@@ -2055,10 +2060,10 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int],
-                                 ) -> Dict[int, CdEDBObjectMap]:
+                                 ) -> dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        ret: Dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
+        ret: dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
         if not self.may_access_attachments(rs, attachment_ids):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(
@@ -2176,7 +2181,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def change_attachment_version(self, rs: RequestState, data: CdEDBObject
+    def change_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                   ) -> DefaultReturnCode:
         """Change metadata of an attachment version."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data)
@@ -2233,7 +2238,7 @@ class AssemblyBackend(AbstractBackend):
             if attachment['num_versions'] <= 1:
                 raise ValueError(n_("Cannot remove the last remaining version"
                                     " of an attachment."))
-            deletor: Dict[str, Union[int, datetime.datetime, None]] = {
+            deletor: dict[str, Union[int, datetime.datetime, None]] = {
                 'dtime': now(),
                 'title': None,
                 'authors': None,
@@ -2277,7 +2282,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, *, assembly_id: int = None,
-                         ballot_id: int = None) -> Set[int]:
+                         ballot_id: int = None) -> set[int]:
         """List all files attached to an assembly/ballot.
 
         Exactly one of the inputs has to be provided.
@@ -2303,7 +2308,7 @@ class AssemblyBackend(AbstractBackend):
         return {unwrap(e) for e in data}
 
     def _get_attachment_infos(self, rs: RequestState,
-                              attachment_ids: Collection[int]
+                              attachment_ids: Collection[int],
                               ) -> CdEDBObjectMap:
         """Internal helper to retrieve attachment data without access check."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
@@ -2353,8 +2358,8 @@ class AssemblyBackend(AbstractBackend):
         get_attachments, "attachment_ids", "attachment_id")
 
     @access("assembly")
-    def group_ballots_by_config(self, rs: RequestState, assembly_id: int
-                                ) -> Dict[BallotConfiguration, Set[int]]:
+    def group_ballots_by_config(self, rs: RequestState, assembly_id: int,
+                                ) -> dict[BallotConfiguration, set[int]]:
         """Group ballot ids by their configuration."""
         query = """
             SELECT
@@ -2392,7 +2397,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         ref = now()
-        params = (ref, ref, assembly_id,)
+        params = (ref, ref, assembly_id)
 
         ballot_ids = self.list_ballots(rs, assembly_id)
         ballots = self.get_ballots(rs, ballot_ids)
@@ -2421,7 +2426,7 @@ class AssemblyBackend(AbstractBackend):
                 })
 
         ret = GroupedBallots(
-            concluded=concluded, extended=extended, current=current, upcoming=upcoming
+            concluded=concluded, extended=extended, current=current, upcoming=upcoming,
         )
 
         if len(ballots) != len(ret.all):

@@ -7,7 +7,7 @@ import difflib
 import json
 import pathlib
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 import click
 
@@ -164,7 +164,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 @pass_secrets
 @pass_config
 def populate_database_cmd(
-    config: TestConfig, secrets: SecretsConfig, xss: bool
+    config: TestConfig, secrets: SecretsConfig, xss: bool,
 ) -> None:
     """Populate the database tables with sample data."""
     click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
@@ -215,7 +215,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
 @pass_config
 def compile_sample_data_sql(
     config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
-    outfile: pathlib.Path, xss: bool
+    outfile: pathlib.Path, xss: bool,
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -225,8 +225,8 @@ def compile_sample_data_sql(
     The xss-switch decides if the sample data should be contaminated with script
     tags, to check proper escaping afterwards.
     """
-    with open(infile, "r", encoding="utf8") as f:
-        data: Dict[str, List[Any]] = json.load(f)
+    with open(infile, encoding="utf8") as f:
+        data: dict[str, list[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
     commands = json2sql(config, secrets, data, xss_payload=xss_payload)
@@ -282,7 +282,7 @@ def serve_debugger_cmd(test: bool) -> None:
 @pass_config
 def execute_sql_script_cmd(
         config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
+        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool,
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
         execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
@@ -320,9 +320,9 @@ def check_sample_data_consistency(ctx: click.Context) -> None:
     ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
 
     # compare the fresh one with the current one
-    with open(clean_data, "r", encoding='UTF-8') as f:
+    with open(clean_data, encoding='UTF-8') as f:
         fresh = f.readlines()
-    with open(current_data, "r", encoding='UTF-8') as f:
+    with open(current_data, encoding='UTF-8') as f:
         current = f.readlines()
     diff = "".join(difflib.unified_diff(
         fresh, current, fromfile="Cleanly generated sampledata.",
@@ -340,7 +340,7 @@ def main() -> None:
     except PermissionError as e:
         raise PermissionError(
             "Unable to perform this command due to missing permissions."
-            " Some commands allow invoking them as root and passing a --owner."
+            " Some commands allow invoking them as root and passing a --owner.",
         ) from e
 
 

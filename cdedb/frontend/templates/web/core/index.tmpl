@@ -177,7 +177,7 @@
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
                 <ul class="slim spaced">
-                    {% for mailinglist_id, mailinglist in dashboard['moderator']|keydictsort(EntitySorter.mailinglist) %}
+                    {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}

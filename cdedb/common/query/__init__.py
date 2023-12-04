@@ -16,10 +16,8 @@ import datetime
 import enum
 import itertools
 import re
-from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
-    Sequence, Tuple, cast,
-)
+from collections.abc import Collection, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
 
 from typing_extensions import TypeAlias
 
@@ -75,7 +73,7 @@ class QueryOperators(CdEIntEnum):
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
-VALID_QUERY_OPERATORS: Dict[str, Tuple[QueryOperators, ...]] = {
+VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
             _ops.equalornull, _ops.unequalornull, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
@@ -119,12 +117,18 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
-QueryConstraint = Tuple[str, QueryOperators, Any]
-QueryConstraintType = NamedTuple(
-    "QueryConstraintType", [("field", str), ("op", QueryOperators), ("value", Any)])
+QueryConstraint = tuple[str, QueryOperators, Any]
+
+
+class QueryConstraintType(NamedTuple):
+    field: str
+    op: QueryOperators
+    value: Any
+
+
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
 # is ASC (i.e. True -> ASC, False -> DESC).
-QueryOrder = Tuple[str, bool]
+QueryOrder = tuple[str, bool]
 
 QueryChoices = Mapping[Any, str]
 
@@ -136,7 +140,7 @@ class QuerySpecEntry:
     type: str
     title_base: str
     title_prefix: str = ""
-    title_params: Dict[str, str] = dataclasses.field(default_factory=dict)
+    title_params: dict[str, str] = dataclasses.field(default_factory=dict)
     choices: QueryChoices = dataclasses.field(default_factory=dict)
     translate_prefix: bool = True
 
@@ -151,7 +155,7 @@ class QuerySpecEntry:
         return ret
 
 
-QuerySpec = Dict[str, QuerySpecEntry]
+QuerySpec = dict[str, QuerySpecEntry]
 
 
 class QueryScope(CdEIntEnum):
@@ -163,7 +167,7 @@ class QueryScope(CdEIntEnum):
     realm: str
     includes_archived: bool
 
-    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False
+    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False,
                 ) -> "QueryScope":
         """Custom creation method for this enum.
 
@@ -277,7 +281,7 @@ class QueryScope(CdEIntEnum):
         return target
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
-                           ) -> Dict[str, str]:
+                           ) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -636,20 +640,20 @@ class Query:
         """Custom columns may contain upper case, this wraps them in qoutes."""
         self.fields_of_interest = [
             ",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(","))
             for column in self.fields_of_interest]
         self.constraints = [
             (",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(",")),
              operator, value)
             for column, operator, value in self.constraints
         ]
         self.order = [
-            (".".join(atom if atom.islower() else '"{}"'.format(atom)
+            (".".join(atom if atom.islower() else f'"{atom}"'
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
@@ -758,10 +762,10 @@ class Query:
         return QueryResultEntryFormat.other
 
 
-def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
-                       ) -> Dict[const.FieldAssociations, List["models.EventField"]]:
+def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]",
+                       ) -> dict[const.FieldAssociations, list["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: Dict[const.FieldAssociations, List["models.EventField"]] = {
+    sorted_fields: dict[const.FieldAssociations, list["models.EventField"]] = {
         association: []
         for association in const.FieldAssociations
     }
@@ -770,7 +774,7 @@ def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
     return sorted_fields
 
 
-def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
+def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
                    prefix: str, translate_prefix: bool = False) -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 
@@ -818,7 +822,7 @@ def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
+def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -956,8 +960,9 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
 
     def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else cco.shortname
+        reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
-            f"course_choices{cco.reference_track.id}.rank{i}": QuerySpecEntry(
+            f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
                 "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
@@ -1154,7 +1159,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
                 'shortname': part_group.shortname,
             }
             for part_group in sorted_part_groups
-        )
+        ),
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']

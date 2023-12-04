@@ -4,7 +4,8 @@
 
 import email.parser
 import urllib.error
-from typing import Collection, Mapping, Optional
+from collections.abc import Collection, Mapping
+from typing import Optional
 
 from werkzeug import Response
 
@@ -21,7 +22,7 @@ __all__ = ['MlFrontend']
 class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
-    def message_moderation_form(self, rs: RequestState, mailinglist_id: int
+    def message_moderation_form(self, rs: RequestState, mailinglist_id: int,
                                 ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
