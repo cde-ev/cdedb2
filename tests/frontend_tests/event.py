@@ -6319,7 +6319,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Heldentum", div="query-result")
         self.assertPresence("Kabarett", div="query-result")
         self.traverse("Eigene Filter", {'href': r'filter/\d+/change'})
-        self.assertTitle("Eigenen Filter Kur(s|z)titel ändern (Große Testakademie 2222)")
+        self.assertTitle(
+            "Eigenen Filter Kur(s|z)titel ändern (Große Testakademie 2222)")
         f = self.response.forms['configurecustomfilterform']
         f['notes'] = "abc"
         self.submit(f)
