@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import zipapp
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
@@ -217,7 +217,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
-                        presider_address: Optional[str], data: Dict[str, Any]
+                        presider_address: Optional[str], data: dict[str, Any],
                         ) -> Response:
         """Modify an assembly."""
         if not rs.ambience['assembly']['is_active']:
@@ -324,7 +324,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
                         create_attendee_list: bool, create_presider_list: bool,
-                        presider_address: Optional[Email], data: Dict[str, Any]
+                        presider_address: Optional[Email], data: dict[str, Any],
                         ) -> Response:
         """Make a new assembly."""
         if presider_ids is not None:

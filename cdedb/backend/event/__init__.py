@@ -7,7 +7,8 @@ variant for external participants.
 import collections
 import copy
 import decimal
-from typing import Any, Collection, Dict, Mapping, Set, Tuple
+from collections.abc import Collection, Mapping
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -315,7 +316,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
             ret = 1
             # Second synchronize the data sets
-            translations: Dict[str, Dict[int, int]]
+            translations: dict[str, dict[int, int]]
             translations = collections.defaultdict(dict)
             for reg in data['event.registrations'].values():
                 if reg['real_persona_id']:
@@ -387,8 +388,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: str = None
-                             ) -> Tuple[str, CdEDBObject]:
+                             dryrun: bool, token: str = None,
+                             ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -411,8 +412,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
-        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any]
-                      ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
+        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any],
+                      ) -> tuple[dict[Any, Any], dict[Any, Any]]:
             delta = {}
             previous = {}
             # keys missing in the new dict are simply ignored
@@ -488,7 +489,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
 
-            used_course_ids: Set[int] = set()
+            used_course_ids: set[int] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():
@@ -515,7 +516,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             # We handle these in the specific order of mixed_existence_sorter
             mes = mixed_existence_sorter
             # noinspection PyPep8Naming
-            IDMap = Dict[int, int]
+            IDMap = dict[int, int]
 
             gmap: IDMap = {}
             gdelta: CdEDBOptionalMap = {}
@@ -757,7 +758,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
             result = get_hash(
                 json_serialize(total_delta, sort_keys=True).encode('utf-8'),
-                json_serialize(total_previous, sort_keys=True).encode('utf-8')
+                json_serialize(total_previous, sort_keys=True).encode('utf-8'),
             )
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")

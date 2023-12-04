@@ -4,7 +4,8 @@
 The `CoreGenesisBackend` subclasses the `CoreBaseBackend` and provides functionality
 for "genesis", that is for account creation via anonymous account requests.
 """
-from typing import Any, Collection, List, Optional, Protocol, Tuple
+from collections.abc import Collection
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -33,7 +34,7 @@ from cdedb.database.connection import Atomizer
 
 class CoreGenesisBackend(CoreBaseBackend):
     @access("anonymous")
-    def genesis_set_attachment(self, rs: RequestState, attachment: bytes
+    def genesis_set_attachment(self, rs: RequestState, attachment: bytes,
                                ) -> str:
         """Store a file for genesis usage. Returns the file hash."""
         attachment = affirm(vtypes.PDFFile, attachment, file_storage=False)
@@ -45,7 +46,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return myhash
 
     @access("anonymous")
-    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str
+    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str,
                                  ) -> bool:
         """Check whether a genesis attachment with the given hash is available.
 
@@ -57,7 +58,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return path.is_file()
 
     @access(*REALM_ADMINS)
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Optional[bytes]:
         """Retrieve a stored genesis attachment."""
         attachment_hash = affirm(str, attachment_hash)
@@ -87,7 +88,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret
 
     @access("anonymous")
-    def genesis_request(self, rs: RequestState, data: CdEDBObject
+    def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         ) -> Optional[DefaultReturnCode]:
         """Log a request for a new account.
 
@@ -140,7 +141,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
-                            cascade: Collection[str] = None
+                            cascade: Collection[str] = None,
                             ) -> DefaultReturnCode:
         """Remove a genesis case."""
 
@@ -205,8 +206,8 @@ class CoreGenesisBackend(CoreBaseBackend):
         return -unwrap(data) if data else None  # pylint: disable=invalid-unary-operand-type
 
     @access("anonymous")
-    def genesis_verify(self, rs: RequestState, case_id: int
-                       ) -> Tuple[DefaultReturnCode, str]:
+    def genesis_verify(self, rs: RequestState, case_id: int,
+                       ) -> tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before
@@ -252,13 +253,13 @@ class CoreGenesisBackend(CoreBaseBackend):
         stati = affirm_set(const.GenesisStati, stati)
         if not realms and "core_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged."))
-        elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
+        elif not all({f"{realm}_admin", "core_admin"} & rs.user.roles
                      for realm in realms):
             raise PrivilegeError(n_("Not privileged."))
         query = ("SELECT id, ctime, username, given_names, family_name,"
                  " case_status FROM core.genesis_cases")
         conditions = []
-        params: List[Any] = []
+        params: list[Any] = []
         if realms:
             conditions.append("realm = ANY(%s)")
             params.append(realms)
@@ -272,7 +273,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return {e['id']: e for e in data}
 
     @access(*REALM_ADMINS)
-    def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
+    def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int],
                           ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
@@ -296,7 +297,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ) -> DefaultReturnCode:
         """Modify a persona creation case."""
         data = affirm(vtypes.GenesisCase, data)

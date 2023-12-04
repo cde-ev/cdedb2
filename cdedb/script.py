@@ -15,9 +15,10 @@ import os
 import pathlib
 import tempfile
 import time
+from collections.abc import Mapping
 from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, Any, Dict, Mapping, Optional, Tuple, Type
+from typing import IO, Any, Optional
 
 import psycopg2
 import psycopg2.extensions
@@ -69,7 +70,7 @@ class TempConfig:
             self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
             # copy the real_config into the temporary config
-            with open(self._real_configpath, "r") as cf:
+            with open(self._real_configpath) as cf:
                 real_config = cf.read()
             f.write(real_config)
             # now, add all keyword config options. Since they are added _after_ the
@@ -86,7 +87,7 @@ class TempConfig:
             assert self._configpath is not None
             set_configpath(self._configpath)
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],
+    def __exit__(self, exc_type: Optional[type[Exception]],
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> Optional[bool]:
         # restore the real configpath
@@ -183,15 +184,15 @@ class Script:
             self.config = Config()
             self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-        self._backends: Dict[Tuple[str, bool], AbstractBackend]
-        self._frontends: Dict[str, AbstractFrontend]
+        self._backends: dict[tuple[str, bool], AbstractBackend]
+        self._frontends: dict[str, AbstractFrontend]
         self._translations = None
         self._backends = {}
         self._frontends = {}
-        self._request_states: Dict[int, RequestState] = {}
+        self._request_states: dict[int, RequestState] = {}
         self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor
+    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor,
                  ) -> None:
         """Create and save a database connection."""
         if self._conn:
@@ -253,7 +254,7 @@ class Script:
             self._redirect.__enter__()
         return self._atomizer.__enter__()
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],
+    def __exit__(self, exc_type: Optional[type[Exception]],
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
@@ -287,7 +288,7 @@ class ScriptAtomizer(Atomizer):
         self.start_time = time.monotonic()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore[override]
+    def __exit__(self, exc_type: Optional[type[Exception]],  # type: ignore[override]
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Calculate time taken and provide success message.

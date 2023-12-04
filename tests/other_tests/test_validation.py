@@ -5,9 +5,8 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import (
-    Any, Dict, Iterable, List, Mapping, Sequence, Tuple, Type, TypeVar, Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Dict, List, Tuple, Type, TypeVar, Union
 
 import pytz
 
@@ -785,3 +784,11 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {1: None, -1: -1, 2: 2}, int, "int", creation_only=True)
+
+    def test_serialized_event_configuration(self) -> None:
+        # pylint: disable=protected-access
+        with self.assertRaises(validate.ValidationSummary):
+            validate._serialized_event_configuration({
+                'id': -1,
+                'iban': "DE75512108001245126199"
+            }, "", creation=True, current=None)

@@ -3939,6 +3939,9 @@ msgstr "Nur partielle Exporte sind unterstützt."
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr "Es gibt bereits ein Feld mit diesem Namen ('%(field_name)s')."
 
+msgid "Must be a registered event IBAN."
+msgstr "Muss eine registrierte Veranstaltungs-IBAN sein."
+
 #: cdedb/common/validation/validate.py:4002
 #: cdedb/common/validation/validate.py:4060
 msgid "Must be before hard and soft limit."
@@ -6458,6 +6461,9 @@ msgstr "Nicht abonniert."
 #: cdedb/frontend/ml/base.py:1081 cdedb/frontend/ml/base.py:1090
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
+
+msgid "Address already taken by another user."
+msgstr "Adresse wird bereits von einem anderen Nutzer verwendet."
 
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6

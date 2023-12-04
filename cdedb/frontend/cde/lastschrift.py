@@ -14,7 +14,8 @@ import shutil
 import string
 import tempfile
 from collections import OrderedDict
-from typing import Collection, Dict, List, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import dateutil.easter
 import werkzeug.exceptions
@@ -122,7 +123,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         })
 
     @access("finance_admin")
-    def lastschrift_change_form(self, rs: RequestState, lastschrift_id: int
+    def lastschrift_change_form(self, rs: RequestState, lastschrift_id: int,
                                 ) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['lastschrift'])
@@ -146,7 +147,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
+    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None,
                                 ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
@@ -162,7 +163,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     @REQUESTdata("persona_id", "donation")
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
-                           data: CdEDBObject, donation: vtypes.PositiveDecimal
+                           data: CdEDBObject, donation: vtypes.PositiveDecimal,
                            ) -> Response:
         """Create a new permit."""
         data['persona_id'] = persona_id
@@ -197,7 +198,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
     @access("finance_admin", modi={"POST"})
-    def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int
+    def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int,
                            ) -> Response:
         """Disable a permit."""
         if rs.has_validation_errors():
@@ -263,7 +264,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         return payment_date
 
-    def create_sepapain(self, rs: RequestState, transactions: List[CdEDBObject]
+    def create_sepapain(self, rs: RequestState, transactions: list[CdEDBObject],
                         ) -> Optional[str]:
         """Create an XML document for submission to a bank.
 
@@ -282,7 +283,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return None
         assert sanitized_transactions is not None
-        sorted_transactions: Dict[str, List[CdEDBObject]] = {}
+        sorted_transactions: dict[str, list[CdEDBObject]] = {}
         for transaction in sanitized_transactions:
             sorted_transactions.setdefault(transaction['type'], []).append(
                 transaction)
@@ -363,7 +364,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             else:
                 transaction['account_owner'] = "{} {}".format(
                     persona['given_names'], persona['family_name'])
-            timestamp = "{:.6f}".format(now().timestamp())
+            timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
             transaction['subject'] = asciificator(glue(
@@ -491,7 +492,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @REQUESTdata("transaction_ids", "success", "cancelled", "failure")
     def lastschrift_finalize_transactions(
             self, rs: RequestState, transaction_ids: Collection[vtypes.ID],
-            success: Optional[bool], cancelled: Optional[bool], failure: Optional[bool]
+            success: Optional[bool], cancelled: Optional[bool], failure: Optional[bool],
             ) -> Response:
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
@@ -614,8 +615,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         return self.render(
             rs, "lastschrift/lastschrift_subscription_form_fill", {
                 "persona": persona, "not_minor": not_minor,
-                "min_donation": min_donation, "typical_donation": typical_donation
-            }
+                "min_donation": min_donation, "typical_donation": typical_donation,
+            },
         )
 
     @access("anonymous")
@@ -628,7 +629,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             address_supplement: Optional[str], address: Optional[str],
             postal_code: Optional[vtypes.GermanPostalCode], location: Optional[str],
             country: Optional[str], iban: Optional[vtypes.IBAN],
-            account_holder: Optional[str], donation: Optional[vtypes.PositiveDecimal]
+            account_holder: Optional[str], donation: Optional[vtypes.PositiveDecimal],
     ) -> Response:
         """Fill the direct debit authorization template with information."""
 
@@ -667,7 +668,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/lastschrift_subscription_form_fill")
 
     @periodic("forget_old_lastschrifts", period=7*24*4)
-    def forget_old_lastschrifts(self, rs: RequestState, store: CdEDBObject
+    def forget_old_lastschrifts(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Forget revoked and old lastschrifts."""
         lastschrift_ids = self.cdeproxy.list_lastschrift(
