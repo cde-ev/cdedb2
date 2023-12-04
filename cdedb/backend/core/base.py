@@ -703,7 +703,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
                      is_member: Optional[bool], is_archived: Optional[bool],
-                     paper_expuls: Optional[bool]) -> Optional[int]:
+                     paper_expuls: Optional[bool] = None) -> Optional[int]:
         """Look up the following persona.
 
         :param is_member: If not None, only consider personas with a matching flag.
