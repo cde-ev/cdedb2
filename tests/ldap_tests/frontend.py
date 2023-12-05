@@ -7,7 +7,6 @@ from typing import Dict, List, Set, Union
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
-from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
 from tests.common import USER_DICT, BasicTest
 
