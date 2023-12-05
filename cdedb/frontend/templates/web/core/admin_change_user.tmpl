@@ -49,7 +49,7 @@
                 {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
             {% endif %}
             {% if "birthday" in shown_fields %}
-                {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD", type="date") }}
+                {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
             {% endif %}
         {% endif %}
 
