@@ -1276,6 +1276,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
+            data["id"] = new_id
             self.send_welcome_mail(rs, data)
             rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
