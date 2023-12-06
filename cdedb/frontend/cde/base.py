@@ -22,6 +22,7 @@ from werkzeug.datastructures import FileStorage
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
@@ -540,16 +541,19 @@ class CdEBaseFrontend(AbstractUserFrontend):
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "perform_batch_admission"):
-            success, count_new, count_renewed = self.cdeproxy.perform_batch_admission(
+            success, stats = self.cdeproxy.perform_batch_admission(
                 rs, relevant_data, trial_membership, consent)
             if not success:
-                return success, count_new, count_renewed
+                assert stats is None or isinstance(stats, int)
+                return success, stats, None
+            assert isinstance(stats, BatchAdmissionStats)
             # Send mail after the transaction succeeded
             if sendmail:
-                for datum in data:
-                    if datum['resolution'] == LineResolutions.create:
-                        self.send_welcome_mail(rs, datum['persona'])
-            return True, count_new, count_renewed
+                personas = self.coreproxy.get_personas(rs, stats.new_accounts)
+                for persona in personas.values():
+                    self.send_welcome_mail(rs, persona)
+            count_new = len(stats.new_accounts | stats.new_members)
+            return True, count_new, len(stats.modified_accounts)
 
     @staticmethod
     def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:
