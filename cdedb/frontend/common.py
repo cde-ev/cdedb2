@@ -843,7 +843,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                       'email': reset_link if success else "",
                       'cookie': cookie if success else "",
                       'meta_info': meta_info,
-                      'transaction_subject': transaction_subject
+                      'transaction_subject': transaction_subject,
                       })
 
     def generic_user_search(self, rs: RequestState, download: Optional[str],
