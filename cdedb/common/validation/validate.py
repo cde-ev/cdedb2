@@ -90,7 +90,7 @@ import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, now, parse_date, parse_datetime
+    compute_checkdigit, now, parse_date, parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
@@ -678,7 +678,7 @@ def _float(
 
 @_add_typed_validator
 def _non_negative_float(
-    val: Any, argname: str = None, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any,
 ) -> NonNegativeFloat:
     val = _float(val, argname, **kwargs)
     if val < 0:
@@ -689,8 +689,7 @@ def _non_negative_float(
 
 @_add_typed_validator
 def _decimal(
-    val: Any, argname: str = None, *,
-    large: bool = False, **kwargs: Any,
+    val: Any, argname: str = None, *, large: bool = False, **kwargs: Any,
 ) -> decimal.Decimal:
     """decimal.Decimal fitting into a `numeric` postgres column.
 

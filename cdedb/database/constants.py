@@ -7,6 +7,7 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import builtins
 import enum
 from typing import Optional
 
@@ -108,7 +109,7 @@ class FieldDatatypes(CdEIntEnum):
     phone = 20  #:
 
     @property
-    def spec_type(self) -> str:  # type: ignore[valid-type]
+    def spec_type(self) -> builtins.str:
         if self == FieldDatatypes.phone:
             return 'str'
         if self == FieldDatatypes.non_negative_float:

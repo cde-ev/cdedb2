@@ -22,7 +22,7 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
-    PsycoJson, RequestState,  parse_date, parse_datetime, parse_phone, now, unwrap,
+    PsycoJson, RequestState, now, parse_date, parse_datetime, parse_phone, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
