@@ -26,7 +26,6 @@ services:
       - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
       - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
     ports:
-      - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
       - 8443:443 # apache
     environment:
         CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config

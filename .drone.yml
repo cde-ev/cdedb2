@@ -38,6 +38,7 @@ steps:
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+  - docker build --file related/docker/Dockerfile-cdedb-dev --tag cdedb-dev .
   - docker build --file related/docker/Dockerfile-ldaptor --tag ldaptor .
 - name: cdb # is used as the hostname for the container
   image: cdepostgres

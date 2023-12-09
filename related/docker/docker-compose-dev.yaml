@@ -1,0 +1,9 @@
+version: "3.2"
+
+services:
+  app:
+    image: cdedb-dev
+    build:
+      dockerfile: ./related/docker/Dockerfile-cdedb-dev
+    ports:
+      - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
