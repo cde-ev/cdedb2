@@ -13,7 +13,8 @@ import itertools
 import pathlib
 import re
 from collections import defaultdict
-from typing import List, Optional, Sequence, Tuple, cast
+from collections.abc import Sequence
+from typing import Optional, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -25,7 +26,7 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -49,8 +50,8 @@ class CdEParseMixin(CdEBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'], event['title']) for event in events.values()],
-            key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
+            [(event.id, event.title) for event in events.values()],
+            key=lambda e: events[e[0]], reverse=True)
         params = {
             'params': params or None,
             'data': data,
@@ -63,12 +64,12 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @staticmethod
     def organize_transaction_data(
-        rs: RequestState, transactions: List[parse.Transaction],
+        rs: RequestState, transactions: list[parse.Transaction],
         date: datetime.date,
-    ) -> Tuple[CdEDBObject, CdEDBObject]:
+    ) -> tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
 
-        data = {"{}{}".format(k, t.t_id): v
+        data = {f"{k}{t.t_id}": v
                 for t in transactions
                 for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
@@ -98,7 +99,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
-                params["events"][t.event['id']] += 1
+                params["events"][t.event.id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
         return data, params
@@ -152,7 +153,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct columns."),
-                                {'lineno': i + 1}
+                                {'lineno': i + 1},
                                 ))
                 rs.append_validation_error(p)
                 continue
@@ -176,7 +177,7 @@ class CdEParseMixin(CdEBaseFrontend):
                        validate: Optional[str] = None,
                        event: Optional[vtypes.ID] = None,
                        membership: Optional[str] = None, excel: Optional[str] = None,
-                       gnucash: Optional[str] = None, ignore_warnings: bool = False
+                       gnucash: Optional[str] = None, ignore_warnings: bool = False,
                        ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
@@ -212,9 +213,9 @@ class CdEParseMixin(CdEBaseFrontend):
         elif event is not None:
             aux = int(event)
             event_data = self.eventproxy.get_event(rs, aux)
-            filename = event_data["shortname"]
+            filename = event_data.shortname
             transactions = [t for t in transactions
-                            if t.event and t.event['id'] == aux
+                            if t.event and t.event.id == aux
                             and t.type == TransactionType.EventFee]
             fields = parse.EVENT_EXPORT_FIELDS
             write_header = False
@@ -242,8 +243,8 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def money_transfers_form(self, rs: RequestState,
-                             data: List[CdEDBObject] = None,
-                             csvfields: Tuple[str, ...] = None,
+                             data: list[CdEDBObject] = None,
+                             csvfields: tuple[str, ...] = None,
                              saldo: decimal.Decimal = None) -> Response:
         """Render form.
 
@@ -259,7 +260,7 @@ class CdEParseMixin(CdEBaseFrontend):
             'data': data, 'csvfields': csv_position, 'saldo': saldo,
         })
 
-    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject
+    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject,
                                ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -302,7 +303,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if family_name is not None and not re.search(
                     diacritic_patterns(re.escape(family_name)),
                     persona['family_name'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('family_name', ValueError(
                         n_("Family name doesn’t match."))))
@@ -310,7 +311,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if given_names is not None and not re.search(
                     diacritic_patterns(re.escape(given_names)),
                     persona['given_names'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('given_names', ValueError(
                         n_("Given names don’t match."))))
@@ -328,7 +329,7 @@ class CdEParseMixin(CdEBaseFrontend):
     @REQUESTdata("sendmail", "transfers", "checksum")
     def money_transfers(self, rs: RequestState, sendmail: bool,
                         transfers: Optional[str], checksum: Optional[str],
-                        transfers_file: Optional[FileStorage]
+                        transfers_file: Optional[FileStorage],
                         ) -> Response:
         """Update member balances.
 

@@ -7,13 +7,15 @@ both the partial import and the questionnaire import.
 
 import collections.abc
 import json
-from typing import Any, Mapping, Optional, Set, Tuple
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, json_serialize
 from cdedb.common.exceptions import PartialImportError
 from cdedb.common.n_ import n_
@@ -49,8 +51,9 @@ class EventImportMixin(EventBaseFrontend):
             is skipped, even if their definition is different from the existing one.
             Otherwise, duplicate field names will cause an error and prevent the import.
         """
-        kwargs = {
-            'field_definitions': rs.ambience['event']['fields'],
+        kwargs: CdEDBObject = {
+            'field_definitions': {
+                f.id: f.as_dict() for f in rs.ambience['event'].fields.values()},
             'fees_by_field':
                 self.eventproxy.get_event_fees_per_entity(rs, event_id).fields,
             'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
@@ -81,7 +84,7 @@ class EventImportMixin(EventBaseFrontend):
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
                        json_file: Optional[werkzeug.datastructures.FileStorage],
-                       partial_import_data: Optional[str], token: Optional[str]
+                       partial_import_data: Optional[str], token: Optional[str],
                        ) -> Response:
         """Further steps of partial import process
 
@@ -220,17 +223,17 @@ class EventImportMixin(EventBaseFrontend):
                 if val is None and lodgement_groups.get(anid))),
         }
 
-        changed_registration_fields: Set[str] = set()
+        changed_registration_fields: set[str] = set()
         for reg in summary['changed_registrations'].values():
             changed_registration_fields |= reg.keys()
         summary['changed_registration_fields'] = tuple(xsorted(
             changed_registration_fields))
-        changed_course_fields: Set[str] = set()
+        changed_course_fields: set[str] = set()
         for course in summary['changed_courses'].values():
             changed_course_fields |= course.keys()
         summary['changed_course_fields'] = tuple(xsorted(
             changed_course_fields))
-        changed_lodgement_fields: Set[str] = set()
+        changed_lodgement_fields: set[str] = set()
         for lodgement in summary['changed_lodgements'].values():
             changed_lodgement_fields |= lodgement.keys()
         summary['changed_lodgement_fields'] = tuple(xsorted(
@@ -290,9 +293,9 @@ class EventImportMixin(EventBaseFrontend):
     # TODO: be more specific about the return types.
     @staticmethod
     def _make_partial_import_diff_aux(
-            rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
-            lodgements: CdEDBObjectMap
-    ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
+            rs: RequestState, event: models.Event, courses: CdEDBObjectMap,
+            lodgements: CdEDBObjectMap,
+    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """ Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation
         of partial_import().
@@ -322,9 +325,9 @@ class EventImportMixin(EventBaseFrontend):
         }
 
         # Titles and choices for track-specific fields
-        for track_id, track in event['tracks'].items():
-            if len(event['tracks']) > 1:
-                prefix = "{title}: ".format(title=track['shortname'])
+        for track_id, track in event.tracks.items():
+            if len(event.tracks) > 1:
+                prefix = f"{track.shortname}: "
             else:
                 prefix = ""
             reg_titles[f"tracks.{track_id}.course_id"] = (
@@ -340,21 +343,21 @@ class EventImportMixin(EventBaseFrontend):
                     prefix + rs.gettext("Status"))
             course_choices[f"segments.{track_id}"] = segment_stati_entries
 
-        for field in event['fields'].values():
+        for field in event.fields.values():
             # TODO add choices?
-            key = f"fields.{field['field_name']}"
-            title = safe_filter("<i>{}</i>").format(field['field_name'])
-            if field['association'] == const.FieldAssociations.registration:
+            key = f"fields.{field.field_name}"
+            title = safe_filter("<i>{}</i>").format(field.field_name)
+            if field.association == const.FieldAssociations.registration:
                 reg_titles[key] = title
-            elif field['association'] == const.FieldAssociations.course:
+            elif field.association == const.FieldAssociations.course:
                 course_titles[key] = title
-            elif field['association'] == const.FieldAssociations.lodgement:
+            elif field.association == const.FieldAssociations.lodgement:
                 lodgement_titles[key] = title
 
         # Titles and choices for part-specific fields
-        for part_id, part in event['parts'].items():
-            if len(event['parts']) > 1:
-                prefix = f"{part['shortname']}: "
+        for part_id, part in event.parts.items():
+            if len(event.parts) > 1:
+                prefix = f"{part.shortname}: "
             else:
                 prefix = ""
             reg_titles[f"parts.{part_id}.status"] = (

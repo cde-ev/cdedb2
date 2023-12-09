@@ -7,8 +7,8 @@ This expects a period of 15 minutes.
 
 import inspect
 import pathlib
+from collections.abc import Collection, Iterator
 from datetime import datetime
-from typing import Collection, Iterator
 
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_

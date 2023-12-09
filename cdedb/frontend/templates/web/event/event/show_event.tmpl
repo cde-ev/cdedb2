@@ -33,6 +33,14 @@
     {% endif %}
 
     <dl class="dl-horizontal">
+        {% if ambience['event']['website_url'] %}
+            <dt title="{% trans %}Website Link{% endtrans %}">
+                {% trans %}Website Link{% endtrans %}
+            </dt>
+            <dd id="website-link">
+                {{ util.href(ambience['event']['website_url'], ambience['event']['title']) }}
+            </dd>
+        {% endif %}
         {% if ambience['event']['parts']|length > 0 %}
             <dt title="{% trans %}Timeframe{% endtrans %}">
                 {% trans %}Timeframe{% endtrans %}
@@ -44,7 +52,7 @@
                         {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full') }}</span>
                     {% endwith %}
                 {% else %}
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% for part in ambience['event'].parts.values()|sort %}
                         {{ part['title'] }}:
                         {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang) }}<br />
@@ -107,7 +115,7 @@
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
-            <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
+            <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
             {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
                 <dt title="{% trans %}CdE-Account IBAN{% endtrans %}">{% trans %}CdE-Account IBAN{% endtrans %}</dt>
                 <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
@@ -362,14 +370,14 @@
                                     {% trans count=mec_violations|length %}
                                         There are {{ count }} violations of mutually exclusive course constraints.
                                     {% endtrans %}
-                                </li>
+                                </a></li>
                             {% endif %}
                             {% if ccs_violations %}
                                 <li><a href="{{ cdedblink("event/constraint_violations") }}#ccs-violations">
                                     {% trans count=ccs_violations|length %}
                                         There are {{ count }} violations of course choice sync constraints.
                                     {% endtrans %}
-                                </li>
+                                </a></li>
                             {% endif %}
                         </ul>
                     {% endif %}

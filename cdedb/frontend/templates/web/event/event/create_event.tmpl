@@ -22,11 +22,9 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
-        {{ util.form_input_text(name="part_begin", label=gettext("Event Begin"), type="date",
-                                placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="part_end", label=gettext("Event End"), type="date",
-                                placeholder="YYYY-MM-DD") }}
+                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_text(name="part_begin", label=gettext("Event Begin"), type="date") }}
+        {{ util.form_input_text(name="part_end", label=gettext("Event End"), type="date") }}
         {{ util.form_input_checkbox(name="create_track", label=gettext("Event with courses")) }}
 
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
@@ -41,7 +39,8 @@
         {{ util.form_input_text(name="fee", label=gettext("Fee"), type="number", addon='€') }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."),
                                 type="number", addon='€',
-                                info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
+                                info=gettext("Participants who are not currently members will have to pay this additional fee."),
+                                attributes='min="0" step="0.01"'|s) }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",

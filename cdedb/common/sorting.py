@@ -5,10 +5,8 @@
 import collections
 import collections.abc
 import datetime
-from typing import (
-    Any, Callable, Collection, Dict, Generator, Iterable, KeysView, List, Tuple,
-    TypeVar, Union,
-)
+from collections.abc import Collection, Generator, Iterable, KeysView
+from typing import Any, Callable, TypeVar, Union
 
 import icu
 
@@ -23,14 +21,13 @@ LOCALE = 'de-u-kn-true'
 COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 
 T = TypeVar("T")
 
 
-def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> List[T]:
-    """Wrapper for sorted() to achieve a natural sort.
+def collate(sortkey: Any) -> Any:
+    """Key function for sorting.
 
     This replaces all strings in possibly nested objects with a sortkey
     matching an collation from the Unicode Collation Algorithm, provided
@@ -40,21 +37,23 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     sorted correctly, e.g. with ß = ss, a = ä, s = S etc. Furthermore, numbers
     (ints and decimals) are sorted correctly, even in midst of strings.
     However, negative numbers in strings are sorted by absolute value, before
-    positive numbers, as minus and hyphens can not be distinguished.
+    positive numbers, as minus and hyphens can not be distinguished."""
+    if isinstance(sortkey, str):
+        return COLLATOR.getSortKey(sortkey)
+    if isinstance(sortkey, collections.abc.Iterable):
+        # Make sure strings in nested Iterables are sorted
+        # correctly as well.
+        return tuple(map(collate, sortkey))
+    return sortkey
+
+
+def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
+            reverse: bool = False) -> list[T]:
+    """Wrapper for sorted() to achieve a natural sort.
 
     For users, the interface of this function should be identical
     to sorted().
     """
-
-    def collate(sortkey: Any) -> Any:
-        if isinstance(sortkey, str):
-            return COLLATOR.getSortKey(sortkey)
-        if isinstance(sortkey, collections.abc.Iterable):
-            # Make sure strings in nested Iterables are sorted
-            # correctly as well.
-            return tuple(map(collate, sortkey))
-        return sortkey
-
     return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
@@ -86,7 +85,7 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
+Sortkey = tuple[Union[str, int, datetime.datetime, datetime.date], ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
@@ -150,10 +149,6 @@ class EntitySorter:
         return (country, postal_code, location, address)
 
     @staticmethod
-    def event(event: CdEDBObject) -> Sortkey:
-        return (event['begin'], event['end'], event['title'], event['id'])
-
-    @staticmethod
     def course(course: CdEDBObject) -> Sortkey:
         return (course['nr'], course['shortname'], course['id'])
 
@@ -163,42 +158,12 @@ class EntitySorter:
 
     @staticmethod
     def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['group_title'] is None, lodgement['group_title'],
-                lodgement['group_id'], lodgement['title'], lodgement['id'])
+        return (lodgement['group_title'], lodgement['group_id'], lodgement['title'],
+                lodgement['id'])
 
     @staticmethod
     def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
         return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
-    def event_part(event_part: CdEDBObject) -> Sortkey:
-        return (event_part['part_begin'], event_part['part_end'],
-                event_part['shortname'], event_part['id'])
-
-    @staticmethod
-    def event_part_group(part_group: CdEDBObject) -> Sortkey:
-        return (part_group['title'], part_group['id'])
-
-    @staticmethod
-    def event_fee(event_fee: CdEDBObject) -> Sortkey:
-        return (event_fee['title'], event_fee['id'])
-
-    @staticmethod
-    def course_track(course_track: CdEDBObject) -> Sortkey:
-        return (course_track['sortkey'], course_track['id'])
-
-    @staticmethod
-    def course_track_group(track_group: CdEDBObject) -> Sortkey:
-        return (track_group['sortkey'], track_group['constraint_type'],
-                track_group['title'], track_group['shortname'], track_group['id'])
-
-    @staticmethod
-    def course_choice_object(cco: CdEDBObject) -> Sortkey:
-        return (cco['sortkey'], cco.get('constraint_type', 0), cco['title'], cco['id'])
-
-    @staticmethod
-    def event_field(event_field: CdEDBObject) -> Sortkey:
-        return (event_field['sortkey'], event_field['field_name'], event_field['id'])
 
     @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
@@ -230,10 +195,6 @@ class EntitySorter:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
     @staticmethod
-    def institution(institution: CdEDBObject) -> Sortkey:
-        return (institution['shortname'], institution['id'])
-
-    @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
@@ -246,12 +207,8 @@ class EntitySorter:
         return (changelog_entry['ctime'], changelog_entry['generation'],
                 changelog_entry['persona_id'])
 
-    @staticmethod
-    def mailinglist(mailinglist: CdEDBObject) -> Sortkey:
-        return (mailinglist['title'], mailinglist['id'])
 
-
-def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
+def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]],
                            ) -> Generator[int, None, None]:
     """Iterate over a set of indices in the relevant way.
 

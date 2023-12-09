@@ -9,8 +9,9 @@ This should be the only module which makes subsistantial use of psycopg.
 """
 
 import logging
+from collections.abc import Collection, Mapping
 from types import TracebackType
-from typing import Any, Collection, Literal, Mapping, NoReturn, Optional, Type
+from typing import Any, Literal, NoReturn, Optional
 
 import psycopg2
 import psycopg2.extensions
@@ -45,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _create_connection(dbname: str, dbuser: str, password: str, host: str,
-                       port: int, isolation_level: Optional[int] = SERIALIZABLE
+                       port: int, isolation_level: Optional[int] = SERIALIZABLE,
                        ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
@@ -62,7 +63,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
             "host": host,
             "port": port,
             "connection_factory": IrradiatedConnection,
-            "cursor_factory": psycopg2.extras.RealDictCursor
+            "cursor_factory": psycopg2.extras.RealDictCursor,
     }
     conn = psycopg2.connect(**connection_parameters)
     conn.set_client_encoding("UTF8")
@@ -73,7 +74,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
 
 def connection_pool_factory(dbname: str, roles: Collection[Role],
                             secrets: SecretsConfig, host: str, port: int,
-                            isolation_level: Optional[int] = SERIALIZABLE
+                            isolation_level: Optional[int] = SERIALIZABLE,
                             ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
@@ -168,7 +169,7 @@ class Atomizer:
         self.rs._conn.contaminate()
         return self.rs._conn.__enter__()
 
-    def __exit__(self, atype: Optional[Type[Exception]],
+    def __exit__(self, atype: Optional[type[Exception]],
                  value: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         self.rs._conn.decontaminate()
@@ -189,7 +190,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
         # keep a copy of any exception we encounter.
-        self._saved_etype: Optional[Type[Exception]] = None
+        self._saved_etype: Optional[type[Exception]] = None
         self._saved_evalue: Optional[Exception] = None
         self._saved_tb: Optional[TracebackType] = None
 
@@ -205,7 +206,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             self._saved_tb = None
             return super().__enter__()
 
-    def __exit__(self, etype: Optional[Type[Exception]],
+    def __exit__(self, etype: Optional[type[Exception]],
                  evalue: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         if self._radiation_level:

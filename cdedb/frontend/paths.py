@@ -82,7 +82,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/mailinglists", methods=_GET,
                      endpoint="show_user_mailinglists_self"),
                 rule("/lastschrift", methods=_GET,
-                     endpoint="my_lastschrift"),)),
+                     endpoint="my_lastschrift"))),
             sub('/self/username', (
                 rule("/change", methods=_GET,
                      endpoint="change_username_form"),
@@ -91,7 +91,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/change/confirm", methods=_GET,
                      endpoint="do_username_change_form"),
                 rule("/change", methods=_POST,
-                     endpoint="do_username_change"),)),
+                     endpoint="do_username_change"))),
             sub('/password', (
                 rule("/reset", methods=_GET,
                      endpoint="reset_password_form"),
@@ -100,7 +100,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/reset/confirm", methods=_GET,
                      endpoint="do_password_reset_form"),
                 rule("/reset", methods=_POST,
-                     endpoint="do_password_reset"),)),
+                     endpoint="do_password_reset"))),
             rule('/search/user', methods=_GET,
                  endpoint="user_search"),
             sub('/persona/<int:persona_id>', (
@@ -161,7 +161,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/purge", methods=_POST,
                      endpoint="purge_persona"),
                 rule("/activity/change", methods=_POST,
-                     endpoint="toggle_activity"),)),
+                     endpoint="toggle_activity"))),
             sub('/genesis', (
                 rule("/request", methods=_GET,
                      endpoint="genesis_request_form"),
@@ -181,7 +181,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/modify", methods=_POST,
                      endpoint="genesis_modify"),
                 rule("/decide", methods=_POST,
-                     endpoint="genesis_decide"),)),
+                     endpoint="genesis_decide"))),
             sub('/privileges', (
                 rule("/list", methods=_GET,
                      endpoint="list_privilege_changes"),)),
@@ -189,8 +189,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/show", methods=_GET,
                      endpoint="show_privilege_change"),
                 rule("/decide", methods=_POST,
-                     endpoint="decide_privilege_change"),)),
-        )),)),
+                     endpoint="decide_privilege_change"))),
+        )))),
     werkzeug.routing.EndpointPrefix('cde/', (
         sub('/cde', (
             rule("/", methods=_GET,
@@ -225,14 +225,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/consent", methods=_GET,
                      endpoint="consent_decision_form"),
                 rule("/consent", methods=_POST,
-                     endpoint="consent_decision"),)),
+                     endpoint="consent_decision"))),
             sub('/search', (
                 rule("/member", methods=_GET,
                      endpoint="member_search"),
                 rule("/user", methods=_GET,
                      endpoint="user_search"),
                 rule("/course", methods=_GET,
-                     endpoint="past_course_search"),)),
+                     endpoint="past_course_search"))),
             rule("/i25p", endpoint="", redirect_to="cde/lastschrift/info"),
             sub("/lastschrift/", (
                 rule("/", methods=_GET,
@@ -252,12 +252,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/transaction/generate", methods=_POST,
                      endpoint="lastschrift_generate_transactions"),
                 rule("/transaction/finalize", methods=_POST,
-                     endpoint="lastschrift_finalize_transactions"),)),
+                     endpoint="lastschrift_finalize_transactions"))),
             sub('/past/', (
-                rule("/institution/summary", methods=_GET,
-                     endpoint="institution_summary_form"),
-                rule("/institution/summary", methods=_POST,
-                     endpoint="institution_summary"),
                 rule("/event/list", methods=_GET,
                      endpoint="list_past_events"),
                 rule("/event/create", methods=_GET,
@@ -297,7 +293,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/change", methods=_POST,
                              endpoint="change_past_course"),
                         rule("/delete", methods=_POST,
-                             endpoint="delete_past_course"),)),)),)),
+                             endpoint="delete_past_course"))))))),
             sub('/lastschrift/<int:lastschrift_id>', (
                 rule("/skip", methods=_POST,
                      endpoint="lastschrift_skip"),
@@ -313,14 +309,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/receipt", methods=_GET,
                          endpoint="lastschrift_receipt"),
                     rule("/rollback", methods=_POST,
-                         endpoint="lastschrift_rollback_transaction"),)),)),
+                         endpoint="lastschrift_rollback_transaction"))))),
             sub('/user/<int:persona_id>', (
                 rule("/lastschrift", methods=_GET,
                      endpoint="lastschrift_show"),
                 rule("/lastschrift/create", methods=_GET,
                      endpoint="lastschrift_create_form"),
                 rule("/lastschrift/create", methods=_POST,
-                     endpoint="lastschrift_create"),)),
+                     endpoint="lastschrift_create"))),
             sub('/semester', (
                 rule("/show", methods=_GET,
                      endpoint="show_semester"),
@@ -335,7 +331,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/address", methods=_POST,
                      endpoint="expuls_addresscheck"),
                 rule("/advance", methods=_POST,
-                     endpoint="expuls_advance"),)),
+                     endpoint="expuls_advance"))),
         )),)),
     werkzeug.routing.EndpointPrefix('event/', (
         sub('/event', (
@@ -395,8 +391,26 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/checkin", methods=_POST,
                      endpoint="checkin"),
                 sub('/droid', (
+                    # API-functionality:
                     rule("/partial", methods=_GET,
                          endpoint="droid_partial_export"),
+                    # Token management:
+                    rule("/summary", methods=_GET,
+                         endpoint="orga_token_summary"),
+                    rule("/create", methods=_GET,
+                         endpoint="create_orga_token_form"),
+                    rule("/create", methods=_POST,
+                         endpoint="create_orga_token"),
+                    sub("/<int:orga_token_id>", (
+                        rule("/change", methods=_GET,
+                             endpoint="change_orga_token_form"),
+                        rule("/change", methods=_POST,
+                             endpoint="change_orga_token"),
+                        rule("/delete", methods=_POST,
+                             endpoint="delete_orga_token"),
+                        rule("/revoke", methods=_POST,
+                             endpoint="revoke_orga_token"),
+                    )),
                 )),
                 sub('/minorform', (
                     rule("/get", methods=_GET,
@@ -474,7 +488,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/csv_lodgements", methods=_GET,
                          endpoint="download_csv_lodgements"),
                     rule("/csv_registrations", methods=_GET,
-                         endpoint="download_csv_registrations"),)),
+                         endpoint="download_csv_registrations"))),
                 sub('/group', (
                     rule("/summary", methods=_GET,
                          endpoint="group_summary"),
@@ -483,13 +497,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 )),
                 sub('/fee', (
                     rule("/summary", methods=_GET, endpoint="fee_summary"),
+                    rule("/stats", methods=_GET, endpoint="fee_stats"),
                     rule("/add", methods=_GET, endpoint="configure_fee_form"),
                     rule("/add", methods=_POST, endpoint="configure_fee"),
                     sub('/<int:fee_id>', (
                         rule("/change", methods=_GET, endpoint="configure_fee_form"),
                         rule("/change", methods=_POST, endpoint="configure_fee"),
                         rule("/delete", methods=_POST, endpoint="delete_fee"),
-                    ))
+                    )),
                 )),
                 sub('/part', (
                     rule("/summary", methods=_GET,
@@ -504,7 +519,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/change", methods=_POST,
                              endpoint="change_part"),
                         rule("/delete", methods=_POST,
-                             endpoint="delete_part"),)),
+                             endpoint="delete_part"))),
                     sub('/group', (
                         rule("/add", methods=_GET,
                              endpoint="add_part_group_form"),
@@ -759,6 +774,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="create_ballot"),
                 rule("/ballot/summary", methods=_GET,
                      endpoint="summary_ballots"),
+                rule("/ballot/reschedule", methods=_GET,
+                     endpoint="reschedule_ballots_form"),
+                rule("/ballot/reschedule", methods=_POST,
+                     endpoint="reschedule_ballots"),
                 sub('/ballot/<int:ballot_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_ballot"),
@@ -821,7 +840,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/merge", methods=_GET,
                      endpoint="merge_accounts_form"),
                 rule("/merge", methods=_POST,
-                     endpoint="merge_accounts"),)),
+                     endpoint="merge_accounts"))),
             rule("/mailinglist/refresh", methods=_POST,
                  endpoint="manually_write_subscription_states"),
             rule("/mailinglist/sync", methods=_POST,
@@ -861,6 +880,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="message_moderation_multi"),
                 rule("/management/advanced", methods=_GET,
                      endpoint="advanced_management"),
+                rule("/roster", methods=_GET,
+                     endpoint="show_roster"),
                 rule("/download/subscriptions", methods=_GET,
                      endpoint="download_csv_subscription_states"),
                 rule("/force/add", methods=_POST,
@@ -900,6 +921,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/subaddress/change", methods=_POST,
                      endpoint="change_address"),
                 rule("/subaddress/confirm", methods=_GET,
-                     endpoint="do_address_change"),)),
+                     endpoint="do_address_change"))),
         )),)),
 ), converters={'filename': FilenameConverter})

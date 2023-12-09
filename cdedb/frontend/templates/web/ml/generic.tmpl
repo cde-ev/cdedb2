@@ -27,7 +27,7 @@
         <div class="col-sm-5 small">
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
-                {%- if events[ml['event_id']]['is_visible'] -%}
+                {%- if events[ml['event_id']].is_visible_for(user) -%}
                     {% set link = util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
                                             events[ml['event_id']]['title'], icon='chalkboard-teacher') %}
                 {%- else -%}
@@ -71,5 +71,26 @@
                 {{ count }} moderators.
             {% endtrans %}
         </div>
+    </div>
+{% endmacro %}
+
+{% macro index_buttons() %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
+                aclass="btn btn-sm btn-success") }}
+        {% if "ml_admin" in user.roles %}
+            <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
+                  id="writesubscriptionstates" style="display: inline;">
+                {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
+                {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-primary",
+                        icon="sync-alt") }}
+            </form>
+            <form action="{{ cdedblink("ml/manual_mailman_sync") }}" method="POST"
+                  id="mailmansync" style="display: inline;">
+                {{ util.anti_csrf_token("ml/manual_mailman_sync") }}
+                {{ util.input_submit(label=gettext("Force mailman sync now"), aclass="btn btn-sm btn-primary",
+                        icon="share") }}
+            </form>
+        {% endif %}
     </div>
 {% endmacro %}

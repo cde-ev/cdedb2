@@ -1,6 +1,6 @@
 {
     "EVENT_SCHEMA_VERSION": [
-        16,
+        17,
         0
     ],
     "kind": "partial",
@@ -661,6 +661,7 @@
         "title": "Gro\u00dfe Testakademie 2222",
         "institution": 1,
         "description": "Everybody come!",
+        "website_url": "https://www.cde-ev.de/",
         "shortname": "TestAka",
         "registration_start": "2000-10-30T00:00:00+00:00",
         "registration_soft_limit": "2200-10-30T00:00:00+00:00",
@@ -682,54 +683,61 @@
         "is_cancelled": false,
         "is_archived": false,
         "lodge_field": "lodge",
-        "camping_mat_field": "may_reserve",
-        "course_room_field": "transportation",
         "part_groups": {},
         "track_groups": {},
         "fees": {
             "Teilnahmebeitrag Warmup": {
                 "amount": "10.50",
                 "condition": "part.Wu",
+                "kind": 1,
                 "notes": null
             },
             "Teilnahmebeitrag 1. Hälfte": {
                 "amount": "123.00",
                 "condition": "part.1.H.",
+                "kind": 1,
                 "notes": null
             },
             "Teilnahmebeitrag 2. Hälfte": {
                 "amount": "450.99",
                 "condition": "part.2.H.",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis Warmup": {
                 "amount": "-5.00",
                 "condition": "part.Wu and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis 1. Hälfte": {
                 "amount": "-12.00",
                 "condition": "part.1.H. and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Kinderpreis 2. Hälfte": {
                 "amount": "-19.00",
                 "condition": "part.2.H. and field.is_child",
+                "kind": 1,
                 "notes": null
             },
             "Externenzusatzbeitrag": {
                 "amount": "5.00",
                 "condition": "any_part and not (is_member or field.is_child)",
+                "kind": 3,
                 "notes": null
             },
             "Mengenrabatt": {
                 "amount": "-0.01",
                 "condition": "all_parts",
+                "kind": 10,
                 "notes": null
             },
             "Orgarabatt": {
                 "amount": "-50.00",
                 "condition": "part.1.H. and part.2.H. and is_orga",
+                "kind": 1,
                 "notes": null
             }
         },
@@ -740,6 +748,7 @@
                 "part_begin": "2222-02-02",
                 "part_end": "2222-02-02",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {}
             },
             "2": {
@@ -748,20 +757,23 @@
                 "part_begin": "2222-11-01",
                 "part_end": "2222-11-11",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {
                     "1": {
                         "title": "Morgenkreis (Erste H\u00e4lfte)",
                         "shortname": "Morgenkreis",
                         "num_choices": 4,
                         "min_choices": 4,
-                        "sortkey": 1
+                        "sortkey": 1,
+                        "course_room_field": "room"
                     },
                     "2": {
                         "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
                         "shortname": "Kaffee",
                         "num_choices": 1,
                         "min_choices": 1,
-                        "sortkey": 2
+                        "sortkey": 2,
+                        "course_room_field": "room"
                     }
                 }
             },
@@ -771,13 +783,15 @@
                 "part_begin": "2222-11-11",
                 "part_end": "2222-11-30",
                 "waitlist_field": null,
+                "camping_mat_field": "may_reserve",
                 "tracks": {
                     "3": {
                         "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
                         "shortname": "Sitzung",
                         "num_choices": 3,
                         "min_choices": 2,
-                        "sortkey": 3
+                        "sortkey": 3,
+                        "course_room_field": "room"
                     }
                 }
             }
@@ -802,20 +816,11 @@
             "transportation": {
                 "kind": 1,
                 "association": 1,
-                "entries": [
-                    [
-                        "pedes",
-                        "by feet"
-                    ],
-                    [
-                        "car",
-                        "own car available"
-                    ],
-                    [
-                        "etc",
-                        "anything else"
-                    ]
-                ],
+                "entries": {
+                    "pedes": "by feet",
+                    "car": "own car available",
+                    "etc": "anything else"
+                },
                 "checkin": false,
                 "title": "Reist an mit",
                 "sortkey": 0
@@ -847,24 +852,12 @@
             "contamination": {
                 "kind": 1,
                 "association": 3,
-                "entries": [
-                    [
-                        "high",
-                        "lots of radiation"
-                    ],
-                    [
-                        "medium",
-                        "elevated level of radiation"
-                    ],
-                    [
-                        "low",
-                        "some radiation"
-                    ],
-                    [
-                        "none",
-                        "no radiation"
-                    ]
-                ],
+                "entries": {
+                    "high": "lots of radiation",
+                    "medium": "elevated level of radiation",
+                    "low": "some radiation",
+                    "none": "no radiation"
+                },
                 "checkin": false,
                 "title": "Verseuchung",
                 "sortkey": 0

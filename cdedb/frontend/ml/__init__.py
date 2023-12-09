@@ -4,7 +4,8 @@
 
 import email.parser
 import urllib.error
-from typing import Collection, Mapping
+from collections.abc import Collection, Mapping
+from typing import Optional
 
 from werkzeug import Response
 
@@ -21,7 +22,7 @@ __all__ = ['MlFrontend']
 class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
-    def message_moderation_form(self, rs: RequestState, mailinglist_id: int
+    def message_moderation_form(self, rs: RequestState, mailinglist_id: int,
                                 ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
@@ -36,7 +37,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     }
 
     def _moderate_messages(self, rs: RequestState, request_ids: Collection[int],
-                           action: str) -> Response:
+                           action: str, reason: Optional[str] = None) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
@@ -55,7 +56,8 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                     held = mmlist.get_held_message(request_id)
                     sender, subject, msg = held.sender, held.subject, held.msg
                     # This destroys the information we just queried.
-                    response = mmlist.moderate_message(request_id, action)
+                    response = mmlist.moderate_message(request_id, action,
+                                                       comment=reason)
                 except urllib.error.HTTPError:
                     rs.notify("error", n_("Message unavailable."))
                 else:
@@ -102,9 +104,9 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdata("request_id", "action", "sender")
+    @REQUESTdata("request_id", "action", "sender", "reason")
     def message_moderation(self, rs: RequestState, mailinglist_id: int, request_id: int,
-                           action: str, sender: str) -> Response:
+                           action: str, sender: str, reason: Optional[str]) -> Response:
         """Moderate a held message.
 
         Valid actions are: whitelist, accept, reject, discard
@@ -121,7 +123,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             self.mlproxy.add_whitelist_entry(rs, dblist.id, sender)
             action = "accept"
 
-        return self._moderate_messages(rs, [request_id], action)
+        return self._moderate_messages(rs, [request_id], action, reason)
 
     @access("ml_admin", modi={"POST"})
     def manual_mailman_sync(self, rs: RequestState) -> Response:

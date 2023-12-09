@@ -159,10 +159,10 @@ CREATE TABLE core.personas (
         free_form               varchar,
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
-            CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
+            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
         donation                numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_donation
-            CHECK(NOT is_cde_realm OR donation IS NOT NULL OR is_purged),
+            CHECK(NOT is_cde_realm OR donation IS NOT NULL),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -603,21 +603,12 @@ DROP SCHEMA IF EXISTS past_event CASCADE;
 CREATE SCHEMA past_event;
 GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 
-CREATE TABLE past_event.institutions (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        shortname               varchar NOT NULL
-);
-GRANT SELECT ON past_event.institutions TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
-
 CREATE TABLE past_event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES past_event.institutions(id),
+        institution             integer NOT NULL,
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in
@@ -693,13 +684,15 @@ GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous, cdb_ldap;
 CREATE TABLE event.events (
         id                           serial PRIMARY KEY,
         title                        varchar NOT NULL,
-        shortname                    varchar NOT NULL,
+        shortname                    varchar UNIQUE NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution                  integer NOT NULL REFERENCES past_event.institutions(id),
+        institution                  integer NOT NULL,
         description                  varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
+        -- URL of event specific page at the CdE homepage
+        website_url                  varchar,
         registration_start           timestamp WITH TIME ZONE,
         -- official end of registration
         registration_soft_limit      timestamp WITH TIME ZONE,
@@ -726,9 +719,7 @@ CREATE TABLE event.events (
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- reference to special purpose custom data fields
-        lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        lodge_field_id               integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 -- TODO: ADD indexes for is_visible, is_archived, etc.?
@@ -741,6 +732,8 @@ GRANT SELECT ON event.events to cdb_anonymous;
 CREATE TABLE event.event_fees (
         id                           serial PRIMARY KEY,
         event_id                     integer NOT NULL REFERENCES event.events (id),
+        -- see cdedb.database.constants.EventFeeType
+        kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
         amount                       numeric(8, 2) NOT NULL,
         condition                    varchar NOT NULL,
@@ -759,10 +752,12 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- reference to custom data field for waitlist management
-        waitlist_field          integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        waitlist_field_id       integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field_id    integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX event_parts_event_id_idx ON event.event_parts(event_id);
-CREATE INDEX event_parts_partial_waitlist_field_idx ON event.event_parts(waitlist_field) WHERE waitlist_field IS NOT NULL;
+CREATE INDEX event_parts_partial_waitlist_field_id_idx ON event.event_parts(waitlist_field_id) WHERE waitlist_field_id IS NOT NULL;
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 GRANT SELECT ON event.event_parts TO cdb_anonymous;
@@ -800,7 +795,9 @@ CREATE TABLE event.course_tracks (
         shortname               varchar NOT NULL,
         num_choices             integer NOT NULL,
         min_choices             integer NOT NULL, -- required number of distinct course choices
-        sortkey                 integer NOT NULL
+        sortkey                 integer NOT NULL,
+        course_room_field_id    integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 CREATE INDEX course_tracks_part_id_idx ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
@@ -861,10 +858,10 @@ GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
 GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
-ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (camping_mat_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
-ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (lodge_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (waitlist_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.event_parts ADD FOREIGN KEY (camping_mat_field_id) REFERENCES event.field_definitions(id);
+ALTER TABLE event.course_tracks ADD FOREIGN KEY (course_room_field_id) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
@@ -1312,6 +1309,8 @@ CREATE TABLE ml.mailinglists (
         convert_html            boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
+        -- see cdedb.database.constants.MailinglistRosterVisibility
+        roster_visibility       integer NOT NULL,
         subject_prefix          varchar,
         -- in kB
         maxsize                 integer,
@@ -1366,7 +1365,8 @@ CREATE TABLE ml.subscription_addresses (
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar NOT NULL,
-        UNIQUE (persona_id, mailinglist_id)
+        UNIQUE (persona_id, mailinglist_id),
+        UNIQUE (address, mailinglist_id)
 );
 CREATE INDEX subscription_addresses_mailinglist_id_idx ON ml.subscription_addresses(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_addresses TO cdb_persona;

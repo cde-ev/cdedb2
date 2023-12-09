@@ -95,66 +95,75 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': 3,
              'persona_id': 2,
              'submitted_by': 1},
+            # unset the explicit subscription address of janis, but since janis is
+            #  archived afterward, the log entry is deleted.
+            # {'change_note': None,
+            #  'code': const.MlLogCodes.subscription_changed,
+            #  'ctime': nearly_now(),
+            #  'id': 1002,
+            #  'mailinglist_id': 3,
+            #  'persona_id': 10,
+            #  'submitted_by': 1},
             {'change_note': 'janis-spam@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
-             'id': 1002,
+             'id': 1003,
              'mailinglist_id': 3,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.marked_override,
              'ctime': nearly_now(),
-             'id': 1003,
+             'id': 1004,
              'mailinglist_id': 61,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'janis@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
-             'id': 1004,
+             'id': 1005,
              'mailinglist_id': 61,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
-             'ctime': nearly_now(),
-             'id': 1005,
-             'mailinglist_id': 64,
-             'persona_id': 2,
-             'submitted_by': 1},
-            {'change_note': 'janis@example.cde',
-             'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
              'id': 1006,
              'mailinglist_id': 64,
              'persona_id': 2,
              'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1007,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
-             'id': 1007,
+             'id': 1008,
              'mailinglist_id': 65,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'janis@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
-             'id': 1008,
-             'mailinglist_id': 65,
-             'persona_id': 2,
-             'submitted_by': 1},
-            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
-             'code': const.MlLogCodes.moderator_added,
-             'ctime': nearly_now(),
              'id': 1009,
-             'mailinglist_id': 2,
+             'mailinglist_id': 65,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'id': 1010,
+             'mailinglist_id': 2,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'id': 1011,
              'mailinglist_id': 63,
              'persona_id': 2,
              'submitted_by': 1},
@@ -211,6 +220,7 @@ class TestMlBackend(BackendTest):
                 description="Einer geht noch ...",
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(3),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(2048),
@@ -228,6 +238,7 @@ class TestMlBackend(BackendTest):
                 assembly_id=self.as_id(1),
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(5),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
@@ -244,6 +255,7 @@ class TestMlBackend(BackendTest):
                 description=None,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 id=self.as_id(7),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
@@ -304,6 +316,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=False,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -335,6 +348,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -1312,6 +1326,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=False,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,
@@ -1414,6 +1429,7 @@ class TestMlBackend(BackendTest):
             description=None,
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             event_id=self.as_id(2),
             is_active=True,
             maxsize=None,
@@ -1613,6 +1629,24 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
         self._check_implicit_whitelist(mailinglist_id, expectation.keys())
+
+        # Set an address for another mailinglist with your own mailadress is allowed...
+        datum = {
+            'mailinglist_id': 64,
+            'persona_id': self.user['id'],
+            'email': "janis-ist-toll@example.cde",
+        }
+        self.ml.set_subscription_address(self.key, **datum)
+
+        # ... but using someone else's address is forbidden.
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': self.user['id'],
+            'email': "new-anton@example.cde",
+        }
+        with self.assertRaises(ValueError) as e:
+            self.ml.set_subscription_address(self.key, **datum)
+        self.assertEqual("Address already taken by another user.", str(e.exception))
 
         # Remove an address.
         datum = {
@@ -1879,6 +1913,8 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
+        type_change_err_msg = (
+            "Not privileged to change to this mailinglist type for this mailinglist.")
         if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
@@ -1890,6 +1926,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -1928,8 +1965,7 @@ class TestMlBackend(BackendTest):
                     self.ml.change_ml_type(
                         self.key, new_id, ml_type,
                         update={"domain": const.MailinglistDomain.lists})
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(
                     self.ml.change_ml_type(
@@ -1952,6 +1988,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -1982,8 +2019,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2001,6 +2037,7 @@ class TestMlBackend(BackendTest):
                 is_active=True,
                 attachment_policy=const.AttachmentPolicy.forbid,
                 convert_html=True,
+                roster_visibility=const.MailinglistRosterVisibility.none,
                 maxsize=None,
                 additional_footer=None,
                 moderators={self.user['id']},
@@ -2029,8 +2066,7 @@ class TestMlBackend(BackendTest):
             if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.change_ml_type(self.key, new_id, ml_type)
-                self.assertEqual(cm.exception.args,
-                                 ("Not privileged to make this change.",))
+                self.assertEqual(cm.exception.args, (type_change_err_msg, ))
             else:
                 self.assertTrue(self.ml.change_ml_type(self.key, new_id, ml_type))
 
@@ -2057,6 +2093,7 @@ class TestMlBackend(BackendTest):
             description='Vereinigt Euch',
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
             is_active=True,
             maxsize=None,
             additional_footer=None,

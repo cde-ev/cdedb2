@@ -3,12 +3,14 @@
 import collections
 import csv
 import re
+import types
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import webtest
 
 import cdedb.frontend.cde.parse_statement as parse
+import cdedb.models.event as models_event
 from cdedb.common import Accounts, CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
@@ -69,18 +71,23 @@ class TestParseFrontend(FrontendTest):
         self.assertEqual(t._find_cdedbids(cl.Full), {1000: cl.Low, 100: cl.Medium})
 
     def test_parse_statement_additional(self) -> None:
-        pseudo_winter = {"title": "CdE Pseudo-WinterAkademie",
-                         "begin": datetime(2222, 12, 27),
-                         "end": datetime(2223, 1, 6)}
-        test_pfingsten = {"title": "CdE Pfingstakademie",
-                          "begin": datetime(1234, 5, 20),
-                          "end": datetime(1234, 5, 23)}
-        naka = {"title": "NachhaltigkeitsAkademie 2019",
-                "begin": datetime(2019, 3, 23),
-                "end": datetime(2019, 3, 30)}
-        velbert = {"title": "JuniorAkademie NRW - Nachtreffen Velbert 2019",
-                   "begin": datetime(2019, 11, 15),
-                   "end": datetime(2019, 11, 17)}
+
+        pseudo_winter = cast(models_event.Event, types.SimpleNamespace(**{
+            "title": "CdE Pseudo-WinterAkademie",
+            "begin": datetime(2222, 12, 27),
+            "end": datetime(2223, 1, 6)}))
+        test_pfingsten = cast(models_event.Event, types.SimpleNamespace(**{
+            "title": "CdE Pfingstakademie",
+            "begin": datetime(1234, 5, 20),
+            "end": datetime(1234, 5, 23)}))
+        naka = cast(models_event.Event, types.SimpleNamespace(**{
+            "title": "NachhaltigkeitsAkademie 2019",
+            "begin": datetime(2019, 3, 23),
+            "end": datetime(2019, 3, 30)}))
+        velbert = cast(models_event.Event, types.SimpleNamespace(**{
+            "title": "JuniorAkademie NRW - Nachtreffen Velbert 2019",
+            "begin": datetime(2019, 11, 15),
+            "end": datetime(2019, 11, 17)}))
 
         pattern = re.compile(parse.get_event_name_pattern(pseudo_winter),
                              flags=re.IGNORECASE)

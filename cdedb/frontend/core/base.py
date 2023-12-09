@@ -11,7 +11,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import magic
 import segno
@@ -98,7 +98,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # genesis cases
             genesis_realms = []
             for realm in REALM_SPECIFIC_GENESIS_FIELDS:
-                if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
+                if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
             if genesis_realms and "genesis" in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
@@ -119,23 +119,24 @@ class CoreBaseFrontend(AbstractFrontend):
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
                 orga = {}
+                orga_registrations = {}
                 events = self.eventproxy.get_events(rs, orga_info)
                 present = now()
                 for event_id, event in events.items():
-                    begin = event['begin']
-                    if (not begin or begin >= present.date()
-                            or abs(begin.year - present.year) < 2):
-                        regs = self.eventproxy.list_registrations(rs, event['id'])
-                        event['registrations'] = len(regs)
+                    if (event.begin >= present.date()
+                            or abs(event.begin.year - present.year) < 2):
+                        regs = self.eventproxy.list_registrations(rs, event.id)
+                        orga_registrations[event_id] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
+                dashboard['orga_registrations'] = orga_registrations
                 dashboard['present'] = present
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 mailinglists = self.mlproxy.get_mailinglists(rs, moderator_info)
                 mailman = self.get_mailman()
-                moderator: Dict[int, Dict[str, Any]] = {}
+                moderator: dict[int, dict[str, Any]] = {}
                 for ml_id, ml in mailinglists.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, ml_id, states=(const.SubscriptionState.pending,))
@@ -153,27 +154,29 @@ class CoreBaseFrontend(AbstractFrontend):
                 event_ids = self.eventproxy.list_events(
                     rs, visible=True, current=True, archived=False)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
-                final = {}
+                final: dict[int, Any] = {}
+                events_registration: dict[int, Optional[bool]] = {}
+                events_payment_pending: dict[int, bool] = {}
                 for event_id, event in events.items():
-                    if event_id not in orga_info:
-                        event['registration'], event['payment_pending'] = (
-                            self.eventproxy.get_registration_payment_info(rs, event_id))
-                        # Skip event, if the registration begins more than
-                        # 2 weeks in future
-                        if event['registration_start'] and \
-                                now() + datetime.timedelta(weeks=2) < \
-                                event['registration_start']:
-                            continue
-                        # Skip events, that are over or are not registerable
-                        # anymore
-                        if event['registration_hard_limit'] and \
-                                now() > event['registration_hard_limit'] \
-                                and not event['registration'] \
-                                or now().date() > event['end']:
-                            continue
-                        final[event_id] = event
-                if final:
-                    dashboard['events'] = final
+                    registration, payment_pending = (
+                        self.eventproxy.get_registration_payment_info(rs, event_id))
+                    # Skip event, if the registration begins more than 2 weeks in future
+                    if event.registration_start and \
+                            now() + datetime.timedelta(weeks=2) < \
+                            event.registration_start:
+                        continue
+                    # Skip events, that are over or are not registerable anymore
+                    if (event.registration_hard_limit
+                            and now() > event.registration_hard_limit
+                            and not registration
+                            or now().date() > event.end):
+                        continue
+                    final[event_id] = event
+                    events_registration[event_id] = registration
+                    events_payment_pending[event_id] = payment_pending
+                dashboard['events'] = final
+                dashboard['events_registration'] = events_registration
+                dashboard['events_payment_pending'] = events_payment_pending
             # open assemblies
             if "assembly" in rs.user.roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
@@ -197,7 +200,8 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info", {"meta_info": info})
+        return self.render(rs, "meta_info",
+                           {"meta_info": info, "hard_lockdown": self.conf["LOCKDOWN"]})
 
     @access("core_admin", modi={"POST"})
     def change_meta_info(self, rs: RequestState) -> Response:
@@ -274,7 +278,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return ret
 
     @periodic("deactivate_old_sessions", period=4 * 24)
-    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject
+    def deactivate_old_sessions(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Once per day deactivate old sessions."""
         count = self.coreproxy.deactivate_old_sessions(rs)
@@ -362,7 +366,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
-    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
+    def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int,
                        ) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
             return self.index(rs)
@@ -571,7 +575,7 @@ class CoreBaseFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id, event_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if "core" in access_levels and "member" in roles:
+            if "core" in access_levels:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = bool(user_lastschrift)
@@ -656,8 +660,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
-        registration_ids: Dict[int, int] = {}
-        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
+        registration_ids: dict[int, int] = {}
+        registration_parts: dict[int, dict[int, const.RegistrationPartStati]] = {}
         for event_id, reg in registrations.items():
             registration_ids[event_id] = unwrap(reg.keys())
             registration_parts[event_id] = unwrap(reg.values())
@@ -673,7 +677,7 @@ class CoreBaseFrontend(AbstractFrontend):
                              {'persona_id': rs.user.persona_id})
 
     @access("ml")
-    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID
+    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID,
                                ) -> Response:
         """Render overview of mailinglist data of a certain user."""
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
@@ -688,7 +692,7 @@ class CoreBaseFrontend(AbstractFrontend):
         mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
 
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
             grouped[ml.sortkey][mailinglist_id] = {
@@ -714,20 +718,22 @@ class CoreBaseFrontend(AbstractFrontend):
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.ambience['persona']['is_archived']:
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
-        history = self.coreproxy.changelog_get_history(rs, persona_id,
-                                                       generations=None)
-        current_generation = self.coreproxy.changelog_get_generation(
-            rs, persona_id)
+        history = self.coreproxy.changelog_get_history(rs, persona_id, generations=None)
+        # retrieve the latest version of the changelog, including pending ones
+        current_generation = self.coreproxy.changelog_get_generation(rs, persona_id)
         current = history[current_generation]
+        # do not use the latest changelog version, since we want to highlight any
+        # inconsistencies between latest changelog generation and core.personas
+        inconsistencies = self.coreproxy.get_changelog_inconsistencies(rs, persona_id)
+        # to display the differences between the latest committed changelog generation
+        # and the state in core.personas
+        committed = self.coreproxy.get_total_persona(rs, persona_id)
         fields = current.keys()
         stati = const.PersonaChangeStati
         constants = {}
         for f in fields:
-            total_const: List[int] = []
-            tmp: List[int] = []
+            total_const: list[int] = []
+            tmp: list[int] = []
             already_committed = False
             for x, y in pairwise(xsorted(history.keys())):
                 if history[x]['code'] == stati.committed:
@@ -785,11 +791,13 @@ class CoreBaseFrontend(AbstractFrontend):
             'entries': history, 'constants': constants, 'current': current,
             'pending': pending, 'eventual_status': eventual_status,
             'personas': personas, 'ADMIN_KEYS': ADMIN_KEYS,
+            'inconsistencies': inconsistencies or [],
+            'committed': committed,
         })
 
     @access("core_admin")
     @REQUESTdata("phrase", "include_archived")
-    def admin_show_user(self, rs: RequestState, phrase: str, include_archived: bool
+    def admin_show_user(self, rs: RequestState, phrase: str, include_archived: bool,
                         ) -> Response:
         """Allow admins to view any user data set.
 
@@ -954,7 +962,7 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             return self.send_json(rs, {})
 
-        data: Optional[Tuple[CdEDBObject, ...]] = None
+        data: Optional[tuple[CdEDBObject, ...]] = None
 
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
@@ -977,7 +985,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
-        terms: Tuple[str, ...] = tuple()
+        terms: tuple[str, ...] = tuple()
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
@@ -988,7 +996,7 @@ class CoreBaseFrontend(AbstractFrontend):
             if not valid:
                 data = tuple()
             else:
-                search: List[Tuple[str, QueryOperators, Any]]
+                search: list[tuple[str, QueryOperators, Any]]
                 key = "username,family_name,given_names,display_name"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
@@ -1012,7 +1020,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
         # Check if name occurs multiple times to add email address in this case
-        counter: Dict[str, int] = collections.defaultdict(lambda: 0)
+        counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
             counter[make_persona_name(entry)] += 1
 
@@ -1039,14 +1047,14 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     def _changeable_persona_fields(self, rs: RequestState, user: User,
-                                   restricted: bool = True) -> Set[str]:
+                                   restricted: bool = True) -> set[str]:
         """Helper to retrieve the appropriate fields for (admin_)change_user.
 
         :param restricted: If True, only return fields the user may change
             themselves, i.e. remove the restricted fields.
         """
         assert user.persona_id is not None
-        ret: Set[str] = set()
+        ret: set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
         hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
@@ -1094,7 +1102,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'username': data['username'],
             'shown_fields': shown_fields,
             'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
-            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"],
         })
 
     @access("persona", modi={"POST"})
@@ -1147,7 +1155,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     query: Optional[Query] = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices: Dict[str, Dict[Any, str]] = {
+        choices: dict[str, dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1182,7 +1190,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, realm + "/create_user")
 
     @staticmethod
-    def admin_bits(rs: RequestState) -> Set[Realm]:
+    def admin_bits(rs: RequestState) -> set[Realm]:
         """Determine realms this admin can see.
 
         This is somewhat involved due to realm inheritance.
@@ -1191,7 +1199,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if "core_admin" in rs.user.roles:
             ret |= REALM_INHERITANCE.keys()
         for realm in REALM_INHERITANCE:
-            if "{}_admin".format(realm) in rs.user.roles:
+            if f"{realm}_admin" in rs.user.roles:
                 ret |= {realm} | implied_realms(realm)
         return ret
 
@@ -1285,14 +1293,14 @@ class CoreBaseFrontend(AbstractFrontend):
         for admin in admins:
             admins[admin] = xsorted(
                 admins[admin],
-                key=lambda anid: EntitySorter.persona(personas[anid])
+                key=lambda anid: EntitySorter.persona(personas[anid]),
             )
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("meta_admin")
-    def change_privileges_form(self, rs: RequestState, persona_id: int
+    def change_privileges_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
@@ -1392,7 +1400,7 @@ class CoreBaseFrontend(AbstractFrontend):
                            {"cases": cases, "personas": personas})
 
     @access("meta_admin")
-    def show_privilege_change(self, rs: RequestState, privilege_change_id: int
+    def show_privilege_change(self, rs: RequestState, privilege_change_id: int,
                               ) -> Response:
         """Show detailed infromation about pending privilege change."""
         privilege_change = rs.ambience['privilege_change']
@@ -1470,7 +1478,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
-    def privilege_change_remind(self, rs: RequestState, store: CdEDBObject
+    def privilege_change_remind(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Cron job for privilege changes to review.
 
@@ -1521,7 +1529,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
-        if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
+        if target_realm and rs.ambience['persona'][f'is_{target_realm}_realm']:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         past_events = self.pasteventproxy.list_past_events(rs)
@@ -1567,9 +1575,9 @@ class CoreBaseFrontend(AbstractFrontend):
         # trial membership implies membership
         if data.get("trial_member"):
             data["is_member"] = True
-        data['is_{}_realm'.format(target_realm)] = True
+        data[f'is_{target_realm}_realm'] = True
         for realm in implied_realms(target_realm):
-            data['is_{}_realm'.format(realm)] = True
+            data[f'is_{realm}_realm'] = True
         data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(
@@ -1602,7 +1610,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
-    def modify_membership_form(self, rs: RequestState, persona_id: int
+    def modify_membership_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:
         """Render form."""
         if rs.ambience['persona']['is_archived']:
@@ -1648,7 +1656,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("finance_admin")
-    def modify_balance_form(self, rs: RequestState, persona_id: int
+    def modify_balance_form(self, rs: RequestState, persona_id: int,
                             ) -> Response:
         """Serve form to manually modify a personas balance."""
         if rs.ambience['persona']['is_archived']:
@@ -1805,7 +1813,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("email")
-    def send_password_reset_link(self, rs: RequestState, email: vtypes.Email
+    def send_password_reset_link(self, rs: RequestState, email: vtypes.Email,
                                  ) -> Response:
         """Send a confirmation mail.
 
@@ -1916,7 +1924,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdata("#email", "new_password", "new_password2", "cookie")
     def do_password_reset(self, rs: RequestState, email: vtypes.Email,
-                          new_password: str, new_password2: str, cookie: str
+                          new_password: str, new_password2: str, cookie: str,
                           ) -> Response:
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
@@ -1927,7 +1935,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if new_password != new_password2:
             rs.extend_validation_errors(
                 (("new_password", ValueError(n_("Passwords don’t match."))),
-                 ("new_password2", ValueError(n_("Passwords don’t match."))),))
+                 ("new_password2", ValueError(n_("Passwords don’t match.")))))
             rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
             return self.do_password_reset_form(rs, email=email, cookie=cookie,
@@ -1986,7 +1994,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("persona")
     @REQUESTdata("#new_username")
-    def do_username_change_form(self, rs: RequestState, new_username: vtypes.Email
+    def do_username_change_form(self, rs: RequestState, new_username: vtypes.Email,
                                 ) -> Response:
         """Email is now verified or we are admin."""
         if rs.has_validation_errors():
@@ -2019,7 +2027,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
 
     @access(*REALM_ADMINS)
-    def admin_username_change_form(self, rs: RequestState, persona_id: int
+    def admin_username_change_form(self, rs: RequestState, persona_id: int,
                                    ) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -2050,7 +2058,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("activity")
-    def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
+    def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool,
                         ) -> Response:
         """Enable/disable an account."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -2079,7 +2087,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @periodic("pending_changelog_remind")
-    def pending_changelog_remind(self, rs: RequestState, store: CdEDBObject
+    def pending_changelog_remind(self, rs: RequestState, store: CdEDBObject,
                                  ) -> CdEDBObject:
         """Cron job for pending changlog entries to decide.
 
@@ -2161,7 +2169,9 @@ class CoreBaseFrontend(AbstractFrontend):
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
-            rs.notify("error", e.args[0])
+            msg = e.args[0]
+            args = e.args[1] if len(e.args) > 1 else {}
+            rs.notify("error", msg, args)
             code = 0
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
@@ -2194,7 +2204,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
-    def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool
+    def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool,
                       ) -> Response:
         """Delete all identifying information for a persona."""
         if not ack_delete:
@@ -2210,7 +2220,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("core_admin", "auditor")
-    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_changelog_meta(self, rs: RequestState, data: CdEDBObject, download: bool,
                             ) -> Response:
         """View changelog activity."""
         return self.generic_view_log(
@@ -2246,7 +2256,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
-                                "cdedb-mail-{}.txt".format(token))
+                                f"cdedb-mail-{token}.txt")
         with open(filename, 'rb') as f:
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
@@ -2255,13 +2265,13 @@ class CoreBaseFrontend(AbstractFrontend):
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         return self.coreproxy.get_cron_store(rs, name)
 
-    def set_cron_store(self, rs: RequestState, name: str, data: CdEDBObject
+    def set_cron_store(self, rs: RequestState, name: str, data: CdEDBObject,
                        ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
     @access("droid_resolve")
     @REQUESTdata("username")
-    def api_resolve_username(self, rs: RequestState, username: vtypes.Email
+    def api_resolve_username(self, rs: RequestState, username: vtypes.Email,
                              ) -> Response:
         """API to resolve username to that users given names and family name."""
         if rs.has_validation_errors():

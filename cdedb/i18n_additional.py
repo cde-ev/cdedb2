@@ -12,6 +12,7 @@ I18N_STRINGS = (
     n_("AgeClasses.u18"),
     n_("AgeClasses.u16"),
     n_("AgeClasses.u14"),
+    n_("AgeClasses.u10"),
 
     n_("AssemblyLogCodes.assembly_created"),
     n_("AssemblyLogCodes.assembly_changed"),
@@ -103,6 +104,7 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_created"),
     n_("EventLogCodes.registration_changed"),
     n_("EventLogCodes.registration_deleted"),
+    n_("EventLogCodes.registration_payment_received"),
     n_("EventLogCodes.event_locked"),
     n_("EventLogCodes.event_unlocked"),
     n_("EventLogCodes.event_partial_import"),
@@ -225,9 +227,6 @@ I18N_STRINGS = (
     n_("PastEventLogCodes.course_deleted"),
     n_("PastEventLogCodes.participant_added"),
     n_("PastEventLogCodes.participant_removed"),
-    n_("PastEventLogCodes.institution_created"),
-    n_("PastEventLogCodes.institution_changed"),
-    n_("PastEventLogCodes.institution_deleted"),
 
     n_("PrivilegeChangeStati.pending"),
     n_("PrivilegeChangeStati.approved"),
@@ -257,6 +256,14 @@ I18N_STRINGS = (
     n_("LastschriftTransactionStati.failure"),
     n_("LastschriftTransactionStati.cancelled"),
     n_("LastschriftTransactionStati.rollback"),
+
+    n_("PastInstitutions.cde"),
+    n_("PastInstitutions.dsa"),
+    n_("PastInstitutions.dja"),
+    n_("PastInstitutions.jgw"),
+    n_("PastInstitutions.basf"),
+    n_("PastInstitutions.van"),
+    n_("PastInstitutions.eisenberg"),
 
     n_("QueryOperators.empty"),
     n_("QueryOperators.nonempty"),
@@ -309,6 +316,17 @@ I18N_STRINGS = (
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
+
+    n_("MailinglistRosterVisibility.none"),
+    n_("MailinglistRosterVisibility.subscribable"),
+    n_("MailinglistRosterVisibility.viewers"),
+
+    n_("EventFeeType.common"),
+    n_("EventFeeType.storno"),
+    n_("EventFeeType.external"),
+    n_("EventFeeType.solidary_reduction"),
+    n_("EventFeeType.donation"),
+    n_("EventFeeType.solidary_increase"),
 
     #
     # Validation errors
@@ -368,6 +386,14 @@ I18N_STRINGS = (
     n_("subman_managing_no-unsubscribe-possible"),
     n_("subman_managing_not-privileged"),
     n_("subman_managing_no-cleanup-necessary"),
+
+    #
+    # schulze-condorcet localization
+    #
+    n_("A candidate contains a forbidden character."),
+    n_("Superfluous candidate in vote string."),
+    n_("Missing candidate in vote string."),
+    n_("Every candidate must occur exactly once in each vote."),
 
     #
     # Default Strings

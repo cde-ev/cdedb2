@@ -19,7 +19,8 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Any, Iterator, Mapping, MutableMapping, Union
+from collections.abc import Iterator, Mapping, MutableMapping
+from typing import Any, Union
 
 import pytz
 
@@ -209,6 +210,8 @@ _DEFAULTS = {
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
     # email for replies to assembly mails
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
+    # email for replies to finance mails
+    "FINANCE_ADMIN_ADDRESS": "buchhaltung@lists.cde-ev.de",
 
     # email for privilege changes
     "META_ADMIN_ADDRESS": "admin@cde-ev.de",
@@ -226,6 +229,7 @@ _DEFAULTS = {
     "MAILMAN_BASIC_AUTH_USER": "mailman",
     # aliases which are recognized for mailinglists
     "MAILMAN_ACCEPTABLE_ALIASES": {
+        "verwaltung@lists.cde-ev.de": ["datenbank@cde-ev.de"],
         "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],

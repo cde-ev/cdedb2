@@ -1,22 +1,21 @@
 {% import "web/util.tmpl" as util with context %}
 {# A macro to generate the form select fields for all course choices of a given track.
 
-    track               The track dict of the requested track.
+    cco                 The course choice object.
     all_courses         A dict containing all courses of the current event.
     course_choices      A dict containing a mapping from track to a list of ids of all choosable courses.
                         Choosable courses can differ depending on event state and orga privileges.
     all_course_choices  A dict containing a mapping from track to a list of ids of all offered courses.
     show_track_titles   A bool deciding whether to print or omit the title of the track.
-    track_group         Optionally the track group for which to print course choices.
 #}
-{% macro select_course_choice(track, all_courses, course_choices, all_course_choices, show_track_title, track_group=none) %}
-
-    <div id="course-choice-container-{{ track['id'] if not track_group else "group-{}".format(track_group['id'])  }}"
+{% macro select_course_choice(cco, all_courses, course_choices, all_course_choices, show_track_title) %}
+    {% set track = cco.reference_track %}
+    <div id="course-choice-container-{{ track['id'] if not cco.is_complex() else "group-{}".format(cco['id'])  }}"
          class="course_choice_container">
         <h4>
             {% trans %}Course Choices{% endtrans %}
             {% if show_track_title %}
-                {% trans track=(track_group or track)['title'] %}
+                {% trans track=cco['title'] %}
                     for {{ track }}
                 {% endtrans %}
             {% endif %}
@@ -26,9 +25,9 @@
                                            |xdict_entries('{id}', '{nr}. {title}', include=course_choices) %}
         {% set all_course_entries = all_courses|keydictsort(EntitySorter.course)
                                                |xdict_entries('{id}', '{nr}. {title}', include=all_course_choices) %}
-        {% if track_group %}
-            {% set choice_name = "group{}.course_choice".format(track_group['id']) + "_{}" %}
-            {% set instructor_name = "group{}.course_instructor".format(track_group['id']) %}
+        {% if cco.is_complex() %}
+            {% set choice_name = "group{}.course_choice".format(cco['id']) + "_{}" %}
+            {% set instructor_name = "group{}.course_instructor".format(cco['id']) %}
         {% else %}
             {% set choice_name = "track{}.course_choice".format(track['id']) + "_{}" %}
             {% set instructor_name = "track{}.course_instructor".format(track['id']) %}
@@ -38,8 +37,8 @@
 
         {% for i in range(num_choices) %}
             {{ util.form_input_select(name=choice_name.format(i), nulloption=nbsp,
-                                      aclass="choice_group_select" if track_group else "",
-                                      attributes="track_group_id={}".format(track_group['id']) if track_group else "",
+                                      aclass="choice_group_select" if cco.is_complex() else "",
+                                      attributes="track_group_id={}".format(cco['id']) if cco.is_complex() else "",
                                       label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
                                       info=(gettext("Optional choice") if i >= min_choices else "")) }}
         {% endfor %}
@@ -52,18 +51,16 @@
 
 {% macro select_all_course_choices(involved_tracks=None) %}
     {% for cco in choice_objects %}
-        {% if 'constraint_type' in cco %}
-            {% if cco['track_ids'] and reference_tracks[cco['id']]['num_choices'] and (
-                    involved_tracks is none or involved_tracks.intersection(cco['track_ids'])) %}
-                {{ select_course_choice(
-                        reference_tracks[cco['id']], courses, courses_per_track_group[cco['id']],
-                        all_courses_per_track_group[cco['id']],
-                        show_track_title=choice_objects|length > 1, track_group=cco) }}
+        {% if cco.num_choices and (involved_tracks is none or involved_tracks.intersection(cco.tracks)) %}
+            {% if cco.is_complex() %}
+                {% set course_choices = courses_per_track_group[cco.id] %}
+                {% set all_course_choices = all_courses_per_track_group[cco.id] %}
+            {% else %}
+                {% set course_choices = courses_per_track[cco.id] %}
+                {% set all_course_choices = all_courses_per_track[cco.id] %}
             {% endif %}
-        {% elif cco['num_choices'] and (involved_tracks is none or cco['id'] in involved_tracks) %}
-            {{ select_course_choice(
-                    cco, courses, courses_per_track[cco['id']], all_courses_per_track[cco['id']],
-                    show_track_title=choice_objects|length > 1) }}
+            {{ select_course_choice(cco, courses, course_choices, all_course_choices,
+                                    show_track_title=choice_objects|length > 1) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}
@@ -135,7 +132,7 @@
 {% macro display_field(field, entry, otherwise='—') %}
     {% if field['entries'] %}
         {% set hit = [] %}
-        {% for value, description in field['entries'] %}
+        {% for value, description in field['entries'].items() %}
             {% if value == entry|string %}
                 {% do hit.append(description) %}
             {% endif %}
@@ -172,36 +169,29 @@
     {%- set name = name or "fields.{}".format(field['field_name']) %}
     {%- set bool_label = bool_label or field['title'] %}
     {%- if field['entries'] %}
-        {{- util.input_select(name=name, entries=field['entries'], nulloption=nbsp,
+        {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
+        {% set to_input_type = {
+            datatypes.str: 'text',
+            datatypes.int: 'number',
+            datatypes.float: 'number',
+            datatypes.date: 'date',
+            datatypes.datetime: 'datetime-local',
+        } %}
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
-        {%- elif field['kind'] == datatypes.str %}
-            {% if text_rows %}
-                {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
-                                        anid=anid, rows=text_rows) }}
-            {% else %}
-                {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid)  }}
-            {% endif %}
-        {%- elif field['kind'] == datatypes.int %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="number", placeholder="0") }}
-        {%- elif field['kind'] == datatypes.float %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                placeholder="0.0") }}
-        {%- elif field['kind'] == datatypes.date %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="date", placeholder="YYYY-MM-DD") }}
-        {%- elif field['kind'] == datatypes.datetime %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="datetime-local") }}
+        {%- elif field['kind'] == datatypes.str and text_rows %}
+            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                    anid=anid, rows=text_rows) }}
         {%- else %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            {% set type = to_input_type.get(field['kind'], 'text') %}
+            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
+                attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
     {%- endif %}
 {%- endmacro %}
@@ -231,7 +221,7 @@
 {% macro print_field_inputs(association) %}
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+        {% for field in ambience['event']['fields'].values()|sort
                 if field['association'] == association %}
             {{ form_field_input(field) }}
         {% else %}
@@ -294,7 +284,7 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
+                                              entries=registration_fields.values()|sort|entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
@@ -415,4 +405,20 @@
             </li>
         {% endfor %}
     </ul>
+{% endmacro %}
+
+{% macro camping_mat_icon(is_camping_mat, may_camping_mat) %}
+    {% if is_camping_mat and may_camping_mat  %}
+        <span title="{{ gettext("Assigned to sleep on a camping mat.") }}">
+            {{- util.make_icon('campground') -}}
+            {{- util.make_icon('arrow-left') -}}
+        </span>
+    {% elif may_camping_mat %}
+        {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a camping mat.")) }}
+    {% elif is_camping_mat %}
+        <span title="{{ gettext("Assigned to, but may not sleep on a camping mat.") }}">
+            {{- util.make_icon('campground', aclass='text-warning') -}}
+            {{- util.make_icon('exclamation', aclass='text-warning') -}}
+        </span>
+    {% endif %}
 {% endmacro %}

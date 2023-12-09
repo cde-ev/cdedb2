@@ -10,6 +10,7 @@ import tempfile
 from typing import List
 
 import freezegun
+import pytz
 import webtest
 
 from cdedb.common import (
@@ -1359,11 +1360,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # invalid candidates - test validation errors
         f['vote'] = "Werner>Anton"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Unerwartete Kandidaten gefunden.")
         self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
-        f['vote'] = "e>pi>1=0>i>e"
+        f['vote'] = "_bar_=Akira=Anton>Berta>Willi"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Doppelte Kandidaten gefunden.")
+        self.assertValidationError('vote', "Unerwarteten Kandidaten gefunden.")
+        f['vote'] = "_bar_=Akira=Anton>Berta>Anton"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'vote', "Jeder Kandidat muss genau einmal vorhanden sein.")
 
     @storage
     @as_users("werner", "inga", "kalif")
@@ -1983,35 +1987,71 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @as_users("werner")
     @storage
-    def test_duplicate_ballot(self) -> None:
+    def test_duplicate_reschedule_ballot(self) -> None:
         self.traverse("Versammlungen", "Archiv-Sammlung", "Abstimmungen",
                       "Ganz wichtige Wahl", "Als Vorlage benutzen")
         f = self.response.forms['selectassemblyform']
         f['target_assembly_id'] = 3
         self.submit(f)
         f = self.response.forms['configureballotform']
+        f['title'] = "Längere Wahl"
+        f['vote_extension_end'] = datetime.datetime(2222, 2, 23,
+                                                    tzinfo=pytz.utc)
+        f['abs_quorum'] = 1
         self.submit(f)
         ballots = self.assembly.get_ballots(self.key, (16, 1001))
+        self.assertEqual(ballots[1001]['abs_quorum'], 1)
+        self.assertEqual(ballots[1001]['title'], "Längere Wahl")
         for ballot in ballots.values():
-            del ballot['id']
-            del ballot['candidates']
+            del ballot['id'], ballot['candidates']
+            del ballot['title']
+            del ballot['vote_extension_end'], ballot['quorum'], ballot['abs_quorum']
         self.assertEqual(ballots[16], ballots[1001])
         self.assertEqual(
             self.assembly.list_attachments(self.key, ballot_id=16),
             self.assembly.list_attachments(self.key, ballot_id=1001),
         )
 
+        # Now try rescheduling
+        self.traverse("Abstimmungen", "Abstimmungen umplanen")
+        f = self.response.forms["rescheduleballotsform"]
+        self.submit(f, check_notification=False)
+        self.assertNotification("wenigstens eine Abstimmung auswählen", 'error')
+        f = self.response.forms["rescheduleballotsform"]
+        f['ballot_ids'] = [16, 1001]
+        f['vote_begin'] = datetime.datetime(2100, 1, 1)
+        f['vote_end'] = datetime.datetime(2100, 1, 2)
+        f['vote_extension_end'] = datetime.datetime(2100, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('vote_extension_end')
+        f = self.response.forms["rescheduleballotsform"]
+        f['vote_extension_end'] = datetime.datetime(2100, 1, 3)
+        self.submit(f)
+
+        self.assertTitle("Zusammenfassung (Archiv-Sammlung)")
+        self.traverse("Ganz wichtige Wahl")
+        self.assertPresence("01.01.2100, 00:00:00 bis 02.01.2100, 00:00:00")
+        self.assertNonPresence("Verlängerung")
+        self.traverse("Nächste")
+        self.assertTitle("Genauso wichtige Wahl (Archiv-Sammlung)")
+        self.assertPresence("22.02.2222, 01:00:00 bis 22.02.2222, 01:01:00")
+        self.assertNonPresence("Verlängerung")
+        self.traverse("Nächste")
+        self.assertTitle("Längere Wahl (Archiv-Sammlung)")
+        self.assertPresence("01.01.2100, 00:00:00 bis 02.01.2100, 00:00:00")
+        self.assertPresence("Verlängerung bis 03.01.2100")
+
         # Source the ballot from a different assembly:
-        self.traverse("Abstimmungen", "Ganz wichtige Wahl", "Als Vorlage benutzen")
+        self.traverse("Abstimmungen", "Genauso wichtige Wahl",
+                      "Als Vorlage benutzen")
         f = self.response.forms['selectassemblyform']
         f['target_assembly_id'] = 1
         self.submit(f)
         f = self.response.forms['configureballotform']
         self.submit(f)
-        source = ballots[16]
+        source = self.assembly.get_ballot(self.key, 17)
         target = self.assembly.get_ballot(self.key, 1002)
-        del target['id']
-        del target['candidates']
+        del source['id'], target['id']
         source['assembly_id'] = 1
         self.assertEqual(source, target)
 

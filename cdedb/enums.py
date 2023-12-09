@@ -6,7 +6,6 @@ one list instead of two.
 """
 
 from enum import Enum, IntEnum
-from typing import Tuple, Type
 
 import cdedb.database.constants as const
 from cdedb.common import (
@@ -18,7 +17,7 @@ from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 #: The list of normal enums
-ALL_ENUMS: Tuple[Type[Enum], ...] = (
+ALL_ENUMS: tuple[type[Enum], ...] = (
     const.Genders,
     const.PersonaChangeStati,
     const.RegistrationPartStati,
@@ -39,9 +38,12 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.FieldDatatypes,
     const.MailinglistTypes,
     const.MailinglistDomain,
+    const.MailinglistRosterVisibility,
     const.QuestionnaireUsages,
     const.EventPartGroupType,
     const.CourseTrackGroupType,
+    const.EventFeeType,
+    const.PastInstitutions,
     QueryOperators,
     QueryScope,
     AgeClasses,
@@ -56,7 +58,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
 )
 
 #: The list of infinite enums
-ALL_INFINITE_ENUMS: Tuple[Type[IntEnum], ...] = (
+ALL_INFINITE_ENUMS: tuple[type[IntEnum], ...] = (
     CourseFilterPositions, CourseChoiceToolActions)
 
 #: A dict for enum lookup in the templates.

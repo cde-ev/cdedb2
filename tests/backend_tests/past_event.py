@@ -237,53 +237,6 @@ class TestPastEventBackend(BackendTest):
         self.assertIn((3, 2), participants)
 
     @as_users("vera")
-    def test_rcw_mechanism(self) -> None:
-        institution_id = 1
-        data = self.pastevent.get_institution(
-            self.key, institution_id=institution_id)
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-        # positional argument
-        data['title'] = "Stavromula Beta"
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        self.pastevent.rcw_institution(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Gamma"
-        self.pastevent.rcw_institution(self.key, data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Delta"
-        self.pastevent.rcw_institution(
-            self.key, {'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-        # keyword argument
-        data['title'] = "Stavromula Epsilon"
-        self.pastevent.rcw_institution(self.key, data=data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        self.pastevent.rcw_institution(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Zeta"
-        self.pastevent.rcw_institution(self.key, data=data)
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-        data['title'] = "Stavromula Eta"
-        self.pastevent.rcw_institution(
-            self.key, data={'id': data['id'], 'title': data['title']})
-        self.assertEqual(data, self.pastevent.get_institution(
-            self.key, institution_id=institution_id))
-
-    @as_users("vera")
     def test_past_log(self) -> None:
         # first generate some data
         data = {
@@ -369,19 +322,15 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
-        update = {
-            'id': 2,
-            'is_cancelled': True
-        }
-        self.event.set_event(self.key, update)
+        self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
         new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
+        event_id = 1
         update = {
-            'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
                                                          tzinfo=pytz.utc),
             'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
@@ -401,8 +350,8 @@ class TestPastEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event(self.key, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        self.event.set_event(self.key, event_id, update)
+        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
