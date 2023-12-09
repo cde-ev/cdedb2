@@ -49,7 +49,8 @@
             </div>
             <div class="col-md-6">
                 {{ util.form_input_checkbox("consent", label=gettext("Privacy Consent given"), horizontal=False) }}
-                {{ util.form_input_checkbox("sendmail", label=gettext("Send Welcome Mail"), horizontal=False) }}
+                {{ util.form_input_checkbox("sendmail", label=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
+                                                                        gettext("Send Welcome Mail")), horizontal=False) }}
             </div>
         </div>
         {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}

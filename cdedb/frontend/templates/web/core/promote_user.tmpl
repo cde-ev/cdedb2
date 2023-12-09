@@ -122,8 +122,9 @@
                 </div>
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     <div class="text-muted">
-                        {% trans %}
-                            The CdEDB will automatically send a welcome email to the promoted user.
+                        {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
+                                                                        gettext("welcome email")) %}
+                            The CdEDB will automatically send a %(welcome_mail)s to the user.
                             If the user gets no trial membership, this also includes payment instructions.
                         {% endtrans %}
                     </div>

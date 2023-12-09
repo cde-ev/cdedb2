@@ -8852,6 +8852,17 @@ msgstr "E-Mail übernehmen"
 msgid "Merge with Account"
 msgstr "Zusammenführen mit Account"
 
+msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
+msgstr "Die CdEDB wird eine automatische %(welcome_mail)s an den neuen Nutzer schicken."
+
+msgid "welcome email"
+msgstr "Willkommensmail"
+
+msgid "The CdEDB will automatically send a %(welcome_mail)s to the user. "
+"If the user gets no trial membership, this also includes payment instructions."
+msgstr "Die CdEDB wird eine automatische %(welcome_mail)s an den Nutzer schicken. "
+"Wenn der Nutzer keine Probemitgliedschaft erhält, beinhaltet diese auch die Zahlungsinformationen."
+
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
 msgid "Consent to Member Search"
 msgstr "Einwilligung zur Mitgliedersuche"

@@ -8554,6 +8554,16 @@ msgstr ""
 msgid "Merge with Account"
 msgstr ""
 
+msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
+msgstr ""
+
+msgid "welcome email"
+msgstr ""
+
+msgid "The CdEDB will automatically send a %(welcome_mail)s to the user. "
+"If the user gets no trial membership, this also includes payment instructions."
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
 msgid "Consent to Member Search"
 msgstr ""
