@@ -437,12 +437,15 @@ class CustomQueryFilter(EventDataclass):
 
     def to_database(self) -> "CdEDBObject":
         ret = super().to_database()
-        ret['fields'] = self.field
+        ret['fields'] = self.get_field_string()
         return ret
 
-    @property
-    def field(self) -> str:
-        return ",".join(xsorted(self.fields))
+    @staticmethod
+    def _get_field_string(fields: Collection[str]) -> str:
+        return ",".join(xsorted(fields))
+
+    def get_field_string(self) -> str:
+        return self._get_field_string(self.fields)
 
     def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
         if self.scope != scope:
@@ -452,7 +455,7 @@ class CustomQueryFilter(EventDataclass):
         types = {spec[f].type for f in self.fields}
         if len(types) != 1:
             return
-        spec[self.field] = QuerySpecEntry(unwrap(types), self.title)
+        spec[self.get_field_string()] = QuerySpecEntry(unwrap(types), self.title)
 
     def get_sortkey(self) -> Sortkey:
         return (self.event_id, self.scope, self.title)

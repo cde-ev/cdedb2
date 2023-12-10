@@ -3572,8 +3572,8 @@ def _serialized_partial_event(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if not((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
-           <= EVENT_SCHEMA_VERSION):
+    if not ((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
+            <= EVENT_SCHEMA_VERSION):
         raise ValidationSummary(ValueError(
             argname, n_("Schema version mismatch.")))
 
@@ -4506,7 +4506,7 @@ def _custom_query_filter(
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['fields'] = ",".join(xsorted(val['fields']))
+    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])
 
     if errs:
         raise errs

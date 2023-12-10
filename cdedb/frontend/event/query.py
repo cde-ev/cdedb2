@@ -353,7 +353,7 @@ class EventQueryMixin(EventBaseFrontend):
                    for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('title', KeyError(n_("A filter with this title already exists."))))
-            if any(cf.field == data['fields']
+            if any(cf.get_field_string() == data['fields']
                    for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('field', KeyError(n_(
@@ -400,7 +400,7 @@ class EventQueryMixin(EventBaseFrontend):
                    for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('title', KeyError(n_("A filter with this title already exists."))))
-            if any(cf.field == data['fields'] and cf.id != custom_filter_id
+            if any(cf.get_field_string() == data['fields'] and cf.id != custom_filter_id
                    for cf in rs.ambience['event'].custom_query_filters.values()):
                 rs.append_validation_error(
                     ('field', KeyError(n_(
