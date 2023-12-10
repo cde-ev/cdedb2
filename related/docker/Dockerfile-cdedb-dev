@@ -1,29 +1,9 @@
 FROM cdedb:latest
 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-webtest \
-    python3-freezegun \
-    flake8 \
-    isort \
-    pylint \
-    wget \
-    unzip \
-    \
     bash-completion \
     man \
     less \
     vim \
     nano \
-    emacs \
-    \
-    && python3 -m pip --no-cache-dir install \
-    mypy==0.971 \
-    types-werkzeug \
-    types-pytz \
-    types-jinja2 \
-    types-python-dateutil \
-    types-freezegun \
-    types-bleach \
-    types-Markdown \
-    types-click \
-    types-tabulate
+    emacs

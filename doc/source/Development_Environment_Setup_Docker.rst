@@ -7,48 +7,58 @@ may be used for development.
 Prerequisites
 -------------
 
-To utilise the images you need to have Docker installed.
-If you furthermore want to use the ``docker-compose.yaml`` file
-(higly recommended) you also need ``docker-compose`` installed.
-Theoretically the images and the compose file can also be run by podman
-or similar OCI compatibel tools.
-This however has not been tested yet.
+To utilise the images you need to have Docker installed. Furthermore the use
+of ``docker-compose`` (which is a separate program) is advised for ease of
+use.  Theoretically the images and the compose file can also be run by podman
+or similar OCI compatibel tools.  This however has not been tested yet.
 
 The following commands assume that you are a member of the docker group
 or have gained the proper permissions by other means like sudo.
+
+Variants
+--------
+
+There are two variants of the Docker environment, configured via separate
+compose files. These are as follows.
+
+- ``related/docker/docker-compose.yaml`` for simply running the CdEDB; this
+  does not provide additional functionality to keep the environment lean
+- ``related/docker/docker-compose-dev.yaml`` is a superset of the previous and
+  provides additional functionality for developing the CdEDB especially also
+  from inside the container (e.g. installing reasonable editors)
 
 Building the images
 -------------------
 
 Before starting any containers you have to build the corresponding images.
-``docker-compose up`` will do this for you if they do not yet exist.
-As the compose file is in a subdirectory you have to tell ``docker-compose``
+``docker compose up`` will do this for you if they do not yet exist.
+As the compose file is in a subdirectory you have to tell ``docker compose``
 where it has to look for it using the ``--file`` flag.
-The flag needs to be places between ``docker-compose`` and the subcommand.
+The flag needs to be places between ``docker compose`` and the subcommand.
 Another possibility is to simply change you working directory
 to the parent directory of the compose file.
 This applies to (almost) all subcommands.
 
 Should you see the need to manually rebuild them you can do so using
-``docker-compose build``.
+``docker compose build``.
 
 Starting the containers
 -----------------------
 
-To start the containers you can simply run ``docker-compose up``.
+To start the containers you can simply run ``docker compose up``.
 This will let the containers run in the foreground and block your terminal.
 If you wish to run the containers in a detached mode you can append a ``-d``.
 The LDAP container depends on a properly seeded database. This is already
 honored during the default setup process and needs no further manual
 intervention.
 
-Once the containers are running you can execute ``docker-compose ps``
+Once the containers are running you can execute ``docker compose ps``
 to check if everything went well and all containers are still alive.
 In this overview you are also able to see more information like port mappings.
 
 To shutdown the containers you can either press CTRL+C
 if you started the containers attached
-or run ``docker-compose down`` otherwise.
+or run ``docker compose down`` otherwise.
 
 Initializing the containers
 ---------------------------
@@ -72,11 +82,11 @@ To do this you can run the following:
     $ # navigate to the repository root
     $ make i18n-compile
     $ make doc
-    $ docker-compose --file related/docker/docker-compose.yaml exec app python3 -m cdedb dev apply-sample-data
+    $ docker compose --file related/docker/docker-compose.yaml exec app python3 -m cdedb dev apply-sample-data
 
 .. warning::
 
-    Currently is is advised to run make targets which generate files
+    Currently it is advised to run make targets which generate files
     from the host to ensure proper permissions on the files.
     You may also experiment with executing them from within the containers
     when running as another user however this is somewhat complicated.
@@ -91,7 +101,7 @@ at the correct directory inside the application container.
 If you wish to execute commands inside a running container you can either
 pass them one-by-one to ``exec`` like above
 or start an interactive session by executing bash inside a container
-(``docker-compose exec app bash``).
+(``docker compose exec app bash``).
 To run commands in the postgres container
 you have to substitute ``app`` with ``cdb``.
 
@@ -103,8 +113,8 @@ The ldap server listens at `localhost:8389 <https://localhost:8389>`_.
 
 Some development commands like ``pylint`` are however not installed
 inside the containers to keep them light and should be run locally.
-For more information refer to the ``docker``/``docker-compose`` documentation
-or execute ``docker-compose help``.
+For more information refer to the ``docker``/``docker compose`` documentation
+or execute ``docker compose help``.
 
 
 Resetting the containers
@@ -112,8 +122,8 @@ Resetting the containers
 
 The containers store their state in multiple volumes.
 You can list these using ``docker volume ls``.
-When starting the containers using ``docker-compose`` they get a proper name
-which is generated from the name set in the ``docker-compose.yaml`` file
+When starting the containers using ``docker compose`` they get a proper name
+which is generated from the name set in the ``docker compose.yaml`` file
 and the parent folder of that file.
 
 The volumes used should therefore be named:
@@ -126,8 +136,8 @@ The volumes used should therefore be named:
 
 You can delete these volumes using ``docker volume rm VOLUME``.
 This can however only be done when the containers are not running.
-Execute ``docker-compose down`` to properly stop the containers.
-To remove all volumes you can simply run ``docker-compose down --volumes``.
+Execute ``docker compose down`` to properly stop the containers.
+To remove all volumes you can simply run ``docker compose down --volumes``.
 
 If you changed the entrypoint shell scripts or the docker files themselves, you
-need to rebuild the containers via ``docker-compose build``.
+need to rebuild the containers via ``docker compose build``.

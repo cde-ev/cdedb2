@@ -2,17 +2,9 @@ version: '3.4'
 
 services:
   cdb:
-    image: cdepostgres
-    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
-    build:
-      context: ../..
-      dockerfile: ./related/docker/Dockerfile-postgres
-    volumes:
-      - database:/var/lib/postgresql/data # tables etc
-    ports:
-      - 127.0.0.1:5432:5432
-    environment:
-      POSTGRES_PASSWORD: passwd
+    extends:
+      file: docker-compose-base.yaml
+      service: cdb
   app:
     image: cdedb
     build:
@@ -23,7 +15,7 @@ services:
       - config:/etc/cdedb # config files
       - cert:/etc/ssl/apache2 # dynamic self-signed certificate
       - ldap:/etc/ssl/ldap:ro # dynamic self-signed ldap certificate
-      - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
+      - ../..:/cdedb2:z # the :z is for SELinux (see #2053), will be ro in the future
       - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
     ports:
       - 8443:443 # apache
@@ -32,28 +24,14 @@ services:
     depends_on:
       - cdb
   ldap:
-    image: ldaptor
-    build:
-      context: ../..
-      dockerfile: ./related/docker/Dockerfile-ldaptor
-    volumes:
-      - ldap:/etc/ssl/ldap # dynamic self-signed ldap certificate
-      - ../..:/cdedb2:z,ro # the :z is for SELinux (see #2053)
-    ports:
-      - 127.0.0.1:8636:636
-    environment:
-        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
-    depends_on:
-      - cdb
-  adminer:
-    image: adminer
-    ports:
-      - 127.0.0.1:8080:8080
+    extends:
+      file: docker-compose-base.yaml
+      service: ldap
 
 volumes:
-  config:
   database:
   files:
-  ldap:
+  config:
   cert:
+  ldap:
   i18nwritable:
