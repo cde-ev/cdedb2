@@ -81,7 +81,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = inspect(vtypes.NonNegativeDecimal,
+        amount, problems = inspect(decimal.Decimal,
             (datum['raw']['amount'] or "").strip(), argname="amount")
         persona_id, p = inspect(vtypes.CdedbID,
             (datum['raw']['id'] or "").strip(), argname="persona_id")
