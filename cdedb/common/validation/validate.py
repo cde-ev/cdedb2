@@ -3041,21 +3041,19 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: dict[str, type[Any]] = {}
-    for field in fields.values():
-        if field.association == association:
-            dt = _ALL_TYPED[const.FieldDatatypes](
-                field.kind, field.field_name, **kwargs)
-            datatypes[field.field_name] = cast(type[Any], eval(  # pylint: disable=eval-used
-                f"Optional[{dt.name}]",
-                {
-                    'Optional': Optional,
-                    'date': datetime.date,
-                    'datetime': datetime.datetime,
-                    'phone': str,
-                }))
+    datatypes: dict[const.FieldDatatypes, type[Any]] = {
+        const.FieldDatatypes.str: Optional[str],
+        const.FieldDatatypes.bool: Optional[bool],
+        const.FieldDatatypes.int: Optional[int],
+        const.FieldDatatypes.float: Optional[float],
+        const.FieldDatatypes.date: Optional[datetime.date],
+        const.FieldDatatypes.datetime: Optional[datetime.datetime],
+        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
+        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
+        const.FieldDatatypes.phone: Optional[str],
+    }
     optional_fields = {
-        str(field.field_name): datatypes[field.field_name]
+        str(field.field_name): datatypes[field.kind]
         for field in fields.values() if field.association == association
     }
 
