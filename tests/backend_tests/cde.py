@@ -431,6 +431,12 @@ class TestCdEBackend(BackendTest):
             else:
                 self.assertFalse(v)
 
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -449,23 +455,11 @@ class TestCdEBackend(BackendTest):
         else:
             self.fail("Invalid user configuration for this test.")
 
-        self.assertEqual(AllowedSemesterSteps(balance=True, exmember_balance=True),
+        self.assertEqual(AllowedSemesterSteps(balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
-        # check that exmember balance and member balance work in arbitrary order
-        if self.user_in("anton"):
-            self.cde.finish_semester_balance_update(self.key)
-            self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
-                             self.cde.allowed_semester_steps(self.key))
-            self.cde.finish_semester_exmember_update(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_exmember_update(self.key)
-            self.assertEqual(AllowedSemesterSteps(balance=True),
-                             self.cde.allowed_semester_steps(self.key))
-            self.cde.finish_semester_balance_update(self.key)
-        else:
-            self.fail("Invalid user configuration for this test.")
+        self.cde.finish_semester_balance_update(self.key)
 
         self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
@@ -489,6 +483,12 @@ class TestCdEBackend(BackendTest):
             self.cde.finish_semester_bill(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
+
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
 
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))

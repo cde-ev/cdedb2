@@ -122,7 +122,13 @@ class CdESemesterBackend(CdELastschriftBackend):
         if allowed_steps.any():
             return allowed_steps
 
-        # after both are done, next ones are member ejections and archival
+        # after both are done, remove balance of exmembers
+        if not period["exmember_done"]:
+            allowed_steps.exmember_balance = True
+        if allowed_steps.any():
+            return allowed_steps
+
+        # after that, we can eject members and perform archival
         if not period["ejection_done"]:
             allowed_steps.ejection = True
         if not period["archival_done"]:
@@ -130,11 +136,9 @@ class CdESemesterBackend(CdELastschriftBackend):
         if allowed_steps.any():
             return allowed_steps
 
-        # after both are done, next one are balance update and exmember balance removal
+        # after both are done, next one is balance update
         if not period["balance_done"]:
             allowed_steps.balance = True
-        if not period["exmember_done"]:
-            allowed_steps.exmember_balance = True
         if allowed_steps.any():
             return allowed_steps
 
@@ -586,8 +590,9 @@ class CdESemesterBackend(CdELastschriftBackend):
                                      ) -> tuple[bool, Optional[CdEDBObject]]:
         """Set the balance of all former members to zero.
 
-        We keep the balance of all former members during one semester, so they get their
+        We keep the balance of all former members for one semester, so they get their
         remaining balance back if they pay again in this time.
+        Immediately before we perform the next wave of ejections, we remove it.
         """
         period_id = affirm(int, period_id)
         with Atomizer(rs):

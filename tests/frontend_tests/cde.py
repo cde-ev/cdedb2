@@ -2008,6 +2008,12 @@ class TestCdEFrontend(FrontendTest):
                             div='eject-members')
         self.assertPresence("Später zu erledigen.", div='balance-update')
 
+        # 1.2.1 Remove exmember balance
+        f = self.response.forms['ejectform']
+        self.submit(f)
+        self.join_worker_thread('semester_update_exmember_balance', link)
+        self.assertTitle("Semesterverwaltung")
+        # 1.2.2 Perform ejection and archival
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
@@ -2061,6 +2067,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('Zahlungserinnerung bereits erledigt', div='notifications')
         self.assertTitle("Semesterverwaltung")
 
+        # 2.2.1 Remove exmember balance
+        f = self.response.forms['ejectform']
+        self.submit(f)
+        self.join_worker_thread('semester_update_exmember_balance', link)
+        self.assertTitle("Semesterverwaltung")
+        # 2.2.2 Perform ejection and archival
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
@@ -2086,6 +2098,10 @@ class TestCdEFrontend(FrontendTest):
         # Verify Log
         log_expectation: list[CdEDBObject] = [
             {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "561,11\xa0€ Guthaben von 9 Exmitgliedern aufgelöst.",
+            },
+            {
                 'code': const.CdeLogCodes.semester_ejection,
                 'change_note': "2 inaktive Mitglieder gestrichen.",
             },
@@ -2097,10 +2113,6 @@ class TestCdEFrontend(FrontendTest):
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "2 Probemitgliedschaften beendet."
                                " 16,00\xa0€ Guthaben von Mitgliedern abgebucht.",
-            },
-            {
-                'code': const.CdeLogCodes.semester_exmember_balance,
-                'change_note': "567,55\xa0€ Guthaben von 11 Exmitgliedern aufgelöst.",
             },
             {
                 'code': const.CdeLogCodes.semester_advance,
@@ -2116,6 +2128,10 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': "0 E-Mails versandt.",
             },
             {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "6,44\xa0€ Guthaben von 2 Exmitgliedern aufgelöst.",
+            },
+            {
                 'code': const.CdeLogCodes.semester_ejection,
                 'change_note': "1 inaktive Mitglieder gestrichen.",
             },
@@ -2127,10 +2143,6 @@ class TestCdEFrontend(FrontendTest):
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "0 Probemitgliedschaften beendet."
                                " 20,00\xa0€ Guthaben von Mitgliedern abgebucht.",
-            },
-            {
-                'code': const.CdeLogCodes.semester_exmember_balance,
-                'change_note': "1,00\xa0€ Guthaben von 1 Exmitgliedern aufgelöst.",
             },
             {
                 'code': const.CdeLogCodes.semester_advance,
@@ -2147,35 +2159,6 @@ class TestCdEFrontend(FrontendTest):
             },
         ]
         self.assertLogEqual(log_expectation, realm="cde")
-
-        self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–12 von 12]")
-        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="1-1001")
-        self.assertPresence("1 Accounts archiviert.", div="2-1002")
-        self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        # self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
-        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="3-1003")
-        self.assertPresence("Nächstes Semester", div="4-1004")
-        self.assertPresence("44", div="4-1004")
-
-        self.assertPresence("Zahlungsaufforderung mit Addresscheck", div="5-1005")
-        self.assertPresence("6 E-Mails versandt", div="5-1005")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="6-1006")
-        self.assertPresence("0 E-Mails versandt", div="6-1006")
-        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="7-1007")
-        self.assertPresence("0 Accounts archiviert.", div="8-1008")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="9-1009")
-        self.assertPresence("20,00 € Guthaben abgebucht.", div="9-1009")
-        # self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
-        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="9-1009")
-        self.assertPresence("Nächstes Semester", div="10-1010")
-        self.assertPresence("45", div="10-1010")
-
-        self.assertPresence("Zahlungsaufforderung versendet", div="11-1011")
-        self.assertPresence("5 E-Mails versandt", div="11-1011")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="12-1012")
-        self.assertPresence("0 E-Mails versandt", div="12-1012")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
@@ -2811,19 +2794,24 @@ class TestCdEFrontend(FrontendTest):
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
 
+        # Remove Exmember balance
+        f = self.response.forms['ejectform']
+        self.submit(f)
+        self.join_worker_thread('semester_update_exmember_balance', link)
+        logs.append((1001, const.CdeLogCodes.semester_exmember_balance))
+
         # Remove Inactive Members
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
-        logs.append((1001, const.CdeLogCodes.semester_ejection))
-        logs.append((1002, const.CdeLogCodes.automated_archival_done))
+        logs.append((1002, const.CdeLogCodes.semester_ejection))
+        logs.append((1003, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         f = self.response.forms['balanceform']
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
-        logs.append((1003, const.CdeLogCodes.semester_balance_update))
-        logs.append((1004, const.CdeLogCodes.semester_exmember_balance))
+        logs.append((1004, const.CdeLogCodes.semester_balance_update))
 
         # Payment Request with addresscheck
         # (the variant without addresscheck is tested in test_semester)

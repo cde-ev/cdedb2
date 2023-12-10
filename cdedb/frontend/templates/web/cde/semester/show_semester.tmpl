@@ -50,7 +50,6 @@
     </script>
 
     <div class="row">
-        {% set during_step_1 = period["billing_state"] or period["archival_notification_state"] %}
         <div class="col-md-12">
             <div id="payment-request" class="panel {% if in_step_1 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
@@ -133,7 +132,6 @@
             </div>
         </div>
 
-        {% set during_step_2 = period['ejection_state'] or period['archival_state'] %}
         <div class="col-md-12">
             <div id="eject-members" class="panel {% if in_step_2 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
@@ -142,6 +140,12 @@
                 </div>
                 <div class="row panel-body">
                     <div class="col-md-8">
+                        <p>
+                            {% trans %}
+                                Remove the remaining balance from all non-members, since losing your membership leaves your
+                                balance untouched.
+                            {% endtrans %}
+                        </p>
                         <p>
                             {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
                                                     readonly="finance" not in user.admin_views) %}
@@ -160,6 +164,16 @@
                     {% if in_step_2 %}
                         {% if during_step_2 %}
                             <p>
+                                {% if period['exmember_state'] %}
+                                    {% trans state=period['exmember_state']|cdedbid %}
+                                        Exmember Balance done up until {{ state }}.
+                                    {% endtrans %}
+                                    <br />
+                                {% endif %}
+                                {% trans total=period['exmember_balance']|money(lang=lang) %}
+                                    A total of {{ total }} exmember balance has been deducted so far.
+                                {% endtrans %}
+                                <br />
                                 {% if period['ejection_state'] %}
                                     {% trans state=period['ejection_state']|cdedbid %}
                                         Ejection done up until {{ state }}.
@@ -224,7 +238,6 @@
             </div>
         </div>
 
-        {% set during_step_3 = period['balance_state'] or period['exmember_state'] %}
         <div class="col-md-12">
             <div id="balance-update" class="panel {% if in_step_3 %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
@@ -237,12 +250,6 @@
                             {% trans %}
                                 Subtract the membership fee from all members. Trial members lose their trial membership
                                 instead and are normal members afterwards.
-                            {% endtrans %}
-                        </p>
-                        <p>
-                            {% trans %}
-                                Remove the remaining balance from all non-members, since losing your membership leaves your
-                                balance untouched.
                             {% endtrans %}
                         </p>
                     </div>
@@ -264,16 +271,6 @@
                                 <br />
                                 {% trans count=period['balance_trialmembers'] %}
                                     {{ count }} trial memberships have been ended so far.
-                                {% endtrans %}
-                                <br />
-                                {% if period['exmember_state'] %}
-                                    {% trans state=period['exmember_state']|cdedbid %}
-                                        Exmember Balance done up until {{ state }}.
-                                    {% endtrans %}
-                                    <br />
-                                {% endif %}
-                                {% trans total=period['exmember_balance']|money(lang=lang) %}
-                                    A total of {{ total }} exmember balance has been deducted so far.
                                 {% endtrans %}
                             </p>
                         {% else %}
@@ -311,14 +308,14 @@
                 <th>{% trans %}Billing Done{% endtrans %}</th>
                 <th>{% trans %}Archival Notifications Sent{% endtrans %}</th>
                 <th class=col-border-right>{% trans %}Archival Notifications Done{% endtrans %}</th>
+                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
+                <th>{% trans %}Affected Exmembers{% endtrans %}</th>
+                <th>{% trans %}Exmember Update Done{% endtrans %}</th>
                 <th>{% trans %}Members Ejected{% endtrans %}</th>
                 <th>{% trans %}Ejection Balance{% endtrans %}</th>
                 <th>{% trans %}Ejection Done{% endtrans %}</th>
                 <th>{% trans %}Accounts Archived{% endtrans %}</th>
                 <th class=col-border-right>{% trans %}Automated Archival Done{% endtrans %}</th>
-                <th>{% trans %}Balance of Exmembers{% endtrans %}</th>
-                <th>{% trans %}Affected Exmembers{% endtrans %}</th>
-                <th>{% trans %}Exmember Update Done{% endtrans %}</th>
                 <th>{% trans %}Trial Memberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
                 <th class=col-border-right>{% trans %}Balance Update Done{% endtrans %}</th>
@@ -333,14 +330,14 @@
                     <td class=col-border-right>{{ period['billing_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['archival_notification_count'] }}</td>
                     <td class=col-border-right>{{ period['archival_notification_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['exmember_balance']|money(lang=lang) }}</td>
+                    <td>{{ period['exmember_count'] }}</td>
+                    <td class=col-border-right>{{ period['exmember_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['ejection_count'] }}</td>
                     <td>{{ period['ejection_balance']|money(lang=lang) }}</td>
                     <td class=col-border-right>{{ period['ejection_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['archival_count'] }}</td>
                     <td class=col-border-right>{{ period['archival_done']|datetime(lang=lang) }}</td>
-                    <td>{{ period['exmember_balance']|money(lang=lang) }}</td>
-                    <td>{{ period['exmember_count'] }}</td>
-                    <td class=col-border-right>{{ period['exmember_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
                     <td class=col-border-right>{{ period['balance_done']|datetime(lang=lang) }}</td>
