@@ -113,4 +113,14 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <hr />
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}
+        {% trans %}
+            Custom Filters can be used to realize some OR-queries. If you use a custom filter within a query,
+            it will be checked whether the condition given will apply to at least <strong>one</strong> of the fields
+            specified for the Custom Filter.
+        {% endtrans %}
+    </p>
 {% endblock %}

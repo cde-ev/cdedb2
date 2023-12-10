@@ -70,14 +70,6 @@
 {% endblock %}
 
 {% block content %}
-{#    {% if not scope %}#}
-{#        <form action="{{ cdedblink('event/configure_custom_filter_form') }}" method="GET" id="selectcustomfilterscopeform" class="form-horizontal">#}
-{#            {{ util.form_input_select(name="scope", label=gettext("Scope"), displayerrors=False,#}
-{#                    entries=available_scopes|enum_entries(processing=gettext)) }}#}
-{#            {{ util.form_input_submit(name="", label=gettext("Continue"), cancellink=cdedblink("event/custom_filter_summary")) }}#}
-{#        </form>#}
-{#    {% else %}#}
-
     {% if ambience['custom_filter'] %}
         {% set action = 'event/change_custom_filter' %}
     {% else %}
@@ -95,7 +87,7 @@
         <p class="text-info">
             {{ util.make_icon('info-circle') }}
             {% trans %}
-                Only fields of the same type are allowed.
+                Only fields of the same type can be combined within one custom filter.
             {% endtrans %}
         </p>
         {% call util.output_errors('field', wrapper=True) %}
