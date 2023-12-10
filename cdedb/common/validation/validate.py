@@ -3041,7 +3041,7 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: dict[const.FieldDatatypes, type[Any]] = {
+    datatypes = {
         const.FieldDatatypes.str: Optional[str],
         const.FieldDatatypes.bool: Optional[bool],
         const.FieldDatatypes.int: Optional[int],
@@ -3052,8 +3052,8 @@ def _event_associated_fields(
         const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
         const.FieldDatatypes.phone: Optional[str],
     }
-    optional_fields = {
-        str(field.field_name): datatypes[field.kind]
+    optional_fields: TypeMapping = {
+        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
