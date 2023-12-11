@@ -600,7 +600,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -674,7 +674,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.event_course,
-            QueryScope.event_course.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
             constraints=[],
             order=[('course.nr', True)],
@@ -774,7 +774,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -885,7 +885,7 @@ class EventRegistrationInXChoiceGrouper:
                         ) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],
