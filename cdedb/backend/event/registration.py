@@ -817,21 +817,22 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
-            event_fields = self._get_event_fields(rs, event_id)
-            for anid in ret:
-                if 'tracks' in ret[anid]:
-                    raise RuntimeError()
-                tracks = {e['track_id']: e for e in tdata
-                          if e['registration_id'] == anid}
-                for track_id in tracks:
-                    tmp = {e['course_id']: e['rank'] for e in choices
-                           if (e['registration_id'] == anid
-                               and e['track_id'] == track_id)}
-                    tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
-                ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
+            for reg in ret.values():
+                reg['tracks'] = {}
+                reg['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+            for reg_track in tdata:
+                reg = ret[reg_track['registration_id']]
+                reg['tracks'][reg_track['track_id']] = reg_track
+                reg_track['choices'] = {}
+            for choice in choices:
+                reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
+                reg_track['choices'][choice['course_id']] = choice['rank']
+            for reg in ret.values():
+                for reg_track in reg['tracks'].values():
+                    tmp = reg_track['choices']
+                    reg_track['choices'] = xsorted(tmp.keys(), key=tmp.get)
 
         return ret
 
