@@ -821,7 +821,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 self._get_event_fields(rs, event_id).values())
             for reg in ret.values():
                 reg['tracks'] = {}
-                reg['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+                reg['fields'] = cast_fields(reg['fields'], event_fields)
             for reg_track in tdata:
                 reg = ret[reg_track['registration_id']]
                 reg['tracks'][reg_track['track_id']] = reg_track
