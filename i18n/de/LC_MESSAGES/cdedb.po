@@ -1240,9 +1240,8 @@ msgid "Mismatched registrations, not associated with the event."
 msgstr "Fehlassoziierte Anmeldung, nicht mit der Veranstaltung verknüpft."
 
 #: cdedb/backend/event/registration.py:1492
-#, fuzzy
 msgid "Cannot book fee with amount of zero."
-msgstr "Diese Art von Suchabfrage kann nciht gespeichert werden."
+msgstr "Überweisung konnte nicht verbucht werden, da der Betrag Null ist."
 
 #: cdedb/backend/ml.py:69
 msgid "Unknown mailinglist_id."

@@ -133,7 +133,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                             error = (
                                 'amount',
                                 ValueError(
-                                    n_(f"Not enough money. %(total)s < %(expected)s"),
+                                    n_("Not enough money. %(total)s < %(expected)s"),
                                     params,
                                 ))
                             if full_payment:
@@ -145,7 +145,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                             warnings.append((
                                 'amount',
                                 ValueError(
-                                    n_(f"Too much money. %(total)s > %(expected)s"),
+                                    n_("Too much money. %(total)s > %(expected)s"),
                                     params,
                                 )))
                         expected_fees[registration_id] -= amount
