@@ -674,7 +674,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.event_course,
-            event.basic_registration_query_spec,
+            event.basic_course_query_spec,
             fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
             constraints=[],
             order=[('course.nr', True)],
