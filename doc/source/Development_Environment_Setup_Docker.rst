@@ -42,6 +42,9 @@ This applies to (almost) all subcommands.
 Should you see the need to manually rebuild them you can do so using
 ``docker compose build``.
 
+.. note:: To build the dev-container you will first need to build the non-dev
+          variant as the dependency is not publicly resolvable.
+
 Starting the containers
 -----------------------
 
@@ -123,7 +126,7 @@ Resetting the containers
 The containers store their state in multiple volumes.
 You can list these using ``docker volume ls``.
 When starting the containers using ``docker compose`` they get a proper name
-which is generated from the name set in the ``docker compose.yaml`` file
+which is generated from the name set in the ``docker-compose.yaml`` file
 and the parent folder of that file.
 
 The volumes used should therefore be named:
