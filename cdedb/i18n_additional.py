@@ -289,6 +289,10 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
+    n_("QueryScope.registration"),
+    n_("QueryScope.event_course"),
+    n_("QueryScope.lodgement"),
+
     n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
