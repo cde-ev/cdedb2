@@ -243,12 +243,6 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
     Helper class for methods to delegate tests and query construction for part stats.
     """
 
-    def test_part_group(self, event: models.Event, entity: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, entity, track_id) for track_id
-                   in self.get_part_ids(event, part_group_id=part_group_id))
-
     def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
@@ -274,17 +268,6 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
     """
     Helper class for methods to delegate tests and query construction for track stats.
     """
-
-    def test_part(self, event: models.Event, entity: CdEDBObject, part_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part."""
-        return any(self.test(event, entity, track_id)
-                   for track_id in self.get_track_ids(event, part_id=part_id))
-
-    def test_part_group(self, event: models.Event, entity: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, entity, track_id) for track_id
-                   in self.get_track_ids(event, part_group_id=part_group_id))
 
     def get_query_part(self, event: models.Event, part_id: int,
                        registration_ids: Collection[int]) -> Query:
