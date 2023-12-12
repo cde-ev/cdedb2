@@ -8,11 +8,8 @@ Everything else here requires the "finance_admin" role.
 """
 
 import datetime
-import pathlib
 import random
-import shutil
 import string
-import tempfile
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional
@@ -25,7 +22,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
-    int_to_words, lastschrift_reference, merge_dicts, now, unwrap,
+    lastschrift_reference, merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
@@ -35,7 +32,7 @@ from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
-    make_postal_address, periodic,
+    periodic,
 )
 
 
