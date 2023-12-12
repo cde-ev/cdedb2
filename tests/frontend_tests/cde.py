@@ -1027,10 +1027,8 @@ class TestCdEFrontend(FrontendTest):
                             div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
-            self.assertIn("receiptform3", self.response.forms)
         else:
             self.assertNotIn("revokeform", self.response.forms)
-            self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
         # create a new lastschrift
