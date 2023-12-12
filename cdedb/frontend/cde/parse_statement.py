@@ -79,11 +79,6 @@ GVC_DESCRIPTIONS = {
 # Specification for how the date is formatted in the input.
 STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
 
-# This specifies the export fields for the (eventual) use with GnuCash.
-# Since this is not yet currently in use this is very much subject to change.
-GNUCASH_EXPORT_FIELDS = ("transaction_date", "amount", "account_nr", "t_id",
-                         "posting", "category", "reference", "summary")
-
 # This is the specification for how the export for membership fees should look
 # like. The first five fields are a requirement by the reimport functionality in
 # `cdedb.frontend.cde::money_transfers`, everything after that is curretnly
