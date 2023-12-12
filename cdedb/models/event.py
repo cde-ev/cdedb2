@@ -29,11 +29,13 @@ import datetime
 import decimal
 import logging
 from collections.abc import Collection, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
+from typing import (
+    TYPE_CHECKING, Any, Callable, ClassVar, Optional, get_args, get_origin,
+)
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import User, cast_fields, now, unwrap
+from cdedb.common import User, cast_fields, now
 from cdedb.common.query import QueryScope, QuerySpec, QuerySpecEntry
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
@@ -440,6 +442,9 @@ class CustomQueryFilter(EventDataclass):
         ret['fields'] = self.get_field_string()
         return ret
 
+    def get_sortkey(self) -> Sortkey:
+        return (self.event_id, self.scope, self.title)
+
     @staticmethod
     def _get_field_string(fields: Collection[str]) -> str:
         return ",".join(xsorted(fields))
@@ -448,17 +453,24 @@ class CustomQueryFilter(EventDataclass):
         return self._get_field_string(self.fields)
 
     def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
-        if self.scope != scope:
+        if self.scope != scope or not self.is_valid(spec):
             return
-        if any(f not in spec for f in self.fields):
-            return
-        types = {spec[f].type for f in self.fields}
-        if len(types) != 1:
-            return
-        spec[self.get_field_string()] = QuerySpecEntry(unwrap(types), self.title)
+        type_ = spec[next(iter(self.fields))].type
+        spec[self.get_field_string()] = QuerySpecEntry(type_, self.title)
 
-    def get_sortkey(self) -> Sortkey:
-        return (self.event_id, self.scope, self.title)
+    def is_valid(self, spec: QuerySpec) -> None:
+        return all(f in spec for f in self.fields) and len(
+            {spec[f].type for f in self.fields}) == 1
+
+    def get_field_titles(self, spec: QuerySpec, g: Callable[[str], str]) -> tuple[list[str], list[str]]:
+        valid, invalid = [], []
+        for f in self.fields:
+            if f in spec:
+                valid.append(spec[f].get_title(g))
+            else:
+                invalid.append(f)
+        return xsorted(valid), xsorted(invalid)
+
 
 
 @dataclasses.dataclass

@@ -96,10 +96,16 @@
                         {{ custom_filter.notes }}
                     </td>
                     <td>
-                        {% for f in custom_filter.fields|sort %}
-                            {{ query_specs[custom_filter.scope][f].get_title(gettext) }}
-                            {%- if not loop.last %}, {% endif %}
-                        {% endfor %}
+                        {% with valid, invalid = custom_filter.get_field_titles(query_specs[custom_filter.scope], gettext) %}
+                            {% for title in valid -%}
+                                {{ title }}
+                                {%- if not loop.last or invalid %}, {% endif -%}
+                            {% endfor -%}
+                            {% for field in invalid -%}
+                                <del class="text-danger">{{ field }}</del>
+                                {%- if not loop.last %}, {% endif -%}
+                            {% endfor %}
+                        {% endwith %}
                     </td>
                     <td class="text-right text-nowrap">
                         {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning") }}

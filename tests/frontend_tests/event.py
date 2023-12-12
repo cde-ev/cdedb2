@@ -6301,6 +6301,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['fields.test2'] = False
         self.submit(f)
 
+    @event_keeper
     @as_users("garcia")
     def test_custom_query_filter(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222",
@@ -6330,6 +6331,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['deletecustomfilterform1001']
         self.submit(f)
         self.assertNonPresence("Kur(s|z)titel")
+
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'] = True
+        f['title_-1'] = "Bringt Kugeln mit"
+        f['field_name_-1'] = "brings_kugeln"
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
+        self.submit(f)
+        self.traverse("Eigene Filter", "Anmeldungsfilter hinzufügen")
+        f = self.response.forms['configurecustomfilterform']
+        f['title'] = "Bälle oder Kugeln?"
+        f['cf_reg_fields.xfield_brings_balls'] = f[
+            'cf_reg_fields.xfield_brings_kugeln'] = True
+        self.submit(f)
+        self.assertPresence("Bringt Kugeln mit")
+        self.assertNonPresence("brings_kugeln")
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['delete_1001'] = True
+        self.submit(f)
+        self.traverse("Eigene Filter")
+        self.assertNonPresence("Bringt Kugeln mit")
+        self.assertPresence("brings_kugeln")
 
     @as_users("garcia")
     def test_orga_droid(self) -> None:
