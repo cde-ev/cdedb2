@@ -60,8 +60,8 @@
             </noscript>
             {{ util.form_input_select(name="gender", entries=allowed_genders|enum_entries(processing=gettext),
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
-                                    type="date", small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", small=True,
+                                    aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,

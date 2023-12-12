@@ -257,12 +257,11 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
-            event_fields = self._get_event_fields(rs, event_id)
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
             ret = {e['id']: e for e in data}
-            for entry in ret.values():
-                entry['fields'] = cast_fields(
-                    entry['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            for lodge in ret.values():
+                lodge['fields'] = cast_fields(lodge['fields'], event_fields)
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):

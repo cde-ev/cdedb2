@@ -480,6 +480,7 @@ class EventLogCodes(CdEIntEnum):
     registration_changed = 51  #:
     registration_deleted = 52  #:
     registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:

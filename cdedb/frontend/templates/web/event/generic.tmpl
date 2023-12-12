@@ -173,32 +173,25 @@
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
+        {% set to_input_type = {
+            datatypes.str: 'text',
+            datatypes.int: 'number',
+            datatypes.float: 'number',
+            datatypes.date: 'date',
+            datatypes.datetime: 'datetime-local',
+        } %}
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
-        {%- elif field['kind'] == datatypes.str %}
-            {% if text_rows %}
-                {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
-                                        anid=anid, rows=text_rows) }}
-            {% else %}
-                {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid)  }}
-            {% endif %}
-        {%- elif field['kind'] == datatypes.int %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="number", placeholder="0") }}
-        {%- elif field['kind'] == datatypes.float %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                placeholder="0.0") }}
-        {%- elif field['kind'] == datatypes.date %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="date", placeholder="YYYY-MM-DD") }}
-        {%- elif field['kind'] == datatypes.datetime %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="datetime-local") }}
+        {%- elif field['kind'] == datatypes.str and text_rows %}
+            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                    anid=anid, rows=text_rows) }}
         {%- else %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            {% set type = to_input_type.get(field['kind'], 'text') %}
+            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
+                attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
     {%- endif %}
 {%- endmacro %}

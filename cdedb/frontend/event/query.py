@@ -14,6 +14,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, RequestState, determine_age_class, merge_dicts, unwrap,
 )
@@ -36,7 +37,6 @@ from cdedb.frontend.event.query_stats import (
     EventCourseStatistic, EventRegistrationInXChoiceGrouper,
     EventRegistrationPartStatistic, EventRegistrationTrackStatistic,
 )
-from cdedb.models.event import CustomQueryFilter
 
 
 class EventQueryMixin(EventBaseFrontend):
@@ -46,7 +46,7 @@ class EventQueryMixin(EventBaseFrontend):
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event'].parts
         tracks = rs.ambience['event'].tracks
-        stat_part_groups = {
+        stat_part_groups: dict[int, models.PartGroup] = {
             part_group_id: part_group
             for part_group_id, part_group in rs.ambience['event'].part_groups.items()
             if part_group.constraint_type == const.EventPartGroupType.Statistic
@@ -69,20 +69,20 @@ class EventQueryMixin(EventBaseFrontend):
             EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
+            _parts: dict[int, set[int]] = {
+                part_id: set(
+                    reg['id'] for reg in registrations.values()
+                    if reg_stat.test(rs.ambience['event'], reg, part_id))
+                for part_id in event_parts
+            }
+            _part_groups: dict[int, set[int]] = {
+                part_group.id: set().union(
+                    *(_parts[part_id] for part_id in part_group.parts))
+                for part_group in stat_part_groups.values()
+            }
             per_part_statistics[reg_stat] = {
-                'parts': {
-                    part_id: set(
-                        reg['id'] for reg in registrations.values()
-                        if reg_stat.test(rs.ambience['event'], reg, part_id))
-                    for part_id in event_parts
-                },
-                'part_groups': {
-                    part_group_id: set(
-                        reg['id'] for reg in registrations.values()
-                        if reg_stat.test_part_group(
-                            rs.ambience['event'], reg, part_group_id))
-                    for part_group_id in stat_part_groups
-                },
+                'parts': _parts,
+                'part_groups': _part_groups,
             }
         # Needed for formatting in template. We do it here since it's ugly in jinja
         # without list comprehension.
@@ -95,50 +95,48 @@ class EventQueryMixin(EventBaseFrontend):
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
+                _tracks: dict[int, set[int]] = {
+                    track_id: set(
+                        course['id'] for course in courses.values()
+                        if course_stat.test(rs.ambience['event'], course, track_id))
+                    for track_id in tracks
+                }
+                _parts = {
+                    part.id: set().union(
+                        *(_tracks[track_id] for track_id in part.tracks))
+                    for part in event_parts.values()
+                }
+                _part_groups = {
+                    part_group.id: set().union(
+                        *(_parts[part_id] for part_id in part_group.parts))
+                    for part_group in stat_part_groups.values()
+                }
                 per_track_statistics[course_stat] = {
-                    'tracks': {
-                        track_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test(rs.ambience['event'], course, track_id))
-                        for track_id in tracks
-                    },
-                    'parts': {
-                        part_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test_part(
-                                rs.ambience['event'], course, part_id))
-                        for part_id in event_parts
-                    },
-                    'part_groups': {
-                        part_group_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test_part_group(
-                                rs.ambience['event'], course, part_group_id))
-                        for part_group_id in stat_part_groups
-                    },
+                    'tracks': _tracks,
+                    'parts': _parts,
+                    'part_groups': _part_groups,
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
+                _tracks = {
+                    track_id: set(
+                        reg['id'] for reg in registrations.values()
+                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
+                    for track_id in tracks
+                }
+                _parts = {
+                    part.id: set().union(
+                        *(_tracks[track_id] for track_id in part.tracks))
+                    for part in event_parts.values()
+                }
+                _part_groups = {
+                    part_group.id: set().union(
+                        *(_parts[part_id] for part_id in part_group.parts))
+                    for part_group in stat_part_groups.values()
+                }
                 per_track_statistics[reg_track_stat] = {
-                    'tracks': {
-                        track_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test(rs.ambience['event'], reg, track_id))
-                        for track_id in tracks
-                    },
-                    'parts': {
-                        part_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test_part(
-                                rs.ambience['event'], reg, part_id))
-                        for part_id in event_parts
-                    },
-                    'part_groups': {
-                        part_group_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test_part_group(
-                                rs.ambience['event'], reg, part_group_id))
-                        for part_group_id in stat_part_groups
-                    },
+                    'tracks': _tracks,
+                    'parts': _parts,
+                    'part_groups': _part_groups,
                 }
 
             grouper = EventRegistrationInXChoiceGrouper(
@@ -346,7 +344,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*CustomQueryFilter.requestdict_fields())
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
     def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
                              ) -> Response:
         scope = check(rs, QueryScope, data['scope'])
@@ -365,7 +363,7 @@ class EventQueryMixin(EventBaseFrontend):
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
         if rs.has_validation_errors() or not data:
             return self.configure_custom_filter_form(rs, event_id, scope)
-        custom_filter = CustomQueryFilter(**data)
+        custom_filter = models.CustomQueryFilter(**data)
         custom_filter.event = None  # type: ignore[assignment]
         code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
         rs.notify_return_code(code)
@@ -388,7 +386,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*CustomQueryFilter.requestdict_fields())
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
         custom_filter = rs.ambience['custom_filter']

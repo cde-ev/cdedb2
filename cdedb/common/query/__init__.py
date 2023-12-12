@@ -80,24 +80,21 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
             _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
             _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
             _ops.between, _ops.outside),
-    "id": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-           _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
     "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-            _ops.nonempty),
+            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "float": (_ops.less, _ops.between, _ops.outside, _ops.greater, _ops.empty,
               _ops.nonempty),
     "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
              _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-             _ops.nonempty),
+             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
                  _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
                  _ops.empty, _ops.nonempty),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
 }
+VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
