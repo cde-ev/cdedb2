@@ -6310,6 +6310,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['title'] = "Kur(s|z)titel"
         f['cf_course.title'] = f['cf_course.shortname'] = True
         self.submit(f)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Es existiert bereits ein Filter mit diesem Titel.")
+        self.assertPresence("Es existiert bereits ein Filter mit diesen Feldern.")
         self.traverse("Kurse", "Kurssuche")
         f = self.response.forms['queryform']
         f['qop_course.shortname,course.title'] = QueryOperators.match.value

@@ -4863,7 +4863,7 @@ msgstr "Ungültiger Name für eine Suchabfrage."
 
 #: cdedb/frontend/event/query.py:355 cdedb/frontend/event/query.py:402
 msgid "A filter with this title already exists."
-msgstr "Es existiert bereits ein Filter mit diesem Namen."
+msgstr "Es existiert bereits ein Filter mit diesem Titel."
 
 #: cdedb/frontend/event/query.py:359 cdedb/frontend/event/query.py:406
 msgid "A filter with this selection of fields already exists."
