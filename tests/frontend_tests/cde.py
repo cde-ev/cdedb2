@@ -1022,6 +1022,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Das Mitglied ist der Kontoinhaber.",
+                            div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
             self.assertIn("receiptform3", self.response.forms)

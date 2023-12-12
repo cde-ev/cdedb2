@@ -125,6 +125,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         for lastschrift in lastschrifts.values():
             if not lastschrift['revoked_at']:
                 active_permit = lastschrift['id']
+        inactive_permits = [lastschrift for lastschrift in lastschrifts.values()
+                            if lastschrift['revoked_at']]
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
         payment_date = self._calculate_payment_date()
@@ -132,7 +134,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
-            'payment_date': payment_date,
+            'payment_date': payment_date, 'inactive_permits': inactive_permits,
         })
 
     @access("finance_admin")

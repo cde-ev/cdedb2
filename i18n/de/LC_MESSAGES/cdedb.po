@@ -8183,6 +8183,9 @@ msgstr "Einzugsermächtigung widerrufen"
 msgid "Active Direct Debit Authorization"
 msgstr "Aktive Einzugsermächtigung"
 
+msgid "Inactive Direct Debit Authorizations"
+msgstr "Inaktive Einzugsermächtigungen"
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:68
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:69
 msgid "Submitted by"
@@ -8199,6 +8202,9 @@ msgstr "Anschrift Kontoinhaber"
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:111
 msgid "Granted"
 msgstr "Erteilt"
+
+msgid "Revoked"
+msgstr "Widerrufen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:116
 msgid "No active Direct Debit Authorization"
