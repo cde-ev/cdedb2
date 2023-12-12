@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-12-11 00:48+0100\n"
+"POT-Creation-Date: 2023-12-12 23:30+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -88,7 +88,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:2124 cdedb/frontend/core/base.py:2145
 #: cdedb/frontend/core/genesis.py:299 cdedb/frontend/core/genesis.py:341
 #: cdedb/frontend/core/genesis.py:391 cdedb/frontend/core/genesis.py:418
-#: cdedb/frontend/event/query.py:594 cdedb/frontend/ml/base.py:205
+#: cdedb/frontend/event/query.py:591 cdedb/frontend/ml/base.py:205
 msgid "Not privileged."
 msgstr ""
 
@@ -2401,7 +2401,7 @@ msgstr ""
 msgid "{rank}. Choice"
 msgstr ""
 
-#: cdedb/common/query/__init__.py:978 cdedb/common/query/__init__.py:1141
+#: cdedb/common/query/__init__.py:978
 msgid "Any Choice"
 msgstr ""
 
@@ -2470,6 +2470,10 @@ msgstr ""
 
 #: cdedb/common/query/__init__.py:1117
 msgid "{rank}. choices"
+msgstr ""
+
+#: cdedb/common/query/__init__.py:1141
+msgid "total choices"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:1211
@@ -4743,11 +4747,11 @@ msgstr ""
 msgid "Invalid query name."
 msgstr ""
 
-#: cdedb/frontend/event/query.py:355 cdedb/frontend/event/query.py:402
+#: cdedb/frontend/event/query.py:340
 msgid "A filter with this title already exists."
 msgstr ""
 
-#: cdedb/frontend/event/query.py:359 cdedb/frontend/event/query.py:406
+#: cdedb/frontend/event/query.py:344
 msgid "A filter with this selection of fields already exists."
 msgstr ""
 
@@ -13587,12 +13591,12 @@ msgstr ""
 msgid "All Filters"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:109
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:115
 #: cdedb/frontend/templates/web/generic.tmpl:386
 msgid "Delete query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:120
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:126
 msgid ""
 "Custom Filters can be used to realize some OR-queries. If you use a custom "
 "filter within a query, it will be checked whether the condition given will "

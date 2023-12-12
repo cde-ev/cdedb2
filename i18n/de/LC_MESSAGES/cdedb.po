@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-12-11 00:48+0100\n"
+"POT-Creation-Date: 2023-12-12 23:30+0000\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -89,7 +89,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/frontend/core/base.py:2124 cdedb/frontend/core/base.py:2145
 #: cdedb/frontend/core/genesis.py:299 cdedb/frontend/core/genesis.py:341
 #: cdedb/frontend/core/genesis.py:391 cdedb/frontend/core/genesis.py:418
-#: cdedb/frontend/event/query.py:594 cdedb/frontend/ml/base.py:205
+#: cdedb/frontend/event/query.py:591 cdedb/frontend/ml/base.py:205
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -2436,7 +2436,7 @@ msgstr "{field} geleiteter Kurs"
 msgid "{rank}. Choice"
 msgstr "{rank}. Wahl"
 
-#: cdedb/common/query/__init__.py:978 cdedb/common/query/__init__.py:1141
+#: cdedb/common/query/__init__.py:978
 msgid "Any Choice"
 msgstr "Beliebige Kurswahl"
 
@@ -2503,6 +2503,10 @@ msgstr "Anzahl potentieller Kursleiter (inkl. offen)"
 #: cdedb/common/query/__init__.py:1117
 msgid "{rank}. choices"
 msgstr "{rank}. Wahlen"
+
+#: cdedb/common/query/__init__.py:1141
+msgid "total choices"
+msgstr "Insgesamte Wahlen"
 
 #: cdedb/common/query/__init__.py:1211
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:80
@@ -4861,11 +4865,11 @@ msgstr "Isomatte"
 msgid "Invalid query name."
 msgstr "Ungültiger Name für eine Suchabfrage."
 
-#: cdedb/frontend/event/query.py:355 cdedb/frontend/event/query.py:402
+#: cdedb/frontend/event/query.py:340
 msgid "A filter with this title already exists."
 msgstr "Es existiert bereits ein Filter mit diesem Titel."
 
-#: cdedb/frontend/event/query.py:359 cdedb/frontend/event/query.py:406
+#: cdedb/frontend/event/query.py:344
 msgid "A filter with this selection of fields already exists."
 msgstr "Es existiert bereits ein Filter mit diesen Feldern."
 
@@ -14312,12 +14316,12 @@ msgstr "Eigene Unterkunftsfilter"
 msgid "All Filters"
 msgstr "Alle Filter"
 
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:109
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:115
 #: cdedb/frontend/templates/web/generic.tmpl:386
 msgid "Delete query"
 msgstr "Suchabfrage löschen"
 
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:120
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:126
 msgid ""
 "Custom Filters can be used to realize some OR-queries. If you use a custom "
 "filter within a query, it will be checked whether the condition given will "

@@ -1138,7 +1138,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
             if key not in course_choice_spec:
                 prefix = ("" if len(event.tracks) <= 1
                           else event.tracks[track_id].shortname)
-                spec[key] = QuerySpecEntry("id", n_("Any Choice"), prefix)
+                spec[key] = QuerySpecEntry("int", n_("total choices"), prefix)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
