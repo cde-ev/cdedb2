@@ -222,13 +222,6 @@
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
                             {% if "finance" in user.admin_views %}
-                                <form action="{{ cdedblink('cde/lastschrift_receipt',
-                                                           {'lastschrift_id': transaction['lastschrift_id'],
-                                                            'transaction_id': transaction_id}) }}"
-                                    method="GET" id="receiptform{{ transaction_id }}">
-                                    {{ util.input_submit(label=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
-                                                         icon='download') }}
-                                </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}"

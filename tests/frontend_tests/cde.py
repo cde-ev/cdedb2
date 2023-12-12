@@ -1280,15 +1280,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
                             exact=True)
 
-    @as_users("farin")
-    def test_lastschrift_receipt(self) -> None:
-        self.admin_view_profile('berta')
-        self.traverse({'description': 'Einzugsermächtigung'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        f = self.response.forms['receiptform3']
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-
     @as_users("vera")
     def test_lastschrift_subscription_form(self) -> None:
         # as user

@@ -306,8 +306,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 sub('/transaction/<int:transaction_id>', (
                     rule("/finalize", methods=_POST,
                          endpoint="lastschrift_finalize_transaction"),
-                    rule("/receipt", methods=_GET,
-                         endpoint="lastschrift_receipt"),
                     rule("/rollback", methods=_POST,
                          endpoint="lastschrift_rollback_transaction"))))),
             sub('/user/<int:persona_id>', (

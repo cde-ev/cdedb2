@@ -550,54 +550,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("finance_admin")
-    def lastschrift_receipt(self, rs: RequestState, lastschrift_id: int,
-                            transaction_id: int) -> Response:
-        """Generate a donation certificate.
-
-        This allows tax deductions.
-        """
-        transaction = rs.ambience['transaction']
-        persona = self.coreproxy.get_cde_user(
-            rs, rs.ambience['lastschrift']['persona_id'])
-        addressee = make_postal_address(rs, persona)
-        # TODO add proper handling of missing address
-        if addressee is None:
-            addressee = []
-        if rs.ambience['lastschrift']['account_owner']:
-            addressee[0] = rs.ambience['lastschrift']['account_owner']
-        if rs.ambience['lastschrift']['account_address']:
-            addressee = addressee[:1]
-            addressee.extend(
-                rs.ambience['lastschrift']['account_address'].split('\n'))
-        # We do not support receipts or number conversion in other locales.
-        lang = "de"
-        words = (
-            int_to_words(int(transaction['amount']), lang),
-            int_to_words(int(transaction['amount'] * 100) % 100, lang))
-        transaction['amount_words'] = words
-        meta_info = self.coreproxy.get_meta_info(rs)
-        tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
-            'meta_info': meta_info, 'persona': persona, 'addressee': addressee})
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = pathlib.Path(tmp_dir) / 'workdir'
-            work_dir.mkdir()
-            with open(work_dir / "lastschrift_receipt.tex", 'w', encoding='UTF-8') as f:
-                f.write(tex)
-            logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
-            shutil.copy(logo_src, work_dir / "cde-logo.jpg")
-            errormsg = n_("LaTeX compiliation failed. "
-                          "This might be due to special characters.")
-            pdf = self.serve_complex_latex_document(
-                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex",
-                errormsg=errormsg)
-            if pdf:
-                return pdf
-            else:
-                return self.redirect(
-                    rs, "cde/lastschrift_show",
-                    {"persona_id": rs.ambience['lastschrift']['persona_id']})
-
     @access("anonymous")
     def lastschrift_subscription_form_fill(self, rs: RequestState) -> Response:
         """Generate a form for configuring direct debit authorization.
