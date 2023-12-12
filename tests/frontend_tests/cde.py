@@ -1005,6 +1005,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
+        self.assertPresence("Bertålotta Beispiel", div='active-authorizations')
+        self.assertPresence("Akira Abukara", div='inactive-authorizations')
+        self.assertNonPresence("Bertålotta Beispiel", div='inactive-authorizations')
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:

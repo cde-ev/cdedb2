@@ -46,30 +46,42 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         This presents open items as well as all permits.
         """
-        lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids.keys())
+        active_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=True)
         all_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=None)
         all_lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, all_lastschrift_ids.keys())
+        active_lastschrifts = {anid: x for anid, x in all_lastschrifts.items()
+                               if not x['revoked_at']}
+        active_personas = {x['persona_id'] for x in active_lastschrifts.values()}
+        # an inactive lastschrift of a user with active lastschrift is displayed in the
+        #  same way as viewing the active lastschrift directly.
+        inactive_lastschrifts = {
+            anid: x for anid, x in all_lastschrifts.items()
+            if x['revoked_at'] and x['persona_id'] not in active_personas}
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
         transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids.keys())
-        persona_ids = set(all_lastschrift_ids.values()).union({
-            x['submitted_by'] for x in lastschrifts.values()})
+        persona_ids = set(x['persona_id'] for x in all_lastschrifts.values()).union(
+            x['submitted_by'] for x in all_lastschrifts.values())
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        open_permits = self.determine_open_permits(rs, lastschrift_ids)
-        for lastschrift in lastschrifts.values():
+        open_permits = self.determine_open_permits(rs, active_lastschrift_ids)
+        for lastschrift in active_lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
-        last_order = xsorted(
-            lastschrifts.keys(),
+        active_last_order = xsorted(
+            active_lastschrifts.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[lastschrifts[anid]['persona_id']]))
-        lastschrifts = OrderedDict(
-            (last_id, lastschrifts[last_id]) for last_id in last_order)
+                personas[active_lastschrifts[anid]['persona_id']]))
+        active_lastschrifts = OrderedDict(
+            (anid, active_lastschrifts[anid]) for anid in active_last_order)
+        inactive_last_order = xsorted(
+            inactive_lastschrifts.keys(),
+            key=lambda anid: EntitySorter.persona(
+                personas[inactive_lastschrifts[anid]['persona_id']]))
+        inactive_lastschrifts = OrderedDict(
+            (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order)
 
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]
@@ -81,8 +93,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
         payment_date = self._calculate_payment_date()
 
         return self.render(rs, "lastschrift/lastschrift_index", {
-            'lastschrifts': lastschrifts, 'personas': personas,
+            'active_lastschrifts': active_lastschrifts, 'personas': personas,
             'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts,
+            'inactive_lastschrifts': inactive_lastschrifts,
             'payment_date': payment_date})
 
     @access("member", "finance_admin")

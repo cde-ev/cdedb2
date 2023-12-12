@@ -7790,6 +7790,9 @@ msgstr ""
 msgid "All active Authorizations"
 msgstr ""
 
+msgid "All inactive Authorizations"
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:218
 #: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "Profile"

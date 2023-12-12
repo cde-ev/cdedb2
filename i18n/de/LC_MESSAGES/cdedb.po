@@ -8157,6 +8157,12 @@ msgstr "Aktuell befinden sich keine Einzüge in der Schwebe."
 msgid "All active Authorizations"
 msgstr "Alle aktiven Einzugsermächtigungen"
 
+msgid "All inactive Authorizations"
+msgstr "Alle inaktiven Einzugsermächtigungen"
+
+msgid "Only authorizations of users without an active authorization are shown."
+msgstr "Es werden nur Einzugsermächtigungen von Nutzern gezeigt, die aktuell keine aktive Einzugsermächtigung haben."
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:218
 #: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "Profile"
