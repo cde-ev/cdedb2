@@ -218,17 +218,17 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: models.Event, *, part_group_id: int) -> Sequence[int]:
-        return xsorted(event.part_groups[part_group_id].parts)
+        return tuple(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
     def get_track_ids(event: models.Event, *, part_id: int = None,
                       part_group_id: int = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return xsorted(event.parts[part_id].tracks)
+            return tuple(event.parts[part_id].tracks.keys())
         if part_group_id:
             parts = event.part_groups[part_group_id].parts.values()
-            return xsorted(itertools.chain.from_iterable(p.tracks for p in parts))
+            return tuple(itertools.chain.from_iterable(p.tracks for p in parts))
         return ()
 
     @abc.abstractmethod
@@ -600,7 +600,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -674,7 +674,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.event_course,
-            QueryScope.event_course.get_spec(event=event),
+            event.basic_course_query_spec,
             fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
             constraints=[],
             order=[('course.nr', True)],
@@ -774,7 +774,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -885,7 +885,7 @@ class EventRegistrationInXChoiceGrouper:
                         ) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],

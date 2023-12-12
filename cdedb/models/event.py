@@ -27,6 +27,7 @@ import abc
 import dataclasses
 import datetime
 import decimal
+import functools
 import logging
 from collections.abc import Collection, Mapping
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
@@ -34,6 +35,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import User, cast_fields, now
+from cdedb.common.query import (
+    QuerySpec, make_course_query_spec, make_registration_query_spec,
+)
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
@@ -201,6 +205,14 @@ class Event(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title
+
+    @functools.cached_property
+    def basic_registration_query_spec(self) -> QuerySpec:
+        return make_registration_query_spec(self)
+
+    @functools.cached_property
+    def basic_course_query_spec(self) -> QuerySpec:
+        return make_course_query_spec(self)
 
 
 @dataclasses.dataclass
