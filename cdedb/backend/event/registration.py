@@ -817,21 +817,22 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
-            event_fields = self._get_event_fields(rs, event_id)
-            for anid in ret:
-                if 'tracks' in ret[anid]:
-                    raise RuntimeError()
-                tracks = {e['track_id']: e for e in tdata
-                          if e['registration_id'] == anid}
-                for track_id in tracks:
-                    tmp = {e['course_id']: e['rank'] for e in choices
-                           if (e['registration_id'] == anid
-                               and e['track_id'] == track_id)}
-                    tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
-                ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
+            for reg in ret.values():
+                reg['tracks'] = {}
+                reg['fields'] = cast_fields(reg['fields'], event_fields)
+            for reg_track in tdata:
+                reg = ret[reg_track['registration_id']]
+                reg['tracks'][reg_track['track_id']] = reg_track
+                reg_track['choices'] = {}
+            for choice in choices:
+                reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
+                reg_track['choices'][choice['course_id']] = choice['rank']
+            for reg in ret.values():
+                for reg_track in reg['tracks'].values():
+                    tmp = reg_track['choices']
+                    reg_track['choices'] = xsorted(tmp.keys(), key=tmp.get)
 
         return ret
 
@@ -1475,16 +1476,23 @@ class EventRegistrationBackend(EventBaseBackend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    change_note = "{} am {} gezahlt.".format(
-                        money_filter(datum['amount']),
-                        date_filter(datum['original_date'], lang="de"))
                     # perform the change directly instead of using set_registration
                     # to avoid privilege conflicts and use custom log code
                     count += self.sql_update(rs, "event.registrations", update)
-                    self.event_log(
-                        rs, const.EventLogCodes.registration_payment_received, event_id,
-                        persona_id=all_regs[reg_id]['persona_id'],
-                        change_note=change_note)
+                    if datum['amount'] > 0:
+                        log_code = const.EventLogCodes.registration_payment_received
+                        change_note = "{} am {} gezahlt.".format(
+                            money_filter(datum['amount']),
+                            date_filter(datum['original_date'], lang="de"))
+                    elif datum['amount'] < 0:
+                        log_code = const.EventLogCodes.registration_payment_reimbursed
+                        change_note = "{} am {} zurückerstattet.".format(
+                            money_filter(-datum['amount']),
+                            date_filter(datum['original_date'], lang="de"))
+                    else:
+                        raise ValueError(n_("Cannot book fee with amount of zero."))
+                    self.event_log(rs, log_code, event_id, change_note=change_note,
+                                   persona_id=all_regs[reg_id]['persona_id'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.

@@ -282,14 +282,14 @@
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
-Überweise dazu {{ fee|money(lang=lang) }} auf folgendes Konto.
+Überweise dazu {{ to_pay|money(lang=lang) }} auf folgendes Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:               {{ ambience['event']['iban']|iban }}
 BIC:                {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
-Betrag:             {{ fee|money(lang=lang) }}
+Betrag:             {{ to_pay|money(lang=lang) }}
 Verwendungszweck:   {{ reference }}
 </pre>
 

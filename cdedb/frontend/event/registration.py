@@ -81,7 +81,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = inspect(vtypes.NonNegativeDecimal,
+        amount, problems = inspect(decimal.Decimal,
             (datum['raw']['amount'] or "").strip(), argname="amount")
         persona_id, p = inspect(vtypes.CdedbID,
             (datum['raw']['id'] or "").strip(), argname="persona_id")
@@ -118,21 +118,37 @@ class EventRegistrationMixin(EventBaseFrontend):
                     seen_reg_ids.add(registration_id)
                     registration = self.eventproxy.get_registration(
                         rs, registration_id)
-                    amount = amount or decimal.Decimal(0)
-                    amount_paid = registration['amount_paid']
-                    total = amount + amount_paid
-                    fee = expected_fees[registration_id]
-                    if total < fee:
-                        error = ('amount', ValueError(n_("Not enough money.")))
-                        if full_payment:
-                            warnings.append(error)
-                            date = None
-                        else:
-                            infos.append(error)
-                    elif total > fee:
-                        warnings.append(('amount',
-                                         ValueError(n_("Too much money."))))
-                    expected_fees[registration_id] -= amount
+                    if not amount:
+                        problems.append(
+                            ('amount', ValueError(n_("Must not be zero."))))
+                    else:
+                        amount_paid = registration['amount_paid']
+                        total = amount + amount_paid
+                        fee = expected_fees[registration_id]
+                        params = {
+                            'total': money_filter(total, lang=rs.lang),
+                            'expected': money_filter(fee, lang=rs.lang),
+                        }
+                        if total < fee:
+                            error = (
+                                'amount',
+                                ValueError(
+                                    n_("Not enough money. %(total)s < %(expected)s"),
+                                    params,
+                                ))
+                            if full_payment:
+                                warnings.append(error)
+                                date = None
+                            else:
+                                infos.append(error)
+                        elif total > fee:
+                            warnings.append((
+                                'amount',
+                                ValueError(
+                                    n_("Too much money. %(total)s > %(expected)s"),
+                                    params,
+                                )))
+                        expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))

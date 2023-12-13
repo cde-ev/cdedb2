@@ -56,23 +56,20 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             events = {e['event_id'] for e in data}
             if len(events) > 1:
                 raise ValueError(n_("Only courses from one event allowed."))
-            event_fields = self._get_event_fields(rs, unwrap(events))
-            data = self.sql_select(
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, unwrap(events)).values())
+            segment_data = self.sql_select(
                 rs, "event.course_segments", COURSE_SEGMENT_FIELDS, course_ids,
                 entity_key="course_id")
-            for anid in course_ids:
-                segments = {p['track_id'] for p in data if p['course_id'] == anid}
-                if 'segments' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['segments'] = segments
-                active_segments = {p['track_id'] for p in data
-                                   if p['course_id'] == anid and p['is_active']}
-                if 'active_segments' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['active_segments'] = active_segments
-                ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            for course in ret.values():
+                course['segments'] = set()
+                course['active_segments'] = set()
+                course['fields'] = cast_fields(course['fields'], event_fields)
+            for segment in segment_data:
+                course = ret[segment['course_id']]
+                course['segments'].add(segment['track_id'])
+                if segment['is_active']:
+                    course['active_segments'].add(segment['track_id'])
         return ret
 
     class _GetCourseProtocol(Protocol):

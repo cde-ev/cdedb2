@@ -218,17 +218,17 @@ class StatisticMixin:
 
     @staticmethod
     def get_part_ids(event: models.Event, *, part_group_id: int) -> Sequence[int]:
-        return xsorted(event.part_groups[part_group_id].parts)
+        return tuple(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
     def get_track_ids(event: models.Event, *, part_id: int = None,
                       part_group_id: int = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
-            return xsorted(event.parts[part_id].tracks)
+            return tuple(event.parts[part_id].tracks.keys())
         if part_group_id:
             parts = event.part_groups[part_group_id].parts.values()
-            return xsorted(itertools.chain.from_iterable(p.tracks for p in parts))
+            return tuple(itertools.chain.from_iterable(p.tracks for p in parts))
         return ()
 
     @abc.abstractmethod
@@ -242,12 +242,6 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
     """
     Helper class for methods to delegate tests and query construction for part stats.
     """
-
-    def test_part_group(self, event: models.Event, entity: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, entity, track_id) for track_id
-                   in self.get_part_ids(event, part_group_id=part_group_id))
 
     def get_query_part_group(self, event: models.Event, part_group_id: int,
                              registration_ids: Collection[int]) -> Query:
@@ -274,17 +268,6 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
     """
     Helper class for methods to delegate tests and query construction for track stats.
     """
-
-    def test_part(self, event: models.Event, entity: CdEDBObject, part_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part."""
-        return any(self.test(event, entity, track_id)
-                   for track_id in self.get_track_ids(event, part_id=part_id))
-
-    def test_part_group(self, event: models.Event, entity: CdEDBObject,
-                        part_group_id: int) -> bool:
-        """Determine whether the entity fits this stat for any track in a part group."""
-        return any(self.test(event, entity, track_id) for track_id
-                   in self.get_track_ids(event, part_group_id=part_group_id))
 
     def get_query_part(self, event: models.Event, part_id: int,
                        registration_ids: Collection[int]) -> Query:
@@ -600,7 +583,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -674,7 +657,7 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.event_course,
-            QueryScope.event_course.get_spec(event=event),
+            event.basic_course_query_spec,
             fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
             constraints=[],
             order=[('course.nr', True)],
@@ -774,7 +757,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
     def _get_base_query(event: models.Event) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
@@ -885,7 +868,7 @@ class EventRegistrationInXChoiceGrouper:
                         ) -> Query:
         return Query(
             QueryScope.registration,
-            QueryScope.registration.get_spec(event=event),
+            event.basic_registration_query_spec,
             fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],
