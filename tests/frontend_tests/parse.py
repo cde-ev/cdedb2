@@ -196,7 +196,7 @@ class TestParseFrontend(FrontendTest):
 
         self.check_dict(
             result[0],
-            amount="584.49",
+            amount="373.99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
@@ -204,7 +204,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[1],
-            amount="584.49",
+            amount="534.48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
@@ -212,7 +212,7 @@ class TestParseFrontend(FrontendTest):
         )
         self.check_dict(
             result[2],
-            amount="100.00",
+            amount="466.49",
             cdedbid="DB-5-1",
             family_name="Eventis",
             given_names="Emilia E.",
@@ -330,7 +330,7 @@ class TestParseFrontend(FrontendTest):
         self.check_dict(
             result[6],
             transaction_date="20.12.2018",
-            amount_german="100,00",
+            amount_german="466,49",
             cdedbid="DB-5-1",
             family_name="Eventis",
             given_names="Emilia E.",
@@ -391,7 +391,7 @@ class TestParseFrontend(FrontendTest):
         self.check_dict(
             result[3],
             transaction_date="28.12.2018",
-            amount_german="584,49",
+            amount_german="373,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
@@ -401,7 +401,7 @@ class TestParseFrontend(FrontendTest):
         self.check_dict(
             result[4],
             transaction_date="27.12.2018",
-            amount_german="584,49",
+            amount_german="534,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
