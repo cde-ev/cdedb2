@@ -396,7 +396,7 @@ def setup_logger(name: str, logfile_path: pathlib.Path,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True)
+    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
