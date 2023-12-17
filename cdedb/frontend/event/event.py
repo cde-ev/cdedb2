@@ -11,6 +11,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import re
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional
@@ -131,6 +132,45 @@ class EventEventMixin(EventBaseFrontend):
         elif not rs.ambience['event'].is_visible:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
+
+    @access("event")
+    @REQUESTdata("phrase")
+    def select_event(self, rs: RequestState, phrase: str) -> Response:
+        """API for intelligent input field.
+
+        This allows the user to choose an event by entering (parts of) the title
+        or the shortname.
+
+        Meant for use during parse_statement.
+
+        Since this only returns basic event information it has little privacy
+        implications.
+        """
+        if rs.has_validation_errors():
+            return self.send_json(rs, {})
+        atoms = [re.compile(re.escape(atom), flags=re.I) for atom in phrase.split()]
+        if not atoms:
+            return self.send_json(rs, {})
+
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+
+        def _match(event: models.Event) -> bool:
+            return all(
+                atom_pattern.search(event.shortname) or atom_pattern.search(event.title)
+                for atom_pattern in atoms
+            )
+
+        return self.send_json(rs, {
+            'events': [
+                {
+                    'title': event.title,
+                    'shortname': event.shortname,
+                    'id': event.id,
+                }
+                for event in xsorted(events.values())
+                if _match(event)
+            ],
+        })
 
     @access("event")
     @event_guard()

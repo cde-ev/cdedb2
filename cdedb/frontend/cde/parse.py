@@ -51,12 +51,20 @@ class CdEParseMixin(CdEBaseFrontend):
         event_entries = xsorted(
             [(event.id, event.title) for event in events.values()],
             key=lambda e: events[e[0]], reverse=True)
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(events.values())
+        ]
         params = {
             'params': params or None,
             'data': data,
             'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
             'TransactionType': parse.TransactionType,
-            'event_entries': event_entries,
+            'event_entries': event_entries, 'event_options': event_options,
             'events': events,
         }
         return self.render(rs, "parse/parse_statement", params)

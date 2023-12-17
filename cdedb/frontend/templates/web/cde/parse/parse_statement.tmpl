@@ -4,6 +4,7 @@
 {% block scripts %}
     {{ util.cdedb_script('cdedb_csv_tools.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_search_event.js') }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
@@ -117,7 +118,14 @@
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
+                                    anid="input-event_id{}".format(t_id),
                                     nulloption=nbsp, label=gettext("Event"), horizontal=False, sort=False) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-event_id{{ t_id }}').cdedbSearchEvent(
+                                '{{ cdedblink('event/select_event') }}',
+                                {{ event_options|tojson }},
+                            );
+                        </script>
                     </div>
                 </div>
             </div>
