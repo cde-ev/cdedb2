@@ -119,13 +119,23 @@ class TestParseFrontend(FrontendTest):
         self.submit(f, check_notification=False, verbose=True)
 
         self.assertTitle("Kontoauszug parsen")
-        self.assertPresence("3 Transaktionen mit Fehlern", div="has_error_summary")
+        self.assertPresence("4 Transaktionen mit Fehlern", div="has_error_summary")
         self.assertPresence("1 Transaktionen mit Warnungen", div="has_warning_summary")
-        self.assertPresence("10 fehlerfreie Transaktionen", div="has_none_summary")
+        self.assertPresence("9 fehlerfreie Transaktionen", div="has_none_summary")
 
         f = self.response.forms["parsedownloadform"]
 
         # Fix Transactions with errors.
+
+        # Fix line 5:
+        self.assertPresence("event: Unsicher über Veranstaltungszuordnung",
+                            div="transaction5_errors")
+        self.assertPresence("event: Veranstaltung Große TestAkademie 2222 nur über"
+                            " zu zahlenden Betrag zugeordnet.",
+                            div="transaction5_warnings")
+        self.assertPresence("event: Große TestAkademie 2222 nicht im Verwendungszweck",
+                            div="transaction5_warnings")
+        f["event_confirm5"] = True
 
         # Fix line 6:
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
