@@ -729,9 +729,9 @@ class Transaction:
 
     def _match_one_event(self, event: models_event.Event) -> Optional[ConfidenceLevel]:
         shortname_pattern = re.compile(
-            rf"\b{re.escape(event.shortname)}\b", flags=re.I)
+            rf"\b{re.escape(asciificator(event.shortname))}\b", flags=re.I)
         title_pattern = re.compile(
-            rf"\b{re.escape(event.title)}\b", flags=re.I)
+            rf"\b{re.escape(asciificator(event.title))}\b", flags=re.I)
         if shortname_pattern.search(self.reference):
             confidence = ConfidenceLevel.Full
         elif title_pattern.search(self.reference):
