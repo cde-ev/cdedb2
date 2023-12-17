@@ -620,7 +620,7 @@ class Transaction:
                             n_("%(text)s not found in reference."),
                             {'text': persona['given_names']}),
                     ))
-                confidence = confidence.decrease()
+                    confidence = confidence.decrease()
             except re.error as e:
                 self.warnings.append((
                     'given_names',
