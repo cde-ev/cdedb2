@@ -1211,10 +1211,10 @@ class EventRegistrationBackend(EventBaseBackend):
     def list_amounts_owed(self, rs: RequestState, persona_id: int, event_id: int = None,
                           ) -> dict[int, decimal.Decimal]:
         persona_id = affirm(vtypes.ID, persona_id)
-        registration_ids = self.list_persona_registrations(rs, persona_id)
+        registration_ids = self.list_persona_registrations(rs, persona_id).keys()
 
         return {
-            e['id']: e['amount_owed'] - e['amount_paid']
+            e['event_id']: e['amount_owed'] - e['amount_paid']
             for e in self.sql_select(
                 rs, models.Registration.database_table,
                 ("event_id", "amount_owed", "amount_paid"), registration_ids)
