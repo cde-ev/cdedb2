@@ -1056,15 +1056,16 @@ class TransactionType(CdEIntEnum):
     MembershipFee = 1
     EventFee = 2
     Donation = 3
-    I25p = 4
-    Other = 5
+    LastschriftInitiative = 4
+    Retoure = 5
+    Other = 100
 
     EventFeeRefund = 10
     InstructorRefund = 11
     EventExpenses = 12
     Expenses = 13
     AccountFee = 14
-    OtherPayment = 15
+    OtherPayment = 200
 
     Unknown = 1000
 
@@ -1080,7 +1081,7 @@ class TransactionType(CdEIntEnum):
     def has_member(self) -> bool:
         return self in {TransactionType.MembershipFee,
                         TransactionType.EventFee,
-                        TransactionType.I25p,
+                        TransactionType.LastschriftInitiative,
                         }
 
     @property
@@ -1101,10 +1102,10 @@ class TransactionType(CdEIntEnum):
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
             return "Teilnahmebeitrag"
-        if self == TransactionType.I25p:
-            return "Initiative 25+"
+        if self == TransactionType.LastschriftInitiative:
+            return "LastschriftInitiative"
         if self == TransactionType.Donation:
-            return "Spende"
+            return "Sonstiges"
         else:
             return "Sonstiges"
 
@@ -1119,7 +1120,8 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.I25p: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Initiative25+",
+            TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
                 "Teilnehmererstattung",
