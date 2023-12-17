@@ -714,9 +714,13 @@ class Transaction:
         ret = {}
 
         events = event_backend.get_events(rs, event_backend.list_events(rs))
+        if not self.persona:
+            amounts_owed = {}
+        else:
+            amounts_owed = event_backend.list_amounts_owed(rs, self.persona['id'])
 
         for event_id, event in events.items():
-            if confidence := self._match_one_event(event):
+            if confidence := self._match_one_event(event, amounts_owed.get(event.id)):
                 ret[event_id] = confidence
 
         if len(ret) > 1:
@@ -726,7 +730,9 @@ class Transaction:
 
         return ret
 
-    def _match_one_event(self, event: models_event.Event) -> Optional[ConfidenceLevel]:
+    def _match_one_event(self, event: models_event.Event,
+                         amount_owed: Optional[decimal.Decimal] = None,
+                         ) -> Optional[ConfidenceLevel]:
         shortname_pattern = re.compile(
             rf"\b{re.escape(asciificator(event.shortname))}\b", flags=re.I)
         title_pattern = re.compile(
@@ -735,6 +741,14 @@ class Transaction:
             confidence = ConfidenceLevel.Full
         elif title_pattern.search(self.reference):
             confidence = ConfidenceLevel.High
+        elif amount_owed is not None and self.amount == amount_owed:
+            confidence = ConfidenceLevel.Medium
+            self.warnings.append((
+                'event',
+                ValueError(
+                    n_("Matched event %(title)s via amount owed only."),
+                    {'title': event.title}),
+            ))
         else:
             return None
         reference_date = now().date()
@@ -742,7 +756,7 @@ class Transaction:
             confidence = confidence.decrease(2)
         return confidence
 
-    def validate(self) -> None:
+    def validate(self, rs: RequestState, event: "EventBackend") -> None:
         """Inspect transaction for problems."""
         cutoff = ConfidenceLevel.High
         if not self.type:
@@ -780,6 +794,19 @@ class Transaction:
                     self.warnings.append(
                         ("amount", ValueError(n_(
                             "Amount lower than expected for event fee."))))
+                if self.event and self.persona:
+                    amount_owed = event.get_amount_owed(
+                        rs, self.persona['id'], self.event.id)
+                    if amount_owed is None:
+                        self.warnings.append((
+                            'event',
+                            ValueError(n_("User is not registered for this event.")),
+                        ))
+                    elif self.amount != amount_owed:
+                        self.warnings.append((
+                            'event',
+                            ValueError(n_("Amount does not match amount owed."))
+                        ))
 
         # Third: If the type needs a persona, check the persona.
         if self.type.has_member:

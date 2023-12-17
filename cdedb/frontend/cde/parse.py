@@ -162,7 +162,7 @@ class CdEParseMixin(CdEBaseFrontend):
             line["id"] = i
             t = parse.Transaction.from_csv(line)
             t.parse(rs, self.coreproxy, self.eventproxy)
-            t.validate()
+            t.validate(rs, self.eventproxy)
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -193,7 +193,7 @@ class CdEParseMixin(CdEBaseFrontend):
             t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
             t = parse.Transaction(t_data, index=i)
             t.get_entities(rs, self.coreproxy, self.eventproxy)
-            t.validate()
+            t.validate(rs, self.eventproxy)
             transactions.append(t)
 
         data, params = self.organize_transaction_data(rs, transactions, date)
