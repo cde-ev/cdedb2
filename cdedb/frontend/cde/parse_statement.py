@@ -407,12 +407,12 @@ class Transaction:
             for persona_id_, confidence in ret.items():
                 ids.append(cdedbid_filter(persona_id_))
                 ret[persona_id_] = confidence.decrease(2)
-            self.warnings.append(('persona', ValueError(
-                n_("Found more than one persona ID: (%(ids)s)."),
-                {
-                    'ids': ", ".join(ids),
-                },
-            )))
+            self.warnings.append((
+                'persona',
+                ValueError(
+                    n_("Found more than one persona ID: (%(ids)s)."),
+                    {'ids': ", ".join(ids)}),
+            ))
 
         return ret
 
@@ -563,7 +563,6 @@ class Transaction:
         self.best_member_confidence.
         """
         self.get_entities(rs, core, event)
-        Null = ConfidenceLevel.Null
 
         if self.persona:
             persona_matches = {
@@ -690,7 +689,7 @@ class Transaction:
                     self.warnings.append((
                         'event',
                         ValueError(
-                            n_("(%(text)s) not found in reference."),
+                            n_("%(text)s not found in reference."),
                             {'text': event.title}),
                     ))
                     confidence = confidence.decrease()
