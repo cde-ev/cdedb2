@@ -39,7 +39,7 @@ class MatchedEntities:
 
     def unpack(self) -> tuple[
         dict[int, ConfidenceLevel], CdEDBObjectMap,
-        dict[int, ConfidenceLevel], CdEDataclassMap[models_event.Event]
+        dict[int, ConfidenceLevel], CdEDataclassMap[models_event.Event],
     ]:
         return (self.persona_matches, self.personas, self.event_matches, self.events)
 
@@ -404,9 +404,9 @@ class Transaction:
 
         if len(ret) > 1:
             ids = []
-            for persona_id_, confidence in ret.items():
+            for persona_id_, confidence_ in ret.items():
                 ids.append(cdedbid_filter(persona_id_))
-                ret[persona_id_] = confidence.decrease(2)
+                ret[persona_id_] = confidence_.decrease(2)
             self.warnings.append((
                 'persona',
                 ValueError(
@@ -575,15 +575,16 @@ class Transaction:
             event_matches: dict[int, ConfidenceLevel] = {
                 self.event.id: self.event_confidence,
             }
-            events = {
+            events: dict[int, models_event.Event] = {
                 self.event.id: self.event,
             }
         else:
             event_matches = self._match_events(rs, event)
+            events = event.get_events(rs, event_matches)
 
         return MatchedEntities(
             persona_matches, core.get_personas(rs, persona_matches),
-            event_matches, event.get_events(rs, event_matches),
+            event_matches, events,
         )
 
     def _check_matches(self, entities: MatchedEntities) -> None:
@@ -603,8 +604,6 @@ class Transaction:
 
             d_p = diacritic_patterns
             # Search reference for given_names.
-            given_names = persona['given_names']
-            gn_pattern = d_p(re.escape(given_names), two_way_replace=True)
             try:
                 if not any(
                     re.search(
@@ -802,7 +801,7 @@ class Transaction:
                 if self.event:
                     self.errors.append((
                         "event",
-                        ValueError(n_("Mustn't have event match."))
+                        ValueError(n_("Mustn't have event match.")),
                     ))
                 if self.persona and not self.persona['is_cde_realm']:
                     self.errors.append((
@@ -819,7 +818,7 @@ class Transaction:
             if self.event:
                 self.warnings.append((
                     "event",
-                    ValueError(n_("Donation to event might be an event fee."))
+                    ValueError(n_("Donation to event might be an event fee.")),
                 ))
 
     @property

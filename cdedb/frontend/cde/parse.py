@@ -8,7 +8,6 @@ Everything here requires the "finance_admin" role.
 import csv
 import datetime
 import decimal
-import functools
 import itertools
 import pathlib
 import re
@@ -180,10 +179,6 @@ class CdEParseMixin(CdEBaseFrontend):
         This uses POST, because the expected filesize is too large for GET.
         """
         rs.ignore_validation_errors()
-
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
 
         transactions = []
         for i in range(1, count + 1):

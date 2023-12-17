@@ -72,10 +72,11 @@ class TestParseFrontend(FrontendTest):
             "begin": datetime.date(2019, 11, 15),
             "end": datetime.date(2019, 11, 17)}))
 
-        def match(event: models_event.Event, reference: str, expected_confidence) -> None:
+        def match(event: models_event.Event, reference: str,
+                  expected_confidence: parse.ConfidenceLevel) -> None:
             fake_transaction = cast(
                 parse.Transaction, types.SimpleNamespace(reference=reference))
-            confidence = parse.Transaction._match_one_event(fake_transaction, event)
+            confidence = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
             self.assertEqual(expected_confidence, confidence)
 
         cl = parse.ConfidenceLevel
