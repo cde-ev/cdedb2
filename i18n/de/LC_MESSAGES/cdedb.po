@@ -3785,7 +3785,7 @@ msgstr "Keine Veranstaltung mit ID %(event_id)s gefunden."
 #: cdedb/frontend/cde/parse_statement.py:610
 #, python-format
 msgid "Matched event %(title)s via amount owed only."
-msgstr "Veranstaltung %(title)s nur über zu zahlenden Beitrag zugeordnet."
+msgstr "Veranstaltung %(title)s nur über zu zahlenden Betrag zugeordnet."
 
 #: cdedb/frontend/cde/parse_statement.py:750
 msgid "Could not determine transaction type."

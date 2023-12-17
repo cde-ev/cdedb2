@@ -130,10 +130,10 @@ class TestParseFrontend(FrontendTest):
         # Fix line 5:
         self.assertPresence("event: Unsicher über Veranstaltungszuordnung",
                             div="transaction5_errors")
-        self.assertPresence("event: Veranstaltung Große TestAkademie 2222 nur über"
+        self.assertPresence("event: Veranstaltung Große Testakademie 2222 nur über"
                             " zu zahlenden Betrag zugeordnet.",
                             div="transaction5_warnings")
-        self.assertPresence("event: Große TestAkademie 2222 nicht im Verwendungszweck",
+        self.assertPresence("event: Große Testakademie 2222 nicht im Verwendungszweck",
                             div="transaction5_warnings")
         f["event_confirm5"] = True
 
