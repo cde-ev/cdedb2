@@ -805,7 +805,7 @@ class Transaction:
                     elif self.amount != amount_owed:
                         self.warnings.append((
                             'event',
-                            ValueError(n_("Amount does not match amount owed."))
+                            ValueError(n_("Amount does not match amount owed.")),
                         ))
 
         # Third: If the type needs a persona, check the persona.

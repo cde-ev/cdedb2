@@ -1230,7 +1230,7 @@ class EventRegistrationBackend(EventBaseBackend):
             return None
         data = self.sql_select_one(rs, models.Registration.database_table,
                                    ("amount_owed", "amount_paid"), registration_id)
-        return data['amount_owed'] - data['amount_paid']
+        return (data['amount_owed'] - data['amount_paid']) if data else None
 
     @access("finance_admin")
     def get_registration_id(self, rs: RequestState, persona_id: int, event_id: int,
