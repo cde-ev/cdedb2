@@ -136,11 +136,6 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file is not None
         statementlines = statement_file.splitlines()
 
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
-
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
 
@@ -159,8 +154,8 @@ class CdEParseMixin(CdEBaseFrontend):
                 continue
             line["id"] = i
             t = parse.Transaction.from_csv(line)
-            t.analyze(events, get_persona)
-            t.inspect()
+            t.parse(rs, self.coreproxy, self.eventproxy)
+            t.validate()
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -194,8 +189,8 @@ class CdEParseMixin(CdEBaseFrontend):
         for i in range(1, count + 1):
             t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
             t = parse.Transaction(t_data, index=i)
-            t.get_data(get_persona=get_persona, events=events)
-            t.inspect()
+            t.get_entities(rs, self.coreproxy, self.eventproxy)
+            t.validate()
             transactions.append(t)
 
         data, params = self.organize_transaction_data(rs, transactions, date)
@@ -208,7 +203,7 @@ class CdEParseMixin(CdEBaseFrontend):
             filename = "Mitgliedsbeiträge"
             transactions = [t for t in transactions
                             if t.type == TransactionType.MembershipFee]
-            fields = parse.MEMBERSHIP_EXPORT_FIELDS
+            fields = parse.ExportFields.member_fees
             write_header = False
         elif event is not None:
             aux = int(event)
@@ -217,12 +212,8 @@ class CdEParseMixin(CdEBaseFrontend):
             transactions = [t for t in transactions
                             if t.event and t.event.id == aux
                             and t.type == TransactionType.EventFee]
-            fields = parse.EVENT_EXPORT_FIELDS
+            fields = parse.ExportFields.event_fees
             write_header = False
-        elif gnucash is not None:
-            filename = "gnucash"
-            fields = parse.GNUCASH_EXPORT_FIELDS
-            write_header = True
         elif excel is not None:
             account, _ = inspect(Accounts, excel)
             if not account:
@@ -230,7 +221,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 return self.parse_statement_form(rs, data, params)
             filename = f"transactions_{account.display_str()}"
             transactions = [t for t in transactions if t.account == account]
-            fields = parse.EXCEL_EXPORT_FIELDS
+            fields = parse.ExportFields.excel
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
