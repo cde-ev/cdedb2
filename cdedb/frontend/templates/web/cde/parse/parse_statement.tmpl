@@ -54,18 +54,30 @@
                     <li>
                         {% trans %}Transaction Type{% endtrans %}: {{ gettext(data["type{}".format(t_id)]).display_str() }}
                     </li>
-                    {% if data["persona{}".format(t_id)] %}
-                        <li>
-                            {% trans %}Matched User{% endtrans %}:
-                            {{ util.print_doppelganger(data["persona{}".format(t_id)]) }}
-                        </li>
-                    {% endif %}
-                    {% if data["event{}".format(t_id)] %}
-                        <li>
-                            {% trans %}Matched Event{% endtrans %}
-                            {{ data["event{}".format(t_id)].title }}
-                        </li>
-                    {% endif %}
+                    {% with persona = data["persona{}".format(t_id)],
+                            event = data["event{}".format(t_id)] %}
+                        {% if persona %}
+                            <li>
+                                {% trans %}Matched User{% endtrans %}:
+                                {{ util.print_doppelganger(persona, link=True) }}
+                            </li>
+                        {% endif %}
+                        {% if event %}
+                            <li>
+                                {% trans %}Matched Event{% endtrans %}:
+                                {{ util.href(cdedblink("event/show_event", {'event_id': event.id}), event.title) }}
+                            </li>
+                        {% endif %}
+                        {% if persona and event %}
+                            {% with reg_id = params.get('registration_ids', {}).get((persona['id'], event.id)) %}
+                                {% if reg_id %}
+                                    <li>
+                                        {{ util.href(cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': reg_id}), gettext("Matched Registration")) }}
+                                    </li>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    {% endwith %}
                 </ul>
                 <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
                         {% for key, problem in data["errors{}".format(t_id)] %}

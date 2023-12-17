@@ -69,9 +69,8 @@ class CdEParseMixin(CdEBaseFrontend):
         }
         return self.render(rs, "parse/parse_statement", params)
 
-    @staticmethod
     def organize_transaction_data(
-        rs: RequestState, transactions: list[parse.Transaction],
+        self, rs: RequestState, transactions: list[parse.Transaction],
         date: datetime.date,
     ) -> tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
@@ -90,6 +89,7 @@ class CdEParseMixin(CdEBaseFrontend):
             "accounts": defaultdict(int),
             "events": defaultdict(int),
             "memberships": 0,
+            "registration_ids": {},
         }
         prev_jump = None
         for t in transactions:
@@ -104,6 +104,8 @@ class CdEParseMixin(CdEBaseFrontend):
                     params["has_warning"].append(t.t_id)
             else:
                 params["has_none"].append(t.t_id)
+            if t.event and t.persona:
+                params["registration_ids"][(t.persona['id'], t.event.id)] = self.eventproxy.get_registration_id(rs, persona_id=t.persona['id'], event_id=t.event.id)
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
                 params["events"][t.event.id] += 1
