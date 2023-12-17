@@ -50,10 +50,19 @@
                     <li>
                         {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}
                     </li>
+                    <li>
+                        {% trans %}Transaction Type{% endtrans %}: {{ gettext(data["type{}".format(t_id)]).display_str() }}
+                    </li>
                     {% if data["persona{}".format(t_id)] %}
                         <li>
                             {% trans %}Matched User{% endtrans %}:
                             {{ util.print_doppelganger(data["persona{}".format(t_id)]) }}
+                        </li>
+                    {% endif %}
+                    {% if data["event{}".format(t_id)] %}
+                        <li>
+                            {% trans %}Matched Event{% endtrans %}
+                            {{ data["event{}".format(t_id)].title }}
                         </li>
                     {% endif %}
                 </ul>
