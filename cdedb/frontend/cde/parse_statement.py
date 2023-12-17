@@ -419,9 +419,203 @@ class Transaction:
     def parse(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
               ) -> None:
         """Try to determine the type of the transaction and referenced entities."""
-        entities = self._match_entites(rs, core, event)
-        self._check_matches(entities)
+        self._get_entities(rs, core, event)
+        self._match_persona(rs, core)
+        self._match_event(rs, event)
         self._determine_type()
+
+    def _get_entities(self, rs: RequestState, core: "CoreBackend",
+                      event: "EventBackend") -> None:
+        """Try retrieving the persona and event belonging to this transaction."""
+        if self._persona_id:
+            try:
+                self.persona = core.get_persona(rs, self._persona_id)
+            except KeyError:
+                self._persona_id = None
+                self.persona = None
+        if self._event_id:
+            try:
+                self.event = event.get_event(rs, self._event_id)
+            except KeyError:
+                self._event_id = None
+                self.event = None
+
+    def _match_persona(self, rs: RequestState, core: "CoreBackend") -> None:
+        """Try to match a persona to this transaction."""
+        if self.persona:
+            persona_matches = {
+                self.persona['id']: self.persona_confidence,
+            }
+        else:
+            persona_matches = self._find_cdedbids()
+
+        personas = core.get_personas(rs, persona_matches)
+
+        for persona_id, confidence in persona_matches.items():
+            # Check that the persona exists.
+            if persona_id not in personas:
+                self.errors.append((
+                    'persona',
+                    KeyError(n_("No Persona with ID %(persona_id)s found."),
+                             {'persona_id': persona_id}),
+                ))
+                persona_matches[persona_id] = ConfidenceLevel.Null
+                continue
+            persona = personas[persona_id]
+
+            d_p = diacritic_patterns
+            # Search reference for given_names.
+            try:
+                if not any(
+                    re.search(
+                        d_p(re.escape(gn), two_way_replace=True),
+                        self.reference,
+                        flags=re.I,
+                    )
+                    for gn in persona['given_names'].split()
+                ):
+                    self.warnings.append((
+                        'given_names',
+                        KeyError(
+                            n_("%(text)s not found in reference."),
+                            {'text': persona['given_names']}),
+                    ))
+                    confidence = confidence.decrease()
+            except re.error as e:
+                self.warnings.append((
+                    'given_names',
+                    TypeError(
+                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
+                        {'p': d_p(re.escape(persona['given_names'])), 'e': e}),
+                ))
+                confidence = confidence.decrease()
+
+            # Search reference for family_name.
+            try:
+                if not any(
+                        re.search(
+                            d_p(re.escape(fn), two_way_replace=True),
+                            self.reference,
+                            flags=re.I,
+                        )
+                        for fn in persona['family_name'].split()
+                ):
+                    self.warnings.append((
+                        'family_name',
+                        KeyError(
+                            n_("%(text)s not found in reference."),
+                            {'text': persona['family_name']}),
+                    ))
+                    confidence = confidence.decrease()
+            except re.error as e:
+                self.warnings.append((
+                    'family_name',
+                    TypeError(
+                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
+                        {'p': d_p(re.escape(persona['given_names'])), 'e': e}),
+                ))
+                confidence = confidence.decrease()
+
+            persona_matches[persona_id] = confidence
+
+        if persona_matches:
+            best_persona_id = max(
+                persona_matches, key=lambda p_id: persona_matches[p_id])
+            self.persona = personas[best_persona_id]
+            self.persona_confidence = persona_matches[best_persona_id]
+
+    def _match_event(self, rs: RequestState, event_backend: "EventBackend") -> None:
+        """Try to match an event to this transaction."""
+        if self.event:
+            return
+
+        event_matches = {}
+
+        events = event_backend.get_events(rs, event_backend.list_events(rs))
+        if not self.persona:
+            amounts_owed = {}
+        else:
+            amounts_owed = event_backend.list_amounts_owed(rs, self.persona['id'])
+
+        for event_id, event in events.items():
+            if confidence := self._match_one_event(event, amounts_owed.get(event.id)):
+                event_matches[event_id] = confidence
+
+        if len(event_matches) > 1:
+            # Force manual reviews.
+            for event_id, confidence in event_matches.items():
+                event_matches[event_id] = confidence.decrease(2)
+
+        for event_id, confidence in event_matches.items():
+            if event_id not in events:
+                self.errors.append((
+                    'event',
+                    KeyError(
+                        n_("No Event with ID $(event_id)s found."),
+                        {'event_id': event_id}),
+                ))
+                event_matches[event_id] = ConfidenceLevel.Null
+                continue
+            event = events[event_id]
+
+            try:
+                if not re.search(
+                        re.escape(asciificator(event.title)),
+                        self.reference,
+                        flags=re.I,
+                ) and not re.search(
+                    re.escape(asciificator(event.shortname)),
+                    self.reference,
+                    flags=re.I,
+                ):
+                    self.warnings.append((
+                        'event',
+                        ValueError(
+                            n_("%(text)s not found in reference."),
+                            {'text': event.title}),
+                    ))
+                    confidence = confidence.decrease()
+            except re.error as e:
+                self.warnings.append((
+                    'event',
+                    TypeError(
+                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
+                        {'p': re.escape(asciificator(event.shortname)), 'e': e}),
+                ))
+                confidence = confidence.decrease()
+            event_matches[event_id] = confidence
+
+        if event_matches:
+            best_event_id = max(
+                event_matches, key=lambda event_id: event_matches[event_id])
+            self.event = events[best_event_id]
+            self.event_confidence = event_matches[best_event_id]
+
+    def _match_one_event(self, event: models_event.Event,
+                         amount_owed: Optional[decimal.Decimal] = None,
+                         ) -> Optional[ConfidenceLevel]:
+        shortname_pattern = re.compile(
+            rf"\b{re.escape(asciificator(event.shortname))}\b", flags=re.I)
+        title_pattern = re.compile(
+            rf"\b{re.escape(asciificator(event.title))}\b", flags=re.I)
+        if shortname_pattern.search(self.reference):
+            confidence = ConfidenceLevel.Full
+        elif title_pattern.search(self.reference):
+            confidence = ConfidenceLevel.High
+        elif amount_owed is not None and self.amount == amount_owed:
+            confidence = ConfidenceLevel.Medium
+            self.warnings.append((
+                'event',
+                ValueError(
+                    n_("Matched event %(title)s via amount owed only."),
+                    {'title': event.title}),
+            ))
+        else:
+            return None
+        reference_date = now().date()
+        if event.end < (reference_date - datetime.timedelta(180)):
+            confidence = confidence.decrease(2)
+        return confidence
 
     def _determine_type(self) -> None:
         """Try to guess the TransactionType."""
@@ -538,226 +732,11 @@ class Transaction:
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def get_entities(self, rs: RequestState, core: "CoreBackend",
-                     event: "EventBackend") -> None:
-        """Try retrieving the persona and event belonging to this transaction."""
-        if self._persona_id:
-            try:
-                self.persona = core.get_persona(rs, self._persona_id)
-            except KeyError:
-                self._persona_id = None
-                self.persona = None
-        if self._event_id:
-            try:
-                self.event = event.get_event(rs, self._event_id)
-            except KeyError:
-                self._event_id = None
-                self.event = None
-
-    def _match_entites(self, rs: RequestState, core: "CoreBackend",
-                       event: "EventBackend") -> MatchedEntities:
-        """
-        Assign all matching members to self.member_matches.
-
-        Assign the best match to self.best_member_match and it's Confidence to
-        self.best_member_confidence.
-        """
-        self.get_entities(rs, core, event)
-
-        if self.persona:
-            persona_matches = {
-                self.persona['id']: self.persona_confidence,
-            }
-        else:
-            persona_matches = self._find_cdedbids()
-
-        if self.event:
-            event_matches: dict[int, ConfidenceLevel] = {
-                self.event.id: self.event_confidence,
-            }
-            events: dict[int, models_event.Event] = {
-                self.event.id: self.event,
-            }
-        else:
-            event_matches = self._match_events(rs, event)
-            events = event.get_events(rs, event_matches)
-
-        return MatchedEntities(
-            persona_matches, core.get_personas(rs, persona_matches),
-            event_matches, events,
-        )
-
-    def _check_matches(self, entities: MatchedEntities) -> None:
-        persona_matches, personas, event_matches, events = entities.unpack()
-
-        for persona_id, confidence in persona_matches.items():
-            # Check that the persona exists.
-            if persona_id not in personas:
-                self.errors.append((
-                    'persona',
-                    KeyError(n_("No Persona with ID %(persona_id)s found."),
-                             {'persona_id': persona_id}),
-                ))
-                persona_matches[persona_id] = ConfidenceLevel.Null
-                continue
-            persona = personas[persona_id]
-
-            d_p = diacritic_patterns
-            # Search reference for given_names.
-            try:
-                if not any(
-                    re.search(
-                        d_p(re.escape(gn), two_way_replace=True),
-                        self.reference,
-                        flags=re.I,
-                    )
-                    for gn in persona['given_names'].split()
-                ):
-                    self.warnings.append((
-                        'given_names',
-                        KeyError(
-                            n_("%(text)s not found in reference."),
-                            {'text': persona['given_names']}),
-                    ))
-                    confidence = confidence.decrease()
-            except re.error as e:
-                self.warnings.append((
-                    'given_names',
-                    TypeError(
-                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                        {'p': d_p(re.escape(persona['given_names'])), 'e': e}),
-                ))
-                confidence = confidence.decrease()
-
-            # Search reference for family_name.
-            try:
-                if not any(
-                        re.search(
-                            d_p(re.escape(fn), two_way_replace=True),
-                            self.reference,
-                            flags=re.I,
-                        )
-                        for fn in persona['family_name'].split()
-                ):
-                    self.warnings.append((
-                        'family_name',
-                        KeyError(
-                            n_("%(text)s not found in reference."),
-                            {'text': persona['family_name']}),
-                    ))
-                    confidence = confidence.decrease()
-            except re.error as e:
-                self.warnings.append((
-                    'family_name',
-                    TypeError(
-                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                        {'p': d_p(re.escape(persona['given_names'])), 'e': e}),
-                ))
-                confidence = confidence.decrease()
-
-            persona_matches[persona_id] = confidence
-
-        if persona_matches:
-            best_persona_id = max(
-                persona_matches, key=lambda p_id: persona_matches[p_id])
-            self.persona = personas[best_persona_id]
-            self.persona_confidence = persona_matches[best_persona_id]
-
-        for event_id, confidence in event_matches.items():
-            if event_id not in events:
-                self.errors.append((
-                    'event',
-                    KeyError(
-                        n_("No Event with ID $(event_id)s found."),
-                        {'event_id': event_id}),
-                ))
-                event_matches[event_id] = ConfidenceLevel.Null
-                continue
-            event = events[event_id]
-
-            try:
-                if not re.search(
-                        re.escape(asciificator(event.title)),
-                        self.reference,
-                        flags=re.I,
-                ) and not re.search(
-                    re.escape(asciificator(event.shortname)),
-                    self.reference,
-                    flags=re.I,
-                ):
-                    self.warnings.append((
-                        'event',
-                        ValueError(
-                            n_("%(text)s not found in reference."),
-                            {'text': event.title}),
-                    ))
-                    confidence = confidence.decrease()
-            except re.error as e:
-                self.warnings.append((
-                    'event',
-                    TypeError(
-                        n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                        {'p': re.escape(asciificator(event.shortname)), 'e': e}),
-                ))
-                confidence = confidence.decrease()
-            event_matches[event_id] = confidence
-
-        if event_matches:
-            best_event_id = max(
-                event_matches, key=lambda event_id: event_matches[event_id])
-            self.event = events[best_event_id]
-            self.event_confidence = event_matches[best_event_id]
-
-    def _match_events(self, rs: RequestState, event_backend: "EventBackend",
-                      ) -> dict[int, ConfidenceLevel]:
-        """Look for event matches by event shortname or title."""
-        ret = {}
-
-        events = event_backend.get_events(rs, event_backend.list_events(rs))
-        if not self.persona:
-            amounts_owed = {}
-        else:
-            amounts_owed = event_backend.list_amounts_owed(rs, self.persona['id'])
-
-        for event_id, event in events.items():
-            if confidence := self._match_one_event(event, amounts_owed.get(event.id)):
-                ret[event_id] = confidence
-
-        if len(ret) > 1:
-            # Force manual reviews.
-            for event_id, confidence in ret.items():
-                ret[event_id] = confidence.decrease(2)
-
-        return ret
-
-    def _match_one_event(self, event: models_event.Event,
-                         amount_owed: Optional[decimal.Decimal] = None,
-                         ) -> Optional[ConfidenceLevel]:
-        shortname_pattern = re.compile(
-            rf"\b{re.escape(asciificator(event.shortname))}\b", flags=re.I)
-        title_pattern = re.compile(
-            rf"\b{re.escape(asciificator(event.title))}\b", flags=re.I)
-        if shortname_pattern.search(self.reference):
-            confidence = ConfidenceLevel.Full
-        elif title_pattern.search(self.reference):
-            confidence = ConfidenceLevel.High
-        elif amount_owed is not None and self.amount == amount_owed:
-            confidence = ConfidenceLevel.Medium
-            self.warnings.append((
-                'event',
-                ValueError(
-                    n_("Matched event %(title)s via amount owed only."),
-                    {'title': event.title}),
-            ))
-        else:
-            return None
-        reference_date = now().date()
-        if event.end < (reference_date - datetime.timedelta(180)):
-            confidence = confidence.decrease(2)
-        return confidence
-
-    def validate(self, rs: RequestState, event: "EventBackend") -> None:
+    def validate(self, rs: RequestState, core: "CoreBackend", event: "EventBackend",
+                 ) -> None:
         """Inspect transaction for problems."""
+        self._get_entities(rs, core, event)
+
         cutoff = ConfidenceLevel.High
         if not self.type:
             self.type = TransactionType.Unknown
