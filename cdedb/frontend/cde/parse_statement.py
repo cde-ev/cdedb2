@@ -11,7 +11,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    RequestState, TransactionType, asciificator, diacritic_patterns, now, setup_logger,
+    RequestState, TransactionType, asciificator, diacritic_patterns, now,
 )
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig
@@ -27,7 +27,7 @@ BackendGetter = Callable[[int], CdEDBObject]
 
 
 _CONF = LazyConfig()
-_LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
+# _LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
 
 
 @dataclasses.dataclass
