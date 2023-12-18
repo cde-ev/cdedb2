@@ -133,7 +133,7 @@ class EventEventMixin(EventBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
-    @access("event")
+    @access("finance_admin")
     @REQUESTdata("phrase")
     def select_event(self, rs: RequestState, phrase: str) -> Response:
         """API for intelligent input field.

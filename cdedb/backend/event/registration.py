@@ -1208,7 +1208,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     @access("finance_admin")
-    def list_amounts_owed(self, rs: RequestState, persona_id: int, event_id: int = None,
+    def list_amounts_owed(self, rs: RequestState, persona_id: int,
                           ) -> dict[int, decimal.Decimal]:
         persona_id = affirm(vtypes.ID, persona_id)
         registration_ids = self.list_persona_registrations(rs, persona_id).keys()

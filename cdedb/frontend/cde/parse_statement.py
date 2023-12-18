@@ -11,7 +11,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    RequestState, TransactionType, asciificator, diacritic_patterns, now,
+    RequestState, TransactionType, asciificator, diacritic_patterns, now, setup_logger,
 )
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig
@@ -27,7 +27,7 @@ BackendGetter = Callable[[int], CdEDBObject]
 
 
 _CONF = LazyConfig()
-# _LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
+_LOGGER = setup_logger('parse', _CONF['LOG_DIR'] / "parse.log", _CONF['LOG_LEVEL'])
 
 
 @dataclasses.dataclass
@@ -147,14 +147,6 @@ class IDPatterns:
 
     persona_close = re.compile(
         r"DB[-./\s]*(?P<persona_id>[0-9]{1,6})[-./\s]*(?P<checkdigit>[0-9X])",
-        flags=re.I)
-
-    event = re.compile(
-        r"EV-(?P<event_id>[0-9]+)-(?P<checkdigit>[0-9X])",
-        flags=re.I)
-
-    event_close = re.compile(
-        r"EV[-./\s]*(?P<event_id>[0-9]{1,4})[-./\s]*(?P<checkdigit>[0-9X])",
         flags=re.I)
 
     whitespace = re.compile(r"[-./\s]", flags=re.I)
@@ -629,8 +621,7 @@ class Transaction:
         # Sanity check whether we know the Account.
         if self.account == Accounts.Unknown:
             self.type = TransactionType.Unknown
-            confidence = confidence.destroy()
-            self.type_confidence = confidence
+            self.type_confidence = confidence.destroy()
             return
 
         # Handle all outgoing payments.
@@ -648,11 +639,15 @@ class Transaction:
                 if ReferencePatterns.event_fee_refund.search(self.reference):
                     self.type = TransactionType.EventFeeRefund
                     self.type_confidence = confidence
+                    return
+
                 # Check for refund of instructor fee:
                 elif ReferencePatterns.event_fee_instructor_refund.search(
                         self.reference):
                     self.type = TransactionType.InstructorRefund
                     self.type_confidence = confidence
+                    return
+
                 # Check for refund of expenses.
                 elif ReferencePatterns.expenses.search(self.reference):
                     if self.event:
@@ -660,20 +655,26 @@ class Transaction:
                     else:
                         self.type = TransactionType.Expenses
                     self.type_confidence = confidence
+                    return
+
                 # Some other active payment. Might require manual review.
                 else:
                     self.type = TransactionType.OtherPayment
                     self.type_confidence = confidence.decrease()
+                    return
 
             # Special case for account fees.
             elif PostingPatterns.account_fee.search(self.posting):
                 # Posting reserved for administrative fees found.
                 self.type = TransactionType.AccountFee
                 self.type_confidence = ConfidenceLevel.Full
+                return
+
             # Some other outgoing payment, probably a direct debit. Manual review.
             else:
                 self.type = TransactionType.OtherPayment
                 self.type_confidence = confidence.decrease(2)
+                return
 
         elif self.amount > 0:
 
@@ -682,6 +683,7 @@ class Transaction:
                 self.type = TransactionType.LastschriftInitiative
                 self.type_confidence = confidence
                 return
+
             elif PostingPatterns.retoure.search(self.posting):
                 self.type = TransactionType.Retoure
                 self.type_confidence = confidence
@@ -697,6 +699,7 @@ class Transaction:
             elif self.event and self.amount > AMOUNT_MIN_EVENT_FEE:
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
+                return
 
             # Look for event fee without event match.
             elif ReferencePatterns.event_fee.search(self.reference) and (
