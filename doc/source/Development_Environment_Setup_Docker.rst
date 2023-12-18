@@ -8,9 +8,9 @@ Prerequisites
 -------------
 
 To utilise the images you need to have Docker installed. Furthermore the use
-of ``docker-compose`` (which is a separate program) is advised for ease of
+of ``docker compose`` (which is a separate plugin) is advised for ease of
 use.  Theoretically the images and the compose file can also be run by podman
-or similar OCI compatibel tools.  This however has not been tested yet.
+or similar OCI compatibel tools.
 
 The following commands assume that you are a member of the docker group
 or have gained the proper permissions by other means like sudo.
