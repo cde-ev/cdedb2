@@ -1513,7 +1513,6 @@ class EventRegistrationBackend(EventBaseBackend):
                     }
                     # perform the change directly instead of using set_registration
                     # to avoid privilege conflicts and use custom log code
-                    count += self.sql_update(rs, "event.registrations", update)
                     if datum['amount'] > 0:
                         log_code = const.EventLogCodes.registration_payment_received
                         change_note = "{} am {} gezahlt.".format(
@@ -1524,8 +1523,10 @@ class EventRegistrationBackend(EventBaseBackend):
                         change_note = "{} am {} zurückerstattet.".format(
                             money_filter(-datum['amount']),
                             date_filter(datum['original_date'], lang="de"))
+                        del update['payment']
                     else:
                         raise ValueError(n_("Cannot book fee with amount of zero."))
+                    count += self.sql_update(rs, "event.registrations", update)
                     self.event_log(rs, log_code, event_id, change_note=change_note,
                                    persona_id=all_regs[reg_id]['persona_id'])
         except psycopg2.extensions.TransactionRollbackError:
