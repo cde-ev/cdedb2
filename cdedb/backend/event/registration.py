@@ -1207,6 +1207,41 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @access("finance_admin")
+    def list_amounts_owed(self, rs: RequestState, persona_id: int,
+                          ) -> dict[int, decimal.Decimal]:
+        persona_id = affirm(vtypes.ID, persona_id)
+        registration_ids = self.list_persona_registrations(rs, persona_id).keys()
+
+        return {
+            e['event_id']: e['amount_owed'] - e['amount_paid']
+            for e in self.sql_select(
+                rs, models.Registration.database_table,
+                ("event_id", "amount_owed", "amount_paid"), registration_ids)
+        }
+
+    @access("finance_admin")
+    def get_amount_owed(self, rs: RequestState, persona_id: int, event_id: int,
+                        ) -> Optional[decimal.Decimal]:
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        registration_id = self.get_registration_id(rs, persona_id, event_id)
+        if not registration_id:
+            return None
+        data = self.sql_select_one(rs, models.Registration.database_table,
+                                   ("amount_owed", "amount_paid"), registration_id)
+        return (data['amount_owed'] - data['amount_paid']) if data else None
+
+    @access("finance_admin")
+    def get_registration_id(self, rs: RequestState, persona_id: int, event_id: int,
+                            ) -> Optional[int]:
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        registration_ids = self.list_registrations(rs, event_id, persona_id)
+        if not registration_ids:
+            return None
+        return unwrap(registration_ids.keys())
+
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
                               ) -> RegistrationFeeData:
