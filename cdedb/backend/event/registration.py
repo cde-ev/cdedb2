@@ -1210,31 +1210,38 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("finance_admin")
     def list_amounts_owed(self, rs: RequestState, persona_id: int,
                           ) -> dict[int, decimal.Decimal]:
+        """List the remaining amount owed for every registration of the given user."""
         persona_id = affirm(vtypes.ID, persona_id)
-        registration_ids = self.list_persona_registrations(rs, persona_id).keys()
+        query = f"""
+            SELECT event_id, amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s
+        """
+        params = [persona_id]
 
         return {
-            e['event_id']: e['amount_owed'] - e['amount_paid']
-            for e in self.sql_select(
-                rs, models.Registration.database_table,
-                ("event_id", "amount_owed", "amount_paid"), registration_ids)
+            e['event_id']: e['amount'] for e in self.query_all(rs, query, params)
         }
 
     @access("finance_admin")
     def get_amount_owed(self, rs: RequestState, persona_id: int, event_id: int,
                         ) -> Optional[decimal.Decimal]:
+        """Retrieve the remaining amount owed for a single persona for one event."""
         persona_id = affirm(vtypes.ID, persona_id)
         event_id = affirm(vtypes.ID, event_id)
-        registration_id = self.get_registration_id(rs, persona_id, event_id)
-        if not registration_id:
-            return None
-        data = self.sql_select_one(rs, models.Registration.database_table,
-                                   ("amount_owed", "amount_paid"), registration_id)
-        return (data['amount_owed'] - data['amount_paid']) if data else None
+        query = f"""
+            SELECT amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s AND event_id = %s
+        """
+        params = [persona_id, event_id]
+
+        return unwrap(self.query_one(rs, query, params))
 
     @access("finance_admin")
     def get_registration_id(self, rs: RequestState, persona_id: int, event_id: int,
                             ) -> Optional[int]:
+        """Retrieve the registration id of the given persona for the event if any."""
         persona_id = affirm(vtypes.ID, persona_id)
         event_id = affirm(vtypes.ID, event_id)
         registration_ids = self.list_registrations(rs, event_id, persona_id)
