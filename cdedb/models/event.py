@@ -465,16 +465,23 @@ class CustomQueryFilter(EventDataclass):
         return self._get_field_string(self.fields)
 
     def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
+        """If this filter is valid for this spec add it to the spec."""
         if self.scope != scope or not self.is_valid(spec):
             return
         type_ = spec[next(iter(self.fields))].type
         spec[self.get_field_string()] = QuerySpecEntry(type_, self.title)
 
-    def is_valid(self, spec: QuerySpec) -> None:
+    def is_valid(self, spec: QuerySpec) -> bool:
+        """Check whether all fields are in the spec and of the same type."""
         return all(f in spec for f in self.fields) and len(
             {spec[f].type for f in self.fields}) == 1
 
-    def get_field_titles(self, spec: QuerySpec, g: Callable[[str], str]) -> tuple[list[str], list[str]]:
+    def get_field_titles(self, spec: QuerySpec, g: Callable[[str], str],
+                         ) -> tuple[list[str], list[str]]:
+        """
+        Return a sorted list of titles of existing fields and potentially names
+        of deleted fields.
+        """
         valid, invalid = [], []
         for f in self.fields:
             if f in spec:
