@@ -4506,7 +4506,7 @@ def _custom_query_filter(
             raise ValidationSummary(TypeError('field', n_(
                 "Incompatible field types.")))
 
-    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])
+    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])  # pylint: disable=protected-access
 
     if errs:
         raise errs
