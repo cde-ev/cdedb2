@@ -177,13 +177,13 @@ class CdEParseMixin(CdEBaseFrontend):
         return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("count", "date", "validate", "event", "membership", "excel", "gnucash",
+    @REQUESTdata("count", "date", "validate", "event", "membership", "excel",
                  "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, date: datetime.date,
                        validate: Optional[str] = None,
                        event: Optional[vtypes.ID] = None,
                        membership: Optional[str] = None, excel: Optional[str] = None,
-                       gnucash: Optional[str] = None, ignore_warnings: bool = False,
+                       ignore_warnings: bool = False,
                        ) -> Response:
         """
         Provide data as CSV-Download with the given filename.

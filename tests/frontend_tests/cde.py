@@ -1005,6 +1005,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
+        self.assertPresence("Bertålotta Beispiel", div='active-authorizations')
+        self.assertPresence("Akira Abukara", div='inactive-authorizations')
+        self.assertNonPresence("Bertålotta Beispiel", div='inactive-authorizations')
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:
@@ -1019,12 +1022,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Das Mitglied ist der Kontoinhaber.",
+                            div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
-            self.assertIn("receiptform3", self.response.forms)
         else:
             self.assertNotIn("revokeform", self.response.forms)
-            self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
         # create a new lastschrift
@@ -1279,15 +1283,6 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
                             exact=True)
-
-    @as_users("farin")
-    def test_lastschrift_receipt(self) -> None:
-        self.admin_view_profile('berta')
-        self.traverse({'description': 'Einzugsermächtigung'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        f = self.response.forms['receiptform3']
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("vera")
     def test_lastschrift_subscription_form(self) -> None:

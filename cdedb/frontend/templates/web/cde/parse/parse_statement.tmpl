@@ -216,7 +216,6 @@
             {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
             {{ util.form_input_submit(name="validate", label=gettext("Validate"), icon="sync-alt", horizontal=False) }}
             {% if not params["has_error"] %}
-                {{ util.input_submit(label=gettext("GnuCash Download"), aclass="btn btn-default", value="gnucash", name="gnucash", icon='download') }}
                 {% for account in enums["Accounts"] if account in params["accounts"] %}
                     {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()), aclass="btn btn-default",
                         value=account, name="excel", icon='download') }}
