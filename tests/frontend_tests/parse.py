@@ -4,7 +4,7 @@ import collections
 import csv
 import datetime
 import types
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import webtest
 
@@ -73,26 +73,39 @@ class TestParseFrontend(FrontendTest):
             "end": datetime.date(2019, 11, 17)}))
 
         def match(event: models_event.Event, reference: str,
-                  expected_confidence: parse.ConfidenceLevel) -> None:
+                  expected_confidence: Optional[parse.ConfidenceLevel]) -> None:
             fake_transaction = cast(
-                parse.Transaction, types.SimpleNamespace(reference=reference))
+                parse.Transaction,
+                types.SimpleNamespace(
+                    reference=reference,
+                    compile_pattern=parse.Transaction.compile_pattern,
+                ))
             confidence = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
-            self.assertEqual(expected_confidence, confidence)
+            if expected_confidence is None:
+                self.assertIsNone(confidence)
+            else:
+                self.assertEqual(expected_confidence, confidence)
 
         cl = parse.ConfidenceLevel
 
         match(pseudo_winter, "pwinter222223", cl.Full)
-        match(pseudo_winter, "CdE Pseudo-WinterAkademie 2222/2223", cl.High)
+        match(pseudo_winter, "pwinter2222232425", cl.High)
+        match(pseudo_winter, "CdE Pseudo-WinterAkademie", cl.Full)
+        match(pseudo_winter, "CdE Pseudo-WinterAkademie 2222/2223", cl.Full)
+        match(pseudo_winter, "CdE Pseudo-WinterAkademie2222", cl.High)
 
         match(test_pfingsten, "pa1234", cl.Medium)
-        match(test_pfingsten, "PfingstAkademie 1234", cl.Low)
+        match(test_pfingsten, "PfingstAkademie 1234", cl.Medium)
+        match(test_pfingsten, "PfingstAkademie 123456", cl.Low)
 
         match(naka, "naka", cl.Full)
         match(naka, "NAKA", cl.Full)
-        match(naka, "CdE NachhaltigkeitsAkademie", cl.High)
+        match(naka, "CdE NachhaltigkeitsAkademie", cl.Full)
+        match(naka, "CdE NachhaltigkeitsAkademie(n)", cl.Full)
 
         match(velbert, "velbert19", cl.Medium)
-        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Low)
+        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "Velbert 2019", None)
 
     def check_dict(self, adict: CdEDBObject, **kwargs: Any) -> None:
         for k, v in kwargs.items():

@@ -584,7 +584,7 @@ class Transaction:
             self.event_confidence = event_matches[best_event_id]
 
     @staticmethod
-    def compile_pattern(s: str, strict: bool) -> re.Pattern:
+    def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
         s = re.escape(asciificator(s))
         if strict:
             s = rf"\b{s}\b"
