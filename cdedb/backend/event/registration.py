@@ -1207,6 +1207,48 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @access("finance_admin")
+    def list_amounts_owed(self, rs: RequestState, persona_id: int,
+                          ) -> dict[int, decimal.Decimal]:
+        """List the remaining amount owed for every registration of the given user."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = f"""
+            SELECT event_id, amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s
+        """
+        params = [persona_id]
+
+        return {
+            e['event_id']: e['amount'] for e in self.query_all(rs, query, params)
+        }
+
+    @access("finance_admin")
+    def get_amount_owed(self, rs: RequestState, persona_id: int, event_id: int,
+                        ) -> Optional[decimal.Decimal]:
+        """Retrieve the remaining amount owed for a single persona for one event."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        query = f"""
+            SELECT amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s AND event_id = %s
+        """
+        params = [persona_id, event_id]
+
+        return unwrap(self.query_one(rs, query, params))
+
+    @access("finance_admin")
+    def get_registration_id(self, rs: RequestState, persona_id: int, event_id: int,
+                            ) -> Optional[int]:
+        """Retrieve the registration id of the given persona for the event if any."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        registration_ids = self.list_registrations(rs, event_id, persona_id)
+        if not registration_ids:
+            return None
+        return unwrap(registration_ids.keys())
+
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
                               ) -> RegistrationFeeData:

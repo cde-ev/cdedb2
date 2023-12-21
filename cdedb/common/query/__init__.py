@@ -1208,6 +1208,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
         "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
             "int", n_("Camping Mat Capacity")),
+        "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity")),
         "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes")),
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
@@ -1225,6 +1226,12 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
                 "int", n_("Camping Mat Inhabitants"), prefix),
             f"part{part.id}.total_inhabitants": QuerySpecEntry(
                 "int", n_("Total Inhabitants"), prefix),
+            f"part{part.id}.regular_remaining": QuerySpecEntry(
+                "int", n_("Regular Remaining"), prefix),
+            f"part{part.id}.camping_mat_remaining": QuerySpecEntry(
+                "int", n_("Camping Mat Remaining"), prefix),
+            f"part{part.id}.total_remaining": QuerySpecEntry(
+                "int", n_("Total Remaining"), prefix),
             f"part{part.id}.group_regular_inhabitants": QuerySpecEntry(
                 "int", n_("Group Regular Inhabitants"), prefix),
             f"part{part.id}.group_camping_mat_inhabitants": QuerySpecEntry(

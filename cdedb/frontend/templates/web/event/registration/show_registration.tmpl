@@ -113,6 +113,10 @@
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
+        <dt title="{% trans %}Remaining Owed{% endtrans %}">{% trans %}Remaining Owed{% endtrans %}</dt>
+        <dd>
+            {{ to_pay|money(lang=lang) }}
+        </dd>
 
         <dt title="{% trans %}Parental Consent{% endtrans %}">{% trans %}Parental Consent{% endtrans %}</dt>
         <dd>

@@ -30,6 +30,71 @@
                             util.persona_name(ambience['persona'], only_given_names=True), 'user', gettext("User")) }}
 {% endblock %}
 
+{% macro print_permit(lastschrift) %}
+    <dl class="dl-horizontal">
+        <dt title="{% trans %}Member{% endtrans %}">
+            {% trans %}Member{% endtrans %}
+        </dt>
+        <dd>{{ util.persona_anchor(main_persona) }}</dd>
+    {% if "finance" in user.admin_views %}
+        <dt title="{% trans %}Submitted by{% endtrans %}">
+            {% trans %}Submitted by{% endtrans %}
+        </dt>
+        <dd id="submitted-by">
+            {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
+        </dd>
+
+        <dt title="{% trans %}Notes{% endtrans %}">
+            {% trans %}Notes{% endtrans %}
+        </dt>
+        <dd id="notes">{{ lastschrift['notes']|md }}</dd>
+    {% endif %}
+    {# display revoked permits in a more compact manner #}
+    {% if not lastschrift['revoked_at'] %}
+    </dl>
+    <dl class="dl-horizontal">
+    {% endif %}
+        {# the donation is part of core.personas, we do not know the donation of revoked permits #}
+        {% if not lastschrift['revoked_at'] %}
+            <dt title="{% trans %}Donation{% endtrans %}">
+                {% trans %}Donation{% endtrans %}
+            </dt>
+            <dd id="donation">{{ main_persona["donation"]|money(lang=lang) }}</dd>
+        {% endif %}
+        <dt title="{% trans %}IBAN{% endtrans %}">
+            {% trans %}IBAN{% endtrans %}
+        </dt>
+        {% if 'finance' in user.admin_views %}
+            <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
+        {% else %}
+            <dd id="iban">{{ lastschrift['iban']|hidden_iban }}</dd>
+        {% endif %}
+
+        <dt title="{% trans %}Account holder{% endtrans %}">{% trans %}Account holder{% endtrans %}</dt>
+        <dd id="account-holder">
+            {% if lastschrift['account_owner'] %}
+                {{ lastschrift['account_owner'] }}
+            {% else %}
+                <i>{% trans %}The account is owned by the member.{% endtrans %}</i>
+            {% endif %}
+        </dd>
+
+        {% if lastschrift['account_address'] %}
+        <dt title="{% trans %}Acc. holder’s address{% endtrans %}">{% trans %}Acc. holder’s address{% endtrans %}</dt>
+        <dd id="account-holder-address">
+            {{ lastschrift['account_address']|linebreaks }}
+        </dd>
+        {% endif %}
+
+        <dt title="{% trans %}Granted{% endtrans %}">{% trans %}Granted{% endtrans %}</dt>
+        <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
+        {% if lastschrift['revoked_at'] %}
+            <dt title="{% trans %}Revoked{% endtrans %}">{% trans %}Revoked{% endtrans %}</dt>
+            <dd id="revoked-at">{{ lastschrift['revoked_at']|datetime(lang=lang) }}</dd>
+        {% endif %}
+    </dl>
+{% endmacro %}
+
 {% block content %}
     <div id="active-permit">
     {% if active_permit %}
@@ -58,60 +123,7 @@
         {% endif %}
 
         <h2>{% trans %}Active Direct Debit Authorization{% endtrans %}</h2>
-        {% with lastschrift = lastschrifts[active_permit] %}
-            <dl class="dl-horizontal">
-                <dt title="{% trans %}Member{% endtrans %}">
-                    {% trans %}Member{% endtrans %}
-                </dt>
-                <dd>{{ util.persona_anchor(main_persona) }}</dd>
-            {% if "finance" in user.admin_views %}
-                <dt title="{% trans %}Submitted by{% endtrans %}">
-                    {% trans %}Submitted by{% endtrans %}
-                </dt>
-                <dd id="submitted-by">
-                    {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
-                </dd>
-
-                <dt title="{% trans %}Notes{% endtrans %}">
-                    {% trans %}Notes{% endtrans %}
-                </dt>
-                <dd id="notes">{{ lastschrift['notes']|md }}</dd>
-            {% endif %}
-            </dl>
-            <dl class="dl-horizontal">
-                <dt title="{% trans %}Donation{% endtrans %}">
-                    {% trans %}Donation{% endtrans %}
-                </dt>
-                <dd id="donation">{{ main_persona["donation"]|money(lang=lang) }}</dd>
-                <dt title="{% trans %}IBAN{% endtrans %}">
-                    {% trans %}IBAN{% endtrans %}
-                </dt>
-                {% if 'finance' in user.admin_views %}
-                    <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
-                {% else %}
-                    <dd id="iban">{{ lastschrift['iban']|hidden_iban }}</dd>
-                {% endif %}
-
-                <dt title="{% trans %}Account holder{% endtrans %}">{% trans %}Account holder{% endtrans %}</dt>
-                <dd id="account-holder">
-                    {% if lastschrift['account_owner'] %}
-                        {{ lastschrift['account_owner'] }}
-                    {% else %}
-                        <i>{% trans %}The account is owned by the member.{% endtrans %}</i>
-                    {% endif %}
-                </dd>
-
-                {% if lastschrift['account_address'] %}
-                <dt title="{% trans %}Acc. holder’s address{% endtrans %}">{% trans %}Acc. holder’s address{% endtrans %}</dt>
-                <dd id="account-holder-address">
-                    {{ lastschrift['account_address']|linebreaks }}
-                </dd>
-                {% endif %}
-
-                <dt title="{% trans %}Granted{% endtrans %}">{% trans %}Granted{% endtrans %}</dt>
-                <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
-            </dl>
-        {% endwith %}
+        {{ print_permit(lastschrifts[active_permit]) }}
     {% else %}
         {% trans %}No active Direct Debit Authorization{% endtrans %}
         {% if "finance" in user.admin_views %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}
@@ -222,13 +234,6 @@
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
                             {% if "finance" in user.admin_views %}
-                                <form action="{{ cdedblink('cde/lastschrift_receipt',
-                                                           {'lastschrift_id': transaction['lastschrift_id'],
-                                                            'transaction_id': transaction_id}) }}"
-                                    method="GET" id="receiptform{{ transaction_id }}">
-                                    {{ util.input_submit(label=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
-                                                         icon='download') }}
-                                </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}"
@@ -246,4 +251,13 @@
 	    </tbody>
         </table>
     {% endif %}
+
+    <div id="inactive-permits">
+        {% if inactive_permits %}
+            <h2>{% trans %}Inactive Direct Debit Authorizations{% endtrans %}</h2>
+            {% for lastschrift in inactive_permits %}
+                {{ print_permit(lastschrift) }}
+            {% endfor %}
+        {% endif %}
+    </div>
 {% endblock %}
