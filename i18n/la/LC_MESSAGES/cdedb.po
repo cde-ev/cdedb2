@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2023-12-18 20:44+0000\n"
+"POT-Creation-Date: 2023-12-21 22:41+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -66,7 +66,7 @@ msgstr ""
 #: cdedb/backend/event/registration.py:931
 #: cdedb/backend/event/registration.py:1048
 #: cdedb/backend/event/registration.py:1148
-#: cdedb/backend/event/registration.py:1425 cdedb/backend/ml.py:174
+#: cdedb/backend/event/registration.py:1432 cdedb/backend/ml.py:174
 #: cdedb/backend/ml.py:283 cdedb/backend/ml.py:444 cdedb/backend/ml.py:478
 #: cdedb/backend/ml.py:505 cdedb/backend/ml.py:528 cdedb/backend/ml.py:718
 #: cdedb/backend/ml.py:764 cdedb/backend/ml.py:845 cdedb/backend/ml.py:881
@@ -387,8 +387,8 @@ msgstr ""
 #: cdedb/backend/cde/lastschrift.py:452 cdedb/backend/common.py:467
 #: cdedb/backend/core/base.py:2192 cdedb/backend/event/base.py:1133
 #: cdedb/common/__init__.py:249 cdedb/frontend/assembly/ballot.py:521
-#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/lastschrift.py:513
-#: cdedb/frontend/cde/parse_statement.py:736 cdedb/frontend/common.py:620
+#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/lastschrift.py:525
+#: cdedb/frontend/cde/parse_statement.py:743 cdedb/frontend/common.py:620
 #: cdedb/frontend/event/base.py:469 cdedb/frontend/event/query_stats.py:418
 #: cdedb/frontend/event/query_stats.py:580
 #: cdedb/frontend/event/query_stats.py:623
@@ -475,7 +475,7 @@ msgstr ""
 msgid "Failed to revoke active lastschrift permit"
 msgstr ""
 
-#: cdedb/backend/cde/lastschrift.py:155 cdedb/frontend/cde/lastschrift.py:192
+#: cdedb/backend/cde/lastschrift.py:155 cdedb/frontend/cde/lastschrift.py:204
 msgid "Multiple active permits are disallowed."
 msgstr ""
 
@@ -493,8 +493,8 @@ msgstr ""
 msgid "Lastschrift already revoked."
 msgstr ""
 
-#: cdedb/backend/cde/lastschrift.py:361 cdedb/frontend/cde/lastschrift.py:336
-#: cdedb/frontend/cde/lastschrift.py:409
+#: cdedb/backend/cde/lastschrift.py:361 cdedb/frontend/cde/lastschrift.py:348
+#: cdedb/frontend/cde/lastschrift.py:421
 msgid "Existing pending transaction."
 msgstr ""
 
@@ -1160,7 +1160,7 @@ msgstr ""
 
 #: cdedb/backend/event/registration.py:776
 #: cdedb/backend/event/registration.py:886
-#: cdedb/backend/event/registration.py:1414
+#: cdedb/backend/event/registration.py:1421
 msgid "Only registrations from exactly one event allowed."
 msgstr ""
 
@@ -1208,11 +1208,11 @@ msgstr ""
 msgid "Missing track dataset."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1500
+#: cdedb/backend/event/registration.py:1507
 msgid "Mismatched registrations, not associated with the event."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1528
+#: cdedb/backend/event/registration.py:1535
 msgid "Cannot book fee with amount of zero."
 msgstr ""
 
@@ -2251,8 +2251,8 @@ msgstr ""
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:13
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:38
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:60
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:75
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:76
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:47
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:48
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:51
 #: cdedb/frontend/templates/web/event/course/change_course.tmpl:74
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:51
@@ -3612,54 +3612,50 @@ msgstr ""
 msgid "*Nothing here yet.*"
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:175
+#: cdedb/frontend/cde/lastschrift.py:187
 msgid "Persona must have cde realm."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:180
+#: cdedb/frontend/cde/lastschrift.py:192
 #, python-format
 msgid "User already set a different donation of %(donation)s."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:185
+#: cdedb/frontend/cde/lastschrift.py:197
 #, python-format
 msgid "Lastschrift donation must be at least %(min)s."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:214
+#: cdedb/frontend/cde/lastschrift.py:226
 msgid "Permit revoked."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:380
+#: cdedb/frontend/cde/lastschrift.py:392
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:441
+#: cdedb/frontend/cde/lastschrift.py:453
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:459
+#: cdedb/frontend/cde/lastschrift.py:471
 msgid "Unable to skip transaction."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:461
+#: cdedb/frontend/cde/lastschrift.py:473
 msgid "Skipped."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:500
+#: cdedb/frontend/cde/lastschrift.py:512
 msgid "Wrong number of actions."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:504
+#: cdedb/frontend/cde/lastschrift.py:516
 msgid "No transactions selected."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:589
-msgid "LaTeX compiliation failed. This might be due to special characters."
-msgstr ""
-
-#: cdedb/frontend/cde/lastschrift.py:661
+#: cdedb/frontend/cde/lastschrift.py:625
 msgid ""
 "Form could not be created. Please refrain from using special characters if "
 "possible."
@@ -3743,64 +3739,64 @@ msgstr ""
 msgid "No Event with ID $(event_id)s found."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:602
+#: cdedb/frontend/cde/parse_statement.py:609
 #, python-format
 msgid "Matched event %(title)s via amount owed only."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:753
+#: cdedb/frontend/cde/parse_statement.py:760
 msgid "Could not determine transaction type."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:758
+#: cdedb/frontend/cde/parse_statement.py:765
 msgid "Not confident about transaction type."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:768
+#: cdedb/frontend/cde/parse_statement.py:775
 msgid "Not confident about event match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:772
+#: cdedb/frontend/cde/parse_statement.py:779
 msgid "Needs event match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:777
+#: cdedb/frontend/cde/parse_statement.py:784
 msgid "Amount lower than expected for event fee."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:785
+#: cdedb/frontend/cde/parse_statement.py:792
 msgid "User is not registered for this event."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:790
+#: cdedb/frontend/cde/parse_statement.py:797
 msgid "Amount does not match amount owed."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:801
+#: cdedb/frontend/cde/parse_statement.py:808
 msgid "Not confident about member match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:806
+#: cdedb/frontend/cde/parse_statement.py:813
 msgid "Needs member match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:813
+#: cdedb/frontend/cde/parse_statement.py:820
 msgid "Mustn't have event match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:818
+#: cdedb/frontend/cde/parse_statement.py:825
 msgid "Not a CdE-Account."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:824
+#: cdedb/frontend/cde/parse_statement.py:831
 msgid "Amount higher than expected for membership fee."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:830
+#: cdedb/frontend/cde/parse_statement.py:837
 msgid "Donation to event might be an event fee."
 msgstr ""
 
-#: cdedb/frontend/cde/parse_statement.py:859
+#: cdedb/frontend/cde/parse_statement.py:866
 msgid "This transaction has not been analyzed yet."
 msgstr ""
 
@@ -4737,7 +4733,7 @@ msgstr ""
 #: cdedb/frontend/event/partial_import.py:364
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:136
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:137
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:161
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:173
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:26
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:27
 #: cdedb/frontend/templates/web/core/show_history.tmpl:324
@@ -6023,7 +6019,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/list_ballots.tmpl:49
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot.tmpl:44
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:13
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:49
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:114
 #: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:19
 #: cdedb/frontend/templates/web/cde/past_event/change_past_event.tmpl:16
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:27
@@ -6204,7 +6200,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:21
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:43
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:41
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:44
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:42
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:42
 #: cdedb/frontend/templates/web/generic.tmpl:106
 msgid "Result"
@@ -6599,7 +6595,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:37
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:62
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:64
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:117
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:129
 #: cdedb/frontend/templates/web/cde/past_event/create_past_course.tmpl:40
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:37
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:62
@@ -7508,7 +7504,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:124
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:95
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:73
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:52
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:87
 msgid "Account holder"
@@ -7517,8 +7513,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:128
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:35
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:57
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:86
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:87
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:64
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:65
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:56
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:91
 msgid "IBAN"
@@ -7646,8 +7642,8 @@ msgstr "utens"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:31
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:146
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:63
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:64
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:35
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:36
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:40
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:118
@@ -7655,8 +7651,8 @@ msgid "Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:33
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:82
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:83
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:59
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:60
 #, fuzzy
 msgid "Donation"
 msgstr "documentatio"
@@ -7703,11 +7699,11 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:19
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:39
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:40
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:42
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:43
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:104
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:105
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:107
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:108
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:109
 msgid "This action cannot be undone."
 msgstr ""
 
@@ -7716,7 +7712,7 @@ msgid "Direct Debits will be created."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:22
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:41
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:106
 msgid "Direct Debit will be created."
 msgstr ""
 
@@ -7740,24 +7736,24 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:47
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:125
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:137
 #, python-format
 msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:66
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:95
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:134
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:146
 msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:74
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:141
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:153
 msgid "Perform Direct Debit"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:82
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:148
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:160
 msgid "Skip Direct Debit"
 msgstr ""
 
@@ -7814,17 +7810,17 @@ msgid "Invert"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:147
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:157
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:169
 msgid "Created"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:148
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:158
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:170
 msgid "Payment date"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:149
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:162
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:174
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:38
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:46
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
@@ -7838,7 +7834,7 @@ msgid "Amount"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:164
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:217
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:229
 msgid "This transaction needs to be cancelled!"
 msgstr ""
 
@@ -7847,17 +7843,17 @@ msgid "All selected:"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:193
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:191
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:203
 msgid "Success"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:194
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:201
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:213
 msgid "Failed"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:195
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:211
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:223
 msgid "Cancelled"
 msgstr ""
 
@@ -7869,9 +7865,18 @@ msgstr ""
 msgid "All active Authorizations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:218
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:217
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:242
 #: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "Profile"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:225
+msgid "All inactive Authorizations"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:227
+msgid "Only authorizations of users without an active authorization are shown."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:14
@@ -7881,62 +7886,66 @@ msgstr ""
 msgid "Direct Debit Authorization"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:54
-msgid "Revoke Direct Debit Authorization"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:60
-msgid "Active Direct Debit Authorization"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:68
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:69
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:40
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:41
 msgid "Submitted by"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:100
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:78
 msgid "The account is owned by the member."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:105
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:83
 msgid "Acc. holder’s address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:111
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:89
 msgid "Granted"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:116
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:92
+msgid "Revoked"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:119
+msgid "Revoke Direct Debit Authorization"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:125
+msgid "Active Direct Debit Authorization"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:128
 msgid "No active Direct Debit Authorization"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:122
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:134
 msgid "Transactions"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:159
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:171
 msgid "Finalized"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:160
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:172
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:297
 msgid "Semester"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:163
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:175
 msgid "Transaction"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:164
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:176
 msgid "Creator"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:229
-msgid "Donation receipt"
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:243
+msgid "Reverse"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:238
-msgid "Reverse"
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:257
+msgid "Inactive Direct Debit Authorizations"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:4
@@ -8260,19 +8269,15 @@ msgstr ""
 msgid "Ignore Warnings"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:219
-msgid "GnuCash Download"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:221
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:220
 msgid "Excel Download"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:225
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:224
 msgid "Download Membership Fees"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:229
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:228
 #, python-format
 msgid "%(shortname)s participants"
 msgstr ""
