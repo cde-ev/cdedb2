@@ -583,16 +583,23 @@ class Transaction:
             self.event = events[best_event_id]
             self.event_confidence = event_matches[best_event_id]
 
+    @staticmethod
+    def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
+        s = re.escape(asciificator(s))
+        if strict:
+            s = rf"\b{s}\b"
+        return re.compile(s, flags=re.I)
+
     def _match_one_event(self, event: models_event.Event,
                          amount_owed: Optional[decimal.Decimal] = None,
                          ) -> Optional[ConfidenceLevel]:
-        shortname_pattern = re.compile(
-            rf"\b{re.escape(asciificator(event.shortname))}\b", flags=re.I)
-        title_pattern = re.compile(
-            rf"\b{re.escape(asciificator(event.title))}\b", flags=re.I)
-        if shortname_pattern.search(self.reference):
+        if self.compile_pattern(event.shortname, strict=True).search(self.reference):
             confidence = ConfidenceLevel.Full
-        elif title_pattern.search(self.reference):
+        elif self.compile_pattern(event.title, strict=True).search(self.reference):
+            confidence = ConfidenceLevel.Full
+        elif self.compile_pattern(event.shortname, strict=False).search(self.reference):
+            confidence = ConfidenceLevel.High
+        elif self.compile_pattern(event.title, strict=False).search(self.reference):
             confidence = ConfidenceLevel.High
         elif amount_owed is not None and self.amount == amount_owed:
             confidence = ConfidenceLevel.Medium
