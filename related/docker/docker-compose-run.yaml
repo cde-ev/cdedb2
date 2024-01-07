@@ -15,7 +15,7 @@ services:
       - config:/etc/cdedb # config files
       - cert:/etc/ssl/apache2 # dynamic self-signed certificate
       - ldap:/etc/ssl/ldap:ro # dynamic self-signed ldap certificate
-      - ../..:/cdedb2:z # the :z is for SELinux (see #2053), will be ro in the future
+      - ../..:/cdedb2:z,ro # the :z is for SELinux (see #2053)
       - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
     ports:
       - 8443:443 # apache
