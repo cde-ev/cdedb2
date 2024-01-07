@@ -21,7 +21,7 @@ Variants
 There are two variants of the Docker environment, configured via separate
 compose files. These are as follows.
 
-- ``related/docker/docker-compose.yaml`` for simply running the CdEDB; this
+- ``related/docker/docker-compose-run.yaml`` for simply running the CdEDB; this
   does not provide additional functionality to keep the environment lean
 - ``related/docker/docker-compose-dev.yaml`` is a superset of the previous and
   provides additional functionality for developing the CdEDB especially also
