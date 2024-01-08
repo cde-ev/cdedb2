@@ -9,7 +9,6 @@ registrations at once for the mailinglist realm.
 import copy
 import dataclasses
 import decimal
-import typing
 from collections import defaultdict
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any, NamedTuple, Optional, Protocol, TypeVar
@@ -1352,7 +1351,7 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
-        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
+        field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
