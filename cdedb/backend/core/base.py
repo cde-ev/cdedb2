@@ -230,16 +230,27 @@ class CoreBaseBackend(AbstractBackend):
         }
         with Atomizer(rs):
             query = """
-                SELECT COUNT(*) AS members, COALESCE(SUM(balance), 0) AS total
+                SELECT COUNT(*) AS members, COALESCE(SUM(balance), 0) AS member_total
                 FROM core.personas
-                WHERE is_member = True"""
+                WHERE is_member = True
+            """
             tmp = self.query_one(rs, query, tuple())
             if tmp:
                 data.update(tmp)
             else:
                 self.logger.error(f"Could not determine member count and total"
-                                  f" balance for creating log entry {data!r}.")
+                                  f" member balance for creating log entry {data!r}.")
                 data.update(members=0, total=0)
+            query = """
+                SELECT COALESCE(SUM(balance), 0) AS total
+                FROM core.personas
+            """
+            tmp = self.query_one(rs, query, ())
+            if tmp:
+                data.update(tmp)
+            else:
+                self.logger.error(f"Could not determine total balance for creating"
+                                  f" log entry {data!r}.")
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")

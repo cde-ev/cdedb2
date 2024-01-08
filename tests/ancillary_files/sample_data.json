@@ -4091,7 +4091,8 @@
             "change_note": "-4.50€",
             "transaction_date": null,
             "members": 7,
-            "total": "106.50"
+            "total": "-1",
+            "member_total": "97.26"
         },
         {
             "ctime": "---now---",
@@ -4103,7 +4104,8 @@
             "change_note": "42.23€",
             "transaction_date": null,
             "members": 7,
-            "total": "111.50"
+            "total": "-1",
+            "member_total": "109.76"
         },
         {
             "ctime": "---now---",
@@ -4115,7 +4117,8 @@
             "change_note": null,
             "transaction_date": "---now---",
             "members": 7,
-            "total": "116.50"
+            "total": "725.87",
+            "member_total": "114.76"
         }
     ],
     "cde.log": [],

@@ -567,7 +567,9 @@ CREATE TABLE cde.finance_log (
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
-        -- sum of all balances (SELECT SUM(balance) FROM core.personas)
+        -- sum of all member balances (SELECT SUM(balance) FROM core.personas WHERE is_member = True)
+        member_total            numeric(11, 2) NOT NULL,
+        -- sum of all member balances (SELECT SUM(balance) FROM core.personas)
         total                   numeric(11, 2) NOT NULL
 );
 CREATE INDEX cde_finance_log_code_idx ON cde.finance_log(code);

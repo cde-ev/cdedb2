@@ -502,7 +502,7 @@ class BackendTest(CdEDBTest):
             for k in ('droid_id',):
                 if k not in exp and k in real:
                     exp[k] = None
-            for k in ('total', 'delta', 'new_balance'):
+            for k in ('total', 'delta', 'new_balance', 'member_total'):
                 if exp.get(k):
                     exp[k] = decimal.Decimal(exp[k])
         self.assertEqual(log, tuple(log_expectation))
