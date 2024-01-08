@@ -2816,7 +2816,8 @@ class TestCdEFrontend(FrontendTest):
         f['length'] = 2
         self.response = f.submit("download", value="csv")
         self.assertIn(
-            ';5.00;114.76;7;5.00;DB-9-4;Iota;Inga;DB-32-9;Finanzvorstand;Farin;725.87;20',
+            ';5.00;114.76;7;5.00;DB-9-4;Iota;Inga;DB-32-9;'
+            'Finanzvorstand;Farin;725.87;20',
             self.response.text)
         self.assertNotIn('Beispiel', self.response.text)
 
