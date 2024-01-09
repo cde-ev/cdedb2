@@ -127,11 +127,11 @@
              */
 
             field_checkboxes.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).prop('checked');
             });
             field_selects.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).val() == 'True';
             });
 
