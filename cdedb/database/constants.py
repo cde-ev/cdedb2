@@ -359,6 +359,7 @@ class PastInstitutions(CdEIntEnum):
     dsa = 20  #:
     dja = 40  #:
     jgw = 60  #:
+    bub = 70  #:
     basf = 80  #:
     van = 200  #:
     eisenberg = 400  #:
@@ -374,6 +375,7 @@ class PastInstitutions(CdEIntEnum):
             self.dsa: "DSA",
             self.dja: "DJA",
             self.jgw: "JGW",
+            self.bub: "BuB",
             self.basf: "BASF",
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
