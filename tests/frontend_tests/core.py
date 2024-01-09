@@ -268,7 +268,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR:;;Im Garten 77;Utopia;;34576;Deutschland",
+                 ("ADR;TYPE=intl,home,postal,pref:;bei Spielmanns;"
+                  "Im Garten 77;Utopia;;34576;Deutschland"),
+                 ("ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
+                  "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
