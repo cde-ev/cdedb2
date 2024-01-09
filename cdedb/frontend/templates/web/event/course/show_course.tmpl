@@ -82,10 +82,11 @@
         <div class="row">
         {% for track_id, track in batch %}
             {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
+            {% set num_track_instructors = attendees[(ambience['course']['id'], track_id)]|length - num_track_learners %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
-                        <div class="pull-right">{{ attendees[(ambience['course']['id'], track_id)]|length }}</div>
+                        <div class="pull-right">{{ num_track_learners }}+{{ num_track_instructors }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
