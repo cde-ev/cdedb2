@@ -7843,6 +7843,12 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
+msgid "The total amount of donations is %(money)s."
+msgstr ""
+
+msgid "Including the annual membership fees, this sums up to %(money)s."
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:225
 msgid "All inactive Authorizations"
 msgstr ""

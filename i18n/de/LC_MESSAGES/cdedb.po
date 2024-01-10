@@ -8209,6 +8209,12 @@ msgstr "Alle aktiven Einzugsermächtigungen"
 msgid "Profile"
 msgstr "Profil"
 
+msgid "The total amount of donations is %(money)s."
+msgstr "Das Gesamtspendenvolumen beträgt %(money)s."
+
+msgid "Including the annual membership fees, this sums up to %(money)s."
+msgstr "Mit den jährlichen Mitgliedsbeiträgen ergibt sich eine Summe von %(money)s."
+
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:225
 msgid "All inactive Authorizations"
 msgstr "Alle inaktiven Einzugsermächtigungen"
