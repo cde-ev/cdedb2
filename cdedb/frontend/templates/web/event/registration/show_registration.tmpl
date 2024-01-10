@@ -145,6 +145,43 @@
     </dl>
     </div>
 
+    <details class="col-md-12">
+        <summary>
+            {% trans %}Composition of the fee{% endtrans %}
+        </summary>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Title{% endtrans %}</th>
+                    <th>{% trans %}Amount{% endtrans %}</th>
+                    <th>{% trans %}Condition{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for fee in ambience['event']['fees'].values()|sort %}
+                <tr id="active-fee" data-fee_id="{{ fee.id }}">
+                    <td class="{% if fee['id'] in complex_fee['fee']['active_fees'] %}alert-success{% else %}alert-danger{% endif %}" id="active-fee-title">
+                        {% if fee['id'] in complex_fee['fee']['active_fees'] %}
+                            {{ util.deko_checkbox(True) }}
+                        {% else %}
+                            {{ util.deko_checkbox(False) }}
+                        {% endif %}
+                        {{ fee['title'] }}
+                    </td>
+                    <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
+                        <strong>
+                            {{ fee['amount']|money(lang=lang) }}
+                        </strong>
+                    </td>
+                    <td id="active-fee-condition">
+                        {{ complex_fee['fee']['visual_debug'][fee['id']]|safe }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
+
     {% for batch in ambience['event']['parts'].values()|sort|batch(2) %}
         <div class="row">
         {% for part in batch %}
