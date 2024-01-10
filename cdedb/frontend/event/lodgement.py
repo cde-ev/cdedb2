@@ -195,11 +195,10 @@ class EventLodgementMixin(EventBaseFrontend):
                     num = len(inhabitants[lodgement['id']][sort_part_id].camping_mat)
                 primary_sort = (num,)
             elif sortkey.is_total_sorting():
-                lodgement_group = groups[lodgement['group_id']]
                 if sortkey == LodgementsSortkeys.total_regular:
-                    num = lodgement_group['regular_capacity']
+                    num = lodgement['regular_capacity']
                 else:
-                    num = lodgement_group['camping_mat_capacity']
+                    num = lodgement['camping_mat_capacity']
                 primary_sort = (num,)
             elif sortkey == LodgementsSortkeys.title:
                 primary_sort = (lodgement["title"],)
