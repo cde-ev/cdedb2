@@ -87,8 +87,8 @@
         <div class="panel panel-primary">
             <details class="panel-body">
                 <summary>
-                    {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview", aclass="font-bold",
-                                              value=gettext("Activate JavaScript for automatic fee preview.")) }}
+                    {% trans %}Fee{% endtrans %}:
+                    <span id="fee-preview">{% trans %}Activate JavaScript for automatic fee preview.{% endtrans %}</span>
                 </summary>
                 <table class="table" style="display: none">
                     <thead>
