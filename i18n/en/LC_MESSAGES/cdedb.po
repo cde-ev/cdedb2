@@ -10097,6 +10097,9 @@ msgstr ""
 msgid "%(link)s will gain/lose the following admin privileges:"
 msgstr ""
 
+msgid "This change was initiated by %(submitter)s."
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:35
 msgid "to grant"
 msgstr ""

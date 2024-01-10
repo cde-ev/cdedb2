@@ -1442,8 +1442,7 @@ class CoreBaseFrontend(AbstractFrontend):
                            "has to be approved by another Meta-Admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
-        submitter = self.coreproxy.get_persona(
-            rs, privilege_change["submitted_by"])
+        submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
 
         return self.render(rs, "show_privilege_change", {
             "persona": persona, "submitter": submitter, "admin_keys": ADMIN_KEYS,

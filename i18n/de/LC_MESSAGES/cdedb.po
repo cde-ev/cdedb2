@@ -10603,6 +10603,9 @@ msgstr "Änderung von Admin-Privilegien"
 msgid "%(link)s will gain/lose the following admin privileges:"
 msgstr "%(link)s erhält/verliert die folgenden Admin-Privilegien:"
 
+msgid "This change was initiated by %(submitter)s."
+msgstr "Diese Änderung wurde von %(submitter)s angestoßen."
+
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:35
 msgid "to grant"
 msgstr "zu bewilligen"
