@@ -5720,7 +5720,7 @@ msgstr "Abgestimmt"
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:187
 #, python-format
 msgid "%(count)s attendees had given their vote for this ballot."
-msgstr "Es stimmten %(count)s Teilnehmer über diesen Punkt ab."
+msgstr "%(count)s Personen haben ihre Stimme abgegeben."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:193
 #, python-format
