@@ -382,7 +382,7 @@ class EventFee(EventDataclass):
     notes: Optional[str]
 
     def get_sortkey(self) -> Sortkey:
-        return self.kind, self.title
+        return self.kind, self.title, self.amount
 
 
 @dataclasses.dataclass
