@@ -661,7 +661,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Lastschriftinitiative' (former 'Initiative 25+')."""
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
+        has_lastschrift = False
+        if "member" in rs.user.roles:
+            assert rs.user.persona_id is not None
+            has_lastschrift = bool(self.cdeproxy.list_lastschrift(
+                rs, persona_ids=(rs.user.persona_id,), active=True))
         return self.render(rs, "lastschrift/i25p_index", {
-            "annual_fee": annual_fee,
+            "annual_fee": annual_fee, "has_lastschrift": has_lastschrift,
             "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
             "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"]})
