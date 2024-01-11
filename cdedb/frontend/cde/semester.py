@@ -71,6 +71,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
         meta_info = self.coreproxy.get_meta_info(rs)
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
 
         if rs.has_validation_errors():
             return self.show_semester(rs)
@@ -110,6 +111,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                          'Subject': subject},
                         {'persona': persona,
                          'fee': self.conf["MEMBERSHIP_FEE"],
+                         'annual_fee': annual_fee,
                          'lastschrift': lastschrift,
                          'open_lastschrift': open_lastschrift,
                          'address': address,

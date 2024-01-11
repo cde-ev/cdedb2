@@ -5,7 +5,7 @@ Hallo {{ persona['display_name'] }}!
 == Mitgliedsbeitrag per Lastschrift ==
 
 Danke, das Du uns erlaubt hast, den jährlichen Mitgliedsbeitrag
-von {{ (2*fee)|money }} zusammen mit einer Spende von aktuell {{ persona['donation']|money }}
+von {{ annual_fee|money }} zusammen mit einer Spende von aktuell {{ persona['donation']|money }}
 von Deinem Konto einzuziehen.
 Die Höhe der Spende kannst Du online über die CdE-Datenbank ändern
 {{ cdedblink("core/change_user") }}
