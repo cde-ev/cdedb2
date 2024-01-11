@@ -63,7 +63,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs, transaction_ids.keys())
         persona_ids = set(x['persona_id'] for x in all_lastschrifts.values()).union(
             x['submitted_by'] for x in all_lastschrifts.values())
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        personas = self.coreproxy.get_cde_users(rs, persona_ids)
+        active_lastschrift_donations = sum(
+            personas[p_id]['donation'] for p_id in active_personas)
         open_permits = self.determine_open_permits(rs, active_lastschrift_ids)
         for lastschrift in active_lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
@@ -88,12 +90,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
         sorted_transactions = keydictsort_filter(
             transactions, sortkey=transaction_sortkey)
         payment_date = self._calculate_payment_date()
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
 
         return self.render(rs, "lastschrift/lastschrift_index", {
             'active_lastschrifts': active_lastschrifts, 'personas': personas,
             'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts,
             'inactive_lastschrifts': inactive_lastschrifts,
-            'payment_date': payment_date})
+            'payment_date': payment_date, 'annual_fee': annual_fee,
+            'active_lastschrift_donations': active_lastschrift_donations,
+        })
 
     @access("member", "finance_admin")
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
