@@ -4587,6 +4587,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                        'href': '/event/event/1/course/1/show'})
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.assertNonPresence("Garcia", div='track1-attendees')
+        self.assertPresence("0+0", div='track1-attendees')
+        self.assertPresence("2+1", div='track3-attendees')
         # Check the attendees link in the footer.
         self.assertNonPresence("Kurswahlen Kursteilnehmer", div='track1-attendees')
         self.assertPresence("Inga", div='track3-attendees')
@@ -4602,9 +4604,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.assertPresence("Garcia", div='track1-attendees')
         self.assertPresence("Kursteilnehmer", div='track1-attendees')
+        self.assertPresence("1+0", div='track1-attendees')
         self.assertPresence("Akira", div='track3-attendees')
         self.assertPresence("Emilia", div='track3-attendees')
         self.assertNonPresence("Inga", div='track3-attendees')
+        self.assertPresence("1+1", div='track3-attendees')
 
         # Check the attendees link in the footer.
         self.assertPresence("Alle Kurswahlen", div='track3-attendees')
