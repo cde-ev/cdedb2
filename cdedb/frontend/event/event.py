@@ -1166,7 +1166,9 @@ class EventEventMixin(EventBaseFrontend):
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
-        self.eventproxy.event_keeper_drop(rs, event_id)
+
+        # Deleting event keeper here is too early for now.
+        # self.eventproxy.event_keeper_drop(rs, event_id)
 
         rs.notify("success", n_("Event archived."))
         if new_ids is None:
