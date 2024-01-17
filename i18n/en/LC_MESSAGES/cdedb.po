@@ -11589,6 +11589,9 @@ msgstr ""
 msgid "Fee"
 msgstr ""
 
+msgid "Composition of the fee"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:31
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:45
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:79

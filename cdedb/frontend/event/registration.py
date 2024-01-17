@@ -1358,7 +1358,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, registration['persona_id'], event_id)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        complex_fee = self.eventproxy.calculate_complex_fee(
+            rs, registration_id, visual_debug=True)
         reference = make_event_fee_reference(
             persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount

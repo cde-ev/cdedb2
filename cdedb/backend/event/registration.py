@@ -1250,12 +1250,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
-                              ) -> RegistrationFeeData:
+                              visual_debug: bool = False) -> RegistrationFeeData:
         """Public access point for retrieving complex fee data."""
         registration_id = affirm(vtypes.ID, registration_id)
         registration = self.get_registration(rs, registration_id)
         event = self.get_event(rs, registration['event_id'])
-        return self._calculate_complex_fee(rs, registration, event=event)
+        return self._calculate_complex_fee(rs, registration, event=event,
+                                           visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event, is_member: bool = None,
