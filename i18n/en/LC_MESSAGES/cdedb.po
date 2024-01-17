@@ -13674,7 +13674,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:36
-msgid "Set payment date for full payments only."
+msgid "Set payment date for full (positive) payments only."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:48
