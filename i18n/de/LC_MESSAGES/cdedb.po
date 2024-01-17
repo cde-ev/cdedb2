@@ -14534,8 +14534,8 @@ msgstr ""
 "und das Orgateam eine Zusammenfassung aller Überweisungen."
 
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:36
-msgid "Set payment date for full payments only."
-msgstr "Aktualisiere Zahlungseingangsdatum nur bei voller Bezahlung."
+msgid "Set payment date for (positive) full payments only."
+msgstr "Aktualisiere Zahlungseingangsdatum nur bei voller (positiver) Bezahlung."
 
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:48
 msgid "Date"

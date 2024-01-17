@@ -505,6 +505,8 @@ class BackendTest(CdEDBTest):
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
                     exp[k] = decimal.Decimal(exp[k])
+            if real['change_note']:
+                real['change_note'] = real['change_note'].replace("\xa0", " ")
         self.assertEqual(log, tuple(log_expectation))
 
     @classmethod
