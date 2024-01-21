@@ -46,8 +46,9 @@ var inputTypes = {
 
                 $i.append($('<option>', {'value': ''}));
                 if (has_entries) {
-                    for (var i = 0; i < field_spec['entries'].length; i++)
-                        $i.append($('<option>', {'value': field_spec['entries'][i][0]}).text(field_spec['entries'][i][1]))
+                    for (var key in field_spec['entries']) {
+                        $i.append($('<option>', {'value': key}).text(field_spec['entries'][key]));
+                    }
                 } else {
                     $i.append($('<option>', {'value': 'True'}).text(translations['true'] || 'true'))
                         .append($('<option>', {'value': 'False'}).text(translations['false'] || 'false'));
