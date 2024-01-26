@@ -426,7 +426,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return (
                 ['ctime.creation_time'],
                 [_status_constraint(part, RPS.applied)],
-                [('ctime.creation_time', True)]
+                [('ctime.creation_time', True)],
             )
         elif self == self.paid:
             return (
