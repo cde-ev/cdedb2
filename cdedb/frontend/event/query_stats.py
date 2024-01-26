@@ -423,15 +423,19 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         """
         part = event.parts[part_id]
         if self == self.pending:
-            return ([], [_status_constraint(part, RPS.applied)], [])
+            return (
+                ['ctime.creation_time'],
+                [_status_constraint(part, RPS.applied)],
+                [('ctime.creation_time', True)]
+            )
         elif self == self.paid:
             return (
-                ['reg.payment'],
+                ['reg.payment', 'ctime.creation_time'],
                 [
                     _status_constraint(part, RPS.applied),
                     ('reg.payment', QueryOperators.nonempty, None),
                 ],
-                [],
+                [('ctime.creation_time', True)],
             )
         elif self == self.participant:
             return ([], [_participant_constraint(part)], [])
