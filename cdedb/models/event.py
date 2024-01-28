@@ -31,7 +31,7 @@ import functools
 import logging
 from collections.abc import Collection, Mapping
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, ForwardRef, Optional, get_args, get_origin
+    TYPE_CHECKING, Any, ClassVar, ForwardRef, Optional, get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
