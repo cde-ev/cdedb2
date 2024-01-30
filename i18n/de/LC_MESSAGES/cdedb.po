@@ -12111,9 +12111,12 @@ msgstr "Orga-Listen nach Veranstaltungsteil"
 msgid "Export"
 msgstr "Datenexport"
 
+msgid "event overview"
+msgstr "Veranstaltungsübersicht"
+
 #: cdedb/frontend/templates/web/event/downloads.tmpl:121
-msgid "The full export is now on event overview."
-msgstr "Der volle Export befindet sich nun auf der Übersichtsseite."
+msgid "The full export is on the %(overview)s."
+msgstr "Der volle Export ist auf der %(overview)s."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
 msgid "Partial Event Export"
