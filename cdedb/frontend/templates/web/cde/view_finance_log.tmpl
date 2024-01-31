@@ -32,7 +32,10 @@
         </thead>
         <tbody>
             {% for entry in log %}
-                <tr id="{{ loop.index }}-{{ entry['id'] }}">
+                <tr id="{{ loop.index }}-{{ entry['id'] }}"
+                        class="{% if not entry['delta'] %}
+                               {% elif entry['delta'] > 0 %}money-positive
+                               {% elif entry['delta'] < 0 %}money-negative{% endif %}">
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                     <td>{{ gettext(enums['FinanceLogCodes'](entry['code'])|string) }}</td>
                     <td>
