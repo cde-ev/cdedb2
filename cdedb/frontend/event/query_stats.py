@@ -369,7 +369,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         if self == self.pending:
             return part['status'] == RPS.applied
         elif self == self.paid:
-            return part['status'] == RPS.applied and reg['payment']
+            return (part['status'] == RPS.applied
+                    and reg['amount_owed'] <= reg['amount_paid'])
         elif self == self.participant:
             return _is_participant(part)
         elif self == self.minors:
@@ -395,12 +396,11 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.involved:
             return part['status'].is_involved()
         elif self == self.not_paid:
-            return part['status'].has_to_pay() and not reg['payment']
+            return (part['status'].has_to_pay()
+                    and reg['amount_owed'] > reg['amount_paid'])
         elif self == self.orgas_not_paid:
-            return (
-                    EventRegistrationPartStatistic.orgas.test(event, reg, part_id)
-                    and EventRegistrationPartStatistic.not_paid.test(event, reg,
-                                                                     part_id))
+            return (reg['amount_owed'] > reg['amount_paid']
+                    and reg['persona_id'] in event.orgas)
         elif self == self.no_parental_agreement:
             return (part['status'].is_involved() and part['age_class'].is_minor()
                     and not reg['parental_agreement'])
@@ -423,15 +423,22 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         """
         part = event.parts[part_id]
         if self == self.pending:
-            return ([], [_status_constraint(part, RPS.applied)], [])
+            return (
+                ['ctime.creation_time'],
+                [_status_constraint(part, RPS.applied)],
+                [('ctime.creation_time', True)],
+            )
         elif self == self.paid:
             return (
-                ['reg.payment'],
+                [
+                    'reg.payment', 'reg.amount_paid', 'reg.remaining_owed',
+                    'ctime.creation_time',
+                ],
                 [
                     _status_constraint(part, RPS.applied),
-                    ('reg.payment', QueryOperators.nonempty, None),
+                    ('reg.remaining_owed', QueryOperators.lessequal, 0),
                 ],
-                [],
+                [('reg.payment', True)],
             )
         elif self == self.participant:
             return ([], [_participant_constraint(part)], [])
@@ -523,7 +530,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [f"part{part.id}.status"],
                 [
                     _has_to_pay_constraint(part),
-                    ('reg.payment', QueryOperators.empty, None),
+                    ('reg.remaining_owed', QueryOperators.greater, 0),
                 ],
                 [],
             )
@@ -533,7 +540,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [
                     _participant_constraint(part),
                     ('persona.id', QueryOperators.oneof, tuple(event.orgas)),
-                    ('reg.payment', QueryOperators.empty, None),
+                    ('reg.remaining_owed', QueryOperators.greater, 0),
                 ],
                 [],
             )
