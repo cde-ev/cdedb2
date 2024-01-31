@@ -205,6 +205,10 @@ class QueryScope(CdEIntEnum):
         """
         return _QUERY_VIEWS.get(self, "core.personas")
 
+    def get_aggregate_view(self) -> str:
+
+        return _AGGREGATE_VIEWS.get(self) or self.get_view()
+
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
 
@@ -355,6 +359,23 @@ _QUERY_VIEWS = {
         LEFT OUTER JOIN past_event.events
             ON courses.pevent_id = events.id
         """,
+}
+
+_AGGREGATE_VIEWS = {
+    QueryScope.cde_user: (_CDE_USER_AGGREGATE_VIEW := """core.personas
+        LEFT OUTER JOIN (
+            SELECT
+                id, granted_at, revoked_at,
+                revoked_at IS NULL AS active_lastschrift,
+                persona_id
+            FROM cde.lastschrift
+            WHERE (granted_at, persona_id) IN (
+                SELECT MAX(granted_at) AS granted_at, persona_id
+                FROM cde.lastschrift GROUP BY persona_id
+            )
+        ) AS lastschrift ON personas.id = lastschrift.persona_id
+        """),
+    QueryScope.all_cde_users: _CDE_USER_AGGREGATE_VIEW,
 }
 
 # See QueryScope.get_primary_key().
