@@ -3571,8 +3571,8 @@ def _serialized_partial_event(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if not((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
-           <= EVENT_SCHEMA_VERSION):
+    if not ((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
+            <= EVENT_SCHEMA_VERSION):
         raise ValidationSummary(ValueError(
             argname, n_("Schema version mismatch.")))
 
