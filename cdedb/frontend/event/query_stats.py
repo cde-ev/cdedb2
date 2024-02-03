@@ -73,7 +73,7 @@ def _present_constraint(part: models.EventPart) -> QueryConstraint:
             tuple(status.value for status in RPS if status.is_present()))
 
 
-def _age_constraint(part: models.EventPart, max_age: int, min_age: int = None,
+def _age_constraint(part: models.EventPart, max_age: int, min_age: Optional[int] = None,
                     ) -> QueryConstraint:
     min_date = deduct_years(part.part_begin, max_age)
     if min_age is None:
@@ -221,8 +221,8 @@ class StatisticMixin:
         return tuple(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
-    def get_track_ids(event: models.Event, *, part_id: int = None,
-                      part_group_id: int = None) -> Sequence[int]:
+    def get_track_ids(event: models.Event, *, part_id: Optional[int] = None,
+                      part_group_id: Optional[int] = None) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
             return tuple(event.parts[part_id].tracks.keys())
@@ -232,8 +232,8 @@ class StatisticMixin:
         return ()
 
     @abc.abstractmethod
-    def get_link_id(self, *, track_id: int = None, part_id: int = None,
-                    part_group_id: int = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
+                    part_group_id: Optional[int] = None) -> str:
         """Build an id for the link to the related query."""
 
 
@@ -253,8 +253,8 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_link_id(self, *, track_id: int = None, part_id: int = None,
-                    part_group_id: int = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
+                    part_group_id: Optional[int] = None) -> str:
         """Build an id for the link to the related query."""
         if part_id:
             return f"part_{self.name}_{part_id}"
@@ -289,8 +289,8 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_link_id(self, *, track_id: int = None, part_id: int = None,
-                    part_group_id: int = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
+                    part_group_id: Optional[int] = None) -> str:
         """Build an id for the link to the related query."""
         if track_id:
             return f"track_{self.name}_{track_id}"
@@ -904,8 +904,8 @@ class EventRegistrationInXChoiceGrouper:
         return query
 
     @staticmethod
-    def get_link_id(x: int, *, track_id: int = None, part_id: int = None,
-                    part_group_id: int = None) -> str:
+    def get_link_id(x: int, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
+                    part_group_id: Optional[int] = None) -> str:
         if track_id:
             return f"track_in_{x}_choice_{track_id}"
         elif part_id:

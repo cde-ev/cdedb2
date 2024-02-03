@@ -43,7 +43,7 @@ class TestEventFrontend(FrontendTest):
 
     def _set_payment_info(
         self, reg_id: int, event_id: int, amount_paid: decimal.Decimal,
-        payment: datetime.date = None
+        payment: Optional[datetime.date] = None
     ) -> None:
         """Mocker around book_fees to ease setting of payment stuff in tests.
 

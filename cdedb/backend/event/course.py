@@ -6,7 +6,7 @@ for managing courses belonging to an event.
 """
 
 from collections.abc import Collection
-from typing import Protocol
+from typing import Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -300,7 +300,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
     @access("event")
     def delete_course(self, rs: RequestState, course_id: int,
-                      cascade: Collection[str] = None) -> DefaultReturnCode:
+                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 
         :param cascade: Specify which deletion blockers to cascadingly remove

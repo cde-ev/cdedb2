@@ -109,11 +109,11 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: set[Role] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
-                 username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None,
-                 presider: Collection[int] = None) -> None:
+                 username: str = "", orga: Optional[Collection[int]] = None,
+                 moderator: Optional[Collection[int]] = None,
+                 presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
         self.droid_class = droid_class
         self.droid_token_id = droid_token_id
@@ -216,7 +216,7 @@ class RequestState(ConnectionContainer):
         return self.translations[self.default_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
-               params: CdEDBObject = None) -> None:
+               params: Optional[CdEDBObject] = None) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError(n_("Invalid notification type %(t)s found."),
@@ -381,8 +381,8 @@ def make_proxy(backend: B, internal: bool = False) -> B:
 
 
 def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: int = None,
-                 console_log_level: int = None) -> logging.Logger:
+                 log_level: int, syslog_level: Optional[int] = None,
+                 console_log_level: Optional[int] = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
@@ -1395,7 +1395,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: datetime.date = None,
+    val: str, default_date: Optional[datetime.date] = None,
 ) -> datetime.date:
     """Make a string into a datetime.
 

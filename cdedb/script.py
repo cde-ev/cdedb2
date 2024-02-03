@@ -51,7 +51,7 @@ class TempConfig:
     account.
     """
 
-    def __init__(self, configpath: PathLike = None, **config: Any):
+    def __init__(self, configpath: Optional[PathLike] = None, **config: Any):
         if configpath and config:  # pragma: no cover
             raise ValueError(f"Do not provide both config ({config}) and"
                              f" configpath ({configpath}).")
@@ -123,9 +123,9 @@ class Script:
         "event": "EventFrontend",
     }
 
-    def __init__(self, *, persona_id: int = None, dry_run: bool = None,
+    def __init__(self, *, persona_id: Optional[int] = None, dry_run: Optional[bool] = None,
                  dbuser: str = 'cdb_anonymous',
-                 outfile: PathLike = None, outfile_append: bool = None,
+                 outfile: Optional[PathLike] = None, outfile_append: Optional[bool] = None,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
                  check_system_user: bool = True, configpath: Optional[PathLike] = None,
                  **config: Any):
@@ -233,7 +233,7 @@ class Script:
         self._frontends[realm] = frontend
         return frontend
 
-    def rs(self, persona_id: int = None) -> RequestState:
+    def rs(self, persona_id: Optional[int] = None) -> RequestState:
         """Create a RequestState."""
         persona_id = self.persona_id if persona_id is None else persona_id
         if ret := self._request_states.get(persona_id):

@@ -291,8 +291,8 @@ class BasicTest(unittest.TestCase):
         set_configpath(self._orig_configpath)
 
     @staticmethod
-    def get_sample_data(table: str, ids: Iterable[int] = None,
-                        keys: Iterable[str] = None) -> CdEDBObjectMap:
+    def get_sample_data(table: str, ids: Optional[Iterable[int]] = None,
+                        keys: Optional[Iterable[str]] = None) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
@@ -983,7 +983,7 @@ class FrontendTest(BackendTest):
                                              delete=False) as f:
                 f.write(self.response.body)
 
-    def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
+    def _log_generation_time(self, response: Optional[webtest.TestResponse] = None) -> None:
         if response is None:
             response = self.response
         # record performance information during test runs
@@ -1042,7 +1042,7 @@ class FrontendTest(BackendTest):
 
     def submit(self, form: webtest.Form, button: str = "", *,
                check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: str = None) -> None:
+               verbose: bool = False, value: Optional[str] = None) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1302,7 +1302,7 @@ class FrontendTest(BackendTest):
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False, msg: str = None) -> None:
+                       exact: bool = False, msg: Optional[str] = None) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
@@ -1342,8 +1342,8 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn(s.strip(), content.text_content())
 
-    def assertNotification(self, ntext: str = None, ntype: str = None, *,
-                           static: bool = False, msg: str = None) -> None:
+    def assertNotification(self, ntext: Optional[str] = None, ntype: Optional[str] = None, *,
+                           static: bool = False, msg: Optional[str] = None) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
         :param ntext: Substring to be present in the notification's message.
@@ -1376,7 +1376,7 @@ class FrontendTest(BackendTest):
         self.assertEqual(name.strip(), span.text_content().strip())
 
     def assertValidationError(
-            self, fieldname: str, message: str = "", index: int = None,
+            self, fieldname: str, message: str = "", index: Optional[int] = None,
             notification: Optional[str] = "Validierung fehlgeschlagen") -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
@@ -1398,7 +1398,7 @@ class FrontendTest(BackendTest):
             notification=notification)
 
     def assertValidationWarning(
-            self, fieldname: str, message: str = "", index: int = None,
+            self, fieldname: str, message: str = "", index: Optional[int] = None,
             notification: Optional[str] = "Eingaben scheinen fehlerhaft") -> None:
         """
         Check for a specific form input field to be highlighted as .has-warning
@@ -1463,8 +1463,8 @@ class FrontendTest(BackendTest):
         msg += container[0].text_content()
         self.assertIn(message, container[0].text_content(), msg)
 
-    def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
-                     tag: str = 'a', href_attr: str = 'href', content: str = None,
+    def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
+                     tag: str = 'a', href_attr: str = 'href', content: Optional[str] = None,
                      verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
@@ -1708,7 +1708,7 @@ class FrontendTest(BackendTest):
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
 
-    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+    def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None) -> None:
         """Basic check for the user creation and archival functionality of each realm.
 
         :param data: realm-dependent data to use for the persona to be created
@@ -1784,7 +1784,7 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],
-                                 current_state: bool = None) -> None:
+                                 current_state: Optional[bool] = None) -> None:
         """
         Helper function for checking the disableable admin views
 

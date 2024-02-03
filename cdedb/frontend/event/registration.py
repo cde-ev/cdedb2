@@ -41,9 +41,9 @@ from cdedb.frontend.event.base import EventBaseFrontend
 class EventRegistrationMixin(EventBaseFrontend):
     @access("finance_admin")
     def batch_fees_form(self, rs: RequestState, event_id: int,
-                        data: Collection[CdEDBObject] = None,
-                        csvfields: Collection[str] = None,
-                        saldo: decimal.Decimal = None) -> Response:
+                        data: Optional[Collection[CdEDBObject]] = None,
+                        csvfields: Optional[Collection[str]] = None,
+                        saldo: Optional[decimal.Decimal] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -489,7 +489,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return Response(json_serialize(ret), mimetype='application/json')
 
     def new_process_registration_input(
-            self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
+            self, rs: RequestState, orga_input: bool, parts: Optional[CdEDBObjectMap] = None,
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a

@@ -164,7 +164,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None,
+    def lastschrift_create_form(self, rs: RequestState, persona_id: Optional[int] = None,
                                 ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]

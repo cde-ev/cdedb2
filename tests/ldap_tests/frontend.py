@@ -2,7 +2,7 @@
 """Module containing all tests for the CdEDB-LDAP interface."""
 
 import ssl
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Optional, Set, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -69,7 +69,7 @@ class TestLDAP(BasicTest):
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES,
-        excluded_attributes: List[str] = None,
+        excluded_attributes: Optional[List[str]] = None,
     ) -> None:
         with ldap3.Connection(
             self.server, user=user, password=password, raise_exceptions=True
@@ -92,7 +92,7 @@ class TestLDAP(BasicTest):
     def no_result_search(
         self,
         search_filter: str, *,
-        except_users: Set[str] = None,
+        except_users: Optional[Set[str]] = None,
         search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES
     ) -> None:

@@ -157,9 +157,9 @@ class AssemblyBackend(AbstractBackend):
         presider_infos, "persona_ids", "persona_id")
 
     @access("persona")
-    def is_presider(self, rs: RequestState, *, assembly_id: int = None,
-                    ballot_id: int = None, attachment_id: int = None,
-                    persona_id: int = None) -> bool:
+    def is_presider(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                    ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
+                    persona_id: Optional[int] = None) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
         If persona_id is not given, the current user is used.
@@ -180,9 +180,9 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("persona")
-    def may_access(self, rs: RequestState, *, assembly_id: int = None,
-                   ballot_id: int = None, attachment_id: int = None,
-                   persona_id: int = None) -> bool:
+    def may_access(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                   ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
+                   persona_id: Optional[int] = None) -> bool:
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -209,8 +209,8 @@ class AssemblyBackend(AbstractBackend):
             attachment_id=attachment_id, persona_id=persona_id)
 
     @access("persona")
-    def may_assemble(self, rs: RequestState, *, assembly_id: int = None,
-                     ballot_id: int = None, attachment_id: int = None,
+    def may_assemble(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                     ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
                      ) -> bool:
         """Check authorization of this persona.
 
@@ -230,8 +230,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def check_assemble(self, rs: RequestState, persona_id: int, *,
-                       assembly_id: int = None, ballot_id: int = None,
-                       attachment_id: int = None) -> bool:
+                       assembly_id: Optional[int] = None, ballot_id: Optional[int] = None,
+                       attachment_id: Optional[int] = None) -> bool:
         """Check authorization of given persona.
 
         This checks, if the given persona may interact with a specific
@@ -287,7 +287,7 @@ class AssemblyBackend(AbstractBackend):
     def assembly_log(self, rs: RequestState, code: const.AssemblyLogCodes,
                      assembly_id: Optional[int],
                      persona_id: Optional[int] = None,
-                     change_note: str = None) -> DefaultReturnCode:
+                     change_note: Optional[str] = None) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -362,8 +362,8 @@ class AssemblyBackend(AbstractBackend):
     @internal
     @access("persona")
     def get_assembly_ids(self, rs: RequestState, *,
-                         ballot_ids: Collection[int] = None,
-                         attachment_ids: Collection[int] = None,
+                         ballot_ids: Optional[Collection[int]] = None,
+                         attachment_ids: Optional[Collection[int]] = None,
                          ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids or set())
@@ -381,8 +381,8 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("persona")
-    def get_assembly_id(self, rs: RequestState, *, ballot_id: int = None,
-                        attachment_id: int = None) -> int:
+    def get_assembly_id(self, rs: RequestState, *, ballot_id: Optional[int] = None,
+                        attachment_id: Optional[int] = None) -> int:
         """Singular version of `get_assembly_ids`.
 
         This allows both inputs, but raises an error if they belong to
@@ -408,9 +408,9 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("persona")
-    def check_attendance(self, rs: RequestState, *, assembly_id: int = None,
-                         ballot_id: int = None, attachment_id: int = None,
-                         persona_id: int = None) -> bool:
+    def check_attendance(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                         ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
+                         persona_id: Optional[int] = None) -> bool:
         """Check whether a persona attends a specific assembly/ballot.
 
         Exactly one of the inputs assembly_id, ballot_id and attachment_id has
@@ -448,8 +448,8 @@ class AssemblyBackend(AbstractBackend):
                 rs, query, (assembly_id, persona_id)))
 
     @access("assembly")
-    def does_attend(self, rs: RequestState, *, assembly_id: int = None,
-                    ballot_id: int = None) -> bool:
+    def does_attend(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                    ballot_id: Optional[int] = None) -> bool:
         """Check whether this persona attends a specific assembly/ballot.
 
         Exactly one of the inputs has to be provided.
@@ -620,7 +620,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def set_assembly(self, rs: RequestState, data: CdEDBObject,
-                     change_note: str = None) -> DefaultReturnCode:
+                     change_note: Optional[str] = None) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
@@ -797,7 +797,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def delete_assembly(self, rs: RequestState, assembly_id: int,
-                        cascade: Collection[str] = None) -> DefaultReturnCode:
+                        cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove an assembly.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -1146,7 +1146,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def comment_concluded_ballot(self, rs: RequestState, ballot_id: int,
-                                 comment: str = None) -> DefaultReturnCode:
+                                 comment: Optional[str] = None) -> DefaultReturnCode:
         """Add a comment to a concluded ballot.
 
         This is intended to note comments regarding tallying, for exmaple tie breakers
@@ -1230,7 +1230,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def delete_ballot(self, rs: RequestState, ballot_id: int,
-                      cascade: Collection[str] = None) -> DefaultReturnCode:
+                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove a ballot.
 
         .. note:: As with modification of ballots this is forbidden
@@ -1669,7 +1669,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly(self, rs: RequestState, assembly_id: int,
-                          cascade: set[str] = None,
+                          cascade: Optional[set[str]] = None,
                           ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
@@ -1814,7 +1814,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def delete_attachment(self, rs: RequestState, attachment_id: int,
-                          cascade: Collection[str] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
@@ -2265,7 +2265,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachment_content(self, rs: RequestState, attachment_id: int,
-                               version_nr: int = None) -> Union[bytes, None]:
+                               version_nr: Optional[int] = None) -> Union[bytes, None]:
         """Get the content of an attachment. Defaults to most recent version."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         if not self.may_access_attachments(rs, (attachment_id,)):
@@ -2281,8 +2281,8 @@ class AssemblyBackend(AbstractBackend):
         return None
 
     @access("assembly")
-    def list_attachments(self, rs: RequestState, *, assembly_id: int = None,
-                         ballot_id: int = None) -> set[int]:
+    def list_attachments(self, rs: RequestState, *, assembly_id: Optional[int] = None,
+                         ballot_id: Optional[int] = None) -> set[int]:
         """List all files attached to an assembly/ballot.
 
         Exactly one of the inputs has to be provided.

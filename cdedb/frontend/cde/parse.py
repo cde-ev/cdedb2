@@ -37,8 +37,8 @@ from cdedb.frontend.common import (
 
 class CdEParseMixin(CdEBaseFrontend):
     @access("finance_admin")
-    def parse_statement_form(self, rs: RequestState, data: CdEDBObject = None,
-                             params: CdEDBObject = None) -> Response:
+    def parse_statement_form(self, rs: RequestState, data: Optional[CdEDBObject] = None,
+                             params: Optional[CdEDBObject] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -240,9 +240,9 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def money_transfers_form(self, rs: RequestState,
-                             data: list[CdEDBObject] = None,
-                             csvfields: tuple[str, ...] = None,
-                             saldo: decimal.Decimal = None) -> Response:
+                             data: Optional[list[CdEDBObject]] = None,
+                             csvfields: Optional[tuple[str, ...]] = None,
+                             saldo: Optional[decimal.Decimal] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled

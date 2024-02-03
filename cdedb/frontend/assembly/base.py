@@ -409,7 +409,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/index")
 
     def process_signup(self, rs: RequestState, assembly_id: int,
-                       persona_id: int = None) -> None:
+                       persona_id: Optional[int] = None) -> None:
         """Helper to actually perform signup."""
         if persona_id:
             secret = self.assemblyproxy.external_signup(

@@ -57,8 +57,8 @@ class EventLowLevelBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_orga(self, rs: RequestState, *, event_id: int = None,
-                course_id: int = None, registration_id: int = None) -> bool:
+    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None,
+                course_id: Optional[int] = None, registration_id: Optional[int] = None) -> bool:
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -81,8 +81,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
-                  event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
+                  event_id: Optional[int], persona_id: Optional[int] = None,
+                  change_note: Optional[str] = None, atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -182,7 +182,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_course_track(self, rs: RequestState, track_id: int,
-                             cascade: Collection[str] = None,
+                             cascade: Optional[Collection[str]] = None,
                              ) -> DefaultReturnCode:
         """Helper to remove a course track.
 
@@ -487,7 +487,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_event_part(self, rs: RequestState, part_id: int,
-                           cascade: Collection[str] = None,
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Helper to remove one event part.
 
@@ -689,7 +689,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_part_group(self, rs: RequestState, part_group_id: int,
-                           cascade: Collection[str] = None) -> DefaultReturnCode:
+                           cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Helper to delete one part group.
 
         :note: This has to be called inside an atomized context.
@@ -788,7 +788,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_track_group(self, rs: RequestState, track_group_id: int,
-                            cascade: Collection[str] = None) -> DefaultReturnCode:
+                            cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Helper to delete one track group.
 
         :note: This has to be called inside an atomized context.
@@ -1084,7 +1084,7 @@ class EventLowLevelBackend(AbstractBackend):
         return blockers
 
     def _delete_event_field(self, rs: RequestState, field_id: int,
-                            cascade: Collection[str] = None,
+                            cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
         """Helper to remove an event field.
 
@@ -1270,7 +1270,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _get_registration_data(self, rs: RequestState, event_id: int,
-                               registration_ids: Collection[int] = None,
+                               registration_ids: Optional[Collection[int]] = None,
                                ) -> CdEDBObjectMap:
         """Retrieve basic registration data."""
         query = f"""
@@ -1302,7 +1302,7 @@ class EventLowLevelBackend(AbstractBackend):
     @classmethod
     def _translate(cls, data: CdEDBObject,
                    translations: dict[str, dict[int, int]],
-                   extra_translations: dict[str, str] = None,
+                   extra_translations: Optional[dict[str, str]] = None,
                    ) -> CdEDBObject:
         """Helper to do the actual translation of IDs which got out of sync.
 
@@ -1331,8 +1331,8 @@ class EventLowLevelBackend(AbstractBackend):
     def _synchronize_table(self, rs: RequestState, table: str,
                            data: CdEDBObjectMap, current: CdEDBObjectMap,
                            translations: dict[str, dict[int, int]],
-                           entity: str = None,
-                           extra_translations: dict[str, str] = None,
+                           entity: Optional[str] = None,
+                           extra_translations: Optional[dict[str, str]] = None,
                            ) -> DefaultReturnCode:
         """Replace one data set in a table with another.
 
