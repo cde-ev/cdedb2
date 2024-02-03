@@ -89,7 +89,7 @@ class TestCommon(BasicTest):
         }
         for int_, str_ in cases.items():
             with self.subTest(int=int_):
-                self.assertEqual(str_, int_to_words(int, "de"))
+                self.assertEqual(str_, int_to_words(int_, "de"))
 
     def test_collation(self) -> None:
         # Test correct plain string sorting
