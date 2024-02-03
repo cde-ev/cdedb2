@@ -15,7 +15,7 @@ For every step "foo" of semester management, there are the following methods:
 """
 import dataclasses
 import decimal
-from typing import Optional, Tuple
+from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -337,7 +337,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
-            if not expuls['addresscheck_done'] is None:
+            if expuls['addresscheck_done'] is not None:
                 raise RuntimeError(n_(
                     "Addresscheck already done for this expuls."))
             expuls_update = {
@@ -357,8 +357,8 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_bill(self, rs: RequestState, period_id: int,
-                                  addresscheck: bool, testrun: bool
-                                  ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                  addresscheck: bool, testrun: bool,
+                                  ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to bill one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -392,8 +392,8 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_prearchival(self, rs: RequestState, period_id: int,
-                                         testrun: bool
-                                         ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                         testrun: bool,
+                                         ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -431,7 +431,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_eject(self, rs: RequestState, period_id: int,
-                                   ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                   ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to eject one (soon to be ex-)member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -466,7 +466,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_archival(self, rs: RequestState, period_id: int,
-                                      ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                      ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -513,7 +513,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_balance(self, rs: RequestState, period_id: int,
-                                     ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                     ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to update the balance of one member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -560,7 +560,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs: RequestState, period_id: int
+    def remove_exmember_balance(self, rs: RequestState, period_id: int,
                                 ) -> DefaultReturnCode:
         """Set the balance of all former members to zero.
 
@@ -591,7 +591,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,
-                                 testrun: bool) -> Tuple[bool, Optional[CdEDBObject]]:
+                                 testrun: bool) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to initiate addres check.
 
         :returns: A tuple consisting of a boolean signalling whether there

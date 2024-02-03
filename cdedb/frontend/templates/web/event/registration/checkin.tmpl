@@ -38,7 +38,7 @@
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
-                        entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
+                        entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             </div>
@@ -65,10 +65,10 @@
                         {% if ambience['event']['parts']|length > 1 %}
                             <br />
                             <span class="small text-muted">
-                                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                   if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
+                                {% for part in ambience['event']['parts'].values()|sort
+                                   if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %}
                                     {{ part['shortname'] }}
-                                    {% if registration['parts'][part_id]['status']
+                                    {% if registration['parts'][part.id]['status']
                                             == enums['RegistrationPartStati'].guest.value %}
                                         ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                                     {% endif %}
@@ -80,17 +80,16 @@
                         {% endif %}
                     </div>
                     <div class="col-sm-6">
-                        <small class="text-info">
+                        <small>
                             {% trans %}Lodgement{% endtrans %}:
-                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                   if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
-                                {% if registration['parts'][part_id]['lodgement_id'] %}
-                                    {{ lodgements[registration['parts'][part_id]['lodgement_id']]['title'] }}
-                                    {# This is somewhat redundant regarding camping mat consent for now, but we want
-                                       to change this to be by part either way. #}
+                            {% for part in ambience['event']['parts'].values()|sort
+                                   if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %}
+                                {% if registration['parts'][part.id]['lodgement_id'] %}
+                                    {% set lodgement = lodgements[registration['parts'][part.id]['lodgement_id']] %}
+                                    {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement['id']}), lodgement['title'])  }}
                                     {{ generic_event.camping_mat_icon(
-                                            registration['parts'][part_id]['is_camping_mat'],
-                                            registration['fields'].get(camping_mat_field_names[part_id])) }}
+                                            registration['parts'][part.id]['is_camping_mat'],
+                                            registration['fields'].get(camping_mat_field_names[part.id])) }}
                                 {% else %}
                                     –
                                 {% endif %}
@@ -102,11 +101,11 @@
                 {% if checkin_fields %}
                     <hr class="nosp" />
                     <div class="row" id="checkin-fields-{{ registration_id }}">
-                        {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
+                        {% for slice in checkin_fields.values()|sort|slice(2) %}
                             <div class="col-sm-6">
                                 <dl class="dl-horizontal small">
-                                    {% for field_id, field in slice %}
-                                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
+                                    {% for field in slice %}
+                                        {% set field_key = ambience['event']['fields'][field.id]['field_name'] %}
                                         <dt class="text-muted">{{ field['title'] }}</dt>
                                         <dd class="text-muted">
                                             {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}

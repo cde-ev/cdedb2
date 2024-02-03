@@ -27,6 +27,12 @@
         {% endtrans %}
     </p>
 
+    <p>
+        {% trans donations=util.href("https://www.cde-ev.de/wir/spenden/", gettext("donations")) %}
+            You can find more information about {{ donations }} at the CdE website.
+        {% endtrans %}
+    </p>
+
     <h3>{% trans %}For what does the CdE need donations?{% endtrans %}</h3>
 
     <p>
@@ -51,6 +57,15 @@
         {% endtrans %}
     </p>
 
+    {% if has_lastschrift %}
+        <h2>{% trans %}You are already a part of the Lastschriftinitiative.{% endtrans %}</h2>
+        <p>
+            {% trans link=util.href(cdedblink("core/my_lastschrift"),
+                     gettext("existing Direct Debit Authorization"), icon='euro-sign')-%}
+                View Your {{ link }}.
+            {% endtrans %}
+        </p>
+    {% else %}
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
@@ -60,5 +75,6 @@
         {% endtrans %}
     </p>
 
-   {{ util.href(cdedblink('cde/lastschrift_subscription_form_fill'), gettext("Participate"), aclass="btn btn-primary", icon='chevron-right') }}
+    {{ util.href(cdedblink('cde/lastschrift_subscription_form_fill'), gettext("Participate"), aclass="btn btn-primary", icon='chevron-right') }}
+    {% endif %}
 {% endblock %}

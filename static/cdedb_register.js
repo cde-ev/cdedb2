@@ -80,6 +80,8 @@
 
         // Find input elements.
         part_checkboxes = form.find('[type="checkbox"][name="parts"]');
+        // either this or the former is present, depending on the page
+        part_selects = form.find('select[id^="input-select-part"][id$=".status"]')
         field_checkboxes = form.find('[type="checkbox"][id^="event-input-fields"]');
         field_selects = form.find('select[id^="event-input-fields"]');
 
@@ -100,11 +102,20 @@
             if (constants['part_ids']) {
                 part_ids = constants['part_ids']
             } else {
-                part_checkboxes.each(function () {
-                    if ($(this).prop('checked')) {
-                        part_ids.push($(this).val());
-                    }
-                });
+                if (part_checkboxes.length) {
+                    part_checkboxes.each(function () {
+                        if ($(this).prop('checked')) {
+                            part_ids.push($(this).val());
+                        }
+                    });
+                }
+                if (part_selects.length) {
+                    part_selects.each(function () {
+                        if ($(this).get()[0].value === "RegistrationPartStati.participant") {
+                            part_ids.push($(this).data("part_id"))
+                        }
+                    });
+                }
             }
 
             /**
@@ -127,11 +138,11 @@
              */
 
             field_checkboxes.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).prop('checked');
             });
             field_selects.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).val() == 'True';
             });
 
@@ -183,6 +194,9 @@
 
         if (part_checkboxes.length) {
             part_checkboxes.change(updateFeePreview);
+        }
+        if (part_selects.length) {
+            part_selects.change(updateFeePreview);
         }
         if (field_checkboxes.length) {
             field_checkboxes.change(updateFeePreview);

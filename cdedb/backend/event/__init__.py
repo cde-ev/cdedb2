@@ -6,7 +6,9 @@ variant for external participants.
 
 import collections
 import copy
-from typing import Any, Collection, Dict, Mapping, Set, Tuple
+import decimal
+from collections.abc import Collection, Mapping
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -239,7 +241,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
                         'id': event_id,
-                        'lodge_field': None,
+                        'lodge_field_id': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     with Silencer(rs):
@@ -273,7 +275,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 ret *= self.sql_delete_one(
                     rs, "event.events", event_id)
                 self.event_log(rs, const.EventLogCodes.event_deleted,
-                               event_id=None, change_note=event["title"])
+                               event_id=None, change_note=event.title)
                 # Delete non-pseudonymized event keeper only after internal work has
                 # been concluded successfully. This is inside the Atomizer to
                 # guarantee event keeper deletion if the deletion goes through.
@@ -314,12 +316,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
             ret = 1
             # Second synchronize the data sets
-            translations: Dict[str, Dict[int, int]]
+            translations: dict[str, dict[int, int]]
             translations = collections.defaultdict(dict)
             for reg in data['event.registrations'].values():
                 if reg['real_persona_id']:
                     translations['persona_id'][reg['persona_id']] = \
                         reg['real_persona_id']
+            for field in data['event.field_definitions'].values():
+                if field.get('entries'):
+                    field['entries'] = list(field['entries'].items())
             extra_translations = {'course_instructor': 'course_id'}
             # Table name; name of foreign keys referencing this table
             tables = (('event.events', None),
@@ -346,8 +351,26 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 ret *= self._synchronize_table(
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
-            # Third fix the amounts owed for all registrations.
+
+            # Third fix the amounts owed for all registrations and check that
+            # amount paid and payment were not changed.
             self._update_registrations_amount_owed(rs, data['id'])
+            reg_ids = self.list_registrations(rs, data['id'])
+            regs = self.get_registrations(rs, reg_ids)
+            old_regs = current['event.registrations']
+            if any(reg['amount_paid'] != old_regs[reg['id']]['amount_paid']
+                   for reg in regs.values() if reg['id'] in old_regs):
+                raise ValueError(n_("Change of amount_paid detected."))
+            if any(reg['payment'] != old_regs[reg['id']]['payment']
+                   for reg in regs.values() if reg['id'] in old_regs):
+                raise ValueError(n_("Change of payment detected."))
+            # check that amount_paid and payment of new registrations are default vals
+            if any(reg['amount_paid'] != decimal.Decimal("0.00")
+                   for reg in regs.values() if reg['id'] not in old_regs):
+                raise ValueError(n_("Change of amount_paid detected."))
+            if any(reg['payment'] is not None
+                   for reg in regs.values() if reg['id'] not in old_regs):
+                raise ValueError(n_("Change of payment detected."))
 
             # Forth unlock the event
             update = {
@@ -365,8 +388,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: str = None
-                             ) -> Tuple[str, CdEDBObject]:
+                             dryrun: bool, token: str = None,
+                             ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -389,8 +412,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 <= EVENT_SCHEMA_VERSION):
             raise ValueError(n_("Version mismatch – aborting."))
 
-        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any]
-                      ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
+        def dict_diff(old: Mapping[Any, Any], new: Mapping[Any, Any],
+                      ) -> tuple[dict[Any, Any], dict[Any, Any]]:
             delta = {}
             previous = {}
             # keys missing in the new dict are simply ignored
@@ -426,14 +449,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 key for registration in data.get('registrations', {}).values()
                 if registration
                 for key in registration.get('tracks', {})}
-            if not all_track_ids <= set(event['tracks']):
+            if not all_track_ids <= set(event.tracks):
                 raise ValueError("Referential integrity of tracks violated.")
 
             all_part_ids = {
                 key for registration in data.get('registrations', {}).values()
                 if registration
                 for key in registration.get('parts', {})}
-            if not all_part_ids <= set(event['parts']):
+            if not all_part_ids <= set(event.parts):
                 raise ValueError("Referential integrity of parts violated.")
 
             used_lodgement_group_ids = {
@@ -466,7 +489,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
 
-            used_course_ids: Set[int] = set()
+            used_course_ids: set[int] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():
@@ -493,7 +516,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             # We handle these in the specific order of mixed_existence_sorter
             mes = mixed_existence_sorter
             # noinspection PyPep8Naming
-            IDMap = Dict[int, int]
+            IDMap = dict[int, int]
 
             gmap: IDMap = {}
             gdelta: CdEDBOptionalMap = {}
@@ -623,14 +646,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if segments:
                                 orig_seg = current['segments']
                                 new_segments = [
-                                    x for x in event['tracks']
+                                    x for x in event.tracks
                                     if check_seg(x, segments, orig_seg)]
                                 changed_course['segments'] = new_segments
                                 orig_active = [
                                     s for s, a in current['segments'].items()
                                     if a]
                                 new_active = [
-                                    x for x in event['tracks']
+                                    x for x in event.tracks
                                     if segments.get(x, x in orig_active)]
                                 changed_course['active_segments'] = new_active
                             changed_course['id'] = course_id
@@ -735,7 +758,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
             result = get_hash(
                 json_serialize(total_delta, sort_keys=True).encode('utf-8'),
-                json_serialize(total_previous, sort_keys=True).encode('utf-8')
+                json_serialize(total_previous, sort_keys=True).encode('utf-8'),
             )
             if token is not None and result != token:
                 raise PartialImportError("The delta changed.")

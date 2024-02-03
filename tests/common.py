@@ -72,7 +72,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.models.droid import APIToken
+from cdedb.models.droid import APIToken, resolve_droid_name
 from cdedb.script import Script
 
 # TODO: use TypedDict to specify UserObject.
@@ -462,7 +462,7 @@ class BackendTest(CdEDBTest):
         self.logout(allow_anonymous=True)
         self.login(new_user)
         yield
-        self.logout()
+        self.logout(allow_anonymous=True)
         self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
@@ -505,6 +505,8 @@ class BackendTest(CdEDBTest):
             for k in ('total', 'delta', 'new_balance'):
                 if exp.get(k):
                     exp[k] = decimal.Decimal(exp[k])
+            if real['change_note']:
+                real['change_note'] = real['change_note'].replace("\xa0", " ")
         self.assertEqual(log, tuple(log_expectation))
 
     @classmethod
@@ -1232,6 +1234,12 @@ class FrontendTest(BackendTest):
                 return line.split(maxsplit=1)[-1]
         raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
+    def fetch_orga_token(self) -> Tuple[int, str]:
+        new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
+        droid_name, secret = APIToken.parse_token_string(new_token)
+        droid_class, token_id = resolve_droid_name(droid_name)
+        return cast(int, token_id), secret
+
     def assertTitle(self, title: str, exact: bool = True) -> None:
         """
         Assert that the tilte of the current page equals the given string.
@@ -1505,7 +1513,8 @@ class FrontendTest(BackendTest):
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
-            entities = self.event.get_events(self.key, entity_ids)
+            entities = {event_id: event.to_database() for event_id, event
+                        in self.event.get_events(self.key, entity_ids).items()}
             if event_id := kwargs.get('event_id'):
                 specific_log = True
                 self.get(f"/event/event/{event_id}/log")

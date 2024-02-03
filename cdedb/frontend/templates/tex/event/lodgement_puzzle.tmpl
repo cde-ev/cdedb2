@@ -37,19 +37,19 @@
     <<% endif %>>
 
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
-        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
+        <<% for part in ambience['event']['parts'].values()|sort %>>
             \lodgement{<<< lodgement['title']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%
                       {<<< lodgement['camping_mat_capacity']|te >>>}{<<< lodgement['notes']|te >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
     <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
-        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
-            <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
+        <<% for part in ambience['event']['parts'].values()|sort %>>
+            <<% if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %>>
                 \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
                     {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
-                     <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
+                     <<% if registration['parts'][part.id]['status'] == enums['RegistrationPartStati'].guest -%>>
                         ~[<<% trans %>> guest <<% endtrans %>>]
                      <<%- endif %>>}%
                     {<<< gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te >>>}%
@@ -58,17 +58,16 @@
                     <<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
-                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
-                    {<<% if ambience['event']['parts'][part_id]['camping_mat_field'] and
-                            registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['parts'][part_id]['camping_mat_field']]['field_name']) -%>>
+                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>
+                     <<% if registration['age'] == enums['AgeClasses'].u10 %>>U10<<% endif -%>>}%
+                    {<<% if ambience['event']['parts'][part.id]['camping_mat_field'] and
+                            registration['fields'].get(ambience['event']['parts'][part.id]['camping_mat_field']['field_name']) -%>>
                         <<% trans %>> camping mat <<% endtrans %>>
                      <<%- endif %>>}% ID <<< registration_id|te >>>
                     {<<% if ambience['event']['lodge_field']
-                            and registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
+                            and registration['fields'].get(ambience['event']['lodge_field']['field_name']) -%>>
                         <<% trans %>> Wish <<% endtrans %>>: <<< registration['fields'].get(
-                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
+                                    ambience['event']['lodge_field']['field_name'])|te >>>
                      <<% endif -%>>}%
                     {<<% if reverse_wish.get(registration_id) -%>>%
                         <<% trans %>> Reverse wish heuristic <<% endtrans %>>: <<< reverse_wish[registration_id]|te >>>

@@ -41,7 +41,14 @@
                     {{ ballot['comment']|md }}
                 {% endif %}
             </div>
-            <div class="col-md-5">{{ ballot_tallied.show_result(ballot, result[ballot_id], short=True) }}</div>
+            <div class="col-md-5">
+                {{ ballot_tallied.show_result(ballot, result[ballot_id]) }}
+                <p>
+                    {% trans count=result[ballot_id]['voters']|length %}
+                        {{ count }} attendees had given their vote for this ballot.
+                    {% endtrans %}
+                </p>
+            </div>
         </div>
         {% endcall %}
     {% else %}

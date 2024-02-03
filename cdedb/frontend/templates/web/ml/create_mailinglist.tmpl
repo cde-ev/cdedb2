@@ -61,9 +61,11 @@
         {{ util.input_hidden("ml_type", value=ml_type.value) }}
         {{ util.form_input_static(label=gettext("Mailinglist Type"),
                     value=(gettext( enums['MailinglistTypes'](ml_type)|string ))) }}
+        {{ util.form_input_select(name="roster_visibility", label=gettext("Roster Visibility"),
+                entries=enums["MailinglistRosterVisibility"]|enum_entries(processing=gettext)) }}
         {% if "event_id" in additional_fields %}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
-                entries=events|dictsort|dict_entries('id', 'title'), info=gettext("The participants of this event will "
+                entries=events.values()|sort|entries('id', 'title'), info=gettext("The participants of this event will "
                         "be subscribers of this mailinglist. (Opt-Out)"), sort=True) }}
         {% endif %}
         {% if "registration_stati" in additional_fields %}
@@ -110,7 +112,7 @@
             </script>
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_checkbox(name="convert_html", defaultvalue=True,
+        {{ util.form_input_checkbox(name="convert_html", defaultvalue="True",
                 label=gettext("Automatically convert HTML emails to plaintext"),
                 info=gettext("Disable this in cases of lists with external correspondence (e.g. business emails)"
                              " as there are actors causing problems with malformed emails.")) }}

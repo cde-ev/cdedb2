@@ -18,30 +18,37 @@ import pathlib
 import re
 import string
 import sys
+from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, Generic, Iterable, List, Mapping,
-    MutableMapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    overload,
+    TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extras
 import pytz
+import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 
+import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
+from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEIntEnum
 
+if TYPE_CHECKING:
+    import cdedb.models.event as models_event
+    from cdedb.models.event import CdEDataclassMap
+
 _LOGGER = logging.getLogger(__name__)
+_CONFIG = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
     from cdedb.models.droid import APIToken
@@ -51,12 +58,12 @@ else:
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
 
-CdEDBObjectMap = Dict[int, CdEDBObject]
+CdEDBObjectMap = dict[int, CdEDBObject]
 
 # Same as above, but we also allow negative ints (for creation, not reflected
 # in the type] and None (for deletion). Used in `_set_tracks` and partial
 # import diff.
-CdEDBOptionalMap = Dict[int, Optional[CdEDBObject]]
+CdEDBOptionalMap = dict[int, Optional[CdEDBObject]]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -67,17 +74,17 @@ DefaultReturnCode = int
 # The key specifies the kind of blocker, the value is a list of blocking ids.
 # For some blockers the value might have a different type, mostly when that
 # blocker blocks deletion without the option to cascadingly delete.
-DeletionBlockers = Dict[str, List[int]]
+DeletionBlockers = dict[str, list[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = Tuple[Optional[str], Exception]
+Error = tuple[Optional[str], Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
 # Third argument are format parameters to be spplied to the message (post i18n).
 NotificationType = str
-Notification = Tuple[NotificationType, str, CdEDBObject]
+Notification = tuple[NotificationType, str, CdEDBObject]
 
 # A set of roles a user may have.
 Role = str
@@ -88,7 +95,7 @@ Realm = str
 # Admin views a user may activate/deactivate.
 AdminView = str
 
-CdEDBLog = Tuple[int, Tuple[CdEDBObject, ...]]
+CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = Union[pathlib.Path, str]
 Path = pathlib.Path
@@ -100,9 +107,9 @@ class User:
     """Container for a persona."""
 
     def __init__(self, *, persona_id: Optional[int] = None,
-                 droid_class: Optional[Type["APIToken"]] = None,
+                 droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Set[Role] = None, display_name: str = "",
+                 roles: set[Role] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Collection[int] = None,
                  moderator: Collection[int] = None,
@@ -117,13 +124,13 @@ class User:
         self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
-        self.orga: Set[int] = set(orga) if orga else set()
-        self.moderator: Set[int] = set(moderator) if moderator else set()
-        self.presider: Set[int] = set(presider) if presider else set()
-        self.admin_views: Set[AdminView] = set()
+        self.orga: set[int] = set(orga) if orga else set()
+        self.moderator: set[int] = set(moderator) if moderator else set()
+        self.presider: set[int] = set(presider) if presider else set()
+        self.admin_views: set[AdminView] = set()
 
     @property
-    def available_admin_views(self) -> Set[AdminView]:
+    def available_admin_views(self) -> set[AdminView]:
         return roles_to_admin_views(self.roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
@@ -146,7 +153,7 @@ class RequestState(ConnectionContainer):
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[Dict[str, int]],
+                 requestargs: Optional[dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
@@ -256,41 +263,32 @@ class RequestState(ConnectionContainer):
                 self.notify("error", n_("Failed validation."))
 
     def append_validation_error(self, error: Error) -> None:
-        """Register a new  error.
+        """Register a new error, if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
-
-        However in general the method extend_validation_errors()
-        should be preferred since it activates the validation tracking
-        even if no errors are present.
         """
         self.validation_appraised = False
-        self._errors.append(error)
-
-    def add_validation_error(self, error: Error) -> None:
-        """Register a new error, if the same error is not already present."""
         for k, e in self._errors:
             if k == error[0]:
                 if e.args == error[1].args:
                     break
         else:
-            self.append_validation_error(error)
+            self._errors.append(error)
 
     def extend_validation_errors(self, errors: Iterable[Error]) -> None:
         """Register a new (maybe empty) set of errors.
+
+        Errors are only added if the same error is not already present.
 
         The important side-effect is the activation of the validation
         tracking, that causes the application to throw an error if the
         validation result is not checked.
         """
         self.validation_appraised = False
-        self._errors.extend(errors)
-
-    def add_validation_errors(self, errors: Iterable[Error]) -> None:
         for e in errors:
-            self.add_validation_error(e)
+            self.append_validation_error(e)
 
     def has_validation_errors(self) -> bool:
         """Check whether validation errors exists.
@@ -311,7 +309,7 @@ class RequestState(ConnectionContainer):
         """
         self.validation_appraised = True
 
-    def retrieve_validation_errors(self) -> List[Error]:
+    def retrieve_validation_errors(self) -> list[Error]:
         """Take a look at the queued validation errors.
 
         This does not cause the validation tracking to register a
@@ -376,7 +374,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def get_backend_class() -> Type[B]:
+        def get_backend_class() -> type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -398,7 +396,7 @@ def setup_logger(name: str, logfile_path: pathlib.Path,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True)
+    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -459,7 +457,11 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
                 if (isinstance(adict[key], collections.abc.Collection)
                         and not isinstance(adict[key], str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    targetdict.setlist(key, adict[key])
+                    value = adict[key]
+                    if isinstance(value, dict) and "id" in value:
+                        targetdict[key] = value["id"]
+                    else:
+                        targetdict.setlist(key, adict[key])
                 else:
                     targetdict[key] = adict[key]
 
@@ -684,15 +686,18 @@ class CustomJSONEncoder(json.JSONEncoder):
                                  decimal.Decimal]) -> str: ...
 
     @overload
-    def default(self, obj: Set[T]) -> Tuple[T, ...]: ...
+    def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, Tuple[Any, ...]]:
+    def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
+        import cdedb.models.common as models  # pylint: disable=import-outside-toplevel
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
             return str(obj)
         elif isinstance(obj, set):
             return tuple(obj)
+        elif isinstance(obj, models.CdEDataclass):
+            return obj.as_dict()
         return super().default(obj)
 
 
@@ -712,7 +717,7 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
+def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
@@ -809,17 +814,26 @@ class AgeClasses(CdEIntEnum):
     full = 1  #: at least 18 years old
     u18 = 2  #: between 16 and 18 years old
     u16 = 3  #: between 14 and 16 years old
-    u14 = 4  #: less than 14 years old
+    u14 = 4  #: between 10 and 14 years old
+    u10 = 5  #: under 10 years old, presumed child with parents
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required."""
+        """Checks whether permission by a legal guardian is required.
+
+        This excludes young children which are assumed to be accompanied.
+        """
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+
+    def with_guardian(self) -> bool:
+        """Whether we assume that the child is accompanied by a legal guardian
+        at the event, usually a parent."""
+        return self == AgeClasses.u10
 
 
 def deduct_years(date: datetime.date, years: int) -> datetime.date:
@@ -837,7 +851,7 @@ def deduct_years(date: datetime.date, years: int) -> datetime.date:
         return date.replace(year=date.year - years, day=28)
 
 
-def determine_age_class(birth: datetime.date, reference: datetime.date
+def determine_age_class(birth: datetime.date, reference: datetime.date,
                         ) -> AgeClasses:
     """Basically a constructor for :py:class:`AgeClasses`.
 
@@ -850,7 +864,9 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
         return AgeClasses.u18
     if birth <= deduct_years(reference, 14):
         return AgeClasses.u16
-    return AgeClasses.u14
+    if birth <= deduct_years(reference, 10):
+        return AgeClasses.u14
+    return AgeClasses.u10
 
 
 @enum.unique
@@ -945,7 +961,7 @@ class InfiniteEnum(Generic[E]):
 
     def __str__(self) -> str:
         if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
-            return "{}({})".format(self.enum, self.int)
+            return f"{self.enum}({self.int})"
         return str(self.enum)
 
     def __eq__(self, other: Any) -> bool:
@@ -1040,15 +1056,16 @@ class TransactionType(CdEIntEnum):
     MembershipFee = 1
     EventFee = 2
     Donation = 3
-    I25p = 4
-    Other = 5
+    LastschriftInitiative = 4
+    Retoure = 5
+    Other = 100
 
     EventFeeRefund = 10
     InstructorRefund = 11
     EventExpenses = 12
     Expenses = 13
     AccountFee = 14
-    OtherPayment = 15
+    OtherPayment = 200
 
     Unknown = 1000
 
@@ -1064,14 +1081,14 @@ class TransactionType(CdEIntEnum):
     def has_member(self) -> bool:
         return self in {TransactionType.MembershipFee,
                         TransactionType.EventFee,
-                        TransactionType.I25p,
+                        TransactionType.LastschriftInitiative,
                         }
 
     @property
     def is_unknown(self) -> bool:
         return self in {TransactionType.Unknown,
                         TransactionType.Other,
-                        TransactionType.OtherPayment
+                        TransactionType.OtherPayment,
                         }
 
     def old(self) -> str:
@@ -1085,10 +1102,10 @@ class TransactionType(CdEIntEnum):
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
             return "Teilnahmebeitrag"
-        if self == TransactionType.I25p:
-            return "Initiative 25+"
+        if self == TransactionType.LastschriftInitiative:
+            return "LastschriftInitiative"
         if self == TransactionType.Donation:
-            return "Spende"
+            return "Sonstiges"
         else:
             return "Sonstiges"
 
@@ -1103,7 +1120,8 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.I25p: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Initiative25+",
+            TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
                 "Teilnehmererstattung",
@@ -1181,7 +1199,7 @@ def sanitize_filename(name: str) -> str:
     return name.translate(FILENAME_SANITIZE_MAP)
 
 
-MaybeStr = TypeVar("MaybeStr", str, Type[None])
+MaybeStr = TypeVar("MaybeStr", str, type[None])
 
 
 def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
@@ -1251,7 +1269,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
-def abbreviation_mapper(data: Sequence[T]) -> Dict[T, str]:
+def abbreviation_mapper(data: Sequence[T]) -> dict[T, str]:
     """Assign an unique combination of ascii letters to each element."""
     num_letters = ((len(data) - 1) // 26) + 1
     return {item: "".join(shortname) for item, shortname in zip(
@@ -1318,15 +1336,15 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = now() + timeout
         timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
-    message = "{}--{}".format(timestamp, param)
-    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
+    message = f"{timestamp}--{param}"
+    tohash = f"{target}--{str(persona_id)}--{name}--{message}"
     h.update(tohash.encode("utf-8"))
-    return "{}--{}".format(h.hexdigest(), message)
+    return f"{h.hexdigest()}--{message}"
 
 
 def decode_parameter(salt: str, target: str, name: str, param: str,
-                     persona_id: Optional[int]
-                     ) -> Union[Tuple[bool, None], Tuple[None, str]]:
+                     persona_id: Optional[int],
+                     ) -> Union[tuple[bool, None], tuple[None, str]]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 
@@ -1336,7 +1354,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     """
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     mac, message = param[0:128], param[130:]
-    tohash = "{}--{}--{}--{}".format(target, str(persona_id), name, message)
+    tohash = f"{target}--{str(persona_id)}--{name}--{message}"
     h.update(tohash.encode("utf-8"))
     if not hmac.compare_digest(h.hexdigest(), mac):
         if persona_id:
@@ -1355,10 +1373,101 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     return None, message[26:]
 
 
+def parse_date(val: str) -> datetime.date:
+    """Make a string into a date.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
+               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    for fmt, _ in formats:
+        try:
+            return datetime.datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
+    # Shorten strings to allow datetimes as inputs
+    for fmt, length in formats:
+        try:
+            return datetime.datetime.strptime(val[:length], fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(n_("Invalid date string."))
+
+
+def parse_datetime(
+    val: str, default_date: datetime.date = None,
+) -> datetime.date:
+    """Make a string into a datetime.
+
+    We only support a limited set of formats to avoid any surprises
+    """
+    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
+    connectors = ("T", " ")
+    time_formats = (
+        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    formats = itertools.chain(
+        map("".join, itertools.product(date_formats, connectors, time_formats)),
+        map(" ".join, itertools.product(time_formats, date_formats)),
+    )
+    ret = None
+    for fmt in formats:
+        try:
+            ret = datetime.datetime.strptime(val, fmt)
+            break
+        except ValueError:
+            pass
+    if ret is None and default_date:
+        for fmt in time_formats:
+            try:
+                # TODO if we get to here this should be unparseable?
+                ret = datetime.datetime.strptime(val, fmt)
+                ret = ret.replace(
+                    year=default_date.year, month=default_date.month,
+                    day=default_date.day)
+                break
+            except ValueError:
+                pass
+    if ret is None:
+        ret = datetime.datetime.fromisoformat(val)
+    if ret.tzinfo is None:
+        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = timezone.localize(ret)
+        assert ret is not None
+    return ret.astimezone(pytz.utc)
+
+
+def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
+                ) -> CdEDBObject:
+    """Helper to deserialize json fields.
+
+    We serialize some classes as strings and need to undo this upon
+    retrieval from the database.
+    """
+    spec: dict[str, const.FieldDatatypes]
+    spec = {f.field_name: f.kind for f in fields.values()}
+    casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
+        const.FieldDatatypes.int: lambda x: x,
+        const.FieldDatatypes.str: lambda x: x,
+        const.FieldDatatypes.float: lambda x: x,
+        const.FieldDatatypes.date: parse_date,
+        const.FieldDatatypes.datetime: parse_datetime,
+        const.FieldDatatypes.bool: lambda x: x,
+    }
+
+    def _do_cast(key: str, val: Any) -> Any:
+        if val is None:
+            return None
+        if key in spec:
+            return casters[spec[key]](val)
+        return val
+
+    return {key: _do_cast(key, val) for key, val in data.items()}
+
+
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
-NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
+NOTIFICATION_TYPES: set[NotificationType] = {"success", "info", "question",
                                              "warning", "error"}
 
 #: The form field name used for the anti CSRF token.
@@ -1377,7 +1486,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (16, 0)
+EVENT_SCHEMA_VERSION = (17, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

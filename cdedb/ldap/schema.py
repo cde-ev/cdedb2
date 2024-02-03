@@ -1,6 +1,5 @@
 """Process information about ldap schemas from specification files."""
 
-from typing import List
 
 from ldaptor.schema import AttributeTypeDescription, ObjectClassDescription
 
@@ -12,10 +11,10 @@ class SchemaDescription:
     RFC ldap schema definitions from files. Those files are for example provided by the
     openldap project.
     """
-    attribute_types: List[bytes]
-    matching_rules: List[bytes]
-    object_classes: List[bytes]
-    syntaxes: List[bytes]
+    attribute_types: list[bytes]
+    matching_rules: list[bytes]
+    object_classes: list[bytes]
+    syntaxes: list[bytes]
 
     def __init__(self, file: str) -> None:
         self.attribute_types = []
@@ -26,13 +25,13 @@ class SchemaDescription:
             self.process_chunk(block)
 
     @staticmethod
-    def split_file(file: str) -> List[str]:
+    def split_file(file: str) -> list[str]:
         """Split a given file into blocks separated by whitespace."""
         lines = file.split(sep="\n")
 
         # next, group all blocks separated by one or more blank lines together
-        blocks: List[List[str]] = []
-        block: List[str] = []
+        blocks: list[list[str]] = []
+        block: list[str] = []
         for line in lines:
             if line.startswith("#"):
                 continue

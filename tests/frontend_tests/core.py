@@ -218,8 +218,10 @@ class TestCoreFrontend(FrontendTest):
         _check_redirected_profile()
         self.get('/core/persona/8/mailinglists')
         _check_redirected_profile()
+        # The history is available
         self.get('/core/persona/8/history')
-        _check_redirected_profile()
+        self.assertTitle("Änderungshistorie von Hades Hell")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()
         self.get('/core/persona/8/privileges')
@@ -266,7 +268,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR:;;Im Garten 77;Utopia;;34576;Deutschland",
+                 ("ADR;TYPE=intl,home,postal,pref:;bei Spielmanns;"
+                  "Im Garten 77;Utopia;;34576;Deutschland"),
+                 ("ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
+                  "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
@@ -715,6 +720,30 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
+
+    @as_users("daniel")
+    def test_changedata_lastschrift(self) -> None:
+        # create a new lastschrift
+        with self.switch_user("anton"):
+            self.admin_view_profile("daniel")
+            self.assertNonPresence("Lastschrift")
+            self.traverse("Neue Einzugsermächtigung …", "Anlegen")
+            f = self.response.forms["createlastschriftform"]
+            f["donation"] = "25"
+            f["iban"] = "DE26370205000008068900"
+            self.submit(f)
+        # check that the lastschrift is visible
+        self.traverse("Meine Daten")
+        self.assertTitle("Daniel Dino")
+        self.assertPresence("Einzugsermächtigung", div="lastschrift")
+        # check changing is possible
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        # Invalid postal code
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
 
     @as_users("vera")
     def test_automatic_country(self) -> None:
@@ -1631,6 +1660,32 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
 
+    def test_lockdown_web(self) -> None:
+        self.login('vera')
+        self.traverse("Metadaten")
+        f = self.response.forms['changeinfoform']
+        f['lockdown_web'].checked = True
+        self.submit(f)
+        self.assertNotification("nur, wenn du weißt, warum", 'warning')
+        self.traverse("Index", "Nutzer verwalten")  # test that admins can access
+        self.logout()
+        self.assertNotification("Wartungsarbeiten", 'info')
+        self.assertNotification("leider nicht verfügbar", 'info')
+        self.login('inga')  # forbidden
+        self.assertNonPresence("Inga", div='navbar-collapse-1')
+        self.login('annika')  # forbidden
+        self.assertNonPresence("Annika", div='navbar-collapse-1')
+        self.login('martin')  # meta admin, login allowed
+        self.assertPresence("Martin", div='navbar-collapse-1')
+        self.assertNotification("nur, wenn du weißt, warum", 'warning')
+        self.logout()
+        self.login('paul')
+        self.traverse("Metadaten")
+        f = self.response.forms['changeinfoform']
+        self.assertTrue(f['lockdown_web'].checked)
+        f['lockdown_web'].checked = False
+        self.assertNonPresence("Wartungsarbeiten")
+
     @as_users("berta")
     def test_changelog(self) -> None:
         self.traverse("Meine Daten", "Bearbeiten")
@@ -1827,6 +1882,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Änderungshistorie von Martin Meister")
         self.assertPresence("Automatisierte Änderung", div='generation2')
         self.assertNonPresence("Automatisiert", div='generation1')
+
+    @as_users("vera")
+    def test_inconsistent_history(self) -> None:
+        self.admin_view_profile("lisa")
+        self.traverse("Änderungshistorie")
+        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("Gen 1", div="is_member-1")
+        self.assertPresence("Probemitgliedschaft", div="is_member-1")
+        self.assertPresence("Aktuell", div="is_member-panic")
+        self.assertPresence("Kein Mitglied", div="is_member-panic")
 
     @as_users("vera")
     def test_markdown(self) -> None:

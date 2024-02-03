@@ -1,0 +1,32 @@
+version: '3.4'
+
+services:
+  cdb:
+    image: cdepostgres
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-postgres
+    volumes:
+      - database:/var/lib/postgresql/data # tables etc
+    ports:
+      - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_PASSWORD: passwd
+  ldap:
+    image: ldaptor
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-ldaptor
+    volumes:
+      - ldap:/etc/ssl/ldap # dynamic self-signed ldap certificate
+      - ../..:/cdedb2:z,ro # the :z is for SELinux (see #2053)
+    ports:
+      - 127.0.0.1:8636:636
+    environment:
+        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
+    depends_on:
+      - cdb
+
+volumes:
+  database:

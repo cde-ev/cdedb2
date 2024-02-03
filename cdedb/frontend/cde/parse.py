@@ -8,12 +8,12 @@ Everything here requires the "finance_admin" role.
 import csv
 import datetime
 import decimal
-import functools
 import itertools
 import pathlib
 import re
 from collections import defaultdict
-from typing import List, Optional, Sequence, Tuple, cast
+from collections.abc import Sequence
+from typing import Optional, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -25,7 +25,7 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
@@ -49,26 +49,33 @@ class CdEParseMixin(CdEBaseFrontend):
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
-            [(event['id'], event['title']) for event in events.values()],
-            key=lambda e: EntitySorter.event(events[e[0]]), reverse=True)
+            [(event.id, event.title) for event in events.values()],
+            key=lambda e: events[e[0]], reverse=True)
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(events.values())
+        ]
         params = {
             'params': params or None,
             'data': data,
             'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
             'TransactionType': parse.TransactionType,
-            'event_entries': event_entries,
+            'event_entries': event_entries, 'event_options': event_options,
             'events': events,
         }
         return self.render(rs, "parse/parse_statement", params)
 
-    @staticmethod
     def organize_transaction_data(
-        rs: RequestState, transactions: List[parse.Transaction],
+        self, rs: RequestState, transactions: list[parse.Transaction],
         date: datetime.date,
-    ) -> Tuple[CdEDBObject, CdEDBObject]:
+    ) -> tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
 
-        data = {"{}{}".format(k, t.t_id): v
+        data = {f"{k}{t.t_id}": v
                 for t in transactions
                 for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
@@ -82,6 +89,7 @@ class CdEParseMixin(CdEBaseFrontend):
             "accounts": defaultdict(int),
             "events": defaultdict(int),
             "memberships": 0,
+            "registration_ids": {},
         }
         prev_jump = None
         for t in transactions:
@@ -96,9 +104,13 @@ class CdEParseMixin(CdEBaseFrontend):
                     params["has_warning"].append(t.t_id)
             else:
                 params["has_none"].append(t.t_id)
+            if t.event and t.persona:
+                reg_id = self.eventproxy.get_registration_id(
+                    rs, persona_id=t.persona['id'], event_id=t.event.id)
+                params["registration_ids"][(t.persona['id'], t.event.id)] = reg_id
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
-                params["events"][t.event['id']] += 1
+                params["events"][t.event.id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
         return data, params
@@ -135,11 +147,6 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file is not None
         statementlines = statement_file.splitlines()
 
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
-
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
 
@@ -152,14 +159,14 @@ class CdEParseMixin(CdEBaseFrontend):
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct columns."),
-                                {'lineno': i + 1}
+                                {'lineno': i + 1},
                                 ))
                 rs.append_validation_error(p)
                 continue
             line["id"] = i
             t = parse.Transaction.from_csv(line)
-            t.analyze(events, get_persona)
-            t.inspect()
+            t.parse(rs, self.coreproxy, self.eventproxy)
+            t.validate(rs, self.coreproxy, self.eventproxy)
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -170,13 +177,13 @@ class CdEParseMixin(CdEBaseFrontend):
         return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("count", "date", "validate", "event", "membership", "excel", "gnucash",
+    @REQUESTdata("count", "date", "validate", "event", "membership", "excel",
                  "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, date: datetime.date,
                        validate: Optional[str] = None,
                        event: Optional[vtypes.ID] = None,
                        membership: Optional[str] = None, excel: Optional[str] = None,
-                       gnucash: Optional[str] = None, ignore_warnings: bool = False
+                       ignore_warnings: bool = False,
                        ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
@@ -185,16 +192,11 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         rs.ignore_validation_errors()
 
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        event_ids = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_ids)
-
         transactions = []
         for i in range(1, count + 1):
             t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
             t = parse.Transaction(t_data, index=i)
-            t.get_data(get_persona=get_persona, events=events)
-            t.inspect()
+            t.validate(rs, self.coreproxy, self.eventproxy)
             transactions.append(t)
 
         data, params = self.organize_transaction_data(rs, transactions, date)
@@ -207,21 +209,17 @@ class CdEParseMixin(CdEBaseFrontend):
             filename = "Mitgliedsbeiträge"
             transactions = [t for t in transactions
                             if t.type == TransactionType.MembershipFee]
-            fields = parse.MEMBERSHIP_EXPORT_FIELDS
+            fields = parse.ExportFields.member_fees
             write_header = False
         elif event is not None:
             aux = int(event)
             event_data = self.eventproxy.get_event(rs, aux)
-            filename = event_data["shortname"]
+            filename = event_data.shortname
             transactions = [t for t in transactions
-                            if t.event and t.event['id'] == aux
+                            if t.event and t.event.id == aux
                             and t.type == TransactionType.EventFee]
-            fields = parse.EVENT_EXPORT_FIELDS
+            fields = parse.ExportFields.event_fees
             write_header = False
-        elif gnucash is not None:
-            filename = "gnucash"
-            fields = parse.GNUCASH_EXPORT_FIELDS
-            write_header = True
         elif excel is not None:
             account, _ = inspect(Accounts, excel)
             if not account:
@@ -229,7 +227,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 return self.parse_statement_form(rs, data, params)
             filename = f"transactions_{account.display_str()}"
             transactions = [t for t in transactions if t.account == account]
-            fields = parse.EXCEL_EXPORT_FIELDS
+            fields = parse.ExportFields.excel
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
@@ -242,8 +240,8 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def money_transfers_form(self, rs: RequestState,
-                             data: List[CdEDBObject] = None,
-                             csvfields: Tuple[str, ...] = None,
+                             data: list[CdEDBObject] = None,
+                             csvfields: tuple[str, ...] = None,
                              saldo: decimal.Decimal = None) -> Response:
         """Render form.
 
@@ -259,7 +257,7 @@ class CdEParseMixin(CdEBaseFrontend):
             'data': data, 'csvfields': csv_position, 'saldo': saldo,
         })
 
-    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject
+    def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject,
                                ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -302,7 +300,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if family_name is not None and not re.search(
                     diacritic_patterns(re.escape(family_name)),
                     persona['family_name'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('family_name', ValueError(
                         n_("Family name doesn’t match."))))
@@ -310,7 +308,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 if given_names is not None and not re.search(
                     diacritic_patterns(re.escape(given_names)),
                     persona['given_names'],
-                    flags=re.IGNORECASE
+                    flags=re.IGNORECASE,
                 ):
                     problems.append(('given_names', ValueError(
                         n_("Given names don’t match."))))
@@ -328,7 +326,7 @@ class CdEParseMixin(CdEBaseFrontend):
     @REQUESTdata("sendmail", "transfers", "checksum")
     def money_transfers(self, rs: RequestState, sendmail: bool,
                         transfers: Optional[str], checksum: Optional[str],
-                        transfers_file: Optional[FileStorage]
+                        transfers_file: Optional[FileStorage],
                         ) -> Response:
         """Update member balances.
 

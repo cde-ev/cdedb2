@@ -4,7 +4,8 @@
 event and assembly realm in the form of specific mailing lists.
 """
 import itertools
-from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, overload
+from collections.abc import Collection
+from typing import Any, Optional, Protocol, overload
 
 import subman
 
@@ -22,7 +23,6 @@ from cdedb.common import (
     make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
@@ -59,8 +59,8 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("ml")
-    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int]
-                     ) -> Dict[int, MLType]:
+    def get_ml_types(self, rs: RequestState, mailinglist_ids: Collection[int],
+                     ) -> dict[int, MLType]:
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         data = self.sql_select(rs, "ml.mailinglists",
                                ["id", "ml_type"], mailinglist_ids)
@@ -131,7 +131,7 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs: RequestState) -> Set[const.MailinglistTypes]:  # pylint: disable=no-self-use
+    def get_available_types(self, rs: RequestState) -> set[const.MailinglistTypes]:  # pylint: disable=no-self-use
         """Get a list of MailinglistTypes the user is allowed to manage."""
         ret = {enum_member for enum_member, atype in ML_TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -179,7 +179,7 @@ class MlBackend(AbstractBackend):
     def filter_personas_by_policy(self, rs: RequestState, ml: Mailinglist,
                                   data: Collection[CdEDBObject],
                                   allowed_pols: Collection[SubscriptionPolicy],
-                                  ) -> Tuple[CdEDBObject, ...]:
+                                  ) -> tuple[CdEDBObject, ...]:
         """Restrict persona sample to eligibles.
 
         This additional endpoint checking for interaction policies is
@@ -212,8 +212,8 @@ class MlBackend(AbstractBackend):
         return is_subscribed or ml.may_view(rs) or ml.id in rs.user.moderator
 
     @access("persona")
-    def moderator_infos(self, rs: RequestState, persona_ids: Collection[int]
-                        ) -> Dict[int, Set[int]]:
+    def moderator_infos(self, rs: RequestState, persona_ids: Collection[int],
+                        ) -> dict[int, set[int]]:
         """List mailing lists moderated by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(
@@ -225,13 +225,13 @@ class MlBackend(AbstractBackend):
         return ret
 
     class _ModeratorInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     moderator_info: _ModeratorInfoProtocol = singularize(
         moderator_infos, "persona_ids", "persona_id")
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
-               change_note: Optional[str] = None, atomized: bool = True
+               change_note: Optional[str] = None, atomized: bool = True,
                ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -285,7 +285,7 @@ class MlBackend(AbstractBackend):
 
     @access("core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
@@ -311,7 +311,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
-                          managed: str = None) -> Dict[vtypes.ID, str]:
+                          managed: str = None) -> dict[vtypes.ID, str]:
         """List all mailinglists you may view
 
         :param active_only: Toggle whether inactive lists should be included.
@@ -325,7 +325,7 @@ class MlBackend(AbstractBackend):
         active_only = affirm(bool, active_only)
         query = "SELECT id, title FROM ml.mailinglists"
         constraints = []
-        params: List[Any] = []
+        params: list[Any] = []
         if active_only:
             constraints.append("is_active = True")
 
@@ -353,7 +353,7 @@ class MlBackend(AbstractBackend):
             return {k: v for k, v in ret.items()
                     if self.may_view(rs, mailinglists[k])}
 
-    def list_mailinglist_addresses(self, rs: RequestState) -> Dict[int, str]:
+    def list_mailinglist_addresses(self, rs: RequestState) -> dict[int, str]:
         """List all mailinglist adresses
 
         This is for the purpose of preventing duplicate mail adresses,
@@ -367,8 +367,8 @@ class MlBackend(AbstractBackend):
         return {e['id']: e['address'] for e in data}
 
     @access("ml", "droid")
-    def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int]
-                         ) -> Dict[int, Mailinglist]:
+    def get_mailinglists(self, rs: RequestState, mailinglist_ids: Collection[int],
+                         ) -> dict[int, Mailinglist]:
         """Retrieve data for some mailinglists.
 
         This provides the following additional attributes:
@@ -383,7 +383,7 @@ class MlBackend(AbstractBackend):
             fields.extend(ADDITIONAL_TYPE_FIELDS)
             data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
 
-            ret: Dict[int, Mailinglist] = {}
+            ret: dict[int, Mailinglist] = {}
             for e in data:
                 ml_type = ml_types[e["id"]]
                 ml = ml_type(
@@ -394,6 +394,8 @@ class MlBackend(AbstractBackend):
                     mod_policy=const.ModerationPolicy(e['mod_policy']),
                     attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
                     convert_html=e["convert_html"],
+                    roster_visibility=const.MailinglistRosterVisibility(
+                        e["roster_visibility"]),
                     is_active=e["is_active"],
                     moderators=set(),
                     whitelist=set(),
@@ -432,14 +434,14 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def add_moderators(self, rs: RequestState, mailinglist_id: int,
-                       persona_ids: Collection[int], change_note: Optional[str] = None
+                       persona_ids: Collection[int], change_note: Optional[str] = None,
                        ) -> DefaultReturnCode:
         """Add moderators to a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
         with Atomizer(rs):
@@ -466,14 +468,14 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
-                         persona_id: int, change_note: Optional[str] = None
+                         persona_id: int, change_note: Optional[str] = None,
                          ) -> DefaultReturnCode:
         """Remove moderators from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
         if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM ml.moderators"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
@@ -536,7 +538,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, update: CdEDBObject = None
+                       ml_type: const.MailinglistTypes, update: CdEDBObject = None,
                        ) -> DefaultReturnCode:
         """Change the type of a mailinglist.
 
@@ -554,7 +556,8 @@ class MlBackend(AbstractBackend):
 
             if not (new_type.is_relevant_admin(rs.user)
                     and old_type.is_relevant_admin(rs.user)):
-                raise PrivilegeError("Not privileged to make this change.")
+                raise PrivilegeError(n_("Not privileged to change to this mailinglist"
+                                        " type for this mailinglist."))
 
             # check that the type change preserves the data integrity
             ml = self.get_mailinglist(rs, mailinglist_id)
@@ -564,7 +567,7 @@ class MlBackend(AbstractBackend):
                 del new_ml[field]
             affirm(vtypes.Mailinglist, new_ml, subtype=new_type)
 
-            # Delete all unsubscriptions for mandatory list.
+            # Delete all unsubscriptions and explicit addresses for mandatory list.
             if not new_type.allow_unsub:
                 query = ("DELETE FROM ml.subscription_states "
                          "WHERE mailinglist_id = %s "
@@ -573,6 +576,13 @@ class MlBackend(AbstractBackend):
                 params = (mailinglist_id, self.subman.written_states -
                           const.SubscriptionState.subscribing_states())
                 self.query_exec(rs, query, params)
+
+                explicits = self.get_subscription_addresses(rs, mailinglist_id,
+                                                            explicits_only=True)
+                for persona_id, explicit_address in explicits.items():
+                    if explicit_address:
+                        ret *= self.remove_subscription_address(rs, mailinglist_id,
+                                                                persona_id)
 
             # delete all obsolete additional fields
             if obsolete_fields:
@@ -621,9 +631,9 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= MOD_ALLOWED_FIELDS:
+                if not changed <= current.get_moderator_fields():
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not changed <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
+                if not changed <= current.restricted_moderator_fields and is_restricted:
                     raise PrivilegeError(n_(
                         "Restricted moderators are not allowed to change this."))
 
@@ -648,7 +658,8 @@ class MlBackend(AbstractBackend):
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
         if not data.is_relevant_admin(rs.user):
-            raise PrivilegeError("Not privileged to create mailinglist of this type.")
+            raise PrivilegeError(n_(
+                "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
             mdata = data.to_database()
             # The address is a readonly property, but we want to save it into the
@@ -831,7 +842,7 @@ class MlBackend(AbstractBackend):
                            or self.may_manage(rs, datum['mailinglist_id'],
                                               allow_restricted=False)
                            for datum in set_data):
-                    raise PrivilegeError("Not privileged.")
+                    raise PrivilegeError(n_("Not privileged."))
 
                 keys = ("subscription_state", "mailinglist_id", "persona_id")
                 placeholders = ", ".join(("(%s, %s, %s)",) * len(set_data))
@@ -847,7 +858,7 @@ class MlBackend(AbstractBackend):
         return num
 
     class _SetSubscriptionProtocol(Protocol):
-        def __call__(self, rs: RequestState, datum: CdEDBObject
+        def __call__(self, rs: RequestState, datum: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     _set_subscription: _SetSubscriptionProtocol = singularize(
         _set_subscriptions, "data", "datum", passthrough=True)
@@ -867,13 +878,13 @@ class MlBackend(AbstractBackend):
             if not all(datum['persona_id'] == rs.user.persona_id
                        or self.may_manage(rs, datum['mailinglist_id'])
                        for datum in data):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(n_("Not privileged."))
 
             # noinspection SqlWithoutWhere
             query = "DELETE FROM ml.subscription_states"
             phrase = "mailinglist_id = %s AND persona_id = %s"
             query = query + " WHERE " + " OR ".join((phrase,) * len(data))
-            params: List[Any] = []
+            params: list[Any] = []
             for datum in data:
                 params.extend((datum['mailinglist_id'], datum['persona_id']))
 
@@ -882,7 +893,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     class _RemoveSubscriptionProtocol(Protocol):
-        def __call__(self, rs: RequestState, datum: CdEDBObject
+        def __call__(self, rs: RequestState, datum: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     _remove_subscription: _RemoveSubscriptionProtocol = singularize(
         _remove_subscriptions, "data", "datum", passthrough=True)
@@ -937,6 +948,25 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
+    def is_subscription_address_taken(self, rs: RequestState, email: str,
+                                      excluded_persona_id: int) -> bool:
+        """Is the given address already in use as an explicit subscription address?
+
+        Beware that this does not take the usernames of core.personas into account!
+
+        :param excluded_persona_id: Ignore if this persona already used this address.
+        """
+        email = affirm(vtypes.Email, email)
+        excluded_persona_id = affirm(vtypes.ID, excluded_persona_id)
+
+        with Atomizer(rs):
+            query = ("SELECT 1 FROM ml.subscription_addresses"
+                     " WHERE address = %s AND persona_id != %s LIMIT 1")
+            params = (email, excluded_persona_id)
+            ret = self.query_exec(rs, query, params)
+        return bool(ret)
+
+    @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
                                  persona_id: int, email: str,
                                  ) -> DefaultReturnCode:
@@ -949,6 +979,9 @@ class MlBackend(AbstractBackend):
         if (not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
                 and persona_id != rs.user.persona_id):
             raise PrivilegeError(n_("Not privileged."))
+
+        if self.is_subscription_address_taken(rs, email, persona_id):
+            raise ValueError(n_("Address already taken by another user."))
 
         with Atomizer(rs):
             query = ("INSERT INTO ml.subscription_addresses "
@@ -992,7 +1025,7 @@ class MlBackend(AbstractBackend):
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
             states: SubStates = None,
-    ) -> Dict[int, Dict[int, const.SubscriptionState]]:
+    ) -> dict[int, dict[int, const.SubscriptionState]]:
         """Get all users related to a given mailinglist and their sub state.
 
         :param states: Defaults to DatabseStates
@@ -1013,7 +1046,7 @@ class MlBackend(AbstractBackend):
                  "ml.subscription_states")
 
         constraints = ["mailinglist_id = ANY(%s)"]
-        params: List[Any] = [mailinglist_ids]
+        params: list[Any] = [mailinglist_ids]
 
         if states:
             constraints.append("subscription_state = ANY(%s)")
@@ -1022,7 +1055,7 @@ class MlBackend(AbstractBackend):
             query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, Dict[int, const.SubscriptionState]]
+        ret: dict[int, dict[int, const.SubscriptionState]]
         ret = {ml_id: {} for ml_id in mailinglist_ids}
         for e in data:
             state = const.SubscriptionState(e["subscription_state"])
@@ -1032,14 +1065,58 @@ class MlBackend(AbstractBackend):
 
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
-                     states: SubStates = None
-                     ) -> Dict[int, const.SubscriptionState]: ...
+                     states: SubStates = None,
+                     ) -> dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
-    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
-                                      ) -> Set[int]:
+    def may_view_roster(self, rs: RequestState, ml: Mailinglist) -> bool:
+        """Determine if the user is privileged to view the roster of this mailinglist.
+
+        This is needed to determine the visibility of "roster" in the navbar. Therefore,
+        we take the is_active of the mailinglist into account.
+        """
+        ml = affirm_dataclass(Mailinglist, ml)
+        mrv = const.MailinglistRosterVisibility
+        assert rs.user.persona_id is not None
+
+        if not ml.is_active:
+            return False
+        elif self.may_manage(rs, ml.id):
+            return True
+        elif ml.roster_visibility == mrv.none:
+            return False
+        elif ml.roster_visibility == mrv.subscribable:
+            return (self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
+        elif ml.roster_visibility == mrv.viewers:
+            return (self.may_view(rs, ml)
+                    or self.get_subscription_policy(
+                            rs, rs.user.persona_id, mailinglist=ml).may_subscribe()
+                    or self.is_subscribed(rs, rs.user.persona_id, ml.id))
+        else:
+            raise RuntimeError
+
+    @access("ml")
+    def get_roster(self, rs: RequestState, mailinglist_id: int) -> set[int]:
+        """Retrieve the roster of a given mailinglist."""
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+        mailinglist = self.get_mailinglist(rs, mailinglist_id)
+
+        # Check if the user is privileged to view the roster list
+        if not self.may_view_roster(rs, mailinglist):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = ("SELECT persona_id FROM ml.subscription_states"
+                 " WHERE mailinglist_id = %s AND subscription_state = ANY(%s)")
+        params = (mailinglist_id, const.SubscriptionState.subscribing_states())
+        return {entry["persona_id"] for entry in self.query_all(rs, query, params)}
+
+    @access("ml")
+    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int,
+                                      ) -> set[int]:
         """Retrieve all unsubscribed users who's unsubscriptions have no effect.
 
         This is the case if and only if the user is no implicit subscriber of the
@@ -1062,7 +1139,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_user_subscriptions(
             self, rs: RequestState, persona_id: int, states: SubStates = None,
-    ) -> Dict[int, const.SubscriptionState]:
+    ) -> dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
         :param states: If given only relations with these states are returned.
@@ -1082,7 +1159,7 @@ class MlBackend(AbstractBackend):
                  "FROM ml.subscription_states")
 
         constraints = ["persona_id = %s"]
-        params: List[Any] = [persona_id]
+        params: list[Any] = [persona_id]
 
         if states:
             constraints.append("subscription_state = ANY(%s)")
@@ -1096,7 +1173,7 @@ class MlBackend(AbstractBackend):
             for e in data}
 
     @access("ml")
-    def get_subscription(self, rs: RequestState, persona_id: int, mailinglist_id: int
+    def get_subscription(self, rs: RequestState, persona_id: int, mailinglist_id: int,
                          ) -> const.SubscriptionState:
         """Returns state of a persona with regard to a mailinglist."""
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1117,7 +1194,7 @@ class MlBackend(AbstractBackend):
     def get_subscription_addresses(self, rs: RequestState, mailinglist_id: int,
                                    persona_ids: Collection[int] = None,
                                    explicits_only: bool = False,
-                                   ) -> Dict[int, Optional[str]]:
+                                   ) -> dict[int, Optional[str]]:
         """Retrieve email addresses of the given personas for the mailinglist.
 
         With `explicits_only = False`, this returns a dict mapping all
@@ -1137,7 +1214,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
-        ret: Dict[int, Optional[str]] = {}
+        ret: dict[int, Optional[str]] = {}
         with Atomizer(rs):
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError(n_("Not privileged."))
@@ -1212,8 +1289,8 @@ class MlBackend(AbstractBackend):
                 explicits_only=explicits_only))
 
     @access("ml")
-    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int
-                                        ) -> Dict[int, str]:
+    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int,
+                                        ) -> dict[int, str]:
         """Retrieve explicit email addresses of the given persona for all mailinglists.
 
         :returns: Returns dict mapping mailinglist_id with explicit addresses to the
@@ -1230,7 +1307,7 @@ class MlBackend(AbstractBackend):
         return {e["mailinglist_id"]: e["address"] for e in data}
 
     @access("ml")
-    def get_persona_addresses(self, rs: RequestState) -> Set[str]:
+    def get_persona_addresses(self, rs: RequestState) -> set[str]:
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
@@ -1242,8 +1319,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
-                               ) -> Set[vtypes.Email]:
+    def get_implicit_whitelist(self, rs: RequestState, mailinglist_id: int,
+                               ) -> set[vtypes.Email]:
         """Get all usernames of users which have a custom subscription address
         configured for the mailinglist.
 
@@ -1410,7 +1487,7 @@ class MlBackend(AbstractBackend):
         non_implicit_states = {state for state in SS
                                if state not in {SS.implicit, SS.none}}
 
-        state_to_log: Dict[const.SubscriptionState, const.MlLogCodes] = {
+        state_to_log: dict[const.SubscriptionState, const.MlLogCodes] = {
             SS.subscribed: log.from_subman(SA.add_subscriber),
             SS.unsubscribed: log.from_subman(SA.remove_subscriber),
             SS.subscription_override: log.from_subman(SA.add_subscription_override),
@@ -1466,11 +1543,10 @@ class MlBackend(AbstractBackend):
                 # to get_subscription_states
                 assert state is not None
 
+                explicit_address = None
                 if clone_addresses:
-                    address = self.get_subscription_address(
-                        rs, ml_id, explicits_only=False, persona_id=source_persona_id)
-                    # get_subscription_address returns only None if explicits_only=True
-                    assert address is not None
+                    explicit_address = self.get_subscription_address(
+                        rs, ml_id, explicits_only=True, persona_id=source_persona_id)
 
                 # set the target to the subscription state of the source
                 datum = {
@@ -1485,9 +1561,12 @@ class MlBackend(AbstractBackend):
 
                 # set the subscribing address of the target to the address of the source
                 if clone_addresses:
-                    assert address is not None
+                    if explicit_address:
+                        code *= self.remove_subscription_address(
+                            rs, ml_id, source_persona_id)
                     code *= self.set_subscription_address(
-                        rs, ml_id, persona_id=target_persona_id, email=address)
+                        rs, ml_id, persona_id=target_persona_id,
+                        email=explicit_address or source['username'])
 
             for ml_id in source_moderates:
                 # we do not mind if both users are currently moderator of a mailinglist

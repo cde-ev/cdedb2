@@ -11,6 +11,7 @@ import collections.abc
 import copy
 import csv
 import datetime
+import decimal
 import email
 import email.charset
 import email.encoders
@@ -40,13 +41,13 @@ import typing
 import urllib.error
 import urllib.parse
 import weakref
+from collections.abc import Collection, Iterable, Mapping, Sequence, Set as AbstractSet
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from types import TracebackType
 from typing import (
-    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
-    Literal, Mapping, NamedTuple, Optional, Protocol, Sequence, Tuple, Type, TypeVar,
-    Union, cast, overload,
+    IO, Any, AnyStr, Callable, ClassVar, Literal, NamedTuple, Optional, Protocol,
+    TypeVar, Union, cast, overload,
 )
 
 import jinja2
@@ -64,6 +65,9 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
+import cdedb.models.droid as models_droid
+import cdedb.models.event as models_event
+import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -98,11 +102,15 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
-from cdedb.models.ml import Mailinglist
 
-Attachment = typing.TypedDict(
-    "Attachment", {'path': PathLike, 'filename': str, 'mimetype': str,
-                   'file': Union[IO[str], IO[bytes]]}, total=False)
+
+class Attachment(typing.TypedDict, total=False):
+    path: PathLike
+    filename: str
+    mimetype: str
+    file: Union[IO[str], IO[bytes]]
+
+
 Headers = typing.TypedDict(
     "Headers", {
         "From": str,
@@ -115,7 +123,7 @@ Headers = typing.TypedDict(
         "Bcc": Collection[str],
         "To": Collection[str],
     },
-    total=False
+    total=False,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -169,7 +177,7 @@ class BaseApp(metaclass=abc.ABCMeta):
 
         def local_encode(
                 target: str, name: str, param: str, persona_id: Optional[int],
-                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"]
+                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"],
         ) -> str:
             return encode_parameter(url_parameter_salt, target, name,
                                     param, persona_id, timeout)
@@ -203,15 +211,14 @@ class BaseApp(metaclass=abc.ABCMeta):
           (json-encoded).
         """
         nparams = nparams or {}
-        message = "{}--{}--{}--{}".format(ntype, len(nmessage), nmessage,
-                                          json_serialize(nparams))
+        message = f"{ntype}--{len(nmessage)}--{nmessage}--{json_serialize(nparams)}"
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
             persona_id=rs.user.persona_id,
             timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
 
-    def decode_notification(self, rs: RequestState, note: str
-                            ) -> Union[Notification, Tuple[None, None, None]]:
+    def decode_notification(self, rs: RequestState, note: str,
+                            ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
         timeout, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id)
@@ -226,7 +233,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return ntype, nmessage, nparams
 
     def redirect(self, rs: RequestState, target: str,
-                 params: CdEDBObject = None, anchor: str = None
+                 params: CdEDBObject = None, anchor: str = None,
                  ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
@@ -268,7 +275,7 @@ class PeriodicJob(Protocol):
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
-def periodic(name: str, period: int = 1
+def periodic(name: str, period: int = 1,
              ) -> Callable[[PeriodicMethod], PeriodicJob]:
     """This decorator marks a function of a frontend for periodic execution.
 
@@ -356,10 +363,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
-                    "{}_admin".format(realm)
+                    f"{realm}_admin"
                     for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
+            'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
@@ -397,7 +405,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        return "{}_admin".format(cls.realm) in rs.user.roles
+        return f"{cls.realm}_admin" in rs.user.roles
 
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
@@ -496,7 +504,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 raise AttributeError(n_("Given method is not callable."))
 
-        errorsdict: Dict[Optional[str], List[Exception]] = {}
+        errorsdict: dict[Optional[str], list[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
 
@@ -617,7 +625,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         headers = []
         disposition = "inline" if inline else "attachment"
         if filename is not None:
-            disposition += '; filename="{}"'.format(filename)
+            disposition += f'; filename="{filename}"'
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
         return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
@@ -638,25 +646,23 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param filename: The extension will be added automatically depending on
             the kind specified.
         """
-        fields: List[str] = sum(
+        fields: list[str] = sum(
             (csvfield.split(',') for csvfield in query.fields_of_interest), [])
         filename += f".{kind}"
 
         # Apply special handling to enums and country codes for downloads.
         for k, v in query.spec.items():
             if k.endswith("gender"):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.Genders, lambda x: x.name, raw=True)))
+                query.spec[k].choices = dict(enum_entries_filter(
+                    const.Genders, lambda x: x.name, raw=True))
             if k.endswith(".status"):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.RegistrationPartStati, lambda x: x.name, raw=True)))
+                query.spec[k].choices = dict(enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True))
             if k.endswith(("country", "country2")):
-                query.spec[k] = query.spec[k].replace_choices(
-                    dict(get_localized_country_codes(rs, rs.default_lang)))
+                query.spec[k].choices = dict(get_localized_country_codes(
+                    rs, rs.default_lang))
             if "xfield" in k:
-                query.spec[k] = query.spec[k].replace_choices({})
+                query.spec[k].choices = {}
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
@@ -694,9 +700,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if not rs.notifications:
             rs.notify_validation()
-        if self.conf["LOCKDOWN"]:
-            rs.notify("info", n_("The database currently undergoes "
-                                 "maintenance and is unavailable."))
+        if self.coreproxy.is_locked_down(rs):
+            if {'core_admin', 'meta_admin'} & rs.user.roles:
+                rs.notify(
+                    'warning',
+                    n_("The CdEDB is curently locked for maintenance. You can still"
+                       " access it as admin. Only use the CdEDB if you know why it was"
+                       " locked!"))
+            else:
+                rs.notify("info", n_("The CdE database is currently under"
+                                     " maintenance and is unavailable."))
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -790,8 +803,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
             msg[header] = headers[header]  # type: ignore[literal-required]
-        subject = headers["Prefix"] + " " + headers['Subject']  # type
-        msg["Subject"] = subject
+        if headers["Prefix"]:
+            msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
+        else:
+            msg["Subject"] = headers["Subject"]
         msg["Message-ID"] = email.utils.make_msgid(
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
@@ -800,7 +815,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
-                                                           Tuple[CdEDBObject, ...]], *,
+                                                           tuple[CdEDBObject, ...]], *,
                             choices: Mapping[str, Mapping[Any, str]] = None,
                             query: Query = None) -> werkzeug.Response:
         """Perform user search.
@@ -836,7 +851,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for k, v in choices.items():
             choices_lists[k] = list(v.items())
             if query and k in query.spec:
-                query.spec[k] = query.spec[k].replace_choices(v)
+                query.spec[k].choices = v
         params = {
             'spec': spec, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query, 'scope': scope,
@@ -874,7 +889,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             data = attachment['file'].read()
         else:
             if maintype == "text":
-                with open(attachment['path'], 'r') as ft:
+                with open(attachment['path']) as ft:
                     data = ft.read()
             else:
                 with open(attachment['path'], 'rb') as fb:
@@ -947,9 +962,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :returns: Path to the compiled pdf.
         """
         if target_file.endswith('.tex'):
-            pdf_file = "{}.pdf".format(target_file[:-4])
+            pdf_file = f"{target_file[:-4]}.pdf"
         else:
-            pdf_file = "{}.pdf".format(target_file)
+            pdf_file = f"{target_file}.pdf"
         pdf_path = pathlib.Path(cwd, pdf_file)
 
         args = ("lualatex", "-interaction", "batchmode", target_file)
@@ -966,7 +981,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
-                backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
+                backup_path = f"/tmp/cdedb-latex-error-{tstamp}.tex"
                 self.logger.info(f"Copying source file to {backup_path}")
                 shutil.copy2(cwd / target_file, backup_path)
             errormsg = errormsg or n_(
@@ -1001,7 +1016,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     return None
 
     def serve_latex_document(self, rs: RequestState, data: str, filename: str,
-                             runs: int = 2, errormsg: str = None
+                             runs: int = 2, errormsg: str = None,
                              ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1017,19 +1032,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not runs:
             return self.send_file(
                 rs, data=data, inline=False,
-                filename="{}.tex".format(filename))
+                filename=f"{filename}.tex")
         else:
             pdf = self.latex_compile(rs, data, runs=runs, errormsg=errormsg)
             if not pdf:
                 return None
             return self.send_file(
                 rs, mimetype="application/pdf", data=pdf,
-                filename="{}.pdf".format(filename))
+                filename=f"{filename}.pdf")
 
     def serve_complex_latex_document(self, rs: RequestState,
                                      tmp_dir: Union[str, pathlib.Path],
                                      work_dir_name: str, tex_file_name: str,
-                                     runs: int = 2, errormsg: str = None
+                                     runs: int = 2, errormsg: str = None,
                                      ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1065,18 +1080,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 str(target), "gztar", base_dir=work_dir_name, root_dir=tmp_dir,
                 logger=self.logger)
             if tex_file_name.endswith('.tex'):
-                tex_file = "{}.tar.gz".format(tex_file_name[:-4])
+                tex_file = f"{tex_file_name[:-4]}.tar.gz"
             else:
-                tex_file = "{}.tar.gz".format(tex_file_name)
+                tex_file = f"{tex_file_name}.tar.gz"
             return self.send_file(
                 rs, path=archive, inline=False,
                 filename=tex_file)
         else:
             work_dir = pathlib.Path(tmp_dir, work_dir_name)
             if tex_file_name.endswith('.tex'):
-                pdf_file = "{}.pdf".format(tex_file_name[:-4])
+                pdf_file = f"{tex_file_name[:-4]}.pdf"
             else:
-                pdf_file = "{}.pdf".format(tex_file_name)
+                pdf_file = f"{tex_file_name}.pdf"
             path = self.safe_compile(
                 rs, tex_file_name, cwd=work_dir, runs=runs,
                 errormsg=errormsg)
@@ -1123,10 +1138,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return None
 
     def generic_view_log(self, rs: RequestState, data: CdEDBObject,
-                         filter_class: Type[GenericLogFilter],
+                         filter_class: type[GenericLogFilter],
                          log_retriever: Callable[..., CdEDBLog],
                          *, download: bool, template: str,
-                         template_kwargs: CdEDBObject = None
+                         template_kwargs: CdEDBObject = None,
                          ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
@@ -1189,7 +1204,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return self.render(rs, template, {
                 'log': log, 'total': total, 'length': log_filter.length,
                 'personas': personas, 'loglinks': loglinks,
-                **(template_kwargs or {})
+                **(template_kwargs or {}),
             })
 
 
@@ -1292,8 +1307,8 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
             return None
 
-    def get_held_messages(self, dblist: Mailinglist) -> Optional[
-            List[mailmanclient.restobjects.held_message.HeldMessage]]:
+    def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
+            list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman, this function returns None instead.
@@ -1315,7 +1330,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: Mailinglist) -> Optional[int]:
+    def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman, this returns None instead.
@@ -1357,7 +1372,7 @@ class Worker(threading.Thread):
     """
 
     # For details about this class variable dict see `Worker.create()`.
-    active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
+    active_workers: ClassVar[dict[str, "weakref.ReferenceType[Worker]"]] = {}
 
     def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
@@ -1458,31 +1473,28 @@ class Worker(threading.Thread):
         return worker
 
 
-AmbienceDict = typing.TypedDict(
-    "AmbienceDict",
-    {
-        'persona': CdEDBObject,
-        'privilege_change': CdEDBObject,
-        'genesis_case': CdEDBObject,
-        'lastschrift': CdEDBObject,
-        'transaction':  CdEDBObject,
-        'event': CdEDBObject,
-        'pevent': CdEDBObject,
-        'course': CdEDBObject,
-        'pcourse': CdEDBObject,
-        'registration': CdEDBObject,
-        'group': CdEDBObject,
-        'lodgement': CdEDBObject,
-        'part_group': CdEDBObject,
-        'track_group': CdEDBObject,
-        'fee': CdEDBObject,
-        'attachment': CdEDBObject,
-        'attachment_version': CdEDBObject,
-        'assembly': CdEDBObject,
-        'ballot': CdEDBObject,
-        'mailinglist': Mailinglist,
-    }
-)
+class AmbienceDict(typing.TypedDict):
+    persona: CdEDBObject
+    privilege_change: CdEDBObject
+    genesis_case: CdEDBObject
+    lastschrift: CdEDBObject
+    transaction: CdEDBObject
+    event: models_event.Event
+    pevent: CdEDBObject
+    course: CdEDBObject
+    pcourse: CdEDBObject
+    registration: CdEDBObject
+    group: CdEDBObject
+    lodgement: CdEDBObject
+    part_group: models_event.PartGroup
+    track_group: models_event.TrackGroup
+    fee: models_event.EventFee
+    orga_token: models_droid.OrgaToken
+    attachment: CdEDBObject
+    attachment_version: CdEDBObject
+    assembly: CdEDBObject
+    ballot: CdEDBObject
+    mailinglist: models_ml.Mailinglist
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1520,44 +1532,40 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'pevent_id', 'pevent', ()),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: do_assert(a['course']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['course']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: do_assert(a['pcourse']['pevent_id']
                                     == a['pevent']['id'])),)),
         Scout(None, 'part_id', None,
-              ((lambda a: do_assert(rs.requestargs['part_id']
-                                    in a['event']['parts'])),)),
+              ((lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts)),)),
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
-              ((lambda a: do_assert(a['registration']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
               'group_id', 'group',
-              ((lambda a: do_assert(a['group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['group']['event_id'] == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['lodgement']['event_id'] == a['event'].id)),)),
         Scout(None, 'field_id', None,
               ((lambda a: do_assert(rs.requestargs['field_id']
-                                    in a['event']['fields'])),)),
+                                    in a['event'].fields)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['part_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
               'part_group_id', 'part_group',
-              ((lambda a: do_assert(a['part_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['part_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['track_groups'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
               'track_group_id', 'track_group',
-              ((lambda a: do_assert(a['track_group']['event_id']
-                                    == a['event']['id'])),)),
+              ((lambda a: do_assert(a['track_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event']['fees'][anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
               'fee_id', 'fee',
-              ((lambda a: do_assert(a['fee']['event_id'] == a['event']['id'])),)),
+              ((lambda a: do_assert(a['fee'].event_id == a['event'].id)),)),
+        Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
+              'orga_token_id', 'orga_token',
+              ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1612,7 +1620,7 @@ class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
 
-    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any
+    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any,
                  ) -> werkzeug.Response: ...
 
 
@@ -1653,7 +1661,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
-                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
                     }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
@@ -1722,9 +1730,9 @@ def cdedburl(rs: RequestState, endpoint: str,
                 for i, name in enumerate(magic_placeholders):
                     attempt = attempt.replace(
                         str(newparams[name]),
-                        "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i))
+                        f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_")
                 if any(attempt.count(
-                        "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)) != 1
+                        f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_") != 1
                        for i in range(len(magic_placeholders))):
                     continue
                 return attempt
@@ -1777,7 +1785,6 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1810,7 +1817,6 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
@@ -1927,7 +1933,7 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
+def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
                     ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
@@ -1968,7 +1974,7 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]],
     return wrap
 
 
-RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
+RequestConstraint = tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
@@ -2012,7 +2018,7 @@ def request_extractor(
 
 
 def request_dict_extractor(
-        rs: RequestState, args: Collection[Union[str, Tuple[str, str]]],
+        rs: RequestState, args: Collection[Union[str, tuple[str, str]]],
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -2154,7 +2160,7 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def check_validation(rs: RequestState, type_: Type[T], value: Any,
+def check_validation(rs: RequestState, type_: type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2176,7 +2182,7 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
     return ret
 
 
-def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
+def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
                               name: str = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2201,8 +2207,8 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
 
 
 def inspect_validation(
-    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
+) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
@@ -2214,8 +2220,8 @@ def inspect_validation(
 
 
 def inspect_validation_optional(
-    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
+) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
@@ -2263,7 +2269,7 @@ def construct_redirect(request: werkzeug.Request,
         return ret
 
 
-def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[List[str]]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list[str]]:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -2309,16 +2315,18 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
+                             donation: decimal.Decimal = decimal.Decimal(0)) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
-        event=asciificator(event['title']),
+    return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
+        event=asciificator(event.title),
+        donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
-        cdedbid=cdedbid_filter(persona['id'])
+        cdedbid=cdedbid_filter(persona['id']),
     )
 
 
@@ -2345,14 +2353,14 @@ C = TypeVar('C', bound=CdEDBObject)
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
     rs: RequestState,
-    type_: Type[C],
+    type_: type[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
     creation_spec: vtypes.TypeMapping = None,
     prefix: str = "",
-) -> Dict[int, Optional[C]]:
+) -> dict[int, Optional[C]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
@@ -2401,7 +2409,7 @@ def process_dynamic_input(
     data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
-    ret: Dict[int, Optional[C]] = {
+    ret: dict[int, Optional[C]] = {
         anid: type_({key: data[drow_name(key, anid, prefix)] for key in spec})
         for anid in non_deleted_existing
     }
@@ -2508,8 +2516,8 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
 
 
 def calculate_loglinks(rs: RequestState, total: int,
-                       offset: Optional[int], length: int
-                       ) -> Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]:
+                       offset: Optional[int], length: int,
+                       ) -> dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -2549,7 +2557,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["current"]["offset"] = trueoffset
 
     # piece everything together
-    ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
+    ret: dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
 
@@ -2573,7 +2581,7 @@ class TransactionObserver:
     def __enter__(self) -> "TransactionObserver":
         return self
 
-    def __exit__(self, atype: Optional[Type[Exception]],
+    def __exit__(self, atype: Optional[type[Exception]],
                  value: Optional[Exception],
                  tb: Optional[TracebackType]) -> Literal[False]:
         if value:
@@ -2597,7 +2605,8 @@ class TransactionObserver:
 def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
-        lang: gettext.translation('cdedb', languages=[lang],
-                                  localedir=conf["REPOSITORY_PATH"] / 'i18n')
+        lang: gettext.translation(
+            'cdedb', languages=[lang],
+            localedir=conf["REPOSITORY_PATH"] / 'i18n-output')
         for lang in conf["I18N_LANGUAGES"]
     }

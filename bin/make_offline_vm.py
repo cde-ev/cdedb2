@@ -92,22 +92,22 @@ def make_meta_info(cur: DictCursor) -> None:
 
 
 def update_event(cur: DictCursor, event: CdEDBObject) -> None:
-    query = """UPDATE event.events SET lodge_field = %s"""
-    cur.execute(query, [event['lodge_field']])
+    query = """UPDATE event.events SET lodge_field_id = %s"""
+    cur.execute(query, [event['lodge_field_id']])
 
 
 def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
     query = """UPDATE event.event_parts
-               SET (waitlist_field, camping_mat_field) = (%s, %s) WHERE id = %s"""
+               SET (waitlist_field_id, camping_mat_field_id) = (%s, %s) WHERE id = %s"""
     for part in parts:
-        params = (part['waitlist_field'], part['camping_mat_field'], part['id'])
+        params = (part['waitlist_field_id'], part['camping_mat_field_id'], part['id'])
         cur.execute(query, params)
 
 
 def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
-    query = "UPDATE event.course_tracks SET course_room_field = %s WHERE id = %s"
+    query = "UPDATE event.course_tracks SET course_room_field_id = %s WHERE id = %s"
     for track in tracks:
-        cur.execute(query, (track['course_room_field'], track['id']))
+        cur.execute(query, (track['course_room_field_id'], track['id']))
 
 
 def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
@@ -120,7 +120,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [16, 0]:
+    if data.get("EVENT_SCHEMA_VERSION") != [17, 0]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -207,15 +207,15 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field',):
+                    for key in ('lodge_field_id',):
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:
-                        for key in ('waitlist_field', 'camping_mat_field'):
+                        for key in ('waitlist_field_id', 'camping_mat_field_id'):
                             values[part_id][key] = None
                 if table == 'event.course_tracks':
                     for track_id in data[table]:
-                        for key in ('course_room_field',):
+                        for key in ('course_room_field_id',):
                             values[track_id][key] = None
                 populate_table(cur, table, values)
             # Fix forward references

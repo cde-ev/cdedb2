@@ -67,7 +67,7 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">{% trans %}Course{% endtrans %}</th>
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                {% for track in ambience['event']['tracks'].values()|sort %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
                             {% trans %}Course Size & Choices{% endtrans %}
@@ -82,7 +82,7 @@
                 {% endif %}
             </tr>
             <tr>
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                {% for track in ambience['event']['tracks'].values()|sort %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('crosshairs', title=gettext("Assigned")) }}</th>
                     {% for i in range(track['num_choices']) %}
@@ -99,36 +99,36 @@
                     <td>{{ course['nr'] }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                        {% if track_id in course['segments'] %}
-                            {% set attendees = assign_counts[course_id][track_id][0] %}
-                            {% set instructors = assign_counts[course_id][track_id][1] %}
-                            {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] and attendees + instructors > 0 else
-                                            ('course-cancelled-ok' if track_id not in course['active_segments'] else
+                    {% for track in ambience['event']['tracks'].values()|sort %}
+                        {% if track.id in course['segments'] %}
+                            {% set attendees = assign_counts[course_id][track.id][0] %}
+                            {% set instructors = assign_counts[course_id][track.id][1] %}
+                            {% set aclass = 'course-cancelled' if track.id not in course['active_segments'] and attendees + instructors > 0 else
+                                            ('course-cancelled-ok' if track.id not in course['active_segments'] else
                                              ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
                                               ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
                             <td class="b-left course-primary {{ aclass }}">
-                                {% if track_id not in course['active_segments'] %}
+                                {% if track.id not in course['active_segments'] %}
                                     {{ util.make_icon('ban', title=gettext("Course cancelled")) }}
                                 {% endif %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}">
-                                {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
+                                {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,
                                                                                 'course_id': course_id,
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s + %s"|format(assign_counts[course_id][track_id][0],
-                                                              assign_counts[course_id][track_id][1])) }}
+                                             "%s%s+%s%s"|format(assign_counts[course_id][track.id][0], nbsp, nbsp,
+                                                                assign_counts[course_id][track.id][1])) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
                                 <td class="text-right">
-                                    {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
+                                    {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,
                                                                                     'course_id': course_id,
                                                                                     'position': i,
                                                                                     'include_active': include_active,
                                                                                     'submitform': True}),
-                                             choice_counts[course_id][(track_id, i)]) }}
+                                             choice_counts[course_id][(track.id, i)]) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left"></td>
@@ -153,7 +153,7 @@
                 <tr style="display: none;">
                     <th></th>
                     <th></th>
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) -%}
+                    {% for track in ambience['event']['tracks'].values()|sort -%}
                         <th colspan="{{ track['num_choices'] + 2 }}"></th>
                     {%- endfor %}
                     <th></th>

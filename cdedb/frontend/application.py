@@ -6,7 +6,6 @@ import json
 import os
 import pathlib
 import types
-from typing import Set
 
 import jinja2
 import psycopg2.extensions
@@ -200,7 +199,7 @@ class Application(BaseApp):
                             "core/index", "wants", request.url,
                             user.persona_id,
                             timeout=self.conf[
-                                "UNCRITICAL_PARAMETER_TIMEOUT"])
+                                "UNCRITICAL_PARAMETER_TIMEOUT"]),
                     }
                     ret = construct_redirect(
                         request, urls.build("core/index", params))
@@ -252,8 +251,7 @@ class Application(BaseApp):
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
                     handler.modi,
-                    "Unsupported request method {}.".format(
-                        request.method))
+                    f"Unsupported request method {request.method}.")
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and 'droid' not in user.roles:
@@ -276,14 +274,14 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Insert orga and moderator status context
-                orga: Set[int] = set()
+                orga: set[int] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
-                moderator: Set[int] = set()
+                moderator: set[int] = set()
                 if "ml" in user.roles:
                     moderator = self.mlproxy.moderator_info(
                         rs, user.persona_id)
-                presider: Set[int] = set()
+                presider: set[int] = set()
                 if "assembly" in user.roles:
                     presider = self.assemblyproxy.presider_info(
                         rs, user.persona_id)
@@ -311,9 +309,8 @@ class Application(BaseApp):
                     n_("You reached the internal limit for user profile views. "
                        "This is a privacy feature to prevent users from cloning "
                        "the address database. Unfortunatetly, this may also yield "
-                       "some false positive restrictions. If you require extensive "
-                       "queries, you may query %s. Your limit will be reset in the "
-                       "next days.").format(self.conf['MANAGEMENT_ADDRESS']))
+                       "some false positive restrictions. Your limit will be "
+                       "reset in the next days."))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()

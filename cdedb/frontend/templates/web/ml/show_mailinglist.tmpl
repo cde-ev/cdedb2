@@ -16,7 +16,7 @@
 {% block content %}
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
-            {% if event['is_visible'] %}
+            {% if event.is_visible_for(user) %}
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
                         icon='chalkboard-teacher') %}
             {% else %}
@@ -50,8 +50,8 @@
             {% trans %}Moderators{% endtrans %}
         </dt>
         <dd id="moderator-list">
-            {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
-                {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
+            {% for moderator in moderators %} {# This is already sorted. #}
+                {{ util.persona_anchor(moderator) }}{% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
         <dt title="{% trans %}Moderator Contact{% endtrans %}">
@@ -97,7 +97,7 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if allow_unsub %}
+                    {% if ambience["mailinglist"].allow_unsub %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"

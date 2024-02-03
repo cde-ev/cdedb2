@@ -89,17 +89,23 @@ dynamic droid
 import abc
 import datetime
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
+from re import Pattern
 from secrets import token_hex
-from typing import Any, ClassVar, Optional, Pattern, Type, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import User
+from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.models.common import CdEDataclass
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+    from cdedb.common import CdEDBObject  # pylint:disable=ungrouped-imports
 
 
 class APIToken(abc.ABC):
@@ -120,7 +126,7 @@ class APIToken(abc.ABC):
     """
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         """
         Return a regex pattern matching all droid names for this class.
@@ -183,6 +189,14 @@ class APIToken(abc.ABC):
     #:  to validate the given secret.
     token_string_pattern = re.compile(
         r"CdEDB-(?P<droid_name>\w+/\w+)/(?P<secret>[0-9a-zA-Z\-]+)/")
+
+    @classmethod
+    def parse_token_string(cls, token_str: str) -> tuple[str, str]:
+        if m := cls.token_string_pattern.fullmatch(token_str):
+            droid_name = m.group('droid_name')
+            secret = m.group('secret')
+            return droid_name, secret
+        raise ValueError(n_("Wrong format for api token."))
 
 
 class StaticAPIToken(APIToken):
@@ -254,26 +268,33 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
-    ctime: datetime.datetime
+    ctime: datetime.datetime = field(
+        default_factory=now, init=False, metadata={'database_include': True})
     #: Revocation time. Automatically set by event backend on revocation.
-    rtime: Optional[datetime.datetime]
+    rtime: Optional[datetime.datetime] = field(
+        default=None, init=False, metadata={'database_include': True})
     #: Last access time. Automatically updated by session backend on every request.
-    atime: Optional[datetime.datetime]
+    atime: Optional[datetime.datetime] = field(
+        default=None, init=False, metadata={'database_include': True})
 
-    # Sepcial fields and methods for datacase storage using `CdEDataclass` interface.
+    # Special fields and methods for datacase storage using `CdEDataclass` interface.
 
     #: Subclasses may define unchangeable fields.
     fixed_fields: ClassVar[tuple[str, ...]] = ('etime',)
 
-    def to_database(self) -> dict[str, Any]:
-        """Exclude special fields from being set manually."""
-        ret = super().to_database()
-        # Creation time is written behind the scenes upon creation.
-        del ret['ctime']
-        # Revocation time is written behind the scenes upon revocation.
-        del ret['rtime']
-        # Last access time is written by the session backend on every droid request.
-        del ret['atime']
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        """Add special treatment for non-init attributes."""
+        ctime = data.pop('ctime')
+        rtime = data.pop('rtime')
+        atime = data.pop('atime')
+
+        ret = super().from_database(data)
+
+        ret.ctime = ctime
+        ret.rtime = rtime
+        ret.atime = atime
+
         return ret
 
     @classmethod
@@ -282,12 +303,15 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         for key in cls.fixed_fields:
             if key in optional:
                 del optional[key]
+        if 'ctime' in mandatory:
+            optional['ctime'] = mandatory['ctime']
+            del mandatory['ctime']
         return mandatory, optional
 
     # Implementations of inherited methods.
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         return re.compile(rf"{cls.name}/(\d+)")
 
@@ -307,7 +331,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         return User(
             droid_class=self.__class__,
             droid_token_id=self.id,
-            roles=droid_roles(self.name)
+            roles=droid_roles(self.name),
         )
 
     def __str__(self) -> str:
@@ -315,11 +339,6 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     def get_sortkey(self) -> Sortkey:
         return (self.name, self.title, self.ctime, self.id)
-
-    def __lt__(self, other: "DynamicAPIToken") -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        return self.get_sortkey() < other.get_sortkey()
 
 
 @dataclass
@@ -353,10 +372,10 @@ class OrgaToken(DynamicAPIToken):
 
 
 def resolve_droid_name(
-        droid_name: str
+        droid_name: str,
 ) -> Union[
-    tuple[Type[StaticAPIToken], None],
-    tuple[Type[DynamicAPIToken], int],
+    tuple[type[StaticAPIToken], None],
+    tuple[type[DynamicAPIToken], int],
     tuple[None, None],
 ]:
     """Determine the class of token from the given droid name.

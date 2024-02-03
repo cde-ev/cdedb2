@@ -6,8 +6,9 @@ import io
 import os
 import pathlib
 import pwd
+from collections.abc import Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Generator, Iterator, Union
+from typing import Any, Callable, Union
 
 import click
 import psycopg2.extensions
@@ -77,7 +78,7 @@ def switch_user(user: str) -> Generator[None, None, None]:
         yield
     except PermissionError as e:
         raise PermissionError(
-            f"Insufficient permissions to switch to user {user}."
+            f"Insufficient permissions to switch to user {user}.",
         ) from e
     finally:
         os.setegid(original_gid)
@@ -208,13 +209,19 @@ def execute_sql_script(
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
             for statement in sql_text.split(";"):
-                if not statement.strip() or statement.strip().startswith("--"):
+                if not statement.strip():
                     continue
-                cur.execute(statement)
+
                 if verbose > 2:
                     click.echo(cur.query)
                 if verbose > 1:
                     click.echo(cur.statusmessage)
+
+                try:
+                    cur.execute(statement)
+                except psycopg2.ProgrammingError:
+                    continue
+
                 if verbose > 0:
                     try:
                         for x in cur:

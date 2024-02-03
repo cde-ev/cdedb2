@@ -1,6 +1,52 @@
+[project]
+name = "cdedb2"
+
 [tool.isort]
 profile = "black"
 known_third_party = ["subman"]
 src_paths = ["cdedb", "tests"]
 multi_line_output = 5
 combine_as_imports = true
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+src = ["cdedb", "tests"]
+include = [
+    "cdedb/**.py",
+]
+exclude = [
+    "cdedb/ldap",
+]
+select = [
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+#    "C90",  # mccabe  # Reports a couple of places of over complex code.
+#    "I",  # isort  # Incompatible with our isort configuration.
+#    "N",  # pep8-naming  # Reports a few things most of which make sense to ignore.
+#    "D",  # pydocstyle  # A whole bunch of complaints. Should be tackled per file if at all.
+    "UP",  # pyupgrade  # Reports many uses of .format, everything autofixable.
+    "YTT",  # flake8-2020
+#    "ANN",  # flake8-annotations  # Reports many instances of missing __init__ returns, and a few complicated cases.
+#    "S",  # flake8-bandit  # Reports some interesting things but plenty false positives.
+#    "BLE",  # flake8-blind-except  # Mostly false positives.
+#    "B",  # flake8-bugbear
+#    "A",  # flake8-builtins  # Doesn't report much but seems useful.
+    "COM",  # flake8-commas  # Many reports, all autofixable.
+]
+ignore = [
+    "E501", # Line too long.
+    "F405", # * import.
+    "E731", # Assigning a lambda.
+    "S101",  # Use of assert.
+    "ANN101",  # No annotation for `self`.
+    "ANN102",  # No annotation for `cls`.
+    "ANN401",  # Use of typing.Any.
+    "S608",  # SQL-Injection vector due to query string construction.
+    "A003",  # Class attributes shadowing builtin.
+    "TRY003",  # Exception message not defined in exception class.
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
