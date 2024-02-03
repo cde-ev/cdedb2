@@ -419,7 +419,7 @@ class BackendTest(CdEDBTest):
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
         # Workaround to make orga info available for calls into the MLBackend.
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -1032,7 +1032,7 @@ class FrontendTest(BackendTest):
         if evade_anti_csrf:
             urlmap = CDEDB_PATHS
             urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
-            endpoint, _ = urls.match(url, method="POST")
+            endpoint, _ = urls.match(url, method="POST")  # pylint: disable=unpacking-non-sequence
             params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
                 endpoint, csrf_token_name, csrf_token_payload,
                 persona_id=self.user['id'])

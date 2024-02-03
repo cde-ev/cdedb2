@@ -87,9 +87,9 @@ class TestCommon(BasicTest):
             76577: "sechsundsiebzigtausendfünfhundertsiebenundsiebzig",
             835199: "achthundertfünfunddreißigtausendeinhundertneunundneunzig",
         }
-        for case in cases:
-            with self.subTest(case=case):
-                self.assertEqual(cases[case], int_to_words(case, "de"))
+        for int_, str_ in cases.items():
+            with self.subTest(int=int_):
+                self.assertEqual(str_, int_to_words(int, "de"))
 
     def test_collation(self) -> None:
         # Test correct plain string sorting

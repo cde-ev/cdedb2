@@ -216,7 +216,7 @@ class Application(BaseApp):
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
-            endpoint, args = urls.match()
+            endpoint, args = urls.match()  # pylint: disable=unpacking-non-sequence
 
             lang = self.get_locale(request)
             rs = RequestState(

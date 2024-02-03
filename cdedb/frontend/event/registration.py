@@ -657,11 +657,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 # In which case we don't want to touch the course choices.
                 continue
-            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")
+            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")  # pylint: disable=cell-var-from-loop
             choice_key = lambda x: (
                 f"group{group_id}.course_choice_{x}"
-                if (group_id := track_group_map[track_id])
-                else f"track{track_id}.course_choice_{x}"
+                if (group_id := track_group_map[track_id])  # pylint: disable=cell-var-from-loop
+                else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
             )
             choices_list = [
                 c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.

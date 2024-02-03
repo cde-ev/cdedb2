@@ -387,7 +387,7 @@ def create_lodgement_wishes_graph(
                 subgraph = lodgement_clusters[lodgement_id]
             elif cluster_by_lodgement_group:
                 if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
-                    subgraph = lodgement_group_clusters[lodgement_group_id]
+                    subgraph = lodgement_group_clusters[lodgement_group_id]  # pylint: disable=undefined-loop-variable
         # Create node
         is_present = (
             filter_part_id in present_parts if filter_part_id

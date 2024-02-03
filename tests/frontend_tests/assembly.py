@@ -904,8 +904,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         }
         comment_failed = "Kommentare sind nur für beendete Abstimmungen erlaubt."
         change_failed = "Eine aktive Abstimmung kann nicht mehr verändert werden."
-        for ballot_id in ballot_states:
-            with self.subTest(ballot_states[ballot_id]):
+        for ballot_id, state in ballot_states.items():
+            with self.subTest(state):
                 ballot_title = (
                     "Maximale Länge der Satzung"
                     if ballot_id == 1001 else self.get_sample_datum(
@@ -913,7 +913,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 page_title = f"{ballot_title} (Internationaler Kongress)"
                 self.get(f'/assembly/assembly/1/ballot/{ballot_id}/show')
                 self.assertTitle(page_title)
-                self.assertPresence(ballot_states[ballot_id], div='status')
+                self.assertPresence(state, div='status')
 
                 # commenting - only possible for past ballots
                 comment_url = f'/assembly/assembly/1/ballot/{ballot_id}/comment'
