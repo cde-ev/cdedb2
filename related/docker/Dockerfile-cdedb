@@ -1,4 +1,4 @@
-FROM debian:bookworm-20230703
+FROM debian:bookworm-20240130
 
 # TODO this should be obsolete, since we generate the certificates with a first run script.
 #  however, this does not work for the ci (which becomes visible for the offline vm test)
