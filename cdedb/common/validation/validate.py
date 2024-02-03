@@ -1604,7 +1604,7 @@ def _phone(
     # handle the phone number as normalized string internally
     phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
-    return phone_str
+    return Phone(phone_str)
 
 
 @_add_typed_validator
@@ -1870,7 +1870,7 @@ def _pair_of_int(
     val: list[int] = _list_of(val, int, argname, **kwargs)
 
     try:
-        a, b = val
+        a, b = val  # pylint: disable=unbalanced-tuple-unpacking
     except ValueError as e:
         raise ValidationSummary(ValueError(
             argname, n_("Must contain exactly two elements."))) from e
@@ -3053,7 +3053,7 @@ def _event_associated_fields(
 
     errs = ValidationSummary()
     lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
-    for field in val:
+    for field in val:  # pylint: disable=consider-using-dict-items
         field_id = lookup[field]
         entries = fields[field_id].entries
         if entries is not None and val[field] is not None:
@@ -3571,8 +3571,8 @@ def _serialized_partial_event(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if not((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
-           <= EVENT_SCHEMA_VERSION):
+    if not ((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
+            <= EVENT_SCHEMA_VERSION):
         raise ValidationSummary(ValueError(
             argname, n_("Schema version mismatch.")))
 

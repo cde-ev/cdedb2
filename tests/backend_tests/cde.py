@@ -318,7 +318,7 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        new_id: int
+        new_id: int = -1
         for status in (ltstati.success, ltstati.cancelled, ltstati.failure):
             with self.subTest(status=status):
                 # since this is modified by the successful lastschrift test, we need to

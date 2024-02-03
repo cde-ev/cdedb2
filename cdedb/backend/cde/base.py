@@ -491,7 +491,7 @@ class CdEBaseBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index, None
+            return False, index, None  # pylint: disable=used-before-assignment
         return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")

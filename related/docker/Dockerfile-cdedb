@@ -1,4 +1,4 @@
-FROM debian:bullseye-20210816
+FROM debian:bookworm-20240130
 
 # TODO this should be obsolete, since we generate the certificates with a first run script.
 #  however, this does not work for the ci (which becomes visible for the offline vm test)
@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # mostly python packages and some dev tools
+# * the large lib* block is mostly for the web driver
+# * pycoverage is installed without suppressing recommendations
+#   as jQuery is otherwise not pulled in - this can be changed in newer version
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-psycopg2 \
     python3-dateutil \
@@ -61,6 +64,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-graphviz \
     python3-phonenumbers \
     python3-tabulate \
+    python3-mailmanclient \
+    python3-pyparsing \
+    python3-psycopg \
+    python3-psycopg-pool \
     \
     python3-pip \
     python3-click \
@@ -70,7 +77,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     wget \
     unzip \
     \
-    && apt-get install --yes --no-install-recommends \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -98,21 +104,15 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && apt-get install --yes python3-coverage \
     \
-    && rm -rf /var/lib/apt/lists/* \
-    \
-    && python3 -m pip --no-cache-dir install \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
     ldaptor==21.2.0 \
-    mailmanclient==3.3.3 \
-    psycopg[binary]==3.0.15 \
-    psycopg_pool==3.1.1 \
-    pyparsing==3.0.9 \
     schulze_condorcet==2.0.1 \
     subman==0.1.1 \
     segno==1.5.2 \
-    \
-    && python3 -m pip --no-cache-dir install \
-    pylint==2.7.2 \
     mypy==1.4.0 \
+    pylint==2.15.0 \
     types-werkzeug \
     types-pytz \
     types-jinja2 \
@@ -122,7 +122,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-Markdown \
     types-click \
     types-tabulate \
-    playwright
+    playwright>=1.37.0
 
 # get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
@@ -186,5 +186,5 @@ ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]
 
 USER cdedb
-RUN pip install ruff==0.1.1
+RUN pip install --break-system-packages ruff==0.1.1
 USER root

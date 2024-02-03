@@ -1715,6 +1715,8 @@ class CoreBaseFrontend(AbstractFrontend):
     def get_foto(self, rs: RequestState, foto: str) -> Response:
         """Retrieve profile picture."""
         ret = self.coreproxy.get_foto(rs, foto)
+        if ret is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         mimetype = magic.from_buffer(ret, mime=True)
         return self.send_file(rs, data=ret, mimetype=mimetype)
 
