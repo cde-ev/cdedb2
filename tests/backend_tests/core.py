@@ -509,18 +509,18 @@ class TestCoreBackend(BackendTest):
 
         def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
             if members == 7:
-                total = "113.76"
+                member_total = "113.76"
             elif members == 8:
-                total = "114.76"
+                member_total = "114.76"
             else:
                 raise RuntimeError("Test needs adjustment.")
-            data = {'persona_id': persona_id, 'code': code, 'total': total,
+            data = {'persona_id': persona_id, 'code': code, 'total': "725.87",
                     'delta': None, 'new_balance': None, 'transaction_date': None,
-                    'members': members}
+                    'members': members, 'member_total': member_total}
             if code == const.FinanceLogCodes.lose_membership:
                 data["delta"] = "0.00"
                 data["new_balance"] = "1.00"
-                data["total"] = "113.76"
+                data["member_total"] = "113.76"
             return data
 
         persona_id = 3
@@ -1122,7 +1122,8 @@ class TestCoreBackend(BackendTest):
             "delta": "-5.00",
             "new_balance": "0.00",
             "members": 7,
-            "total": "113.76",
+            "total": "724.87",
+            "member_total": "113.76",
             "transaction_date": None,
         }]
         self.assertLogEqual(

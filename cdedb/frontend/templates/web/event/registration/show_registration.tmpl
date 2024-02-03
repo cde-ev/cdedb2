@@ -320,6 +320,7 @@
         </dl>
     {% endif %}
 
+    {% if ambience['event']['iban'] %}
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
@@ -333,6 +334,7 @@ Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
 Betrag:             {{ to_pay|money(lang=lang) }}
 Verwendungszweck:   {{ reference }}
 </pre>
+    {% endif %}
 
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">

@@ -8902,6 +8902,9 @@ msgstr ""
 msgid "Overall Balance"
 msgstr ""
 
+msgid "Overall Balance (Members only)"
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:7
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:20
 #, python-format

@@ -226,7 +226,7 @@
                             <tbody>
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     <tr class="query_sort">
-                                        <td> {{ i|string + "." }} </td>
+                                        <td> {{ (i+1)|string + "." }} </td>
                                         <td>
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}

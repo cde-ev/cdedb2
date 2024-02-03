@@ -11548,8 +11548,11 @@ msgstr ""
 msgid "Export"
 msgstr ""
 
+msgid "event overview"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/downloads.tmpl:121
-msgid "The full export is now on event overview."
+msgid "The full export is on the %(overview)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:129
