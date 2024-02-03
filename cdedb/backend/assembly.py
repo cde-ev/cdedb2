@@ -535,11 +535,11 @@ class AssemblyBackend(AbstractBackend):
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %s AND code = %s AND ctime >= %s
         """
-        late_list = {
+        late_list = [
             attendee_data[e['persona_id']]
             for e in self.query_all(
                 rs, q, (assembly_id, const.AssemblyLogCodes.new_attendee, cutoff))
-        }
+        ]
         late_attendees = {
             e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)}
         if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
