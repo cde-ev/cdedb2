@@ -104,7 +104,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && apt-get install --yes python3-coverage \
     \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip --no-cache-dir install --break-system-packages \
     ldaptor==21.2.0 \
