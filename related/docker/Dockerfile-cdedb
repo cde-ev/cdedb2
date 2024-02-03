@@ -105,15 +105,12 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && apt-get install --yes python3-coverage \
     \
     && rm -rf /var/lib/apt/lists/* \
-    \
-    && python3 -m pip --no-cache-dir install --break-system-packages \
+
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
     ldaptor==21.2.0 \
     schulze_condorcet==2.0.1 \
     subman==0.1.1 \
     segno==1.5.2 \
-    \
-    && python3 -m pip --no-cache-dir install \
-    pylint==2.7.2 \
     mypy==1.4.0 \
     pylint==2.15.0 \
     types-werkzeug \
