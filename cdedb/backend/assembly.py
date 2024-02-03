@@ -158,7 +158,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def is_presider(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                    ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
+                    ballot_id: Optional[int] = None,
+                    attachment_id: Optional[int] = None,
                     persona_id: Optional[int] = None) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
@@ -210,8 +211,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("persona")
     def may_assemble(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                     ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
-                     ) -> bool:
+                     ballot_id: Optional[int] = None,
+                     attachment_id: Optional[int] = None) -> bool:
         """Check authorization of this persona.
 
         This checks, if the calling user may interact with a specific
@@ -230,7 +231,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def check_assemble(self, rs: RequestState, persona_id: int, *,
-                       assembly_id: Optional[int] = None, ballot_id: Optional[int] = None,
+                       assembly_id: Optional[int] = None,
+                       ballot_id: Optional[int] = None,
                        attachment_id: Optional[int] = None) -> bool:
         """Check authorization of given persona.
 
@@ -409,7 +411,8 @@ class AssemblyBackend(AbstractBackend):
     @internal
     @access("persona")
     def check_attendance(self, rs: RequestState, *, assembly_id: Optional[int] = None,
-                         ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
+                         ballot_id: Optional[int] = None,
+                         attachment_id: Optional[int] = None,
                          persona_id: Optional[int] = None) -> bool:
         """Check whether a persona attends a specific assembly/ballot.
 
@@ -1814,7 +1817,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def delete_attachment(self, rs: RequestState, attachment_id: int,
-                          cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None,
+                          ) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)

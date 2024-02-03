@@ -199,7 +199,8 @@ class BaseApp(metaclass=abc.ABCMeta):
                         mimetype="text/html", status=500)
 
     def encode_notification(self, rs: RequestState, ntype: NotificationType,
-                            nmessage: str, nparams: Optional[CdEDBObject] = None) -> str:
+                            nmessage: str, nparams: Optional[CdEDBObject] = None,
+                            ) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
@@ -456,8 +457,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return staticlink(rs, label="", path=path, version=version, html=False)
 
-        def _show_user_link(user: User, persona_id: int, quote_me: Optional[bool] = None,
-                            event_id: Optional[int] = None, ml_id: Optional[int] = None) -> str:
+        def _show_user_link(user: User, persona_id: int,
+                            quote_me: Optional[bool] = None,
+                            event_id: Optional[int] = None, ml_id: Optional[int] = None,
+                            ) -> str:
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -577,10 +580,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             afile=afile, data=data, encoding='utf-8-sig')
 
     @staticmethod
-    def send_file(rs: RequestState, mimetype: Optional[str] = None, filename: Optional[str] = None,
-                  inline: bool = True, *, path: Optional[PathLike] = None,
-                  afile: Optional[IO[bytes]] = None, data: Optional[AnyStr] = None,
-                  encoding: str = 'utf-8') -> Response:
+    def send_file(rs: RequestState, mimetype: Optional[str] = None,
+                  filename: Optional[str] = None, inline: bool = True, *,
+                  path: Optional[PathLike] = None, afile: Optional[IO[bytes]] = None,
+                  data: Optional[AnyStr] = None, encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -1625,7 +1628,8 @@ class FrontendEndpoint(Protocol):
 
 
 def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: Optional[bool] = None, anti_csrf_token_name: Optional[str] = None,
+           check_anti_csrf: Optional[bool] = None,
+           anti_csrf_token_name: Optional[str] = None,
            anti_csrf_token_payload: Optional[str] = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1826,7 +1830,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: Optional[vtypes.TypeMapping] = None, _postpone_validation: bool = False,
+        *spec: str, _hints: Optional[vtypes.TypeMapping] = None,
+        _postpone_validation: bool = False,
         _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.

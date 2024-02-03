@@ -294,8 +294,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             pass
 
     def general_query(self, rs: RequestState, query: Query,
-                      distinct: bool = True, view: Optional[str] = None, aggregate: bool = False,
-                      ) -> tuple[CdEDBObject, ...]:
+                      distinct: bool = True, view: Optional[str] = None,
+                      aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 

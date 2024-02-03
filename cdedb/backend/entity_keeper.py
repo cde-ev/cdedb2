@@ -34,7 +34,8 @@ tabulate.PRESERVE_WHITESPACE = True
 
 class EntityKeeper:
     def __init__(self, conf: Config, directory: PathLike,
-                 log_keys: Optional[Sequence[str]] = None, log_timestamp_key: Optional[str] = None):
+                 log_keys: Optional[Sequence[str]] = None,
+                 log_timestamp_key: Optional[str] = None):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf

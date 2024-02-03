@@ -1064,14 +1064,16 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any) -> list[T]:
+    def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any,
+                 ) -> list[T]:
         ...
 
 
 def make_list_validator(type_: type[T]) -> ListValidator[T]:
 
     @functools.wraps(_list_of)
-    def list_validator(val: Any, argname: Optional[str] = None, **kwargs: Any) -> list[T]:
+    def list_validator(val: Any, argname: Optional[str] = None, **kwargs: Any,
+                       ) -> list[T]:
         return _list_of(val, type_, argname, **kwargs)
 
     return list_validator
@@ -1086,7 +1088,8 @@ class PairValidator(Protocol[T_Co]):
 def make_pair_validator(type_: type[T]) -> PairValidator[T]:
 
     @functools.wraps(_range)
-    def pair_validator(val: Any, argname: Optional[str] = None, **kwargs: Any) -> tuple[T, T]:
+    def pair_validator(val: Any, argname: Optional[str] = None, **kwargs: Any,
+                       ) -> tuple[T, T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
@@ -1101,7 +1104,8 @@ def _set_of(
 
 
 class SetValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: Optional[str] = None, **kwargs: Any) -> set[T]:
+    def __call__(self, val: Any, argname: Optional[str] = None, **kwargs: Any,
+                 ) -> set[T]:
         ...
 
 
@@ -1587,7 +1591,8 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> Phone:
     raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
 
@@ -4886,7 +4891,8 @@ def _db_subscription_state(
 IE = TypeVar("IE", bound=IntEnum)
 
 
-def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None) -> None:
+def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None,
+                                   ) -> None:
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.

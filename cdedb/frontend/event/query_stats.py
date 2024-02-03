@@ -232,8 +232,9 @@ class StatisticMixin:
         return ()
 
     @abc.abstractmethod
-    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
-                    part_group_id: Optional[int] = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None,
+                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
+                    ) -> str:
         """Build an id for the link to the related query."""
 
 
@@ -253,8 +254,9 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
-                    part_group_id: Optional[int] = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None,
+                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
+                    ) -> str:
         """Build an id for the link to the related query."""
         if part_id:
             return f"part_{self.name}_{part_id}"
@@ -289,8 +291,9 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_link_id(self, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
-                    part_group_id: Optional[int] = None) -> str:
+    def get_link_id(self, *, track_id: Optional[int] = None,
+                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
+                    ) -> str:
         """Build an id for the link to the related query."""
         if track_id:
             return f"track_{self.name}_{track_id}"
@@ -904,8 +907,9 @@ class EventRegistrationInXChoiceGrouper:
         return query
 
     @staticmethod
-    def get_link_id(x: int, *, track_id: Optional[int] = None, part_id: Optional[int] = None,
-                    part_group_id: Optional[int] = None) -> str:
+    def get_link_id(x: int, *, track_id: Optional[int] = None,
+                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
+                    ) -> str:
         if track_id:
             return f"track_in_{x}_choice_{track_id}"
         elif part_id:

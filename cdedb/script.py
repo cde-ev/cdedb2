@@ -123,9 +123,10 @@ class Script:
         "event": "EventFrontend",
     }
 
-    def __init__(self, *, persona_id: Optional[int] = None, dry_run: Optional[bool] = None,
-                 dbuser: str = 'cdb_anonymous',
-                 outfile: Optional[PathLike] = None, outfile_append: Optional[bool] = None,
+    def __init__(self, *, persona_id: Optional[int] = None,
+                 dry_run: Optional[bool] = None, dbuser: str = 'cdb_anonymous',
+                 outfile: Optional[PathLike] = None,
+                 outfile_append: Optional[bool] = None,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
                  check_system_user: bool = True, configpath: Optional[PathLike] = None,
                  **config: Any):

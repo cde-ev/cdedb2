@@ -253,7 +253,8 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_event(self, rs: RequestState, pevent_id: int,
-                          cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None,
+                          ) -> DefaultReturnCode:
         """Remove past event.
 
         :param cascade: Specify which deletion blockers to cascadingly

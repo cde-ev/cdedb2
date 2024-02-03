@@ -110,7 +110,8 @@ class AssemblyTestHelpers(FrontendTest):
         self.submit(f)
         return self._fetch_secret()
 
-    def _create_ballot(self, bdata: CdEDBObject, candidates: Optional[List[CdEDBObject]] = None,
+    def _create_ballot(self, bdata: CdEDBObject,
+                       candidates: Optional[List[CdEDBObject]] = None,
                        atitle: Optional[str] = None) -> None:
         """Helper to create a new ballot.
 

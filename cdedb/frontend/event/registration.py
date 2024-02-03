@@ -489,7 +489,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         return Response(json_serialize(ret), mimetype='application/json')
 
     def new_process_registration_input(
-            self, rs: RequestState, orga_input: bool, parts: Optional[CdEDBObjectMap] = None,
+            self, rs: RequestState, orga_input: bool,
+            parts: Optional[CdEDBObjectMap] = None,
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a

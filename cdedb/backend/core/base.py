@@ -203,7 +203,8 @@ class CoreBaseBackend(AbstractBackend):
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
                     persona_id: Optional[int], delta: Optional[decimal.Decimal],
                     new_balance: Optional[decimal.Decimal],
-                    change_note: Optional[str] = None, transaction_date: Optional[datetime.date] = None,
+                    change_note: Optional[str] = None,
+                    transaction_date: Optional[datetime.date] = None,
                     ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
@@ -1228,7 +1229,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
-                                    is_member: Optional[bool] = None, trial_member: Optional[bool] = None,
+                                    is_member: Optional[bool] = None,
+                                    trial_member: Optional[bool] = None,
                                     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1349,9 +1351,10 @@ class CoreBaseBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (persona_id,)))
 
     @access("core_admin")
-    def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
-                                            reference_date: Optional[datetime.date] = None,
-                                            ) -> bool:
+    def is_persona_automatically_archivable(
+            self, rs: RequestState, persona_id: int,
+            reference_date: Optional[datetime.date] = None,
+    ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
         :param reference_date: If given consider this as the reference point for
@@ -2404,7 +2407,8 @@ class CoreBaseBackend(AbstractBackend):
         return None
 
     def modify_password(self, rs: RequestState, new_password: str,
-                        old_password: Optional[str] = None, reset_cookie: Optional[str] = None,
+                        old_password: Optional[str] = None,
+                        reset_cookie: Optional[str] = None,
                         persona_id: Optional[int] = None) -> tuple[bool, str]:
         """Helper for manipulating password entries.
 
@@ -2481,7 +2485,8 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def check_password_strength(
         self, rs: RequestState, password: str, *,
-        email: Optional[str] = None, persona_id: Optional[int] = None, argname: Optional[str] = None,
+        email: Optional[str] = None, persona_id: Optional[int] = None,
+        argname: Optional[str] = None,
     ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
         """Check the password strength using some additional userdate.
 

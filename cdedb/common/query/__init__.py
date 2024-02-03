@@ -216,7 +216,8 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: Optional["models.Event"] = None, courses: Optional[CourseMap] = None,
+    def get_spec(self, *, event: Optional["models.Event"] = None,
+                 courses: Optional[CourseMap] = None,
                  lodgements: Optional[LodgementMap] = None,
                  lodgement_groups: Optional[LodgementGroupMap] = None,
                  ) -> QuerySpec:
@@ -278,8 +279,8 @@ class QueryScope(CdEIntEnum):
             return f"{prefix}/{target}"
         return target
 
-    def mangle_query_input(self, rs: RequestState, defaults: Optional[CdEDBObject] = None,
-                           ) -> dict[str, str]:
+    def mangle_query_input(self, rs: RequestState,
+                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -820,7 +821,8 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
+def make_registration_query_spec(event: "models.Event",
+                                 courses: Optional[CourseMap] = None,
                                  lodgements: Optional[LodgementMap] = None,
                                  lodgement_groups: Optional[LodgementGroupMap] = None,
                                  ) -> QuerySpec:
@@ -1168,7 +1170,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
     return spec
 
 
-def make_lodgement_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
+def make_lodgement_query_spec(event: "models.Event",
+                              courses: Optional[CourseMap] = None,
                               lodgements: Optional[LodgementMap] = None,
                               lodgement_groups: Optional[LodgementGroupMap] = None,
                               ) -> QuerySpec:

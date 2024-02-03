@@ -37,7 +37,8 @@ CdEDBObject = dict[str, Any]
 
 class BackendContainer:
     """Helper class to pass multiple backends into the ml_type methods at once."""
-    def __init__(self, *, core: Optional["CoreBackend"] = None, event: Optional["EventBackend"] = None,
+    def __init__(self, *, core: Optional["CoreBackend"] = None,
+                 event: Optional["EventBackend"] = None,
                  assembly: Optional["AssemblyBackend"] = None):
         self.core = cast("CoreBackend", core)
         self.event = cast("EventBackend", event)

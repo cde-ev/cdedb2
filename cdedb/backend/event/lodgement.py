@@ -211,8 +211,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     @access("event")
-    def list_lodgements(self, rs: RequestState, event_id: int, group_id: Optional[int] = None,
-                        ) -> dict[int, str]:
+    def list_lodgements(self, rs: RequestState, event_id: int,
+                        group_id: Optional[int] = None) -> dict[int, str]:
         """List all lodgements for an event.
 
         :param group_id: If given, limit to lodgements in this group.
@@ -398,7 +398,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement(self, rs: RequestState, lodgement_id: int,
-                         cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+                         cascade: Optional[Collection[str]] = None,
+                         ) -> DefaultReturnCode:
         """Delete a lodgement.
 
         :param cascade: Specify which deletion blockers to cascadingly

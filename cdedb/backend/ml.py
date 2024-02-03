@@ -150,7 +150,8 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
                                 mailinglist: Optional[Mailinglist] = None,
-                                mailinglist_id: Optional[int] = None) -> SubscriptionPolicy:
+                                mailinglist_id: Optional[int] = None,
+                                ) -> SubscriptionPolicy:
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
@@ -538,8 +539,8 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, update: Optional[CdEDBObject] = None,
-                       ) -> DefaultReturnCode:
+                       ml_type: const.MailinglistTypes,
+                       update: Optional[CdEDBObject] = None) -> DefaultReturnCode:
         """Change the type of a mailinglist.
 
         To preserve data integrity, some additional changes may be specified via update.

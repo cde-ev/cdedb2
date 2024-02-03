@@ -58,7 +58,8 @@ class EventLowLevelBackend(AbstractBackend):
         return super().is_admin(rs)
 
     def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None,
-                course_id: Optional[int] = None, registration_id: Optional[int] = None) -> bool:
+                course_id: Optional[int] = None, registration_id: Optional[int] = None,
+                ) -> bool:
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -82,7 +83,8 @@ class EventLowLevelBackend(AbstractBackend):
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: Optional[int] = None,
-                  change_note: Optional[str] = None, atomized: bool = True) -> DefaultReturnCode:
+                  change_note: Optional[str] = None, atomized: bool = True,
+                  ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -689,7 +691,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_part_group(self, rs: RequestState, part_group_id: int,
-                           cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+                           cascade: Optional[Collection[str]] = None,
+                           ) -> DefaultReturnCode:
         """Helper to delete one part group.
 
         :note: This has to be called inside an atomized context.
@@ -788,7 +791,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_track_group(self, rs: RequestState, track_group_id: int,
-                            cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+                            cascade: Optional[Collection[str]] = None,
+                            ) -> DefaultReturnCode:
         """Helper to delete one track group.
 
         :note: This has to be called inside an atomized context.

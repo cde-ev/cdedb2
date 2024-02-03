@@ -2908,8 +2908,9 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
-    def _decide_genesis_case(self, decision: GenesisDecision, persona_id: Optional[int] = None,
-                             check: bool = True) -> None:
+    def _decide_genesis_case(self, decision: GenesisDecision,
+                             persona_id: Optional[int] = None, check: bool = True,
+                             ) -> None:
         f = self.response.forms['genesisdecisionform']
         if persona_id:
             f['persona_id'] = persona_id

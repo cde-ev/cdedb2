@@ -983,7 +983,8 @@ class FrontendTest(BackendTest):
                                              delete=False) as f:
                 f.write(self.response.body)
 
-    def _log_generation_time(self, response: Optional[webtest.TestResponse] = None) -> None:
+    def _log_generation_time(self, response: Optional[webtest.TestResponse] = None,
+                             ) -> None:
         if response is None:
             response = self.response
         # record performance information during test runs
@@ -1342,8 +1343,9 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn(s.strip(), content.text_content())
 
-    def assertNotification(self, ntext: Optional[str] = None, ntype: Optional[str] = None, *,
-                           static: bool = False, msg: Optional[str] = None) -> None:
+    def assertNotification(self, ntext: Optional[str] = None,
+                           ntype: Optional[str] = None, *, static: bool = False,
+                           msg: Optional[str] = None) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
         :param ntext: Substring to be present in the notification's message.
@@ -1464,8 +1466,8 @@ class FrontendTest(BackendTest):
         self.assertIn(message, container[0].text_content(), msg)
 
     def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
-                     tag: str = 'a', href_attr: str = 'href', content: Optional[str] = None,
-                     verbose: bool = False) -> None:
+                     tag: str = 'a', href_attr: str = 'href',
+                     content: Optional[str] = None, verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
 
@@ -1708,7 +1710,8 @@ class FrontendTest(BackendTest):
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
 
-    def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None) -> None:
+    def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None,
+                                  ) -> None:
         """Basic check for the user creation and archival functionality of each realm.
 
         :param data: realm-dependent data to use for the persona to be created

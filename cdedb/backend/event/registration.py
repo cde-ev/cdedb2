@@ -255,10 +255,10 @@ class EventRegistrationBackend(EventBaseBackend):
         }
 
     @access("event")
-    def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
-                                            active_only: bool = False,
-                                            involved_parts: Optional[Collection[int]] = None,
-                                            ) -> dict[int, set[int]]:
+    def get_course_segments_per_track_group(
+            self, rs: RequestState, event_id: int, active_only: bool = False,
+            involved_parts: Optional[Collection[int]] = None,
+    ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track group.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -596,10 +596,12 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def registrations_by_course(
             self, rs: RequestState, event_id: int, course_id: Optional[int] = None,
-            track_id: Optional[int] = None, position: Optional[InfiniteEnum[CourseFilterPositions]] = None,
+            track_id: Optional[int] = None,
+            position: Optional[InfiniteEnum[CourseFilterPositions]] = None,
             reg_ids: Optional[Collection[int]] = None,
             reg_states: Collection[const.RegistrationPartStati] =
-            (const.RegistrationPartStati.participant,)) -> dict[int, int]:
+            (const.RegistrationPartStati.participant,),
+    ) -> dict[int, int]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -1267,8 +1269,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, is_member: Optional[bool] = None,
-                               is_orga: Optional[bool] = None, visual_debug: bool = False,
-                               ) -> RegistrationFeeData:
+                               is_orga: Optional[bool] = None,
+                               visual_debug: bool = False) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,

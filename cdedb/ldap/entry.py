@@ -86,7 +86,8 @@ class CdEDBBaseLDAPEntry(
     def __getitem__(self, key: bytes) -> LDAPAttributeSet:
         return self.attributes[key]
 
-    def get(self, key: bytes, default: Optional[LDAPAttributeSet] = None) -> LDAPAttributeSet:
+    def get(self, key: bytes, default: Optional[LDAPAttributeSet] = None,
+            ) -> LDAPAttributeSet:
         if key in self:
             return self[key]
         return default
@@ -192,7 +193,8 @@ class CdEDBBaseLDAPEntry(
         """
         raise NotImplementedError
 
-    async def subtree(self, bound_dn: Optional[BoundDn] = None) -> list["CdEDBBaseLDAPEntry"]:
+    async def subtree(self, bound_dn: Optional[BoundDn] = None,
+                      ) -> list["CdEDBBaseLDAPEntry"]:
         """List the subtree rooted at this entry, including this entry."""
         result = [self]
         children = await self.children(bound_dn=bound_dn)
