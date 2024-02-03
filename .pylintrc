@@ -74,6 +74,9 @@ disable=
     missing-class-docstring,missing-function-docstring,  # not applicable for our application structure
     invalid-name,
     similarities,
+    consider-iterating-dictionary,unnecessary-dict-index-lookup,useless-option-value,consider-using-from-import,consider-using-f-string,unspecified-encoding, # yes
+    unnecessary-dunder-call,use-sequence-for-iteration,consider-using-with, # maybe
+    consider-using-min-builtin,arguments-renamed,arguments-differ,typevar-name-incorrect-variance,deprecated-module,use-dict-literal,use-list-literal,unnecessary-lambda-assignment, # leave me alone
     fixme,
 
 
