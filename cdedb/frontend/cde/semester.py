@@ -246,7 +246,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @REQUESTdata("testrun", "skip")
     def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool,
                             ) -> Response:
-        """Send address check mail to all members which receive a printed exPuls.
+        """Send address check mail to all members who receive a printed exPuls.
 
         In case of a test run we send only a single mail to the button
         presser.

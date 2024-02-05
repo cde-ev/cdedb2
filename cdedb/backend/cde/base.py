@@ -460,7 +460,7 @@ class CdEBaseBackend(AbstractBackend):
     def perform_batch_admission(
             self, rs: RequestState, data: list[CdEDBObject], trial_membership: bool,
             consent: bool,
-    ) -> tuple[bool, Optional[Union[BatchAdmissionStats, int]]]:
+    ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this

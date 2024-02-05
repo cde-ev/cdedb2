@@ -25,7 +25,7 @@ msgstr ""
 
 msgid ""
 "The CdEDB will automatically send a %(welcome_mail)s to the user. If the "
-"user gets no trial membership, this also includes payment instructions."
+"user receives no trial membership, this also includes payment instructions."
 msgstr ""
 "Die CdEDB wird eine automatische %(welcome_mail)s an den Nutzer schicken. "
 "Wenn der Nutzer keine Probemitgliedschaft erhält, beinhaltet diese auch die "

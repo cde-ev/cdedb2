@@ -822,7 +822,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         created. Additionally, this provides further information for personas with
         cde realm (and depending on if they are already member or not).
 
-        Therefore, we sent this mail again if a persona was granted the cde realm.
+        Therefore, we send this mail again if a persona was granted the cde realm.
         """
         success, cookie = self.coreproxy.make_reset_cookie(
             rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
@@ -833,9 +833,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if persona['is_member']:
             subject = "Aufnahme in den CdE"
         elif persona['is_cde_realm']:
-            subject = "Aufnahmeberechtigung für den CdE"
+            subject = "Aufnahmeangebot in den CdE"
         else:
-            subject = "CdEDB Account erstellt"
+            subject = "CdEDB-Account erstellt"
         meta_info = self.coreproxy.get_meta_info(rs)
         self.do_mail(rs, "welcome",
                      {'To': (persona['username'],),
