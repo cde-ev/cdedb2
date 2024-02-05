@@ -353,7 +353,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     return new_fun
 
 
-def _add_typed_validator(fun: F, return_type: type[Any] = None) -> F:
+def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
     if not return_type:
@@ -369,7 +369,7 @@ def _add_typed_validator(fun: F, return_type: type[Any] = None) -> F:
 def _examine_dictionary_fields(
     adict: Mapping[str, Any],
     mandatory_fields: TypeMapping,
-    optional_fields: TypeMapping = None,
+    optional_fields: Optional[TypeMapping] = None,
     *,
     argname: str = "",
     allow_superfluous: bool = False,
@@ -442,7 +442,7 @@ def _augment_dict_validator(
 
     @functools.wraps(validator)
     def new_validator(
-        val: Any, argname: str = None, **kwargs: Any,
+        val: Any, argname: Optional[str] = None, **kwargs: Any,
     ) -> dict[str, Any]:
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
@@ -513,7 +513,7 @@ def filter_none(data: dict[str, Any]) -> dict[str, Any]:
 
 @_add_typed_validator
 def _None(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> None:
     """Force a None.
 
@@ -527,7 +527,7 @@ def _None(
 
 @_add_typed_validator
 def _any(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Any:
     """Dummy to allow arbitrary things.
 
@@ -539,7 +539,7 @@ def _any(
 
 @_add_typed_validator
 def _int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> int:
     if isinstance(val, (str, bool)):
         try:
@@ -563,7 +563,7 @@ def _int(
 
 @_add_typed_validator
 def _non_negative_int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonNegativeInt:
     val = _int(val, argname, **kwargs)
     if val < 0:
@@ -574,7 +574,7 @@ def _non_negative_int(
 
 @_add_typed_validator
 def _positive_int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> PositiveInt:
     val = _int(val, argname, **kwargs)
     if val <= 0:
@@ -584,7 +584,7 @@ def _positive_int(
 
 @_add_typed_validator
 def _negative_int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NegativeInt:
     val = _int(val, argname, **kwargs)
     if val >= 0:
@@ -594,7 +594,7 @@ def _negative_int(
 
 @_add_typed_validator
 def _non_zero_int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonZeroInt:
     val = _int(val, argname, **kwargs)
     if val == 0:
@@ -604,7 +604,7 @@ def _non_zero_int(
 
 @_add_typed_validator
 def _id(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> ID:
     """A numeric ID as in a database key.
 
@@ -619,7 +619,7 @@ def _id(
 
 @_add_typed_validator
 def _creation_id(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> CreationID:
     """ID of an object which is currently under creation.
 
@@ -634,7 +634,7 @@ def _creation_id(
 
 @_add_typed_validator
 def _proto_id(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> ProtoID:
     """An object with a proto-id may already exist or is currently under creation.
 
@@ -647,7 +647,7 @@ def _proto_id(
 
 @_add_typed_validator
 def _partial_import_id(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> PartialImportID:
     """A numeric id or a negative int as a placeholder."""
     val = _int(val, argname, **kwargs)
@@ -658,7 +658,7 @@ def _partial_import_id(
 
 @_add_typed_validator
 def _float(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> float:
     try:
         val = float(val)
@@ -678,7 +678,7 @@ def _float(
 
 @_add_typed_validator
 def _decimal(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     large: bool = False, **kwargs: Any,
 ) -> decimal.Decimal:
     """decimal.Decimal fitting into a `numeric` postgres column.
@@ -705,7 +705,7 @@ def _decimal(
 
 @_add_typed_validator
 def _non_negative_decimal(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonNegativeDecimal:
     val = _decimal(val, argname, **kwargs)
     if val < 0:
@@ -716,7 +716,7 @@ def _non_negative_decimal(
 
 @_add_typed_validator
 def _non_negative_large_decimal(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonNegativeLargeDecimal:
     return NonNegativeLargeDecimal(
         _non_negative_decimal(val, argname, large=True, **kwargs))
@@ -724,7 +724,7 @@ def _non_negative_large_decimal(
 
 @_add_typed_validator
 def _positive_decimal(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> PositiveDecimal:
     val = _decimal(val, argname, **kwargs)
     if val <= 0:
@@ -735,7 +735,7 @@ def _positive_decimal(
 
 @_add_typed_validator
 def _str_type(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     zap: str = '', sieve: str = '', **kwargs: Any,
 ) -> StringType:
     """
@@ -759,7 +759,7 @@ def _str_type(
 
 
 @_add_typed_validator
-def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
+def _str(val: Any, argname: Optional[str] = None, **kwargs: Any) -> str:
     """ Like :py:class:`_str_type` (parameters see there),
     but mustn't be empty (whitespace doesn't count).
     """
@@ -770,7 +770,7 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
 
 
 @_add_typed_validator
-def _url(val: Any, argname: str = None, **kwargs: Any) -> Url:
+def _url(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Url:
     """A string which is a valid url.
 
     We can not guarantee that the URL is actually valid, since the respective RFCs
@@ -785,7 +785,7 @@ def _url(val: Any, argname: str = None, **kwargs: Any) -> Url:
 
 
 @_add_typed_validator
-def _shortname(val: Any, argname: str = None, *,
+def _shortname(val: Any, argname: Optional[str] = None, *,
                ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
     """A string used as shortname with therefore limited length."""
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
@@ -797,7 +797,7 @@ def _shortname(val: Any, argname: str = None, *,
 
 
 @_add_typed_validator
-def _shortname_identifier(val: Any, argname: str = None, *,
+def _shortname_identifier(val: Any, argname: Optional[str] = None, *,
                           ignore_warnings: bool = False,
                           **kwargs: Any) -> ShortnameIdentifier:
     """A string used as shortname and as programmatically accessible identifier."""
@@ -808,7 +808,7 @@ def _shortname_identifier(val: Any, argname: str = None, *,
 
 @_add_typed_validator
 def _shortname_restrictive_identifier(
-        val: Any, argname: str = None, *,
+        val: Any, argname: Optional[str] = None, *,
         ignore_warnings: bool = False,
         **kwargs: Any) -> ShortnameRestrictiveIdentifier:
     """A string used as shortname and as restrictive identifier"""
@@ -820,7 +820,7 @@ def _shortname_restrictive_identifier(
 
 
 @_add_typed_validator
-def _legacy_shortname(val: Any, argname: str = None, *,
+def _legacy_shortname(val: Any, argname: Optional[str] = None, *,
                       ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
     """A string used as shortname, but with increased but still limited length."""
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
@@ -833,7 +833,7 @@ def _legacy_shortname(val: Any, argname: str = None, *,
 
 @_add_typed_validator
 def _bytes(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     encoding: str = "utf-8", **kwargs: Any,
 ) -> bytes:
     if isinstance(val, str):
@@ -855,7 +855,7 @@ def _bytes(
 
 @_add_typed_validator
 def _mapping(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Mapping:  # type: ignore[type-arg] # type parameters would break this (for now)
     if not isinstance(val, Mapping):
         raise ValidationSummary(TypeError(argname, n_("Must be a mapping.")))
@@ -864,7 +864,7 @@ def _mapping(
 
 @_add_typed_validator
 def _iterable(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Iterable:  # type: ignore[type-arg] # type parameters would break this (for now)
     if not isinstance(val, Iterable):
         raise ValidationSummary(TypeError(argname, n_("Must be an iterable.")))
@@ -873,7 +873,7 @@ def _iterable(
 
 @_add_typed_validator
 def _sequence(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Sequence:  # type: ignore[type-arg] # type parameters would break this (for now)
     try:
         val = tuple(val)
@@ -887,7 +887,7 @@ def _sequence(
 
 @_add_typed_validator
 def _bool(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> bool:
     if val is None:
         raise ValidationSummary(TypeError(argname, n_("Must be a boolean.")))
@@ -904,7 +904,7 @@ def _bool(
 
 @_add_typed_validator
 def _empty_dict(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> EmptyDict:
     # TODO why do we not convert here but do so for _empty_list?
     if val != {}:
@@ -915,7 +915,7 @@ def _empty_dict(
 
 @_add_typed_validator
 def _empty_list(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> EmptyList:
     val = list(_iterable(val, argname, **kwargs))
     if val:
@@ -925,7 +925,7 @@ def _empty_list(
 
 @_add_typed_validator  # TODO use Union of Literal
 def _realm(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
@@ -936,7 +936,7 @@ def _realm(
 
 @_add_typed_validator
 def _cdedbid(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> CdedbID:
     val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
@@ -951,7 +951,7 @@ def _cdedbid(
 
 @_add_typed_validator
 def _printable_ascii_type(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> PrintableASCIIType:
     val = _str_type(val, argname, **kwargs)
     if not re.search(r'^[ -~]*$', val):
@@ -962,7 +962,7 @@ def _printable_ascii_type(
 
 @_add_typed_validator
 def _printable_ascii(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> PrintableASCII:
     """Like :py:func:`_printable_ascii_type` (parameters see there),
     but must not be empty (whitespace doesn't count).
@@ -975,7 +975,7 @@ def _printable_ascii(
 
 @_add_typed_validator
 def _identifier(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Identifier:
     """Identifiers encompass everything from file names to short names for
     events.
@@ -990,7 +990,7 @@ def _identifier(
 
 @_add_typed_validator
 def _restrictive_identifier(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> RestrictiveIdentifier:
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
@@ -1007,7 +1007,7 @@ def _restrictive_identifier(
 
 @_add_typed_validator
 def _csv_identifier(
-        val: Any, argname: str = None, **kwargs: Any,
+        val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> CSVIdentifier:
     val = _printable_ascii(val, argname, **kwargs)
     if not re.search(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$', val):
@@ -1018,7 +1018,7 @@ def _csv_identifier(
 
 @_add_typed_validator
 def _token_string(
-        val: Any, argname: str = None, **kwargs: Any,
+        val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> TokenString:
     val = _str(val, argname, **kwargs)
     if re.search(r'[\s()]', val):
@@ -1031,7 +1031,7 @@ def _token_string(
 @_add_typed_validator
 def _list_of(
     val: Any, atype: type[T],
-    argname: str = None,
+    argname: Optional[str] = None,
     *,
     _parse_csv: bool = False,
     _allow_empty: bool = True,
@@ -1064,21 +1064,23 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> list[T]:
+    def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any,
+                 ) -> list[T]:
         ...
 
 
 def make_list_validator(type_: type[T]) -> ListValidator[T]:
 
     @functools.wraps(_list_of)
-    def list_validator(val: Any, argname: str = None, **kwargs: Any) -> list[T]:
+    def list_validator(val: Any, argname: Optional[str] = None, **kwargs: Any,
+                       ) -> list[T]:
         return _list_of(val, type_, argname, **kwargs)
 
     return list_validator
 
 
 class PairValidator(Protocol[T_Co]):
-    def __call__(self, val: Any, argname: str = None, **kargs: Any,
+    def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any,
                  ) -> tuple[T_Co, T_Co]:
         ...
 
@@ -1086,14 +1088,15 @@ class PairValidator(Protocol[T_Co]):
 def make_pair_validator(type_: type[T]) -> PairValidator[T]:
 
     @functools.wraps(_range)
-    def pair_validator(val: Any, argname: str = None, **kwargs: Any) -> tuple[T, T]:
+    def pair_validator(val: Any, argname: Optional[str] = None, **kwargs: Any,
+                       ) -> tuple[T, T]:
         return _range(val, type_, argname, **kwargs)
 
     return pair_validator
 
 
 def _set_of(
-    val: Any, atype: type[T], argname: str = None, **kwargs: Any,
+    val: Any, atype: type[T], argname: Optional[str] = None, **kwargs: Any,
 ) -> set[T]:
     # TODO maybe disallow strings here (see also _list_of)
     val = _iterable(val, argname=argname, **kwargs)
@@ -1101,14 +1104,15 @@ def _set_of(
 
 
 class SetValidator(Protocol[T]):
-    def __call__(self, val: Any, argname: str = None, **kwargs: Any) -> set[T]:
+    def __call__(self, val: Any, argname: Optional[str] = None, **kwargs: Any,
+                 ) -> set[T]:
         ...
 
 
 def make_set_validator(type_: type[T]) -> SetValidator[T]:
 
     @functools.wraps(_set_of)
-    def set_validator(val: Any, argname: str = None, **kwargs: Any) -> set[T]:
+    def set_validator(val: Any, argname: Optional[str] = None, **kwargs: Any) -> set[T]:
         return _set_of(val, type_, argname, **kwargs)
 
     return set_validator
@@ -1116,14 +1120,14 @@ def make_set_validator(type_: type[T]) -> SetValidator[T]:
 
 @_add_typed_validator
 def _int_csv_list(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> IntCSVList:
     return IntCSVList(_list_of(val, int, argname, _parse_csv=True, **kwargs))
 
 
 @_add_typed_validator
 def _cdedbid_csv_list(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> CdedbIDList:
     """This deals with strings containing multiple cdedbids,
     like when they are returned from cdedbSearchPerson.
@@ -1133,8 +1137,8 @@ def _cdedbid_csv_list(
 
 @_add_typed_validator  # TODO split into Password and AdminPassword?
 def _password_strength(
-    val: Any, argname: str = None, *,
-    admin: bool = False, inputs: list[str] = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *,
+    admin: bool = False, inputs: Optional[list[str]] = None, **kwargs: Any,
 ) -> PasswordStrength:
     """Implement a password policy.
 
@@ -1219,7 +1223,7 @@ def _orga_token(
 
 @_add_typed_validator
 def _email(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Email:
     """We accept only a subset of valid email addresses since implementing the
     full standard is horrendous. Also we normalize emails to lower case.
@@ -1235,7 +1239,7 @@ def _email(
 
 @_add_typed_validator
 def _email_local_part(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> EmailLocalPart:
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
@@ -1501,7 +1505,7 @@ def _persona(
 
 @_add_typed_validator
 def _batch_admission_entry(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> BatchAdmissionEntry:
     val = _mapping(val, argname, **kwargs)
     mandatory_fields: dict[str, Any] = {
@@ -1522,7 +1526,7 @@ def _batch_admission_entry(
 # TODO move this above _persona stuff?
 @_add_typed_validator
 def _date(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> datetime.date:
     if isinstance(val, str) and len(val.strip()) >= 6:
         try:
@@ -1541,7 +1545,7 @@ def _date(
 
 
 @_add_typed_validator
-def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+def _birthday(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Birthday:
     if not val:
         val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
@@ -1553,8 +1557,8 @@ def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
 
 @_add_typed_validator
 def _datetime(
-    val: Any, argname: str = None, *,
-    default_date: datetime.date = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *,
+    default_date: Optional[datetime.date] = None, **kwargs: Any,
 ) -> datetime.datetime:
     """
     :param default_date: If the user-supplied value specifies only a time, this
@@ -1575,7 +1579,7 @@ def _datetime(
 
 @_add_typed_validator
 def _single_digit_int(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> SingleDigitInt:
     """Like _int, but between +9 and -9."""
     val = _int(val, argname, **kwargs)
@@ -1587,7 +1591,8 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: str = None, *,  ignore_warnings: bool = False, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> Phone:
     raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
 
@@ -1604,12 +1609,12 @@ def _phone(
     # handle the phone number as normalized string internally
     phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
-    return phone_str
+    return Phone(phone_str)
 
 
 @_add_typed_validator
 def _german_postal_code(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     aux: str = "", ignore_warnings: bool = False, **kwargs: Any,
 ) -> GermanPostalCode:
     """
@@ -1631,7 +1636,7 @@ def _german_postal_code(
 
 @_add_typed_validator
 def _country(
-    val: Any, argname: str = None, *, ignore_warnings: bool = False,
+    val: Any, argname: Optional[str] = None, *, ignore_warnings: bool = False,
     **kwargs: Any,
 ) -> Country:
     val = _ALL_TYPED[str](val, argname, ignore_warnings=ignore_warnings, **kwargs)
@@ -1753,7 +1758,7 @@ def _privilege_change(
 # TODO also move these up?
 @_add_typed_validator
 def _input_file(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> InputFile:
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         raise ValidationSummary(TypeError(argname, n_("Not a FileStorage.")))
@@ -1767,7 +1772,7 @@ def _input_file(
 # TODO get rid of encoding and use try-catch with UnicodeDecodeError?
 @_add_typed_validator
 def _csvfile(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     encoding: str = "utf-8-sig", **kwargs: Any,
 ) -> CSVFile:
     """
@@ -1787,7 +1792,7 @@ def _csvfile(
 
 @_add_typed_validator
 def _profilepic(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     file_storage: bool = True, **kwargs: Any,
 ) -> ProfilePicture:
     """
@@ -1832,7 +1837,7 @@ def _profilepic(
 
 @_add_typed_validator
 def _pdffile(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     file_storage: bool = True, **kwargs: Any,
 ) -> PDFFile:
     """Validate a file as a pdf.
@@ -1870,7 +1875,7 @@ def _pair_of_int(
     val: list[int] = _list_of(val, int, argname, **kwargs)
 
     try:
-        a, b = val
+        a, b = val  # pylint: disable=unbalanced-tuple-unpacking
     except ValueError as e:
         raise ValidationSummary(ValueError(
             argname, n_("Must contain exactly two elements."))) from e
@@ -2162,7 +2167,7 @@ def _sepa_meta(
 
 @_add_typed_validator
 def _safe_str(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> SafeStr:
     """This allows alpha-numeric, whitespace and known good others."""
     allowed_chars = ".,-+()/"
@@ -2617,7 +2622,7 @@ EVENT_FIELD_ALL_FIELDS: TypeMapping = {
 
 @_add_typed_validator
 def _event_field(
-    val: Any, argname: str = "event_field", *, field_name: str = None,
+    val: Any, argname: str = "event_field", *, field_name: Optional[str] = None,
     creation: bool = False, **kwargs: Any,
 ) -> EventField:
     """
@@ -3053,7 +3058,7 @@ def _event_associated_fields(
 
     errs = ValidationSummary()
     lookup: dict[str, int] = {v.field_name: k for k, v in fields.items()}
-    for field in val:
+    for field in val:  # pylint: disable=consider-using-dict-items
         field_id = lookup[field]
         entries = fields[field_id].entries
         if entries is not None and val[field] is not None:
@@ -3156,7 +3161,7 @@ def _lodgement(
 # TODO make argname non-optional
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *, kind: FieldDatatypes, **kwargs: Any,
 ) -> ByFieldDatatype:
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
@@ -3571,8 +3576,8 @@ def _serialized_partial_event(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if not((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
-           <= EVENT_SCHEMA_VERSION):
+    if not ((EVENT_SCHEMA_VERSION[0], 0) <= val['EVENT_SCHEMA_VERSION']
+            <= EVENT_SCHEMA_VERSION):
         raise ValidationSummary(ValueError(
             argname, n_("Schema version mismatch.")))
 
@@ -4398,7 +4403,7 @@ def _assembly_attachment_version(
 @_add_typed_validator
 def _vote(
     val: Any, argname: str = "vote",
-    ballot: CdEDBObject = None, **kwargs: Any,
+    ballot: Optional[CdEDBObject] = None, **kwargs: Any,
 ) -> Vote:
     """Validate a single voters intent.
 
@@ -4444,7 +4449,7 @@ def _vote(
 # TODO move above
 @_add_typed_validator
 def _regex(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Regex:
     val = _str(val, argname, **kwargs)
     try:
@@ -4461,7 +4466,7 @@ def _regex(
 
 @_add_typed_validator
 def _non_regex(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonRegex:
     val = _str(val, argname, **kwargs)
     forbidden_chars = r'\*+?{}()[]|'
@@ -4475,7 +4480,7 @@ def _non_regex(
 
 @_add_typed_validator
 def _query_input(
-    val: Any, argname: str = None, *,
+    val: Any, argname: Optional[str] = None, *,
     spec: QuerySpec, allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',
     **kwargs: Any,
@@ -4659,7 +4664,7 @@ def _query_input(
 # TODO ignore ignore_warnings here too?
 @_add_typed_validator
 def _query(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> Query:
     """Check query object for consistency.
 
@@ -4775,7 +4780,7 @@ def _query(
 
 
 def _range(
-    val: Any, type_: type[T], argname: str = None, **kwargs: Any,
+    val: Any, type_: type[T], argname: Optional[str] = None, **kwargs: Any,
 ) -> tuple[T, T]:
     """Validate val to be a tuple of exactly two values of the given type.
 
@@ -4801,7 +4806,7 @@ def _range(
 
 @_add_typed_validator
 def _log_filter(
-    val: Any, argname: str = None,
+    val: Any, argname: Optional[str] = None,
     *, subtype: type[GenericLogFilter],
     **kwargs: Any,
 ) -> LogFilter:
@@ -4823,7 +4828,7 @@ E = TypeVar('E', bound=Enum)
 
 
 def _enum_validator_maker(
-    anenum: type[E], name: str = None, internal: bool = False,
+    anenum: type[E], name: Optional[str] = None, internal: bool = False,
 ) -> Callable[..., E]:
     """Automate validator creation for enums.
 
@@ -4836,7 +4841,7 @@ def _enum_validator_maker(
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(
-        val: Any, argname: str = None,
+        val: Any, argname: Optional[str] = None,
         **kwargs: Any,
     ) -> E:
         if isinstance(val, anenum):
@@ -4873,7 +4878,7 @@ for oneenum in ALL_ENUMS:
 
 @_add_typed_validator
 def _db_subscription_state(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> DatabaseSubscriptionState:
     """Validates whether a subscription state is written into the database."""
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
@@ -4886,7 +4891,8 @@ def _db_subscription_state(
 IE = TypeVar("IE", bound=IntEnum)
 
 
-def _infinite_enum_validator_maker(anenum: type[IE], name: str = None) -> None:
+def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None,
+                                   ) -> None:
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.
@@ -4901,7 +4907,7 @@ def _infinite_enum_validator_maker(anenum: type[IE], name: str = None) -> None:
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(
-        val: Any, argname: str = None,
+        val: Any, argname: Optional[str] = None,
         **kwargs: Any,
     ) -> InfiniteEnum[IE]:
         val_int: Optional[int]

@@ -80,24 +80,22 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
             _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
             _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
             _ops.between, _ops.outside),
-    "id": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-           _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
     "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-            _ops.nonempty),
-    "float": (_ops.less, _ops.between, _ops.outside, _ops.greater, _ops.empty,
-              _ops.nonempty),
+            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
+    "float": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
+              _ops.less, _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
+              _ops.greater, _ops.empty, _ops.nonempty),
     "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
              _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-             _ops.nonempty),
+             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
                  _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
                  _ops.empty, _ops.nonempty),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
 }
+VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -218,9 +216,10 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: "models.Event" = None, courses: CourseMap = None,
-                 lodgements: LodgementMap = None,
-                 lodgement_groups: LodgementGroupMap = None,
+    def get_spec(self, *, event: Optional["models.Event"] = None,
+                 courses: Optional[CourseMap] = None,
+                 lodgements: Optional[LodgementMap] = None,
+                 lodgement_groups: Optional[LodgementGroupMap] = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -280,8 +279,8 @@ class QueryScope(CdEIntEnum):
             return f"{prefix}/{target}"
         return target
 
-    def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
-                           ) -> dict[str, str]:
+    def mangle_query_input(self, rs: RequestState,
+                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -599,7 +598,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Sequence[QueryOrder],
-                 name: str = None, query_id: int = None,
+                 name: Optional[str] = None, query_id: Optional[int] = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -822,9 +821,10 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: "models.Event", courses: CourseMap = None,
-                                 lodgements: LodgementMap = None,
-                                 lodgement_groups: LodgementGroupMap = None,
+def make_registration_query_spec(event: "models.Event",
+                                 courses: Optional[CourseMap] = None,
+                                 lodgements: Optional[LodgementMap] = None,
+                                 lodgement_groups: Optional[LodgementGroupMap] = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1045,9 +1045,9 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
-                           lodgements: LodgementMap = None,
-                           lodgement_groups: LodgementGroupMap = None,
+def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
+                           lodgements: Optional[LodgementMap] = None,
+                           lodgement_groups: Optional[LodgementGroupMap] = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1170,9 +1170,10 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
     return spec
 
 
-def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
-                              lodgements: LodgementMap = None,
-                              lodgement_groups: LodgementGroupMap = None,
+def make_lodgement_query_spec(event: "models.Event",
+                              courses: Optional[CourseMap] = None,
+                              lodgements: Optional[LodgementMap] = None,
+                              lodgement_groups: Optional[LodgementGroupMap] = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
@@ -1197,6 +1198,7 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
         "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
             "int", n_("Camping Mat Capacity")),
+        "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity")),
         "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes")),
         "lodgement.group_id": QuerySpecEntry(
             "int", n_("Lodgement Group"), choices=lodgement_group_choices),
@@ -1214,6 +1216,12 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
                 "int", n_("Camping Mat Inhabitants"), prefix),
             f"part{part.id}.total_inhabitants": QuerySpecEntry(
                 "int", n_("Total Inhabitants"), prefix),
+            f"part{part.id}.regular_remaining": QuerySpecEntry(
+                "int", n_("Regular Remaining"), prefix),
+            f"part{part.id}.camping_mat_remaining": QuerySpecEntry(
+                "int", n_("Camping Mat Remaining"), prefix),
+            f"part{part.id}.total_remaining": QuerySpecEntry(
+                "int", n_("Total Remaining"), prefix),
             f"part{part.id}.group_regular_inhabitants": QuerySpecEntry(
                 "int", n_("Group Regular Inhabitants"), prefix),
             f"part{part.id}.group_camping_mat_inhabitants": QuerySpecEntry(

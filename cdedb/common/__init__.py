@@ -109,11 +109,11 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: set[Role] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
-                 username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None,
-                 presider: Collection[int] = None) -> None:
+                 username: str = "", orga: Optional[Collection[int]] = None,
+                 moderator: Optional[Collection[int]] = None,
+                 presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
         self.droid_class = droid_class
         self.droid_token_id = droid_token_id
@@ -216,7 +216,7 @@ class RequestState(ConnectionContainer):
         return self.translations[self.default_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
-               params: CdEDBObject = None) -> None:
+               params: Optional[CdEDBObject] = None) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError(n_("Invalid notification type %(t)s found."),
@@ -381,8 +381,8 @@ def make_proxy(backend: B, internal: bool = False) -> B:
 
 
 def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: int = None,
-                 console_log_level: int = None) -> logging.Logger:
+                 log_level: int, syslog_level: Optional[int] = None,
+                 console_log_level: Optional[int] = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
@@ -396,7 +396,7 @@ def setup_logger(name: str, logfile_path: pathlib.Path,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True)
+    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -1056,15 +1056,16 @@ class TransactionType(CdEIntEnum):
     MembershipFee = 1
     EventFee = 2
     Donation = 3
-    I25p = 4
-    Other = 5
+    LastschriftInitiative = 4
+    Retoure = 5
+    Other = 100
 
     EventFeeRefund = 10
     InstructorRefund = 11
     EventExpenses = 12
     Expenses = 13
     AccountFee = 14
-    OtherPayment = 15
+    OtherPayment = 200
 
     Unknown = 1000
 
@@ -1080,7 +1081,7 @@ class TransactionType(CdEIntEnum):
     def has_member(self) -> bool:
         return self in {TransactionType.MembershipFee,
                         TransactionType.EventFee,
-                        TransactionType.I25p,
+                        TransactionType.LastschriftInitiative,
                         }
 
     @property
@@ -1101,10 +1102,10 @@ class TransactionType(CdEIntEnum):
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
             return "Teilnahmebeitrag"
-        if self == TransactionType.I25p:
-            return "Initiative 25+"
+        if self == TransactionType.LastschriftInitiative:
+            return "LastschriftInitiative"
         if self == TransactionType.Donation:
-            return "Spende"
+            return "Sonstiges"
         else:
             return "Sonstiges"
 
@@ -1119,7 +1120,8 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.I25p: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Initiative25+",
+            TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
                 "Teilnehmererstattung",
@@ -1393,7 +1395,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: datetime.date = None,
+    val: str, default_date: Optional[datetime.date] = None,
 ) -> datetime.date:
     """Make a string into a datetime.
 

@@ -167,7 +167,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement_group(self, rs: RequestState, group_id: int,
-                               cascade: Collection[str] = None,
+                               cascade: Optional[Collection[str]] = None,
                                ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
@@ -211,8 +211,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     @access("event")
-    def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None,
-                        ) -> dict[int, str]:
+    def list_lodgements(self, rs: RequestState, event_id: int,
+                        group_id: Optional[int] = None) -> dict[int, str]:
         """List all lodgements for an event.
 
         :param group_id: If given, limit to lodgements in this group.
@@ -257,12 +257,11 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
-            event_fields = self._get_event_fields(rs, event_id)
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
             ret = {e['id']: e for e in data}
-            for entry in ret.values():
-                entry['fields'] = cast_fields(
-                    entry['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            for lodge in ret.values():
+                lodge['fields'] = cast_fields(lodge['fields'], event_fields)
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):
@@ -399,7 +398,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement(self, rs: RequestState, lodgement_id: int,
-                         cascade: Collection[str] = None) -> DefaultReturnCode:
+                         cascade: Optional[Collection[str]] = None,
+                         ) -> DefaultReturnCode:
         """Delete a lodgement.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -450,7 +450,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     @access("event")
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
-            lodgement_ids: Collection[int] = None,
+            lodgement_ids: Optional[Collection[int]] = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)

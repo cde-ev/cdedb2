@@ -330,8 +330,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     def batch_admission_form(self, rs: RequestState,
-                             data: list[CdEDBObject] = None,
-                             csvfields: tuple[str, ...] = None) -> Response:
+                             data: Optional[list[CdEDBObject]] = None,
+                             csvfields: Optional[tuple[str, ...]] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -725,7 +725,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     def determine_open_permits(self, rs: RequestState,
-                               lastschrift_ids: Collection[int] = None,
+                               lastschrift_ids: Optional[Collection[int]] = None,
                                ) -> set[int]:
         """Find ids, which to debit this period.
 

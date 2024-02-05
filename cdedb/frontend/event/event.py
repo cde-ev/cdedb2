@@ -11,6 +11,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import re
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional
@@ -131,6 +132,45 @@ class EventEventMixin(EventBaseFrontend):
         elif not rs.ambience['event'].is_visible:
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
+
+    @access("finance_admin")
+    @REQUESTdata("phrase")
+    def select_event(self, rs: RequestState, phrase: str) -> Response:
+        """API for intelligent input field.
+
+        This allows the user to choose an event by entering (parts of) the title
+        or the shortname.
+
+        Meant for use during parse_statement.
+
+        Since this only returns basic event information it has little privacy
+        implications.
+        """
+        if rs.has_validation_errors():
+            return self.send_json(rs, {})
+        atoms = [re.compile(re.escape(atom), flags=re.I) for atom in phrase.split()]
+        if not atoms:
+            return self.send_json(rs, {})
+
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+
+        def _match(event: models.Event) -> bool:
+            return all(
+                atom_pattern.search(event.shortname) or atom_pattern.search(event.title)
+                for atom_pattern in atoms
+            )
+
+        return self.send_json(rs, {
+            'events': [
+                {
+                    'title': event.title,
+                    'shortname': event.shortname,
+                    'id': event.id,
+                }
+                for event in xsorted(events.values())
+                if _match(event)
+            ],
+        })
 
     @access("event")
     @event_guard()
@@ -542,8 +582,8 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None,
-                        ) -> RemainingOwedQuery:
+        def _paid_query(constraints: Collection[QueryConstraint],
+                        sum_col: Optional[str] = None) -> RemainingOwedQuery:
             query = Query(
                 QueryScope.registration,
                 QueryScope.registration.get_spec(event=rs.ambience['event']),
@@ -586,8 +626,8 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None,
-                           ) -> Response:
+    def configure_fee_form(self, rs: RequestState,
+                           event_id: int, fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
@@ -1126,7 +1166,9 @@ class EventEventMixin(EventBaseFrontend):
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
-        self.eventproxy.event_keeper_drop(rs, event_id)
+
+        # Deleting event keeper here is too early for now.
+        # self.eventproxy.event_keeper_drop(rs, event_id)
 
         rs.notify("success", n_("Event archived."))
         if new_ids is None:

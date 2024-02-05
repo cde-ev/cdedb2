@@ -2,7 +2,7 @@
 
 """All about translations."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES
@@ -22,7 +22,7 @@ def format_country_code(code: str) -> str:
     return f'CountryCodes.{code}'
 
 
-def get_localized_country_codes(rs: RequestState, lang: str = None,
+def get_localized_country_codes(rs: RequestState, lang: Optional[str] = None,
                                 ) -> list[tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 

@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import pyparsing as pp
 
 
-def serialize(result: pp.ParseResults, *, part_substitutions: dict[str, str] = None) -> str:
+def serialize(result: pp.ParseResults, *, part_substitutions: Optional[dict[str, str]] = None) -> str:
     """Public serialization interface, to get a normalized condition string.
 
     :param part_substitutions: Replace each part name in the dict with it's value.

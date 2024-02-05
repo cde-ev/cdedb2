@@ -82,7 +82,7 @@ class CdEBaseBackend(AbstractBackend):
         return super().is_admin(rs)
 
     def cde_log(self, rs: RequestState, code: const.CdeLogCodes,
-                persona_id: int = None, change_note: str = None,
+                persona_id: Optional[int] = None, change_note: Optional[str] = None,
                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -505,7 +505,7 @@ class CdEBaseBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index
+            return False, index  # pylint: disable=used-before-assignment
         return True, stats
 
     @access("searchable", "core_admin", "cde_admin")

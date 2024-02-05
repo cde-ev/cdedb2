@@ -81,7 +81,7 @@ def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
 
 
 def date_filter(val: Union[datetime.date, str, None],
-                formatstr: str = "%Y-%m-%d", lang: str = None,
+                formatstr: str = "%Y-%m-%d", lang: Optional[str] = None,
                 verbosity: str = "medium",
                 passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.date`` objects.
@@ -127,7 +127,7 @@ def date_filter(val: Union[datetime.date, str, None],
 
 
 def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
+                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: Optional[str] = None,
                     passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
@@ -356,7 +356,7 @@ def genus_filter(val: int, female: str, male: str,
 
 
 def genus_filter(val: Optional[int], female: str, male: str,
-                 unknown: str = None) -> Optional[str]:
+                 unknown: Optional[str] = None) -> Optional[str]:
     """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
@@ -538,7 +538,7 @@ def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
 
 @pass_environment
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
-                reverse: bool = False, attribute: Any = None) -> list[T]:
+                reverse: bool = False, attribute: Optional[Any] = None) -> list[T]:
     """Sort an iterable using `xsorted`, using correct collation.
 
     TODO: With Jinja 2.11, make_multi_attrgetter should be used
@@ -613,7 +613,7 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
 
 
 def enum_entries_filter(enum: Iterable[enum.Enum],
-                        processing: Callable[[Any], str] = None,
+                        processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
                         ) -> list[tuple[enum.Enum, str]]:
     """
@@ -688,7 +688,7 @@ def entries_filter(items: list["CdEDataclass"], *args: str) -> list[tuple[Any, .
 
 
 def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
-                         include: Container[str] = None,
+                         include: Optional[Container[str]] = None,
                          ) -> list[tuple[str, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of

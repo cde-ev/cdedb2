@@ -391,6 +391,45 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
+    @staticmethod
+    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+        """Creates a string encoding the contact information as vCard 3.0.
+
+        Only a subset of available `vCard 3.0 properties
+        <https://tools.ietf.org/html/rfc2426>` is supported.
+
+        This is a rewritten form of `segno.helpers.make_vcard_data` to suite our needs.
+        """
+        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
+        name = [persona['family_name'], persona['given_names'], "",
+                persona['title'], persona['name_supplement']]
+        data = ['BEGIN:VCARD', 'VERSION:3.0',
+                f'N:{";".join(escape(e or "") for e in name)}',
+                f'FN:{escape(make_persona_name(persona, only_given_names=True))}',
+                f'EMAIL:{escape(persona["username"])}']
+        if persona["mobile"]:
+            data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
+        if persona["telephone"]:
+            data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
+        if persona['display_name']:
+            data.append(f'NICKNAME:{escape(persona["display_name"])}')
+        for sub in ["", "2"]:
+            address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
+                       persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
+                       rs.gettext(format_country_code(persona[f'country{sub}']))]
+            if any(address):
+                if sub == "":
+                    prefix = 'ADR;TYPE=intl,home,postal,pref:;'
+                else:
+                    prefix = 'ADR;TYPE=intl,home,postal:;'
+                data.append(prefix + ";".join(escape(e or "") for e in address))
+        if persona['birthday'] != datetime.date.min:
+            data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        data.append('END:VCARD')
+        data.append('')
+        return '\r\n'.join(data)
+
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
         Generate a vCard string for a user to be delivered to a client.
@@ -406,24 +445,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-
-        vcard = segno.helpers.make_vcard_data(
-            name=";".join((persona['family_name'], persona['given_names'], "",
-                           persona['title'] or "", persona['name_supplement'] or "")),
-            displayname=make_persona_name(persona, only_given_names=True),
-            nickname=persona['display_name'],
-            birthday=(
-                persona['birthday']
-                if persona['birthday'] != datetime.date.min else None
-            ),
-            street=persona['address'],
-            city=persona['location'],
-            zipcode=persona['postal_code'],
-            country=rs.gettext(format_country_code(persona['country'])),
-            email=persona['username'],
-            homephone=persona['telephone'],
-            cellphone=persona['mobile'],
-        )
+        vcard = self._make_vcard_data(rs, persona)
         return vcard
 
     @access("persona")
@@ -1420,8 +1442,7 @@ class CoreBaseFrontend(AbstractFrontend):
                            "has to be approved by another Meta-Admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
-        submitter = self.coreproxy.get_persona(
-            rs, privilege_change["submitted_by"])
+        submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
 
         return self.render(rs, "show_privilege_change", {
             "persona": persona, "submitter": submitter, "admin_keys": ADMIN_KEYS,
@@ -1684,6 +1705,8 @@ class CoreBaseFrontend(AbstractFrontend):
     def get_foto(self, rs: RequestState, foto: str) -> Response:
         """Retrieve profile picture."""
         ret = self.coreproxy.get_foto(rs, foto)
+        if ret is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         mimetype = magic.from_buffer(ret, mime=True)
         return self.send_file(rs, data=ret, mimetype=mimetype)
 

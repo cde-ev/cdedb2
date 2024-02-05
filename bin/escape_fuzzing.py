@@ -106,7 +106,7 @@ def work(
     return len(errors)
 
 
-def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: str = None
+def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: Optional[str] = None
                     ) -> None:
     """Write data to the next available numbered file in the target directory."""
     if outdir and outdir.exists():
@@ -118,7 +118,7 @@ def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: str =
 
 
 def check(response_data: ResponseData, *, payload: str,
-          secondary_payloads: Collection[str] = (), outdir: pathlib.Path = None,
+          secondary_payloads: Collection[str] = (), outdir: Optional[pathlib.Path] = None,
           verbose: bool = False) -> CheckReturn:
     """Check a single response for presence of the payload.
 

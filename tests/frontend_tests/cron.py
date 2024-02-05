@@ -359,21 +359,21 @@ class TestCron(CronTest):
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
 
-    @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 2")
+    @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 3")
     def test_forget_old_lastschrifts(self) -> None:
         name = "forget_old_lastschrifts"
         self.assertEqual(
-            [1, 2], list(self.cde.list_lastschrift(RS, active=False)))
+            [1, 3], list(self.cde.list_lastschrift(RS, active=False)))
         self.execute(name)
         # Make sure only the old lastschrift is deleted.
         self.assertEqual(
-            [2], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False))
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
         self.execute(name)
         # Make sure nothing changes when the cron job runs again.
         self.assertEqual(
-            [2], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False))
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 

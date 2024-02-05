@@ -41,9 +41,9 @@ from cdedb.frontend.event.base import EventBaseFrontend
 class EventRegistrationMixin(EventBaseFrontend):
     @access("finance_admin")
     def batch_fees_form(self, rs: RequestState, event_id: int,
-                        data: Collection[CdEDBObject] = None,
-                        csvfields: Collection[str] = None,
-                        saldo: decimal.Decimal = None) -> Response:
+                        data: Optional[Collection[CdEDBObject]] = None,
+                        csvfields: Optional[Collection[str]] = None,
+                        saldo: Optional[decimal.Decimal] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -81,7 +81,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = inspect(vtypes.NonNegativeDecimal,
+        amount, problems = inspect(decimal.Decimal,
             (datum['raw']['amount'] or "").strip(), argname="amount")
         persona_id, p = inspect(vtypes.CdedbID,
             (datum['raw']['id'] or "").strip(), argname="persona_id")
@@ -118,21 +118,37 @@ class EventRegistrationMixin(EventBaseFrontend):
                     seen_reg_ids.add(registration_id)
                     registration = self.eventproxy.get_registration(
                         rs, registration_id)
-                    amount = amount or decimal.Decimal(0)
-                    amount_paid = registration['amount_paid']
-                    total = amount + amount_paid
-                    fee = expected_fees[registration_id]
-                    if total < fee:
-                        error = ('amount', ValueError(n_("Not enough money.")))
-                        if full_payment:
-                            warnings.append(error)
-                            date = None
-                        else:
-                            infos.append(error)
-                    elif total > fee:
-                        warnings.append(('amount',
-                                         ValueError(n_("Too much money."))))
-                    expected_fees[registration_id] -= amount
+                    if not amount:
+                        problems.append(
+                            ('amount', ValueError(n_("Must not be zero."))))
+                    else:
+                        amount_paid = registration['amount_paid']
+                        total = amount + amount_paid
+                        fee = expected_fees[registration_id]
+                        params = {
+                            'total': money_filter(total, lang=rs.lang),
+                            'expected': money_filter(fee, lang=rs.lang),
+                        }
+                        if total < fee:
+                            error = (
+                                'amount',
+                                ValueError(
+                                    n_("Not enough money. %(total)s < %(expected)s"),
+                                    params,
+                                ))
+                            if full_payment:
+                                warnings.append(error)
+                                date = None
+                            else:
+                                infos.append(error)
+                        elif total > fee:
+                            warnings.append((
+                                'amount',
+                                ValueError(
+                                    n_("Too much money. %(total)s > %(expected)s"),
+                                    params,
+                                )))
+                        expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
                                      ValueError(n_("No registration found."))))
@@ -473,7 +489,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         return Response(json_serialize(ret), mimetype='application/json')
 
     def new_process_registration_input(
-            self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
+            self, rs: RequestState, orga_input: bool,
+            parts: Optional[CdEDBObjectMap] = None,
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a
@@ -641,11 +658,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 # In which case we don't want to touch the course choices.
                 continue
-            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")
+            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")  # pylint: disable=cell-var-from-loop
             choice_key = lambda x: (
                 f"group{group_id}.course_choice_{x}"
-                if (group_id := track_group_map[track_id])
-                else f"track{track_id}.course_choice_{x}"
+                if (group_id := track_group_map[track_id])  # pylint: disable=cell-var-from-loop
+                else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
             )
             choices_list = [
                 c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
@@ -1342,7 +1359,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, registration['persona_id'], event_id)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        complex_fee = self.eventproxy.calculate_complex_fee(
+            rs, registration_id, visual_debug=True)
         reference = make_event_fee_reference(
             persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount

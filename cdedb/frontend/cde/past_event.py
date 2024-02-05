@@ -80,7 +80,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'spec': spec, 'result': result, 'count': count})
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
-                              pcourse_id: int = None, orgas_only: bool = False,
+                              pcourse_id: Optional[int] = None,
+                              orgas_only: bool = False,
                               ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
@@ -227,7 +228,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("member", "cde_admin")
     @REQUESTdata("institution")
     def list_past_events(self, rs: RequestState,
-                         institution: const.PastInstitutions = None) -> Response:
+                         institution: Optional[const.PastInstitutions] = None,
+                         ) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))

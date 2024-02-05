@@ -268,7 +268,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR:;;Im Garten 77;Utopia;;34576;Deutschland",
+                 ("ADR;TYPE=intl,home,postal,pref:;bei Spielmanns;"
+                  "Im Garten 77;Utopia;;34576;Deutschland"),
+                 ("ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
+                  "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
@@ -1347,7 +1350,7 @@ class TestCoreFrontend(FrontendTest):
     def _initialize_privilege_change(self, admin1: UserIdentifier,
                                      admin2: UserIdentifier, new_admin: UserObject,
                                      new_privileges: Dict[str, bool],
-                                     old_privileges: Dict[str, bool] = None,
+                                     old_privileges: Optional[Dict[str, bool]] = None,
                                      note: str = "For testing.") -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
@@ -1371,9 +1374,9 @@ class TestCoreFrontend(FrontendTest):
     def _approve_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                   new_admin: UserObject,
                                   new_privileges: Dict[str, bool],
-                                  old_privileges: Dict[str, bool] = None,
+                                  old_privileges: Optional[Dict[str, bool]] = None,
                                   note: str = "For testing.",
-                                  new_password: str = None) -> UserObject:
+                                  new_password: Optional[str] = None) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
             admin1, admin2, new_admin, new_privileges, old_privileges)
@@ -1399,7 +1402,7 @@ class TestCoreFrontend(FrontendTest):
     def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                  new_admin: UserObject,
                                  new_privileges: Dict[str, bool],
-                                 old_privileges: Dict[str, bool] = None,
+                                 old_privileges: Optional[Dict[str, bool]] = None,
                                  note: str = "For testing.") -> None:
         """Helper to reject a privilege change."""
         self._initialize_privilege_change(
@@ -1506,7 +1509,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_create_user(self) -> None:
 
-        def _traverse_to_realm(realm: str = None) -> webtest.Form:
+        def _traverse_to_realm(realm: Optional[str] = None) -> webtest.Form:
             self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
@@ -2643,7 +2646,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.approve),
                     check_notification=False)
 
-    def _create_genesis_doppelganger(self, user: UserIdentifier = None,
+    def _create_genesis_doppelganger(self, user: Optional[UserIdentifier] = None,
                                      realm: str = "ml", unique_username: bool = False
                                      ) -> UserObject:
         # Create a new request almost identical to the current or given user.
@@ -2905,8 +2908,9 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.update))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
-    def _decide_genesis_case(self, decision: GenesisDecision, persona_id: int = None,
-                             check: bool = True) -> None:
+    def _decide_genesis_case(self, decision: GenesisDecision,
+                             persona_id: Optional[int] = None, check: bool = True,
+                             ) -> None:
         f = self.response.forms['genesisdecisionform']
         if persona_id:
             f['persona_id'] = persona_id

@@ -42,8 +42,9 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
 
 class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event", "core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState, query: Query, event_id: int = None,
-                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             event_id: Optional[int] = None, aggregate: bool = False,
+                             ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
@@ -461,7 +462,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             def lodgement_view() -> str:
                 tmp_group_id = 'COALESCE(group_id, -1) AS tmp_group_id'
                 lodgement_id = 'id AS lodgement_id'
-                columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id)
+                total = 'regular_capacity + camping_mat_capacity AS total_capacity'
+                columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id, total)
                 event_part_tables = {
                     part.id: event_part_table(part)
                     for part in event.parts.values()
@@ -515,7 +517,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             SELECT
                                 COALESCE(group_id, -1) as tmp_group_id,
                                 SUM(regular_capacity) as regular_capacity,
-                                SUM(camping_mat_capacity) as camping_mat_capacity
+                                SUM(camping_mat_capacity) as camping_mat_capacity,
+                                SUM(regular_capacity) + SUM(camping_mat_capacity) as total_capacity
                             FROM event.lodgements
                             WHERE event_id = {event_id}
                             GROUP BY tmp_group_id
@@ -529,8 +532,14 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
             # A base table with all lodgement ids and temporary group ids we need in
             # the following tables.
-            base = (f"(SELECT id, COALESCE(group_id, -1) AS tmp_group_id"
-                    f" FROM event.lodgements WHERE event_id = {event_id}) AS base")
+            base = "({}) AS base".format(f"""
+                SELECT
+                    id, COALESCE(group_id, -1) AS tmp_group_id,
+                    regular_capacity, camping_mat_capacity,
+                    regular_capacity + camping_mat_capacity AS total_capacity
+                FROM event.lodgements
+                WHERE event_id = {event_id}
+            """)
 
             # Step 4.1: Template for combining all event part information.
             def event_part_table(part: models.EventPart) -> str:
@@ -550,15 +559,23 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                                               ) -> str:
                 if is_camping_mat is None:
                     param_name = 'total_inhabitants'
+                    remaining_name = 'total_remaining'
+                    capacity = 'total_capacity'
                     constraint = ''
                 elif is_camping_mat:
                     param_name = 'camping_mat_inhabitants'
+                    remaining_name = 'camping_mat_remaining'
+                    capacity = 'camping_mat_capacity'
                     constraint = 'AND is_camping_mat = True'
                 else:
                     param_name = 'regular_inhabitants'
+                    remaining_name = 'regular_remaining'
+                    capacity = 'regular_capacity'
                     constraint = 'AND is_camping_mat = False'
                 return f"""
-                    SELECT id as base_id, COUNT(registration_id) AS {param_name}
+                    SELECT
+                        id as base_id, COUNT(registration_id) AS {param_name},
+                        {capacity} - COUNT(registration_id) AS {remaining_name}
                     FROM (
                         {base}
                         LEFT OUTER JOIN (
@@ -567,14 +584,15 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                             WHERE part_id = {p_id} {constraint}
                         ) AS reg_part ON base.id = reg_part.lodgement_id
                     )
-                    GROUP BY id
+                    GROUP BY id, {capacity}
                 """
 
             # Step 4.3: Template for lodgement inhabitant counts.
             lodgement_inhabitants_view = lambda part_id: f"""
                 SELECT
                     base.id AS base_id, tmp_group_id,
-                    regular_inhabitants, camping_mat_inhabitants, total_inhabitants
+                    regular_inhabitants, camping_mat_inhabitants, total_inhabitants,
+                    regular_remaining, camping_mat_remaining, total_remaining
                 FROM (
                     {base}
                     LEFT OUTER JOiN (
@@ -612,8 +630,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
     @access("event")
     def get_event_queries(self, rs: RequestState, event_id: int,
-                          scopes: Collection[QueryScope] = None,
-                          query_ids: Collection[int] = None,
+                          scopes: Optional[Collection[QueryScope]] = None,
+                          query_ids: Optional[Collection[int]] = None,
                           ) -> dict[str, Query]:
         """Retrieve all stored queries for the given event and scope.
 

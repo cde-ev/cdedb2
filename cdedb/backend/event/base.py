@@ -65,8 +65,8 @@ class EventBaseBackend(EventLowLevelBackend):
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
     @access("event")
-    def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
-                          course_id: int = None) -> bool:
+    def is_offline_locked(self, rs: RequestState, *, event_id: Optional[int] = None,
+                          course_id: Optional[int] = None) -> bool:
         """Helper to determine if an event or course is locked for offline
         usage.
 
@@ -91,8 +91,8 @@ class EventBaseBackend(EventLowLevelBackend):
             raise ValueError(n_("Event does not exist"))
         return data['offline_lock']
 
-    def assert_offline_lock(self, rs: RequestState, *, event_id: int = None,
-                            course_id: int = None) -> None:
+    def assert_offline_lock(self, rs: RequestState, *, event_id: Optional[int] = None,
+                            course_id: Optional[int] = None) -> None:
         """Helper to check locking state of an event or course.
 
         This raises an exception in case of the wrong locking state. Exactly
@@ -142,9 +142,9 @@ class EventBaseBackend(EventLowLevelBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
-    def list_events(self, rs: RequestState, visible: bool = None,
-                       current: bool = None,
-                       archived: bool = None) -> dict[int, str]:
+    def list_events(self, rs: RequestState, visible: Optional[bool] = None,
+                       current: Optional[bool] = None,
+                       archived: Optional[bool] = None) -> dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
@@ -513,7 +513,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def delete_orga_token(self, rs: RequestState, orga_token_id: int,
-                          cascade: Collection[str] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None,
+                          ) -> DefaultReturnCode:
         """Delete an orga  token.
 
         :param cascade: Specify which deletion blockers to cascadingly remove or ignore.
@@ -567,7 +568,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event", "droid_orga")
     def set_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                  change_note: str = None) -> DefaultReturnCode:
+                  change_note: Optional[str] = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
         The syntax for updating the associated data on orgas, parts and
@@ -973,7 +974,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event", "droid_quick_partial_export", "droid_orga")
     def get_questionnaire(self, rs: RequestState, event_id: int,
-                          kinds: Collection[const.QuestionnaireUsages] = None,
+                          kinds: Optional[Collection[const.QuestionnaireUsages]] = None,
                           ) -> CdEDBQuestionnaire:
         """Retrieve the questionnaire rows for a specific event.
 

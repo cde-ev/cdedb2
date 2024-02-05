@@ -1005,6 +1005,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
+        self.assertPresence("Bertålotta Beispiel", div='active-authorizations')
+        self.assertPresence("Akira Abukara", div='inactive-authorizations')
+        self.assertNonPresence("Bertålotta Beispiel", div='inactive-authorizations')
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:
@@ -1019,12 +1022,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Das Mitglied ist der Kontoinhaber.",
+                            div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
-            self.assertIn("receiptform3", self.response.forms)
         else:
             self.assertNotIn("revokeform", self.response.forms)
-            self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
         # create a new lastschrift
@@ -1279,15 +1283,6 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
                             exact=True)
-
-    @as_users("farin")
-    def test_lastschrift_receipt(self) -> None:
-        self.admin_view_profile('berta')
-        self.traverse({'description': 'Einzugsermächtigung'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        f = self.response.forms['receiptform3']
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("vera")
     def test_lastschrift_subscription_form(self) -> None:
@@ -1846,7 +1841,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': "5.00",
                 'new_balance': "5.00",
-                'total': "116.50",
+                'total': "725.87",
+                'member_total': "114.76",
                 'members': 7,
                 'submitted_by': 32,
                 'transaction_date': now().date(),
@@ -1858,7 +1854,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': "12.34",
                 'new_balance': "13.34",
-                'total': "127.10",
+                'total': "738.21",
+                'member_total': "127.10",
                 'members': 8,
                 'transaction_date': None,
             },
@@ -1868,7 +1865,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': "100.00",
                 'new_balance': "100.00",
-                'total': "127.10",
+                'total': "838.21",
+                'member_total': "127.10",
                 'members': 8,
                 'transaction_date': datetime.date(2019, 3, 17),
             },
@@ -1878,7 +1876,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': None,
                 'new_balance': None,
-                'total': "227.10",
+                'total': "838.21",
+                'member_total': "227.10",
                 'members': 9,
                 'transaction_date': None,
             },
@@ -1888,7 +1887,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': "25.00",
                 'new_balance': "47.20",
-                'total': "252.10",
+                'total': "863.21",
+                'member_total': "252.10",
                 'members': 9,
                 'transaction_date': datetime.date(2019, 3, 15),
             },
@@ -1898,7 +1898,8 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': None,
                 'delta': "13.75",
                 'new_balance': "60.95",
-                'total': "265.85",
+                'total': "876.96",
+                'member_total': "265.85",
                 'members': 9,
                 'transaction_date': datetime.date(2019, 3, 16),
             },
@@ -2815,7 +2816,8 @@ class TestCdEFrontend(FrontendTest):
         f['length'] = 2
         self.response = f.submit("download", value="csv")
         self.assertIn(
-            ';5.00;7;5.00;DB-9-4;Iota;Inga;DB-32-9;Finanzvorstand;Farin;116.50;20',
+            ';5.00;114.76;7;5.00;DB-9-4;Iota;Inga;DB-32-9;'
+            'Finanzvorstand;Farin;725.87;20',
             self.response.text)
         self.assertNotIn('Beispiel', self.response.text)
 

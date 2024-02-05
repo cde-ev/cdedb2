@@ -16,6 +16,7 @@ from cdedb.common import deduct_years, now
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpec
 from cdedb.common.roles import ADMIN_KEYS
+from cdedb.common.sorting import xsorted
 
 
 def generate_event_registration_default_queries(
@@ -35,7 +36,7 @@ def generate_event_registration_default_queries(
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        f"part{part_id}.status" for part_id in event.parts)
+        f"part{part_id}.status" for part_id in xsorted(event.parts))
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]

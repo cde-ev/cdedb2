@@ -4016,6 +4016,18 @@
             "revoked_at": null,
             "revision": 1,
             "notes": "reicher Onkel"
+        },
+        {
+            "id": 3,
+            "submitted_by": 32,
+            "persona_id": 100,
+            "iban": "DE26370205000008068900",
+            "account_owner": null,
+            "account_address": null,
+            "granted_at": "2005-02-22T20:22:22.222222+00:00",
+            "revoked_at": "2006-02-22T20:22:22.222222+00:00",
+            "revision": 1,
+            "notes": null
         }
     ],
     "cde.lastschrift_transactions": [
@@ -4054,6 +4066,18 @@
             "payment_date": "2012-03-07",
             "processed_at": "2012-02-22T20:22:22.222222+00:00",
             "tally": "42.23"
+        },
+        {
+            "id": 4,
+            "submitted_by": 32,
+            "lastschrift_id": 3,
+            "period_id": 41,
+            "status": 11,
+            "amount": "10.00",
+            "issued_at": "2005-03-22T22:00:00+00:00",
+            "payment_date": "2005-04-05",
+            "processed_at": "2005-06-23T20:22:22.222222+00:00",
+            "tally": "-4.50"
         }
     ],
     "cde.finance_log": [
@@ -4067,7 +4091,8 @@
             "change_note": "-4.50€",
             "transaction_date": null,
             "members": 7,
-            "total": "106.50"
+            "member_total": "97.26",
+            "total": "-1.00"
         },
         {
             "ctime": "---now---",
@@ -4079,7 +4104,8 @@
             "change_note": "42.23€",
             "transaction_date": null,
             "members": 7,
-            "total": "111.50"
+            "member_total": "109.76",
+            "total": "-1.00"
         },
         {
             "ctime": "---now---",
@@ -4091,7 +4117,8 @@
             "change_note": null,
             "transaction_date": "---now---",
             "members": 7,
-            "total": "116.50"
+            "member_total": "114.76",
+            "total": "725.87"
         }
     ],
     "cde.log": [],

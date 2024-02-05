@@ -7,7 +7,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
-from typing import List
+from typing import List, Optional
 
 import freezegun
 import pytz
@@ -57,8 +57,8 @@ class AssemblyTestHelpers(FrontendTest):
         10,  # archived, preferential
     }
 
-    def _create_assembly(self, adata: CdEDBObject = None,
-                         delta: CdEDBObject = None) -> None:
+    def _create_assembly(self, adata: Optional[CdEDBObject] = None,
+                         delta: Optional[CdEDBObject] = None) -> None:
         """Helper function to automatically create a new asembly.
 
         :param adata: This can be a full set of assembly data. If this is None
@@ -110,8 +110,9 @@ class AssemblyTestHelpers(FrontendTest):
         self.submit(f)
         return self._fetch_secret()
 
-    def _create_ballot(self, bdata: CdEDBObject, candidates: List[CdEDBObject] = None,
-                       atitle: str = None) -> None:
+    def _create_ballot(self, bdata: CdEDBObject,
+                       candidates: Optional[List[CdEDBObject]] = None,
+                       atitle: Optional[str] = None) -> None:
         """Helper to create a new ballot.
 
         In order to use this you must have already navigated to somewhere inside the
@@ -904,8 +905,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         }
         comment_failed = "Kommentare sind nur für beendete Abstimmungen erlaubt."
         change_failed = "Eine aktive Abstimmung kann nicht mehr verändert werden."
-        for ballot_id in ballot_states:
-            with self.subTest(ballot_states[ballot_id]):
+        for ballot_id, state in ballot_states.items():
+            with self.subTest(state):
                 ballot_title = (
                     "Maximale Länge der Satzung"
                     if ballot_id == 1001 else self.get_sample_datum(
@@ -913,7 +914,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 page_title = f"{ballot_title} (Internationaler Kongress)"
                 self.get(f'/assembly/assembly/1/ballot/{ballot_id}/show')
                 self.assertTitle(page_title)
-                self.assertPresence(ballot_states[ballot_id], div='status')
+                self.assertPresence(state, div='status')
 
                 # commenting - only possible for past ballots
                 comment_url = f'/assembly/assembly/1/ballot/{ballot_id}/comment'

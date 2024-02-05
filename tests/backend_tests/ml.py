@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=protected-access,missing-module-docstring
 
-from typing import Collection, cast
+from typing import Collection, Optional, cast
 
 from subman.exceptions import SubscriptionError
 
@@ -574,7 +574,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(state, expected_state)
 
     def _change_sub(self, persona_id: int, mailinglist_id: int, action: SA,
-                    state: SS, kind: str = None) -> None:
+                    state: SS, kind: Optional[str] = None) -> None:
         """This calls functions to (administratively) modify the own subscription
         state on a given mailinglist to state and asserts they return code and
         have the correct state after the operation. If kind is given, we assert that a
@@ -1532,7 +1532,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "janis")
     def test_subscription_addresses(self) -> None:
-        expectation = {
+        expectation: dict[int, Optional[str]] = {
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',
@@ -1543,12 +1543,38 @@ class TestMlBackend(BackendTest):
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
+        expectation = {k: None for k in expectation}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 2,
+                                                            explicits_only=True))
         expectation = {
             1: 'new-anton@example.cde',
             10: 'janis-spam@example.cde',
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 3))
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(
+                             self.key, 3, explicits_only=True))
+        if self.user_in('nina'):
+            self.ml.change_ml_type(self.key, 3,
+                                   const.MailinglistTypes.member_mandatory)
+            expectation = {
+                1: 'anton@example.cde',
+                2: 'berta@example.cde',
+                3: 'charly@example.cde',
+                6: 'ferdinand@example.cde',
+                7: 'garcia@example.cde',
+                9: 'inga@example.cde',
+                15: 'olaf@example.cde',
+                100: 'akira@example.cde',
+            }
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 3))
+            expectation = {k: None for k in expectation}  # type: ignore[misc]
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 3,
+                                                                explicits_only=True))
         expectation = {
             3: 'charly@example.cde',
         }

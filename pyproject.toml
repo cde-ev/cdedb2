@@ -18,6 +18,7 @@ include = [
 exclude = [
     "cdedb/ldap",
 ]
+[tool.ruff.lint]
 select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
@@ -48,5 +49,5 @@ ignore = [
     "TRY003",  # Exception message not defined in exception class.
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"

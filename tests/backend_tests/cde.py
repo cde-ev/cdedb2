@@ -176,10 +176,10 @@ class TestCdEBackend(BackendTest):
     def test_lastschrift(self) -> None:
         expectation = {2: 2}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
-        expectation = {1: 2, 2: 2}
-        self.assertEqual(expectation, self.cde.list_lastschrift(self.key,
-                                                                active=None))
-        self.assertEqual({1: 2}, self.cde.list_lastschrift(self.key, active=False))
+        expectation = {1: 2, 2: 2, 3: 100}
+        self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=None))
+        expectation = {1: 2, 3: 100}
+        self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=False))
         expectation = {
             2: {
                 'account_address': 'Im Geldspeicher 1',
@@ -205,7 +205,7 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         self.assertEqual({}, self.cde.list_lastschrift(self.key))
         self.assertEqual(
-            {1: 2, 2: 2}, self.cde.list_lastschrift(self.key, active=False))
+            {1: 2, 2: 2, 3: 100}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
             'account_address': None,
             'account_owner': None,
@@ -271,7 +271,7 @@ class TestCdEBackend(BackendTest):
 
     @as_users("farin")
     def test_lastschrift_transaction(self) -> None:
-        expectation = {1: 1, 2: 1, 3: 2}
+        expectation = {1: 1, 2: 1, 3: 2, 4: 3}
         self.assertEqual(expectation,
                          self.cde.list_lastschrift_transactions(self.key))
         expectation = {1: 1, 3: 2}
@@ -318,7 +318,7 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
         ltstati = const.LastschriftTransactionStati
-        new_id: int
+        new_id: int = -1
         for status in (ltstati.success, ltstati.cancelled, ltstati.failure):
             with self.subTest(status=status):
                 # since this is modified by the successful lastschrift test, we need to

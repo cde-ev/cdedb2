@@ -141,7 +141,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
-                            cascade: Collection[str] = None,
+                            cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
         """Remove a genesis case."""
 
@@ -241,8 +241,8 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def genesis_list_cases(self, rs: RequestState,
-                           stati: Collection[const.GenesisStati] = None,
-                           realms: Collection[str] = None) -> CdEDBObjectMap:
+                           stati: Optional[Collection[const.GenesisStati]] = None,
+                           realms: Optional[Collection[str]] = None) -> CdEDBObjectMap:
         """List persona creation cases.
 
         Restrict to certain stati and certain target realms.
@@ -336,7 +336,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access(*REALM_ADMINS)
     def genesis_decide(self, rs: RequestState, case_id: int, decision: GenesisDecision,
-                       persona_id: int = None) -> DefaultReturnCode:
+                       persona_id: Optional[int] = None) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
         :returns: The id of the newly created or modified user if any, -1 if rejected.

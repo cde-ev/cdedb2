@@ -34,7 +34,7 @@ class Genders(CdEIntEnum):
 
 
 @enum.unique
-class PersonaChangeStati(enum.IntEnum):
+class PersonaChangeStati(CdEIntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
@@ -359,6 +359,7 @@ class PastInstitutions(CdEIntEnum):
     dsa = 20  #:
     dja = 40  #:
     jgw = 60  #:
+    bub = 70  #:
     basf = 80  #:
     van = 200  #:
     eisenberg = 400  #:
@@ -374,6 +375,7 @@ class PastInstitutions(CdEIntEnum):
             self.dsa: "DSA",
             self.dja: "DJA",
             self.jgw: "JGW",
+            self.bub: "BuB",
             self.basf: "BASF",
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
@@ -480,6 +482,7 @@ class EventLogCodes(CdEIntEnum):
     registration_changed = 51  #:
     registration_deleted = 52  #:
     registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:

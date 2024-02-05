@@ -31,8 +31,8 @@ from cdedb.database.connection import Atomizer
 class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
-            self, rs: RequestState, persona_id: int, is_member: bool = None,
-            trial_member: bool = None,
+            self, rs: RequestState, persona_id: int, is_member: Optional[bool] = None,
+            trial_member: Optional[bool] = None,
     ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
@@ -79,7 +79,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
-                         persona_ids: Collection[int] = None,
+                         persona_ids: Optional[Collection[int]] = None,
                          active: Optional[bool] = True) -> dict[int, int]:
         """List all direct debit permits.
 
@@ -206,7 +206,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def delete_lastschrift(self, rs: RequestState, lastschrift_id: int,
-                           cascade: Collection[str] = None,
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Remove data about an old lastschrift.
 
@@ -255,9 +255,9 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("member", "cde_admin")
     def list_lastschrift_transactions(
-            self, rs: RequestState, lastschrift_ids: Collection[int] = None,
-            stati: Collection[const.LastschriftTransactionStati] = None,
-            periods: Collection[int] = None) -> dict[int, int]:
+            self, rs: RequestState, lastschrift_ids: Optional[Collection[int]] = None,
+            stati: Optional[Collection[const.LastschriftTransactionStati]] = None,
+            periods: Optional[Collection[int]] = None) -> dict[int, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.

@@ -54,7 +54,7 @@
             <hr />
             {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}
                 <div class="p">
-                    {% trans link=util.href("#questionnaire_field_entry_{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
+                    {% trans link=util.href("#field.{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
                         You can enter lodgement wishes in the respective {{ link }} in the following formats:
                     {% endtrans %}
                     {% trans %}
