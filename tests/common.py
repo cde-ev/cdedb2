@@ -1558,9 +1558,7 @@ class FrontendTest(BackendTest):
         # Check frontend log.
         for i, entry in enumerate(log_expectation, start=1):
             log_id = entry['id']
-            # take care to normalize whitespace of change_note messages
-            self.assertPresence(re.sub(r'\s+', ' ', entry['change_note'] or ""),
-                                div=f"{i}-{log_id}")
+            self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
                 name = make_persona_name(personas[entry['persona_id']])

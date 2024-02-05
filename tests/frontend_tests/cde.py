@@ -2100,7 +2100,7 @@ class TestCdEFrontend(FrontendTest):
         log_expectation: list[CdEDBObject] = [
             {
                 'code': const.CdeLogCodes.semester_exmember_balance,
-                'change_note': "561,11\xa0€ Guthaben von 9 Exmitgliedern aufgelöst.",
+                'change_note': "561,11 € Guthaben von 9 Exmitgliedern aufgelöst.",
             },
             {
                 'code': const.CdeLogCodes.semester_ejection,
@@ -2113,7 +2113,7 @@ class TestCdEFrontend(FrontendTest):
             {
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "2 Probemitgliedschaften beendet."
-                               " 16,00\xa0€ Guthaben von Mitgliedern abgebucht.",
+                               " 16,00 € Guthaben von Mitgliedern abgebucht.",
             },
             {
                 'code': const.CdeLogCodes.semester_advance,
@@ -2130,7 +2130,7 @@ class TestCdEFrontend(FrontendTest):
             },
             {
                 'code': const.CdeLogCodes.semester_exmember_balance,
-                'change_note': "6,44\xa0€ Guthaben von 2 Exmitgliedern aufgelöst.",
+                'change_note': "6,44 € Guthaben von 2 Exmitgliedern aufgelöst.",
             },
             {
                 'code': const.CdeLogCodes.semester_ejection,
@@ -2143,7 +2143,7 @@ class TestCdEFrontend(FrontendTest):
             {
                 'code': const.CdeLogCodes.semester_balance_update,
                 'change_note': "0 Probemitgliedschaften beendet."
-                               " 20,00\xa0€ Guthaben von Mitgliedern abgebucht.",
+                               " 20,00 € Guthaben von Mitgliedern abgebucht.",
             },
             {
                 'code': const.CdeLogCodes.semester_advance,
