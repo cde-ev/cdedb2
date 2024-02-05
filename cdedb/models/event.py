@@ -30,7 +30,9 @@ import decimal
 import functools
 import logging
 from collections.abc import Collection, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
+from typing import (
+    TYPE_CHECKING, Any, ClassVar, ForwardRef, Optional, get_args, get_origin,
+)
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -129,7 +131,10 @@ class Event(EventDataclass):
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
             if get_origin(field.type) is dict:
-                value_class = globals()[(get_args(field.type)[1])]
+                value_kind = get_args(field.type)[1]
+                if isinstance(value_kind, ForwardRef):
+                    value_kind = value_kind.__forward_arg__
+                value_class = globals()[value_kind]
                 if issubclass(value_class, EventDataclass):
                     for obj in getattr(self, field.name).values():
                         obj.event = self
@@ -382,7 +387,7 @@ class EventFee(EventDataclass):
     notes: Optional[str]
 
     def get_sortkey(self) -> Sortkey:
-        return self.kind, self.title
+        return self.kind, self.title, self.amount
 
 
 @dataclasses.dataclass

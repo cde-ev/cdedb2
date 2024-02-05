@@ -20,8 +20,9 @@ SessionEntry = NamedTuple(
 
 
 def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
-                       sessionkey: str = None, ctime: datetime.datetime = None,
-                       atime: datetime.datetime = None) -> SessionEntry:
+                       sessionkey: Optional[str] = None,
+                       ctime: Optional[datetime.datetime] = None,
+                       atime: Optional[datetime.datetime] = None) -> SessionEntry:
     if sessionkey is None:
         sessionkey = secrets.token_hex()
     return SessionEntry(persona_id, is_active, ip, sessionkey, ctime, atime)

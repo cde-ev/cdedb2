@@ -308,7 +308,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly")
     def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                           secret: str = None) -> Response:
+                           secret: Optional[str] = None) -> Response:
         """This shows a more detailed result of a tallied ballot.
 
         All information provided on this side is constructable from the downloadable
@@ -418,7 +418,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return collections.Counter(as_vote_strings(votes))
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
-                           secret: str = None) -> CdEDBObject:
+                           secret: Optional[str] = None) -> CdEDBObject:
         """Helper function to present the own vote
 
         This handles the personalised information of the current viewer interacting with

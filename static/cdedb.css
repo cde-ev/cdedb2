@@ -1086,6 +1086,14 @@ span.color-legend {
     margin-bottom: 2px;
 }
 
+/* Finance log style */
+tr.money-positive>td {
+    background-color: #e9ffe9;
+}
+tr.money-negative>td {
+    background-color: #ffe9e9;
+}
+
 
 /* ************** *
  * Helper classes *

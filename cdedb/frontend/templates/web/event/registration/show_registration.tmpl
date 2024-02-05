@@ -113,6 +113,10 @@
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
+        <dt title="{% trans %}Remaining Owed{% endtrans %}">{% trans %}Remaining Owed{% endtrans %}</dt>
+        <dd>
+            {{ to_pay|money(lang=lang) }}
+        </dd>
 
         <dt title="{% trans %}Parental Consent{% endtrans %}">{% trans %}Parental Consent{% endtrans %}</dt>
         <dd>
@@ -140,6 +144,43 @@
         </dd>
     </dl>
     </div>
+
+    <details class="col-md-12">
+        <summary>
+            {% trans %}Composition of the fee{% endtrans %}
+        </summary>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Title{% endtrans %}</th>
+                    <th>{% trans %}Amount{% endtrans %}</th>
+                    <th>{% trans %}Condition{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for fee in ambience['event']['fees'].values()|sort %}
+                <tr id="active-fee" data-fee_id="{{ fee.id }}">
+                    <td class="{% if fee['id'] in complex_fee['fee']['active_fees'] %}alert-success{% else %}alert-danger{% endif %}" id="active-fee-title">
+                        {% if fee['id'] in complex_fee['fee']['active_fees'] %}
+                            {{ util.deko_checkbox(True) }}
+                        {% else %}
+                            {{ util.deko_checkbox(False) }}
+                        {% endif %}
+                        {{ fee['title'] }}
+                    </td>
+                    <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
+                        <strong>
+                            {{ fee['amount']|money(lang=lang) }}
+                        </strong>
+                    </td>
+                    <td id="active-fee-condition">
+                        {{ complex_fee['fee']['visual_debug'][fee['id']]|safe }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </details>
 
     {% for batch in ambience['event']['parts'].values()|sort|batch(2) %}
         <div class="row">
@@ -279,6 +320,7 @@
         </dl>
     {% endif %}
 
+    {% if ambience['event']['iban'] %}
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
@@ -292,6 +334,7 @@ Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
 Betrag:             {{ to_pay|money(lang=lang) }}
 Verwendungszweck:   {{ reference }}
 </pre>
+    {% endif %}
 
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">

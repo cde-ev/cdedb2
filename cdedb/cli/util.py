@@ -8,7 +8,7 @@ import pathlib
 import pwd
 from collections.abc import Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 import click
 import psycopg2.extensions
@@ -146,7 +146,7 @@ def connect(
 
 
 def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0,
-            urls: werkzeug.routing.MapAdapter = None) -> RequestState:
+            urls: Optional[werkzeug.routing.MapAdapter] = None) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
     This is needed when we want to interact with the CdEDB on a higher level of

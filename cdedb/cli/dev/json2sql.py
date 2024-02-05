@@ -80,7 +80,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
         "modifier_name", "transaction_date", "condition", "donation", "payment_date",
-        'etime', 'rtime', 'secret_hash',
+        'etime', 'rtime', 'secret_hash', 'member_total',
     }
     xss_table_excludes = {
         "cde.org_period", "cde.expuls_period",

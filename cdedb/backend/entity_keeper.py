@@ -34,7 +34,8 @@ tabulate.PRESERVE_WHITESPACE = True
 
 class EntityKeeper:
     def __init__(self, conf: Config, directory: PathLike,
-                 log_keys: Sequence[str] = None, log_timestamp_key: str = None):
+                 log_keys: Optional[Sequence[str]] = None,
+                 log_timestamp_key: Optional[str] = None):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
@@ -113,7 +114,7 @@ class EntityKeeper:
 
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: Sequence[CdEDBObject] = None,
+               may_drop: bool = True, logs: Optional[Sequence[CdEDBObject]] = None,
                ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
