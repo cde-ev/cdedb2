@@ -50,7 +50,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
                             event: models.Event,
                             restrict_part_id: Optional[int],
-                            restrict_registration_id: int = None,
+                            restrict_registration_id: Optional[int] = None,
                             check_edges: bool = True,
                             ) \
         -> tuple[list[LodgementWish], list[Notification]]:

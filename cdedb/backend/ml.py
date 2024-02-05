@@ -83,8 +83,8 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def is_relevant_admin(self, rs: RequestState, *,
-                          mailinglist: Mailinglist = None,
-                          mailinglist_id: int = None) -> bool:
+                          mailinglist: Optional[Mailinglist] = None,
+                          mailinglist_id: Optional[int] = None) -> bool:
         """Check if the user is a relevant admin for a mailinglist.
 
         Exactly one of the inputs should be provided.
@@ -149,8 +149,9 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
-                                mailinglist: Mailinglist = None,
-                                mailinglist_id: int = None) -> SubscriptionPolicy:
+                                mailinglist: Optional[Mailinglist] = None,
+                                mailinglist_id: Optional[int] = None,
+                                ) -> SubscriptionPolicy:
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
@@ -311,7 +312,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState, active_only: bool = True,
-                          managed: str = None) -> dict[vtypes.ID, str]:
+                          managed: Optional[str] = None) -> dict[vtypes.ID, str]:
         """List all mailinglists you may view
 
         :param active_only: Toggle whether inactive lists should be included.
@@ -538,8 +539,8 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       ml_type: const.MailinglistTypes, update: CdEDBObject = None,
-                       ) -> DefaultReturnCode:
+                       ml_type: const.MailinglistTypes,
+                       update: Optional[CdEDBObject] = None) -> DefaultReturnCode:
         """Change the type of a mailinglist.
 
         To preserve data integrity, some additional changes may be specified via update.
@@ -752,7 +753,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def delete_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           cascade: Collection[str] = None,
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Remove a mailinglist.
 
@@ -1024,7 +1025,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
-            states: SubStates = None,
+            states: Optional[SubStates] = None,
     ) -> dict[int, dict[int, const.SubscriptionState]]:
         """Get all users related to a given mailinglist and their sub state.
 
@@ -1065,7 +1066,7 @@ class MlBackend(AbstractBackend):
 
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
-                     states: SubStates = None,
+                     states: Optional[SubStates] = None,
                      ) -> dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
@@ -1138,7 +1139,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_user_subscriptions(
-            self, rs: RequestState, persona_id: int, states: SubStates = None,
+            self, rs: RequestState, persona_id: int, states: Optional[SubStates] = None,
     ) -> dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
@@ -1192,7 +1193,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_subscription_addresses(self, rs: RequestState, mailinglist_id: int,
-                                   persona_ids: Collection[int] = None,
+                                   persona_ids: Optional[Collection[int]] = None,
                                    explicits_only: bool = False,
                                    ) -> dict[int, Optional[str]]:
         """Retrieve email addresses of the given personas for the mailinglist.
@@ -1356,7 +1357,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def write_subscription_states(self, rs: RequestState,
-                                  mailinglist_ids: Collection[int] = None,
+                                  mailinglist_ids: Optional[Collection[int]] = None,
                                   ) -> DefaultReturnCode:
         """This takes care of writing implicit subscriptions to the db.
 

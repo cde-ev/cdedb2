@@ -199,7 +199,8 @@ class BaseApp(metaclass=abc.ABCMeta):
                         mimetype="text/html", status=500)
 
     def encode_notification(self, rs: RequestState, ntype: NotificationType,
-                            nmessage: str, nparams: CdEDBObject = None) -> str:
+                            nmessage: str, nparams: Optional[CdEDBObject] = None,
+                            ) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
@@ -233,7 +234,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return ntype, nmessage, nparams
 
     def redirect(self, rs: RequestState, target: str,
-                 params: CdEDBObject = None, anchor: str = None,
+                 params: Optional[CdEDBObject] = None, anchor: Optional[str] = None,
                  ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
@@ -423,8 +424,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param templatename: file name of template without extension
         """
 
-        def _cdedblink(endpoint: str, params: CdEDBMultiDict = None,
-                       magic_placeholders: Collection[str] = None) -> str:
+        def _cdedblink(endpoint: str, params: Optional[CdEDBMultiDict] = None,
+                       magic_placeholders: Optional[Collection[str]] = None) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
@@ -456,8 +457,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return staticlink(rs, label="", path=path, version=version, html=False)
 
-        def _show_user_link(user: User, persona_id: int, quote_me: bool = None,
-                            event_id: int = None, ml_id: int = None) -> str:
+        def _show_user_link(user: User, persona_id: int,
+                            quote_me: Optional[bool] = None,
+                            event_id: Optional[int] = None, ml_id: Optional[int] = None,
+                            ) -> str:
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -560,10 +563,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @staticmethod
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
-                      filename: str = None, inline: bool = True, *,
-                      path: Union[str, pathlib.Path] = None,
-                      afile: IO[bytes] = None,
-                      data: AnyStr = None) -> Response:
+                      filename: Optional[str] = None, inline: bool = True, *,
+                      path: Optional[Union[str, pathlib.Path]] = None,
+                      afile: Optional[IO[bytes]] = None,
+                      data: Optional[AnyStr] = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
         This makes Excel happy by adding a BOM at the beginning of the
@@ -577,10 +580,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             afile=afile, data=data, encoding='utf-8-sig')
 
     @staticmethod
-    def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
-                  inline: bool = True, *, path: PathLike = None,
-                  afile: IO[bytes] = None, data: AnyStr = None,
-                  encoding: str = 'utf-8') -> Response:
+    def send_file(rs: RequestState, mimetype: Optional[str] = None,
+                  filename: Optional[str] = None, inline: bool = True, *,
+                  path: Optional[PathLike] = None, afile: Optional[IO[bytes]] = None,
+                  data: Optional[AnyStr] = None, encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -680,7 +683,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
         """
@@ -730,8 +733,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return response
 
     def do_mail(self, rs: RequestState, templatename: str,
-                headers: Headers, params: CdEDBObject = None,
-                attachments: Collection[Attachment] = None) -> Optional[str]:
+                headers: Headers, params: Optional[CdEDBObject] = None,
+                attachments: Optional[Collection[Attachment]] = None) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -816,8 +819,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             is_search: bool, scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            tuple[CdEDBObject, ...]], *,
-                            choices: Mapping[str, Mapping[Any, str]] = None,
-                            query: Query = None) -> werkzeug.Response:
+                            choices: Optional[Mapping[str, Mapping[Any, str]]] = None,
+                            query: Optional[Query] = None) -> werkzeug.Response:
         """Perform user search.
 
         :param download: signals whether the output should be a file. It can either
@@ -933,7 +936,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
-                           quote_me: bool = None) -> werkzeug.Response:
+                           quote_me: Optional[bool] = None) -> werkzeug.Response:
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
@@ -991,7 +994,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return pdf_path
 
     def latex_compile(self, rs: RequestState, data: str, runs: int = 2,
-                      errormsg: str = None) -> Optional[bytes]:
+                      errormsg: Optional[str] = None) -> Optional[bytes]:
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
@@ -1016,7 +1019,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     return None
 
     def serve_latex_document(self, rs: RequestState, data: str, filename: str,
-                             runs: int = 2, errormsg: str = None,
+                             runs: int = 2, errormsg: Optional[str] = None,
                              ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1044,7 +1047,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def serve_complex_latex_document(self, rs: RequestState,
                                      tmp_dir: Union[str, pathlib.Path],
                                      work_dir_name: str, tex_file_name: str,
-                                     runs: int = 2, errormsg: str = None,
+                                     runs: int = 2, errormsg: Optional[str] = None,
                                      ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1141,7 +1144,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                          filter_class: type[GenericLogFilter],
                          log_retriever: Callable[..., CdEDBLog],
                          *, download: bool, template: str,
-                         template_kwargs: CdEDBObject = None,
+                         template_kwargs: Optional[CdEDBObject] = None,
                          ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
@@ -1625,8 +1628,9 @@ class FrontendEndpoint(Protocol):
 
 
 def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: bool = None, anti_csrf_token_name: str = None,
-           anti_csrf_token_payload: str = None) -> Callable[[F], F]:
+           check_anti_csrf: Optional[bool] = None,
+           anti_csrf_token_name: Optional[str] = None,
+           anti_csrf_token_payload: Optional[str] = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1694,9 +1698,9 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
 
 
 def cdedburl(rs: RequestState, endpoint: str,
-             params: Union[CdEDBObject, CdEDBMultiDict] = None,
+             params: Optional[Union[CdEDBObject, CdEDBMultiDict]] = None,
              force_external: bool = False,
-             magic_placeholders: Collection[str] = None) -> str:
+             magic_placeholders: Optional[Collection[str]] = None) -> str:
     """Construct an HTTP URL.
 
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
@@ -1826,7 +1830,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        *spec: str, _hints: Optional[vtypes.TypeMapping] = None,
+        _postpone_validation: bool = False,
         _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
@@ -1979,7 +1984,7 @@ RequestConstraint = tuple[Callable[[CdEDBObject], bool], Error]
 
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
-        constraints: Collection[RequestConstraint] = None,
+        constraints: Optional[Collection[RequestConstraint]] = None,
         postpone_validation: bool = False,
         omit_missing: bool = False,
 ) -> CdEDBObject:
@@ -2161,7 +2166,7 @@ def assembly_guard(fun: F) -> F:
 
 
 def check_validation(rs: RequestState, type_: type[T], value: Any,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
+                     name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2183,7 +2188,7 @@ def check_validation(rs: RequestState, type_: type[T], value: Any,
 
 
 def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
-                              name: str = None, **kwargs: Any) -> Optional[T]:
+                              name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
@@ -2357,8 +2362,8 @@ def process_dynamic_input(
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
-    additional: CdEDBObject = None,
-    creation_spec: vtypes.TypeMapping = None,
+    additional: Optional[CdEDBObject] = None,
+    creation_spec: Optional[vtypes.TypeMapping] = None,
     prefix: str = "",
 ) -> dict[int, Optional[C]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2460,8 +2465,8 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping[Any, Any]] = None,
-               tzinfo: datetime.timezone = None) -> str:
+               substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
+               tzinfo: Optional[datetime.timezone] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2494,8 +2499,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
 
 
 def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
-                         substitutions: Mapping[
-                             str, Mapping[Any, Any]] = None) -> str:
+                         substitutions: Optional[Mapping[
+                             str, Mapping[Any, Any]]] = None) -> str:
     """Generate a json representation of the passed data.
 
     :param substitutions: Allow replacements of values with better

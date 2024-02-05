@@ -42,8 +42,9 @@ def _get_field_select_columns(fields: models.CdEDataclassMap[models.EventField],
 
 class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event", "core_admin", "ml_admin")
-    def submit_general_query(self, rs: RequestState, query: Query, event_id: int = None,
-                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
+    def submit_general_query(self, rs: RequestState, query: Query,
+                             event_id: Optional[int] = None, aggregate: bool = False,
+                             ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
@@ -629,8 +630,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
     @access("event")
     def get_event_queries(self, rs: RequestState, event_id: int,
-                          scopes: Collection[QueryScope] = None,
-                          query_ids: Collection[int] = None,
+                          scopes: Optional[Collection[QueryScope]] = None,
+                          query_ids: Optional[Collection[int]] = None,
                           ) -> dict[str, Query]:
         """Retrieve all stored queries for the given event and scope.
 

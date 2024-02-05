@@ -7,7 +7,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
-from typing import List
+from typing import List, Optional
 
 import freezegun
 import pytz
@@ -57,8 +57,8 @@ class AssemblyTestHelpers(FrontendTest):
         10,  # archived, preferential
     }
 
-    def _create_assembly(self, adata: CdEDBObject = None,
-                         delta: CdEDBObject = None) -> None:
+    def _create_assembly(self, adata: Optional[CdEDBObject] = None,
+                         delta: Optional[CdEDBObject] = None) -> None:
         """Helper function to automatically create a new asembly.
 
         :param adata: This can be a full set of assembly data. If this is None
@@ -110,8 +110,9 @@ class AssemblyTestHelpers(FrontendTest):
         self.submit(f)
         return self._fetch_secret()
 
-    def _create_ballot(self, bdata: CdEDBObject, candidates: List[CdEDBObject] = None,
-                       atitle: str = None) -> None:
+    def _create_ballot(self, bdata: CdEDBObject,
+                       candidates: Optional[List[CdEDBObject]] = None,
+                       atitle: Optional[str] = None) -> None:
         """Helper to create a new ballot.
 
         In order to use this you must have already navigated to somewhere inside the

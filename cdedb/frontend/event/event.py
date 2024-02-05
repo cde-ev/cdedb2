@@ -582,8 +582,8 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None,
-                        ) -> RemainingOwedQuery:
+        def _paid_query(constraints: Collection[QueryConstraint],
+                        sum_col: Optional[str] = None) -> RemainingOwedQuery:
             query = Query(
                 QueryScope.registration,
                 QueryScope.registration.get_spec(event=rs.ambience['event']),
@@ -626,8 +626,8 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None,
-                           ) -> Response:
+    def configure_fee_form(self, rs: RequestState,
+                           event_id: int, fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:

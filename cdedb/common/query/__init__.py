@@ -216,9 +216,10 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: "models.Event" = None, courses: CourseMap = None,
-                 lodgements: LodgementMap = None,
-                 lodgement_groups: LodgementGroupMap = None,
+    def get_spec(self, *, event: Optional["models.Event"] = None,
+                 courses: Optional[CourseMap] = None,
+                 lodgements: Optional[LodgementMap] = None,
+                 lodgement_groups: Optional[LodgementGroupMap] = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -278,8 +279,8 @@ class QueryScope(CdEIntEnum):
             return f"{prefix}/{target}"
         return target
 
-    def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
-                           ) -> dict[str, str]:
+    def mangle_query_input(self, rs: RequestState,
+                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -597,7 +598,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Sequence[QueryOrder],
-                 name: str = None, query_id: int = None,
+                 name: Optional[str] = None, query_id: Optional[int] = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -820,9 +821,10 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: "models.Event", courses: CourseMap = None,
-                                 lodgements: LodgementMap = None,
-                                 lodgement_groups: LodgementGroupMap = None,
+def make_registration_query_spec(event: "models.Event",
+                                 courses: Optional[CourseMap] = None,
+                                 lodgements: Optional[LodgementMap] = None,
+                                 lodgement_groups: Optional[LodgementGroupMap] = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1043,9 +1045,9 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
-                           lodgements: LodgementMap = None,
-                           lodgement_groups: LodgementGroupMap = None,
+def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
+                           lodgements: Optional[LodgementMap] = None,
+                           lodgement_groups: Optional[LodgementGroupMap] = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1168,9 +1170,10 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
     return spec
 
 
-def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
-                              lodgements: LodgementMap = None,
-                              lodgement_groups: LodgementGroupMap = None,
+def make_lodgement_query_spec(event: "models.Event",
+                              courses: Optional[CourseMap] = None,
+                              lodgements: Optional[LodgementMap] = None,
+                              lodgement_groups: Optional[LodgementGroupMap] = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 

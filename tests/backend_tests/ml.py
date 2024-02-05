@@ -574,7 +574,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(state, expected_state)
 
     def _change_sub(self, persona_id: int, mailinglist_id: int, action: SA,
-                    state: SS, kind: str = None) -> None:
+                    state: SS, kind: Optional[str] = None) -> None:
         """This calls functions to (administratively) modify the own subscription
         state on a given mailinglist to state and asserts they return code and
         have the correct state after the operation. If kind is given, we assert that a

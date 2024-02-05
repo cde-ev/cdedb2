@@ -136,7 +136,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     realm = "event"
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: Optional[CdEDBObject] = None) -> Response:
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -417,7 +417,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     @staticmethod
     def calculate_groups(entity_ids: Collection[int], event: models.Event,
                          registrations: CdEDBObjectMap, key: str,
-                         personas: CdEDBObjectMap = None,
+                         personas: Optional[CdEDBObjectMap] = None,
                          instructors: bool = True,
                          ) -> dict[tuple[int, int], Collection[int]]:
         """Determine inhabitants/attendees of lodgements/courses.

@@ -43,7 +43,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         super().__init__()
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: Optional[CdEDBObject] = None) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
