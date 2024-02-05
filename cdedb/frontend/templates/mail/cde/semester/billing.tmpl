@@ -7,12 +7,12 @@ Hallo {{ persona['display_name'] }}!
 Danke, das Du uns erlaubt hast, den jährlichen Mitgliedsbeitrag
 von {{ annual_fee|money }} zusammen mit einer Spende von aktuell {{ persona['donation']|money }}
 von Deinem Konto einzuziehen.
-Die Höhe der Spende kannst Du online über die CdE-Datenbank ändern
+Die Höhe der Spende kannst Du online über die CdE-Datenbank ändern:
 {{ cdedblink("core/change_user") }}
 
 Das Lastschriftmandat mit der Mandatsreferenz
 {{ lastschrift['reference'] }}
-kannst Du online über die CdE-Datenbank einsehen
+kannst Du online über die CdE-Datenbank einsehen:
 {{ cdedblink("core/my_lastschrift") }}
 {% if lastschrift['id'] in open_lastschrift %}
 
@@ -59,7 +59,7 @@ Verwendungszweck: {{ transaction_subject }}
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
 Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
-Weitere Informationen sowie das Formular für die Lastschrift findest Du unter
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
 {% elif persona['balance'] < fee %}
 
@@ -87,7 +87,7 @@ Bitte tätige die Überweisung innerhalb der nächsten zwei Wochen.
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
 Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
-Weitere Informationen sowie das Formular für die Lastschrift findest Du unter
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
 
 Falls du kein CdE-Mitglied mehr sein möchtest, überweise bitte nichts.
@@ -119,7 +119,7 @@ so ist dies hier möglicherweise noch nicht berücksichtigt.)
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
 Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
-Weitere Informationen sowie das Formular für die Lastschrift findest Du unter
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
 {% endif %}
 {% if addresscheck or not address %}
@@ -136,18 +136,18 @@ Deine aktuell in der CdE-Datenbank hinterlegte Adresse ist:
 {{ "\n".join(address) }}
 
 Falls diese nicht mehr aktuell ist, kannst Du sie unter dem
-folgenden Link korrigieren
+folgenden Link korrigieren:
 {{ cdedblink('core/change_user') }}
 {% else %}
 Aktuell ist keine Adresse von Dir in der CdE-Datenbank hinterlegt!
 
 Logge Dich bitte umgehend in der CdE-Datenbank ein und ergänze
-Deine Adresse unter dem folgenden Link
+Deine Adresse unter dem Link:
 {{ cdedblink('core/change_user') }}
 {% endif %}
 
 Benutzername ist Deine Mail-Adresse. Falls Du Dein Passwort
-vergessen hast, kannst Du Dir hier ein neues zusenden lassen
+vergessen hast, kannst Du Dir hier ein neues zusenden lassen:
 {{ cdedblink("core/reset_password_form") }}
 {% endif %}
 
