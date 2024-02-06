@@ -8,6 +8,8 @@ kannst Du Deine persönlichen Zugangsdaten erstellen.
 Viele Grüße
 das Verwaltungsteam
 {% else %}
+{# We expect new cde users with memberships to visited a DJA/DSA
+   recently, and new cde users without membership to be external. #}
 {% if data['is_member'] %}
 Ein herzliches Willkommen im Club der Ehemaligen der Deutschen
 SchülerAkademien (CdE)!
@@ -17,16 +19,31 @@ intensiv gelernt, dabei aber auch sehr viel Spaß gehabt. Würdest Du
 gerne wieder mit anderen motivierten und interessierten Menschen am
 Lagerfeuer sitzen und über Gott und die Welt diskutieren und lachen?
 Dafür gibt es den CdE – den Club der Ehemaligen der Deutschen
-SchülerAkademien e. V. Der CdE besteht aus circa 4.000 Leuten, aus
-Studenten, Berufstätigen und Schülern, aus Biologen und Philosophen,
-aus Leuten aus Deutschland und aus aller Welt, aus 40-jährigen und
-13-jährigen, die alle eins gemeinsam haben:
+SchülerAkademien e. V.
+{% else %}
+Du hast vor kurzem ein Aufnahmeangebot in den Club der
+Ehemaligen der Deutschen SchülerAkademien e. V. (CdE) erhalten!
+
+Noch bist du zwar kein Mitglied, aber du kannst jederzeit eines werden,
+mehr dazu erfährst du weiter unten. Doch was ist der CdE eigentlich?
+{% endif %}
+
+Der CdE besteht aus circa 4.000 Leuten, aus Studenten, Berufstätigen und
+Schülern, aus Biologen und Philosophen, aus Leuten aus Deutschland und
+aus aller Welt, aus 40-jährigen und 13-jährigen, die alle eins gemeinsam haben:
 Sie waren alle mal auf einer JuniorAkademie, SchülerAkademie oder CdE-Akademie.
 
+{% if data['is_member'] %}
 Der Verein veranstaltet jedes Jahr mehrere Akademien, die ähnlich
 aufgebaut sind wie die Akademie, an der Du teilgenommen hast. Einige
 davon haben einen besonderen thematischen Fokus, beispielsweise
 Nachhaltigkeit oder Musik, die meisten haben vielfältige Themen.
+{% else %}
+Der Verein veranstaltet jedes Jahr mehrere Akademien, bei denen das
+gemeinsame Lernen und der Austausch untereinander im Mittelpunkt steht.
+Einige davon haben einen besonderen thematischen Fokus, beispielsweise
+Nachhaltigkeit oder Musik, die meisten haben vielfältige Themen.
+{% endif %}
 
 Darüber hinaus kann man im CdE an Ski- und Segelfreizeiten, Bergtouren,
 Bällen, Seminaren und vielen weiteren Veranstaltungen teilnehmen.
@@ -57,24 +74,14 @@ kostenlos, und Du hast so Gelegenheit, den CdE auszuprobieren. Danach
 musst Du den Mitgliedsbeitrag bezahlen, um Mitglied zu bleiben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
 Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
-{% else %}
+{% elif data['is_member'] %}
 Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
 Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
 Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
-{% endif %}
-
-Der CdE ist seit 2006 ein eingetragener Verein. Die
-Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die
-den CdE betreffen, besprochen werden, inklusive Wahlen und
-Abstimmungen, finden jährlich im Oktober online statt. Du erhältst dazu
-rechtzeitig eine Einladung per E-Mail.
 {% else %}
-Du hast vor kurzem ein Aufnahmeangebot in den Club der
-Ehemaligen der Deutschen SchülerAkademien (CdE) erhalten!
-
-Noch bist du zwar kein Mitglied, aber du kannst jederzeit eines werden:
+Also, wie kannst du jetzt Mitglied werden? Ganz einfach:
 Überweise einfach den halbjährlichen Mitgliedsbeitrag von {{ fee|money }},
 gerne auch ein beliebiges Vielfaches davon, an das folgende Konto:
 
@@ -87,9 +94,15 @@ Verwendungszweck: {{ transaction_subject }}
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
 Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
-Weitere Informationen sowie das Formular für die Lastschrift findest Du unter
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
 {% endif %}
+
+Der CdE ist seit 2006 ein eingetragener Verein. Die
+Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die
+den CdE betreffen, besprochen werden, inklusive Wahlen und
+Abstimmungen, finden jährlich im Oktober online statt. Du erhältst dazu
+rechtzeitig eine Einladung per E-Mail.
 
 Uns, den Vorstand des CdE, kannst Du bei Problemen, Fragen oder
 Anregungen jederzeit unter <vorstand@cde-ev.de> erreichen.
@@ -103,17 +116,23 @@ Vorstand des CdE e. V.
 
 
 
-Die CdE-Aktivitäten:
---------------------
+=== Die CdE-Aktivitäten ===
 
+{% if data['is_member'] %}
 Der CdE bietet traditionell etwa fünfmal im Jahr Akademien an,
 die sehr der Akademie ähneln, auf der Du warst.
 
 Auch dort wählt man einen Kurs mit täglich 6 Stunden Kursarbeit.
+{% else %}
+Der CdE bietet traditionell etwa fünfmal im Jahr Akademien an,
+bei denen das gemeinsame Lernen und Arbeiten in einem vorher gewählten
+Kurs im Mittelpunkt stehen.
+{% endif %}
 Die Kurse rangieren von "Traumhaft – ein verschlafener Kurs" über
 "Sprachphilosophie", "Zahlentheorie" und "Altgriechisch" bis hin
 zu "Das neue Lieblingsspielzeug der Teilchenphysiker – der Large
 Hadron Collider" oder "BGB für Unverseuchte".
+
 Außerhalb der Kurszeit kann man in KüAs so Unterschiedliches unternehmen
 wie Tanzen lernen, Rugby spielen, Musizieren oder einen Vortrag über
 Unternehmensgründungen hören. Auch wenn man nur andere CdEler kennen-
