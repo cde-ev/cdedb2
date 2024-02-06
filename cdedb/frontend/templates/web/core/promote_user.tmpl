@@ -119,6 +119,15 @@
                         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
                     </div>
                 </div>
+                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                    <div class="text-muted">
+                        {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
+                                                                        gettext("welcome email")) %}
+                            The CdEDB will automatically send a %(welcome_mail)s to the user.
+                            If the user receives no trial membership, this also includes payment instructions.
+                        {% endtrans %}
+                    </div>
+                {% endif %}
                 {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>

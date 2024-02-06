@@ -12,10 +12,11 @@ backend parts.
 """
 
 import copy
+import dataclasses
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Optional
+from typing import Optional, Union
 
 import psycopg2.extensions
 
@@ -40,6 +41,29 @@ from cdedb.common.validation.validate import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
+
+
+@dataclasses.dataclass
+class BatchAdmissionStats:
+    # New accounts created via batch admission
+    new_accounts: set[int]
+    # Existing accounts which were granted trial membership
+    new_members: set[int]
+    # Existing accounts which were only modified
+    modified_accounts: set[int]
+
+    def add(self, persona_id: int, resolution: LineResolutions) -> None:
+        """Add a persona to the right stat set, depending on the chosen resolution."""
+        if resolution == LineResolutions.skip:
+            pass
+        elif resolution == LineResolutions.create:
+            self.new_accounts.add(persona_id)
+        elif resolution.do_trial():
+            self.new_members.add(persona_id)
+        elif resolution.do_update():
+            self.modified_accounts.add(persona_id)
+        else:
+            raise RuntimeError(n_("Impossible"))
 
 
 class CdEBaseBackend(AbstractBackend):
@@ -320,12 +344,10 @@ class CdEBaseBackend(AbstractBackend):
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
                                      trial_membership: bool, consent: bool,
-                                     ) -> Optional[bool]:
+                                     ) -> Optional[int]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: None if nothing happened. True if a new member account was created or
-            membership was granted to an existing (non-member) account. False if
-            the existing user was already a member.
+        :returns: The affected persona_id, or None if the entry was skipped.
         """
         # Require an Atomizer.
         self.affirm_atomized_context(rs)
@@ -350,9 +372,7 @@ class CdEBaseBackend(AbstractBackend):
             persona_id = self.core.create_persona(rs, new_persona)
             self.core.change_membership_easy_mode(
                 rs, persona_id, is_member=True, trial_member=trial_membership)
-            ret = True
         elif datum['resolution'].is_modification():
-            ret = False
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
             if current['is_archived']:
@@ -419,10 +439,8 @@ class CdEBaseBackend(AbstractBackend):
             if datum['resolution'].do_trial():
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
-                code = self.core.change_membership_easy_mode(
+                self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True)
-                # This will be true if the user was not a member before.
-                ret = bool(code)
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
@@ -436,28 +454,27 @@ class CdEBaseBackend(AbstractBackend):
             self.pastevent.add_participant(
                 rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
                 is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
-        return ret
+        return persona_id
 
     @access("cde_admin")
-    def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
-                                trial_membership: bool, consent: bool,
-                                ) -> tuple[bool, Optional[int], Optional[int]]:
+    def perform_batch_admission(
+            self, rs: RequestState, data: list[CdEDBObject], trial_membership: bool,
+            consent: bool,
+    ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
         needs to be in atomized context.
 
-        :returns: A tuple consisting of a bool and two optional integers.:
+        :returns: A tuple consisting of a bool and an optional second argument.:
             A boolean signalling success.
             If the operation was successful:
-                An integer signalling the number of newly created accounts.
-                An integer signalling the number of modified/renewed accounts.
+                The second argument is an instance of BatchAdmissionStats.
             If the operation was not successful:
-                If a TransactionRollbackError occrured:
-                    Both integer parameters are None.
+                If a TransactionRollbackError occurred:
+                    The second argument is None
                 Otherwise:
-                    The index where the error occured.
-                    The second parameter is None.
+                    The second argument is an int, the index where the error occurred.
         """
         data = affirm_array(vtypes.BatchAdmissionEntry, data)
         trial_membership = affirm(bool, trial_membership)
@@ -465,20 +482,17 @@ class CdEBaseBackend(AbstractBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count_new = count_renewed = 0
+                stats = BatchAdmissionStats(set(), set(), set())
                 for index, datum in enumerate(data, start=1):
-                    account_created = self._perform_one_batch_admission(
+                    persona_id = self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
-                    if account_created is None:
-                        pass
-                    elif account_created:
-                        count_new += 1
-                    else:
-                        count_renewed += 1
+                    if persona_id is None:
+                        continue
+                    stats.add(persona_id, datum['resolution'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None, None
+            return False, None
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -491,8 +505,8 @@ class CdEBaseBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index, None  # pylint: disable=used-before-assignment
-        return True, count_new, count_renewed
+            return False, index  # pylint: disable=used-before-assignment
+        return True, stats
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState, query: Query,

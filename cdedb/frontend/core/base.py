@@ -1617,17 +1617,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, pevent_id, pcourse_id, persona_id,
                     is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
-            meta_info = self.coreproxy.get_meta_info(rs)
-            self.do_mail(rs, "welcome",
-                         {'To': (persona['username'],),
-                          'Subject': "Aufnahme in den CdE",
-                          },
-                         {'data': persona,
-                          'fee': self.conf['MEMBERSHIP_FEE'],
-                          'email': "",
-                          'cookie': "",
-                          'meta_info': meta_info,
-                          })
+            self.send_welcome_mail(rs, persona)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
