@@ -181,12 +181,14 @@ class TestCommon(BasicTest):
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, "i18n")
             shutil.copytree(i18n_path, tmppath)
-            subprocess.run(["make", f"I18NDIR={tmppath}",
+            outpath = pathlib.Path(tempdir, "i18n-output")
+            outpath.mkdir()
+            subprocess.run(["make", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                             f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
                            check=True, capture_output=True)
             try:
                 result = subprocess.run(
-                    ["make", "-B", f"I18NDIR={tmppath}",
+                    ["make", "-B", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                      f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
                     check=True, capture_output=True, text=True,
                     env={"LC_MESSAGES": "en"}  # makes parsing easier
