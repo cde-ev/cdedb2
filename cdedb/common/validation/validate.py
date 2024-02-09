@@ -1710,6 +1710,8 @@ def _genesis_case(
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
                                 **additional_fields)
+        # Birth name is not allowed on creation to avoid mistakes
+        mandatory_fields.pop('birth_name', None)
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
