@@ -608,8 +608,8 @@ class CoreBaseFrontend(AbstractFrontend):
             data['notes'] = total['notes']
             data['username'] = total['username']
 
-        # Determinate if vcard should be visible
-        data['show_vcard'] = "cde" in access_levels and "cde" in roles
+        # Determine if vcard should be visible
+        data['show_vcard'] = "cde" in access_levels and "searchable" in roles
 
         # Cull unwanted data
         if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
