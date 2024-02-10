@@ -117,12 +117,12 @@
     <table class="table table-slim">
         <tbody>
             <tr>
-                <td class="info">
-                    {% trans %}
-                        The full export is now on event overview.
+                <td class="text-muted">
+                    {% trans overview=util.href(cdedblink('event/show_event'), gettext("event overview")) %}
+                        The full export is on the %(overview)s.
                     {% endtrans %}
                 </td>
-                <td class="info"></td>
+                <td></td>
             </tr>
             <tr>
                 <td>

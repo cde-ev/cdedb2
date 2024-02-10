@@ -7,7 +7,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
-from typing import List
+from typing import List, Optional
 
 import freezegun
 import pytz
@@ -19,10 +19,11 @@ from cdedb.common import (
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.validation.validate import parse_datetime
+from cdedb.database.constants import AssemblyLogCodes
 from cdedb.filter import datetime_filter
 from tests.common import (
     USER_DICT, FrontendTest, MultiAppFrontendTest, UserIdentifier, as_users, get_user,
-    storage,
+    prepsql, storage,
 )
 
 
@@ -57,8 +58,8 @@ class AssemblyTestHelpers(FrontendTest):
         10,  # archived, preferential
     }
 
-    def _create_assembly(self, adata: CdEDBObject = None,
-                         delta: CdEDBObject = None) -> None:
+    def _create_assembly(self, adata: Optional[CdEDBObject] = None,
+                         delta: Optional[CdEDBObject] = None) -> None:
         """Helper function to automatically create a new asembly.
 
         :param adata: This can be a full set of assembly data. If this is None
@@ -110,8 +111,9 @@ class AssemblyTestHelpers(FrontendTest):
         self.submit(f)
         return self._fetch_secret()
 
-    def _create_ballot(self, bdata: CdEDBObject, candidates: List[CdEDBObject] = None,
-                       atitle: str = None) -> None:
+    def _create_ballot(self, bdata: CdEDBObject,
+                       candidates: Optional[List[CdEDBObject]] = None,
+                       atitle: Optional[str] = None) -> None:
         """Helper to create a new ballot.
 
         In order to use this you must have already navigated to somewhere inside the
@@ -650,6 +652,38 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
             self.assertNotification("Leere Datei.")
 
+    @as_users("werner")
+    # add Farin as early attendee
+    @prepsql(f'INSERT INTO assembly.log'
+             f' (ctime, code, submitted_by, assembly_id, persona_id)'
+             f' VALUES (TIMESTAMP \'2020-02-02 00:00:00+01\','
+             f' {AssemblyLogCodes.new_attendee}, {USER_DICT["werner"]["id"]}, 1,'
+             f' {USER_DICT["farin"]["id"]});')
+    @prepsql(f'INSERT INTO assembly.attendees'
+             f' (persona_id, assembly_id)'
+             f' VALUES ({USER_DICT["farin"]["id"]}, 1);')
+    # add Vera as late attendee
+    @prepsql(f'INSERT INTO assembly.log'
+             f' (ctime, code, submitted_by, assembly_id, persona_id)'
+             f' VALUES (TIMESTAMP \'2020-02-04 00:00:00+01\','
+             f' {AssemblyLogCodes.new_attendee}, {USER_DICT["werner"]["id"]}, 1,'
+             f' {USER_DICT["vera"]["id"]});')
+    @prepsql(f'INSERT INTO assembly.attendees'
+             f' (persona_id, assembly_id)'
+             f' VALUES ({USER_DICT["vera"]["id"]}, 1);')
+    def test_attendee_list_download(self) -> None:
+        self.traverse("Versammlungen", "Internationaler Kongress", "Teilnehmer")
+        f = self.response.forms['downloadattendeesform']
+        f['cutoff'] = "2020-02-03T23:59:59"
+        self.submit(f)
+        _, rest = self.response.text.split("% Early attendees")
+        early_att, rest = rest.split("% Late attendees")
+        late_att, _ = rest.split("% Other attendees")
+        self.assertIn("cutoff: 2020-02-03 23:59 (CET)", early_att)
+        self.assertIn("Farin", early_att)
+        self.assertIn("cutoff: 2020-02-03 23:59 (CET)", late_att)
+        self.assertIn("Vera", late_att)
+
     @storage
     @as_users("rowena")
     def test_summary_ballots(self) -> None:
@@ -904,8 +938,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         }
         comment_failed = "Kommentare sind nur für beendete Abstimmungen erlaubt."
         change_failed = "Eine aktive Abstimmung kann nicht mehr verändert werden."
-        for ballot_id in ballot_states:
-            with self.subTest(ballot_states[ballot_id]):
+        for ballot_id, state in ballot_states.items():
+            with self.subTest(state):
                 ballot_title = (
                     "Maximale Länge der Satzung"
                     if ballot_id == 1001 else self.get_sample_datum(
@@ -913,7 +947,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 page_title = f"{ballot_title} (Internationaler Kongress)"
                 self.get(f'/assembly/assembly/1/ballot/{ballot_id}/show')
                 self.assertTitle(page_title)
-                self.assertPresence(ballot_states[ballot_id], div='status')
+                self.assertPresence(state, div='status')
 
                 # commenting - only possible for past ballots
                 comment_url = f'/assembly/assembly/1/ballot/{ballot_id}/comment'

@@ -41,9 +41,9 @@ from cdedb.frontend.event.base import EventBaseFrontend
 class EventRegistrationMixin(EventBaseFrontend):
     @access("finance_admin")
     def batch_fees_form(self, rs: RequestState, event_id: int,
-                        data: Collection[CdEDBObject] = None,
-                        csvfields: Collection[str] = None,
-                        saldo: decimal.Decimal = None) -> Response:
+                        data: Optional[Collection[CdEDBObject]] = None,
+                        csvfields: Optional[Collection[str]] = None,
+                        saldo: Optional[decimal.Decimal] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -489,7 +489,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         return Response(json_serialize(ret), mimetype='application/json')
 
     def new_process_registration_input(
-            self, rs: RequestState, orga_input: bool, parts: CdEDBObjectMap = None,
+            self, rs: RequestState, orga_input: bool,
+            parts: Optional[CdEDBObjectMap] = None,
             skip: Collection[str] = (), check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for e registration and convert it into a
@@ -657,11 +658,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             ):
                 # In which case we don't want to touch the course choices.
                 continue
-            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")
+            choice = lambda x: raw_tracks.get(f"track{track_id}.course_choice_{x}")  # pylint: disable=cell-var-from-loop
             choice_key = lambda x: (
                 f"group{group_id}.course_choice_{x}"
-                if (group_id := track_group_map[track_id])
-                else f"track{track_id}.course_choice_{x}"
+                if (group_id := track_group_map[track_id])  # pylint: disable=cell-var-from-loop
+                else f"track{track_id}.course_choice_{x}"  # pylint: disable=cell-var-from-loop
             )
             choices_list = [
                 c_id for i in range(track.num_choices) if (c_id := choice(i))]  # pylint: disable=superfluous-parens,line-too-long # seems like a bug.
@@ -1358,7 +1359,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, registration['persona_id'], event_id)
 
         meta_info = self.coreproxy.get_meta_info(rs)
-        complex_fee = self.eventproxy.calculate_complex_fee(rs, registration_id)
+        complex_fee = self.eventproxy.calculate_complex_fee(
+            rs, registration_id, visual_debug=True)
         reference = make_event_fee_reference(
             persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount

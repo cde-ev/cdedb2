@@ -263,6 +263,7 @@ I18N_STRINGS = (
     n_("PastInstitutions.dsa"),
     n_("PastInstitutions.dja"),
     n_("PastInstitutions.jgw"),
+    n_("PastInstitutions.bub"),
     n_("PastInstitutions.basf"),
     n_("PastInstitutions.van"),
     n_("PastInstitutions.eisenberg"),

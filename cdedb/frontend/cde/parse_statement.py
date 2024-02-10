@@ -222,7 +222,7 @@ def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data: CdEDBObject, index: int = None) -> None:
+    def __init__(self, data: CdEDBObject, index: Optional[int] = None) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
         # Fix parameter suffix.
         if index is not None:
@@ -338,7 +338,7 @@ class Transaction:
         return Transaction(data)
 
     @staticmethod
-    def get_request_params(index: int = None, *, hidden_only: bool = False,
+    def get_request_params(index: Optional[int] = None, *, hidden_only: bool = False,
                            ) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.

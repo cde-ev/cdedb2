@@ -9,7 +9,6 @@ registrations at once for the mailinglist realm.
 import copy
 import dataclasses
 import decimal
-import typing
 from collections import defaultdict
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any, NamedTuple, Optional, Protocol, TypeVar
@@ -256,10 +255,10 @@ class EventRegistrationBackend(EventBaseBackend):
         }
 
     @access("event")
-    def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
-                                            active_only: bool = False,
-                                            involved_parts: Collection[int] = None,
-                                            ) -> dict[int, set[int]]:
+    def get_course_segments_per_track_group(
+            self, rs: RequestState, event_id: int, active_only: bool = False,
+            involved_parts: Optional[Collection[int]] = None,
+    ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track group.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -372,7 +371,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def list_registrations_personas(self, rs: RequestState, event_id: int,
-                                    persona_ids: Collection[int] = None,
+                                    persona_ids: Optional[Collection[int]] = None,
                                     ) -> dict[int, int]:
         """List all registrations of an event.
 
@@ -405,7 +404,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def list_registrations(self, rs: RequestState, event_id: int,
-                           persona_id: int = None) -> dict[int, int]:
+                           persona_id: Optional[int] = None) -> dict[int, int]:
         """Manual singularization of list_registrations_personas
 
         Handles default values properly.
@@ -513,7 +512,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @internal
     @access("event")
     def _get_waitlist(self, rs: RequestState, event_id: int,
-                      part_ids: Collection[int] = None,
+                      part_ids: Optional[Collection[int]] = None,
                       ) -> dict[int, Optional[list[int]]]:
         """Compute the waitlist in order for the given parts.
 
@@ -556,7 +555,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
-                     part_ids: Collection[int] = None,
+                     part_ids: Optional[Collection[int]] = None,
                      ) -> dict[int, Optional[list[int]]]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
         if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
@@ -565,8 +564,8 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_waitlist_position(self, rs: RequestState, event_id: int,
-                              part_ids: Collection[int] = None,
-                              persona_id: int = None,
+                              part_ids: Optional[Collection[int]] = None,
+                              persona_id: Optional[int] = None,
                               ) -> dict[int, Optional[int]]:
         """Compute the waitlist position of a user for the given parts.
 
@@ -596,11 +595,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def registrations_by_course(
-            self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
-            reg_ids: Collection[int] = None,
+            self, rs: RequestState, event_id: int, course_id: Optional[int] = None,
+            track_id: Optional[int] = None,
+            position: Optional[InfiniteEnum[CourseFilterPositions]] = None,
+            reg_ids: Optional[Collection[int]] = None,
             reg_states: Collection[const.RegistrationPartStati] =
-            (const.RegistrationPartStati.participant,)) -> dict[int, int]:
+            (const.RegistrationPartStati.participant,),
+    ) -> dict[int, int]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -843,7 +844,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def set_registration(self, rs: RequestState, data: CdEDBObject,
-                         change_note: str = None, orga_input: bool = True,
+                         change_note: Optional[str] = None, orga_input: bool = True,
                          ) -> DefaultReturnCode:
         """Public entry point for setting a registration. Perform sanity checks after.
         """
@@ -866,7 +867,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def set_registrations(self, rs: RequestState, data: Collection[CdEDBObject],
-                          change_note: str = None) -> DefaultReturnCode:
+                          change_note: Optional[str] = None) -> DefaultReturnCode:
         """Helper for setting multiple registrations at once.
 
         All registrations must belong to the same event.
@@ -898,7 +899,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     def _set_registration(self, rs: RequestState, data: CdEDBObject,
-                          change_note: str = None, orga_input: bool = True,
+                          change_note: Optional[str] = None, orga_input: bool = True,
                           ) -> DefaultReturnCode:
         """Update some keys of a registration.
 
@@ -1134,7 +1135,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def delete_registration(self, rs: RequestState, registration_id: int,
-                            cascade: Collection[str] = None,
+                            cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
         """Remove a registration.
 
@@ -1251,24 +1252,25 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
-                              ) -> RegistrationFeeData:
+                              visual_debug: bool = False) -> RegistrationFeeData:
         """Public access point for retrieving complex fee data."""
         registration_id = affirm(vtypes.ID, registration_id)
         registration = self.get_registration(rs, registration_id)
         event = self.get_event(rs, registration['event_id'])
-        return self._calculate_complex_fee(rs, registration, event=event)
+        return self._calculate_complex_fee(rs, registration, event=event,
+                                           visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: models.Event, is_member: bool = None,
+                              event: models.Event, is_member: Optional[bool] = None,
                               ) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
         return self._calculate_complex_fee(
             rs, reg, event=event, is_member=is_member).amount
 
     def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: models.Event, is_member: bool = None,
-                               is_orga: bool = None, visual_debug: bool = False,
-                               ) -> RegistrationFeeData:
+                               event: models.Event, is_member: Optional[bool] = None,
+                               is_orga: Optional[bool] = None,
+                               visual_debug: bool = False) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1352,7 +1354,7 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
-        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
+        field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
@@ -1518,9 +1520,6 @@ class EventRegistrationBackend(EventBaseBackend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    # perform the change directly instead of using set_registration
-                    # to avoid privilege conflicts and use custom log code
-                    count += self.sql_update(rs, "event.registrations", update)
                     if datum['amount'] > 0:
                         log_code = const.EventLogCodes.registration_payment_received
                         change_note = "{} am {} gezahlt.".format(
@@ -1531,8 +1530,12 @@ class EventRegistrationBackend(EventBaseBackend):
                         change_note = "{} am {} zurückerstattet.".format(
                             money_filter(-datum['amount']),
                             date_filter(datum['original_date'], lang="de"))
+                        del update['payment']
                     else:
                         raise ValueError(n_("Cannot book fee with amount of zero."))
+                    # perform the change directly instead of using set_registration
+                    # to avoid privilege conflicts and use custom log code
+                    count += self.sql_update(rs, "event.registrations", update)
                     self.event_log(rs, log_code, event_id, change_note=change_note,
                                    persona_id=all_regs[reg_id]['persona_id'])
         except psycopg2.extensions.TransactionRollbackError:

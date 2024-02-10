@@ -166,8 +166,10 @@
     bool_label  Special label for the field_input (not the form*!) if the field is of type bool
 #}
 {% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, text_rows=3, bool_label=none) %}
-    {%- set name = name or "fields.{}".format(field['field_name']) %}
+    {%- set name = name or "fields." + field['field_name'] %}
     {%- set bool_label = bool_label or field['title'] %}
+    {# Wrapping is necessary to identify the data field for the fee preview. #}
+    <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
         {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
@@ -194,6 +196,7 @@
                 attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
     {%- endif %}
+    </div>
 {%- endmacro %}
 
 
@@ -206,7 +209,7 @@
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
                           defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
-    {%- set name = name or "fields.{}".format(field['field_name']) %}
+    {%- set name = name or "fields." + field['field_name'] %}
     {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
                               and not force_label and not field['entries'])
                      else label or field['title']) %}
@@ -243,12 +246,10 @@
     {% if entry['field_id'] %}
         {% with FIELD = ambience['event']['fields'][entry['field_id']],
                 readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
-            <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}" data-field_id="{{ entry['field_id'] }}">
-                {{ form_field_input(
-                        FIELD, name="fields." + FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                        text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
-            </div>
+            {{ form_field_input(
+                    FIELD, label=entry['title'], info=entry['info'],
+                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
+                    text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
         {% endwith %}
     {# Text-only entry #}
     {% else %}

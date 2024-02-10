@@ -199,7 +199,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                                attachment: werkzeug.datastructures.FileStorage,
                                title: str, filename: Optional[vtypes.Identifier],
                                authors: Optional[str],
-                               ack_creation: bool = None) -> Response:
+                               ack_creation: Optional[bool] = None) -> Response:
         """Create a new version of an existing attachment.
 
         If this version can not be deleted afterwards, the creation must be confirmed.

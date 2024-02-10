@@ -7,7 +7,7 @@ import datetime
 import decimal
 import json
 import unittest
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import freezegun
 import psycopg2
@@ -2875,7 +2875,7 @@ class TestEventBackend(BackendTest):
         }
 
         def recursive_update(old: Dict[Any, Any], new: Dict[Any, Any],
-                             hint: str = None) -> None:
+                             hint: Optional[str] = None) -> None:
             """Helper function to replace some placeholder values inside of a dict."""
             if hint == 'fields':
                 new = cast_fields(new, event.fields)

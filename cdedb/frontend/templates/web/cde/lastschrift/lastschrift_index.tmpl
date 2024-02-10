@@ -202,7 +202,15 @@
     {% endif %}
     </div>
 
-    <h2>{% trans %}All active Authorizations{% endtrans %}</h2>
+    <h2>{% trans %}All active Authorizations{% endtrans %} [{{ active_lastschrifts|length }}]</h2>
+    <p>
+        {% trans money=active_lastschrift_donations|money %}
+            The total amount of donations is %(money)s.
+        {% endtrans %}
+        {% trans money=(active_lastschrift_donations + annual_fee*active_lastschrifts|length)|money %}
+            Including the annual membership fees, this sums up to %(money)s.
+        {% endtrans %}
+    </p>
     <div class="row" id="active-authorizations">
         {% for chunk in active_lastschrifts.items()|slice(3 if active_lastschrifts|length > 10 else
                                                          (2 if active_lastschrifts|length > 5 else 1)) %}
@@ -222,7 +230,7 @@
         {% endfor %}
     </div>
 
-    <h2>{% trans %}All inactive Authorizations{% endtrans %}</h2>
+    <h2>{% trans %}All inactive Authorizations{% endtrans %} [{{ inactive_lastschrifts|length }}]</h2>
     <p>
         {% trans %}
             Only authorizations of users without an active authorization are shown.

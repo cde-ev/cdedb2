@@ -6,7 +6,7 @@ import datetime
 import decimal
 import unittest
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Dict, List, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import pytz
 
@@ -32,7 +32,7 @@ class TestValidation(unittest.TestCase):
         self,
         type_: Type[T],
         spec: Iterable[Tuple[Any, T, Union[Type[Exception], Exception, None]]],
-        extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
+        extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True
     ) -> None:
         """Perform extensive tests on a validator.
 

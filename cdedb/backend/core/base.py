@@ -163,7 +163,7 @@ class CoreBaseBackend(AbstractBackend):
         return " ".join(values)
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
-                 persona_id: int = None, change_note: str = None,
+                 persona_id: Optional[int] = None, change_note: Optional[str] = None,
                  atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -203,7 +203,8 @@ class CoreBaseBackend(AbstractBackend):
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
                     persona_id: Optional[int], delta: Optional[decimal.Decimal],
                     new_balance: Optional[decimal.Decimal],
-                    change_note: str = None, transaction_date: datetime.date = None,
+                    change_note: Optional[str] = None,
+                    transaction_date: Optional[datetime.date] = None,
                     ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
@@ -230,16 +231,27 @@ class CoreBaseBackend(AbstractBackend):
         }
         with Atomizer(rs):
             query = """
-                SELECT COUNT(*) AS members, COALESCE(SUM(balance), 0) AS total
+                SELECT COUNT(*) AS members, COALESCE(SUM(balance), 0) AS member_total
                 FROM core.personas
-                WHERE is_member = True"""
+                WHERE is_member = True
+            """
             tmp = self.query_one(rs, query, tuple())
             if tmp:
                 data.update(tmp)
             else:
                 self.logger.error(f"Could not determine member count and total"
-                                  f" balance for creating log entry {data!r}.")
+                                  f" member balance for creating log entry {data!r}.")
                 data.update(members=0, total=0)
+            query = """
+                SELECT COALESCE(SUM(balance), 0) AS total
+                FROM core.personas
+            """
+            tmp = self.query_one(rs, query, ())
+            if tmp:
+                data.update(tmp)
+            else:
+                self.logger.error(f"Could not determine total balance for creating"
+                                  f" log entry {data!r}.")
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin", "auditor")
@@ -702,18 +714,20 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
-                     is_member: Optional[bool],
-                     is_archived: Optional[bool]) -> Optional[int]:
+                     is_member: Optional[bool], is_archived: Optional[bool],
+                     paper_expuls: Optional[bool] = None) -> Optional[int]:
         """Look up the following persona.
 
         :param is_member: If not None, only consider personas with a matching flag.
         :param is_archived: If not None, only consider personas with a matching flag.
+        :param paper_expuls: If not None, only consider personas with a matching flag.
 
         :returns: Next valid id in table core.personas
         """
         persona_id = affirm_optional(int, persona_id)
         is_member = affirm_optional(bool, is_member)
         is_archived = affirm_optional(bool, is_archived)
+        paper_expuls = affirm_optional(bool, paper_expuls)
         query = "SELECT MIN(id) FROM core.personas"
         constraints = []
         params: list[Any] = []
@@ -726,6 +740,9 @@ class CoreBaseBackend(AbstractBackend):
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
+        if paper_expuls is not None:
+            constraints.append("paper_expuls = %s")
+            params.append(paper_expuls)
         if constraints:
             query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
@@ -752,7 +769,7 @@ class CoreBaseBackend(AbstractBackend):
     @internal
     @access("persona")
     def set_persona(self, rs: RequestState, data: CdEDBObject,
-                    generation: int = None, change_note: str = None,
+                    generation: Optional[int] = None, change_note: Optional[str] = None,
                     may_wait: bool = True,
                     allow_specials: tuple[str, ...] = tuple(),
                     force_review: bool = False,
@@ -854,8 +871,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def change_persona(self, rs: RequestState, data: CdEDBObject,
-                       generation: int = None, may_wait: bool = True,
-                       change_note: str = None,
+                       generation: Optional[int] = None, may_wait: bool = True,
+                       change_note: Optional[str] = None,
                        force_review: bool = False) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -1102,9 +1119,9 @@ class CoreBaseBackend(AbstractBackend):
         return ret
 
     @access("meta_admin")
-    def list_privilege_changes(self, rs: RequestState, persona_id: int = None,
-                               stati: Collection[
-                                   const.PrivilegeChangeStati] = None,
+    def list_privilege_changes(self, rs: RequestState, persona_id: Optional[int] = None,
+                               stati: Optional[Collection[
+                                   const.PrivilegeChangeStati]] = None,
                                ) -> CdEDBObjectMap:
         """List privilge changes.
 
@@ -1184,8 +1201,8 @@ class CoreBaseBackend(AbstractBackend):
     def change_persona_balance(self, rs: RequestState, persona_id: int,
                                balance: Union[str, decimal.Decimal],
                                log_code: const.FinanceLogCodes,
-                               change_note: str = None,
-                               transaction_date: datetime.date = None,
+                               change_note: Optional[str] = None,
+                               transaction_date: Optional[datetime.date] = None,
                                ) -> DefaultReturnCode:
         """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1217,7 +1234,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
-                                    is_member: bool = None, trial_member: bool = None,
+                                    is_member: Optional[bool] = None,
+                                    trial_member: Optional[bool] = None,
                                     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1338,9 +1356,10 @@ class CoreBaseBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, (persona_id,)))
 
     @access("core_admin")
-    def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
-                                            reference_date: datetime.date = None,
-                                            ) -> bool:
+    def is_persona_automatically_archivable(
+            self, rs: RequestState, persona_id: int,
+            reference_date: Optional[datetime.date] = None,
+    ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
         :param reference_date: If given consider this as the reference point for
@@ -1840,7 +1859,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_users(self, rs: RequestState, persona_ids: Collection[int],
-                        event_id: int = None) -> CdEDBObjectMap:
+                        event_id: Optional[int] = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
 
         This is allowed for admins and for yourself in any case. Orgas can also
@@ -1896,7 +1915,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetEventUserProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(self, rs: RequestState, persona_id: Optional[int],
-                     event_id: int = None) -> CdEDBObject: ...
+                     event_id: Optional[int] = None) -> CdEDBObject: ...
     get_event_user: _GetEventUserProtocol = singularize(
         get_event_users, "persona_ids", "persona_id")
 
@@ -1911,8 +1930,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @internal
     @access("persona")
-    def quota(self, rs: RequestState, *, ids: Collection[int] = None,
-              num: int = None) -> int:
+    def quota(self, rs: RequestState, *, ids: Optional[Collection[int]] = None,
+              num: Optional[int] = None) -> int:
         """Log quota restricted accesses. Return new total.
 
         This can optionally take either a list of ids or simply a number of
@@ -1976,8 +1995,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @internal
     @access("persona")
-    def check_quota(self, rs: RequestState, *, ids: Collection[int] = None,
-                    num: int = None) -> bool:
+    def check_quota(self, rs: RequestState, *, ids: Optional[Collection[int]] = None,
+                    num: Optional[int] = None) -> bool:
         """Check whether the quota was exceeded today.
 
         Even if quota has been exceeded, never block access to own profile.
@@ -2054,7 +2073,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access(*REALM_ADMINS)
     def create_persona(self, rs: RequestState, data: CdEDBObject,
-                       submitted_by: int = None) -> DefaultReturnCode:
+                       submitted_by: Optional[int] = None) -> DefaultReturnCode:
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -2249,7 +2268,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def verify_ids(self, rs: RequestState, persona_ids: Collection[int],
-                   is_archived: bool = None) -> bool:
+                   is_archived: Optional[bool] = None) -> bool:
         """Check that persona ids do exist.
 
         :param is_archived: If given, check the given archival status.
@@ -2272,7 +2291,7 @@ class CoreBaseBackend(AbstractBackend):
 
     class _VerifyIDProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
-                     is_archived: bool = None) -> bool: ...
+                     is_archived: Optional[bool] = None) -> bool: ...
     verify_id: _VerifyIDProtocol = singularize(
         verify_ids, "persona_ids", "persona_id", passthrough=True)
 
@@ -2297,8 +2316,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
-                        required_roles: Collection[Role] = None,
-                        allowed_roles: Collection[Role] = None,
+                        required_roles: Optional[Collection[Role]] = None,
+                        allowed_roles: Optional[Collection[Role]] = None,
                         introspection_only: bool = True) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
@@ -2322,8 +2341,8 @@ class CoreBaseBackend(AbstractBackend):
 
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
-                     required_roles: Collection[Role] = None,
-                     allowed_roles: Collection[Role] = None,
+                     required_roles: Optional[Collection[Role]] = None,
+                     allowed_roles: Optional[Collection[Role]] = None,
                      introspection_only: bool = True) -> bool: ...
     verify_persona: _VerifyPersonaProtocol = singularize(
         verify_personas, "persona_ids", "persona_id", passthrough=True)
@@ -2393,8 +2412,9 @@ class CoreBaseBackend(AbstractBackend):
         return None
 
     def modify_password(self, rs: RequestState, new_password: str,
-                        old_password: str = None, reset_cookie: str = None,
-                        persona_id: int = None) -> tuple[bool, str]:
+                        old_password: Optional[str] = None,
+                        reset_cookie: Optional[str] = None,
+                        persona_id: Optional[int] = None) -> tuple[bool, str]:
         """Helper for manipulating password entries.
 
         The persona_id parameter is only for the password reset case. We
@@ -2470,7 +2490,8 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def check_password_strength(
         self, rs: RequestState, password: str, *,
-        email: str = None, persona_id: int = None, argname: str = None,
+        email: Optional[str] = None, persona_id: Optional[int] = None,
+        argname: Optional[str] = None,
     ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
         """Check the password strength using some additional userdate.
 

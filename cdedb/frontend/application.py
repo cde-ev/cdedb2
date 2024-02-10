@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import types
+from typing import Optional
 
 import jinja2
 import psycopg2.extensions
@@ -100,7 +101,7 @@ class Application(BaseApp):
 
     def make_error_page(self, error: Exception,
                         request: werkzeug.wrappers.Request, user: User,
-                        message: str = None) -> Response:
+                        message: Optional[str] = None) -> Response:
         """Helper to format an error page.
 
         This is similar to
@@ -140,7 +141,7 @@ class Application(BaseApp):
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            def _cdedblink(endpoint: str, params: CdEDBObject = None) -> str:
+            def _cdedblink(endpoint: str, params: Optional[CdEDBObject] = None) -> str:
                 return urls.build(endpoint, params or {})
 
             begin = now()
@@ -216,7 +217,7 @@ class Application(BaseApp):
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
-            endpoint, args = urls.match()
+            endpoint, args = urls.match()  # pylint: disable=unpacking-non-sequence
 
             lang = self.get_locale(request)
             rs = RequestState(

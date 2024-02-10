@@ -8,7 +8,7 @@ import collections
 import copy
 import decimal
 from collections.abc import Collection, Mapping
-from typing import Any
+from typing import Any, Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -181,7 +181,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event_admin")
     def delete_event(self, rs: RequestState, event_id: int,
-                     cascade: Collection[str] = None) -> DefaultReturnCode:
+                     cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove event.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -400,7 +400,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: str = None,
+                             dryrun: bool, token: Optional[str] = None,
                              ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
