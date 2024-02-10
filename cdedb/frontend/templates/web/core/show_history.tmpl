@@ -248,6 +248,7 @@
             {% endcall %}
 
             {% for name, field in ((gettext("Balance"), 'balance'), (gettext("Annual Donation"), 'donation'),
+                                   (gettext("Printed exPuls"), 'paper_expuls'),
                                    (gettext("Searchable for BuB"), 'bub_search'),
                                    (gettext("Admin Notes"), 'notes')) %}
                 {% call history_field(name) %}
