@@ -355,7 +355,7 @@ def create_lodgement_wishes_graph(
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_{lodgement_id}',
-                graph_attr={'label': lodgement['title'],
+                graph_attr={'label': _make_lodgement_label(lodgement),
                             'URL': cdedburl(rs, 'event/show_lodgement',
                                             {'lodgement_id': lodgement_id})})
     lodgement_group_clusters: dict[int, graphviz.Digraph] = {}
@@ -441,6 +441,11 @@ def create_lodgement_wishes_graph(
                    color="black" if wish.present_together else "grey")
 
     return graph
+
+
+def _make_lodgement_label(lodgement: CdEDBObject) -> str:
+    return (f"{lodgement['title']} ({lodgement['regular_capacity']}"
+            f" + {lodgement['camping_mat_capacity']})")
 
 
 def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
