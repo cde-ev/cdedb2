@@ -396,13 +396,17 @@ class CdEParseMixin(CdEBaseFrontend):
                 personas = self.coreproxy.get_cde_users(rs, persona_ids)
                 for datum in data:
                     persona = personas[datum['persona_id']]
+                    subject = "Überweisung eingegangen"
+                    if persona['balance'] < self.conf["MEMBERSHIP_FEE"]:
+                        subject = "Überweisung eingegangen – Guthaben zu gering!"
                     self.do_mail(rs, "parse/transfer_received",
                                  {'To': (persona['username'],),
-                                  'Subject': "Überweisung eingegangen",
+                                  'Subject': subject,
                                   },
                                  {'persona': persona,
                                   'address': make_postal_address(rs, persona),
-                                  'new_balance': persona['balance']})
+                                  'new_balance': persona['balance'],
+                                  'fee': self.conf["MEMBERSHIP_FEE"]})
         if success:
             rs.notify("success", n_("Committed %(num)s transfers. "
                                     "There were %(new_members)s new members."),
