@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import sys
-from asyncio.transports import BaseTransport, Transport
+from asyncio import StreamReader, StreamWriter
 from collections.abc import Coroutine
 from typing import Any, Callable, Optional, Protocol
 
@@ -34,7 +34,7 @@ class ReplyCallback(Protocol):
         ...
 
 
-class LdapServer(asyncio.Protocol):
+class LdapHander():
     """Implementation of the ldap protocol via asyncio.
 
     Each time a new client connects to the server, a new instance of this class will
@@ -43,8 +43,6 @@ class LdapServer(asyncio.Protocol):
     """
 
     def __init__(self, root: CdEDBBaseLDAPEntry):
-        self.buffer = b""
-        self.transport: Transport = None  # type: ignore[assignment]
         self.root = root
         self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
 
@@ -59,35 +57,35 @@ class LdapServer(asyncio.Protocol):
         )
     )
 
-    def connection_made(self, transport: BaseTransport) -> None:
-        """Called once this instance of LdapServer was connected to its client."""
-        assert isinstance(transport, Transport)
-        self.transport = transport
-
-    def connection_lost(self, exc: Optional[Exception]) -> None:
-        """Called once this instance of LdapServer lost the connection to its client."""
-        # TODO maybe handle the exception or proper close the connection
-        self.transport.close()
-
-    def data_received(self, data: bytes) -> None:
+    async def connection_callback(self, reader: StreamReader, writer: StreamWriter) -> None:
         """Called each time the server received binary data from its client.
 
         Note that this makes no guarantee about receiving semantic messages in one part.
         So, buffering the received data and decoding it manually is mandatory.
         """
-        self.buffer += data
-        while 1:
-            try:
-                msg, len_decoded = pureber.berDecodeObject(self.berdecoder, self.buffer)
-            except pureber.BERExceptionInsufficientData:
-                msg, len_decoded = None, 0
-            self.buffer = self.buffer[len_decoded:]
-            if msg is None:
-                break
+        self.writer = writer
+
+        while not reader.at_eof():
+            # We want to read at least two bytes, the sequence start tag and the length field.
+            wants = 2
+            msg = None
+            buffer = b""
+            while not msg:
+                buffer += await reader.readexactly(wants)
+                try:
+                    # For lengths>128 this will fail the first time around.
+                    # This will result in a double parsing of the first bytes.
+                    # To improve performance we could inline the pureber code an replace `wants`
+                    # with `await reader.readexactly` but for now we use the more simplisitic approach.
+                    msg, _ = pureber.berDecodeObject(self.berdecoder, buffer)
+                except pureber.BERExceptionInsufficientData as e:
+                    # We do not have enough data in our buffer,
+                    # the first and only exception argument contains how much data is still expected.
+                    [wants] = e.args
             # this is some very obscure code path, related to the construction of the
             # berdecoder object, but always guaranteed ...
             assert isinstance(msg, LDAPMessage)
-            asyncio.create_task(self.handle(msg))
+            await self.handle(msg)
 
     @staticmethod
     def unsolicited_notification(msg: LDAPProtocolRequest) -> None:
@@ -157,7 +155,7 @@ class LdapServer(asyncio.Protocol):
             """Send a message back to the client."""
             response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
             logger.debug(f"S->C {repr(response_msg)}")
-            self.transport.write(response_msg.toWire())
+            self.writer.write(response_msg.toWire())
 
         # exactly unsolicited notifications have a message id of 0
         if msg.id == 0:
@@ -237,7 +235,8 @@ class LdapServer(asyncio.Protocol):
         """Notification to close the connection to the client."""
         # explicitly do not check unsupported critical controls -- we
         # have no way to return an error, anyway.
-        self.connection_lost(None)
+        self.writer.close()
+        await self.writer.wait_closed()
 
     fail_LDAPCompareRequest = pureldap.LDAPCompareResponse
 

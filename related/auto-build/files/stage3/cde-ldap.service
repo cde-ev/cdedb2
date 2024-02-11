@@ -14,6 +14,8 @@ Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py
 ExecStart=/usr/bin/python3 -m cdedb.ldap.main
 Restart=on-failure
 
+# TODO move secrets into credentials and use DynamicUser=
+# Similarly, the LDAP certificate key should be made into a credential
 # we need to access the /etc/cdedb/secrets.py file which is only accessible to www-cde
 User=www-cde
 Group=www-cde
@@ -25,10 +27,6 @@ NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectHome=read-only
 ProtectSystem=strict
-# required so unprivileged user can bind to 389
-# using a systemd.socket would also work though probably require changes
-# to the twisted code...starting via twistd however might be rather clean
-AmbientCapabilities=CAP_NET_BIND_SERVICE
 
 [Install]
 WantedBy=multi-user.target
