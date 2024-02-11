@@ -37,8 +37,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 # mostly python packages and some dev tools
 # * the large lib* block is mostly for the web driver
-# * pycoverage is installed without suppressing recommendations
-#   as jQuery is otherwise not pulled in - this can be changed in newer version
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-psycopg2 \
     python3-dateutil \
@@ -72,6 +70,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-pip \
     python3-click \
     python3-freezegun \
+    python3-coverage \
     flake8 \
     isort \
     wget \
@@ -101,8 +100,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     libxfixes3 \
     libxkbcommon0 \
     libxrandr2 \
-    \
-    && apt-get install --yes python3-coverage \
     \
     && rm -rf /var/lib/apt/lists/*
 
