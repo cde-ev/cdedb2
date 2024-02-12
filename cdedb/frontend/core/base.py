@@ -1117,7 +1117,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
-        has_special_donation = not (min_donation <= data["donation"] <= max_donation)
+        has_special_donation = not min_donation <= data["donation"] <= max_donation
 
         merge_dicts(rs.values, data)
         shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
