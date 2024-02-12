@@ -242,7 +242,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("charly", "emilia", "janis")
     def test_showuser_self(self) -> None:
-        name = f"{make_persona_name(self.user)}"  # type: ignore[arg-type]
+        name = make_persona_name(self.user)  # type: ignore[arg-type]
         self.get('/core/self/show')
         self.assertTitle(name)
         if not self.user_in("janis"):  # Janis is no event user
