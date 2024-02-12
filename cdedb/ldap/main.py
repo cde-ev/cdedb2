@@ -13,7 +13,7 @@ from psycopg_pool import AsyncConnectionPool
 from cdedb.config import Config, SecretsConfig
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
-from cdedb.ldap.server import LdapHander
+from cdedb.ldap.server import LdapHandler
 
 logger = logging.getLogger(__name__)
 
@@ -54,24 +54,33 @@ async def main() -> None:
         logging.debug("Detected socket activation")
         # Systemd passes fds from SD_LISTEN_FDS_START...SD_LISTEN_FDS_START+LISTEN_FDS,
         # SD_LISTEN_FDS_START is always 3, and we only expect one fd to be passed to us.
-        # Set family and type to -1 which instructs Python to detect them from the passed fd.
+        # Set family and type to -1 which instructs Python
+        # to detect them from the passed fd.
         sock = socket.fromfd(3, family=-1, type=-1)
         port = None
     else:
         sock = None
         port = conf["LDAP_PORT"]
 
-    server = await asyncio.start_server(LdapHander(root).connection_callback, port=port, sock=sock, ssl=context)
+    server = await asyncio.start_server(
+        lambda reader, writer: LdapHandler(root, reader, writer).connection_callback(),
+        port=port,
+        sock=sock,
+        ssl=context,
+    )
+
     for s in server.sockets:
         logging.info(f"Listening on {s!r}")
 
-    def shutdown(server):
+    def shutdown(server: asyncio.Server) -> None:
+        # TODO We should probably send a NoticeOfDisconnection
+        # after some grace period
         logger.info("Shutting down")
         server.close()
 
     server.get_loop().add_signal_handler(signal.SIGTERM, lambda: shutdown(server))
     server.get_loop().add_signal_handler(signal.SIGINT, lambda: shutdown(server))
-    logger.warning("Startup completed")
+    logger.info("Startup completed")
 
     async with server:
         try:

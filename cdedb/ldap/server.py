@@ -34,7 +34,7 @@ class ReplyCallback(Protocol):
         ...
 
 
-class LdapHander():
+class LdapHandler():
     """Implementation of the ldap protocol via asyncio.
 
     Each time a new client connects to the server, a new instance of this class will
@@ -42,8 +42,15 @@ class LdapHander():
     client, and this client alone.
     """
 
-    def __init__(self, root: CdEDBBaseLDAPEntry):
+    def __init__(
+        self,
+        root: CdEDBBaseLDAPEntry,
+        reader: StreamReader,
+        writer: StreamWriter
+    ):
         self.root = root
+        self.writer = writer
+        self.reader = reader
         self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
 
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
@@ -57,35 +64,36 @@ class LdapHander():
         )
     )
 
-    async def connection_callback(self, reader: StreamReader, writer: StreamWriter) -> None:
-        """Called each time the server received binary data from its client.
+    async def connection_callback(self) -> None:
+        """Called for each new client connection."""
+        while not self.reader.at_eof():
+            try:
+                # We need to read two bytes,
+                # the sequence start tag and the length field.
+                buffer = await self.reader.readexactly(2)
+            except asyncio.IncompleteReadError as e:
+                if e.partial:
+                    logger.exception("Client disconnected with unhandled data")
+                return
 
-        Note that this makes no guarantee about receiving semantic messages in one part.
-        So, buffering the received data and decoding it manually is mandatory.
-        """
-        self.writer = writer
+            length = pureber.ber2int(buffer[1:2], signed=0)
+            if length & 0x80:
+                # We have long-form encoded length.
+                # Therefore this field contains the size of the the length.
+                buffer += await self.reader.readexactly(length & ~0x80)
+                length = pureber.ber2int(buffer[2:], signed=0)
 
-        while not reader.at_eof():
-            # We want to read at least two bytes, the sequence start tag and the length field.
-            wants = 2
-            msg = None
-            buffer = b""
-            while not msg:
-                buffer += await reader.readexactly(wants)
-                try:
-                    # For lengths>128 this will fail the first time around.
-                    # This will result in a double parsing of the first bytes.
-                    # To improve performance we could inline the pureber code an replace `wants`
-                    # with `await reader.readexactly` but for now we use the more simplisitic approach.
-                    msg, _ = pureber.berDecodeObject(self.berdecoder, buffer)
-                except pureber.BERExceptionInsufficientData as e:
-                    # We do not have enough data in our buffer,
-                    # the first and only exception argument contains how much data is still expected.
-                    [wants] = e.args
+            buffer += await self.reader.readexactly(length)
+
+            # We already did some parsing which this function would also perform
+            # but for the sake of simplicitly we only inlined the code necessary
+            # to parse how many bytes we have to read from the network.
+            msg, _ = pureber.berDecodeObject(self.berdecoder, buffer)
+
             # this is some very obscure code path, related to the construction of the
             # berdecoder object, but always guaranteed ...
             assert isinstance(msg, LDAPMessage)
-            await self.handle(msg)
+            asyncio.create_task(self.handle(msg))
 
     @staticmethod
     def unsolicited_notification(msg: LDAPProtocolRequest) -> None:
