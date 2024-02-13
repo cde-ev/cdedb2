@@ -1254,12 +1254,27 @@ class TestCdEFrontend(FrontendTest):
     @as_users("berta")
     def test_lastschrift_change_donation(self) -> None:
         self.traverse(self.user['display_name'], "Bearbeiten")
+        # invalid/uncommon input for donation
+        f = self.response.forms['changedataform']
+        f['donation'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+                                   "Ungültige Eingabe für eine Dezimalzahl")
         f = self.response.forms['changedataform']
         f['donation'] = "4200"
         self.submit(f, check_notification=False)
         self.assertValidationError('donation',
-            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+        # there is some interdependence between validation of donation and other
+        # fields, check that still a working response is returned if both invalid
+        f['telephone'] = "invalid"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('telephone',
+                                   "Telefonnummer kann nicht validiert werden.")
+
+        # valid input, but berta does not pay herself
         f = self.response.forms['changedataform']
+        f['telephone'] = ""
         f['donation'] = "3"
         self.submit(f, check_notification=False)
         self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
