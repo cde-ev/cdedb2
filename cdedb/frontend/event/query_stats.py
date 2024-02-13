@@ -613,7 +613,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
@@ -787,7 +787,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
@@ -898,7 +898,7 @@ class EventRegistrationInXChoiceGrouper:
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)],
