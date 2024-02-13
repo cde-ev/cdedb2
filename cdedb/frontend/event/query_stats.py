@@ -767,7 +767,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equalornull, False),
                 ],
-                [(f"course{track_id}.course_moniker", True)],
+                [(f"course{track_id}.moniker", True)],
             )
         elif self == self.no_course:
             return (
