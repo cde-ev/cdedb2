@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-02-13 21:55+0000\n"
+"POT-Creation-Date: 2024-02-13 22:29+0000\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -56,8 +56,8 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/event/lodgement.py:413 cdedb/backend/event/lowlevel.py:1017
 #: cdedb/backend/event/lowlevel.py:1271 cdedb/backend/event/query.py:64
 #: cdedb/backend/event/query.py:259 cdedb/backend/event/query.py:285
-#: cdedb/backend/event/query.py:457 cdedb/backend/event/query.py:750
-#: cdedb/backend/event/query.py:764 cdedb/backend/event/registration.py:354
+#: cdedb/backend/event/query.py:459 cdedb/backend/event/query.py:752
+#: cdedb/backend/event/query.py:766 cdedb/backend/event/registration.py:354
 #: cdedb/backend/event/registration.py:393
 #: cdedb/backend/event/registration.py:446
 #: cdedb/backend/event/registration.py:478
@@ -94,7 +94,7 @@ msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
 #: cdedb/backend/assembly.py:361 cdedb/backend/cde/base.py:556
-#: cdedb/backend/core/base.py:2730 cdedb/backend/event/query.py:628
+#: cdedb/backend/core/base.py:2730 cdedb/backend/event/query.py:630
 #: cdedb/backend/ml.py:310 cdedb/backend/past_event.py:760
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
@@ -1140,32 +1140,32 @@ msgstr ""
 msgid "Unfit field for %(field)s."
 msgstr "Feld ist nicht geeignet für %(field)s."
 
-#: cdedb/backend/event/query.py:648
+#: cdedb/backend/event/query.py:650
 msgid "Must be orga to retrieve stored queries."
 msgstr "Du musst Orga sein, um gespeicherte Suchabfragen zu nutzen."
 
-#: cdedb/backend/event/query.py:690
+#: cdedb/backend/event/query.py:692
 #, python-format
 msgid "%(count)s stored queries could not be retrieved."
 msgstr "%(count)s gespeicherte Suchen konnten nicht geladen werden."
 
-#: cdedb/backend/event/query.py:704
+#: cdedb/backend/event/query.py:706
 msgid "Must be orga to delete queries for an event."
 msgstr "Du musst Orga sein, um Suchabfragen zu löschen."
 
-#: cdedb/backend/event/query.py:721
+#: cdedb/backend/event/query.py:723
 msgid "Must be orga to store queries for an event."
 msgstr "Du musst Orga sein, um Suchabfragen zu speichern."
 
-#: cdedb/backend/event/query.py:724
+#: cdedb/backend/event/query.py:726
 msgid "Cannot store this kind of query."
 msgstr "Diese Art von Suchabfrage kann nciht gespeichert werden."
 
-#: cdedb/backend/event/query.py:726
+#: cdedb/backend/event/query.py:728
 msgid "Query must have a name"
 msgstr "Suchabfage muss einen Name besitzen"
 
-#: cdedb/backend/event/query.py:738
+#: cdedb/backend/event/query.py:740
 #, python-format
 msgid "Query with name '%(query)s' already exists for this event."
 msgstr ""
@@ -2164,25 +2164,25 @@ msgid "course ID"
 msgstr "Kurs-ID"
 
 #: cdedb/common/query/__init__.py:548 cdedb/common/query/__init__.py:917
-#: cdedb/common/query/__init__.py:1069
+#: cdedb/common/query/__init__.py:1073
 msgid "course"
 msgstr "Kurs"
 
 #: cdedb/common/query/__init__.py:550 cdedb/common/query/__init__.py:921
-#: cdedb/common/query/__init__.py:1070
+#: cdedb/common/query/__init__.py:1074
 msgid "course nr"
 msgstr "Kursnummer"
 
-#: cdedb/common/query/__init__.py:551 cdedb/common/query/__init__.py:923
-#: cdedb/common/query/__init__.py:1071
+#: cdedb/common/query/__init__.py:551 cdedb/common/query/__init__.py:925
+#: cdedb/common/query/__init__.py:1076
 msgid "course title"
 msgstr "Kurstitel"
 
-#: cdedb/common/query/__init__.py:552 cdedb/common/query/__init__.py:1072
+#: cdedb/common/query/__init__.py:552 cdedb/common/query/__init__.py:1077
 msgid "course description"
 msgstr "Kursbeschreibung"
 
-#: cdedb/common/query/__init__.py:554 cdedb/common/query/__init__.py:1197
+#: cdedb/common/query/__init__.py:554 cdedb/common/query/__init__.py:1202
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:330
 #: cdedb/frontend/templates/web/assembly/ballot/configure_ballot.tmpl:51
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:47
@@ -2357,11 +2357,11 @@ msgstr "Status"
 msgid "camping mat user"
 msgstr "Isomattenschläfer"
 
-#: cdedb/common/query/__init__.py:890 cdedb/common/query/__init__.py:1196
+#: cdedb/common/query/__init__.py:890 cdedb/common/query/__init__.py:1201
 msgid "lodgement"
 msgstr "Unterkunft"
 
-#: cdedb/common/query/__init__.py:891 cdedb/common/query/__init__.py:1194
+#: cdedb/common/query/__init__.py:891 cdedb/common/query/__init__.py:1199
 msgid "lodgement ID"
 msgstr "Unterkunfts-ID"
 
@@ -2397,115 +2397,123 @@ msgstr "Hält seinen/ihren Kurs"
 msgid "instructed course"
 msgstr "geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:925 cdedb/common/query/__init__.py:1073
+#: cdedb/common/query/__init__.py:923 cdedb/common/query/__init__.py:1075
+msgid "course moniker"
+msgstr "Kursbezeichnung"
+
+#: cdedb/common/query/__init__.py:927 cdedb/common/query/__init__.py:1078
 msgid "course shortname"
 msgstr "Kurzname"
 
-#: cdedb/common/query/__init__.py:927 cdedb/common/query/__init__.py:1077
+#: cdedb/common/query/__init__.py:929 cdedb/common/query/__init__.py:1082
 msgid "course notes"
 msgstr "Kursnotizen"
 
-#: cdedb/common/query/__init__.py:930
+#: cdedb/common/query/__init__.py:932
 msgid "course {field}"
 msgstr "Kurs {field}"
 
-#: cdedb/common/query/__init__.py:936
+#: cdedb/common/query/__init__.py:938
 msgid "instructed course ID"
 msgstr "ID geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:938
+#: cdedb/common/query/__init__.py:940
 msgid "instructed course nr"
 msgstr "Nummer geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:940
+#: cdedb/common/query/__init__.py:942
+msgid "instructed course moniker"
+msgstr "Bezeichnung geleiteter Kurs"
+
+#: cdedb/common/query/__init__.py:944
 msgid "instructed course title"
 msgstr "Titel geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:942
+#: cdedb/common/query/__init__.py:946
 msgid "instructed course shortname"
 msgstr "Kurzname geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:944
+#: cdedb/common/query/__init__.py:948
 msgid "instructed course notes"
 msgstr "Notizen geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:947
+#: cdedb/common/query/__init__.py:951
 msgid "instructed course {field}"
 msgstr "{field} geleiteter Kurs"
 
-#: cdedb/common/query/__init__.py:959
+#: cdedb/common/query/__init__.py:963
 msgid "{rank}. Choice"
 msgstr "{rank}. Wahl"
 
-#: cdedb/common/query/__init__.py:971 cdedb/common/query/__init__.py:1130
+#: cdedb/common/query/__init__.py:975 cdedb/common/query/__init__.py:1135
 msgid "Any Choice"
 msgstr "Beliebige Kurswahl"
 
-#: cdedb/common/query/__init__.py:1020 cdedb/common/query/__init__.py:1247
+#: cdedb/common/query/__init__.py:1024 cdedb/common/query/__init__.py:1252
 msgid "any part"
 msgstr "Bel. Teil"
 
-#: cdedb/common/query/__init__.py:1026 cdedb/common/query/__init__.py:1029
-#: cdedb/common/query/__init__.py:1157 cdedb/common/query/__init__.py:1160
+#: cdedb/common/query/__init__.py:1030 cdedb/common/query/__init__.py:1033
+#: cdedb/common/query/__init__.py:1162 cdedb/common/query/__init__.py:1165
 msgid "any track"
 msgstr "Bel. Schiene"
 
-#: cdedb/common/query/__init__.py:1068
+#: cdedb/common/query/__init__.py:1072
 msgid "course id"
 msgstr "Kurs ID"
 
-#: cdedb/common/query/__init__.py:1074
+#: cdedb/common/query/__init__.py:1079
 msgid "course instructors"
 msgstr "Kursleiter"
 
-#: cdedb/common/query/__init__.py:1075
+#: cdedb/common/query/__init__.py:1080
 msgid "course min size"
 msgstr "Minimalgröße"
 
-#: cdedb/common/query/__init__.py:1076
+#: cdedb/common/query/__init__.py:1081
 msgid "course max size"
 msgstr "Maximalgröße"
 
-#: cdedb/common/query/__init__.py:1085
+#: cdedb/common/query/__init__.py:1090
 msgid "is offered"
 msgstr "wird angeboten"
 
-#: cdedb/common/query/__init__.py:1087
+#: cdedb/common/query/__init__.py:1092
 #: cdedb/frontend/event/partial_import.py:324
 msgid "takes place"
 msgstr "findet statt"
 
-#: cdedb/common/query/__init__.py:1089
+#: cdedb/common/query/__init__.py:1094
 #: cdedb/frontend/templates/web/event/event/index.tmpl:148
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:31
 msgid "is cancelled"
 msgstr "wurde abgesagt"
 
-#: cdedb/common/query/__init__.py:1091
+#: cdedb/common/query/__init__.py:1096
 msgid "attendee count"
 msgstr "Anzahl Teilnehmer"
 
-#: cdedb/common/query/__init__.py:1093
+#: cdedb/common/query/__init__.py:1098
 msgid "attendee count (incl. guests)"
 msgstr "Anzahl Teilnehmer (inkl. Gäste)"
 
-#: cdedb/common/query/__init__.py:1095
+#: cdedb/common/query/__init__.py:1100
 msgid "instructor count"
 msgstr "Anzahl Kursleiter"
 
-#: cdedb/common/query/__init__.py:1097
+#: cdedb/common/query/__init__.py:1102
 msgid "assigned instructor count"
 msgstr "Anzahl eingeteilter Kursleiter"
 
-#: cdedb/common/query/__init__.py:1099
+#: cdedb/common/query/__init__.py:1104
 msgid "potential instructor count (incl. open)"
 msgstr "Anzahl potentieller Kursleiter (inkl. offen)"
 
-#: cdedb/common/query/__init__.py:1106
+#: cdedb/common/query/__init__.py:1111
 msgid "{rank}. choices"
 msgstr "{rank}. Wahlen"
 
-#: cdedb/common/query/__init__.py:1198
+#: cdedb/common/query/__init__.py:1203
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:80
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:28
@@ -2514,7 +2522,7 @@ msgstr "{rank}. Wahlen"
 msgid "Regular Capacity"
 msgstr "Reguläre Kapazität"
 
-#: cdedb/common/query/__init__.py:1200
+#: cdedb/common/query/__init__.py:1205
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:81
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:29
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:29
@@ -2523,15 +2531,15 @@ msgstr "Reguläre Kapazität"
 msgid "Camping Mat Capacity"
 msgstr "Isomattenplätze"
 
-#: cdedb/common/query/__init__.py:1201
+#: cdedb/common/query/__init__.py:1206
 msgid "Total Capacity"
 msgstr "Gesamtkapazität"
 
-#: cdedb/common/query/__init__.py:1202
+#: cdedb/common/query/__init__.py:1207
 msgid "Lodgement Notes"
 msgstr "Unterkunftsnotizen"
 
-#: cdedb/common/query/__init__.py:1204
+#: cdedb/common/query/__init__.py:1209
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:31
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:37
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:41
@@ -2539,47 +2547,47 @@ msgstr "Unterkunftsnotizen"
 msgid "Lodgement Group"
 msgstr "Unterkunftsgruppe"
 
-#: cdedb/common/query/__init__.py:1205
+#: cdedb/common/query/__init__.py:1210
 msgid "Lodgement Group ID"
 msgstr "Unterkunftsgruppe: ID"
 
-#: cdedb/common/query/__init__.py:1206
+#: cdedb/common/query/__init__.py:1211
 msgid "Lodgement Group Title"
 msgstr "Unterkunftsgruppe: Bezeichner"
 
-#: cdedb/common/query/__init__.py:1214
+#: cdedb/common/query/__init__.py:1219
 msgid "Regular Inhabitants"
 msgstr "Reguläre Bewohner"
 
-#: cdedb/common/query/__init__.py:1216
+#: cdedb/common/query/__init__.py:1221
 msgid "Camping Mat Inhabitants"
 msgstr "Isomattenschläfer"
 
-#: cdedb/common/query/__init__.py:1218
+#: cdedb/common/query/__init__.py:1223
 msgid "Total Inhabitants"
 msgstr "Gesamtbewohner"
 
-#: cdedb/common/query/__init__.py:1220
+#: cdedb/common/query/__init__.py:1225
 msgid "Regular Remaining"
 msgstr "Freie Betten"
 
-#: cdedb/common/query/__init__.py:1222
+#: cdedb/common/query/__init__.py:1227
 msgid "Camping Mat Remaining"
 msgstr "Freie Isomattenplätze"
 
-#: cdedb/common/query/__init__.py:1224
+#: cdedb/common/query/__init__.py:1229
 msgid "Total Remaining"
 msgstr "Freie Gesamtkapazitäten"
 
-#: cdedb/common/query/__init__.py:1226
+#: cdedb/common/query/__init__.py:1231
 msgid "Group Regular Inhabitants"
 msgstr "Unterkunftsgruppe: Reguläre Bewohner"
 
-#: cdedb/common/query/__init__.py:1228
+#: cdedb/common/query/__init__.py:1233
 msgid "Group Camping Mat Inhabitants"
 msgstr "Unterkunftsgruppe: Isomattenschläfer"
 
-#: cdedb/common/query/__init__.py:1230
+#: cdedb/common/query/__init__.py:1235
 msgid "Group Total Inhabitants"
 msgstr "Unterkunftsgruppe: Gesamtbewohner"
 
