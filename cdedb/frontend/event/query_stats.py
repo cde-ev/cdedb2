@@ -33,7 +33,7 @@ from cdedb.common.sorting import xsorted
 
 RPS = const.RegistrationPartStati
 
-StatQueryAux = tuple[list[str], list[QueryConstraint], list[QueryOrder]]
+StatQueryAux = tuple[list[str], Optional[list[QueryConstraint]], list[QueryOrder]]
 
 __all__ = ['EventRegistrationPartStatistic', 'EventCourseStatistic',
            'EventRegistrationTrackStatistic', 'EventRegistrationInXChoiceGrouper']
@@ -186,10 +186,13 @@ class StatisticMixin:
     def _get_base_query(event: models.Event) -> Query:
         """Create a query object to base all queries for these stats on."""
 
-    def get_query(self, event: models.Event, context_id: int) -> Query:
+    def get_query(self, event: models.Event, context_id: int,
+                  entity_ids: Collection[int]) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
         fields, constraints, order = self._get_query_aux(event, context_id)
+        if constraints is None:
+            constraints = [get_id_constraint(self.id_field, entity_ids)]
         query.fields_of_interest.extend(fields)
         query.constraints.extend(constraints)
         # Prepend the specific order.
@@ -248,7 +251,7 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, part_id) for part_id
+            queries = [self.get_query(event, part_id, ()) for part_id
                        in self.get_part_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -275,7 +278,7 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                        registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id) for track_id
+            queries = [self.get_query(event, track_id, ()) for track_id
                        in self.get_track_ids(event, part_id=part_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -285,7 +288,7 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part group, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id) for track_id
+            queries = [self.get_query(event, track_id, ()) for track_id
                        in self.get_track_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -354,6 +357,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     no_parental_agreement = n_("Parental Consent Pending"), 1
     present = n_("Present")
     no_lodgement = n_("No Lodgement"), 1
+    birthdays = n_("Has Birthday"), 1
     cancelled = n_("Registration Cancelled")
     rejected = n_("Registration Rejected")
     total = n_("Total Registrations")
@@ -362,6 +366,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         return self not in {
             # The no lodgement query has a part correlation between two constraints.
             EventRegistrationPartStatistic.no_lodgement,
+            # Birthdays are complicated.
+            EventRegistrationPartStatistic.birthdays,
         }
 
     def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
@@ -411,6 +417,13 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return part['status'].is_present()
         elif self == self.no_lodgement:
             return part['status'].is_present() and not part['lodgement_id']
+        elif self == self.birthdays:
+            month, day = reg['birthday'].month, reg['birthday'].day
+            begin, end = event.parts[part_id].part_begin, event.parts[part_id].part_end
+            return part['status'].is_present() and any(
+                begin <= datetime.date(year, month, day) <= end
+                for year in range(event.begin.year, event.end.year + 1)
+            )
         elif self == self.cancelled:
             return part['status'] == RPS.cancelled
         elif self == self.rejected:
@@ -566,6 +579,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                     _present_constraint(part),
                     (f"part{part.id}.lodgement_id", QueryOperators.empty, None),
                 ],
+                [],
+            )
+        elif self == self.birthdays:
+            return (
+                ["reg.birthday"],
+                None,
                 [],
             )
         elif self == self.cancelled:
