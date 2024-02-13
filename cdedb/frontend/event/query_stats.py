@@ -687,9 +687,9 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.event_course,
             event.basic_course_query_spec,
-            fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
+            fields_of_interest=['course.moniker', 'course.instructors'],
             constraints=[],
-            order=[('course.nr', True)],
+            order=[('course.moniker', True)],
         )
 
 
@@ -746,7 +746,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.course_instructor",
                      QueryOperators.nonempty, None),
                 ],
-                [(f"course_instructor{track_id}.nr", True)],
+                [(f"course_instructor{track_id}.moniker", True)],
             )
         elif self == self.instructors:
             return (
@@ -756,7 +756,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equal, True),
                 ],
-                [(f"course_instructor{track_id}.nr", True)],
+                [(f"course_instructor{track_id}.moniker", True)],
             )
         elif self == self.attendees:
             return (
@@ -767,7 +767,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equalornull, False),
                 ],
-                [(f"course{track_id}.nr", True)],
+                [(f"course{track_id}.course_moniker", True)],
             )
         elif self == self.no_course:
             return (
@@ -907,7 +907,7 @@ class EventRegistrationInXChoiceGrouper:
     def get_query(self, event: models.Event, track_id: int, x: int) -> Query:
         query = self._get_base_query(event, self._get_ids(x, (track_id,)))
         query.fields_of_interest.append(f"track{track_id}.course_id")
-        query.order = [(f"track{track_id}.course_id", True)] + query.order
+        query.order = [(f"track{track_id}.course_moniker", True)] + query.order
         return query
 
     def get_query_part(self, event: models.Event, part_id: int, x: int) -> Query:
