@@ -282,7 +282,7 @@ class EventQueryMixin(EventBaseFrontend):
     @event_guard()
     @REQUESTdata("scope")
     def custom_filter_summary(self, rs: RequestState, event_id: int,
-                              scope: QueryScope = None) -> Response:
+                              scope: Optional[QueryScope] = None) -> Response:
         rs.ignore_validation_errors()
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
