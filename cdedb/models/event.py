@@ -490,7 +490,7 @@ class CustomQueryFilter(EventDataclass):
             if f in spec:
                 valid.append(spec[f].get_title(g))
             else:
-                invalid.append(f)
+                invalid.append(f.removeprefix("reg_fields.xfield_"))
         return xsorted(valid), xsorted(invalid)
 
 
