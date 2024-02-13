@@ -12018,7 +12018,7 @@ msgid ""
 "authorization, in addition to the annual membership fee."
 msgstr ""
 "Du erlaubst dem CdE, diesen Betrag jährlich via Lastschrift, zusätzlich zu "
-"deinem jährlichen Mitgliedsbeitrags, einzuziehen."
+"deinem jährlichen Mitgliedsbeitrag, einzuziehen."
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:68
 #, python-format
