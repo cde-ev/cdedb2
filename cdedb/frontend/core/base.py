@@ -1244,10 +1244,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        # The values of rs.values are converted to strings if there was a validation
-        #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if rs.values.get("donation") is not None:
-            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
+
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
