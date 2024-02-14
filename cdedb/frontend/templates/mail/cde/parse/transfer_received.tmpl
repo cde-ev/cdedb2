@@ -4,11 +4,15 @@ Vielen Dank für Deine Überweisung auf das Konto des CdE. Wir haben
 diese verarbeitet. Dein Guthaben beträgt jetzt {{ new_balance|money }}.
 {% if persona['balance'] < fee %}
 
+{% if persona['is_member'] %}
+*Leider reicht dein Guthaben nicht aus, um deine Mitgliedschaft zu verlängern!*
+{% else %}
 *Leider reicht dein Guthaben nicht aus, um deine Mitgliedschaft zu erneuern!*
+{% endif %}
 
-Bitte zahle dafür den Differenzbetrag von {{ (fee - new_balance)|money }} zum aktuellen Mitgliedsbeitrag
-von {{ fee|money }} (oder einen beliebigen höheren Betrag) bis zum
-Ende des Halbjahres. Danach fällt dein aktuelles Guthaben dem Verein zu.
+Bitte zahle dafür möglichst bald den Differenzbetrag von {{ (fee - new_balance)|money }} zum aktuellen
+Mitgliedsbeitrag von {{ fee|money }} (oder einen beliebigen höheren Betrag).
+Andernfalls fällt dein aktuelles Guthaben dem Verein zu.
 {% if not persona['is_member'] %}
 Alternativ kannst du den gezahlten Betrag stattdessen auch zurückfordern.
 {% endif %}
