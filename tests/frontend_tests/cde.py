@@ -1284,8 +1284,7 @@ class TestCdEFrontend(FrontendTest):
         # fields, check that still a working response is returned if both invalid
         f['telephone'] = "invalid"
         self.submit(f, check_notification=False)
-        self.assertValidationError('telephone',
-                                   "Telefonnummer kann nicht validiert werden.")
+        self.assertValidationError('telephone', "Das ist keine Telefonnummer.")
         # This is the donation info text if currently an extraordinary high/low donation
         # is saved. It should not be shown if high value was entered but not saved.
         self.assertNonPresence("außerhalb der vorgesehenen Grenzwerte")
