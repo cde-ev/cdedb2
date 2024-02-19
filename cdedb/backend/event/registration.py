@@ -1055,9 +1055,12 @@ class EventRegistrationBackend(EventBaseBackend):
             if self.list_registrations(rs, data['event_id'], data['persona_id']):
                 raise ValueError(n_("Already registered."))
             self.assert_offline_lock(rs, event_id=data['event_id'])
+            persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
-            data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
+            data['amount_owed'] = self._calculate_single_fee(
+                rs, data, event=event, is_member=persona['is_member'])
             data['fields'] = PsycoJson(fdata)
+            data['is_member'] = persona['is_member']
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
