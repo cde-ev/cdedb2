@@ -976,6 +976,7 @@ CREATE TABLE event.registrations (
         notes                   varchar,
         -- orga remarks
         orga_notes              varchar DEFAULT NULL,
+        is_member               boolean NOT NULL,
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
