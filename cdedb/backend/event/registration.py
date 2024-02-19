@@ -1332,7 +1332,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 amount, active_fees, visual_debug_data, fees_by_kind)
 
         if is_member is None:
-            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
+            is_member = reg.get('is_member')
+            if is_member is None:
+                is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
             assert is_member is not None
 
         return RegistrationFeeData(
@@ -1436,14 +1438,11 @@ class EventRegistrationBackend(EventBaseBackend):
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
 
             ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
-                is_member = personas[reg['persona_id']]['is_member']
-                ret[reg_id] = self._calculate_single_fee(
-                    rs, reg, event=event, is_member=is_member)
+                ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
         return ret
 
     class _CalculateFeeProtocol(Protocol):
