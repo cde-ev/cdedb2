@@ -1000,6 +1000,7 @@ class TestEventBackend(BackendTest):
             },
             'list_consent': True,
             'id': 2,
+            'is_member': False,
             'mixed_lodging': True,
             'mtime': None,
             'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1124,6 +1125,7 @@ class TestEventBackend(BackendTest):
             new_reg['amount_owed'] = decimal.Decimal("589.48")
             new_reg['amount_paid'] = decimal.Decimal("0.00")
             new_reg['payment'] = None
+            new_reg['is_member'] = False
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -1166,6 +1168,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 1,
+                'is_member': True,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': None,
@@ -1219,6 +1222,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 2,
+                'is_member': False,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1273,6 +1277,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': False,
                 'id': 4,
+                'is_member': True,
                 'mixed_lodging': False,
                 'mtime': None,
                 'orga_notes': None,
@@ -1397,7 +1402,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'persona_id': 999,
-            'real_persona_id': None
+            'real_persona_id': None,
         }
         with self.assertRaises(ValueError) as cm:
             self.event.create_registration(self.key, new_reg)
@@ -1420,6 +1425,7 @@ class TestEventBackend(BackendTest):
         new_reg['amount_owed'] = decimal.Decimal("584.48")
         new_reg['amount_paid'] = decimal.Decimal("0.00")
         new_reg['payment'] = None
+        new_reg['is_member'] = True
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
