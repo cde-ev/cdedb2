@@ -33,8 +33,9 @@ from cdedb.common.query import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
-    EVENT_TRACK_COMMON_FIELDS, EVENT_TRACK_GROUP_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
+    EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
+    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -414,7 +415,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdata("fee")
-    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
+    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
+                     *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
