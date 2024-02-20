@@ -8,7 +8,7 @@ s = Script(dbuser='cdb')
 event: EventBackend = s.make_backend('event', proxy=False)
 
 with s:
-    no_ctime = no_is_member = success = 0
+    no_ctime = archived = no_is_member = success = 0
 
     q = """
         ALTER TABLE event.registrations ADD COLUMN is_member boolean DEFAULT FALSE;
@@ -43,8 +43,13 @@ with s:
             success += 1
             print(f"Updated registration {registration_id} (persona {persona_id}) with historical member status (is_member={data['is_member']}).")
         else:
-            no_is_member += 1
-            print(f"No historical member status found for registration {registration_id} (persona {persona_id}).")
+            persona = event.core.get_persona(s.rs(), persona_id)
+            if persona['is_archived']:
+                archived += 1
+                print(f"No historical member status for registration {registration_id} (persona {persona_id}) because they are archived.")
+            else:
+                no_is_member += 1
+                print(f"No historical member status found for registration {registration_id} (persona {persona_id}) for unknown reason.")
 
     q = """
         ALTER TABLE event.registrations ALTER COLUMN is_member DROP DEFAULT;
@@ -58,5 +63,7 @@ with s:
     if no_ctime:
         print(f"No registration time found for {no_ctime} registrations.")
     if no_is_member:
-        print(f"No membership status found for {no_is_member} registrations.")
+        print(f"No membership status found for {no_is_member} (non-archived) registrations.")
+    if archived:
+        print(f"No membership status found for {archived} archived registrations.")
     print(f"{success} registrations were updated successfully.")
