@@ -421,14 +421,16 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         if secret:
             rs.notify("success", n_("Signed up."))
             subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
-            reply_to = (rs.ambience['assembly']['presider_address'] or
-                        self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+            # This is no actual Reply-To to avoid people leaking their secret.
+            contact_address = (rs.ambience['assembly']['presider_address'] or
+                               self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
                 rs, "signup",
-                {'To': (persona['username'],),
-                 'Subject': subject,
-                 'Reply-To': reply_to},
-                {'secret': secret, 'persona': persona})
+                {'From': self.conf["NOREPLY_ADDRESS"],
+                 'To': (persona['username'],),
+                 'Subject': subject},
+                {'secret': secret, 'persona': persona,
+                 'contact_address': contact_address})
         else:
             rs.notify("info", n_("Already signed up."))
 
