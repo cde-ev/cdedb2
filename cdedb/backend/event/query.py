@@ -300,7 +300,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     (
                         SELECT
                             {', '.join(COURSE_FIELDS)},
-                            id AS course_id, nr || '. ' || shortname AS moniker
+                            id AS course_id, nr || '. ' || shortname AS nr_shortname
                         FROM event.courses
                         WHERE event_id = {event_id}
                     ) AS course
