@@ -1461,9 +1461,10 @@ class FrontendTest(BackendTest):
         if not container:
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-{kind} box")
-        msg = f"Expected error message not found near input with name {f!r}:\n"
-        msg += container[0].text_content()
-        self.assertIn(message, container[0].text_content(), msg)
+        normalized = re.sub(r'\s+', ' ', container[0].text_content())
+        errmsg = (f"Expected error message not found near input with name {f!r}:\n"
+                  f"{normalized}")
+        self.assertIn(message, normalized, errmsg)
 
     def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
                      tag: str = 'a', href_attr: str = 'href',
