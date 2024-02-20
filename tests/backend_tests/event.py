@@ -2397,6 +2397,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1000,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2627,6 +2628,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1001,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2940,6 +2942,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
         expectation['registrations'][1002]['amount_owed'] = decimal.Decimal("573.99")
+        expectation['registrations'][1002]['is_member'] = True
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
