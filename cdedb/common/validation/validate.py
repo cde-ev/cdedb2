@@ -3454,6 +3454,7 @@ def _serialized_event(
             _lodgement, {'event_id': ID}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': ID, 'persona_id': ID,
+                            'is_member': bool,
                             'amount_owed': NonNegativeDecimal,
                             # allow amount_paid and payment for better UX, we check
                             # inside the import that they have not changed
