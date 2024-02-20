@@ -139,7 +139,7 @@ class TestEventFrontend(FrontendTest):
                           {'description': 'Bearbeiten'})
             f = self.response.forms['changedataform']
             self.submit(f, check_notification=False)
-            self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+            self.assertValidationWarning("mobile", "Telefonnummer scheint ungültig zu")
             f = self.response.forms['changedataform']
             f['display_name'] = "Zelda"
             f['location'] = "Hyrule"
@@ -171,7 +171,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         self.submit(f, check_notification=False)
-        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+        self.assertValidationWarning("mobile", "Telefonnummer scheint ungültig zu")
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
