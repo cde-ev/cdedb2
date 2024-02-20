@@ -187,7 +187,7 @@ class StatisticMixin:
         """Create a query object to base all queries for these stats on."""
 
     def get_query(self, event: models.Event, context_id: int,
-                  entity_ids: Collection[int]) -> Query:
+                  entity_ids: Collection[int] = ()) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
         fields, constraints, order = self._get_query_aux(event, context_id)
@@ -251,7 +251,7 @@ class StatisticPartMixin(StatisticMixin):  # pylint: disable=abstract-method
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, part_id, ()) for part_id
+            queries = [self.get_query(event, part_id) for part_id
                        in self.get_part_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -278,7 +278,7 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                        registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id, ()) for track_id
+            queries = [self.get_query(event, track_id) for track_id
                        in self.get_track_ids(event, part_id=part_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -288,7 +288,7 @@ class StatisticTrackMixin(StatisticMixin):  # pylint: disable=abstract-method
                              registration_ids: Collection[int]) -> Query:
         """Construct queries for every track in a given part group, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id, ()) for track_id
+            queries = [self.get_query(event, track_id) for track_id
                        in self.get_track_ids(event, part_group_id=part_group_id)]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -687,9 +687,9 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.event_course,
             event.basic_course_query_spec,
-            fields_of_interest=['course.moniker', 'course.instructors'],
+            fields_of_interest=['course.nr_shortname', 'course.instructors'],
             constraints=[],
-            order=[('course.moniker', True)],
+            order=[('course.nr_shortname', True)],
         )
 
 
@@ -746,7 +746,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.course_instructor",
                      QueryOperators.nonempty, None),
                 ],
-                [(f"course_instructor{track_id}.moniker", True)],
+                [(f"course_instructor{track_id}.nr_shortname", True)],
             )
         elif self == self.instructors:
             return (
@@ -756,7 +756,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equal, True),
                 ],
-                [(f"course_instructor{track_id}.moniker", True)],
+                [(f"course_instructor{track_id}.nr_shortname", True)],
             )
         elif self == self.attendees:
             return (
@@ -767,7 +767,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equalornull, False),
                 ],
-                [(f"course{track_id}.moniker", True)],
+                [(f"course{track_id}.nr_shortname", True)],
             )
         elif self == self.no_course:
             return (
@@ -907,7 +907,7 @@ class EventRegistrationInXChoiceGrouper:
     def get_query(self, event: models.Event, track_id: int, x: int) -> Query:
         query = self._get_base_query(event, self._get_ids(x, (track_id,)))
         query.fields_of_interest.append(f"track{track_id}.course_id")
-        query.order = [(f"track{track_id}.course_moniker", True)] + query.order
+        query.order = [(f"course{track_id}.nr_shortname", True)] + query.order
         return query
 
     def get_query_part(self, event: models.Event, part_id: int, x: int) -> Query:

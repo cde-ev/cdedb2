@@ -2398,8 +2398,8 @@ msgid "instructed course"
 msgstr "geleiteter Kurs"
 
 #: cdedb/common/query/__init__.py:923 cdedb/common/query/__init__.py:1075
-msgid "course moniker"
-msgstr "Kursbezeichnung"
+msgid "course nr+shortname"
+msgstr "Kurs Nr+Kurzname"
 
 #: cdedb/common/query/__init__.py:927 cdedb/common/query/__init__.py:1078
 msgid "course shortname"
@@ -2422,8 +2422,8 @@ msgid "instructed course nr"
 msgstr "Nummer geleiteter Kurs"
 
 #: cdedb/common/query/__init__.py:942
-msgid "instructed course moniker"
-msgstr "Bezeichnung geleiteter Kurs"
+msgid "instructed course"
+msgstr "Nr+Kurzname geleiteter Kurs"
 
 #: cdedb/common/query/__init__.py:944
 msgid "instructed course title"

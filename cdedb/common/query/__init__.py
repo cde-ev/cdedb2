@@ -919,8 +919,8 @@ def make_registration_query_spec(event: "models.Event",
                 "id", n_("instructed course"), prefix, choices=course_choices),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
-            f"course{track_id}.moniker": QuerySpecEntry(
-                "str", n_("course moniker"), prefix),
+            f"course{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("course nr+shortname"), prefix),
             f"course{track_id}.title": QuerySpecEntry(
                 "str", n_("course title"), prefix),
             f"course{track_id}.shortname": QuerySpecEntry(
@@ -938,8 +938,8 @@ def make_registration_query_spec(event: "models.Event",
                 "id", n_("instructed course ID"), prefix),
             f"course_instructor{track_id}.nr": QuerySpecEntry(
                 "str", n_("instructed course nr"), prefix),
-            f"course_instructor{track_id}.moniker": QuerySpecEntry(
-                "str", n_("instructed course moniker"), prefix),
+            f"course_instructor{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("instructed course nr+shortname"), prefix),
             f"course_instructor{track_id}.title": QuerySpecEntry(
                 "str", n_("instructed course title"), prefix),
             f"course_instructor{track_id}.shortname": QuerySpecEntry(
@@ -1072,7 +1072,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
         "course.id": QuerySpecEntry("id", n_("course id")),
         "course.course_id": QuerySpecEntry("id", n_("course"), choices=course_choices),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
-        "course.moniker": QuerySpecEntry("str", n_("course moniker")),
+        "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),
         "course.description": QuerySpecEntry("str", n_("course description")),
         "course.shortname": QuerySpecEntry("str", n_("course shortname")),
