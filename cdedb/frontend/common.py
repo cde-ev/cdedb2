@@ -1325,7 +1325,7 @@ class CdEMailmanClient(mailmanclient.Client):
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code != 404:
+            if e.code == 404:
                 self.logger.exception("Mailinglist not found!")
         except mailmanclient.MailmanConnectionError:
             self.logger.exception("Mailman connection failed!")
@@ -1347,11 +1347,11 @@ class CdEMailmanClient(mailmanclient.Client):
                     return []
             return None
         else:
-            if mmlist := self.get_list_safe(dblist.address):
-                try:
-                    return mmlist.held if mmlist else None
-                except urllib.error.HTTPError:
-                    self.logger.exception("Mailman connection failed!")
+            mmlist = self.get_list_safe(dblist.address)
+            try:
+                return mmlist.held if mmlist else None
+            except urllib.error.HTTPError:
+                self.logger.exception("Mailman connection failed!")
         return None
 
     def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
@@ -1368,11 +1368,11 @@ class CdEMailmanClient(mailmanclient.Client):
                 else:
                     return 0
         else:
-            if mmlist := self.get_list_safe(dblist.address):
-                try:
-                    return mmlist.get_held_count() if mmlist else None
-                except urllib.error.HTTPError:
-                    self.logger.exception("Mailman connection failed!")
+            mmlist = self.get_list_safe(dblist.address)
+            try:
+                return mmlist.get_held_count() if mmlist else None
+            except urllib.error.HTTPError:
+                self.logger.exception("Mailman connection failed!")
         return None
 
 
