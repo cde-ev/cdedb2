@@ -5075,6 +5075,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             del reg['payment']
             del reg['ctime']
             del reg['mtime']
+            del reg['is_member']
         self.get('/')
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
