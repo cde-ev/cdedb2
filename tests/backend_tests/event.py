@@ -4676,11 +4676,12 @@ class TestEventBackend(BackendTest):
             },
         })
 
-        # 2.1 Set test user to not be a member then register them. Check that external fee applies.
+        # 2.1 Set test user to not be a member then register them.
+        #  Check that external fee applies.
         persona_id = 2
         self.cde.change_membership(self.key, persona_id, False)
 
-        rdata = {
+        rdata: CdEDBObject = {
             'event_id': event_id,
             'persona_id': persona_id,
             'mixed_lodging': True,
@@ -4695,17 +4696,23 @@ class TestEventBackend(BackendTest):
             },
         }
         reg_id = self.event.create_registration(self.key, rdata)
-        self.assertEqual(external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
 
         # 2.2 Now grant them membership and check that the external fee still holds.
         self.cde.change_membership(self.key, persona_id, True)
-        self.assertEqual(external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
 
-        # 3.1 Delete and recreate the registration. Check that external fee does not apply.
-        self.event.delete_registration(self.key, reg_id, ('registration_parts',))
+        # 3.1 Delete and recreate the registration.
+        #  Check that external fee does not apply.
+        self.event.delete_registration(
+            self.key, reg_id, ('registration_parts',))
         new_reg_id = self.event.create_registration(self.key, rdata)
-        self.assertEqual(decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
 
         # 3.2 Revoke membership and check that external fee still does not apply.
         self.cde.change_membership(self.key, persona_id, False)
-        self.assertEqual(decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cdedb.backend.event import EventBackend
 from cdedb.common import unwrap
-from cdedb.script import Script, make_proxy
+from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
