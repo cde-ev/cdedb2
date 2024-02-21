@@ -6640,6 +6640,13 @@
             "fields": "reg.amount_paid,persona.birthday",
             "title": "Bad Combo!",
             "notes": null
+        },
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg_fields.xfield_anzahl_GROSSBUCHSTABEN,reg_fields.xfield_deleted_field",
+            "title": "Extrem wichtig!",
+            "notes": "Ups, hätte ich das Feld nicht löschen sollen?"
         }
     ],
     "event.log": [
