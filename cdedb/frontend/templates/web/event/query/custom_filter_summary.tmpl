@@ -112,7 +112,7 @@
                         <form action="{{ cdedblink('event/delete_custom_filter', {'custom_filter_id': custom_filter.id}) }}"
                               method="POST" class="display-inline" id="deletecustomfilterform{{ custom_filter.id }}">
                             {{ util.anti_csrf_token('event/delete_custom_filter') }}
-                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete custom filter')) }}
                         </form>
                     </td>
                 </tr>
