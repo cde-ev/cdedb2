@@ -83,6 +83,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
         meta_info = self.coreproxy.get_meta_info(rs)
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
 
         if rs.has_validation_errors():
             return self.show_semester(rs)
@@ -112,9 +113,9 @@ class CdESemesterMixin(CdEBaseFrontend):
                                   and not persona['trial_member']
                                   and not lastschrift)
                     if endangered:
-                        subject = "Mitgliedschaft verlängern"
+                        subject = "Deine Mitgliedschaft läuft aus"
                     else:
-                        subject = "Mitgliedschaft verlängert"
+                        subject = "Deine Mitgliedschaft wird verlängert"
 
                     self.do_mail(
                         rrs, "semester/billing",
@@ -122,6 +123,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                          'Subject': subject},
                         {'persona': persona,
                          'fee': self.conf["MEMBERSHIP_FEE"],
+                         'annual_fee': annual_fee,
                          'lastschrift': lastschrift,
                          'open_lastschrift': open_lastschrift,
                          'address': address,
@@ -262,7 +264,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @REQUESTdata("testrun", "skip")
     def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool,
                             ) -> Response:
-        """Send address check mail to all members.
+        """Send address check mail to all members who receive a printed exPuls.
 
         In case of a test run we send only a single mail to the button
         presser.

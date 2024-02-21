@@ -1114,17 +1114,21 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
-        merge_dicts(rs.values, data)
-        # The values of rs.values are converted to strings if there was a validation
-        #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if rs.values.get("donation") is not None:
-            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
+
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+        has_special_donation = (
+            "donation" in shown_fields
+            and not min_donation <= data["donation"] <= max_donation)
+
+        merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
-            'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
-            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"],
+            'min_donation': min_donation,
+            'max_donation': max_donation,
+            'has_special_donation': has_special_donation,
         })
 
     @access("persona", modi={"POST"})
@@ -1240,10 +1244,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        # The values of rs.values are converted to strings if there was a validation
-        #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if rs.values.get("donation") is not None:
-            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
+
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
@@ -1617,17 +1618,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, pevent_id, pcourse_id, persona_id,
                     is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
-            meta_info = self.coreproxy.get_meta_info(rs)
-            self.do_mail(rs, "welcome",
-                         {'To': (persona['username'],),
-                          'Subject': "Aufnahme in den CdE",
-                          },
-                         {'data': persona,
-                          'fee': self.conf['MEMBERSHIP_FEE'],
-                          'email': "",
-                          'cookie': "",
-                          'meta_info': meta_info,
-                          })
+            self.send_welcome_mail(rs, persona)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")

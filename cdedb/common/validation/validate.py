@@ -1599,8 +1599,18 @@ def _phone(
     try:
         # default to german if no region is provided
         phone: phonenumbers.PhoneNumber = phonenumbers.parse(raw, region="DE")
-    except phonenumbers.NumberParseException:
-        msg = n_("Phone number can not be parsed.")
+    except phonenumbers.NumberParseException as npe:
+        # error types taken from comments in source code of NumberParseException
+        if npe.error_type == npe.INVALID_COUNTRY_CODE:
+            msg = n_("Invalid country code")
+        elif npe.error_type == npe.NOT_A_NUMBER:
+            msg = n_("This is not a phone number.")
+        elif npe.error_type in (npe.TOO_SHORT_AFTER_IDD, npe.TOO_SHORT_NSN):
+            msg = n_("Phone number too short")
+        elif npe.error_type == npe.TOO_LONG:
+            msg = n_("Phone number too long")
+        else:  # should never happen
+            msg = n_("Phone number can not be parsed.")
         raise ValidationSummary(ValueError(argname, msg)) from None
     if not phonenumbers.is_valid_number(phone) and not ignore_warnings:
         msg = n_("Phone number seems to be not valid.")

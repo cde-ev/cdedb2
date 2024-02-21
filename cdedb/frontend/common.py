@@ -815,6 +815,40 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
+    def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
+        """Send a welcome mail to new personas.
+
+        This informs new personas in general that an account with this email was
+        created. Additionally, this provides further information for personas with
+        cde realm (and depending on if they are already member or not).
+
+        Therefore, we send this mail again if a persona was granted the cde realm.
+        """
+        success, cookie = self.coreproxy.make_reset_cookie(
+            rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+        reset_link = self.encode_parameter(
+            "core/do_password_reset_form", "email", persona['username'],
+            persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+        transaction_subject = make_membership_fee_reference(persona)
+        if persona['is_member']:
+            subject = "Aufnahme in den CdE"
+        elif persona['is_cde_realm']:
+            subject = "Aufnahmeangebot in den CdE"
+        else:
+            subject = "CdEDB-Account erstellt"
+        meta_info = self.coreproxy.get_meta_info(rs)
+        self.do_mail(rs, "welcome",
+                     {'To': (persona['username'],),
+                      'Subject': subject,
+                      },
+                     {'data': persona,
+                      'fee': self.conf["MEMBERSHIP_FEE"],
+                      'email': reset_link if success else "",
+                      'cookie': cookie if success else "",
+                      'meta_info': meta_info,
+                      'transaction_subject': transaction_subject,
+                      })
+
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
@@ -1245,23 +1279,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
-            success, message = self.coreproxy.make_reset_cookie(rs, data[
-                'username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter(
-                "core/do_password_reset_form", "email", data['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            meta_info = self.coreproxy.get_meta_info(rs)
-            self.do_mail(rs, "welcome",
-                         {'To': (data['username'],),
-                          'Subject': "CdEDB Account erstellt",
-                          },
-                         {'data': data,
-                          'fee': self.conf["MEMBERSHIP_FEE"],
-                          'email': email if success else "",
-                          'cookie': message if success else "",
-                          'meta_info': meta_info,
-                          })
-
+            data["id"] = new_id
+            self.send_welcome_mail(rs, data)
             rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
