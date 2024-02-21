@@ -336,6 +336,17 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_increase"),
 
     #
+    # Query datatypes
+    #
+    n_("str"),
+    n_("int"),
+    n_("float"),
+    n_("date"),
+    n_("datetime"),
+    n_("bool"),
+    n_("id"),
+
+    #
     # Validation errors
     #
     n_("day is out of range for month"),

@@ -17888,6 +17888,27 @@ msgstr "Spende"
 msgid "EventFeeType.solidary_increase"
 msgstr "Solidarische Erhöhung"
 
+msgid "str"
+msgstr "Text"
+
+msgid "int"
+msgstr "Zahl"
+
+msgid "float"
+msgstr "Dezimalzahl"
+
+msgid "date"
+msgstr "Datum"
+
+msgid "datetime"
+msgstr "Datum mit Zeit"
+
+msgid "bool"
+msgstr "Ja/Nein"
+
+msgid "id"
+msgstr "ID"
+
 #: cdedb/i18n_additional.py:334 cdedb/i18n_additional.py:341
 msgid "day is out of range for month"
 msgstr "Tag liegt nicht im Monat."

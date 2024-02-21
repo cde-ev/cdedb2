@@ -92,7 +92,7 @@
         </p>
         {% call util.output_errors('field', wrapper=True) %}
             {% for type, fields in fields_by_kind.items() %}
-                <h5>{{ type }}</h5>
+                <h5>{{ gettext(type) }}</h5>
                 <div class="row">
                 {% for list in fields|slice(2) %}
                     <div class="col-sm-6">
