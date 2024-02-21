@@ -102,7 +102,7 @@
                                 {%- if not loop.last or invalid %}, {% endif -%}
                             {% endfor -%}
                             {% for field in invalid -%}
-                                <del class="text-danger">{{ field }}</del>
+                                <code><del class="text-danger">{{ field }}</del></code>
                                 {%- if not loop.last %}, {% endif -%}
                             {% endfor %}
                         {% endwith %}
