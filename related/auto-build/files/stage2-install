@@ -83,6 +83,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-psycopg python3-psycopg-pool                            \
     \
     python3-pip python3-click isort python3-freezegun               \
+    python3-coverage                                                \
     \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
     libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \
@@ -90,8 +91,6 @@ apt-get install --yes --no-install-recommends                       \
     libmanette-0.2-0 libnspr4 libnss3 libopengl0 libwayland-client0 \
     libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
     libxrandr2
-# some packages interpret "recommends" very narrowly, breaking if they are missing
-apt-get install --yes python3-coverage
 
 # runtime dependencies
 python3 -m pip install --no-cache-dir --break-system-packages \
