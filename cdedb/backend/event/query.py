@@ -233,7 +233,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     event.fields, const.FieldAssociations.course)
                 columns = COURSE_FIELDS + course_field_columns
                 return f"""
-                    SELECT {', '.join(columns)}
+                    SELECT {', '.join(columns)}, nr || '. ' || shortname AS nr_shortname
                     FROM event.courses
                     WHERE event_id = {event_id}
                 """
@@ -301,7 +301,9 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 )
                 return f"""
                     (
-                        SELECT {', '.join(COURSE_FIELDS + ('id AS course_id',))}
+                        SELECT
+                            {', '.join(COURSE_FIELDS)},
+                            id AS course_id, nr || '. ' || shortname AS nr_shortname
                         FROM event.courses
                         WHERE event_id = {event_id}
                     ) AS course

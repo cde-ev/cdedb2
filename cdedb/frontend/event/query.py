@@ -60,10 +60,11 @@ class EventQueryMixin(EventBaseFrontend):
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         # Precompute age classes of participants for all registration parts.
         for reg in registrations.values():
+            persona = personas[reg['persona_id']]
+            reg['birthday'] = persona['birthday']
             for part_id, reg_part in reg['parts'].items():
                 reg_part['age_class'] = determine_age_class(
-                    personas[reg['persona_id']]['birthday'],
-                    event_parts[part_id].part_begin)
+                    reg['birthday'], event_parts[part_id].part_begin)
 
         per_part_statistics: dict[
             EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]]
