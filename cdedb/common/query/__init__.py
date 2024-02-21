@@ -206,6 +206,17 @@ class QueryScope(CdEIntEnum):
         return _QUERY_VIEWS.get(self, "core.personas")
 
     def get_aggregate_view(self) -> str:
+        """Like self.get_view() but to be used for calculating aggregates.
+
+        Since some views use joins to allow filtering, they break the aggregation
+        by duplicating rows. We workaround this by using a variant of the view
+        without such joins.
+
+        If no aggregate view is defined, use the regular one instead.
+
+        Note that the complex event views override this anyway, since they use
+        joins differently resulting in no duplicated rows.
+        """
 
         return _AGGREGATE_VIEWS.get(self) or self.get_view()
 
@@ -321,7 +332,7 @@ class QueryScope(CdEIntEnum):
         return params
 
 
-# See `QueryScope.get_view().
+# See `QueryScope.get_view()`.
 _QUERY_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
@@ -361,6 +372,7 @@ _QUERY_VIEWS = {
         """,
 }
 
+# See `QueryScope.get_aggregate_view()`.
 _AGGREGATE_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_AGGREGATE_VIEW := """core.personas
         LEFT OUTER JOIN (
