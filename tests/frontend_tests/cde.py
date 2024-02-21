@@ -2041,12 +2041,6 @@ class TestCdEFrontend(FrontendTest):
                             div='eject-members')
         self.assertPresence("Später zu erledigen.", div='balance-update')
 
-        # 1.2.1 Remove exmember balance
-        f = self.response.forms['ejectform']
-        self.submit(f)
-        self.join_worker_thread('semester_update_exmember_balance', link)
-        self.assertTitle("Semesterverwaltung")
-        # 1.2.2 Perform ejection and archival
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
@@ -2100,12 +2094,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('Zahlungserinnerung bereits erledigt', div='notifications')
         self.assertTitle("Semesterverwaltung")
 
-        # 2.2.1 Remove exmember balance
-        f = self.response.forms['ejectform']
-        self.submit(f)
-        self.join_worker_thread('semester_update_exmember_balance', link)
-        self.assertTitle("Semesterverwaltung")
-        # 2.2.2 Perform ejection and archival
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
@@ -2827,16 +2815,11 @@ class TestCdEFrontend(FrontendTest):
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
 
-        # Remove Exmember balance
-        f = self.response.forms['ejectform']
-        self.submit(f)
-        self.join_worker_thread('semester_update_exmember_balance', link)
-        logs.append((1001, const.CdeLogCodes.semester_exmember_balance))
-
         # Remove Inactive Members
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
+        logs.append((1001, const.CdeLogCodes.semester_exmember_balance))
         logs.append((1002, const.CdeLogCodes.semester_ejection))
         logs.append((1003, const.CdeLogCodes.automated_archival_done))
 

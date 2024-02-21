@@ -154,8 +154,10 @@ class CdESemesterMixin(CdEBaseFrontend):
         Worker.create(
             rs, "semester_bill",
             (send_billing_mail, send_archival_notification), self.conf)
-        rs.notify("success", n_("Started sending billing mails."))
-        rs.notify("success", n_("Started sending archival notifications."))
+        if allowed_steps.billing:
+            rs.notify("success", n_("Started sending billing mails."))
+        if allowed_steps.archival_notification:
+            rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
@@ -220,17 +222,15 @@ class CdESemesterMixin(CdEBaseFrontend):
                     self._send_mail(mail)
             return proceed
 
-        # This is a bit ugly, since the user must hit at least one time the restart
-        #  button, but this should nudge the user to perform this steps together.
         if allowed_steps.exmember_balance:
-            Worker.create(rs, "semester_update_exmember_balance",
-                          (update_exmember_balance,), self.conf)
             rs.notify("success", n_("Started updating exmember balance."))
-        else:
-            Worker.create(rs, "semester_eject", (eject_member, automated_archival),
-                          self.conf)
+        if allowed_steps.ejection:
             rs.notify("success", n_("Started ejection."))
+        if allowed_steps.automated_archival:
             rs.notify("success", n_("Started automated archival."))
+        Worker.create(
+            rs, "semester_eject",
+            (update_exmember_balance, eject_member, automated_archival), self.conf)
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
