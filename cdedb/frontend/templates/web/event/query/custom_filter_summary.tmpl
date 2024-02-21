@@ -87,7 +87,9 @@
         </thead>
         <tbody>
             {% for custom_filter in ambience['event']['custom_query_filters'].values()|sort if scope is none or custom_filter.scope == scope %}
-                <tr>
+                <tr {% if not custom_filter.is_valid(query_specs[custom_filter.scope]) %}
+                        style="background-color: #ffdddd" title="{{ gettext("Incompatible field types.") }}"
+                    {% endif %}>
                     <td>
                         {{ util.make_icon(custom_filter.scope.get_icon(), title=gettext(custom_filter.scope|string))}}
                         {{ custom_filter.title }}
@@ -108,7 +110,7 @@
                         {% endwith %}
                     </td>
                     <td class="text-right text-nowrap">
-                        {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning") }}
+                        {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning", title="") }}
                         <form action="{{ cdedblink('event/delete_custom_filter', {'custom_filter_id': custom_filter.id}) }}"
                               method="POST" class="display-inline" id="deletecustomfilterform{{ custom_filter.id }}">
                             {{ util.anti_csrf_token('event/delete_custom_filter') }}
