@@ -265,6 +265,17 @@ class TestEventModels(BackendTest):
                         "persona.birthday",
                     }
                 ),
+                5: models.CustomQueryFilter(
+                    id=5,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Extrem wichtig!",
+                    notes="Ups, hätte ich das Feld nicht löschen sollen?",
+                    fields={
+                        "reg_fields.xfield_anzahl_GROSSBUCHSTABEN",
+                        "reg_fields.xfield_deleted_field",
+                    }
+                ),
             },
             fees={
                 1: models.EventFee(
