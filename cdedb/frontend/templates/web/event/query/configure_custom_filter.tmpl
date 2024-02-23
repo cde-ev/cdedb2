@@ -15,7 +15,7 @@
 {% block title %}
     {% if ambience['custom_filter'] %}
         {% trans filter_title=ambience['custom_filter']['title'], event_title=ambience['event']['title'] %}
-            Change Custom Filter {{ filter_title }} ({{ event_title }})
+            Change Custom Filter “{{ filter_title }}” ({{ event_title }})
         {% endtrans %}
     {% elif scope.name == "registration" %}
         {% trans event_title=ambience['event']['title'] %}
@@ -34,7 +34,8 @@
 
 {% block heading %}
     {% if ambience['custom_filter'] %}
-        {{ util.context_heading(gettext("Change Custom Filter %(filter_title)s")|format(filter_title=ambience['custom_filter']['title']),
+        {{ util.context_heading(gettext("Change Custom Filter"),
+                                ambience['custom_filter']['title'], 'filter', gettext("Filter"),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% elif scope.name == "registration" %}
         {{ util.context_heading(gettext("Add Registration Filter"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
