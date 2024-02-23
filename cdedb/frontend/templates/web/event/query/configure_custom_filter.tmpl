@@ -76,7 +76,7 @@
         {% set action = 'event/create_custom_filter' %}
     {% endif %}
 
-    <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform" class="form-horizontal">
+    <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform">
         {{ util.anti_csrf_token(action) }}
         {{ util.form_input_text(name="title", label=gettext("Title"), horizontal=False) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True, horizontal=False) }}
@@ -97,14 +97,7 @@
                 {% for list in fields|slice(2) %}
                     <div class="col-sm-6">
                         {% for field in list %}
-                            <div class="row">
-                                <div class="col-sm-1">
-                                    {{ util.input_checkbox(name="cf_{}".format(field)) }}
-                                </div>
-                                <div class="col-sm-11">
-                                    {{ spec[field].get_title(gettext) }}
-                                </div>
-                            </div>
+                            {{ util.form_input_checkbox(name="cf_{}".format(field), label=spec[field].get_title(gettext), horizontal=False) }}
                         {% endfor %}
                     </div>
                 {% endfor %}
