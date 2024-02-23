@@ -50,7 +50,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {% if ambience['custom_filter'] %}
-        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configuration")) }}
+        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
         {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters")) }}
         {{ util.breadcrumb_link(cdedblink("event/change_custom_filter"), gettext("Change Custom Filter"), active=True) }}
     {% elif scope.name == "registration" %}
