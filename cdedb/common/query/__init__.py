@@ -333,6 +333,13 @@ class QueryScope(CdEIntEnum):
                 params[key] = rs.values[key] = value
         return params
 
+    def get_icon(self) -> str:
+        return {
+            QueryScope.registration: "user",
+            QueryScope.lodgement: "home",
+            QueryScope.event_course: "book",
+        }.get(self, "")
+
 
 # See `QueryScope.get_view()`.
 _QUERY_VIEWS = {
@@ -1079,6 +1086,10 @@ def make_registration_query_spec(event: "models.Event",
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.registration)
+
     return spec
 
 
@@ -1165,7 +1176,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
             if key not in course_choice_spec:
                 prefix = ("" if len(event.tracks) <= 1
                           else event.tracks[track_id].shortname)
-                spec[key] = QuerySpecEntry("id", n_("Any Choice"), prefix)
+                spec[key] = QuerySpecEntry("int", n_("total choices"), prefix)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
@@ -1204,6 +1215,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
             choices=field_choices[field.field_name])
         for field in sorted_course_fields
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.event_course)
 
     return spec
 
@@ -1290,5 +1304,8 @@ def make_lodgement_query_spec(event: "models.Event",
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.lodgement)
 
     return spec

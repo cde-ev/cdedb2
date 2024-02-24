@@ -132,6 +132,9 @@ I18N_STRINGS = (
     n_("EventLogCodes.orga_token_changed"),
     n_("EventLogCodes.orga_token_revoked"),
     n_("EventLogCodes.orga_token_deleted"),
+    n_("EventLogCodes.custom_filter_created"),
+    n_("EventLogCodes.custom_filter_changed"),
+    n_("EventLogCodes.custom_filter_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -288,6 +291,10 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
+    n_("QueryScope.registration"),
+    n_("QueryScope.event_course"),
+    n_("QueryScope.lodgement"),
+
     n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
@@ -327,6 +334,17 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
     n_("EventFeeType.solidary_increase"),
+
+    #
+    # Query datatypes
+    #
+    n_("str"),
+    n_("int"),
+    n_("float"),
+    n_("date"),
+    n_("datetime"),
+    n_("bool"),
+    n_("id"),
 
     #
     # Validation errors

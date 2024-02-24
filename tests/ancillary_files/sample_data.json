@@ -6612,6 +6612,43 @@
             }
         }
     ],
+    "event.custom_query_filters": [
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg_fields.xfield_brings_balls,reg_fields.xfield_is_child",
+            "title": "Bälle oder Kind?",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg_fields.xfield_is_child,reg_fields.xfield_brings_balls",
+            "title": "Kind oder Bälle?",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg.notes,reg.orga_notes",
+            "title": "Alle Notizen",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg.amount_paid,persona.birthday",
+            "title": "Bad Combo!",
+            "notes": null
+        },
+        {
+            "event_id": 1,
+            "scope": 30,
+            "fields": "reg_fields.xfield_anzahl_GROSSBUCHSTABEN,reg_fields.xfield_deleted_field",
+            "title": "Extrem wichtig!",
+            "notes": "Ups, hätte ich das Feld nicht löschen sollen?"
+        }
+    ],
     "event.log": [
         {
             "ctime": "---now---",

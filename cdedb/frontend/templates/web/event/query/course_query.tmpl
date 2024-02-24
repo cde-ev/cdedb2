@@ -28,6 +28,7 @@
                     {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
                                   readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
+                {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].event_course}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
             </div>
         </div>
         <div class="col-md-8">

@@ -108,6 +108,7 @@
     <div class="p button-par">
         {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
+        {{ util.href(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
     </div>
     {% if ambience['event']['field_definition_notes'] %}
         {% call util.bootstrap_panel(title=gettext("Custom Fields Notes"), icon="tag",
