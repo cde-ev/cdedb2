@@ -64,8 +64,8 @@ class TestEventFrontend(FrontendTest):
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
-        registered = "(bereits angemeldet" + (", Bezahlung ausstehend)"
-                                              if self.user_in('anton') else ")")
+        # TODO Add someone who already has paid.
+        registered = "(bereits angemeldet, Bezahlung ausstehend)"
         self.assertPresence(registered, div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         if self.user_in('emilia'):
@@ -2297,8 +2297,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.login(USER_DICT["emilia"])
         self.traverse({'href': "/event/event/1/registration/status"})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
-        self.assertPresence("Warteliste (Platz 1)", exact=True,
-                            div="registration_status_part1")
+        self.assertPresence("Warteliste (Bezahlung ausstehend) (Platz 1)",
+                            exact=True, div="registration_status_part1")
 
     @as_users('emilia')
     def test_participant_list(self) -> None:
