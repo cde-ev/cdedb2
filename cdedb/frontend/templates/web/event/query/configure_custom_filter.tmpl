@@ -80,7 +80,7 @@
     <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform">
         {{ util.anti_csrf_token(action) }}
         {{ util.form_input_text(name="title", label=gettext("Title"), horizontal=False) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), markdown=True, horizontal=False) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), horizontal=False) }}
         {{ util.input_hidden('scope', scope) }}
         <hr />
 
