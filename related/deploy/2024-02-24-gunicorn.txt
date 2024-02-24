@@ -1,0 +1,9 @@
+The following steps are necessary to move the server to a gunicorn setup:
+
+1. create user and group www-cde
+2. install gunicorn
+3. drop systemd units in /etc/systemd/system and enable socket
+4. chown /var/lib/cdedb and /var/log/cdedb and /etc/cdedb-mailman-htpasswd
+5. enable mod_proxy (a2enmod proxy)
+6. edit apache config -> replace mod_wsgi by gunicorn
+7. restart apache
