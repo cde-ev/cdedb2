@@ -78,7 +78,7 @@ cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 #
 # Additionally, we recommend to shrink the permissions for that file:
 #
-# sudo chown www-data:www-data /path/to/your/secrets_config.py
+# sudo chown www-cde:www-cde /path/to/your/secrets_config.py
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
@@ -87,7 +87,7 @@ chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
-chown www-data:www-data /etc/cdedb-mailman-htpasswd
+chown www-cde:www-cde /etc/cdedb-mailman-htpasswd
 chmod 640 /etc/cdedb-mailman-htpasswd
 
 echo ""
@@ -103,8 +103,8 @@ echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
-# Create the storage dir itself. Ensure that www-data owns everything.
-python3 -m cdedb filesystem --owner www-data storage create
+# Create the storage dir itself. Ensure that www-cde owns everything.
+python3 -m cdedb filesystem --owner www-cde storage create
 
 echo ""
 echo "Setting up dummy ldap because cyclic dependency..."
@@ -150,8 +150,8 @@ echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-# Create the log directory. Ensure that www-data owns everything.
-python3 -m cdedb filesystem --owner www-data log create
+# Create the log directory. Ensure that www-cde owns everything.
+python3 -m cdedb filesystem --owner www-cde log create
 
 echo ""
 echo "Setting up ldap..."
@@ -173,7 +173,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in ssl wsgi headers authnz_ldap; do
+for i in proxy ssl headers authnz_ldap; do
     a2enmod $i
 done;
 
@@ -189,6 +189,14 @@ a2ensite cdedb-site
 echo "" > /etc/apache2/ports.conf
 
 systemctl restart apache2
+
+echo ""
+echo "Set up the gunicorn..."
+echo "--------------------------------------------"
+
+cp /media/cdrom0/cdedb-app.service /etc/systemd/system/
+cp /media/cdrom0/cdedb-app.socket /etc/systemd/system/
+systemctl enable --now cdedb-app.socket
 
 echo ""
 echo "Set up the fail2ban..."
