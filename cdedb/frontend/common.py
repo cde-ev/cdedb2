@@ -1297,7 +1297,7 @@ class CdEMailmanClient(mailmanclient.Client):
                  mailman_basic_auth_password: str):
         """Automatically initializes a client with our custom parameters.
 
-        :param conf: Usually, he config used where this class is instantiated.
+        :param conf: Usually, the config used where this class is instantiated.
         """
         self.conf = conf
 
@@ -1325,9 +1325,11 @@ class CdEMailmanClient(mailmanclient.Client):
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code != 404:
-                self.logger.exception("Mailman connection failed!")
-            return None
+            if e.code == 404:
+                self.logger.exception("Mailinglist not found!")
+        except mailmanclient.MailmanConnectionError:
+            self.logger.exception("Mailman connection failed!")
+        return None
 
     def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
