@@ -181,7 +181,14 @@
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
-                            {% if mailinglist['held_mails'] %}
+                            {% if mailinglist['held_mails'] is none %}
+                                <br />
+                                <span class="text-warning">{{ util.make_icon('exclamation-triangle') }}
+                                {% trans %}
+                                    Mailman mailinglist unreachable.
+                                {% endtrans %}
+                                </span>
+                            {% elif mailinglist['held_mails'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/message_moderation', {'mailinglist_id' : mailinglist_id}),
                                              ngettext("%(count)s email awaiting moderation", "%(count)s emails awaiting moderation",
