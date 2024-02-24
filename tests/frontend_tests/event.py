@@ -3701,12 +3701,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             # First retrieve the query for the given context id.
             if track_id:
                 assert isinstance(stat, StatisticTrackMixin)
-                query = stat.get_query(event, track_id)
+                query = stat.get_query(event, track_id, [-1])
             elif part_id:
                 if isinstance(stat, StatisticTrackMixin):
                     query = stat.get_query_part(event, part_id, [-1])
                 else:
-                    query = stat.get_query(event, part_id)
+                    query = stat.get_query(event, part_id, [-1])
             else:
                 query = stat.get_query_part_group(event, part_group_id, [-1])
 

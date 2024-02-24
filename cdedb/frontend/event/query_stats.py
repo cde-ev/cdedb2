@@ -33,7 +33,7 @@ from cdedb.common.sorting import xsorted
 
 RPS = const.RegistrationPartStati
 
-StatQueryAux = tuple[list[str], list[QueryConstraint], list[QueryOrder]]
+StatQueryAux = tuple[list[str], Optional[list[QueryConstraint]], list[QueryOrder]]
 
 __all__ = ['EventRegistrationPartStatistic', 'EventCourseStatistic',
            'EventRegistrationTrackStatistic', 'EventRegistrationInXChoiceGrouper']
@@ -186,10 +186,13 @@ class StatisticMixin:
     def _get_base_query(event: models.Event) -> Query:
         """Create a query object to base all queries for these stats on."""
 
-    def get_query(self, event: models.Event, context_id: int) -> Query:
+    def get_query(self, event: models.Event, context_id: int,
+                  entity_ids: Collection[int] = ()) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
         fields, constraints, order = self._get_query_aux(event, context_id)
+        if constraints is None:
+            constraints = [get_id_constraint(self.id_field, entity_ids)]
         query.fields_of_interest.extend(fields)
         query.constraints.extend(constraints)
         # Prepend the specific order.
@@ -354,6 +357,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     no_parental_agreement = n_("Parental Consent Pending"), 1
     present = n_("Present")
     no_lodgement = n_("No Lodgement"), 1
+    birthdays = n_("Has Birthday"), 1
     cancelled = n_("Registration Cancelled")
     rejected = n_("Registration Rejected")
     total = n_("Total Registrations")
@@ -362,6 +366,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         return self not in {
             # The no lodgement query has a part correlation between two constraints.
             EventRegistrationPartStatistic.no_lodgement,
+            # Birthdays are complicated.
+            EventRegistrationPartStatistic.birthdays,
         }
 
     def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:  # pylint: disable=arguments-differ
@@ -411,6 +417,13 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return part['status'].is_present()
         elif self == self.no_lodgement:
             return part['status'].is_present() and not part['lodgement_id']
+        elif self == self.birthdays:
+            month, day = reg['birthday'].month, reg['birthday'].day
+            begin, end = event.parts[part_id].part_begin, event.parts[part_id].part_end
+            return part['status'].is_present() and any(
+                begin <= datetime.date(year, month, day) <= end
+                for year in range(event.begin.year, event.end.year + 1)
+            )
         elif self == self.cancelled:
             return part['status'] == RPS.cancelled
         elif self == self.rejected:
@@ -568,6 +581,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 ],
                 [],
             )
+        elif self == self.birthdays:
+            return (
+                ["reg.birthday"],
+                None,
+                [],
+            )
         elif self == self.cancelled:
             return (
                 ['reg.amount_paid'],
@@ -594,7 +613,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
@@ -668,9 +687,9 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.event_course,
             event.basic_course_query_spec,
-            fields_of_interest=['course.nr', 'course.shortname', 'course.instructors'],
+            fields_of_interest=['course.nr_shortname', 'course.instructors'],
             constraints=[],
-            order=[('course.nr', True)],
+            order=[('course.nr_shortname', True)],
         )
 
 
@@ -727,7 +746,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.course_instructor",
                      QueryOperators.nonempty, None),
                 ],
-                [(f"course_instructor{track_id}.nr", True)],
+                [(f"course_instructor{track_id}.nr_shortname", True)],
             )
         elif self == self.instructors:
             return (
@@ -737,7 +756,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equal, True),
                 ],
-                [(f"course_instructor{track_id}.nr", True)],
+                [(f"course_instructor{track_id}.nr_shortname", True)],
             )
         elif self == self.attendees:
             return (
@@ -748,7 +767,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                     (f"track{track_id}.is_course_instructor",
                      QueryOperators.equalornull, False),
                 ],
-                [(f"course{track_id}.nr", True)],
+                [(f"course{track_id}.nr_shortname", True)],
             )
         elif self == self.no_course:
             return (
@@ -768,7 +787,7 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
@@ -879,7 +898,7 @@ class EventRegistrationInXChoiceGrouper:
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+            fields_of_interest=['persona.given_names', 'persona.family_name',
                                 'persona.username'],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)],
@@ -888,7 +907,7 @@ class EventRegistrationInXChoiceGrouper:
     def get_query(self, event: models.Event, track_id: int, x: int) -> Query:
         query = self._get_base_query(event, self._get_ids(x, (track_id,)))
         query.fields_of_interest.append(f"track{track_id}.course_id")
-        query.order = [(f"track{track_id}.course_id", True)] + query.order
+        query.order = [(f"course{track_id}.nr_shortname", True)] + query.order
         return query
 
     def get_query_part(self, event: models.Event, part_id: int, x: int) -> Query:
