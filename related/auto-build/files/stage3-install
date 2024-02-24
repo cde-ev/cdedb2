@@ -173,7 +173,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in proxy ssl headers authnz_ldap; do
+for i in proxy_http ssl headers authnz_ldap; do
     a2enmod $i
 done;
 
