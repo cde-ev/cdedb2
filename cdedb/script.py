@@ -153,8 +153,8 @@ class Script:
         :param config: Additional config options via keyword arguments. Mutually
             exclusive with `configpath`.
         """
-        if check_system_user and getpass.getuser() != "www-data":
-            raise RuntimeError("Must be run as user www-data.")  # pragma: no cover
+        if check_system_user and getpass.getuser() != "www-cde":
+            raise RuntimeError("Must be run as user www-cde.")  # pragma: no cover
 
         # Read configurable data from environment and/or input.
         # Priority is "parameter > environment variable".

@@ -7,3 +7,4 @@ The following steps are necessary to move the server to a gunicorn setup:
 5. enable mod_proxy (a2enmod proxy)
 6. edit apache config -> replace mod_wsgi by gunicorn
 7. restart apache
+8. move periodic cron job from www-data crontab to www-cde crontab

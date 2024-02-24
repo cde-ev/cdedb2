@@ -25,7 +25,7 @@ found in the ``bin`` subdirectory.
 There is also a development server running at port 5000
 which bypasses Apache and provides an interactive traceback explorer
 including a console in which expressions can be evaluated in the respective namespace.
-Take care to start the interactive debugger as user ``www-data``.
+Take care to start the interactive debugger as user ``www-cde``.
 
 To access the ldap server from a local vm, it is currently necessary to manually switch
 from TLS to plain TCP connections by removing the ``ssl`` parameter during server
