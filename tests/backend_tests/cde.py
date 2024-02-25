@@ -8,12 +8,13 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.backend.cde.semester import AllowedSemesterSteps
+from cdedb.common import now
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now, prepsql
 
 
 class TestCdEBackend(BackendTest):
@@ -431,28 +432,36 @@ class TestCdEBackend(BackendTest):
             else:
                 self.assertFalse(v)
 
-        # step 2
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
+        # step 2
+        # check that archival and ejection work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
             self.assertEqual(AllowedSemesterSteps(automated_archival=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
             self.assertEqual(AllowedSemesterSteps(ejection=True),
                              self.cde.allowed_semester_steps(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_automated_archival(self.key)
-        elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
+        else:
+            self.fail("Invalid user configuration for this test.")
+
         self.assertEqual(AllowedSemesterSteps(balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -462,21 +471,26 @@ class TestCdEBackend(BackendTest):
                          self.cde.allowed_semester_steps(self.key))
 
         # step 1
+        # check that sending archival and billing notification work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
             self.assertEqual(AllowedSemesterSteps(archival_notification=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
             self.assertEqual(AllowedSemesterSteps(billing=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_semester_bill(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
 
-        if self.user_in("anton"):
-            self.cde.finish_archival_notification(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_bill(self.key)
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -487,3 +501,37 @@ class TestCdEBackend(BackendTest):
 
         # now check it
         self.assertLogEqual([], 'cde')
+
+    @prepsql("UPDATE core.personas SET balance = 1 WHERE is_cde_realm = True")
+    @as_users("vera")
+    def test_cde_user_aggregate(self) -> None:
+        query = Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            ['balance'], (), ()
+        )
+
+        pevent_data = {
+            'title': "TestAkademie",
+            'shortname': "TAka",
+            'description': None,
+            'tempus': now().date(),
+            'institution': const.PastInstitutions.main_insitution(),
+        }
+
+        # Create two (identical) past events and add any cde user to them, to
+        #  create duplicates in the cde user view.
+        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        self.pastevent.add_participant(
+            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        self.pastevent.add_participant(
+            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+
+        # Check that the aggregate sums correctly.
+        result = self.cde.submit_general_query(self.key, query, aggregate=False)
+        aggregates = self.cde.submit_general_query(self.key, query, aggregate=True)
+
+        self.assertEqual(
+            sum((e['balance'] for e in result), start=decimal.Decimal(0)),
+            aggregates[0]['sum.balance']
+        )

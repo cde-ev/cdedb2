@@ -417,6 +417,7 @@ class CdeLogCodes(CdEIntEnum):
     semester_bill_with_addresscheck = 11
     semester_ejection = 12
     semester_balance_update = 13
+    semester_exmember_balance = 16
     semester_advance = 1
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
@@ -437,6 +438,7 @@ class FinanceLogCodes(CdEIntEnum):
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
     start_trial_membership = 15  #:
+    remove_exmember_balance = 17  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
@@ -496,6 +498,9 @@ class EventLogCodes(CdEIntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    custom_filter_created = 95  #:
+    custom_filter_changed = 96  #:
+    custom_filter_deleted = 97  #:
     part_group_created = 100  #:
     part_group_changed = 101  #:
     part_group_deleted = 102  #:

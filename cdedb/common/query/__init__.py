@@ -206,6 +206,21 @@ class QueryScope(CdEIntEnum):
         """
         return _QUERY_VIEWS.get(self, "core.personas")
 
+    def get_aggregate_view(self) -> str:
+        """Like self.get_view() but to be used for calculating aggregates.
+
+        Since some views use joins to allow filtering, they break the aggregation
+        by duplicating rows. We workaround this by using a variant of the view
+        without such joins.
+
+        If no aggregate view is defined, use the regular one instead.
+
+        Note that the complex event views override this anyway, since they use
+        joins differently resulting in no duplicated rows.
+        """
+
+        return _AGGREGATE_VIEWS.get(self) or self.get_view()
+
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
 
@@ -318,8 +333,15 @@ class QueryScope(CdEIntEnum):
                 params[key] = rs.values[key] = value
         return params
 
+    def get_icon(self) -> str:
+        return {
+            QueryScope.registration: "user",
+            QueryScope.lodgement: "home",
+            QueryScope.event_course: "book",
+        }.get(self, "")
 
-# See `QueryScope.get_view().
+
+# See `QueryScope.get_view()`.
 _QUERY_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
@@ -357,6 +379,24 @@ _QUERY_VIEWS = {
         LEFT OUTER JOIN past_event.events
             ON courses.pevent_id = events.id
         """,
+}
+
+# See `QueryScope.get_aggregate_view()`.
+_AGGREGATE_VIEWS = {
+    QueryScope.cde_user: (_CDE_USER_AGGREGATE_VIEW := """core.personas
+        LEFT OUTER JOIN (
+            SELECT
+                id, granted_at, revoked_at,
+                revoked_at IS NULL AS active_lastschrift,
+                persona_id
+            FROM cde.lastschrift
+            WHERE (granted_at, persona_id) IN (
+                SELECT MAX(granted_at) AS granted_at, persona_id
+                FROM cde.lastschrift GROUP BY persona_id
+            )
+        ) AS lastschrift ON personas.id = lastschrift.persona_id
+        """),
+    QueryScope.all_cde_users: _CDE_USER_AGGREGATE_VIEW,
 }
 
 # See QueryScope.get_primary_key().
@@ -920,6 +960,8 @@ def make_registration_query_spec(event: "models.Event",
                 "id", n_("instructed course"), prefix, choices=course_choices),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
+            f"course{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("course nr+shortname"), prefix),
             f"course{track_id}.title": QuerySpecEntry(
                 "str", n_("course title"), prefix),
             f"course{track_id}.shortname": QuerySpecEntry(
@@ -937,6 +979,8 @@ def make_registration_query_spec(event: "models.Event",
                 "id", n_("instructed course ID"), prefix),
             f"course_instructor{track_id}.nr": QuerySpecEntry(
                 "str", n_("instructed course nr"), prefix),
+            f"course_instructor{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("instructed course nr+shortname"), prefix),
             f"course_instructor{track_id}.title": QuerySpecEntry(
                 "str", n_("instructed course title"), prefix),
             f"course_instructor{track_id}.shortname": QuerySpecEntry(
@@ -1043,6 +1087,10 @@ def make_registration_query_spec(event: "models.Event",
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.registration)
+
     return spec
 
 
@@ -1069,6 +1117,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
         "course.id": QuerySpecEntry("id", n_("course id")),
         "course.course_id": QuerySpecEntry("id", n_("course"), choices=course_choices),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
+        "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),
         "course.description": QuerySpecEntry("str", n_("course description")),
         "course.shortname": QuerySpecEntry("str", n_("course shortname")),
@@ -1128,7 +1177,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
             if key not in course_choice_spec:
                 prefix = ("" if len(event.tracks) <= 1
                           else event.tracks[track_id].shortname)
-                spec[key] = QuerySpecEntry("id", n_("Any Choice"), prefix)
+                spec[key] = QuerySpecEntry("int", n_("total choices"), prefix)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
@@ -1167,6 +1216,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
             choices=field_choices[field.field_name])
         for field in sorted_course_fields
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.event_course)
 
     return spec
 
@@ -1253,5 +1305,8 @@ def make_lodgement_query_spec(event: "models.Event",
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.lodgement)
 
     return spec

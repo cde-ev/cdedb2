@@ -1,0 +1,115 @@
+{% if scope.name == "registration" %}
+    {% set sidenav_active='event_registration' %}
+{% elif scope.name == "event_course" %}
+    {% set sidenav_active='event_course_stats' %}
+{% elif scope.name == "lodgement" %}
+    {% set sidenav_active='event_lodgements' %}
+{% endif %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+
+{% block title %}
+    {% if ambience['custom_filter'] %}
+        {% trans filter_title=ambience['custom_filter']['title'], event_title=ambience['event']['title'] %}
+            Change Custom Filter “{{ filter_title }}” ({{ event_title }})
+        {% endtrans %}
+    {% elif scope.name == "registration" %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add Custom Registration Filter ({{ event_title }})
+        {% endtrans %}
+    {% elif scope.name == "event_course" %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add Custom Course Filter ({{ event_title }})
+        {% endtrans %}
+    {% elif scope.name == "lodgement" %}
+        {% trans event_title=ambience['event']['title'] %}
+            Add Custom Lodgement Filter ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block heading %}
+    {% if ambience['custom_filter'] %}
+        {{ util.context_heading(gettext("Change Custom Filter"),
+                                ambience['custom_filter']['title'], 'filter', gettext("Filter"),
+                                ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "registration" %}
+        {{ util.context_heading(gettext("Add Registration Filter"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "event_course" %}
+        {{ util.context_heading(gettext("Add Course Filter"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "lodgement" %}
+        {{ util.context_heading(gettext("Add Lodgement Filter"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {% if ambience['custom_filter'] %}
+        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters")) }}
+        {{ util.breadcrumb_link(cdedblink("event/change_custom_filter"), gettext("Change Custom Filter"), active=True) }}
+    {% elif scope.name == "registration" %}
+        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters")) }}
+        {{ util.breadcrumb_link(cdedblink("event/create_registration_filter"), gettext("Add Custom Registration Filter"), active=True) }}
+    {% elif scope.name == "event_course" %}
+        {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+        {{ util.breadcrumb_link(cdedblink("event/course_query"), gettext("Course Query")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters")) }}
+        {{ util.breadcrumb_link(cdedblink("event/create_course_filter"), gettext("Add Custom Course Filter"), active=True) }}
+    {% elif scope.name == "lodgement" %}
+        {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+        {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters")) }}
+        {{ util.breadcrumb_link(cdedblink("event/create_lodgement_filter"), gettext("Add Custom Lodgement Filter"), active=True) }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if ambience['custom_filter'] %}
+        {% set action = 'event/change_custom_filter' %}
+    {% else %}
+        {% set action = 'event/create_custom_filter' %}
+    {% endif %}
+
+    <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform">
+        {{ util.anti_csrf_token(action) }}
+        {{ util.form_input_text(name="title", label=gettext("Title"), horizontal=False) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), horizontal=False) }}
+        {{ util.input_hidden('scope', scope) }}
+        <hr />
+
+
+        <p class="text-info">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Only fields of the same type can be combined within one custom filter.
+            {% endtrans %}
+        </p>
+        {% call util.output_errors('field', wrapper=True) %}
+            {% for type, fields in fields_by_kind.items() %}
+                <h5>{{ gettext(type) }}</h5>
+                <div class="row">
+                {% for list in fields|slice(2) %}
+                    <div class="col-sm-6">
+                        {% for field in list %}
+                            {{ util.form_input_checkbox(name="cf_{}".format(field), label=spec[field].get_title(gettext), horizontal=False) }}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endfor %}
+        {% endcall %}
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/custom_filter_summary"), horizontal=False) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#configurecustomfilterform').cdedbProtectChanges();
+    </script>
+{% endblock %}

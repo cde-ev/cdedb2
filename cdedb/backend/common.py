@@ -331,6 +331,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     # TODO add avg for dates
             select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
+            if not view:
+                view = query.scope.get_aggregate_view()
         else:
             select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
             select += ', ' + query.scope.get_primary_key()

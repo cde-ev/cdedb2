@@ -167,10 +167,8 @@
             {% endif %}
             <dd id="registration_status_part{{ part.id }}">
                 {{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }}
-                {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
-                   E.g. one might only request a second installment of the fee by participants shortly before the event
-                   See also EventRegistrationBackend.get_registration_payment_info() #}
-                {% if registration['parts'][part.id]['status'].has_to_pay() and not registration['payment'] and fee %}
+                {# TODO: Use Registration.remaining_owed here #}
+                {% if registration['parts'][part.id]['status'].has_to_pay() and registration['amount_owed'] > registration['amount_paid'] %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
                 {% if registration['parts'][part.id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
