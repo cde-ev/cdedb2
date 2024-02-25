@@ -39,6 +39,8 @@
             <dt title="{% trans %}Online CdEDB-ID{% endtrans %}">{% trans %}Online CdEDB-ID{% endtrans %}</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid }}</dd>
         {% endif %}
+        <dt title="{% trans %}CdE-Member{% endtrans %}">{% trans %}CdE-Member{% endtrans %}</dt>
+        <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
         <dt title="{% trans %}Member at registration{% endtrans %}">{% trans %}Member at registration{% endtrans %}</dt>
         <dd>{{ util.deko_checkbox(checked=(ambience['registration']['is_member'])) }}</dd>
         <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
