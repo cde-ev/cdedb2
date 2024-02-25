@@ -2274,7 +2274,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError('attachment')
         f = self.response.forms['genesisform']
-        f['birth_name'] = "Ganondorf"
         f['notes'] = ""  # Do not send this to test upload permanance.
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
@@ -2315,7 +2314,7 @@ class TestCoreFrontend(FrontendTest):
 
         # modify genesis request
         self.traverse({'href': '/core/genesis/1001/show'})
-        self.assertPresence("Ganondorf")
+        self.assertPresence("Gimme!")
         self.assertNonPresence("Zickzack")
         self.assertNonPresence("PfingstAkademie")
         self.traverse({'href': '/core/genesis/1001/modify'})

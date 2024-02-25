@@ -870,7 +870,6 @@ class TestCoreBackend(BackendTest):
         data = {
             'family_name': "Zeruda-Hime",
             'given_names': "Zelda",
-            'birth_name': "Ganondorf",
             'username': 'zelda@example.cde',
             'realm': "cde",
             'notes': "Some blah",
@@ -903,6 +902,7 @@ class TestCoreBackend(BackendTest):
         expectation = data
         expectation.update({
             'id': case_id,
+            'birth_name': None,
             'case_status': const.GenesisStati.to_review,
             'reviewer': None,
         })
