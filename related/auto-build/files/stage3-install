@@ -146,6 +146,9 @@ cp /media/cdrom0/pgbouncer /etc/default/
 
 systemctl start pgbouncer
 
+# finally insert all the sample data
+sudo -u cdedb make sample-data
+
 echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
