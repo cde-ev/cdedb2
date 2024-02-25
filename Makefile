@@ -74,9 +74,9 @@ doc:
 reload: i18n-compile
 	python3 -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo apachectl restart
+	sudo apachectl restart # FIXME adapt to gunicorn
 else
-	sudo systemctl restart apache2
+	sudo systemctl restart cdedb-app.service
 endif
 
 
