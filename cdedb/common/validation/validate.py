@@ -192,6 +192,7 @@ DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_ml.Mailinglist: Mailinglist,
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
+    models_event.CustomQueryFilter: CustomQueryFilter,
 }
 
 
@@ -1720,6 +1721,9 @@ def _genesis_case(
     if creation:
         mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
                                 **additional_fields)
+        # Birth name is not allowed on creation to avoid mistakes
+        if 'birth_name' in mandatory_fields:
+            del mandatory_fields['birth_name']
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
@@ -4486,6 +4490,46 @@ def _non_regex(
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
+
+
+@_add_typed_validator
+def _custom_query_filter(
+        val: Any, argname: str = "custom_query_filter", *, creation: bool = False,
+        query_spec: QuerySpec, **kwargs: Any,
+) -> CustomQueryFilter:
+    val = _mapping(val, argname, **kwargs)
+
+    if (fields := val.get('fields')) and isinstance(fields, str):
+        val = dict(val)
+        val['fields'] = set(fields.split(","))
+
+    mandatory, optional = models_event.CustomQueryFilter.validation_fields(
+        creation=creation)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+
+    errs = ValidationSummary()
+
+    if len(val['fields']) < 2:
+        with errs:
+            raise ValidationSummary(ValueError('field', n_(
+                "Combine a minimum of two fields.")))
+    if any(field not in query_spec for field in val['fields']):
+        with errs:
+            raise ValidationSummary(KeyError('field', n_(
+                "Unknown field(s): %(fields)s."), {
+                'fields': ", ".join(val['fields'] - set(query_spec)),
+            }))
+    elif len({query_spec[f].type for f in val['fields']}) != 1:
+        with errs:
+            raise ValidationSummary(TypeError('field', n_(
+                "Incompatible field types.")))
+
+    val['fields'] = models_event.CustomQueryFilter._get_field_string(val['fields'])  # pylint: disable=protected-access
+
+    if errs:
+        raise errs
+
+    return CustomQueryFilter(val)
 
 
 @_add_typed_validator

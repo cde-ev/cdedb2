@@ -64,8 +64,8 @@ class TestEventFrontend(FrontendTest):
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
-        registered = "(bereits angemeldet" + (", Bezahlung ausstehend)"
-                                              if self.user_in('anton') else ")")
+        # TODO Add someone who already has paid.
+        registered = "(bereits angemeldet, Bezahlung ausstehend)"
         self.assertPresence(registered, div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         if self.user_in('emilia'):
@@ -2297,8 +2297,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.login(USER_DICT["emilia"])
         self.traverse({'href': "/event/event/1/registration/status"})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
-        self.assertPresence("Warteliste (Platz 1)", exact=True,
-                            div="registration_status_part1")
+        self.assertPresence("Warteliste (Bezahlung ausstehend) (Platz 1)",
+                            exact=True, div="registration_status_part1")
 
     @as_users('emilia')
     def test_participant_list(self) -> None:
@@ -6338,6 +6338,62 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
         f['fields.test2'] = False
         self.submit(f)
+
+    @event_keeper
+    @as_users("garcia")
+    def test_custom_query_filter(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Datenfelder konfigurieren", "Eigene Filter",
+                      "Kursfilter hinzufügen")
+        f = self.response.forms['configurecustomfilterform']
+        f['title'] = "Kur(s|z)titel"
+        f['cf_course.title'] = f['cf_course.shortname'] = True
+        self.submit(f)
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'title', "Es existiert bereits ein Filter mit diesem Titel.")
+        self.assertPresence("Es existiert bereits ein Filter mit diesen Feldern.")
+        self.traverse("Kurse", "Kurssuche")
+        f = self.response.forms['queryform']
+        f['qop_course.shortname,course.title'] = QueryOperators.match.value
+        f['qval_course.shortname,course.title'] = "rett"
+        self.submit(f)
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Heldentum", div="query-result")
+        self.assertPresence("Kabarett", div="query-result")
+        self.traverse("Eigene Filter", {'href': r'filter/\d+/change'})
+        self.assertTitle(
+            "Eigenen Filter „Kur(s|z)titel“ ändern (Große Testakademie 2222)")
+        f = self.response.forms['configurecustomfilterform']
+        f['notes'] = "abc"
+        self.submit(f)
+        f = self.response.forms['deletecustomfilterform1001']
+        self.submit(f)
+        self.assertNonPresence("Kur(s|z)titel")
+
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'] = True
+        f['title_-1'] = "Bringt Kugeln mit"
+        f['field_name_-1'] = "brings_kugeln"
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
+        self.submit(f)
+        self.traverse("Eigene Filter", "Anmeldungsfilter hinzufügen")
+        f = self.response.forms['configurecustomfilterform']
+        f['title'] = "Bälle oder Kugeln?"
+        f['cf_reg_fields.xfield_brings_balls'] = f[
+            'cf_reg_fields.xfield_brings_kugeln'] = True
+        self.submit(f)
+        self.assertPresence("Bringt Kugeln mit")
+        self.assertNonPresence("brings_kugeln")
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['delete_1001'] = True
+        self.submit(f)
+        self.traverse("Eigene Filter")
+        self.assertNonPresence("Bringt Kugeln mit")
+        self.assertPresence("brings_kugeln")
 
     @as_users("garcia")
     def test_orga_droid(self) -> None:

@@ -18,6 +18,7 @@ import psycopg2.extras
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 from cdedb.database.conversions import from_db_output, to_db_input
+from cdedb.models.common import CdEDataclass
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -135,6 +136,10 @@ class SqlQueryBackend:
                                * len(data))
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(container, query, params)
+
+    def sql_insert_dataclass(self, container: ConnectionContainer, datum: CdEDataclass,
+                             ) -> int:
+        return self.sql_insert(container, datum.database_table, datum.to_database())
 
     def sql_select(self, container: ConnectionContainer, table: str,
                    columns: Sequence[str], entities: EntityKeys, *,
