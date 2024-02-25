@@ -38,6 +38,7 @@ class AllowedSemesterSteps:
     ejection: bool = False
     automated_archival: bool = False
     balance: bool = False
+    exmember_balance: bool = False
     advance: bool = False
 
     def any(self) -> bool:
@@ -121,7 +122,13 @@ class CdESemesterBackend(CdELastschriftBackend):
         if allowed_steps.any():
             return allowed_steps
 
-        # after both are done, next ones are member ejections and archival
+        # after both are done, remove balance of exmembers
+        if not period["exmember_done"]:
+            allowed_steps.exmember_balance = True
+        if allowed_steps.any():
+            return allowed_steps
+
+        # after that, we can eject members and perform archival
         if not period["ejection_done"]:
             allowed_steps.ejection = True
         if not period["archival_done"]:
@@ -258,13 +265,32 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             ret = self.set_period(rs, period_update)
             total = money_filter(period["balance_total"], lang="de")
-            exbalance = money_filter(period["exmember_balance"], lang="de")
-            exmembers = period["exmember_count"]
             msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
-                   f" {total} Guthaben abgebucht."
-                   f" {exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst.")
+                   f" {total} Guthaben von Mitgliedern abgebucht.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
+                change_note=msg)
+        return ret
+
+    @access("finance_admin")
+    def finish_semester_exmember_update(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the exmember balance removal semester step."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not self.allowed_semester_steps(rs).exmember_balance:
+                raise RuntimeError(n_("Wrong timing for removing exmembers."))
+            period_update = {
+                'id': period_id,
+                'exmember_state': None,
+                'exmember_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            exbalance = money_filter(period["exmember_balance"], lang="de")
+            exmembers = period["exmember_count"]
+            msg = f"{exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst."
+            self.cde_log(
+                rs, const.CdeLogCodes.semester_exmember_balance, persona_id=None,
                 change_note=msg)
         return ret
 
@@ -560,34 +586,40 @@ class CdESemesterBackend(CdELastschriftBackend):
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs: RequestState, period_id: int,
-                                ) -> DefaultReturnCode:
+    def process_for_exmember_balance(self, rs: RequestState, period_id: int,
+                                     ) -> tuple[bool, Optional[CdEDBObject]]:
         """Set the balance of all former members to zero.
 
-        We keep the balance of all former members during one semester, so they get their
+        We keep the balance of all former members for one semester, so they get their
         remaining balance back if they pay again in this time.
+        Immediately before we perform the next wave of ejections, we remove it.
         """
         period_id = affirm(int, period_id)
         with Atomizer(rs):
-            if not self.allowed_semester_steps(rs).balance:
-                raise RuntimeError(n_("Wrong timing for removing exmembers."))
-            zero = decimal.Decimal("0.00")
-            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
-                     " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = False AND balance > %s"
-                     " AND is_cde_realm = True AND is_archived = False")
-            data = self.query_one(rs, query, (zero,))
-            update = {
-                "id": period_id,
-                "exmember_balance": data["total"] if data else decimal.Decimal(0),
-                "exmember_count": data["count"] if data else 0,
+            period = self.get_period(rs, period_id)
+            persona_id = self.core.next_persona(
+                rs, period['exmember_state'], is_member=False,
+                is_archived=False, is_cde_realm=True)
+            # We are finished if we reached the end or if this was previously done.
+            if not persona_id or period['exmember_done']:
+                if not period['exmember_done']:
+                    self.finish_semester_exmember_update(rs)
+                return False, None
+            persona = self.core.get_cde_user(rs, persona_id)
+            period_update = {
+                'id': period_id,
+                'exmember_state': persona_id,
             }
-            self.set_period(rs, update)
-            query = ("UPDATE core.personas SET balance = %s "
-                     " WHERE is_member = False AND balance > %s"
-                     " AND is_cde_realm = True AND is_archived = False")
-            ret = self.query_exec(rs, query, (zero, zero))
-        return ret
+            if persona['balance']:
+                self.core.change_persona_balance(
+                    rs, persona_id, balance=decimal.Decimal("0.00"),
+                    log_code=const.FinanceLogCodes.remove_exmember_balance,
+                    change_note="Guthaben von Exmitglied abgebucht.")
+                period_update['exmember_balance'] = \
+                    period['exmember_balance'] + persona['balance']
+                period_update['exmember_count'] = period['exmember_count'] + 1
+            self.set_period(rs, period_update)
+            return True, persona
 
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,

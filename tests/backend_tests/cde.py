@@ -432,28 +432,36 @@ class TestCdEBackend(BackendTest):
             else:
                 self.assertFalse(v)
 
-        # step 2
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
+        # step 2
+        # check that archival and ejection work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
             self.assertEqual(AllowedSemesterSteps(automated_archival=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
             self.assertEqual(AllowedSemesterSteps(ejection=True),
                              self.cde.allowed_semester_steps(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_automated_archival(self.key)
-        elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
+        else:
+            self.fail("Invalid user configuration for this test.")
+
         self.assertEqual(AllowedSemesterSteps(balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -463,21 +471,26 @@ class TestCdEBackend(BackendTest):
                          self.cde.allowed_semester_steps(self.key))
 
         # step 1
+        # check that sending archival and billing notification work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
             self.assertEqual(AllowedSemesterSteps(archival_notification=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
             self.assertEqual(AllowedSemesterSteps(billing=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_semester_bill(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
 
-        if self.user_in("anton"):
-            self.cde.finish_archival_notification(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_bill(self.key)
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
