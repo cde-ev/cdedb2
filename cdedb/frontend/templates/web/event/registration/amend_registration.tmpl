@@ -58,14 +58,6 @@
                     Because you are not a CdE-Member, you might have to pay an additional fee.
                 {% endtrans %}
                 </p>
-                {% if persona["is_cde_realm"] %}
-                    <p>
-                    {% trans semester_fee=semester_fee|money(lang=lang) %}
-                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
-                        If you choose to do so, please do so with two separate payments.
-                    {% endtrans %}
-                    </p>
-                {% endif %}
             </div>
         {% endif %}
 
