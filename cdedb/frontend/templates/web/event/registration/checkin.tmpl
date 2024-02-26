@@ -141,17 +141,33 @@
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">
+        let re;
+        let timer;
+        // save names and registration divs in JS datastructures for faster access on searching
+        let names = [];
+        let registrationBlocks = {};
+        $(".searchname").each(function() {
+            let name = removeDiacritics($(this).text()).trim();
+            names.push(name);
+            registrationBlocks[name] = $(this).closest(".selectee");
+        })
+
+        function filterCheckin() {
+            names.forEach(name => {
+                if (name.match(re))
+                    registrationBlocks[name].show();
+                else
+                    registrationBlocks[name].hide();
+            });
+        }
+
         $("#namesearch").show();
         $("#selector").focus()
-            .on('keydown paste input', function(){
+            .on('paste input', function(){
+                clearTimeout(timer);
                 /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
-                var re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-                $(".selectee").each(function(){
-                    if (removeDiacritics($(this).text()).match(re))
-                        $(this).show();
-                    else
-                        $(this).hide();
-                });
+                re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+                setTimeout(filterCheckin, 0);  // asynchronous call for better performance
             })
             .trigger('input');
         $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");
