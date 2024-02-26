@@ -364,7 +364,7 @@ class CoreBaseFrontend(AbstractFrontend):
         html_str = markdown_parse_safe(md_str)
         return Response(html_str, mimetype='text/plain')
 
-    @access("searchable", "cde_admin")
+    @access("searchable")
     @REQUESTdata("#confirm_id")
     def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int,
                        ) -> Response:
@@ -378,7 +378,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename=f'{filename}.vcf')
 
-    @access("searchable", "cde_admin")
+    @access("searchable")
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -608,8 +608,12 @@ class CoreBaseFrontend(AbstractFrontend):
             data['notes'] = total['notes']
             data['username'] = total['username']
 
+        # Check whether profile is currently searchable to viewer
+        acutally_searchable_to_you = ("searchable" in rs.user.roles
+                                      and rs.ambience['persona']['is_member']
+                                      and rs.ambience['persona']['is_searchable'])
         # Determine if vcard should be visible
-        data['show_vcard'] = "cde" in access_levels and "searchable" in roles
+        data['show_vcard'] = "cde" in access_levels and acutally_searchable_to_you
 
         # Cull unwanted data
         if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
@@ -645,11 +649,8 @@ class CoreBaseFrontend(AbstractFrontend):
             active_session_count = self.coreproxy.count_active_sessions(rs)
 
         # Check whether we should display an option for using the quota
-        quoteable = (not quote_me
-                     and "cde" not in access_levels
-                     and "searchable" in rs.user.roles
-                     and rs.ambience['persona']['is_member']
-                     and rs.ambience['persona']['is_searchable'])
+        quoteable = (not quote_me and "cde" not in access_levels
+                     and acutally_searchable_to_you)
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_membership_fee_reference(data)

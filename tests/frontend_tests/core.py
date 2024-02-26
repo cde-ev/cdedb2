@@ -292,11 +292,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(self.response.content_type, "image/svg+xml")
 
     @as_users("vera")
-    def test_vcard_cde_admin(self) -> None:
-        self.admin_view_profile('charly')
-        self.traverse({'description': 'VCard'})
-
-    @as_users("vera")
     def test_toggle_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
         # Core Administration
