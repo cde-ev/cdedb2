@@ -41,7 +41,9 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
+from cdedb.common.query.log_filter import (
+    ALL_LOG_FILTERS, ChangelogLogFilter, CoreLogFilter,
+)
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
@@ -245,12 +247,26 @@ class CoreBaseBackend(AbstractBackend):
 
     @access(*REALM_ADMINS)
     def redact_log(self, rs: RequestState, log_table: str, log_id: int,
-                   change_note: str = None) -> DefaultReturnCode:
+                   change_note: Optional[str] = None) -> DefaultReturnCode:
+        """Redacts log messages.
+
+        We usually do not want to use this, but keep it as a measure to redact
+        privacy-sensitive information or deragoratory statements.
+        Access validation for this is rather lax, there shall be no frontend endpoints
+        to access this freely."""
+        log_table = affirm(str, log_table)
+        log_id = affirm(int, log_id)
+        change_note = affirm_optional(str, change_note)
+
+        if log_table not in {log_filter.log_table for log_filter in ALL_LOG_FILTERS}:
+            raise ValueError("Unknown log")
+
         update = {
             "id": log_id,
-            "change_note": change_note or None,
+            "change_note": change_note,
         }
-        self.logger.warning(f"Redacted log message {log_id} in {log_table},")
+        self.logger.warning(
+            f"Redacted log message for entry with id {log_id} in {log_table}.")
         return self.sql_update(rs, log_table, update)
 
     @access("core_admin", "auditor")

@@ -1465,6 +1465,8 @@ class TestCoreBackend(BackendTest):
         ]
 
         self.assertLogEqual(log_expectation, realm="core")
+        with self.assertRaises(ValueError):
+            self.core.redact_log(self.key, "core.personas", 1002)
         self.core.redact_log(self.key, "core.log", 1002)
         log_expectation[1]['change_note'] = None
         self.assertLogEqual(log_expectation, realm="core")

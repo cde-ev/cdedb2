@@ -4,12 +4,12 @@
 from pprint import pprint
 
 from cdedb.backend.core import CoreBackend
-from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
 from cdedb.script import Script
 
 # setup
 
-script = Script(persona_id=-1, dbuser="cdb_admin", dry_run=False)
+script = Script(dbuser="cdb_admin")
 rs = script.rs()
 core: CoreBackend = script.make_backend("core", proxy=False)
 
@@ -17,8 +17,8 @@ core: CoreBackend = script.make_backend("core", proxy=False)
 
 with script:
     log_table = input("Which table do you want to delete from? ")
-    if not log_table or not log_table.endswith("log"):
-        raise RuntimeError("Need to specify log table")
+    if log_table not in {log_filter.log_table for log_filter in ALL_LOG_FILTERS}:
+        raise ValueError("Unknown log")
 
     # raises if unsuccessful
     log_id = int(input("For which log id do you want to change the message? "))
