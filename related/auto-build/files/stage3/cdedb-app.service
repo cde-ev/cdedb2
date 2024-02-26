@@ -10,11 +10,8 @@ Group=www-cde
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
-ExecStart=/usr/bin/gunicorn -b 'localhost:8998' --forwarded-allow-ips="*" -w 3 wsgi.cdedb-app:application
+ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 3 wsgi.cdedb-app:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
 PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
