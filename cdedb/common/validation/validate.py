@@ -2408,11 +2408,11 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'shortname': TokenString,
     'part_begin': datetime.date,
     'part_end': datetime.date,
-    'waitlist_field_id': Optional[ID],  # type: ignore[dict-item]
-    'camping_mat_field_id': Optional[ID],  # type: ignore[dict-item]
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
+    'waitlist_field_id': Optional[ID],  # type: ignore[dict-item]
+    'camping_mat_field_id': Optional[ID],  # type: ignore[dict-item]
     'tracks': Mapping,
 }
 
@@ -3458,6 +3458,7 @@ def _serialized_event(
             _lodgement, {'event_id': ID}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': ID, 'persona_id': ID,
+                            'is_member': bool,
                             'amount_owed': NonNegativeDecimal,
                             # allow amount_paid and payment for better UX, we check
                             # inside the import that they have not changed

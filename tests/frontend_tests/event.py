@@ -1576,22 +1576,18 @@ etc;anything else""", f['entries_2'].value)
 
         # now, start registration testing
         surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
-        membership_fee = "Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag"
         self.traverse("Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
-            self.assertNonPresence(membership_fee)
             self.assertPresence("13.05.1984")
         elif self.user_in('daniel'):
             self.assertPresence(surcharge)
-            self.assertPresence(membership_fee)
             self.assertPresence("19.02.2220")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
             self.assertNonPresence("Eltern")
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
-            self.assertNonPresence(membership_fee)
             self.assertPresence("26.08.932")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
             self.assertNonPresence("Eltern")
@@ -1638,15 +1634,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Offen (Bezahlung ausstehend)")
         if self.user_in('charly'):
             self.assertNotIn(surcharge, text)
-            self.assertNotIn(membership_fee, text)
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
             self.assertIn(surcharge, text)
-            self.assertIn(membership_fee, text)
             self.assertIn("466,49", text)
         elif self.user_in('rowena'):
             self.assertIn(surcharge, text)
-            self.assertNotIn(membership_fee, text)
             self.assertIn("466,49", text)
         else:
             self.fail("Please reconfigure the users for the above checks.")
@@ -5075,6 +5068,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             del reg['payment']
             del reg['ctime']
             del reg['mtime']
+            del reg['is_member']
         self.get('/')
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},

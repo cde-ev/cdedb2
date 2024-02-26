@@ -1001,6 +1001,7 @@ class TestEventBackend(BackendTest):
             },
             'list_consent': True,
             'id': 2,
+            'is_member': False,
             'mixed_lodging': True,
             'mtime': None,
             'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1125,6 +1126,7 @@ class TestEventBackend(BackendTest):
             new_reg['amount_owed'] = decimal.Decimal("589.48")
             new_reg['amount_paid'] = decimal.Decimal("0.00")
             new_reg['payment'] = None
+            new_reg['is_member'] = False
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -1167,6 +1169,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 1,
+                'is_member': True,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': None,
@@ -1220,6 +1223,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 2,
+                'is_member': False,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1274,6 +1278,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': False,
                 'id': 4,
+                'is_member': True,
                 'mixed_lodging': False,
                 'mtime': None,
                 'orga_notes': None,
@@ -1398,7 +1403,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'persona_id': 999,
-            'real_persona_id': None
+            'real_persona_id': None,
         }
         with self.assertRaises(ValueError) as cm:
             self.event.create_registration(self.key, new_reg)
@@ -1421,6 +1426,7 @@ class TestEventBackend(BackendTest):
         new_reg['amount_owed'] = decimal.Decimal("584.48")
         new_reg['amount_paid'] = decimal.Decimal("0.00")
         new_reg['payment'] = None
+        new_reg['is_member'] = True
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
@@ -2398,6 +2404,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1000,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2628,6 +2635,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1001,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2941,6 +2949,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
         expectation['registrations'][1002]['amount_owed'] = decimal.Decimal("573.99")
+        expectation['registrations'][1002]['is_member'] = True
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
@@ -4646,3 +4655,74 @@ class TestEventBackend(BackendTest):
 
             self.assertLogEqual(log_expectation, realm='event', event_id=event_id,
                                 offset=event_log_offset)
+
+    @storage
+    @as_users("anton")
+    def test_external_fee(self) -> None:
+        external_fee_amount = decimal.Decimal(1)
+
+        # 1. Create a lightweight event with only an external fee.
+        event_id = self.event.create_event(self.key, {
+            'title': "TestAkademie",
+            'shortname': "tAka",
+            'institution': const.PastInstitutions.main_insitution(),
+            'description': None,
+            'parts': {
+                -1: {
+                    'part_begin': "2222-02-02",
+                    'part_end': "2222-02-22",
+                    'title': "TestPart",
+                    'shortname': "TP",
+                },
+            },
+            'fees': {
+                -1: {
+                    'title': "Externenzusatzbeitrag",
+                    'notes': None,
+                    'amount': external_fee_amount,
+                    'condition': "NOT is_member",
+                    'kind': const.EventFeeType.external,
+                },
+            },
+        })
+
+        # 2.1 Set test user to not be a member then register them.
+        #  Check that external fee applies.
+        persona_id = 2
+        self.cde.change_membership(self.key, persona_id, False)
+
+        rdata: CdEDBObject = {
+            'event_id': event_id,
+            'persona_id': persona_id,
+            'mixed_lodging': True,
+            'list_consent': True,
+            'notes': None,
+            'parts': {
+                1001: {
+                    'status': const.RegistrationPartStati.participant,
+                },
+            },
+            'tracks': {
+            },
+        }
+        reg_id = self.event.create_registration(self.key, rdata)
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+
+        # 2.2 Now grant them membership and check that the external fee still holds.
+        self.cde.change_membership(self.key, persona_id, True)
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+
+        # 3.1 Delete and recreate the registration.
+        #  Check that external fee does not apply.
+        self.event.delete_registration(
+            self.key, reg_id, ('registration_parts',))
+        new_reg_id = self.event.create_registration(self.key, rdata)
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+
+        # 3.2 Revoke membership and check that external fee still does not apply.
+        self.cde.change_membership(self.key, persona_id, False)
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))

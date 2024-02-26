@@ -1014,8 +1014,7 @@ class EventRegistrationBackend(EventBaseBackend):
             current = self.get_registration(rs, data['id'])
             update = {
                 'id': data['id'],
-                'amount_owed': self._calculate_single_fee(
-                    rs, current, event=event),
+                'amount_owed': self._calculate_single_fee(rs, current, event=event),
             }
             ret *= self.sql_update(rs, "event.registrations", update)
             self.event_log(
@@ -1053,7 +1052,9 @@ class EventRegistrationBackend(EventBaseBackend):
             if self.list_registrations(rs, data['event_id'], data['persona_id']):
                 raise ValueError(n_("Already registered."))
             self.assert_offline_lock(rs, event_id=data['event_id'])
+            persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
+            data['is_member'] = persona['is_member']
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
@@ -1259,16 +1260,14 @@ class EventRegistrationBackend(EventBaseBackend):
                                            visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: models.Event, is_member: Optional[bool] = None,
-                              ) -> decimal.Decimal:
+                              event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
-        return self._calculate_complex_fee(
-            rs, reg, event=event, is_member=is_member).amount
+        return self._calculate_complex_fee(rs, reg, event=event).amount
 
-    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: models.Event, is_member: Optional[bool] = None,
-                               is_orga: Optional[bool] = None,
-                               visual_debug: bool = False) -> RegistrationFeeData:
+    @staticmethod
+    def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
+                               event: models.Event, visual_debug: bool = False,
+                               ) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1279,8 +1278,6 @@ class EventRegistrationBackend(EventBaseBackend):
         If the subset does not violate any MEP constraints, the total of all it's parts'
         fees is calculated. The final fee will be the maximum of all such totals.
 
-        :param is_member: If this is None, retrieve membership status here.
-        :param is_orga: If this is None, determine orga status regularly.
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
@@ -1299,8 +1296,7 @@ class EventRegistrationBackend(EventBaseBackend):
         for tmp_is_member in (True, False):
             # Other bools can be added here, but also require adjustment to the parser.
             other_bools = {
-                'is_orga':
-                    reg['persona_id'] in event.orgas if is_orga is None else is_orga,
+                'is_orga': reg.get('is_orga', reg['persona_id'] in event.orgas),
                 'is_member': tmp_is_member,
                 'any_part': any(reg_part_involvement.values()),
                 'all_parts': all(reg_part_involvement.values()),
@@ -1326,12 +1322,8 @@ class EventRegistrationBackend(EventBaseBackend):
             ret[tmp_is_member] = RegistrationFee(
                 amount, active_fees, visual_debug_data, fees_by_kind)
 
-        if is_member is None:
-            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
-            assert is_member is not None
-
         return RegistrationFeeData(
-            member_fee=ret[True], nonmember_fee=ret[False], is_member=is_member,
+            member_fee=ret[True], nonmember_fee=ret[False], is_member=reg['is_member'],
         )
 
     @access("event")
@@ -1392,10 +1384,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 for part_id in event.parts
             },
             'fields': fields,
+            'is_member': is_member,
+            'is_orga': is_orga,
         }
         return self._calculate_complex_fee(
-            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
-            visual_debug=True)
+            rs, fake_registration, event=event, visual_debug=True)
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int],
@@ -1431,14 +1424,11 @@ class EventRegistrationBackend(EventBaseBackend):
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
 
             ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
-                is_member = personas[reg['persona_id']]['is_member']
-                ret[reg_id] = self._calculate_single_fee(
-                    rs, reg, event=event, is_member=is_member)
+                ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
         return ret
 
     class _CalculateFeeProtocol(Protocol):
