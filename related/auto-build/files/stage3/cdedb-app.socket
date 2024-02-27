@@ -3,7 +3,6 @@ Description=CdEDB Application server socket
 
 [Socket]
 ListenStream=8998
-SocketUser=www-data
 
 [Install]
 WantedBy=sockets.target
