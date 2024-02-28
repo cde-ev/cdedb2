@@ -146,8 +146,9 @@
         // save names and registration divs in JS datastructures for faster access on searching
         let names = [];
         let registrationBlocks = {};
+        let counter = 0;  // appended to names to deal with duplicate names, still being efficient in matching
         $(".searchname").each(function() {
-            let name = removeDiacritics($(this).text()).trim();
+            let name = removeDiacritics($(this).text()).trim() + counter++;
             names.push(name);
             registrationBlocks[name] = $(this).closest(".selectee");
         })
