@@ -1120,7 +1120,7 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.LastschriftInitiative: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Lastschriftinitiative",
             TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
