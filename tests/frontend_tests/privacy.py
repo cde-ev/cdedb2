@@ -102,7 +102,7 @@ class TestPrivacyFrontend(FrontendTest):
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
             "Jahrgang, Matrikel, …", "Interessen", "Verschiedenes",
-            "Verg. Veranstaltungen", "VCard"
+            "Verg. Veranstaltungen",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -147,7 +147,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_member_view(self, inspected: UserObject) -> Set[str]:
         # Note that event context is no subset of this, because missing gender
-        expected: Set[str] = set()
+        expected: Set[str] = {"VCard"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_cde_context_view(inspected)
@@ -172,7 +172,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
-            "Geschlecht", "Geburtsdatum", "VCard", "Pronomen",
+            "Geschlecht", "Geburtsdatum", "Pronomen",
             "Pronomen auf Namensschild", "Zahlungsmethode"
         }
         for field in expected:
@@ -337,7 +337,8 @@ class TestPrivacyFrontend(FrontendTest):
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_core_admin_view(inspected)
-        self.assertEqual((self.ALL_FIELDS - found), set())
+        # views all fields except VCard, which is only visible for searchable members
+        self.assertEqual((self.ALL_FIELDS - found), {"VCard"})
 
         # ... especially also on archived users.
         inspected = USER_DICT['hades']

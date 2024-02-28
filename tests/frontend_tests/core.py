@@ -11,6 +11,7 @@ import cdedb.database.constants as const
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
+    make_persona_name,
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
@@ -239,9 +240,9 @@ class TestCoreFrontend(FrontendTest):
         self.post('/core/persona/8/activity/change', {'activity': False})
         _check_redirected_profile()
 
-    @as_users("emilia", "janis")
+    @as_users("charly", "emilia", "janis")
     def test_showuser_self(self) -> None:
-        name = f"{self.user['given_names']} {self.user['family_name']}"
+        name = make_persona_name(self.user)  # type: ignore[arg-type]
         self.get('/core/self/show')
         self.assertTitle(name)
         if not self.user_in("janis"):  # Janis is no event user
@@ -253,6 +254,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']})
         self.assertNonPresence("Veranstaltungs-Daten")
         self.assertNonPresence("Mailinglisten-Daten")
+        self.assertNonPresence("vCard")
 
     @as_users("inga")
     def test_vcard(self) -> None:
@@ -288,11 +290,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("QR")
         # our modal javascript in cdedb_helper.js relies on xml content type
         self.assertEqual(self.response.content_type, "image/svg+xml")
-
-    @as_users("vera")
-    def test_vcard_cde_admin(self) -> None:
-        self.admin_view_profile('charly')
-        self.traverse({'description': 'VCard'})
 
     @as_users("vera")
     def test_toggle_admin_views(self) -> None:
