@@ -154,10 +154,11 @@
 
         function filterCheckin() {
             names.forEach(name => {
+                // adding/removing classes ist 100 times faster than using .show()/.hide()
                 if (name.match(re))
-                    registrationBlocks[name].show();
+                    registrationBlocks[name].removeClass("softhide");
                 else
-                    registrationBlocks[name].hide();
+                    registrationBlocks[name].addClass("softhide");
             });
         }
 
