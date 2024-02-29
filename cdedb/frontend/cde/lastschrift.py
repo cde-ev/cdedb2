@@ -385,7 +385,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
             transaction['subject'] = asciificator(glue(
-                "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
+                "{}, {}, {} LSI Mitgliedsbeitrag u. Spende CdE e.V.",
                 "z. Foerderung der Volks- u. Berufsbildung u.",
                 "Studentenhilfe").format(
                 cdedbid_filter(persona['id']), persona['family_name'],
