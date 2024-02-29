@@ -6396,8 +6396,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
         f['title'] = "New Token!"
-        f['etime'] = now().date() + (datetime.date(now().year + 100,1,1)
-                                     - datetime.date(now().year,1,1))
+        f['etime'] = now().date() + (datetime.date(now().year + 100, 1, 1)
+                                     - datetime.date(now().year, 1, 1))
         self.submit(f)
         new_token_id, secret = self.fetch_orga_token()
         orga_token = self.event.get_orga_token(self.key, new_token_id)
