@@ -119,7 +119,7 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     types-Markdown \
     types-click \
     types-tabulate \
-    playwright>=1.37.0
+    'playwright>=1.37.0'
 
 # get the configuration files from the autobuild
 COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
