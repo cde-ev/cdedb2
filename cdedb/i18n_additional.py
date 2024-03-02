@@ -136,6 +136,7 @@ I18N_STRINGS = (
     n_("EventLogCodes.custom_filter_created"),
     n_("EventLogCodes.custom_filter_changed"),
     n_("EventLogCodes.custom_filter_deleted"),
+    n_("EventLogCodes.registration_status_changed"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),

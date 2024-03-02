@@ -896,6 +896,20 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @staticmethod
+    def _get_status_change_log_message(
+            old_state: CdEDBObject, update: CdEDBObject, event_part: models.EventPart,
+    ) -> Optional[str]:
+        """Uninlined code from _set_registration for better readability."""
+        RPS = const.RegistrationPartStati
+
+        if 'status' in update and update['status'] != RPS(old_state['status']):
+            change_note = f"{RPS(old_state['status']).name} -> {update['status'].name}"
+            if len(event_part.event.parts) > 1:
+                change_note = f"{event_part.shortname}: {change_note}"
+            return change_note
+        return None
+
     def _set_registration(self, rs: RequestState, data: CdEDBObject,
                           change_note: Optional[str] = None, orga_input: bool = True,
                           ) -> DefaultReturnCode:
@@ -955,9 +969,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 parts = data['parts']
                 if not event.parts.keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
-                existing = {e['part_id']: e['id'] for e in self.sql_select(
-                    rs, "event.registration_parts", ("id", "part_id"),
+                existing_data = {e['part_id']: e for e in self.sql_select(
+                    rs, "event.registration_parts",
+                    ("id", "part_id", "status",),
                     (data['id'],), entity_key="registration_id")}
+                existing = {e['part_id']: e['id'] for e in existing_data.values()}
                 new = {x for x in parts if x not in existing}
                 updated = {x for x in parts
                            if x in existing and parts[x] is not None}
@@ -972,8 +988,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 for x in updated:
                     update = copy.deepcopy(parts[x])
                     update['id'] = existing[x]
-                    ret *= self.sql_update(rs, "event.registration_parts",
-                                           update)
+                    if status_change_note := self._get_status_change_log_message(
+                            existing_data[x], update, event.parts[x]):
+                        self.event_log(
+                            rs, const.EventLogCodes.registration_status_changed,
+                            event_id, persona_id, status_change_note)
+                    ret *= self.sql_update(rs, "event.registration_parts", update)
                 if deleted:
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:

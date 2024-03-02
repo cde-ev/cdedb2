@@ -515,6 +515,7 @@ class EventLogCodes(CdEIntEnum):
     orga_token_changed = 201  #:
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
+    registration_status_changed = 300  #:
 
 
 @enum.unique
