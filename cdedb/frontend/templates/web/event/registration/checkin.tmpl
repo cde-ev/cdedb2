@@ -169,7 +169,7 @@
                 clearTimeout(timer);
                 /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
                 re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-                setTimeout(filterCheckin, 0);  // asynchronous call for better performance
+                timer = setTimeout(filterCheckin, 0);  // asynchronous call for better performance
             })
             .trigger('input');
         $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");
