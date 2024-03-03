@@ -63,15 +63,28 @@ if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: n
 _repopath = _currentdir.parent
 
 try:
-    _git_commit = subprocess.check_output(
-        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+    _git_commit = (
+        subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
+        .decode()
+        .strip()
+    )
 except FileNotFoundError:  # pragma: no cover, only catch git executable not found
-    with pathlib.Path(_repopath, '.git/HEAD').open() as head:
-        _git_commit = head.read().strip()
+    _git_commit = (_repopath / ".git/HEAD").read_text().strip()
 
-    if _git_commit.startswith('ref'):
-        with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
-            _git_commit = ref.read().strip()
+    if _git_commit.startswith("ref: "):
+        _git_commit = (
+            (_repopath / ".git" / _git_commit.removeprefix("ref: ")).read_text().strip()
+        )
+except subprocess.CalledProcessError as e:
+    # It can happen that we use a git worktree where the primary repository
+    # is outside of the sandbox/VM in which we are running.
+    _git_reference = (_repopath / ".git").read_text().strip()
+    if not _git_reference.startswith("gitdir: "):
+        raise RuntimeError("Unable to determine git commit") from e
+
+    # The commit is primarily used for cache busting
+    # so there is not harm to set it to the empty string during development.
+    _git_commit = ""
 
 
 #: defaults for :py:class:`Config`
