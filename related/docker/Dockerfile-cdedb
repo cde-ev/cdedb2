@@ -110,13 +110,9 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     segno==1.5.2 \
     mypy==1.4.0 \
     pylint==2.15.0 \
-    types-werkzeug \
-    types-jinja2 \
     types-python-dateutil \
-    types-freezegun \
     types-bleach \
     types-Markdown \
-    types-click \
     types-tabulate \
     'playwright>=1.37.0'
 
