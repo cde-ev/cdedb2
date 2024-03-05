@@ -13,9 +13,13 @@ import cdedb.models.ml
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
 
-def output_counters(context):
-    if False:
-        pprint.pprint(dict(context.counters))
+def output_counters(context, prefix="", final=False):
+    if context.clock is not None:
+        now = datetime.datetime.now()
+        delta = now - context.clock
+        context.clock = now
+        print(prefix + f"Processed in {delta}")
+    pprint.pprint(dict(context.counters))
 
 
 def make_counter(context, name, prefix='', suffix=''):
@@ -96,7 +100,7 @@ def event(context):
                                      suffix='@aka.cde-ev.de'),
         'participant_info': make_counter(
             context, 'Teilnehmerinformation'),
-        'orgas': [persona(context) for _ in range(10)],
+        'orgas': [persona(context) for _ in range(1 if context.quick else 10)],
         'parts': {
             -1: {
                 'tracks': {
@@ -206,7 +210,7 @@ def event(context):
     ret = event.create_event(rs, data)
     lodgement_groups = event.list_lodgement_groups(rs, ret)
     for lg in lodgement_groups:
-        for _ in range(5):
+        for _ in range(1 if context.quick else 5):
             alodgement = event.create_lodgement(rs, {
                 'regular_capacity': 42,
                 'event_id': ret,
@@ -230,7 +234,7 @@ def event(context):
                                      'notes': '',
                                      'segments': {t},
                                      })
-            for _ in range(10)]
+            for _ in range(1 if context.quick else 10)]
         for t in tracks
     }
     fields = event.get_event(rs, ret).fields
@@ -258,7 +262,7 @@ def event(context):
     }
     event.set_questionnaire(rs, ret, questionnaire)
     parts = event.get_event(rs, ret).parts
-    for _ in range(100):
+    for _ in range(1 if context.quick else 100):
         event.create_registration(rs, {
             'event_id': ret,
             'persona_id': persona(context),
@@ -286,14 +290,15 @@ def assembly(context):
     rs = context.script.rs()
     assembly = context.script.make_backend('assembly')
     ret = assembly.create_assembly(rs, {
-        'presiders': [persona(context) for _ in range(3)],
+        'presiders': [persona(context)
+                      for _ in range(1 if context.quick else 3)],
         'description': '',
         'notes': None,
         'signup_end': datetime.datetime(2100, 1, 1, 0, 0, 0),
         'title': make_counter(context, 'Mitgliederversammlung'),
         'shortname': make_counter(context, 'Versammlung'),
     })
-    for _ in range(10):
+    for _ in range(1 if context.quick else 10):
         assembly.create_ballot(rs, {
             'assembly_id': ret,
             'use_bar': True,
@@ -318,7 +323,7 @@ def assembly(context):
                                                     tzinfo=datetime.timezone.utc),
             'votes': None,
         })
-    for _ in range(100):
+    for _ in range(1 if context.quick else 100):
         secret = assembly.signup(context.script.rs(persona(context)), ret)
     return ret
 
@@ -334,14 +339,14 @@ def past_event(context):
         'tempus': datetime.date(2000, 1, 1),
         'participant_info': None,
     })
-    for _ in range(10):
+    for _ in range(1 if context.quick else 10):
         acourse = pastevent.create_past_course(rs, {
             'pevent_id': ret,
             'nr': make_counter(context, 'VergangenerKursNr'),
             'title': make_counter(context, 'VergangenerKursTitel'),
             'description': '',
         })
-        for _ in range(10):
+        for _ in range(1 if context.quick else 10):
             pastevent.add_participant(rs, ret, acourse, persona(context),
                                       False, False)
     return ret
@@ -362,14 +367,15 @@ def mailinglist(context):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators=[persona(context) for _ in range(3)],
+            moderators=[persona(context)
+                        for _ in range(1 if context.quick else 3)],
             whitelist=set(),
             subject_prefix=make_counter(context, 'BetreffPrefix'),
             title=make_counter(context, 'Mailingliste'),
             notes='',
     )
     ret = ml.create_mailinglist(rs, data)
-    for _ in range(10):
+    for _ in range(1 if context.quick else 10):
         ml.do_subscription_action(
             rs, SubscriptionAction.add_subscriber, mailinglist_id=ret,
             persona_id=persona(context))
@@ -377,22 +383,46 @@ def mailinglist(context):
 
 
 def create_everything(context):
-    output_counters(context)
-    for _ in range(context.personas * context.factor):
+    if context.verbose:
+        context.clock = datetime.datetime.now()
+        print(f"Started at {context.clock}")
+        print(f" Creating personas:", end="")
+    for idx in range(context.personas * context.factor):
+        if context.verbose:
+            print(f" {idx}", end="")
         persona(context)
-    output_counters(context)
-    for _ in range(context.events * context.factor):
+    if context.verbose:
+        print()
+        output_counters(context, "[persona] ")
+        print(f" Creating events:", end="")
+    for idx in range(context.events * context.factor):
+        if context.verbose:
+            print(f" {idx}", end="")
         event(context)
-    output_counters(context)
+    if context.verbose:
+        print()
+        output_counters(context, "[event] ")
+        print(f" Creating assemblies:", end="")
     for _ in range(context.assemblies * context.factor):
+        if context.verbose:
+            print(f" {idx}", end="")
         assembly(context)
-    output_counters(context)
+    if context.verbose:
+        print()
+        output_counters(context, "[assembly] ")
+        print(f" Creating pastevents:", end="")
     for _ in range(context.pastevents * context.factor):
         past_event(context)
-    output_counters(context)
+    if context.verbose:
+        print()
+        output_counters(context, "[pastevent] ")
+        print(f" Creating mailinglists:", end="")
     for _ in range(context.mailinglists * context.factor):
         mailinglist(context)
-    output_counters(context)
+    if context.verbose:
+        print()
+        output_counters(context, "[mailinglist] ", final=True)
+        print(f"Done in {datetime.datetime.now() - context.start}")
 
 
 def perform(args):
@@ -400,6 +430,8 @@ def perform(args):
 
     args.script = script
     args.counters = collections.defaultdict(lambda: 0)
+    args.clock = None
+    args.start = datetime.datetime.now()
 
     create_everything(args)
 
@@ -426,6 +458,10 @@ def main():
         "--mailinglists", "-m", default=1, type=int)
     parser.add_argument(
         "--factor", "-f", default=1, type=int)
+    parser.add_argument(
+        "--verbose", "-v", action='store_true')
+    parser.add_argument(
+        "--quick", "-q", action='store_true')
 
     args = parser.parse_args()
 

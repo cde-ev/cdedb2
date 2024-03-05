@@ -19,6 +19,6 @@ class TestHugeData(FrontendTest):
         # subprocess. Since the test configpaths use imports from test, we append
         # the whole repo to the PYTHONPATH so they are found.
         env = {**os.environ.copy(), "PYTHONPATH": str(repopath)}
-        subprocess.run([repopath / 'bin/insert_huge_data.py'], check=True,
-                       env=env)
+        subprocess.run([repopath / 'bin/insert_huge_data.py', '--quick'],
+                       check=True, env=env)
         self.login(user)
