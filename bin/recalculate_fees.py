@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Generic script to repurge all purged personas.
+"""Generic script to recalculate the event fees for all users.
 
 Should not be archived after use.
 """
-from cdedb.backend.common import Silencer
 from cdedb.backend.event import EventBackend
 from cdedb.common.sorting import xsorted
-from cdedb.database.connection import Atomizer
 from cdedb.script import Script
 
 # setup
@@ -19,7 +17,6 @@ event: EventBackend = script.make_backend("event", proxy=False)
 
 with script:
     for event_id, event_name in xsorted(event.list_events(rs).items()):
-        print(f"Recalculating Fee for {event_name} with id {event_id}.")
-        with Atomizer(rs):
-            event._update_registrations_amount_owed(rs, event_id)  # pylint: disable=protected-access
+        print(f"Recalculating Fees for {event_name} with id {event_id}.")
+        event._update_registrations_amount_owed(rs, event_id)  # pylint: disable=protected-access
 
