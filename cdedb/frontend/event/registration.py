@@ -926,7 +926,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             'age': age, 'involved_tracks': involved_tracks,
             'persona': persona, 'semester_fee': self.conf['MEMBERSHIP_FEE'],
             'reg_questionnaire': reg_questionnaire, 'payment_parts': payment_parts,
-            'has_been_member': registration['is_member'], **course_choice_params,
+            'was_member': registration['is_member'], **course_choice_params,
         })
 
     @access("event", modi={"POST"})

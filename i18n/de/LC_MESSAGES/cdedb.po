@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-03-10 18:20+0100\n"
+"POT-Creation-Date: 2024-03-10 19:06+0100\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -14789,11 +14789,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:57
 msgid ""
-"Because you have not been a CdE-Member at registration, you might have to "
-"pay an additional fee."
+"Because you were not a CdE-Member at registration, you might have to pay an "
+"additional fee."
 msgstr ""
-"Da Du bei Anmeldung kein CdE-Mitglied warst, musst Du möglicherweise einen höheren Beitrag "
-"bezahlen."
+"Da Du bei Anmeldung kein CdE-Mitglied warst, musst Du möglicherweise einen "
+"höheren Beitrag bezahlen."
 
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:12
 #, python-format
