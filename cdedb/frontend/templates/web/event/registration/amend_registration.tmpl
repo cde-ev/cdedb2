@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        {% if not ambience['registration']['is_member'] %}
+        {% if not has_been_member %}
             <div class="heading-underline text-info" style="font-weight: bold;">
                 <p id="nonmember-surcharge">
                 {% trans %}
@@ -68,7 +68,7 @@
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
             'persona_id': {{ user.persona_id }},
-            'is_member': {{ ambience['registration']['is_member']|tojson }},
+            'is_member': {{ has_been_member|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'part_ids': {{ payment_parts|tojson }},
         }
