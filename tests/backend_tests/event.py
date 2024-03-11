@@ -3032,9 +3032,19 @@ class TestEventBackend(BackendTest):
                 'persona_id': 1,
             },
             {
+                'change_note': '1.H.: Guest -> Participant',
+                'code': const.EventLogCodes.registration_status_changed,
+                'persona_id': 5,
+            },
+            {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
                 'code': const.EventLogCodes.registration_changed,
                 'persona_id': 5,
+            },
+            {
+                'change_note': '1.H.: Participant -> Waitlist',
+                'code': const.EventLogCodes.registration_status_changed,
+                'persona_id': 7,
             },
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
@@ -3994,6 +4004,18 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.registration_created,
                 'event_id': 1,
                 'persona_id': 3,
+            },
+            {
+                'change_note': "Wu: Rejected -> Participant",
+                'code': const.EventLogCodes.registration_status_changed,
+                'event_id': 1,
+                'persona_id': 9,
+            },
+            {
+                'change_note': "2.H.: Participant -> Rejected",
+                'code': const.EventLogCodes.registration_status_changed,
+                'event_id': 1,
+                'persona_id': 9,
             },
             {
                 'change_note': "Boring change.",
