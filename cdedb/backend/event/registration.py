@@ -898,13 +898,15 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @staticmethod
     def _get_status_change_log_message(
-            old_state: CdEDBObject, update: CdEDBObject, event_part: models.EventPart,
+            rs: RequestState, old_state: CdEDBObject, update: CdEDBObject,
+            event_part: models.EventPart,
     ) -> Optional[str]:
         """Uninlined code from _set_registration for better readability."""
-        RPS = const.RegistrationPartStati
+        old_status = const.RegistrationPartStati(old_state['status'])
+        g = rs.default_gettext
 
-        if 'status' in update and update['status'] != RPS(old_state['status']):
-            change_note = f"{RPS(old_state['status']).name} -> {update['status'].name}"
+        if 'status' in update and update['status'] != old_status:
+            change_note = f"{g(str(old_status))} -> {g(str(update['status']))}"
             if len(event_part.event.parts) > 1:
                 change_note = f"{event_part.shortname}: {change_note}"
             return change_note
@@ -989,7 +991,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     update = copy.deepcopy(parts[x])
                     update['id'] = existing[x]
                     if status_change_note := self._get_status_change_log_message(
-                            existing_data[x], update, event.parts[x]):
+                            rs, existing_data[x], update, event.parts[x]):
                         self.event_log(
                             rs, const.EventLogCodes.registration_status_changed,
                             event_id, persona_id, status_change_note)
