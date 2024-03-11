@@ -973,7 +973,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise ValueError(n_("Non-existing parts specified."))
                 existing_data = {e['part_id']: e for e in self.sql_select(
                     rs, "event.registration_parts",
-                    ("id", "part_id", "status",),
+                    ("id", "part_id", "status"),
                     (data['id'],), entity_key="registration_id")}
                 existing = {e['part_id']: e['id'] for e in existing_data.values()}
                 new = {x for x in parts if x not in existing}
