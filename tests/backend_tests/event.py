@@ -3032,7 +3032,7 @@ class TestEventBackend(BackendTest):
                 'persona_id': 1,
             },
             {
-                'change_note': '1.H.: Guest -> Participant',
+                'change_note': '1.H.: Gast -> Teilnehmer',
                 'code': const.EventLogCodes.registration_status_changed,
                 'persona_id': 5,
             },
@@ -3042,7 +3042,7 @@ class TestEventBackend(BackendTest):
                 'persona_id': 5,
             },
             {
-                'change_note': '1.H.: Participant -> Waitlist',
+                'change_note': '1.H.: Teilnehmer -> Warteliste',
                 'code': const.EventLogCodes.registration_status_changed,
                 'persona_id': 7,
             },
@@ -4006,13 +4006,13 @@ class TestEventBackend(BackendTest):
                 'persona_id': 3,
             },
             {
-                'change_note': "Wu: Rejected -> Participant",
+                'change_note': "Wu: Abgelehnt -> Teilnehmer",
                 'code': const.EventLogCodes.registration_status_changed,
                 'event_id': 1,
                 'persona_id': 9,
             },
             {
-                'change_note': "2.H.: Participant -> Rejected",
+                'change_note': "2.H.: Teilnehmer -> Abgelehnt",
                 'code': const.EventLogCodes.registration_status_changed,
                 'event_id': 1,
                 'persona_id': 9,

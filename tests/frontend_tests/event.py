@@ -3033,7 +3033,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             {
                 'persona_id': 5,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Participant -> Cancelled",
+                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
             },
             {
                 'persona_id': 5,
@@ -3043,7 +3043,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             {
                 'persona_id': 7,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Participant -> Cancelled",
+                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
             },
             {
                 'persona_id': 7,
