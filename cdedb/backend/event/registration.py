@@ -903,7 +903,7 @@ class EventRegistrationBackend(EventBaseBackend):
     ) -> Optional[str]:
         """Uninlined code from _set_registration for better readability."""
         old_status = const.RegistrationPartStati(old_state['status'])
-        g = rs.default_gettext
+        g = rs.log_gettext
 
         if 'status' in update and update['status'] != old_status:
             change_note = f"{g(str(old_status))} -> {g(str(update['status']))}"
