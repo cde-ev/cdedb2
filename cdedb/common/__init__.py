@@ -149,6 +149,7 @@ class RequestState(ConnectionContainer):
     enough to not be non-nice).
     """
     default_lang = "en"
+    log_lang = "de"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -214,6 +215,14 @@ class RequestState(ConnectionContainer):
     @property
     def default_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.default_lang].ngettext
+
+    @property
+    def log_gettext(self) -> Callable[[str], str]:
+        return self.translations[self.log_lang].gettext
+
+    @property
+    def log_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.log_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: Optional[CdEDBObject] = None) -> None:

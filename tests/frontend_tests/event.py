@@ -3028,6 +3028,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['fields.transportation'] = "pedes"
         f['fields.may_reserve'] = True
         self.submit(f)
+
+        log_expectation = [
+            {
+                'persona_id': 5,
+                'code': const.EventLogCodes.registration_status_changed,
+                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
+            },
+            {
+                'persona_id': 5,
+                'code': const.EventLogCodes.registration_changed,
+                'change_note': "Multi-Edit.",
+            },
+            {
+                'persona_id': 7,
+                'code': const.EventLogCodes.registration_status_changed,
+                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
+            },
+            {
+                'persona_id': 7,
+                'code': const.EventLogCodes.registration_changed,
+                'change_note': "Multi-Edit.",
+            },
+        ]
+
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         f = self.response.forms['changeregistrationsform']
         self.assertEqual(True, f['enable_fields.transportation'].checked)
@@ -3062,18 +3086,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
 
+        log_expectation.extend([
+            {
+                'persona_id': 5,
+                'code': const.EventLogCodes.registration_changed,
+                'change_note': "Multi-Edit: Muss doch nicht laufen.",
+            },
+            {
+                'persona_id': 7,
+                'code': const.EventLogCodes.registration_changed,
+                'change_note': "Multi-Edit: Muss doch nicht laufen.",
+            },
+        ])
+
         # Check log
-        self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("Multi-Edit",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Multi-Edit",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertNonPresence("Multi-Edit:",
-                               div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        self.assertLogEqual(
+            log_expectation, realm="event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @event_keeper
     @as_users("garcia")
