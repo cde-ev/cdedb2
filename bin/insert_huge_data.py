@@ -29,6 +29,7 @@ def make_counter(context, name, prefix='', suffix=''):
 
 
 def persona(context):
+    rs = context.script.rs()
     data = {
         'is_cde_realm': True,
         'is_event_realm': True,
@@ -75,8 +76,19 @@ def persona(context):
         'paper_expuls': False,
         'donation': decimal.Decimal(0),
     }
-    core = context.script.make_backend('core')
-    return core.create_persona(context.script.rs(), data)
+    core = context.script.make_backend('core', proxy=False)
+    ret = core.create_persona(rs, data)
+    query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+    hashed_secret = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0"
+                     "nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2"
+                     "cVcK3TwSxsRPb91TLHF/si/")
+    with rs.conn as conn:
+        with conn.cursor() as cur:
+            core.execute_db_query(cur, query, (hashed_secret, ret))
+            success = cur.rowcount
+    if not success:
+        raise RuntimeError("Failed password reset.")
+    return ret
 
 
 def event(context):
@@ -206,7 +218,7 @@ def event(context):
             },
         },
     }
-    event = context.script.make_backend('event')
+    event = context.script.make_backend('event', proxy=False)
     ret = event.create_event(rs, data)
     lodgement_groups = event.list_lodgement_groups(rs, ret)
     for lg in lodgement_groups:
@@ -288,7 +300,7 @@ def event(context):
 
 def assembly(context):
     rs = context.script.rs()
-    assembly = context.script.make_backend('assembly')
+    assembly = context.script.make_backend('assembly', proxy=False)
     ret = assembly.create_assembly(rs, {
         'presiders': [persona(context)
                       for _ in range(1 if context.quick else 3)],
@@ -330,7 +342,7 @@ def assembly(context):
 
 def past_event(context):
     rs = context.script.rs()
-    pastevent = context.script.make_backend('past_event')
+    pastevent = context.script.make_backend('past_event', proxy=False)
     ret = pastevent.create_past_event(rs, {
         'title': make_counter(context, 'VergangeneVeranstaltung'),
         'shortname': make_counter(context, 'Vergangen'),
@@ -354,7 +366,7 @@ def past_event(context):
 
 def mailinglist(context):
     rs = context.script.rs()
-    ml = context.script.make_backend('ml')
+    ml = context.script.make_backend('ml', proxy=False)
     data = cdedb.models.ml.MemberOptInMailinglist(
             id=vtypes.CreationID(vtypes.ProtoID(-1)),
             local_part=vtypes.EmailLocalPart(make_counter(context, 'EmailLocalPart')),
@@ -426,14 +438,16 @@ def create_everything(context):
 
 
 def perform(args):
-    script = Script(persona_id=1, dbuser="cdb", check_system_user=False)
+    script = Script(persona_id=1, dbuser="cdb", check_system_user=False,
+                    dry_run=False)
 
     args.script = script
     args.counters = collections.defaultdict(lambda: 0)
     args.clock = None
     args.start = datetime.datetime.now()
 
-    create_everything(args)
+    with script:
+        create_everything(args)
 
 
 def main():
