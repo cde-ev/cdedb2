@@ -111,7 +111,6 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     mypy==1.4.0 \
     pylint==2.15.0 \
     types-werkzeug \
-    types-pytz \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun \

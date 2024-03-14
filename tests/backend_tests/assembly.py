@@ -6,7 +6,6 @@ import json
 from typing import Collection, List, NamedTuple, Optional
 
 import freezegun
-import pytz
 
 import cdedb.database.constants as const
 from cdedb.backend.assembly import BallotConfiguration
@@ -73,19 +72,22 @@ class TestAssemblyBackend(BackendTest):
             1: {
                 'id': 1,
                 'is_active': True,
-                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Internationaler Kongress'
             },
             2: {
                 'id': 2,
                 'is_active': False,
-                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2020, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Kanonische Beispielversammlung'
             },
             3: {
                 'id': 3,
                 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2222, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Archiv-Sammlung'
             },
         }
@@ -97,7 +99,8 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'id': assembly_id,
             'notes': "More fun for everybody",
-            'signup_end': datetime.datetime(2111, 11, 11, 23, 0, tzinfo=pytz.utc),
+            'signup_end': datetime.datetime(
+                2111, 11, 11, 23, 0, tzinfo=datetime.timezone.utc),
             'title': "Allumfassendes Konklave",
             'shortname': 'konklave',
         }
@@ -267,9 +270,9 @@ class TestAssemblyBackend(BackendTest):
                 'quorum': 2,
                 'title': 'Antwort auf die letzte aller Fragen',
                 'vote_begin': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=pytz.utc),
+                                                tzinfo=datetime.timezone.utc),
                 'vote_end': datetime.datetime(2002, 2, 23, 20, 22, 22, 222222,
-                                              tzinfo=pytz.utc),
+                                              tzinfo=datetime.timezone.utc),
                 'vote_extension_end': nearly_now(),
                 'votes': None,
             },
@@ -322,7 +325,7 @@ class TestAssemblyBackend(BackendTest):
                 'title': 'Akademie-Nachtisch',
                 'vote_begin': nearly_now(),
                 'vote_end': datetime.datetime(2222, 1, 1, 20, 22, 22, 222222,
-                                              tzinfo=pytz.utc),
+                                              tzinfo=datetime.timezone.utc),
                 'vote_extension_end': None,
                 'votes': 2,
             },
@@ -368,11 +371,11 @@ class TestAssemblyBackend(BackendTest):
             'quorum': 9,
             'title': 'Farbe des Logos',
             'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': datetime.datetime(2222, 2, 4, 20, 22, 22,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'votes': None}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
         data: CdEDBObject = {
@@ -385,7 +388,7 @@ class TestAssemblyBackend(BackendTest):
             },
             'notes': "foo",
             'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
@@ -436,11 +439,11 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 0,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'votes': None,
         }
         new_id = self.assembly.create_ballot(self.key, data)
@@ -640,9 +643,9 @@ class TestAssemblyBackend(BackendTest):
             'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': None,
             'votes': None}
         with self.assertRaises(ValueError):
@@ -650,7 +653,7 @@ class TestAssemblyBackend(BackendTest):
 
         data['abs_quorum'] = 0
         data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
-                                                       tzinfo=pytz.utc)
+                                                       tzinfo=datetime.timezone.utc)
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
@@ -1530,16 +1533,20 @@ class TestAssemblyBackend(BackendTest):
     def test_prepsql(self) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
-                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Internationaler Kongress'},
             2: {'id': 2, 'is_active': False,
-                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2020, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Kanonische Beispielversammlung'},
             3: {'id': 3, 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2222, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Archiv-Sammlung'},
             1001: {'id': 1001, 'is_active': True,
-                   'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                   'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
                    'title': 'Umfrage'}
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))

@@ -106,7 +106,6 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     pylint==2.15.0 \
     ruff==0.1.1 \
     types-werkzeug \
-    types-pytz \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun \

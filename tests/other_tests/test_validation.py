@@ -5,10 +5,9 @@ import copy
 import datetime
 import decimal
 import unittest
+import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
-
-import pytz
 
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
@@ -377,8 +376,8 @@ class TestValidation(unittest.TestCase):
 
     def test_datetime(self) -> None:
         now = datetime.datetime.now()
-        now_aware = datetime.datetime.now(pytz.utc)
-        now_other = pytz.timezone('America/New_York').localize(now)
+        now_aware = datetime.datetime.now(datetime.timezone.utc)
+        now_other = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York'))
         self.do_validator_test(datetime.datetime, (
             (now, now, None),
             (now_aware, now_aware, None),
@@ -386,20 +385,20 @@ class TestValidation(unittest.TestCase):
             (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("2014-04-02 21:53",
              datetime.datetime(2014, 4, 2, 19, 53, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("21:53", None, ValueError),
             ("2014-04-02T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 2, 20, 48, 25, 808240,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("2014-04-02T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 2, 17, 48, 25, 808240,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             # see above
             # ("more garbage", None, TypeError),
         ))
@@ -410,22 +409,22 @@ class TestValidation(unittest.TestCase):
             (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("2014-04-20 21:53",
              datetime.datetime(2014, 4, 20, 19, 53, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("21:53",
              datetime.datetime(2000, 5, 23, 19, 53, 0,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("2014-04-20T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             ("2014-04-20T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
-                               tzinfo=pytz.utc), None),
+                               tzinfo=datetime.timezone.utc), None),
             # see above
             # ("more garbage", None, TypeError),
         ), extraparams={'default_date': datetime.date(2000, 5, 23)})

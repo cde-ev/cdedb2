@@ -19,10 +19,9 @@ import logging
 import os
 import pathlib
 import subprocess
+import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
 from typing import Any, Union
-
-import pytz
 
 PathLike = Union[pathlib.Path, str]
 
@@ -153,7 +152,7 @@ _DEFAULTS = {
     "GIT_COMMIT": _git_commit,
 
     # default timezone for input and output
-    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
+    "DEFAULT_TIMEZONE": zoneinfo.ZoneInfo('CET'),
 
     # droids which are allowed access during lockdown.
     "INFRASTRUCTURE_DROIDS": {"resolve"},

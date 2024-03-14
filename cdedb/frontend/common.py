@@ -2493,7 +2493,7 @@ class CustomCSVDialect(csv.Dialect):
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
                substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
-               tzinfo: Optional[datetime.timezone] = None) -> str:
+               tzinfo: Optional[datetime.tzinfo] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.

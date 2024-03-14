@@ -4,8 +4,6 @@
 import datetime
 import decimal
 
-import pytz
-
 import cdedb.database.constants as const
 from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common import now
@@ -186,7 +184,7 @@ class TestCdEBackend(BackendTest):
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae',
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=pytz.utc),
+                                                tzinfo=datetime.timezone.utc),
                 'iban': 'DE12500105170648489890',
                 'id': 2,
                 'notes': 'reicher Onkel',
@@ -199,7 +197,7 @@ class TestCdEBackend(BackendTest):
         update = {
             'id': 2,
             'notes': 'ehem. reicher Onkel',
-            'revoked_at': datetime.datetime.now(pytz.utc),
+            'revoked_at': datetime.datetime.now(datetime.timezone.utc),
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
@@ -210,7 +208,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -261,7 +259,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -285,12 +283,13 @@ class TestCdEBackend(BackendTest):
             1: {
                 'amount': decimal.Decimal('32.00'),
                 'id': 1,
-                'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
+                'issued_at': datetime.datetime(2000, 3, 21, 22, 0,
+                                               tzinfo=datetime.timezone.utc),
                 'lastschrift_id': 1,
                 'period_id': 41,
                 'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                                  tzinfo=pytz.utc),
+                                                  tzinfo=datetime.timezone.utc),
                 'status': 12,
                 'submitted_by': 1,
                 'tally': decimal.Decimal('0.00'),
@@ -411,7 +410,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,

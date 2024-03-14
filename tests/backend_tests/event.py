@@ -13,7 +13,6 @@ import freezegun
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.errors
-import pytz
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -64,9 +63,9 @@ class TestEventBackend(BackendTest):
             'website_url': "https://www.example.com/test",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': None,
             'iban': None,
             'registration_text': None,
@@ -794,14 +793,16 @@ class TestEventBackend(BackendTest):
         update_registration = {
             'id': reg_id,
             'fields': {
-                'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
+                'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
+                                             tzinfo=datetime.timezone.utc),
             }
         }
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
             'anzahl_GROSSBUCHSTABEN': 4,
-            'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
+            'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
+                                         tzinfo=datetime.timezone.utc),
             'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
                      'garcia@example.cde :)',
             'is_child': False,
@@ -1325,7 +1326,7 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(pytz.utc),
+            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,
@@ -3560,9 +3561,9 @@ class TestEventBackend(BackendTest):
             on more lines.""",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': None,
             'iban': None,
             'registration_text': None,
@@ -3777,7 +3778,7 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(pytz.utc),
+            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,
@@ -4598,7 +4599,9 @@ class TestEventBackend(BackendTest):
                 event_id=cast(vtypes.ID, event_id),
                 title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
-                etime=datetime.datetime(2222, 12, 31, 23, 59, 59, tzinfo=pytz.utc),
+                etime=datetime.datetime(
+                    2222, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc
+                ),
             )
         }
         for token in expectation.values():
