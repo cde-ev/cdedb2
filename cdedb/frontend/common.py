@@ -307,9 +307,13 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __eq__ = jinja2.Undefined.__eq__
-    __ne__ = jinja2.Undefined.__ne__
-    __bool__ = jinja2.Undefined.__bool__
+    # The parent class has incompatible type signatures
+    # which strictly speaking would break the substitution principle.
+    # It would be cleaner to subclass jinja2.Undefined instead
+    # but this is more concise.
+    __eq__ = jinja2.Undefined.__eq__  # type: ignore[assignment]
+    __ne__ = jinja2.Undefined.__ne__  # type: ignore[assignment]
+    __bool__ = jinja2.Undefined.__bool__  # type: ignore[assignment]
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -320,18 +324,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        undefined: type[jinja2.Undefined]
         if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
             undefined = CdEDBUndefined
         else:
             undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
-            undefined.__bool__ = jinja2.Undefined.__bool__
+            undefined.__bool__ = jinja2.Undefined.__bool__  # type: ignore[method-assign]
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
             undefined=undefined)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
-        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore[attr-defined]
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -1910,7 +1915,7 @@ def REQUESTdata(
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val = rs.request.values.get(name, "")
+                    val = rs.request.values.get(name)
 
                     # TODO allow encoded collections?
                     if encoded and val:
@@ -1988,7 +1993,7 @@ def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            data = {}
+            data: dict[str, Union[str, tuple[str, ...]]] = {}
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")

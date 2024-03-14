@@ -2152,6 +2152,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         username = affirm(vtypes.PrintableASCII, username)
         password = affirm(str, password)
+        # TODO Extract IP address from RequestState
         ip = affirm(vtypes.PrintableASCII, ip)
         # note the lower-casing for email addresses
         query = ("SELECT id, is_meta_admin, is_core_admin FROM core.personas"
