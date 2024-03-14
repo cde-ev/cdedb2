@@ -189,8 +189,6 @@ class Application(BaseApp):
             apitoken = request.headers.get(APIToken.request_header_key)
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            assert request.remote_addr
-
             if apitoken:
                 sessionkey = None
                 user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)

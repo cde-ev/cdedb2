@@ -1915,7 +1915,7 @@ def REQUESTdata(
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val = rs.request.values.get(name)
+                    val: Optional[str] = rs.request.values.get(name, "")
 
                     # TODO allow encoded collections?
                     if encoded and val:

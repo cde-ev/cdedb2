@@ -230,7 +230,6 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        assert rs.request.remote_addr
         sessionkey = self.coreproxy.login(
             rs, username, password, rs.request.remote_addr)
         if not sessionkey:

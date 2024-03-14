@@ -2138,7 +2138,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("anonymous")
     def login(self, rs: RequestState, username: str, password: str,
-              ip: str) -> Optional[str]:
+              ip: Optional[str]) -> Optional[str]:
         """Create a new session.
 
         This invalidates all existing sessions for this persona. Sessions
