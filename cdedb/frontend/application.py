@@ -6,7 +6,7 @@ import json
 import os
 import pathlib
 import types
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import jinja2
 import psycopg2.extensions
@@ -14,11 +14,6 @@ import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
-
-# TODO replace once we raise requirements to Python 3.11
-# where this is exposed as wsgiref.WSGIApplication.
-# This is a pseudo-module supported by major type checkers.
-from _typeshed.wsgi import WSGIApplication  # pylint: disable=import-error
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.core import CoreBackend
@@ -46,6 +41,12 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken
+
+if TYPE_CHECKING:
+    # TODO replace once we raise requirements to Python 3.11
+    # where this is exposed as wsgiref.WSGIApplication.
+    # This is a pseudo-module supported by major type checkers.
+    from _typeshed.wsgi import WSGIApplication  # pylint: disable=import-error
 
 
 class Application(BaseApp):
@@ -179,7 +180,7 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status)
 
     @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
-    def __call__(self, request: werkzeug.wrappers.Request) -> WSGIApplication:
+    def __call__(self, request: werkzeug.wrappers.Request) -> "WSGIApplication":
         # note time for performance measurement
         begin = now()
         user = User()
