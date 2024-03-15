@@ -152,7 +152,7 @@ _DEFAULTS = {
     "GIT_COMMIT": _git_commit,
 
     # default timezone for input and output
-    "DEFAULT_TIMEZONE": zoneinfo.ZoneInfo('CET'),
+    "DEFAULT_TIMEZONE": zoneinfo.ZoneInfo("Europe/Berlin"),
 
     # droids which are allowed access during lockdown.
     "INFRASTRUCTURE_DROIDS": {"resolve"},
