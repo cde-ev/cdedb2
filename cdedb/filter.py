@@ -149,7 +149,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
+        zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
     else:

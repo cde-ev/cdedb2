@@ -3,8 +3,6 @@
 
 import datetime
 
-import pytz
-
 import cdedb.database.constants as const
 from cdedb.common import nearly_now
 from cdedb.common.sorting import xsorted
@@ -332,9 +330,9 @@ class TestPastEventBackend(BackendTest):
         event_id = 1
         update = {
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),

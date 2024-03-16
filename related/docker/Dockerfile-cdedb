@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     apache2 \
     python3 \
     libapache2-mod-wsgi-py3 \
+    tzdata \
     \
     postgresql-client \
     \
@@ -43,7 +44,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-babel \
     python3-icu \
     python3-jinja2 \
-    python3-tz \
     python3-sphinx \
     python3-lxml \
     python3-pil \
@@ -111,7 +111,6 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     mypy==1.4.0 \
     pylint==2.15.0 \
     types-werkzeug \
-    types-pytz \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun \

@@ -30,8 +30,6 @@ import psycopg2.extras
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
-import pytz
-
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.core import CoreBackend
@@ -231,7 +229,7 @@ def fulltext(persona):
     return " ".join(values)
 
 def now():
-    return datetime.datetime.now(pytz.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 class User:
     def __init__(self, persona_id):

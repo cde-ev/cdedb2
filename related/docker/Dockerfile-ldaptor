@@ -11,8 +11,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     psycopg[binary]==3.0.15 \
     psycopg_pool==3.1.1 \
     subman==0.1.1 \
-    Twisted==22.4.0 \
-    pytz==2022.1
+    Twisted==22.4.0
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 

@@ -9,7 +9,6 @@ import gettext
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
-import pytz
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -91,7 +90,7 @@ def fulltext(persona):
 
 
 def now():
-    return datetime.datetime.now(pytz.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 class User:
