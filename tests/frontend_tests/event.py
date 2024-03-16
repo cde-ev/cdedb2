@@ -6006,6 +6006,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Keine Kursschiene in dieser Gruppe",
                                div="track-group-summary")
 
+        # No tracks, no track groups
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050",
+                      "Veranstaltungsteile", "Gruppen")
+        self.assertNonPresence("Kursschienengruppe")
+
     @event_keeper
     @as_users("anton")
     def test_course_choice_sync(self) -> None:
