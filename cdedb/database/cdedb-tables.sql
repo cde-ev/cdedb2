@@ -589,7 +589,8 @@ CREATE TABLE cde.log (
 CREATE INDEX cde_log_code_idx ON cde.log(code);
 CREATE INDEX cde_log_persona_id_idx ON cde.log(persona_id);
 GRANT SELECT ON cde.log TO cdb_member;
-GRANT INSERT, UPDATE (change_note), DELETE ON cde.log TO cdb_admin;
+-- These are global state changes on the semester change, which shall never be deleted.
+GRANT INSERT ON cde.log TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 
 ---
