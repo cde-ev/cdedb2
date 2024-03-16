@@ -1141,8 +1141,11 @@ class CoreBaseFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
+        if not data:
+            rs.validation_appraised = True
+            return self.change_user_form(rs)
         # take special care for annual donations in combination with lastschrift
-        if (data and "donation" in data
+        if ("donation" in data
                 and (lastschrift_ids := self.cdeproxy.list_lastschrift(
                         rs, [rs.user.persona_id], active=True))):
             current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
@@ -1165,11 +1168,18 @@ class CoreBaseFrontend(AbstractFrontend):
                 msg = n_("You are not the owner of the linked bank account. Make sure"
                          " the owner agreed to the change before submitting it here.")
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
-        if data and data.get('gender') == const.Genders.not_specified:
+        if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
+        for address_row in ('address', 'postal_code', 'location'):
+            # TODO: Use staticlink here?
+            e = ValueError(
+                "Specifying address is mandatory. If you want to have your address"
+                " invisible, contact {verwaltung} to opt out of member search.",
+                {'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+            if not data.get(address_row):
+                rs.append_validation_error((address_row, e))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
-        assert data is not None
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note)
