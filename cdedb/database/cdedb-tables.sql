@@ -584,6 +584,10 @@ CREATE TABLE cde.log (
         submitted_by            integer REFERENCES core.personas(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
+        -- At the moment, there are no persona-specific data in this log.
+        -- If one reconsiders this, archive_persona needs to be adjusted.
+        -- Still, the standard log table format is maintained.
+        CONSTRAINT cde_log_anonymous CHECK (persona_id is NULL),
         change_note             varchar
 );
 CREATE INDEX cde_log_code_idx ON cde.log(code);

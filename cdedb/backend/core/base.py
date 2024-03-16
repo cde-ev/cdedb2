@@ -1683,7 +1683,8 @@ class CoreBaseBackend(AbstractBackend):
                 log_code = const.FinanceLogCodes.remove_balance_on_archival
                 self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
                                  new_balance=decimal.Decimal("0"))
-            self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
+            # The cde.log does not store user specific data
+            # self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle
             # assembly log stays since assemblies have a separate life cycle

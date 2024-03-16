@@ -41,5 +41,5 @@ with script:
     log_entry = core.sql_select_one(rs, log_table, cols, log_id)
     if not log_entry:
         raise RuntimeError("Changed Log entry not found.")
-    print(f"Change successful. New log entry:")
+    print("Change successful. New log entry:")
     pprint(log_entry)
