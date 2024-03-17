@@ -1355,7 +1355,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "AltAka"
         self.submit(f)
         self.assertTitle("Alternative Akademie")
-        self.assertPresence("altaka@aka.cde-ev.de")
+        self.assertPresence("altaka-orga@aka.cde-ev.de")
 
         # Check creation of parts and no tracks
         self.traverse({'description': 'Veranstaltungsteile'})
@@ -1421,7 +1421,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
         f = self.response.forms['changelistform']
-        self.assertEqual('altaka', f['local_part'].value)
+        self.assertEqual('altaka-orga', f['local_part'].value)
         self.assertPresence("Orga (Opt-out)")
         self.assertEqual('AltAka', f['subject_prefix'].value)
 

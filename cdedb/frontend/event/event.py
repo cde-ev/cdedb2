@@ -918,7 +918,7 @@ class EventEventMixin(EventBaseFrontend):
             orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
-                local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
+                local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
                 description=descr,
                 mod_policy=const.ModerationPolicy.unmoderated,
