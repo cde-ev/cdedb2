@@ -1,0 +1,29 @@
+attributetype ( 2.5.18.1 NAME 'createTimestamp'
+    DESC 'RFC4512: time which object was created'
+    EQUALITY generalizedTimeMatch
+    ORDERING generalizedTimeOrderingMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+    SINGLE-VALUE
+    NO-USER-MODIFICATION
+    USAGE directoryOperation )
+
+attributetype ( 2.5.18.2 NAME 'modifyTimestamp'
+    DESC 'RFC4512: time which object was last modified'
+    EQUALITY generalizedTimeMatch
+    ORDERING generalizedTimeOrderingMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.24
+    SINGLE-VALUE
+    NO-USER-MODIFICATION
+    USAGE directoryOperation )
+
+attributetype ( 2.5.21.5 NAME 'attributeTypes'
+    DESC 'RFC4512: attribute types'
+    EQUALITY objectIdentifierFirstComponentMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.3
+    USAGE directoryOperation )
+
+attributetype ( 2.5.21.6 NAME 'objectClasses'
+    DESC 'RFC4512: object classes'
+    EQUALITY objectIdentifierFirstComponentMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.37
+    USAGE directoryOperation )
