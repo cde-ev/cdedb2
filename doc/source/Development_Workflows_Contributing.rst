@@ -10,9 +10,12 @@ We currently do not have any continuous integration. However, its is good style
 to write a new or extend an existing test to cover the new introduced code.
 Please take a look into :doc:`Development_Workflows_Test_Suite`.
 
-If you add new dependencies or change something inside the database, leave a
-*Deployment Hint* by adding a line in the commit message starting with
-``Deploy:`` and followed by a description what to change in the live instance.
-It is good style to write an evolution script if you change the database schema.
-Please take a look into :doc:`Development_Workflows_Scripts` and mention the
-script name in the *Deployment Hint*.
+If your contribution requires any additional dependencies or actions to be taken upon
+being deployed (such as creating a new database table, column, migrating some data,
+etc.), add a file in the ``related/deploy`` folder, containing either a list of
+instructions or even better a list of commands, that can directly be executed
+to achieve this.
+
+For examples, take a look in the ``related/deploy`` folder and/or the
+``cdedb/database/evolutions`` folder and the corresponding doc page
+(:doc:`Development_Workflows_Scripts`).

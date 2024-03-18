@@ -33,7 +33,6 @@ Further we depend on a number of python packages:
 * jinja2
 * markdown
 * bleach
-* pytz
 * python-magic
 * python-imaging-library (more specifically pillow)
 * zxcvbn

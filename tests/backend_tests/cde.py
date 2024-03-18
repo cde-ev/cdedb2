@@ -4,16 +4,15 @@
 import datetime
 import decimal
 
-import pytz
-
 import cdedb.database.constants as const
 from cdedb.backend.cde.semester import AllowedSemesterSteps
+from cdedb.common import now
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now, prepsql
 
 
 class TestCdEBackend(BackendTest):
@@ -185,7 +184,7 @@ class TestCdEBackend(BackendTest):
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae',
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=pytz.utc),
+                                                tzinfo=datetime.timezone.utc),
                 'iban': 'DE12500105170648489890',
                 'id': 2,
                 'notes': 'reicher Onkel',
@@ -198,7 +197,7 @@ class TestCdEBackend(BackendTest):
         update = {
             'id': 2,
             'notes': 'ehem. reicher Onkel',
-            'revoked_at': datetime.datetime.now(pytz.utc),
+            'revoked_at': datetime.datetime.now(datetime.timezone.utc),
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
@@ -209,7 +208,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -260,7 +259,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -284,12 +283,13 @@ class TestCdEBackend(BackendTest):
             1: {
                 'amount': decimal.Decimal('32.00'),
                 'id': 1,
-                'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
+                'issued_at': datetime.datetime(2000, 3, 21, 22, 0,
+                                               tzinfo=datetime.timezone.utc),
                 'lastschrift_id': 1,
                 'period_id': 41,
                 'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                                  tzinfo=pytz.utc),
+                                                  tzinfo=datetime.timezone.utc),
                 'status': 12,
                 'submitted_by': 1,
                 'tally': decimal.Decimal('0.00'),
@@ -410,7 +410,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -431,28 +431,36 @@ class TestCdEBackend(BackendTest):
             else:
                 self.assertFalse(v)
 
-        # step 2
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
+        # step 2
+        # check that archival and ejection work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
             self.assertEqual(AllowedSemesterSteps(automated_archival=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
             self.assertEqual(AllowedSemesterSteps(ejection=True),
                              self.cde.allowed_semester_steps(self.key))
-
-        if self.user_in("anton"):
-            self.cde.finish_automated_archival(self.key)
-        elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
+        else:
+            self.fail("Invalid user configuration for this test.")
+
         self.assertEqual(AllowedSemesterSteps(balance=True),
                          self.cde.allowed_semester_steps(self.key))
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(advance=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -462,21 +470,26 @@ class TestCdEBackend(BackendTest):
                          self.cde.allowed_semester_steps(self.key))
 
         # step 1
+        # check that sending archival and billing notification work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
             self.assertEqual(AllowedSemesterSteps(archival_notification=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
             self.assertEqual(AllowedSemesterSteps(billing=True),
                              self.cde.allowed_semester_steps(self.key))
+            self.cde.finish_semester_bill(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
 
-        if self.user_in("anton"):
-            self.cde.finish_archival_notification(self.key)
-        elif self.user_in("farin"):
-            self.cde.finish_semester_bill(self.key)
+        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
+                         self.cde.allowed_semester_steps(self.key))
+
+        # step 1.5 (in the UI, this is the first part of step 2)
+        self.cde.finish_semester_exmember_update(self.key)
+
         self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
                          self.cde.allowed_semester_steps(self.key))
 
@@ -487,3 +500,37 @@ class TestCdEBackend(BackendTest):
 
         # now check it
         self.assertLogEqual([], 'cde')
+
+    @prepsql("UPDATE core.personas SET balance = 1 WHERE is_cde_realm = True")
+    @as_users("vera")
+    def test_cde_user_aggregate(self) -> None:
+        query = Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            ['balance'], (), ()
+        )
+
+        pevent_data = {
+            'title': "TestAkademie",
+            'shortname': "TAka",
+            'description': None,
+            'tempus': now().date(),
+            'institution': const.PastInstitutions.main_insitution(),
+        }
+
+        # Create two (identical) past events and add any cde user to them, to
+        #  create duplicates in the cde user view.
+        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        self.pastevent.add_participant(
+            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        self.pastevent.add_participant(
+            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+
+        # Check that the aggregate sums correctly.
+        result = self.cde.submit_general_query(self.key, query, aggregate=False)
+        aggregates = self.cde.submit_general_query(self.key, query, aggregate=True)
+
+        self.assertEqual(
+            sum((e['balance'] for e in result), start=decimal.Decimal(0)),
+            aggregates[0]['sum.balance']
+        )

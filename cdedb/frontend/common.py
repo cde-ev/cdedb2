@@ -102,6 +102,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.event import CustomQueryFilter
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -1297,7 +1298,7 @@ class CdEMailmanClient(mailmanclient.Client):
                  mailman_basic_auth_password: str):
         """Automatically initializes a client with our custom parameters.
 
-        :param conf: Usually, he config used where this class is instantiated.
+        :param conf: Usually, the config used where this class is instantiated.
         """
         self.conf = conf
 
@@ -1325,9 +1326,11 @@ class CdEMailmanClient(mailmanclient.Client):
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code != 404:
-                self.logger.exception("Mailman connection failed!")
-            return None
+            if e.code == 404:
+                self.logger.exception("Mailinglist not found!")
+        except mailmanclient.MailmanConnectionError:
+            self.logger.exception("Mailman connection failed!")
+        return None
 
     def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
@@ -1512,6 +1515,7 @@ class AmbienceDict(typing.TypedDict):
     track_group: models_event.TrackGroup
     fee: models_event.EventFee
     orga_token: models_droid.OrgaToken
+    custom_filter: CustomQueryFilter
     attachment: CdEDBObject
     attachment_version: CdEDBObject
     assembly: CdEDBObject
@@ -1588,6 +1592,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
               ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event'].custom_query_filters[anid],  # type: ignore[has-type]
+              'custom_filter_id', 'custom_filter',
+              ((lambda a: do_assert(a['custom_filter'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -2485,7 +2493,7 @@ class CustomCSVDialect(csv.Dialect):
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
                substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
-               tzinfo: Optional[datetime.timezone] = None) -> str:
+               tzinfo: Optional[datetime.tzinfo] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.

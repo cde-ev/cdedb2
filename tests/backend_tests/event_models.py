@@ -2,13 +2,12 @@
 import datetime
 import decimal
 
-import pytz
-
 # noinspection PyUnresolvedReferences
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import NearlyNow, nearly_now
+from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
 
 
@@ -27,11 +26,11 @@ class TestEventModels(BackendTest):
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
-                2000, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2000, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
-                2200, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2200, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
-                2221, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2221, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
@@ -218,6 +217,63 @@ class TestEventModels(BackendTest):
                     sortkey=0,
                     entries=None,
                 )
+            },
+            custom_query_filters={
+                1: models.CustomQueryFilter(
+                    id=1,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Bälle oder Kind?",
+                    notes=None,
+                    fields={
+                        "reg_fields.xfield_brings_balls",
+                        "reg_fields.xfield_is_child",
+                    }
+                ),
+                2: models.CustomQueryFilter(
+                    id=2,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Kind oder Bälle?",
+                    notes=None,
+                    fields={
+                        "reg_fields.xfield_is_child",
+                        "reg_fields.xfield_brings_balls",
+                    }
+                ),
+                3: models.CustomQueryFilter(
+                    id=3,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Alle Notizen",
+                    notes=None,
+                    fields={
+                        "reg.notes",
+                        "reg.orga_notes",
+                    }
+                ),
+                4: models.CustomQueryFilter(
+                    id=4,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Bad Combo!",
+                    notes=None,
+                    fields={
+                        "reg.amount_paid",
+                        "persona.birthday",
+                    }
+                ),
+                5: models.CustomQueryFilter(
+                    id=5,  # type: ignore[arg-type]
+                    event_id=vtypes.ProtoID(1),
+                    scope=QueryScope.registration,
+                    title="Extrem wichtig!",
+                    notes="Ups, hätte ich das Feld nicht löschen sollen?",
+                    fields={
+                        "reg_fields.xfield_anzahl_GROSSBUCHSTABEN",
+                        "reg_fields.xfield_deleted_field",
+                    }
+                ),
             },
             fees={
                 1: models.EventFee(
@@ -434,6 +490,7 @@ class TestEventModels(BackendTest):
             # parts=self.event.get_event(self.key, event_id).parts,
             tracks=self.event.get_event(self.key, event_id).tracks,
             fields={},
+            custom_query_filters={},
             fees={
                 16: models.EventFee(
                     id=16,  # type: ignore[arg-type]

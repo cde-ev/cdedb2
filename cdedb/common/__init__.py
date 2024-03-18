@@ -18,14 +18,13 @@ import pathlib
 import re
 import string
 import sys
+import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extras
-import pytz
-import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -149,6 +148,7 @@ class RequestState(ConnectionContainer):
     enough to not be non-nice).
     """
     default_lang = "en"
+    log_lang = "de"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -214,6 +214,14 @@ class RequestState(ConnectionContainer):
     @property
     def default_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.default_lang].ngettext
+
+    @property
+    def log_gettext(self) -> Callable[[str], str]:
+        return self.translations[self.log_lang].gettext
+
+    @property
+    def log_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.log_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: Optional[CdEDBObject] = None) -> None:
@@ -491,7 +499,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(pytz.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -528,10 +536,10 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
+    now = datetime.datetime.now(datetime.timezone.utc)
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
+        minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
 
 
 def make_persona_forename(persona: CdEDBObject,
@@ -1120,7 +1128,7 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.LastschriftInitiative: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Lastschriftinitiative",
             TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
@@ -1416,10 +1424,11 @@ def parse_datetime(
             break
         except ValueError:
             pass
+    # TODO This code seems to be unsed.
     if ret is None and default_date:
+        # Note the difference between formats and time_formats!
         for fmt in time_formats:
             try:
-                # TODO if we get to here this should be unparseable?
                 ret = datetime.datetime.strptime(val, fmt)
                 ret = ret.replace(
                     year=default_date.year, month=default_date.month,
@@ -1430,10 +1439,9 @@ def parse_datetime(
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
-        ret = timezone.localize(ret)
-        assert ret is not None
-    return ret.astimezone(pytz.utc)
+        timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = ret.replace(tzinfo=timezone)
+    return ret.astimezone(datetime.timezone.utc)
 
 
 def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
@@ -1486,7 +1494,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 0)
+EVENT_SCHEMA_VERSION = (17, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

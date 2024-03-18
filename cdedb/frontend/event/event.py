@@ -33,8 +33,9 @@ from cdedb.common.query import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
-    EVENT_TRACK_COMMON_FIELDS, EVENT_TRACK_GROUP_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
+    EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
+    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -414,7 +415,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdata("fee")
-    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
+    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
+                     *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
@@ -916,7 +918,7 @@ class EventEventMixin(EventBaseFrontend):
             orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
-                local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
+                local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
                 description=descr,
                 mod_policy=const.ModerationPolicy.unmoderated,
@@ -1202,7 +1204,7 @@ class EventEventMixin(EventBaseFrontend):
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups", "orga_tokens",
+            "part_groups", "orga_tokens", "custom_query_filters",
         }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())

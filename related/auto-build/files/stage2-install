@@ -64,7 +64,7 @@ echo "--------------------------------------------"
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
-    apache2 python3 gunicorn fail2ban                               \
+    apache2 python3 gunicorn fail2ban tzdata                        \
     \
     ldap-utils                                                      \
     \
@@ -74,7 +74,7 @@ apt-get install --yes --no-install-recommends                       \
     texlive-lang-german texlive-luatex                              \
     \
     python3-psycopg2 python3-dateutil python3-babel                 \
-    python3-icu python3-jinja2 python3-tz python3-sphinx            \
+    python3-icu python3-jinja2 python3-sphinx                       \
     python3-lxml python3-pil python3-webtest python3-werkzeug       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
@@ -106,7 +106,6 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     pylint==2.15.0 \
     ruff==0.1.1 \
     types-werkzeug \
-    types-pytz \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun \
@@ -114,7 +113,7 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     types-Markdown \
     types-click \
     types-tabulate \
-    playwright>=1.37.0
+    'playwright>=1.37.0'
 
 for file in /var/cache/apt/archives/*.deb
 do

@@ -13,7 +13,6 @@ import freezegun
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.errors
-import pytz
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -64,9 +63,9 @@ class TestEventBackend(BackendTest):
             'website_url': "https://www.example.com/test",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': None,
             'iban': None,
             'registration_text': None,
@@ -202,6 +201,7 @@ class TestEventBackend(BackendTest):
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
         data['track_groups'] = {}
+        data['custom_query_filters'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -793,14 +793,16 @@ class TestEventBackend(BackendTest):
         update_registration = {
             'id': reg_id,
             'fields': {
-                'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
+                'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
+                                             tzinfo=datetime.timezone.utc),
             }
         }
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
             'anzahl_GROSSBUCHSTABEN': 4,
-            'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
+            'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
+                                         tzinfo=datetime.timezone.utc),
             'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
                      'garcia@example.cde :)',
             'is_child': False,
@@ -1000,6 +1002,7 @@ class TestEventBackend(BackendTest):
             },
             'list_consent': True,
             'id': 2,
+            'is_member': False,
             'mixed_lodging': True,
             'mtime': None,
             'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1124,6 +1127,7 @@ class TestEventBackend(BackendTest):
             new_reg['amount_owed'] = decimal.Decimal("589.48")
             new_reg['amount_paid'] = decimal.Decimal("0.00")
             new_reg['payment'] = None
+            new_reg['is_member'] = False
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -1166,6 +1170,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 1,
+                'is_member': True,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': None,
@@ -1219,6 +1224,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': True,
                 'id': 2,
+                'is_member': False,
                 'mixed_lodging': True,
                 'mtime': None,
                 'orga_notes': 'Unbedingt in die Einzelzelle.',
@@ -1273,6 +1279,7 @@ class TestEventBackend(BackendTest):
                 },
                 'list_consent': False,
                 'id': 4,
+                'is_member': True,
                 'mixed_lodging': False,
                 'mtime': None,
                 'orga_notes': None,
@@ -1319,7 +1326,7 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(pytz.utc),
+            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,
@@ -1397,7 +1404,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'persona_id': 999,
-            'real_persona_id': None
+            'real_persona_id': None,
         }
         with self.assertRaises(ValueError) as cm:
             self.event.create_registration(self.key, new_reg)
@@ -1420,6 +1427,7 @@ class TestEventBackend(BackendTest):
         new_reg['amount_owed'] = decimal.Decimal("584.48")
         new_reg['amount_paid'] = decimal.Decimal("0.00")
         new_reg['payment'] = None
+        new_reg['is_member'] = True
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
@@ -2397,6 +2405,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1000,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2627,6 +2636,7 @@ class TestEventBackend(BackendTest):
                        'behaviour': 'good'},
             "list_consent": True,
             'id': 1001,
+            'is_member': True,
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
@@ -2940,6 +2950,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
         expectation['registrations'][1002]['amount_owed'] = decimal.Decimal("573.99")
+        expectation['registrations'][1002]['is_member'] = True
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
@@ -3022,9 +3033,19 @@ class TestEventBackend(BackendTest):
                 'persona_id': 1,
             },
             {
+                'change_note': '1.H.: Gast -> Teilnehmer',
+                'code': const.EventLogCodes.registration_status_changed,
+                'persona_id': 5,
+            },
+            {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
                 'code': const.EventLogCodes.registration_changed,
                 'persona_id': 5,
+            },
+            {
+                'change_note': '1.H.: Teilnehmer -> Warteliste',
+                'code': const.EventLogCodes.registration_status_changed,
+                'persona_id': 7,
             },
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
@@ -3540,9 +3561,9 @@ class TestEventBackend(BackendTest):
             on more lines.""",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': None,
             'iban': None,
             'registration_text': None,
@@ -3757,7 +3778,7 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(pytz.utc),
+            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': 2,
@@ -3984,6 +4005,18 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.registration_created,
                 'event_id': 1,
                 'persona_id': 3,
+            },
+            {
+                'change_note': "Wu: Abgelehnt -> Teilnehmer",
+                'code': const.EventLogCodes.registration_status_changed,
+                'event_id': 1,
+                'persona_id': 9,
+            },
+            {
+                'change_note': "2.H.: Teilnehmer -> Abgelehnt",
+                'code': const.EventLogCodes.registration_status_changed,
+                'event_id': 1,
+                'persona_id': 9,
             },
             {
                 'change_note': "Boring change.",
@@ -4566,7 +4599,9 @@ class TestEventBackend(BackendTest):
                 event_id=cast(vtypes.ID, event_id),
                 title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
-                etime=datetime.datetime(2222, 12, 31, 23, 59, 59, tzinfo=pytz.utc),
+                etime=datetime.datetime(
+                    2222, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc
+                ),
             )
         }
         for token in expectation.values():
@@ -4645,3 +4680,74 @@ class TestEventBackend(BackendTest):
 
             self.assertLogEqual(log_expectation, realm='event', event_id=event_id,
                                 offset=event_log_offset)
+
+    @storage
+    @as_users("anton")
+    def test_external_fee(self) -> None:
+        external_fee_amount = decimal.Decimal(1)
+
+        # 1. Create a lightweight event with only an external fee.
+        event_id = self.event.create_event(self.key, {
+            'title': "TestAkademie",
+            'shortname': "tAka",
+            'institution': const.PastInstitutions.main_insitution(),
+            'description': None,
+            'parts': {
+                -1: {
+                    'part_begin': "2222-02-02",
+                    'part_end': "2222-02-22",
+                    'title': "TestPart",
+                    'shortname': "TP",
+                },
+            },
+            'fees': {
+                -1: {
+                    'title': "Externenzusatzbeitrag",
+                    'notes': None,
+                    'amount': external_fee_amount,
+                    'condition': "NOT is_member",
+                    'kind': const.EventFeeType.external,
+                },
+            },
+        })
+
+        # 2.1 Set test user to not be a member then register them.
+        #  Check that external fee applies.
+        persona_id = 2
+        self.cde.change_membership(self.key, persona_id, False)
+
+        rdata: CdEDBObject = {
+            'event_id': event_id,
+            'persona_id': persona_id,
+            'mixed_lodging': True,
+            'list_consent': True,
+            'notes': None,
+            'parts': {
+                1001: {
+                    'status': const.RegistrationPartStati.participant,
+                },
+            },
+            'tracks': {
+            },
+        }
+        reg_id = self.event.create_registration(self.key, rdata)
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+
+        # 2.2 Now grant them membership and check that the external fee still holds.
+        self.cde.change_membership(self.key, persona_id, True)
+        self.assertEqual(
+            external_fee_amount, self.event.calculate_fee(self.key, reg_id))
+
+        # 3.1 Delete and recreate the registration.
+        #  Check that external fee does not apply.
+        self.event.delete_registration(
+            self.key, reg_id, ('registration_parts',))
+        new_reg_id = self.event.create_registration(self.key, rdata)
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+
+        # 3.2 Revoke membership and check that external fee still does not apply.
+        self.cde.change_membership(self.key, persona_id, False)
+        self.assertEqual(
+            decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))

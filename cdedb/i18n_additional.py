@@ -46,6 +46,7 @@ I18N_STRINGS = (
     n_("CdeLogCodes.semester_bill_with_addresscheck"),
     n_("CdeLogCodes.semester_ejection"),
     n_("CdeLogCodes.semester_balance_update"),
+    n_("CdeLogCodes.semester_exmember_balance"),
     n_("CdeLogCodes.semester_advance"),
     n_("CdeLogCodes.expuls_addresscheck"),
     n_("CdeLogCodes.expuls_addresscheck_skipped"),
@@ -132,6 +133,10 @@ I18N_STRINGS = (
     n_("EventLogCodes.orga_token_changed"),
     n_("EventLogCodes.orga_token_revoked"),
     n_("EventLogCodes.orga_token_deleted"),
+    n_("EventLogCodes.custom_filter_created"),
+    n_("EventLogCodes.custom_filter_changed"),
+    n_("EventLogCodes.custom_filter_deleted"),
+    n_("EventLogCodes.registration_status_changed"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -142,6 +147,7 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.manual_balance_correction"),
     n_("FinanceLogCodes.remove_balance_on_archival"),
     n_("FinanceLogCodes.start_trial_membership"),
+    n_("FinanceLogCodes.remove_exmember_balance"),
     n_("FinanceLogCodes.grant_lastschrift"),
     n_("FinanceLogCodes.revoke_lastschrift"),
     n_("FinanceLogCodes.modify_lastschrift"),
@@ -288,6 +294,10 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
+    n_("QueryScope.registration"),
+    n_("QueryScope.event_course"),
+    n_("QueryScope.lodgement"),
+
     n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
@@ -327,6 +337,17 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
     n_("EventFeeType.solidary_increase"),
+
+    #
+    # Query datatypes
+    #
+    n_("str"),
+    n_("int"),
+    n_("float"),
+    n_("date"),
+    n_("datetime"),
+    n_("bool"),
+    n_("id"),
 
     #
     # Validation errors

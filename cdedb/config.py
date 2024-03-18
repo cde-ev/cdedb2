@@ -19,10 +19,9 @@ import logging
 import os
 import pathlib
 import subprocess
+import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
 from typing import Any, Union
-
-import pytz
 
 PathLike = Union[pathlib.Path, str]
 
@@ -63,15 +62,28 @@ if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: n
 _repopath = _currentdir.parent
 
 try:
-    _git_commit = subprocess.check_output(
-        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+    _git_commit = (
+        subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
+        .decode()
+        .strip()
+    )
 except FileNotFoundError:  # pragma: no cover, only catch git executable not found
-    with pathlib.Path(_repopath, '.git/HEAD').open() as head:
-        _git_commit = head.read().strip()
+    _git_commit = (_repopath / ".git/HEAD").read_text().strip()
 
-    if _git_commit.startswith('ref'):
-        with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
-            _git_commit = ref.read().strip()
+    if _git_commit.startswith("ref: "):
+        _git_commit = (
+            (_repopath / ".git" / _git_commit.removeprefix("ref: ")).read_text().strip()
+        )
+except subprocess.CalledProcessError as e:
+    # It can happen that we use a git worktree where the primary repository
+    # is outside of the sandbox/VM in which we are running.
+    _git_reference = (_repopath / ".git").read_text().strip()
+    if not _git_reference.startswith("gitdir: "):
+        raise RuntimeError("Unable to determine git commit") from e
+
+    # The commit is primarily used for cache busting
+    # so there is not harm to set it to the empty string during development.
+    _git_commit = ""
 
 
 #: defaults for :py:class:`Config`
@@ -140,7 +152,7 @@ _DEFAULTS = {
     "GIT_COMMIT": _git_commit,
 
     # default timezone for input and output
-    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
+    "DEFAULT_TIMEZONE": zoneinfo.ZoneInfo("Europe/Berlin"),
 
     # droids which are allowed access during lockdown.
     "INFRASTRUCTURE_DROIDS": {"resolve"},
@@ -193,6 +205,8 @@ _DEFAULTS = {
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     # default sender address for mails
     "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
+    # noreply sender for sensitive mails
+    "NOREPLY_ADDRESS": '"CdE-Datenbank" <no-reply@cde-ev.de>',
     # default subject prefix
     "DEFAULT_PREFIX": "[CdE]",
     # domain for emails (determines message id)

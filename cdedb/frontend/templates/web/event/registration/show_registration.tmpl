@@ -41,6 +41,8 @@
         {% endif %}
         <dt title="{% trans %}CdE-Member{% endtrans %}">{% trans %}CdE-Member{% endtrans %}</dt>
         <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
+        <dt title="{% trans %}Member at registration{% endtrans %}">{% trans %}Member at registration{% endtrans %}</dt>
+        <dd>{{ util.deko_checkbox(checked=(ambience['registration']['is_member'])) }}</dd>
         <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
         <dd>
             {{ persona['birthday']|date(lang=lang) }} (<em>{{ gettext(age|string) }}</em>)

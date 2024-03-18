@@ -739,10 +739,8 @@ class EventRegistrationBackend(EventBaseBackend):
                        for part in registration['parts'].values()):
                 return any(part['status'].is_involved()
                            for part in registration['parts'].values()), False
-            payment_pending = bool(
-                not registration['payment']
-                and self.calculate_fee(rs, unwrap(registration_ids)))
-            return True, payment_pending
+            # TODO: Use Registration.remaining_owed here.
+            return True, registration['amount_owed'] > registration['amount_paid']
         else:
             return None, False
 
@@ -898,6 +896,22 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @staticmethod
+    def _get_status_change_log_message(
+            rs: RequestState, old_state: CdEDBObject, update: CdEDBObject,
+            event_part: models.EventPart,
+    ) -> Optional[str]:
+        """Uninlined code from _set_registration for better readability."""
+        old_status = const.RegistrationPartStati(old_state['status'])
+        g = rs.log_gettext
+
+        if 'status' in update and update['status'] != old_status:
+            change_note = f"{g(str(old_status))} -> {g(str(update['status']))}"
+            if len(event_part.event.parts) > 1:
+                change_note = f"{event_part.shortname}: {change_note}"
+            return change_note
+        return None
+
     def _set_registration(self, rs: RequestState, data: CdEDBObject,
                           change_note: Optional[str] = None, orga_input: bool = True,
                           ) -> DefaultReturnCode:
@@ -957,9 +971,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 parts = data['parts']
                 if not event.parts.keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
-                existing = {e['part_id']: e['id'] for e in self.sql_select(
-                    rs, "event.registration_parts", ("id", "part_id"),
+                existing_data = {e['part_id']: e for e in self.sql_select(
+                    rs, "event.registration_parts",
+                    ("id", "part_id", "status"),
                     (data['id'],), entity_key="registration_id")}
+                existing = {e['part_id']: e['id'] for e in existing_data.values()}
                 new = {x for x in parts if x not in existing}
                 updated = {x for x in parts
                            if x in existing and parts[x] is not None}
@@ -974,8 +990,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 for x in updated:
                     update = copy.deepcopy(parts[x])
                     update['id'] = existing[x]
-                    ret *= self.sql_update(rs, "event.registration_parts",
-                                           update)
+                    if status_change_note := self._get_status_change_log_message(
+                            rs, existing_data[x], update, event.parts[x]):
+                        self.event_log(
+                            rs, const.EventLogCodes.registration_status_changed,
+                            event_id, persona_id, status_change_note)
+                    ret *= self.sql_update(rs, "event.registration_parts", update)
                 if deleted:
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
@@ -1016,8 +1036,7 @@ class EventRegistrationBackend(EventBaseBackend):
             current = self.get_registration(rs, data['id'])
             update = {
                 'id': data['id'],
-                'amount_owed': self._calculate_single_fee(
-                    rs, current, event=event),
+                'amount_owed': self._calculate_single_fee(rs, current, event=event),
             }
             ret *= self.sql_update(rs, "event.registrations", update)
             self.event_log(
@@ -1055,7 +1074,9 @@ class EventRegistrationBackend(EventBaseBackend):
             if self.list_registrations(rs, data['event_id'], data['persona_id']):
                 raise ValueError(n_("Already registered."))
             self.assert_offline_lock(rs, event_id=data['event_id'])
+            persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
+            data['is_member'] = persona['is_member']
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
@@ -1261,16 +1282,14 @@ class EventRegistrationBackend(EventBaseBackend):
                                            visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: models.Event, is_member: Optional[bool] = None,
-                              ) -> decimal.Decimal:
+                              event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
-        return self._calculate_complex_fee(
-            rs, reg, event=event, is_member=is_member).amount
+        return self._calculate_complex_fee(rs, reg, event=event).amount
 
-    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: models.Event, is_member: Optional[bool] = None,
-                               is_orga: Optional[bool] = None,
-                               visual_debug: bool = False) -> RegistrationFeeData:
+    @staticmethod
+    def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
+                               event: models.Event, visual_debug: bool = False,
+                               ) -> RegistrationFeeData:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1281,8 +1300,6 @@ class EventRegistrationBackend(EventBaseBackend):
         If the subset does not violate any MEP constraints, the total of all it's parts'
         fees is calculated. The final fee will be the maximum of all such totals.
 
-        :param is_member: If this is None, retrieve membership status here.
-        :param is_orga: If this is None, determine orga status regularly.
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
@@ -1301,8 +1318,7 @@ class EventRegistrationBackend(EventBaseBackend):
         for tmp_is_member in (True, False):
             # Other bools can be added here, but also require adjustment to the parser.
             other_bools = {
-                'is_orga':
-                    reg['persona_id'] in event.orgas if is_orga is None else is_orga,
+                'is_orga': reg.get('is_orga', reg['persona_id'] in event.orgas),
                 'is_member': tmp_is_member,
                 'any_part': any(reg_part_involvement.values()),
                 'all_parts': all(reg_part_involvement.values()),
@@ -1328,12 +1344,8 @@ class EventRegistrationBackend(EventBaseBackend):
             ret[tmp_is_member] = RegistrationFee(
                 amount, active_fees, visual_debug_data, fees_by_kind)
 
-        if is_member is None:
-            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
-            assert is_member is not None
-
         return RegistrationFeeData(
-            member_fee=ret[True], nonmember_fee=ret[False], is_member=is_member,
+            member_fee=ret[True], nonmember_fee=ret[False], is_member=reg['is_member'],
         )
 
     @access("event")
@@ -1394,10 +1406,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 for part_id in event.parts
             },
             'fields': fields,
+            'is_member': is_member,
+            'is_orga': is_orga,
         }
         return self._calculate_complex_fee(
-            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
-            visual_debug=True)
+            rs, fake_registration, event=event, visual_debug=True)
 
     @access("event")
     def calculate_fees(self, rs: RequestState, registration_ids: Collection[int],
@@ -1433,14 +1446,11 @@ class EventRegistrationBackend(EventBaseBackend):
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
 
             ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
-                is_member = personas[reg['persona_id']]['is_member']
-                ret[reg_id] = self._calculate_single_fee(
-                    rs, reg, event=event, is_member=is_member)
+                ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
         return ret
 
     class _CalculateFeeProtocol(Protocol):

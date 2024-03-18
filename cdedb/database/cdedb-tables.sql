@@ -479,6 +479,8 @@ CREATE TABLE cde.org_period (
         ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
         exmember_balance        numeric(11, 2) NOT NULL DEFAULT 0,
         exmember_count          integer NOT NULL DEFAULT 0,
+        exmember_state          integer REFERENCES core.personas(id),
+        exmember_done           timestamp WITH TIME ZONE DEFAULT NULL,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
@@ -976,6 +978,7 @@ CREATE TABLE event.registrations (
         notes                   varchar,
         -- orga remarks
         orga_notes              varchar DEFAULT NULL,
+        is_member               boolean NOT NULL,
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
@@ -1063,13 +1066,28 @@ CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events,
         query_name              varchar NOT NULL,
-        -- See cdedb.query.QueryScope:
+        -- See cdedb.common.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
         UNIQUE(event_id, query_name)
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.stored_queries TO cdb_persona;
 GRANT SELECT, UPDATE ON event.stored_queries_id_seq TO cdb_persona;
+
+CREATE TABLE event.custom_query_filters (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events,
+        -- See cdedb.common.query.QueryScope:
+        scope                   integer NOT NULL,
+        fields                  varchar NOT NULL,
+        title                   varchar NOT NULL,
+        notes                   varchar,
+        UNIQUE (event_id, title),
+        UNIQUE (event_id, fields)
+);
+GRANT SELECT ON event.custom_query_filters TO cdb_anonymous;
+GRANT INSERT, UPDATE, DELETE ON event.custom_query_filters TO cdb_persona;
+GRANT SELECT, UPDATE ON event.custom_query_filters_id_seq TO cdb_persona;
 
 CREATE TABLE event.log (
         id                      bigserial PRIMARY KEY,

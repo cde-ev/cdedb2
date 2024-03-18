@@ -31,16 +31,17 @@ import functools
 import logging
 from collections.abc import Collection, Mapping
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, ForwardRef, Optional, get_args, get_origin,
+    TYPE_CHECKING, Any, Callable, ClassVar, ForwardRef, Optional, get_args, get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import User, cast_fields, now
 from cdedb.common.query import (
-    QuerySpec, make_course_query_spec, make_registration_query_spec,
+    QueryScope, QuerySpec, QuerySpecEntry, make_course_query_spec,
+    make_registration_query_spec,
 )
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,6 +111,7 @@ class Event(EventDataclass):
     tracks: CdEDataclassMap["CourseTrack"]
 
     fields: CdEDataclassMap["EventField"]
+    custom_query_filters: CdEDataclassMap["CustomQueryFilter"]
     fees: CdEDataclassMap["EventFee"]
 
     part_groups: CdEDataclassMap["PartGroup"]
@@ -123,6 +125,8 @@ class Event(EventDataclass):
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
+        data['custom_query_filters'] = CustomQueryFilter.many_from_database(
+            data['custom_query_filters'])
         data['fees'] = EventFee.many_from_database(data['fees'])
         data['part_groups'] = PartGroup.many_from_database(data['part_groups'])
         data['track_groups'] = TrackGroup.many_from_database(data['track_groups'])
@@ -413,6 +417,81 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.sortkey, self.field_name
+
+
+@dataclasses.dataclass
+class CustomQueryFilter(EventDataclass):
+    database_table = "event.custom_query_filters"
+
+    event: Event = dataclasses.field(init=False, compare=False, repr=False)
+    event_id: vtypes.ProtoID
+
+    scope: QueryScope
+    title: str
+    notes: Optional[str]
+    fields: set[str] = dataclasses.field(metadata={'database_include': True})
+
+    fixed_fields = ("event_id", "event", "scope")
+
+    @classmethod
+    def validation_fields(cls, *, creation: bool,
+                          ) -> tuple[vtypes.TypeMapping, vtypes.TypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        for key in cls.fixed_fields:
+            if key in optional:
+                del optional[key]
+        optional['event'] = Any  # type: ignore[assignment]
+        return mandatory, optional
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        data['scope'] = QueryScope(data['scope'])
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.fields, str):  # type: ignore[unreachable]
+            self.fields = set(self.fields.split(','))  # type: ignore[unreachable]
+
+    def to_database(self) -> "CdEDBObject":
+        ret = super().to_database()
+        ret['fields'] = self.get_field_string()
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.event_id, self.scope, self.title)
+
+    @staticmethod
+    def _get_field_string(fields: Collection[str]) -> str:
+        return ",".join(xsorted(fields))
+
+    def get_field_string(self) -> str:
+        return self._get_field_string(self.fields)
+
+    def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
+        """If this filter is valid for this spec add it to the spec."""
+        if self.scope != scope or not self.is_valid(spec):
+            return
+        type_ = spec[next(iter(self.fields))].type
+        spec[self.get_field_string()] = QuerySpecEntry(type_, self.title)
+
+    def is_valid(self, spec: QuerySpec) -> bool:
+        """Check whether all fields are in the spec and of the same type."""
+        return all(f in spec for f in self.fields) and len(
+            {spec[f].type for f in self.fields}) == 1
+
+    def get_field_titles(self, spec: QuerySpec, g: Callable[[str], str],
+                         ) -> tuple[list[str], list[str]]:
+        """
+        Return a sorted list of titles of existing fields and potentially names
+        of deleted fields.
+        """
+        valid, invalid = [], []
+        for f in self.fields:
+            if f in spec:
+                valid.append(spec[f].get_title(g))
+            else:
+                invalid.append(f.removeprefix("reg_fields.xfield_"))
+        return xsorted(valid), xsorted(invalid)
 
 
 @dataclasses.dataclass

@@ -10,7 +10,6 @@ import tempfile
 from typing import List, Optional
 
 import freezegun
-import pytz
 import webtest
 
 from cdedb.common import (
@@ -2030,7 +2029,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['configureballotform']
         f['title'] = "Längere Wahl"
         f['vote_extension_end'] = datetime.datetime(2222, 2, 23,
-                                                    tzinfo=pytz.utc)
+                                                    tzinfo=datetime.timezone.utc)
         f['abs_quorum'] = 1
         self.submit(f)
         ballots = self.assembly.get_ballots(self.key, (16, 1001))
