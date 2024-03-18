@@ -7,13 +7,16 @@ import decimal
 import pathlib
 import pprint
 
+from typing import Dict
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.ml
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
 
-def output_counters(context, prefix="", final=False):
+def output_counters(context: argparse.Namespace, prefix: str = "",
+                    final: bool = False) -> None:
     if context.clock is not None:
         now = datetime.datetime.now()
         delta = now - context.clock
@@ -22,13 +25,14 @@ def output_counters(context, prefix="", final=False):
     pprint.pprint(dict(context.counters))
 
 
-def make_counter(context, name, prefix='', suffix=''):
+def make_counter(context: argparse.Namespace, name: str, prefix: str = '',
+                 suffix: str = '') -> str:
     num = context.counters[name]
     context.counters[name] += 1
     return f'{prefix}{name}{num:010}{suffix}'
 
 
-def persona(context):
+def persona(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     data = {
         'is_cde_realm': True,
@@ -91,7 +95,7 @@ def persona(context):
     return ret
 
 
-def event(context):
+def event(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     data = {
         'title': make_counter(context, 'Veranstaltung'),
@@ -298,7 +302,7 @@ def event(context):
     return ret
 
 
-def assembly(context):
+def assembly(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     assembly = context.script.make_backend('assembly', proxy=False)
     ret = assembly.create_assembly(rs, {
@@ -340,7 +344,7 @@ def assembly(context):
     return ret
 
 
-def past_event(context):
+def past_event(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     pastevent = context.script.make_backend('past_event', proxy=False)
     ret = pastevent.create_past_event(rs, {
@@ -364,7 +368,7 @@ def past_event(context):
     return ret
 
 
-def mailinglist(context):
+def mailinglist(context: argparse.Namespace) -> int:
     rs = context.script.rs()
     ml = context.script.make_backend('ml', proxy=False)
     data = cdedb.models.ml.MemberOptInMailinglist(
@@ -379,8 +383,8 @@ def mailinglist(context):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators=[persona(context)
-                        for _ in range(1 if context.quick else 3)],
+            moderators={persona(context)  # type: ignore[misc]
+                        for _ in range(1 if context.quick else 3)},
             whitelist=set(),
             subject_prefix=make_counter(context, 'BetreffPrefix'),
             title=make_counter(context, 'Mailingliste'),
@@ -394,7 +398,7 @@ def mailinglist(context):
     return ret
 
 
-def create_everything(context):
+def create_everything(context: argparse.Namespace) -> None:
     if context.verbose:
         context.clock = datetime.datetime.now()
         print(f"Started at {context.clock}")
@@ -437,7 +441,7 @@ def create_everything(context):
         print(f"Done in {datetime.datetime.now() - context.start}")
 
 
-def perform(args):
+def perform(args: argparse.Namespace) -> None:
     script = Script(persona_id=1, dbuser="cdb", check_system_user=False,
                     dry_run=False)
 
@@ -450,7 +454,7 @@ def perform(args):
         create_everything(args)
 
 
-def main():
+def main() -> None:
     if pathlib.Path("/PRODUCTIONVM").is_file():
         raise RuntimeError("Refusing to touch live instance!")
     if pathlib.Path("/OFFLINEVM").is_file():
