@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     openssl \
     apache2 \
     python3 \
-    libapache2-mod-wsgi-py3 \
+    gunicorn \
     \
     postgresql-client \
     \
@@ -127,6 +127,8 @@ COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp
 # This does the following:
 # - pacify newer git versions concerned about unsafe directory permissions
 # - configure apache,
+# - add www-cde user for gunicorn,
+# - configure gunicorn server,
 # - add the mailman basic-auth password,
 # - put the localconfig at the default config path and
 #   create an empty secrets config (there has to exist one but the fallbacks are fine),
@@ -135,17 +137,22 @@ COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp
 # - create the magic file to signal that we are inside a container.
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     \
-    && cp /tmp/autobuild/gitconfig /etc/gitconfig \
-    \
-    && a2enmod ssl wsgi headers authnz_ldap \
+    && a2enmod proxy_http ssl headers authnz_ldap \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
     && a2ensite cdedb-site \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
+    && groupadd --system www-cde \
+    && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
+    \
+    && cp /tmp/autobuild/gitconfig /etc/gitconfig \
+    && cp /tmp/autobuild/cdedb-app.service /etc/systemd/system/ \
+    && cp /tmp/autobuild/cdedb-app.socket /etc/systemd/system/ \
+    \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
-    && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
+    && chown www-cde:www-cde /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
     && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
