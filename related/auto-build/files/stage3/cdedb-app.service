@@ -10,7 +10,7 @@ Group=www-cde
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
-ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 5 wsgi.cdedb-app:application
+ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 4 wsgi.cdedb-app:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
