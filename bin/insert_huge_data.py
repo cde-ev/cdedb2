@@ -6,7 +6,6 @@ import datetime
 import decimal
 import pathlib
 import pprint
-
 from typing import Dict
 
 import cdedb.common.validation.types as vtypes
@@ -14,6 +13,7 @@ import cdedb.database.constants as const
 import cdedb.models.ml
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
+
 
 def output_counters(context: argparse.Namespace, prefix: str = "",
                     final: bool = False) -> None:
