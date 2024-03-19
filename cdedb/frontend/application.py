@@ -270,7 +270,8 @@ class Application(BaseApp):
                         ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
 
-            # Decide whether the user wants to ignore ValidationWarnings
+            # Decide whether the user wants to ignore ValidationWarnings.
+            # This is a checkbox so it is absent from the form when unchecked.
             rs.ignore_warnings = IGNORE_WARNINGS_NAME in rs.request.values
 
             # Store database connection as private attribute.
