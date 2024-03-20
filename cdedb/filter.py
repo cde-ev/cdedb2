@@ -17,14 +17,6 @@ from typing import (
 import bleach
 import icu
 import jinja2
-
-try:
-    from jinja2 import pass_environment  # type: ignore[attr-defined]
-except ImportError:
-    # This compatibility shim can be removed once the migration to Debian
-    # bookworm is complete
-    from jinja2 import environmentfilter as pass_environment
-
 import markdown
 import markdown.extensions.toc
 import markupsafe
@@ -402,7 +394,8 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace('\n', markupsafe.Markup(replacement))
+    return val.replace(  # type: ignore[return-value]
+        '\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -536,7 +529,7 @@ def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
     return Counter(value.values())
 
 
-@pass_environment
+@jinja2.pass_environment
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
                 reverse: bool = False, attribute: Optional[Any] = None) -> list[T]:
     """Sort an iterable using `xsorted`, using correct collation.

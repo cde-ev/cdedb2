@@ -230,8 +230,8 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        sessionkey = self.coreproxy.login(rs, username, password,
-                                          rs.request.remote_addr)
+        sessionkey = self.coreproxy.login(
+            rs, username, password, rs.request.remote_addr)
         if not sessionkey:
             rs.notify("error", n_("Login failure."))
             rs.extend_validation_errors(

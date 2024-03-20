@@ -2138,7 +2138,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("anonymous")
     def login(self, rs: RequestState, username: str, password: str,
-              ip: str) -> Optional[str]:
+              ip: Optional[str]) -> Optional[str]:
         """Create a new session.
 
         This invalidates all existing sessions for this persona. Sessions
@@ -2152,6 +2152,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         username = affirm(vtypes.PrintableASCII, username)
         password = affirm(str, password)
+        # TODO Extract IP address from RequestState
         ip = affirm(vtypes.PrintableASCII, ip)
         # note the lower-casing for email addresses
         query = ("SELECT id, is_meta_admin, is_core_admin FROM core.personas"

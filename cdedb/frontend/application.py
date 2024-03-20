@@ -6,7 +6,7 @@ import json
 import os
 import pathlib
 import types
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import jinja2
 import psycopg2.extensions
@@ -41,6 +41,12 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken
+
+if TYPE_CHECKING:
+    # TODO replace once we raise requirements to Python 3.11
+    # where this is exposed as wsgiref.WSGIApplication.
+    # This is a pseudo-module supported by major type checkers.
+    from _typeshed.wsgi import WSGIApplication  # pylint: disable=import-error
 
 
 class Application(BaseApp):
@@ -91,7 +97,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
@@ -173,8 +179,8 @@ class Application(BaseApp):
             return Response(
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status)
 
-    @werkzeug.wrappers.Request.application
-    def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.Response:
+    @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
+    def __call__(self, request: werkzeug.wrappers.Request) -> "WSGIApplication":
         # note time for performance measurement
         begin = now()
         user = User()
@@ -264,8 +270,9 @@ class Application(BaseApp):
                         ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
 
-            # Decide whether the user wants to ignore ValidationWarnings
-            rs.ignore_warnings = rs.request.values.get(IGNORE_WARNINGS_NAME, False)
+            # Decide whether the user wants to ignore ValidationWarnings.
+            # This is a checkbox so it is absent from the form when unchecked.
+            rs.ignore_warnings = IGNORE_WARNINGS_NAME in rs.request.values
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
@@ -363,5 +370,5 @@ class Application(BaseApp):
         if request.cookies.get('locale') in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
-        return request.accept_languages.best_match(
+        return request.accept_languages.best_match(  # type: ignore[return-value]
             self.conf["I18N_LANGUAGES"], default="de")

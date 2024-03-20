@@ -105,13 +105,9 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     flake8==3.8.4 \
     pylint==2.15.0 \
     ruff==0.1.1 \
-    types-werkzeug \
-    types-jinja2 \
     types-python-dateutil \
-    types-freezegun \
     types-bleach \
     types-Markdown \
-    types-click \
     types-tabulate \
     'playwright>=1.37.0'
 

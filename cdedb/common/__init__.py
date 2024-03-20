@@ -153,7 +153,7 @@ class RequestState(ConnectionContainer):
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[dict[str, int]],
+                 requestargs: Optional[Mapping[str, Any]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
@@ -443,8 +443,7 @@ def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
 S = TypeVar("S")
 
 
-def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
-                *dicts: Mapping[T, S]) -> None:
+def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -460,18 +459,17 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     if targetdict is None:
         raise ValueError(n_("No inputs given."))
     for adict in dicts:
-        for key in adict:
+        for key, value in adict.items():
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Collection)
-                        and not isinstance(adict[key], str)
+                if (isinstance(value, collections.abc.Collection)
+                        and not isinstance(value, str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    value = adict[key]
                     if isinstance(value, dict) and "id" in value:
                         targetdict[key] = value["id"]
                     else:
-                        targetdict.setlist(key, adict[key])
+                        targetdict.setlist(key, value)
                 else:
-                    targetdict[key] = adict[key]
+                    targetdict[key] = value
 
 
 BytesLike = Union[bytes, bytearray, memoryview]
