@@ -57,7 +57,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 'shortname': event.shortname,
                 'id': event.id,
             }
-            for event in xsorted(events.values())
+            for event in xsorted(events.values(), reverse=True)
         ]
         params = {
             'params': params or None,
