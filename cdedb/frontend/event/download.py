@@ -19,8 +19,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    RequestState, asciificator, determine_age_class, json_serialize, make_persona_name,
-    unwrap,
+    AgeClasses, CdEDBObject, RequestState, asciificator, determine_age_class,
+    json_serialize, make_persona_name, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -64,16 +64,19 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']]))
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
+        registrations_by_age: dict[AgeClasses, list[tuple[int, CdEDBObject]]] = {
+            age: [] for age in reversed(AgeClasses)}
+        for reg_id, reg in registrations.items():
+            registrations_by_age[reg['age']].append((reg_id, reg))
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
-            'lodgements': lodgements, 'registrations': registrations,
+            'lodgements': lodgements, 'registrations_by_age': registrations_by_age,
             'personas': personas, 'courses': courses})
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
-            filename = "{}_nametags.tex".format(
-                rs.ambience['event'].shortname)
+            filename = f"{rs.ambience['event'].shortname}_nametags.tex"
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
@@ -85,8 +88,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 shutil.copy(src, work_dir / f"logo-{course_id}.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event'].shortname,
-                "{}_nametags.tex".format(rs.ambience['event'].shortname),
-                runs)
+                filename, runs)
             if file:
                 return file
             else:
