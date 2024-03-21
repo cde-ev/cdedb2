@@ -154,7 +154,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         ALL_KEYS = parse.StatementCSVKeys.all_keys()
 
-        for i, line in enumerate(reader):
+        for i, line in enumerate(reversed(list(reader))):
             if not line.keys() <= ALL_KEYS:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
