@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-03-21 23:45+0000\n"
+"POT-Creation-Date: 2024-03-21 23:52+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -863,7 +863,7 @@ msgid "Password too weak."
 msgstr ""
 
 #: cdedb/backend/core/base.py:2514 cdedb/frontend/cde/base.py:616
-#: cdedb/frontend/cde/parse.py:437 cdedb/frontend/common.py:929
+#: cdedb/frontend/cde/parse.py:444 cdedb/frontend/common.py:929
 #: cdedb/frontend/event/registration.py:249
 msgid "No input provided."
 msgstr ""
@@ -3601,7 +3601,7 @@ msgstr ""
 msgid "Participation already recorded."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:608 cdedb/frontend/cde/parse.py:428
+#: cdedb/frontend/cde/base.py:608 cdedb/frontend/cde/parse.py:435
 #: cdedb/frontend/event/registration.py:240
 msgid "Only one input method allowed."
 msgstr ""
@@ -3616,7 +3616,7 @@ msgstr ""
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/parse.py:468
+#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/parse.py:475
 msgid "Lines didn’t match up."
 msgstr ""
 
@@ -3634,12 +3634,12 @@ msgstr ""
 msgid "Modified %(num)s existing members."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:721 cdedb/frontend/cde/parse.py:560
+#: cdedb/frontend/cde/base.py:721 cdedb/frontend/cde/parse.py:567
 #: cdedb/frontend/event/registration.py:296
 msgid "DB serialization error."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:723 cdedb/frontend/cde/parse.py:564
+#: cdedb/frontend/cde/base.py:723 cdedb/frontend/cde/parse.py:571
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr ""
@@ -3748,36 +3748,40 @@ msgstr ""
 msgid "Persona is not registerd for this event."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:369 cdedb/frontend/event/registration.py:136
+#: cdedb/frontend/cde/parse.py:364
+msgid "Payment date before registration."
+msgstr ""
+
+#: cdedb/frontend/cde/parse.py:376 cdedb/frontend/event/registration.py:136
 #, python-format
 msgid "Not enough money. %(total)s < %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:377 cdedb/frontend/event/registration.py:148
+#: cdedb/frontend/cde/parse.py:384 cdedb/frontend/event/registration.py:148
 #, python-format
 msgid "Too much money. %(total)s > %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:385 cdedb/frontend/event/registration.py:162
+#: cdedb/frontend/cde/parse.py:392 cdedb/frontend/event/registration.py:162
 msgid "Family name doesn’t match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:390 cdedb/frontend/event/registration.py:170
+#: cdedb/frontend/cde/parse.py:397 cdedb/frontend/event/registration.py:170
 msgid "Given names don’t match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:459
+#: cdedb/frontend/cde/parse.py:466
 #, python-format
 msgid ""
 "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:520
+#: cdedb/frontend/cde/parse.py:527
 #, python-format
 msgid "Booked %(num)s membership fees. There were %(new_members)s new members."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:532
+#: cdedb/frontend/cde/parse.py:539
 #, python-format
 msgid "Booked %(num)s event fees for %(event)s"
 msgstr ""

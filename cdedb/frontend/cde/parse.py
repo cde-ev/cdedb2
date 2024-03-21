@@ -358,6 +358,13 @@ class CdEParseMixin(CdEBaseFrontend):
                         else:
                             fee = registration['amount_owed']
 
+                        if date < registration['ctime'].date():
+                            infos.append((
+                                'date',
+                                ValueError(n_(
+                                    "Payment date before registration.")),
+                            ))
+
                         params = {
                             'total': money_filter(total, lang=rs.lang),
                             'expected': money_filter(fee, lang=rs.lang),
