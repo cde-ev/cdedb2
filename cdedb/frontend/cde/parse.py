@@ -228,6 +228,8 @@ class CdEParseMixin(CdEBaseFrontend):
             filename = f"transactions_{account.display_str()}"
             transactions = [t for t in transactions if t.account == account]
             fields = parse.ExportFields.excel
+            if account == Accounts.Festgeld:
+                fields = parse.ExportFields.festgeld
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))

@@ -1022,11 +1022,17 @@ class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
+    Festgeld = "DE45370205000010042605"
     # Fallback if Account is none of the above
     Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return self.value[-7:]
+        return {
+            Accounts.Account0: "8068900",
+            Accounts.Account1: "8068901",
+            Accounts.Festgeld: "Festgeld",
+            Accounts.Unknown: "Unknown",
+        }[self]
 
 
 @enum.unique
