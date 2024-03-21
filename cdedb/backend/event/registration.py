@@ -8,6 +8,7 @@ registrations at once for the mailinglist realm.
 """
 import copy
 import dataclasses
+import datetime
 import decimal
 from collections import defaultdict
 from collections.abc import Collection, Mapping, Sequence
@@ -28,8 +29,9 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, cast_fields, glue, unwrap,
+    PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
+    DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
+    cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -1491,6 +1493,61 @@ class EventRegistrationBackend(EventBaseBackend):
                     ret['paid'][kind] += amount
 
         return ret
+
+    @internal
+    @access("finance_admin")
+    def set_registration_payment(self, rs: RequestState, registration_id: int,
+                                 amount: decimal.Decimal, date: datetime.date,
+                                 ) -> CdEDBObject:
+
+        event_log_transfer_template = "{amount} am {date} gezahlt."
+        event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
+
+        registration = self.get_registration(rs, registration_id)
+        event_id = registration['event_id']
+
+        if amount > 0:
+            update = {
+                'id': registration['id'],
+                'payment': date,
+                'amount_paid': registration['amount_paid'] + amount,
+            }
+            change_note = event_log_transfer_template.format(
+                amount=money_filter(amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_received,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        elif amount < 0:
+            update = {
+                'id': registration['id'],
+                'amount_paid': registration['amount_paid'] + amount,
+                # Do not update payment date for reimbursements.
+            }
+            change_note = event_log_reimbursement_template.format(
+                amount=money_filter(-amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_reimbursed,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        else:
+            raise ValueError(n_("Cannot book fee with amount of zero."))
+
+        return registration
 
     @access("finance_admin")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],

@@ -1984,14 +1984,14 @@ def _lastschrift(
 def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
                        **kwargs: Any) -> MoneyTransferEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields: dict[str, Any] = {
+    mandatory_fields: TypeMapping = {
         'persona_id': int,
+        'registration_id': Optional[int],  # type: ignore[dict-item]
         'amount': decimal.Decimal,
-        'note': Optional[str],
+        'date': datetime.date,
     }
-    optional_fields: TypeMapping = {}
     return MoneyTransferEntry(_examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs))
+        val, mandatory_fields, {}, **kwargs))
 
 
 # TODO move above

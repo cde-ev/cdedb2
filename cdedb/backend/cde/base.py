@@ -10,7 +10,7 @@ All parts are combined together in the `CdEBackend` class via multiple inheritan
 together with a handful of high-level methods that use functionalities of multiple
 backend parts.
 """
-
+import collections
 import copy
 import dataclasses
 import datetime
@@ -22,10 +22,12 @@ import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models_event
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
 )
+from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
@@ -66,6 +68,30 @@ class BatchAdmissionStats:
             raise RuntimeError(n_("Impossible"))
 
 
+@dataclasses.dataclass
+class MoneyTransfer:
+    persona: CdEDBObject
+    amount: decimal.Decimal
+    date: datetime.date
+
+    registration: Optional[CdEDBObject] = None
+
+
+@dataclasses.dataclass
+class MoneyTransfersResult:
+    success: bool = True
+    index: int = -1
+
+    membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
+    event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
+        default_factory=lambda: collections.defaultdict(list))
+
+    new_members: int = 0
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 class CdEBaseBackend(AbstractBackend):
     """This is the backend with the most additional role logic.
 
@@ -76,6 +102,7 @@ class CdEBaseBackend(AbstractBackend):
     def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
+        self.event = make_proxy(EventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -124,63 +151,63 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
-    def perform_money_transfers(self, rs: RequestState, data: list[CdEDBObject],
-                                ) -> tuple[bool, Optional[int], Optional[int]]:
-        """Resolve all money transfer entries.
-
-        :returns: A bool indicating success and:
-            * In case of success:
-                * The number of recorded transactions
-                * The number of new members.
-            * In case of error:
-                * The index of the erronous line or None
-                    if a DB-serialization error occurred.
-                * None
-        """
-        data = affirm_array(vtypes.MoneyTransferEntry, data)
+    def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
+                             ) -> MoneyTransfersResult:
+        transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
         index = 0
-        note_template = ("Guthabenänderung um {amount} auf {new_balance} "
-                         "(Überwiesen am {date})")
-        # noinspection PyBroadException
+
+        changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
+                                   " (Überwiesen am {date})")
+
         try:
             with Atomizer(rs):
-                count = 0
-                memberships_gained = 0
-                persona_ids = tuple(e['persona_id'] for e in data)
+                result = MoneyTransfersResult()
+                persona_ids = {t['persona_id'] for t in transfers}
                 personas = self.core.get_total_personas(rs, persona_ids)
-                for index, datum in enumerate(data):
-                    assert isinstance(datum['amount'], decimal.Decimal)
-                    new_balance = (personas[datum['persona_id']]['balance']
-                                   + datum['amount'])
-                    note = datum['note']
-                    date = None
-                    if note:
-                        try:
-                            date = datetime.datetime.strptime(
-                                note, PARSE_OUTPUT_DATEFORMAT)
-                        except ValueError:
-                            pass
-                        else:
-                            # This is the default case and makes it pretty
-                            note = note_template.format(
-                                amount=money_filter(datum['amount']),
-                                new_balance=money_filter(new_balance),
-                                date=date.strftime(PARSE_OUTPUT_DATEFORMAT))
-                    count += self.core.change_persona_balance(
-                        rs, datum['persona_id'], new_balance,
-                        const.FinanceLogCodes.increase_balance,
-                        change_note=note, transaction_date=date)
-                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not personas[datum['persona_id']]['is_member']):
-                        code = self.core.change_membership_easy_mode(
-                            rs, datum['persona_id'], is_member=True)
-                        memberships_gained += bool(code)
-                    # Remember the changed balance in case of multiple transfers.
-                    personas[datum['persona_id']]['balance'] = new_balance
+                for index, transfer in enumerate(transfers):
+                    persona = personas[transfer['persona_id']]
+                    amount, date = transfer['amount'], transfer['date']
+                    if transfer['registration_id'] is None:
+                        new_balance = persona['balance'] + amount
+                        change_note = changelog_note_template.format(
+                            amount=money_filter(amount),
+                            new_balance=money_filter(new_balance),
+                            date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+                        )
+
+                        # Increase balance.
+                        self.core.change_persona_balance(
+                            rs, persona['id'], new_balance,
+                            const.FinanceLogCodes.increase_balance,
+                            change_note=change_note, transaction_date=date,
+                        )
+
+                        # Grant membership if necessary.
+                        if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                                and not persona['is_member']):
+                            code = self.core.change_membership_easy_mode(
+                                rs, persona['id'], is_member=True)
+                            result.new_members += bool(code)
+
+                        # Add to tally.
+                        result.membership_fees.append(MoneyTransfer(
+                            persona=persona, amount=amount, date=date,
+                        ))
+
+                        # Remember the changed balance in case of multiple transfers.
+                        persona['balance'] = new_balance
+                    else:
+                        registration = self.event.set_registration_payment(
+                            rs, transfer['registration_id'], amount, date,
+                        )
+                        result.event_fees[registration['event_id']].append(
+                            MoneyTransfer(
+                                persona=persona, amount=amount, date=date,
+                                registration=registration,
+                        ))
         except psycopg2.extensions.TransactionRollbackError:
-            # We perform a rather big transaction, so serialization errors
-            # could happen.
-            return False, None, None
+            # We perform a rather big transaction, so serialization errors could happen.
+            return MoneyTransfersResult(success=False)
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -188,13 +215,14 @@ class CdEBaseBackend(AbstractBackend):
             # frustrating for the users -- hence some extra error handling
             # here.
             self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during transfer processing",
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index, None
-        return True, count, memberships_gained
+
+            return MoneyTransfersResult(success=False, index=index)
+        return result
 
     @access("cde")
     def current_period(self, rs: RequestState) -> int:
