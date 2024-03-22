@@ -455,10 +455,11 @@ class CdEParseMixin(CdEBaseFrontend):
             data.append(
                 self.examine_money_transfer(
                     rs, dataset,
-                    events_by_shortname=events_by_shortname, expected_fees={})
+                    events_by_shortname=events_by_shortname, expected_fees={}),
             )
         for ds1, ds2 in itertools.combinations(data, 2):
-            if (ds1['persona_id'], ds1['category']) == (ds2['persona_id'], ds2['category']):
+            if (ds1['persona_id'], ds1['category']) == (
+                    ds2['persona_id'], ds2['category']):
                 if ds1['persona_id']:
                     info = (
                         None,
@@ -475,7 +476,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 ("transfers", ValueError(n_("Lines didn’t match up."))))
 
         open_issues = any(e['problems'] for e in data)
-        saldos = defaultdict(decimal.Decimal)
+        saldos: dict[int, decimal.Decimal] = defaultdict(decimal.Decimal)
         for datum in data:
             saldos[datum['event_id'] or 0] += datum['amount']
             saldos[-1] += datum['amount']

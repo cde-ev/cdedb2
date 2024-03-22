@@ -22,7 +22,6 @@ import psycopg2.extensions
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-import cdedb.models.event as models_event
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
