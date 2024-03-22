@@ -8576,7 +8576,7 @@ msgstr "Saldo"
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:142
 msgid "If the input changed, the validation results will be displayed again."
 msgstr ""
-"Falls die Eingabe geändert wird, wird das Validierungsergebnis ernaut "
+"Falls die Eingabe geändert wird, wird das Validierungsergebnis erneut "
 "angezeigt."
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:40
