@@ -358,7 +358,8 @@ class CdEParseMixin(CdEBaseFrontend):
                         else:
                             fee = registration['amount_owed']
 
-                        if date < registration['ctime'].date():
+                        if (registration['ctime']
+                                and date < registration['ctime'].date()):
                             infos.append((
                                 'date',
                                 ValueError(n_(
@@ -515,9 +516,9 @@ class CdEParseMixin(CdEBaseFrontend):
                             'To': (transfer.persona['username'],),
                         }
                         self.do_mail(
-                            rs, 'transfer_received', headers,
+                            rs, 'parse/transfer_received', headers,
                             {
-                                'transaction': transfer,
+                                'persona': transfer.persona,
                                 'address': make_postal_address(rs, transfer.persona),
                                 'fee': self.conf['MEMBERSHIP_FEE'],
                             },
@@ -549,8 +550,8 @@ class CdEParseMixin(CdEBaseFrontend):
                         for transfer in booked_transfers:
                             headers['To'] = (transfer.persona['username'],)
                             self.do_mail(
-                                rs, 'event_transfer_received', headers,
-                                {'transfer': transfer})
+                                rs, 'parse/event_transfer_received', headers,
+                                {'transfer': transfer, 'event': event})
                         if event.orga_address:
                             # TODO: Also send this to finance admins?
                             headers = {
@@ -560,8 +561,28 @@ class CdEParseMixin(CdEBaseFrontend):
                                 'Prefix': "",
                             }
                             self.do_mail(
-                                rs, "transfers_booked", headers,
+                                rs, "parse/transfers_booked", headers,
                                 {'num': len(booked_transfers)})
+                    for event_id, reimbursements in result.event_reimbursements.items():
+                        event = events[event_id]
+                        rs.notify(
+                            "success",
+                            n_("Booked %(num)s reimbursements for %(event)s"),
+                            {'num': len(reimbursements), 'event': event.title},
+                        )
+                        if event.orga_address:
+                            # TODO: Also send this to finance admins?
+                            headers = {
+                                'To': (event.orga_address,),
+                                'Reply-To': self.conf['FINANCE_ADMIN_ADDRESS'],
+                                'Subject':
+                                    "Erstattungen für Eure Veranstaltung durchgeführt.",
+                                'Prefix': "",
+                            }
+                            self.do_mail(
+                                rs, "parse/reimbursements_booked", headers,
+                                {'num': len(reimbursements)})
+
                 return self.redirect(rs, "cde/index")
             else:
                 if result.index < 0:

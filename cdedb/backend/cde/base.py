@@ -84,6 +84,8 @@ class MoneyTransfersResult:
     membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
     event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
         default_factory=lambda: collections.defaultdict(list))
+    event_reimbursements: dict[int, list[MoneyTransfer]] = dataclasses.field(
+        default_factory=lambda: collections.defaultdict(list))
 
     new_members: int = 0
 
@@ -199,11 +201,15 @@ class CdEBaseBackend(AbstractBackend):
                         registration = self.event.set_registration_payment(
                             rs, transfer['registration_id'], amount, date,
                         )
-                        result.event_fees[registration['event_id']].append(
-                            MoneyTransfer(
-                                persona=persona, amount=amount, date=date,
-                                registration=registration,
-                        ))
+                        event_id = registration['event_id']
+                        ret = MoneyTransfer(
+                            persona=persona, amount=amount, date=date,
+                            registration=registration,
+                        )
+                        if amount > 0:
+                            result.event_fees[event_id].append(ret)
+                        elif amount < 0:
+                            result.event_reimbursements[event_id].append(ret)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors could happen.
             return MoneyTransfersResult(success=False)

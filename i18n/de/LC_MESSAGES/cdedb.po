@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-03-22 06:52+0000\n"
+"POT-Creation-Date: 2024-03-22 22:56+0000\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -93,7 +93,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
-#: cdedb/backend/assembly.py:361 cdedb/backend/cde/base.py:583
+#: cdedb/backend/assembly.py:361 cdedb/backend/cde/base.py:589
 #: cdedb/backend/core/base.py:2737 cdedb/backend/event/query.py:633
 #: cdedb/backend/ml.py:310 cdedb/backend/past_event.py:760
 msgid "Bad scope."
@@ -406,7 +406,7 @@ msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
-#: cdedb/backend/assembly.py:2437 cdedb/backend/cde/base.py:479
+#: cdedb/backend/assembly.py:2437 cdedb/backend/cde/base.py:485
 #: cdedb/backend/cde/lastschrift.py:452 cdedb/backend/common.py:469
 #: cdedb/backend/core/base.py:2218 cdedb/backend/event/base.py:1140
 #: cdedb/common/__init__.py:257 cdedb/frontend/assembly/ballot.py:521
@@ -425,75 +425,75 @@ msgstr "Unmöglich."
 msgid "Impossible"
 msgstr "Unmöglich."
 
-#: cdedb/backend/cde/base.py:232
+#: cdedb/backend/cde/base.py:238
 msgid "No period exists."
 msgstr "Es existiert kein Semester."
 
-#: cdedb/backend/cde/base.py:278
+#: cdedb/backend/cde/base.py:284
 msgid "num_members"
 msgstr "Mitglieder"
 
-#: cdedb/backend/cde/base.py:278
+#: cdedb/backend/cde/base.py:284
 msgid "num_of_searchable"
 msgstr "davon suchbar"
 
-#: cdedb/backend/cde/base.py:278
+#: cdedb/backend/cde/base.py:284
 msgid "num_of_trial"
 msgstr "davon Probemitglieder"
 
-#: cdedb/backend/cde/base.py:279
+#: cdedb/backend/cde/base.py:285
 msgid "num_all"
 msgstr "Alle Accounts"
 
-#: cdedb/backend/cde/base.py:279
+#: cdedb/backend/cde/base.py:285
 msgid "num_ex_members"
 msgstr "Inaktive Mitglieder"
 
-#: cdedb/backend/cde/base.py:279
+#: cdedb/backend/cde/base.py:285
 msgid "num_of_printed_expuls"
 msgstr "davon mit gedrucktem exPuls"
 
-#: cdedb/backend/cde/base.py:292
+#: cdedb/backend/cde/base.py:298
 msgid "members_by_country"
 msgstr "Mitglieder nach Land"
 
-#: cdedb/backend/cde/base.py:296
+#: cdedb/backend/cde/base.py:302
 msgid "members_by_city"
 msgstr "Mitglieder nach Stadt"
 
-#: cdedb/backend/cde/base.py:305
+#: cdedb/backend/cde/base.py:311
 msgid "members_by_birthday"
 msgstr "Mitglieder nach Geburtsjahr"
 
-#: cdedb/backend/cde/base.py:341
+#: cdedb/backend/cde/base.py:347
 msgid "members_by_first_event"
 msgstr "Mitglieder nach erster Veranstaltung"
 
-#: cdedb/backend/cde/base.py:344
+#: cdedb/backend/cde/base.py:350
 msgid "users_by_first_event"
 msgstr "Accounts nach erster Veranstaltung"
 
-#: cdedb/backend/cde/base.py:366
+#: cdedb/backend/cde/base.py:372
 msgid "unique_participants_per_year"
 msgstr "Verschiedene CdE-Akademie-Teilnehmer"
 
-#: cdedb/backend/cde/base.py:407
+#: cdedb/backend/cde/base.py:413
 msgid "Cannot restore purged account."
 msgstr "Geleerter Account kann nicht wiederhergestellt werden."
 
-#: cdedb/backend/cde/base.py:447
+#: cdedb/backend/cde/base.py:453
 msgid "Need extra data."
 msgstr "Weitere Daten benötigt."
 
-#: cdedb/backend/cde/base.py:468 cdedb/frontend/cde/base.py:504
+#: cdedb/backend/cde/base.py:474 cdedb/frontend/cde/base.py:504
 msgid "May not grant trial membership to member."
 msgstr "Probemitgliedschaft für Mitglieder nicht erlaubt."
 
-#: cdedb/backend/cde/base.py:548 cdedb/backend/core/base.py:2024
+#: cdedb/backend/cde/base.py:554 cdedb/backend/core/base.py:2024
 msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
-#: cdedb/backend/cde/base.py:563 cdedb/backend/event/query.py:267
+#: cdedb/backend/cde/base.py:569 cdedb/backend/event/query.py:267
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -3681,7 +3681,7 @@ msgstr "Zeilen %(first)s und %(second)s sind identisch."
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
-#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/parse.py:475
+#: cdedb/frontend/cde/base.py:693 cdedb/frontend/cde/parse.py:476
 msgid "Lines didn’t match up."
 msgstr "Daten wurden geändert."
 
@@ -3699,12 +3699,12 @@ msgstr "%(num)s Neuaufnahmen."
 msgid "Modified %(num)s existing members."
 msgstr "%(num)s Wiederaufnahmen."
 
-#: cdedb/frontend/cde/base.py:721 cdedb/frontend/cde/parse.py:567
+#: cdedb/frontend/cde/base.py:721 cdedb/frontend/cde/parse.py:588
 #: cdedb/frontend/event/registration.py:296
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
-#: cdedb/frontend/cde/base.py:723 cdedb/frontend/cde/parse.py:571
+#: cdedb/frontend/cde/base.py:723 cdedb/frontend/cde/parse.py:592
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
@@ -3840,22 +3840,27 @@ msgstr "Nachname passt nicht."
 msgid "Given names don’t match."
 msgstr "Vornamen passen nicht zusammen."
 
-#: cdedb/frontend/cde/parse.py:466
+#: cdedb/frontend/cde/parse.py:467
 #, python-format
 msgid ""
 "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 "Mehrere Überweisungen für diesen Account (Zeilen %(first)s und %(second)s)."
 
-#: cdedb/frontend/cde/parse.py:527
+#: cdedb/frontend/cde/parse.py:528
 #, python-format
 msgid "Booked %(num)s membership fees. There were %(new_members)s new members."
 msgstr "%(num)s Mitgliedsbeiträge verbucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde/parse.py:539
+#: cdedb/frontend/cde/parse.py:540
 #, python-format
 msgid "Booked %(num)s event fees for %(event)s"
 msgstr "%(num)s Überweisungen verbucht für %(event)s"
+
+#: cdedb/frontend/cde/parse.py:569
+#, python-format
+msgid "Booked %(num)s reimbursements for %(event)s"
+msgstr "%(num)s Erstattungen eingetragen für %(event)s"
 
 #: cdedb/frontend/cde/parse_statement.py:410
 #, python-format
