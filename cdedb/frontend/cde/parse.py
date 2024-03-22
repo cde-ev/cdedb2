@@ -479,6 +479,8 @@ class CdEParseMixin(CdEBaseFrontend):
         open_issues = any(e['problems'] for e in data)
         saldos: dict[int, decimal.Decimal] = defaultdict(decimal.Decimal)
         for datum in data:
+            if datum['amount'] is None:
+                continue
             saldos[datum['event_id'] or 0] += datum['amount']
             saldos[-1] += datum['amount']
 
