@@ -72,8 +72,15 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for part in ambience['event']['parts'].values()|sort -%>>
-        <<% for age_class, registration_items in registrations_by_age.items() if registration_items %>>
-        <<% for registration_id, registration in registration_items -%>>
+        <<< part.title|te >>>
+        \begin{itemize}
+            <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
+                \item <<< age_class.name|te >>>: <<< ((registrations|length - 1) // 8) + 1 >>>
+            <<% endfor %>>
+            \clearpage
+        \end{itemize}
+        <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
+        <<% for registration_id, registration in registrations.items() -%>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() -%>>
                 <<# jinja does not support list comprehension ... -#>>
                 <<% set mycourses = [] -%>>
