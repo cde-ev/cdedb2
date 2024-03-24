@@ -100,6 +100,10 @@ class ExportFields:
         "category_old", "account_nr", "reference", "account_holder", "iban",
     )
 
+    festgeld = (
+        "transaction_date", "amount_german", "reference",
+    )
+
 
 class PostingPatterns:
     """Common patterns for postings belonging to specific types of transactions."""
