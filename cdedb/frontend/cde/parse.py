@@ -261,7 +261,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
     def examine_money_transfer(self, rs: RequestState, datum: CdEDBObject, *,
                                events_by_shortname: dict[str, models_event.Event],
-                               expected_fees: dict[int, decimal.Decimal],
+                               amounts_paid: dict[int, decimal.Decimal],
                                ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -348,15 +348,15 @@ class CdEParseMixin(CdEBaseFrontend):
                             'persona_id',
                             ValueError(n_("Persona is not registerd for this event.")),
                         ))
-                    else:
+                    elif amount:
                         registration = self.eventproxy.get_registration(
                             rs, unwrap(registration_ids))
-                        amount_paid = registration['amount_paid']
-                        total = amount_paid + amount
-                        if registration['id'] in expected_fees:
-                            fee = expected_fees[registration['id']]
+                        if registration['id'] in amounts_paid:
+                            amount_paid = amounts_paid[registration['id']]
                         else:
-                            fee = registration['amount_owed']
+                            amount_paid = registration['amount_paid']
+                        total = amount_paid + amount
+                        fee = registration['amount_owed']
 
                         if (registration['ctime']
                                 and date < registration['ctime'].date()):
@@ -386,7 +386,7 @@ class CdEParseMixin(CdEBaseFrontend):
                                     params,
                                 ),
                             ))
-                        expected_fees[registration['id']] = fee - total
+                        amounts_paid[registration['id']] = total
 
                 if family_name != persona['family_name']:
                     problems.append((
@@ -451,12 +451,14 @@ class CdEParseMixin(CdEBaseFrontend):
         reader = csv.DictReader(
             transferlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
+        amounts_paid = {}
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(
                 self.examine_money_transfer(
-                    rs, dataset,
-                    events_by_shortname=events_by_shortname, expected_fees={}),
+                    rs, dataset, events_by_shortname=events_by_shortname,
+                    amounts_paid=amounts_paid,
+                ),
             )
         for ds1, ds2 in itertools.combinations(data, 2):
             if (ds1['persona_id'], ds1['category']) == (
