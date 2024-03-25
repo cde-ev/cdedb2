@@ -281,6 +281,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         date, p = inspect(
             datetime.date, raw['transaction_date'], argname="date")
+        problems.extend(p)
 
         amount, p = self.parse_amount(raw['amount_german'])
         problems.extend(p)
