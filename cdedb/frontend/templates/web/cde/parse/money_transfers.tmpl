@@ -39,20 +39,24 @@
 
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
-            <ol class="list-unstyled">
+            <ol class="list-unstyled" id="transfer-validation">
             {% for dataset in data %}
                 <li>
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
-                    {% if dataset['event'] %}
+                    {% if dataset['event'] and dataset['persona'] %}
                         {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']), event=dataset['event'].title %}
                             {{ amount }} for {{ name }} for {{ event }}
                         {% endtrans %}
-                    {% else %}
+                    {% elif dataset['persona'] %}
                         {% trans amount=dataset['amount']|money(lang=lang), name=util.persona_name(dataset['persona']) -%}
                             {{ amount }} for {{ name }}
+                        {% endtrans %}
+                    {% elif dataset['event'] %}
+                        {% trans amount=dataset['amount']|money(lang=lang) %}
+                            {{ amount }} for unknown user.
                         {% endtrans %}
                     {% endif %}
                 </strong>
@@ -105,7 +109,7 @@
         {% endif %}
 
         {% if saldos %}
-            <table class="table table-slim">
+            <table class="table table-slim" id="saldo-table">
                 <tbody>
                     {% for event_id, saldo in saldos|dictsort %}
                         <tr>
