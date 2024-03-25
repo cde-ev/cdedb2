@@ -75,7 +75,7 @@
         <<< part.title|te >>>
         \begin{itemize}
             <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
-                \item <<< age_class.name|te >>>: <<< ((registrations|length - 1) // 8) + 1 >>>
+                \item <<< gettext(age_class|string) >>>: <<< ((registrations|length - 1) // 8) + 1 >>> Seiten
             <<% endfor %>>
             \clearpage
         \end{itemize}
