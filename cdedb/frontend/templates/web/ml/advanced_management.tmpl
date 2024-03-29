@@ -78,7 +78,12 @@
             <ul class="slim" id="modsubscriber-list">
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                        {% if subscription_override in defects %}
+                            {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id'],
+                                        aclass='text-muted', title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                        {% else %}
+                            {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                        {% endif %}
                         {% if not restricted %}
                             <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                                   method="POST"

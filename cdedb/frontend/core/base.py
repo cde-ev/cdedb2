@@ -711,9 +711,11 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
+        persona = self.coreproxy.get_ml_user(rs, persona_id)
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
         mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
+        defect_addresses = self.coreproxy.get_defect_addresses(rs, [persona_id])
 
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
@@ -723,6 +725,9 @@ class CoreBaseFrontend(AbstractFrontend):
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
                 'is_active': ml.is_active,
+                'is_receiving': ((addr := addresses.get(mailinglist_id))
+                                    and addr not in defect_addresses
+                                 or persona['username'] not in defect_addresses)
             }
 
         return self.render(rs, "show_user_mailinglists", {

@@ -557,10 +557,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
+        defect_addresses = self.coreproxy.list_defect_addresses(rs)
         requests = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(const.SubscriptionState.pending,))
         persona_ids = (set(ml.moderators) | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        # determine which subscribers use a defect address for this mailinglist
+        defects = {
+            anid for anid in subscribers
+            if anid not in explicits and personas[anid]["username"] in defect_addresses
+            or anid in explicits and explicits[anid] in defect_addresses}
         subscribers = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
                 subscribers,
@@ -578,7 +584,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted, 'allow_unsub': allow_unsub})
+            'restricted': restricted, 'allow_unsub': allow_unsub,
+            'defects': defects})
 
     @access("ml")
     @mailinglist_guard()
@@ -614,12 +621,18 @@ class MlBaseFrontend(AbstractUserFrontend):
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
+        # determine defect addresses used as subscription_override
+        defect_addresses = self.coreproxy.list_defect_addresses(rs)
+        subscription_addresses = self.mlproxy.get_subscription_addresses(
+            rs, mailinglist_id, subscription_overrides)
+        defects = {anid for anid in subscription_overrides
+                   if subscription_addresses[anid] in defect_addresses}
         return self.render(rs, "advanced_management", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
             'all_unsubscriptions': all_unsubscriptions,
             'redundant_unsubscriptions': redundant_unsubscriptions,
-            'restricted': restricted})
+            'restricted': restricted, 'defects': defects})
 
     @access("ml")
     @mailinglist_guard()
