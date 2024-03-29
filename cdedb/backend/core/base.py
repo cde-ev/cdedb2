@@ -46,11 +46,11 @@ from cdedb.common.query.log_filter import (
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
-from cdedb.models.core import DefectAddress
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.models.core import DefectAddress
 
 
 class CoreBaseBackend(AbstractBackend):
@@ -2789,14 +2789,14 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self.general_query(rs, query)
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def list_defect_addresses(self, rs: RequestState) -> set[str]:
         """List all defect mail addresses known to the CdEDB."""
         query = "SELECT address FROM core.defect_addresses"
         data = self.query_all(rs, query, ())
         return {e['address'] for e in data}
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def get_defect_addresses(
             self, rs: RequestState, persona_ids: list[vtypes.ID] = None
     ) -> dict[str, DefectAddress]:
@@ -2837,7 +2837,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return {a: DefectAddress.from_database(datum) for a, datum in data.items()}
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def add_defect_address(
         self, rs: RequestState, address: str, notes: str = None
     ) -> DefaultReturnCode:
@@ -2852,7 +2852,7 @@ class CoreBaseBackend(AbstractBackend):
                                {"address": address, "notes": notes})
         return code
 
-    @access("ml_admin")
+    @access("core_admin", "ml_admin")
     def remove_defect_address(
         self, rs: RequestState, address: str
     ) -> DefaultReturnCode:
