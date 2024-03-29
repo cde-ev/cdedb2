@@ -46,6 +46,7 @@ from cdedb.common.query.log_filter import (
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
+from cdedb.models.core import DefectAddress
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2787,3 +2788,73 @@ class CoreBaseBackend(AbstractBackend):
         """
         query = affirm(Query, query)
         return self.general_query(rs, query)
+
+    @access("ml_admin")
+    def list_defect_addresses(self, rs: RequestState) -> set[str]:
+        """List all defect mail addresses known to the CdEDB."""
+        query = "SELECT address FROM core.defect_addresses"
+        data = self.query_all(rs, query, ())
+        return {e['address'] for e in data}
+
+    @access("ml_admin")
+    def get_defect_addresses(
+            self, rs: RequestState, persona_ids: list[vtypes.ID] = None
+    ) -> dict[str, DefectAddress]:
+        """Get defect mail addresses and map them to users and mls, if possible.
+
+        :param persona_ids: Retrieve only defect addresses of those users.
+        """
+        # first, query core.personas
+        query = """
+            SELECT
+                def.address, def.notes, core.personas.id AS user_id
+            FROM core.defect_addresses AS def
+                LEFT JOIN core.personas ON def.address = core.personas.username
+        """
+        params: tuple[list[vtypes.ID], ...] = tuple()
+        if persona_ids:
+            query += "WHERE core.personas.id = ANY(%s)"
+            params = (persona_ids, )
+        data = collections.defaultdict(dict)
+        for e in self.query_all(rs, query, params):
+            data[e['address']] = e
+
+        # second, query ml.subscription_addresses
+        query = """
+            SELECT
+                def.address, array_remove(array_agg(sa.mailinglist_id), NULL) AS ml_ids,
+                sa.persona_id AS subscriber_id
+            FROM core.defect_addresses AS def
+                LEFT JOIN ml.subscription_addresses AS sa ON def.address = sa.address
+        """
+        params: tuple[list[vtypes.ID], ...] = tuple()
+        if persona_ids:
+            query += " WHERE sa.persona_id = ANY(%s)"
+            params = (persona_ids,)
+        query += " GROUP BY def.address, subscriber_id"
+        for e in self.query_all(rs, query, params):
+            data[e['address']].update(e)
+
+        return {a: DefectAddress.from_database(datum) for a, datum in data.items()}
+
+    @access("ml_admin")
+    def add_defect_address(
+        self, rs: RequestState, address: str, notes: str = None
+    ) -> DefaultReturnCode:
+        address = affirm(vtypes.Email, address)
+        notes = affirm(Optional[str], notes)
+
+        # check the address is not already marked as defect
+        query = "SELECT address FROM core.defect_addresses WHERE address = %s"
+        if self.query_one(rs, query, (address,)):
+            raise ValueError(n_("Address already marked as defect."))
+        code = self.sql_insert(rs, "core.defect_addresses",
+                               {"address": address, "notes": notes})
+        return code
+
+    @access("ml_admin")
+    def remove_defect_address(
+        self, rs: RequestState, address: str
+    ) -> DefaultReturnCode:
+        address = affirm(vtypes.Email, address)
+        return self.sql_delete_one(rs, "core.defect_addresses", address, "address")
