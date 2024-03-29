@@ -3897,6 +3897,15 @@
             "paper_expuls": true
         }
     ],
+    "core.defect_addresses": [
+        {
+            "address": "defect@example.com"
+        },
+        {
+            "address": "anton@example.cde",
+            "notes": "Einfach kaputt gegangen..."
+        }
+    ],
     "core.cron_store": [],
     "core.locks": [
         {
