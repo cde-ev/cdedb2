@@ -1328,6 +1328,20 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
+    @access("core_admin", "ml_admin")
+    def defect_addresses(self, rs: RequestState) -> Response:
+        defect_addresses = self.coreproxy.get_defect_addresses(rs)
+        persona_ids = set().union(*[e.persona_ids for e in defect_addresses.values()])
+        personas = set()
+        if persona_ids:
+            personas = self.coreproxy.get_personas(rs, persona_ids)
+        ml_ids = set().union(*[e.ml_ids for e in defect_addresses.values()])
+        mls = set()
+        if ml_ids:
+            mls = self.mlproxy.get_mailinglists(rs, ml_ids)
+        return self.render(rs, "defect_addresses", {
+            'defect_addresses': defect_addresses, 'personas': personas, 'mls': mls})
+
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:

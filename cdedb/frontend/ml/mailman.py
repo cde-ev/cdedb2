@@ -243,6 +243,7 @@ The original message as received by Mailman is attached.
             rs, db_list.id, states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list.id, persona_ids)
+        defect_addresses = self.coreproxy.list_defect_addresses(rs)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Before updating subscribers, delete spurious (un)subscription requests

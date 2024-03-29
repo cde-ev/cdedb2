@@ -1,0 +1,47 @@
+{% set sidenav_active='defect_addresses' %}
+{% set jshint='weak' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% trans %}Defect Addresses{% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/defect_addresses"), gettext("Defect Addresses"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% if defect_addresses %}
+        <ul>
+            {% for address, infos in defect_addresses.items() %}
+                <li>
+                    {{ address }} {% if infos.notes %}<span class="text-muted small">{{ infos.notes }}</span>{% endif %}
+                    {% if infos.user_id or infos.subscriber_id %}
+                        <ul>
+                            {% if infos.user_id %}
+                                <li>
+                                    {{ util.persona_anchor(personas[infos.user_id]) }}: {% trans %}as username{% endtrans %}
+                                </li>
+                            {% endif %}
+                            {% if infos.subscriber_id %}
+                                <li>
+                                    {{ util.persona_anchor(personas[infos.subscriber_id]) }}:
+                                    {%- for ml_id in infos.ml_ids -%}
+                                        {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': ml_id}), mls[ml_id].title) }}
+                                        {%- if not loop.last %}, {% endif -%}
+                                    {% endfor -%}
+                                </li>
+                            {% endif %}
+                        </ul>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            {% trans %}There are currently no addresses marked as defect.{% endtrans %}
+        </p>
+    {% endif %}
+{% endblock %}

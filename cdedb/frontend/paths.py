@@ -103,6 +103,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="do_password_reset"))),
             rule('/search/user', methods=_GET,
                  endpoint="user_search"),
+            rule('/defects', methods=_GET,
+                 endpoint="defect_addresses"),
             sub('/persona/<int:persona_id>', (
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
