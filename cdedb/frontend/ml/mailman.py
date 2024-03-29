@@ -259,10 +259,11 @@ The original message as received by Mailman is attached.
             address: make_persona_name(personas[pid])
             for pid, address in db_addresses.items() if address
         }
+        actual_db_subscribers = set(db_subscribers) - defect_addresses
         mm_subscribers = {m.email: m for m in mm_list.members}
 
-        new_subs = set(db_subscribers) - set(mm_subscribers)
-        delete_subs = set(mm_subscribers) - set(db_subscribers)
+        new_subs = actual_db_subscribers - set(mm_subscribers)
+        delete_subs = set(mm_subscribers) - actual_db_subscribers
 
         for address in new_subs:
             mm_list.subscribe(address, display_name=db_subscribers[address],
