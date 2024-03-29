@@ -438,6 +438,14 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
+CREATE TABLE  core.defect_addresses (
+        id                      serial PRIMARY KEY,
+        address                 varchar NOT NULL UNIQUE,
+        notes                   varchar
+);
+GRANT SELECT, DELETE on core.defect_addresses TO cdb_persona;
+GRANT INSERT, UPDATE (notes) ON core.defect_addresses TO cdb_admin;
+
 CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
