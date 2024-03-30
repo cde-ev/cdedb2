@@ -2024,7 +2024,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms["transfersform"]
-        f["transfers"] = "1.00;DB-4-3;Dino;Daniel D.;"
+        f["transfers"] = "01.01.1900;1.00;DB-4-3;Dino;Daniel D.;Mitgliedsbeitrag"
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f)
