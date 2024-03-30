@@ -454,7 +454,7 @@ class CdEParseMixin(CdEBaseFrontend):
         reader = csv.DictReader(
             transferlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        amounts_paid = {}
+        amounts_paid: dict[int, decimal.Decimal] = {}
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(
