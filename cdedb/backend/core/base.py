@@ -2796,14 +2796,20 @@ class CoreBaseBackend(AbstractBackend):
         data = self.query_all(rs, query, ())
         return {e['address'] for e in data}
 
-    @access("core_admin", "ml_admin")
+    @access("ml")
     def get_defect_addresses(
-            self, rs: RequestState, persona_ids: list[vtypes.ID] = None
+            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None
     ) -> dict[str, DefectAddress]:
         """Get defect mail addresses and map them to users and mls, if possible.
 
         :param persona_ids: Retrieve only defect addresses of those users.
         """
+        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
+
+        if (not {"ml_admin", "core_admin"} & rs.user.roles
+                and persona_ids != {rs.user.persona_id}):
+            raise PrivilegeError
+
         # first, query core.personas
         query = """
             SELECT
