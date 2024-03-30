@@ -427,7 +427,9 @@ class TestEventFrontend(FrontendTest):
             "Unterkünfte", "Downloads", "Partieller Import",
             "Konfiguration", "Veranstaltungsteile", "Teilnahmebeiträge",
             "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens"}
+            "Fragebogen konfigurieren", "Log", "Checkin", "Orga-Tokens",
+            "Anmeldungsvorschau",
+        }
         finance_admin = {"Überweisungen eintragen"}
 
         # TODO this could be more expanded (event without courses, distinguish

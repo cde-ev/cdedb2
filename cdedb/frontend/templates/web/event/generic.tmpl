@@ -280,7 +280,7 @@
                         {{ util.input_textarea(name="info_{}".format(part_id), anid=textarea_id,
                                                attributes=('data-basename="info_"'|s if newrow else ''),
                                                aclass='form-control input-info drow-input') }}
-                        {{ util.markdown_preview(textarea_id, "Supports Markdown for “Text-Only” fields.") }}
+                        {{ util.markdown_preview(textarea_id, gettext("Supports Markdown for “Only Text” fields.")) }}
                     {%- endcall %}
                 </div>
                 <div class="col-md-6">

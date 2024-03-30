@@ -40,7 +40,9 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
+from cdedb.common.query.log_filter import (
+    ALL_LOG_FILTERS, ChangelogLogFilter, CoreLogFilter,
+)
 from cdedb.common.roles import (
     ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
 )
@@ -253,6 +255,30 @@ class CoreBaseBackend(AbstractBackend):
                 self.logger.error(f"Could not determine total balance for creating"
                                   f" log entry {data!r}.")
             return self.sql_insert(rs, "cde.finance_log", data)
+
+    @access(*REALM_ADMINS)
+    def redact_log(self, rs: RequestState, log_table: str, log_id: int,
+                   change_note: Optional[str] = None) -> DefaultReturnCode:
+        """Redacts log messages.
+
+        We usually do not want to use this, but keep it as a measure to redact
+        privacy-sensitive information or deragoratory statements.
+        Access validation for this is rather lax, there shall be no frontend endpoints
+        to access this freely."""
+        log_table = affirm(str, log_table)
+        log_id = affirm(int, log_id)
+        change_note = affirm_optional(str, change_note)
+
+        if log_table not in {log_filter.log_table for log_filter in ALL_LOG_FILTERS}:
+            raise ValueError("Unknown log")
+
+        update = {
+            "id": log_id,
+            "change_note": change_note,
+        }
+        self.logger.warning(
+            f"Redacted log message for entry with id {log_id} in {log_table}.")
+        return self.sql_update(rs, log_table, update)
 
     @access("core_admin", "auditor")
     def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
@@ -1681,7 +1707,8 @@ class CoreBaseBackend(AbstractBackend):
                 log_code = const.FinanceLogCodes.remove_balance_on_archival
                 self.finance_log(rs, log_code, persona_id, delta=-persona['balance'],
                                  new_balance=decimal.Decimal("0"))
-            self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
+            # The cde.log does not store user specific data
+            # self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
             # past event log stays untouched since we keep past events
             # event log stays untouched since events have a separate life cycle
             # assembly log stays since assemblies have a separate life cycle
