@@ -3,13 +3,16 @@
 import collections
 import csv
 import datetime
+import decimal
 import types
+import unittest.mock
 from typing import Any, Optional, cast
 
 import webtest
 
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models_event
+from cdedb.backend.event import EventBackend
 from cdedb.common import Accounts, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
@@ -80,11 +83,13 @@ class TestParseFrontend(FrontendTest):
                     reference=reference,
                     compile_pattern=parse.Transaction.compile_pattern,
                 ))
-            confidence = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
+            match = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
             if expected_confidence is None:
-                self.assertIsNone(confidence)
+                self.assertIsNone(match)
             else:
-                self.assertEqual(expected_confidence, confidence)
+                self.assertIsNotNone(match)
+                assert match is not None
+                self.assertEqual(expected_confidence, match.confidence)
 
         cl = parse.ConfidenceLevel
 
@@ -106,6 +111,34 @@ class TestParseFrontend(FrontendTest):
         match(velbert, "velbert19", cl.Medium)
         match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Medium)
         match(velbert, "Velbert 2019", None)
+
+    def test_fee_matching(self) -> None:
+        # Match TestAka via reference, but Party via amount.
+        amount = decimal.Decimal("3.50")
+        data: CdEDBObject = collections.defaultdict(lambda: None)
+        data.update({
+            'reference': "TestAka",
+            'errors': [],
+            'warnings': [],
+            'amount': amount,
+            'event': None,
+        })
+        transaction = parse.Transaction(data)
+        transaction.persona = {'id': 1}
+        event_backend = self.initialize_backend(EventBackend)
+        event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
+            return_value={2: amount})
+        transaction._match_event(rs=self.key, event_backend=event_backend)  # pylint: disable=protected-access
+
+        # Check that reference match is better.
+        self.assertIsNotNone(transaction.event)
+        assert transaction.event is not None
+        self.assertEqual(parse.ConfidenceLevel.Medium, transaction.event_confidence)
+        self.assertEqual("Große Testakademie 2222", transaction.event.title)
+
+        # Check that "match only by amount" warning is not present.
+        self.assertEqual([], transaction.warnings)
+        self.assertEqual([], transaction.errors)
 
     def check_dict(self, adict: CdEDBObject, **kwargs: Any) -> None:
         for k, v in kwargs.items():
@@ -145,8 +178,6 @@ class TestParseFrontend(FrontendTest):
                             div="transaction5_errors")
         self.assertPresence("event: Veranstaltung Große Testakademie 2222 nur über"
                             " zu zahlenden Betrag zugeordnet.",
-                            div="transaction5_warnings")
-        self.assertPresence("event: Große Testakademie 2222 nicht im Verwendungszweck",
                             div="transaction5_warnings")
         f["event_confirm5"] = True
 
