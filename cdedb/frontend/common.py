@@ -722,13 +722,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         defect_username = None
         mls_with_defect_explicits = None
         if rs.user.persona_id and (defect_addresses := self.coreproxy.get_defect_addresses(rs, [rs.user.persona_id])):
-            if any(e.user_id == rs.user.persona_id for e in defect_addresses.values()):
+            if rs.user.username in defect_addresses:
                 defect_username = rs.user.username
             mls_with_defect_explicit_ids = {
                 e.address: e.ml_ids for e in defect_addresses.values()
                 if e.subscriber_id == rs.user.persona_id}
             mls = self.mlproxy.get_mailinglists(
-                rs, list(set().union(*mls_with_defect_explicit_ids.values())))
+                rs, set().union(*mls_with_defect_explicit_ids.values()))
             mls_with_defect_explicits = {
                 address: [mls[ml_id] for ml_id in ml_ids]
                 for address, ml_ids in mls_with_defect_explicit_ids.items()}

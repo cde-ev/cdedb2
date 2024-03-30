@@ -2817,7 +2817,7 @@ class CoreBaseBackend(AbstractBackend):
             FROM core.defect_addresses AS def
                 LEFT JOIN core.personas ON def.address = core.personas.username
         """
-        params: tuple[list[vtypes.ID], ...] = tuple()
+        params: tuple[set[vtypes.ID], ...] = tuple()
         if persona_ids:
             query += "WHERE core.personas.id = ANY(%s)"
             params = (persona_ids, )
@@ -2841,20 +2841,20 @@ class CoreBaseBackend(AbstractBackend):
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
 
-        return {a: DefectAddress.from_database(datum) for a, datum in data.items()}
+        return DefectAddress.many_from_database(data)
 
     @access("core_admin", "ml_admin")
     def add_defect_address(
-        self, rs: RequestState, address: str, notes: str = None
+        self, rs: RequestState, address: str, notes: Optional[str] = None
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
-        notes = affirm(Optional[str], notes)
+        notes = affirm_optional(str, notes)
 
         # check the address is not already marked as defect
         query = "SELECT address FROM core.defect_addresses WHERE address = %s"
         if self.query_one(rs, query, (address,)):
             raise ValueError(n_("Address already marked as defect."))
-        code = self.sql_insert(rs, "core.defect_addresses",
+        code = self.sql_insert(rs, DefectAddress.database_table,
                                {"address": address, "notes": notes})
         return code
 
@@ -2863,4 +2863,4 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, address: str
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
-        return self.sql_delete_one(rs, "core.defect_addresses", address, "address")
+        return self.sql_delete_one(rs, DefectAddress.database_table, address, "address")
