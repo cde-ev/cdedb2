@@ -12915,7 +12915,7 @@ msgstr ""
 "Orga-Tokens ermöglichen einen automatisierten Zugriff auf "
 "Veranstaltungsdaten. Mit einem solchen Token kann ein Programm einen "
 "partiellen Export erstellen und herunterladen, der die vollständigen "
-"Informationen über Kurse, Unterkünfte und Anmeldunge enthält, inklusiver der "
+"Informationen über Kurse, Unterkünfte und Anmeldungen enthält, inklusiver der "
 "persönlichen Daten aller Orgas und angemeldeten Personen. Behandle diese "
 "Tokens entsprechend und veröffentliche sie nicht."
 
