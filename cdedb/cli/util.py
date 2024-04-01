@@ -219,12 +219,14 @@ def execute_sql_script(
 
                 try:
                     cur.execute(statement)
-                except psycopg2.ProgrammingError:
+                except psycopg2.ProgrammingError as e:
+                    click.echo(e)
                     continue
 
                 if verbose > 0:
                     try:
                         for x in cur:
                             click.echo(x)
-                    except psycopg2.ProgrammingError:
+                    except psycopg2.ProgrammingError as e:
+                        click.echo(e)
                         pass

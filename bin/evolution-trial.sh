@@ -60,13 +60,13 @@ while read -r evolution; do
         sudo CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
              python3 -m cdedb dev execute-sql-script --as-postgres -vv \
              -f cdedb/database/evolutions/$evolution \
-             -o $evolution_output --outfile-append
+             -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
         python3 -m cdedb dev execute-sql-script -vv \
              -f cdedb/database/evolutions/$evolution \
-             -o $evolution_output --outfile-append
+             -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
@@ -79,7 +79,7 @@ while read -r evolution; do
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
             PYTHONPATH=$PYTHONPATH \
             CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH \
-            python3 cdedb/database/evolutions/$evolution
+            python3 cdedb/database/evolutions/$evolution || echo "Error while applying $evolution"
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi
