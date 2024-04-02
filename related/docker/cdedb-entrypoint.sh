@@ -35,9 +35,6 @@ if [ ! -e /etc/cdedb/container_already_initalized ]; then
     # Compile the translations.
     make i18n-compile
 
-    # Enable gunicorn server
-    systemctl enable --now cdedb-app.socket
-
     # Touch the firstrun file, so we perform the initialization only once.
     touch /etc/cdedb/container_already_initalized
 fi
