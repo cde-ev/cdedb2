@@ -1521,16 +1521,17 @@ class EventRegistrationBackend(EventBaseBackend):
                 for index, datum in enumerate(data):
                     reg_id = datum['registration_id']
                     if reg_id in regs_done:
-                        all_regs[reg_id] = self.get_registration(rs, reg_id)
+                        reg = self.get_registration(rs, reg_id)
                     else:
                         regs_done.add(reg_id)
+                        reg = all_regs[reg_id]
                     update = {
                         'id': reg_id,
-                        'payment': datum['date'],
-                        'amount_paid': all_regs[reg_id]['amount_paid']
-                                       + datum['amount'],
+                        'amount_paid': reg['amount_paid'] + datum['amount'],
                     }
                     if datum['amount'] > 0:
+                        if not reg['payment']:
+                            update['payment'] = datum['date']
                         log_code = const.EventLogCodes.registration_payment_received
                         change_note = "{} am {} gezahlt.".format(
                             money_filter(datum['amount']),
@@ -1540,14 +1541,14 @@ class EventRegistrationBackend(EventBaseBackend):
                         change_note = "{} am {} zurückerstattet.".format(
                             money_filter(-datum['amount']),
                             date_filter(datum['original_date'], lang="de"))
-                        del update['payment']
                     else:
                         raise ValueError(n_("Cannot book fee with amount of zero."))
                     # perform the change directly instead of using set_registration
                     # to avoid privilege conflicts and use custom log code
                     count += self.sql_update(rs, "event.registrations", update)
                     self.event_log(rs, log_code, event_id, change_note=change_note,
-                                   persona_id=all_regs[reg_id]['persona_id'])
+                                   persona_id=reg['persona_id'])
+                    all_regs[reg_id] = reg
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
