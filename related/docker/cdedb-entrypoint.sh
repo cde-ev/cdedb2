@@ -15,7 +15,7 @@ fi
 
 # If this is the first run of the container, perform some initialization
 if [ ! -e /etc/cdedb/container_already_initalized ]; then
-    # Create the log and storage directory. Ensure that www-data owns everything.
+    # Create the log and storage directory. Ensure that www-cde owns everything.
     python3 -m cdedb filesystem --owner www-cde log create
     python3 -m cdedb filesystem --owner www-cde storage create
 
