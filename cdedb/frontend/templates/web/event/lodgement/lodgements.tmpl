@@ -185,11 +185,13 @@
             The lodgements may be sorted according to the following criteria inside their lodgement groups.
         {% endtrans %}
         <ul class="slim">
+            {% if ambience['event']['parts']|length != 1 %}
             <li>
                 {% trans %}
                     The names of the <strong>event parts</strong> sort by the number of regular spaces used in this part.
                 {% endtrans %}
             </li>
+            {% endif %}
             <li>
                 {% trans %}
                     The <strong>+x</strong> sort by the number of camping mat spaces used in the associated part.
