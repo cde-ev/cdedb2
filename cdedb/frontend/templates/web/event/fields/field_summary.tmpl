@@ -119,7 +119,9 @@
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/field_summary') }}
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">
-            {% for association in enums['FieldAssociations'] -%}
+            {% for association in enums['FieldAssociations']
+                    if not (association == enums['FieldAssociations'].course
+                            and not ambience['event']['tracks']) -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
                             role="tab">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>

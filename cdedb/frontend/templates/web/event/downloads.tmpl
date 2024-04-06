@@ -23,16 +23,19 @@
                 <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% if ambience['event']['tracks'] %}
             <tr>
                 <td>{% trans %}Course Attendee Lists{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% endif %}
             <tr>
                 <td>{% trans %}Lodgement Inhabitant Lists{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% if ambience['event']['tracks'] %}
             <tr>
                 <td>
                     {% trans %}Course Puzzle{% endtrans %}
@@ -41,6 +44,7 @@
                 <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% endif %}
             <tr>
                 <td>
                     {% trans %}Lodgement Puzzle{% endtrans %}
@@ -135,18 +139,22 @@
                 <td>{% trans %}Registrations{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
+            {% if ambience['event']['tracks'] %}
             <tr>
-                <td>{% trans %}Courselist{% endtrans %}</td>
+                <td>{% trans %}Course list{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_courses'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
+            {% endif %}
             <tr>
-                <td>{% trans %}Lodgementlist{% endtrans %}</td>
+                <td>{% trans %}Lodgement list{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_lodgements'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
+            {% if ambience['event']['tracks'] %}
             <tr>
-                <td>{% trans %}Dokuteam courselist{% endtrans %}</td>
+                <td>{% trans %}Dokuteam course list{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_dokuteam_courselist'), gettext("Shell-Snippet"), icon='download') }}</td>
             </tr>
+            {% endif %}
             <tr>
                 <td>{% trans %}Dokuteam participant list{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_dokuteam_participant_list'), gettext("ZIP-Archive"), icon='download') }}</td>
