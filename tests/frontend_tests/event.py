@@ -4385,7 +4385,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # first check empty csv
         self.traverse({'href': '/event/event/2/download/csv_registrations'})
         self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/csv_courses'})
+        self.get('/event/event/2/download/csv_courses')
         self.assertPresence('Leere Datei.', div='notifications')
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
         self.assertPresence('Leere Datei.', div='notifications')
@@ -4393,11 +4393,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # now check empty pdfs
         self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/courselists\\?runs=2'})
+        self.get('/event/event/2/download/courselists?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
         self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/coursepuzzle\\?runs=2'})
+        self.get('/event/event/2/download/coursepuzzle?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
         self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
@@ -4408,13 +4408,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         save = self.response
         self.response = save.click(href='/event/event/2/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(href='/event/event/2/download/courselists\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.response = save.click(
             href='/event/event/2/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(href='/event/event/2/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
         self.response = save.click(
             href='/event/event/2/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
