@@ -229,4 +229,3 @@ def execute_sql_script(
                             click.echo(x)
                     except psycopg2.ProgrammingError as e:
                         click.echo(e)
-                        pass
