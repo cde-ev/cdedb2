@@ -247,7 +247,7 @@ class Transaction:
         self.account = data["account"]
         self.transaction_date = data["transaction_date"]
         self.amount = data["amount"]
-        self.reference = re.sub(r"\s+", " ", data["reference"])
+        self.reference = re.sub(r"\s+", " ", data["reference"] or "")
         self.account_holder = data["account_holder"]
         self.iban = data["iban"]
         self.bic = data["bic"]
