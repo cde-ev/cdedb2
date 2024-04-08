@@ -4390,19 +4390,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
         self.assertPresence('Leere Datei.', div='notifications')
 
-        # now check empty pdfs
+        # Test nametags
+        save = self.response
         self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = save
+
+        # now check empty pdfs
         self.traverse({'href': '/event/event/2/download/courselists\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/coursepuzzle\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/participantlist\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
 
         # but the latex source code should still be available
         save = self.response

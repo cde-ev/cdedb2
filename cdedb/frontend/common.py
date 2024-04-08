@@ -1022,6 +1022,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_path.unlink()
             self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
             self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
+            self.logger.debug(e.stderr)
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = f"/tmp/cdedb-latex-error-{tstamp}.tex"
