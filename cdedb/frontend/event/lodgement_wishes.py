@@ -16,7 +16,7 @@ import graphviz
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
-    make_persona_name, unwrap,
+    make_persona_name,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
