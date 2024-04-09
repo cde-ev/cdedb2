@@ -469,12 +469,12 @@ def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
         registration['fields'].get(camping_mat_field_names[p]),
         registration['parts'][p]['is_camping_mat'])
         for p in presence_parts}
-    parts = (', '.join(f"{event.parts[p].shortname}{icons[p]}"
-                       for p in _sort_parts(presence_parts, event))
-             if len(event.parts) > 1 else unwrap(icons.values()))
+    parts = ', '.join(
+        f"{event.parts[p].shortname if len(event.parts) > 1 else ''}{icons[p]}"
+        for p in _sort_parts(presence_parts, event))
+    persona = personas[registration['persona_id']]
     linebreak = "\n" if parts else ""
-    return (f"{make_persona_name(personas[registration['persona_id']])}"
-            f"{linebreak}{parts}")
+    return f"{make_persona_name(persona)}{linebreak}{parts}"
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
