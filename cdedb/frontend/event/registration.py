@@ -64,7 +64,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
                      expected_fees: dict[int, decimal.Decimal],
-                     seen_reg_ids: set[int], full_payment: bool = True,
+                     seen_reg_ids: set[int],
                      ) -> CdEDBObject:
         """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
@@ -72,8 +72,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
 
-        :param full_payment: If True, only write the payment date if the fee
-            was paid in full.
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
@@ -129,24 +127,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                             'expected': money_filter(fee, lang=rs.lang),
                         }
                         if total < fee:
-                            error = (
+                            infos.append((
                                 'amount',
                                 ValueError(
                                     n_("Not enough money. %(total)s < %(expected)s"),
                                     params,
-                                ))
-                            if full_payment:
-                                warnings.append(error)
-                                date = None
-                            else:
-                                infos.append(error)
+                                ),
+                            ))
                         elif total > fee:
-                            warnings.append((
+                            infos.append((
                                 'amount',
                                 ValueError(
                                     n_("Too much money. %(total)s > %(expected)s"),
                                     params,
-                                )))
+                                ),
+                            ))
                         expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
@@ -213,12 +208,11 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("fee_data_file")
-    @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
+    @REQUESTdata("force", "fee_data", "checksum", "send_notifications")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
                    fee_data_file: Optional[werkzeug.datastructures.FileStorage],
-                   checksum: Optional[str], send_notifications: bool,
-                   full_payment: bool) -> Response:
+                   checksum: Optional[str], send_notifications: bool) -> Response:
         """Allow finance admins to add payment information of participants.
 
         This is the only entry point for those information.
@@ -258,22 +252,21 @@ class EventRegistrationMixin(EventBaseFrontend):
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(self._examine_fee(
-                rs, dataset, expected_fees, full_payment=full_payment,
-                seen_reg_ids=seen_reg_ids))
+                rs, dataset, expected_fees, seen_reg_ids=seen_reg_ids))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields, saldo=saldo)
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields, saldo=saldo)
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         # Here validation is finished
         success, num = self.book_fees(rs, data, send_notifications)
@@ -293,7 +286,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if num is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line %(num)s."),
                           {'num': num + 1})
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
