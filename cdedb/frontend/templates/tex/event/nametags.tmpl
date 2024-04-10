@@ -76,6 +76,8 @@
         \begin{itemize}
             <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
                 \item <<< gettext(age_class|string) >>>: <<< ((registrations|length - 1) // 8) + 1 >>> <<% trans %>>pages<<% endtrans %>>
+            <<% else %>>
+                \item <<< gettext("No Participants") >>>
             <<% endfor %>>
             \clearpage
         \end{itemize}
