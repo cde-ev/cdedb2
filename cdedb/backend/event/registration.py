@@ -1519,9 +1519,10 @@ class EventRegistrationBackend(EventBaseBackend):
         if amount > 0:
             update = {
                 'id': registration['id'],
-                'payment': date,
                 'amount_paid': registration['amount_paid'] + amount,
             }
+            if not registration['payment']:
+                update['payment'] = date
             change_note = event_log_transfer_template.format(
                 amount=money_filter(amount),
                 date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
