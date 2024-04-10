@@ -7,3 +7,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     vim \
     nano \
     emacs
+
+# The local repo is mounted from the host, thus setting it globally.
+RUN sudo -u cdedb git config --global core.hooksPath .githooks

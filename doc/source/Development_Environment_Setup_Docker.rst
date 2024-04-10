@@ -15,6 +15,14 @@ or similar OCI compatibel tools.
 The following commands assume that you are a member of the docker group
 or have gained the proper permissions by other means like sudo.
 
+Clone the repository
+--------------------
+
+To get started, clone the git repository and configure a custom git hooks path
+to use the convenience scripts located in the repository.::
+
+  git config core.hooksPath .githooks
+
 Variants
 --------
 
@@ -42,7 +50,7 @@ This applies to (almost) all subcommands.
 Should you see the need to manually rebuild them you can do so using
 ``docker compose build``.
 
-.. note:: To build the dev-container you will first need to build the non-dev
+.. warning:: To build the dev-container you will first need to build the non-dev
           variant as the dependency is not publicly resolvable.
 
 Starting the containers
