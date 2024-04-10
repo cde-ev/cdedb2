@@ -1579,6 +1579,18 @@ class EventRegistrationBackend(EventBaseBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
+                all_reg_ids = {datum['registration_id'] for datum in data}
+                if not all_reg_ids:
+                    return True, 0
+                query = f"""
+                    SELECT DISTINCT event_id
+                    FROM {models.Registration.database_table}
+                    WHERE id = ANY(%s)
+                """
+                event_ids = set(map(unwrap, self.query_all(rs, query, [all_reg_ids])))
+                if not len(event_ids) == 1:
+                    raise ValueError(n_(
+                        "All registrations must belong to the same event."))
                 for index, datum in enumerate(data):
                     self.book_registration_payment(
                         rs, datum['registration_id'], datum['amount'], datum['date'])
