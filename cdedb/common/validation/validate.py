@@ -3091,8 +3091,7 @@ def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
     val = _mapping(val, argname, **kwargs)
     mandatory_fields: dict[str, Any] = {
         'registration_id': int,
-        'date': Optional[datetime.date],
-        'original_date': datetime.date,
+        'date': datetime.date,
         'amount': decimal.Decimal,
     }
     optional_fields: TypeMapping = {}

@@ -198,7 +198,7 @@ class CdEBaseBackend(AbstractBackend):
                         # Remember the changed balance in case of multiple transfers.
                         persona['balance'] = new_balance
                     else:
-                        registration = self.event.set_registration_payment(
+                        registration = self.event.book_registration_payment(
                             rs, transfer['registration_id'], amount, date,
                         )
                         event_id = registration['event_id']

@@ -1496,9 +1496,19 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @internal
     @access("finance_admin")
-    def set_registration_payment(self, rs: RequestState, registration_id: int,
-                                 amount: decimal.Decimal, date: datetime.date,
-                                 ) -> CdEDBObject:
+    def book_registration_payment(
+            self, rs: RequestState, registration_id: int,
+            amount: decimal.Decimal, date: datetime.date,
+    ) -> CdEDBObject:
+        """
+        Add the given amount to the amount that was paid for this registration.
+
+        The amount may be negative but not zero.
+
+        The caller is responsible for validating the input, due to this being internal.
+
+        Returns the new state of the registration for convenienve.
+        """
 
         event_log_transfer_template = "{amount} am {date} gezahlt."
         event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
@@ -1568,43 +1578,9 @@ class EventRegistrationBackend(EventBaseBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
-                all_reg_ids = {datum['registration_id'] for datum in data}
-                all_regs = self.get_registrations(rs, all_reg_ids)
-                regs_done = set()
-                if any(reg['event_id'] != event_id for reg in all_regs.values()):
-                    raise ValueError(n_("Mismatched registrations,"
-                                        " not associated with the event."))
                 for index, datum in enumerate(data):
-                    reg_id = datum['registration_id']
-                    if reg_id in regs_done:
-                        all_regs[reg_id] = self.get_registration(rs, reg_id)
-                    else:
-                        regs_done.add(reg_id)
-                    update = {
-                        'id': reg_id,
-                        'payment': datum['date'],
-                        'amount_paid': all_regs[reg_id]['amount_paid']
-                                       + datum['amount'],
-                    }
-                    if datum['amount'] > 0:
-                        log_code = const.EventLogCodes.registration_payment_received
-                        change_note = "{} am {} gezahlt.".format(
-                            money_filter(datum['amount']),
-                            date_filter(datum['original_date'], lang="de"))
-                    elif datum['amount'] < 0:
-                        log_code = const.EventLogCodes.registration_payment_reimbursed
-                        change_note = "{} am {} zurückerstattet.".format(
-                            money_filter(-datum['amount']),
-                            date_filter(datum['original_date'], lang="de"))
-                        del update['payment']
-                    else:
-                        raise ValueError(n_("Cannot book fee with amount of zero."))
-                    # perform the change directly instead of using set_registration
-                    # to avoid privilege conflicts and use custom log code
-                    count += self.sql_update(rs, "event.registrations", update)
-                    self.event_log(rs, log_code, event_id, change_note=change_note,
-                                   persona_id=all_regs[reg_id]['persona_id'])
+                    self.book_registration_payment(
+                        rs, datum['registration_id'], datum['amount'], datum['date'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -1622,4 +1598,4 @@ class EventRegistrationBackend(EventBaseBackend):
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
             return False, index
-        return True, count
+        return True, len(data)
