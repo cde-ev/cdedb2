@@ -40,7 +40,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.filter import date_filter, money_filter
+from cdedb.filter import money_filter
 
 T = TypeVar("T")
 
