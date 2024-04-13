@@ -40,7 +40,7 @@ following steps to deploy a new revision.
     sudo -i
     cdedb-update.sh
     sudo -u cdb psql -U cdb -d cdb -f evolution.sql
-    sudo -u www-data SCRIPT_CONFIGPATH="/etc/cdedb/config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
+    sudo -u www-cde SCRIPT_CONFIGPATH="/etc/cdedb/config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
     cdedb-restart.sh
 
 * Send update information to the Aktivenforum. These should include a short summary of

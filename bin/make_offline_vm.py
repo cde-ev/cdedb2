@@ -159,7 +159,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
            'populate-event-keeper', str(data['id'])]
     if not args.test:
         cmd.insert(6, '--owner')
-        cmd.insert(7, 'www-data')
+        cmd.insert(7, 'www-cde')
     subprocess.run(cmd, check=True)
 
     print("Make orgas into admins")
