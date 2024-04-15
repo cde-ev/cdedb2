@@ -4214,6 +4214,7 @@ BALLOT_COMMON_FIELDS: Mapping[str, Any] = {
     'vote_begin': datetime.datetime,
     'vote_end': datetime.datetime,
     'notes': Optional[str],
+    'use_bar': bool,
 }
 
 BALLOT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -4221,7 +4222,6 @@ BALLOT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'abs_quorum': int,
     'rel_quorum': int,
     'votes': Optional[PositiveInt],
-    'use_bar': bool,
 }
 
 BALLOT_EXPOSED_FIELDS = {**BALLOT_COMMON_FIELDS, **BALLOT_EXPOSED_OPTIONAL_FIELDS}
