@@ -28,15 +28,23 @@ from cdedb.script import Script
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
          "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/")
 
+
 # Add some default values for specific tables
-DEFAULTS = {
-    'core.personas': {
+def update_defaults(table: str, entry: CdEDBObject) -> CdEDBObject:
+    if table != 'core.personas':
+        return entry
+    cde = entry['is_cde_realm']
+    defaults = {
         'password_hash': PHASH,
         'is_event_realm': True,
         'is_searchable': False,
         'is_active': True,
-        'balance': 0,
-        'donation': 0,
+        'balance': 0 if cde else None,
+        'donation': 0 if cde else None,
+        'trial_member': False if cde else None,
+        'decided_search': True if cde else None,
+        'bub_search': False if cde else None,
+        'paper_expuls': True if cde else None,
         'birth_name': None,
         'address_supplement2': None,
         'address2': None,
@@ -49,23 +57,18 @@ DEFAULTS = {
         'timeline': None,
         'interests': None,
         'free_form': None,
-        'trial_member': False,
-        'decided_search': True,
-        'bub_search': False,
-        'paper_expuls': True,
         'foto': None,
         'fulltext': '',
         'notes': 'This is just a copy, changes to profiles will not be persisted.'
     }
-}
+    return {**defaults, **entry}
 
 
 def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
     """Insert the passed data into the DB."""
     if data:
         for entry in data.values():
-            if table in DEFAULTS:
-                entry = {**DEFAULTS[table], **entry}
+            entry = update_defaults(table, entry)
             for k, v in entry.items():
                 if isinstance(v, collections.abc.Mapping):
                     # No special care for serialization needed, since the data
@@ -227,7 +230,7 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
             # duration of the offline deployment
             print("Instantiating changelog.")
             for persona in data['core.personas'].values():
-                datum = {**DEFAULTS['core.personas'], **persona}
+                datum = update_defaults('core.personas', persona)
                 del datum['id']
                 del datum['password_hash']
                 del datum['fulltext']

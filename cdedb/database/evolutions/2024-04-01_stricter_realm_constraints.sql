@@ -1,0 +1,32 @@
+BEGIN;
+    -- rename only:
+    ALTER TABLE core.personas DROP CONSTRAINT personas_auditor;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_auditor CHECK(NOT is_auditor OR is_cde_realm);
+    -- changed check:
+    ALTER TABLE core.personas DROP CONSTRAINT personas_realm_gender;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_birthday;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_balance;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_donation;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_consent;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_trial;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_bub;
+    ALTER TABLE core.personas DROP CONSTRAINT personas_cde_expuls;
+    UPDATE core.personas SET gender = NULL WHERE NOT is_cde_realm AND NOT is_event_realm AND gender IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_realm_gender CHECK((is_cde_realm OR is_event_realm) = (gender IS NOT NULL));
+    UPDATE core.personas SET birthday = NULL WHERE NOT is_cde_realm AND NOT is_event_realm AND birthday IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_realm_birthday CHECK((is_cde_realm OR is_event_realm) = (birthday IS NOT NULL));
+    UPDATE core.personas SET is_searchable = False WHERE NOT is_cde_realm AND is_searchable;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_searchable CHECK(NOT is_searchable OR is_cde_realm);
+    UPDATE core.personas SET balance = NULL WHERE NOT is_cde_realm AND balance IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_balance CHECK(is_cde_realm = (balance IS NOT NULL));
+    UPDATE core.personas SET donation = NULL WHERE NOT is_cde_realm AND donation IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_donation CHECK(is_cde_realm = (donation IS NOT NULL));
+    UPDATE core.personas SET decided_search = NULL WHERE NOT is_cde_realm AND decided_search IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_decided_search CHECK(is_cde_realm = (decided_search IS NOT NULL));
+    UPDATE core.personas SET trial_member = NULL WHERE NOT is_cde_realm AND trial_member IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_trial_member CHECK(is_cde_realm = (trial_member IS NOT NULL));
+    UPDATE core.personas SET bub_search = NULL WHERE NOT is_cde_realm AND bub_search IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_bub_search CHECK(is_cde_realm = (bub_search IS NOT NULL));
+    UPDATE core.personas SET paper_expuls = NULL WHERE NOT is_cde_realm AND paper_expuls IS NOT NULL;
+    ALTER TABLE core.personas ADD CONSTRAINT personas_cde_paper_expuls CHECK(is_cde_realm = (paper_expuls IS NOT NULL));
+COMMIT;
