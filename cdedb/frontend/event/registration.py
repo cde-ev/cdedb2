@@ -95,7 +95,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         problems.extend(p)
 
         registration_id = None
-        original_date = date
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -167,7 +166,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             'persona_id': persona_id,
             'registration_id': registration_id,
             'date': date,
-            'original_date': original_date,
             'amount': amount,
             'warnings': warnings,
             'problems': problems,
@@ -186,7 +184,7 @@ class EventRegistrationMixin(EventBaseFrontend):
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error
         """
-        relevant_keys = {'registration_id', 'date', 'original_date', 'amount'}
+        relevant_keys = {'registration_id', 'date', 'amount'}
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "book_fees"):

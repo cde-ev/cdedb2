@@ -53,9 +53,8 @@ class TestEventFrontend(FrontendTest):
         current = self.event.get_registration(self.key, reg_id)
         data = {
             'registration_id': reg_id,
-            'date': payment,
+            'date': payment or now().date(),
             # used in log entry
-            'original_date': now().date(),
             'amount': amount_paid - current['amount_paid'],
         }
         self.event.book_fees(self.key, event_id, [data])

@@ -8,6 +8,7 @@ registrations at once for the mailinglist realm.
 """
 import copy
 import dataclasses
+import datetime
 import decimal
 from collections import defaultdict
 from collections.abc import Collection, Mapping, Sequence
@@ -28,8 +29,9 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, cast_fields, glue, unwrap,
+    PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
+    DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
+    cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -38,7 +40,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.filter import date_filter, money_filter
+from cdedb.filter import money_filter
 
 T = TypeVar("T")
 
@@ -1492,6 +1494,72 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @internal
+    @access("finance_admin")
+    def book_registration_payment(
+            self, rs: RequestState, registration_id: int,
+            amount: decimal.Decimal, date: datetime.date,
+    ) -> CdEDBObject:
+        """
+        Add the given amount to the amount that was paid for this registration.
+
+        The amount may be negative but not zero.
+
+        The caller is responsible for validating the input, due to this being internal.
+
+        Returns the new state of the registration for convenienve.
+        """
+
+        event_log_transfer_template = "{amount} am {date} gezahlt."
+        event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
+
+        registration = self.get_registration(rs, registration_id)
+        event_id = registration['event_id']
+
+        if amount > 0:
+            update = {
+                'id': registration['id'],
+                'amount_paid': registration['amount_paid'] + amount,
+            }
+            if not registration['payment']:
+                update['payment'] = date
+            change_note = event_log_transfer_template.format(
+                amount=money_filter(amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_received,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        elif amount < 0:
+            update = {
+                'id': registration['id'],
+                'amount_paid': registration['amount_paid'] + amount,
+                # Do not update payment date for reimbursements.
+            }
+            change_note = event_log_reimbursement_template.format(
+                amount=money_filter(-amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_reimbursed,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        else:
+            raise ValueError(n_("Cannot book fee with amount of zero."))
+
+        return registration
+
     @access("finance_admin")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
                   ) -> tuple[bool, Optional[int]]:
@@ -1511,44 +1579,21 @@ class EventRegistrationBackend(EventBaseBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
                 all_reg_ids = {datum['registration_id'] for datum in data}
-                all_regs = self.get_registrations(rs, all_reg_ids)
-                regs_done = set()
-                if any(reg['event_id'] != event_id for reg in all_regs.values()):
-                    raise ValueError(n_("Mismatched registrations,"
-                                        " not associated with the event."))
+                if not all_reg_ids:
+                    return True, 0
+                query = f"""
+                    SELECT DISTINCT event_id
+                    FROM {models.Registration.database_table}
+                    WHERE id = ANY(%s)
+                """
+                event_ids = set(map(unwrap, self.query_all(rs, query, [all_reg_ids])))
+                if not len(event_ids) == 1:
+                    raise ValueError(n_(
+                        "Only registrations from exactly one event allowed."))
                 for index, datum in enumerate(data):
-                    reg_id = datum['registration_id']
-                    if reg_id in regs_done:
-                        reg = self.get_registration(rs, reg_id)
-                    else:
-                        regs_done.add(reg_id)
-                        reg = all_regs[reg_id]
-                    update = {
-                        'id': reg_id,
-                        'amount_paid': reg['amount_paid'] + datum['amount'],
-                    }
-                    if datum['amount'] > 0:
-                        if not reg['payment']:
-                            update['payment'] = datum['date']
-                        log_code = const.EventLogCodes.registration_payment_received
-                        change_note = "{} am {} gezahlt.".format(
-                            money_filter(datum['amount']),
-                            date_filter(datum['original_date'], lang="de"))
-                    elif datum['amount'] < 0:
-                        log_code = const.EventLogCodes.registration_payment_reimbursed
-                        change_note = "{} am {} zurückerstattet.".format(
-                            money_filter(-datum['amount']),
-                            date_filter(datum['original_date'], lang="de"))
-                    else:
-                        raise ValueError(n_("Cannot book fee with amount of zero."))
-                    # perform the change directly instead of using set_registration
-                    # to avoid privilege conflicts and use custom log code
-                    count += self.sql_update(rs, "event.registrations", update)
-                    self.event_log(rs, log_code, event_id, change_note=change_note,
-                                   persona_id=reg['persona_id'])
-                    all_regs[reg_id] = reg
+                    self.book_registration_payment(
+                        rs, datum['registration_id'], datum['amount'], datum['date'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -1566,4 +1611,4 @@ class EventRegistrationBackend(EventBaseBackend):
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
             return False, index
-        return True, count
+        return True, len(data)

@@ -243,73 +243,82 @@ class TestParseFrontend(FrontendTest):
         # check Testakademie csv.
 
         # Make sure to use the correct submit button.
-        self.csv_submit(f, button="event", value="1")
+        self.csv_submit(f, button="db_import")
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.event_fees,
+                                     fieldnames=parse.ExportFields.db_import,
                                      dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
-            amount="373.99",
+            amount_german="373,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
             transaction_date="28.12.2018",
+            category_old="TestAka",
         )
         self.check_dict(
             result[1],
-            amount="534.48",
+            amount_german="534,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
             transaction_date="27.12.2018",
+            category_old="TestAka",
         )
         self.check_dict(
             result[2],
-            amount="466.49",
-            cdedbid="DB-5-1",
-            family_name="Eventis",
-            given_names="Emilia E.",
-            transaction_date="20.12.2018",
-        )
-        # self.check_dict(
-        #     result[3],
-        #     amount="-584,49",
-        #     cdedbid="DB-1-9",
-        #     family_name="Administrator",
-        #     given_names="Anton Armin A.",
-        #     transaction_date="18.12.2018",
-        # )
-
-        # check membership_fees.csv
-        self.csv_submit(f, button="membership", value="membership")
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.member_fees,
-                                     dialect=CustomCSVDialect))
-
-        self.check_dict(
-            result[0],
-            amount="10.00",
+            amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
             transaction_date="26.12.2018",
+            category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[1],
-            amount="5.00",
+            result[3],
+            amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
             given_names="Bertålotta",
             transaction_date="25.12.2018",
+            category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[2],
-            amount="2.50",
+            result[4],
+            amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
             transaction_date="24.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[5],
+            amount_german="2,50",
+            cdedbid="DB-4-3",
+            family_name="Dino",
+            given_names="Daniel D.",
+            transaction_date="23.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[6],
+            amount_german="10,00",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            transaction_date="21.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[7],
+            amount_german="466,49",
+            cdedbid="DB-5-1",
+            family_name="Eventis",
+            given_names="Emilia E.",
+            transaction_date="20.12.2018",
+            category_old="TestAka",
         )
 
         # check transactions files

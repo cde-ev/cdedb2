@@ -59,6 +59,8 @@ if TYPE_CHECKING:
 # meta
 #
 
+EventDataclassMap = CdEDataclassMap["Event"]
+
 
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass, abc.ABC):

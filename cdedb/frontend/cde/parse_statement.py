@@ -95,6 +95,12 @@ class StatementCSVKeys:
 class ExportFields:
     """Specifications for the fields to include in the different download files"""
 
+    # For the unified import (event fees and membership fees).
+    db_import = (
+        "transaction_date", "amount_german", "cdedbid", "family_name", "given_names",
+        "category_old",
+    )
+
     # For import in CdE-Realm `money_transfers`.
     member_fees = (
         "amount", "cdedbid", "family_name", "given_names", "transaction_date",
