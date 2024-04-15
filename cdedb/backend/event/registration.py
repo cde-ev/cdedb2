@@ -1590,7 +1590,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 event_ids = set(map(unwrap, self.query_all(rs, query, [all_reg_ids])))
                 if not len(event_ids) == 1:
                     raise ValueError(n_(
-                        "All registrations must belong to the same event."))
+                        "Only registrations from exactly one event allowed."))
                 for index, datum in enumerate(data):
                     self.book_registration_payment(
                         rs, datum['registration_id'], datum['amount'], datum['date'])
