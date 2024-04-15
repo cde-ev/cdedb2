@@ -2,6 +2,7 @@
 
 """Custom exceptions for the CdEDB."""
 from typing import Any
+from collections.abc import Collection
 
 import werkzeug.exceptions
 
@@ -26,7 +27,7 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
-    def __init__(self, msg: str = "Not privileged", *args: Any):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, msg: str = n_("Not privileged"), *args: Any):  # pylint: disable=keyword-arg-before-vararg
         super().__init__(msg, *args)
 
 
@@ -51,6 +52,27 @@ class PartialImportError(RuntimeError):
 
     Making this an exception rolls back the database transaction.
     """
+
+
+class DeletionBlockedError(Exception):
+    """Exception signalling that deletion failed because the entity is still referenced.
+
+    Is only raised when the deletion is possible by cascadingly deleting the
+    appropriate references.
+    """
+
+    def __init__(self, entity_name: str, remaining_blockers: Collection[str]) -> None:
+        super().__init__(
+            "Deletion of '%(entity_name)s' blocked by %(blockers)s",
+            {
+                "entity_name": entity_name,
+                "blockers": ", ".join(sorted(remaining_blockers)),
+            },
+        )
+
+
+class DeletionImpossibleError(Exception):
+    """Exception signalling that deletion is permanently blocked."""
 
 
 class ValidationWarning(Exception):
