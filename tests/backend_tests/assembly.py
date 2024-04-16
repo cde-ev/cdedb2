@@ -43,6 +43,17 @@ class TestAssemblyBackend(BackendTest):
         new_data = self.core.get_assembly_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
+        with self.assertRaises(ValueError):
+            self.assembly.get_assembly_id(self.key)
+
+        with self.assertRaises(ValueError):
+            self.assembly.check_attendance(self.key)
+        with self.assertRaises(ValueError):
+            self.assembly.check_attendance(self.key, assembly_id=1, ballot_id=1)
+        with self.switch_user("emilia"):
+            with self.assertRaises(PrivilegeError):
+                self.assembly.check_attendance(self.key, assembly_id=1, persona_id=1)
+
     @as_users("viktor")
     def test_archived_user_search(self) -> None:
         # Search for pure assembly users.
@@ -1607,12 +1618,10 @@ class TestAssemblyBackend(BackendTest):
         presider = get_user("berta")
 
         for assembly_id in assembly_ids:
-            if not self.assembly.is_presider(
-                    self.key, assembly_id=assembly_id, persona_id=presider['id']):
-                execsql(f"""
-                    INSERT into assembly.presiders (persona_id, assembly_id)
-                    VALUES ({presider['id']}, {assembly_id}) ON CONFLICT DO NOTHING
-                """)
+            execsql(f"""
+                INSERT into assembly.presiders (persona_id, assembly_id)
+                VALUES ({presider['id']}, {assembly_id}) ON CONFLICT DO NOTHING
+            """)
         self.assertEqual(
             set(assembly_ids), self.assembly.presider_info(self.key, presider['id']))
 
@@ -1646,7 +1655,10 @@ class TestAssemblyBackend(BackendTest):
         self.assertFalse(self.assembly.presider_info(self.key, member['id']))
         self.assertIn(
             "member", self.core.get_roles_single(self.key, member['id']))
-        execsql(f"UPDATE core.personas SET is_assembly_admin = False WHERE id = {member['id']}")
+        execsql(f"""
+            UPDATE core.personas SET is_assembly_admin = False
+            WHERE id = {member['id']}
+        """)
         self.assertNotIn(
             "assembly_admin", self.core.get_roles_single(self.key, member['id']))
 
@@ -1804,18 +1816,6 @@ class TestAssemblyBackend(BackendTest):
                         b"123",
                     )
 
-                for attachment_id in all_attachment_ids[assembly_id]:
-                    try:
-                        with self.assertRaises(PrivilegeError):
-                            self.assembly.delete_attachment(
-                                self.key, attachment_id,
-                                self.assembly.delete_attachment_blockers(
-                                    self.key, attachment_id,
-                                ),
-                            )
-                    except (DeletionImpossibleError, DeletionBlockedError):
-                        pass
-
             self.assembly.retrieve_log(self.key, some_assemblies_filter)
             with self.assertRaises(PrivilegeError):
                 self.assembly.retrieve_log(self.key, other_assemblies_filter)
@@ -1878,8 +1878,28 @@ class TestAssemblyBackend(BackendTest):
                             self.assembly.get_attachment_version(
                                 self.key, attachment_id, 1)
 
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.get_attachment_content(
+                                self.key, attachment_id)
+
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.get_latest_attachments_version(
+                            self.key, attachment_ids)
+
                 with self.assertRaises(PrivilegeError):
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+                for attachment_id in all_attachment_ids[assembly_id]:
+                    try:
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.delete_attachment(
+                                self.key, attachment_id,
+                                self.assembly.delete_attachment_blockers(
+                                    self.key, attachment_id,
+                                ),
+                            )
+                    except (DeletionImpossibleError, DeletionBlockedError):
+                        pass
 
             with self.assertRaises(PrivilegeError):
                 self.assembly.retrieve_log(

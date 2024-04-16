@@ -161,8 +161,7 @@ class AssemblyBackend(AbstractBackend):
     @access("persona")
     def is_presider(self, rs: RequestState, *, assembly_id: Optional[int] = None,
                     ballot_id: Optional[int] = None,
-                    attachment_id: Optional[int] = None,
-                    persona_id: Optional[int] = None) -> bool:
+                    attachment_id: Optional[int] = None) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
         If persona_id is not given, the current user is used.
@@ -172,20 +171,15 @@ class AssemblyBackend(AbstractBackend):
         if assembly_id is None:
             assembly_id = self.get_assembly_id(
                 rs, ballot_id=ballot_id, attachment_id=attachment_id)
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
+        assembly_id = affirm(vtypes.ID, assembly_id)
 
-        if persona_id is None or persona_id == rs.user.persona_id:
-            return self.is_admin(rs) or assembly_id in rs.user.presider
-        else:  # pragma: no cover
-            roles = self.core.get_roles_single(rs, persona_id)
-            presiders = self.presider_info(rs, persona_id)
-            return "assembly_admin" in roles or assembly_id in presiders
+        return self.is_admin(rs) or assembly_id in rs.user.presider
 
     @internal
     @access("persona")
     def may_access(self, rs: RequestState, *, assembly_id: Optional[int] = None,
                    ballot_id: Optional[int] = None, attachment_id: Optional[int] = None,
-                   persona_id: Optional[int] = None) -> bool:
+                   ) -> bool:
         """Helper to check authorization.
 
         The deal is that members may access anything and assembly users
@@ -196,20 +190,15 @@ class AssemblyBackend(AbstractBackend):
 
         Assembly admins may access every assembly.
 
-        Exactly one of assembly_id and ballot_id has to be provided.
-
-        :param persona_id: If not provided the current user is used.
+        Exactly one of assembly_id, ballot_id and attachment_id has to be provided.
         """
-        persona_id = persona_id or rs.user.persona_id
-        roles = self.core.get_roles_single(rs, persona_id)
-
-        if "member" in roles or self.is_presider(
+        if "member" in rs.user.roles or self.is_presider(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                attachment_id=attachment_id, persona_id=persona_id):
+                attachment_id=attachment_id):
             return True
         return self.check_attendance(
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
-            attachment_id=attachment_id, persona_id=persona_id)
+            attachment_id=attachment_id)
 
     @access("persona")
     def may_assemble(self, rs: RequestState, *, assembly_id: Optional[int] = None,
@@ -230,31 +219,6 @@ class AssemblyBackend(AbstractBackend):
 
         return self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id,
                                attachment_id=attachment_id)
-
-    # @access("assembly_admin")
-    # def check_assemble(self, rs: RequestState, persona_id: int, *,
-    #                    assembly_id: Optional[int] = None,
-    #                    ballot_id: Optional[int] = None,
-    #                    attachment_id: Optional[int] = None) -> bool:
-    #     """Check authorization of given persona.
-    #
-    #     This checks, if the given persona may interact with a specific
-    #     assembly or ballot.
-    #     Published variant of 'may_access' with input validation.
-    #
-    #     Exactly one of assembly_id, ballot_id and attachment_id has to be
-    #     provided.
-    #
-    #     :param persona_id: If not provided the current user is used.
-    #     """
-    #     persona_id = affirm_optional(vtypes.ID, persona_id)
-    #     assembly_id = affirm_optional(vtypes.ID, assembly_id)
-    #     ballot_id = affirm_optional(vtypes.ID, ballot_id)
-    #     attachment_id = affirm_optional(vtypes.ID, attachment_id)
-    #
-    #     return self.may_access(
-    #         rs, assembly_id=assembly_id, ballot_id=ballot_id,
-    #         persona_id=persona_id, attachment_id=attachment_id)
 
     @staticmethod
     def encrypt_vote(salt: str, secret: str, vote: str) -> str:
@@ -404,7 +368,7 @@ class AssemblyBackend(AbstractBackend):
         ret = self.get_assembly_ids(
             rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
         if not ret:
-            raise ValueError(n_("No input specified."))  # pragma: no cover
+            raise ValueError(n_("No input specified."))
         if len(ret) > 1:
             raise ValueError(n_(
                 "Can only retrieve id for exactly one assembly."))
@@ -427,9 +391,9 @@ class AssemblyBackend(AbstractBackend):
         :param persona_id: If not provided the current user is used.
         """
         inputs = sum(1 for x in (assembly_id, ballot_id, attachment_id) if x)
-        if inputs < 1:  # pragma: no cover
+        if inputs < 1:
             raise ValueError(n_("No input specified."))
-        if inputs > 1:  # pragma: no cover
+        if inputs > 1:
             raise ValueError(n_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
@@ -449,8 +413,7 @@ class AssemblyBackend(AbstractBackend):
                     rs, ballot_id=ballot_id, attachment_id=attachment_id)
             query = glue("SELECT id FROM assembly.attendees",
                          "WHERE assembly_id = %s and persona_id = %s")
-            return bool(self.query_one(
-                rs, query, (assembly_id, persona_id)))
+            return bool(self.query_one(rs, query, (assembly_id, persona_id)))
 
     @access("assembly")
     def does_attend(self, rs: RequestState, *, assembly_id: Optional[int] = None,
@@ -466,22 +429,6 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id,
                                      ballot_id=ballot_id)
-
-    # @access("assembly")
-    # def check_attends(self, rs: RequestState, persona_id: int,
-    #                   assembly_id: int) -> bool:
-    #     """Check whether a user attends an assembly.
-    #
-    #     This is mostly used for checking mailinglist eligibility.
-    #
-    #     As assembly attendees are public to all assembly users, this does not
-    #     check for any privileges,
-    #     """
-    #     persona_id = affirm(vtypes.ID, persona_id)
-    #     assembly_id = affirm(vtypes.ID, assembly_id)
-    #
-    #     return self.check_attendance(
-    #         rs, assembly_id=assembly_id, persona_id=persona_id)
 
     @access("assembly", "ml_admin")
     def list_attendees(self, rs: RequestState, assembly_id: int,
@@ -1189,7 +1136,7 @@ class AssemblyBackend(AbstractBackend):
         blockers: CdEDBObject = {}
 
         if not self.is_presider(rs, ballot_id=ballot_id):
-            raise PrivilegeError(n_("Must have privileged access to delete ballot."))  # TODO: coverage
+            raise PrivilegeError(n_("Must have privileged access to delete ballot."))
 
         ballot = self.get_ballot(rs, ballot_id)
         if ballot['is_locked']:
@@ -1421,8 +1368,8 @@ class AssemblyBackend(AbstractBackend):
                              "WHERE assembly_id = %s and persona_id = %s")
                 secret = unwrap(self.query_one(
                     rs, query, (ballot['assembly_id'], rs.user.persona_id)))
-                if secret is None:
-                    raise ValueError(n_("Could not determine secret."))  # pragma: no cover
+                if secret is None:  # TODO: coverage
+                    raise ValueError(n_("Could not determine secret."))
             if not has_voted:
                 salt = token_urlsafe(12)
                 entry = {
@@ -1822,7 +1769,7 @@ class AssemblyBackend(AbstractBackend):
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
                 raise PrivilegeError(n_(
-                    "Must have privileged access to delete attachment."))
+                    "Must have privileged access to delete attachment."))  # TODO: coverage
             if cascade:
                 if "ballots" in cascade:
                     with Silencer(rs):
@@ -1867,14 +1814,6 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
-
-    # @access("assembly")
-    # def are_attachment_ballots_links_deletable(self, rs: RequestState,
-    #                                            attachment_id: int,
-    #                                            ballot_ids: Collection[int]) -> bool:
-    #     attachment_id = affirm(vtypes.ID, attachment_id)
-    #     ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-    #     return not self.is_any_ballot_locked(rs, ballot_ids)
 
     @access("assembly")
     def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
@@ -2046,7 +1985,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         ret: dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
         if not self.may_access_attachments(rs, attachment_ids):
-            raise PrivilegeError()  # TODO: coverage
+            raise PrivilegeError()
         data = self.sql_select(
             rs, "assembly.attachment_versions",
             ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
@@ -2068,7 +2007,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         version_nr = affirm(vtypes.ID, version_nr)
         if not self.may_access_attachments(rs, [attachment_id]):
-            raise PrivilegeError()  # TODO: coverage
+            raise PrivilegeError()
 
         query = (f"SELECT {', '.join(ASSEMBLY_ATTACHMENT_VERSION_FIELDS)}"
                  f" FROM assembly.attachment_versions WHERE attachment_id = %s"
@@ -2087,7 +2026,7 @@ class AssemblyBackend(AbstractBackend):
         """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         if not self.may_access_attachments(rs, attachment_ids):
-            raise PrivilegeError()  # TODO: coverage
+            raise PrivilegeError()
         return self._get_latest_attachments_versions(rs, attachment_ids)
 
     class _GetLatestVersionProtocol(Protocol):
@@ -2219,7 +2158,7 @@ class AssemblyBackend(AbstractBackend):
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['num_versions'] <= 1:
                 raise ValueError(n_(
-                    "Cannot remove the last remaining version of an attachment."))  # TODO: coverage
+                    "Cannot remove the last remaining version of an attachment."))
             deletor: dict[str, Union[int, datetime.datetime, None]] = {
                 'dtime': now(),
                 'title': None,
@@ -2250,7 +2189,7 @@ class AssemblyBackend(AbstractBackend):
         """Get the content of an attachment. Defaults to most recent version."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         if not self.may_access_attachments(rs, (attachment_id,)):
-            raise PrivilegeError()  # TODO: coverage
+            raise PrivilegeError()
         version_nr = affirm_optional(vtypes.ID, version_nr)
         if version_nr is None:
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
