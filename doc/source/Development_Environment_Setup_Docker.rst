@@ -12,16 +12,12 @@ of ``docker compose`` (which is a separate plugin) is advised for ease of
 use.  Theoretically the images and the compose file can also be run by podman
 or similar OCI compatibel tools.
 
-The following commands assume that you are a member of the docker group
-or have gained the proper permissions by other means like sudo.
-
-Clone the repository
---------------------
-
-To get started, clone the git repository and configure a custom git hooks path
-to use the convenience scripts located in the repository.::
+To get started, clone the git repository and activate our custom :ref:`githooks`::
 
   git config core.hooksPath .githooks
+
+The following commands assume that you are a member of the docker group
+or have gained the proper permissions by other means like sudo.
 
 Variants
 --------

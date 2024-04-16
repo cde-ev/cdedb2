@@ -35,3 +35,15 @@ from the hostname which is used to access the ldap server.
 If those tools are used *within* the vm, everything works fine.
 
 It is also reasonable to increase the debug level in ldap/main.py from WARNING to DEBUG.
+
+
+.. _githooks:
+
+Git Hooks
+---------
+
+Currently, we use one pre-merge-commit hook which aims to reduce the diff size of
+.po translation catalogues. Since in case of merge conflicts git just invokes the
+pre-commit hook, we use this one and also link it as pre-merge-commit.
+
+.. literalinclude:: pre-commit.githook
