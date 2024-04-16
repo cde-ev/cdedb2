@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 """Custom exceptions for the CdEDB."""
-from typing import Any
 from collections.abc import Collection
+from typing import Any
 
 import werkzeug.exceptions
 
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import xsorted
 
 
 class QuotaException(werkzeug.exceptions.TooManyRequests):
@@ -66,7 +67,7 @@ class DeletionBlockedError(Exception):
             "Deletion of '%(entity_name)s' blocked by %(blockers)s",
             {
                 "entity_name": entity_name,
-                "blockers": ", ".join(sorted(remaining_blockers)),
+                "blockers": ", ".join(xsorted(remaining_blockers)),
             },
         )
 
