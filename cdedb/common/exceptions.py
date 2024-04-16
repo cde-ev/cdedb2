@@ -28,7 +28,7 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
-    def __init__(self, msg: str = n_("Not privileged"), *args: Any):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, msg: str = n_("Not privileged."), *args: Any):  # pylint: disable=keyword-arg-before-vararg
         super().__init__(msg, *args)
 
 

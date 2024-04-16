@@ -756,7 +756,7 @@ class AssemblyBackend(AbstractBackend):
         blockers = self.delete_assembly_blockers(rs, assembly_id)
         if "ballot_is_locked" in blockers:
             raise DeletionImpossibleError(n_(
-                "Cannot delete locked assembly with locked ballots."))  # TODO: coverage
+                "Cannot delete assembly with locked ballots."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if remaining_blockers := (blockers.keys() - cascade):
