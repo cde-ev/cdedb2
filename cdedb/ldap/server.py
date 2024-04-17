@@ -5,7 +5,7 @@ import logging
 import sys
 from asyncio.transports import BaseTransport, Transport
 from collections.abc import Coroutine
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Protocol
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
@@ -20,11 +20,16 @@ from ldaptor.protocols.pureldap import (
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
-ReplyCallback = Callable[[pureldap.LDAPProtocolResponse], None]
 PagedResultsControlType = b"1.2.840.113556.1.4.319"
 KNOWN_CONTROL_TYPES = [PagedResultsControlType]
 
 logger = logging.getLogger(__name__)
+
+
+class ReplyCallback(Protocol):
+    def __call__(self, response: pureldap.LDAPProtocolResponse,
+                 controls: Optional[list[Any]] = None) -> None:
+        ...
 
 
 class LdapServer(asyncio.Protocol):
@@ -301,13 +306,15 @@ class LdapServer(asyncio.Protocol):
             for controlType, _, controlValue in controls:
                 if controlType == PagedResultsControlType:
                     control_values = pureber.BERSequence.fromBER(
-                        pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()).data[0]
+                        pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
+                    ).data[0]
                     logger.debug(f"Control values: {control_values.data}")
                     paged_size = control_values[0].value
                     if control_values[1].value == b"":
                         paged_cookie = None
                     else:
-                        paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
+                        paged_cookie = int.from_bytes(
+                            control_values[1].value, sys.byteorder)
                     is_paged = (paged_size != 0)
                     logger.debug(f"Received Paged size: {paged_size}")
                     logger.debug(f"Received Paged cookie: {paged_cookie}")
