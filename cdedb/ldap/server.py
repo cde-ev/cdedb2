@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import sys
 from asyncio.transports import BaseTransport, Transport
 from collections.abc import Coroutine
 from typing import Any, Callable, Optional, Protocol
@@ -20,7 +19,9 @@ from ldaptor.protocols.pureldap import (
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
+# see RFC 2696
 PagedResultsControlType = b"1.2.840.113556.1.4.319"
+
 KNOWN_CONTROL_TYPES = [PagedResultsControlType]
 
 logger = logging.getLogger(__name__)
@@ -153,7 +154,6 @@ class LdapServer(asyncio.Protocol):
         def reply(response: pureldap.LDAPProtocolResponse,
                   controls: Optional[list[Any]] = None) -> None:
             """Send a message back to the client."""
-            controls = controls or None
             response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
             logger.debug(f"S->C {repr(response_msg)}")
             self.transport.write(response_msg.toWire())
@@ -289,6 +289,9 @@ class LdapServer(asyncio.Protocol):
     #                                 -- result set size estimate from server
     #         cookie          OCTET STRING
     # }
+    #
+    # We decided to store the offset of the last page (the ordinal of the last entry
+    # which was already returned) in the cookie.
     async def handle_LDAPSearchRequest(
         self,
         request: LDAPSearchRequest,
@@ -301,7 +304,7 @@ class LdapServer(asyncio.Protocol):
 
         is_paged = False
         paged_size = 0
-        paged_cookie: Optional[int] = None
+        paged_cookie = 0
         if controls:
             for controlType, _, controlValue in controls:
                 if controlType == PagedResultsControlType:
@@ -310,11 +313,11 @@ class LdapServer(asyncio.Protocol):
                     ).data[0]
                     logger.debug(f"Control values: {control_values.data}")
                     paged_size = control_values[0].value
+                    # Signaling we should return the first page.
                     if control_values[1].value == b"":
-                        paged_cookie = None
+                        paged_cookie = 0
                     else:
-                        paged_cookie = int.from_bytes(
-                            control_values[1].value, sys.byteorder)
+                        paged_cookie = int.from_bytes(control_values[1].value)
                     is_paged = (paged_size != 0)
                     logger.debug(f"Received Paged size: {paged_size}")
                     logger.debug(f"Received Paged cookie: {paged_cookie}")
@@ -439,9 +442,8 @@ class LdapServer(asyncio.Protocol):
                     (key, attributes.get(key)) for key in request.attributes
                     if key in attributes]
 
-        filtered_results = ((result.dn, filter_entry(result))
-                            for result in search_results)
-        results = [result for result in filtered_results if result[1] is not None]
+        results = [(result.dn, filter_entry(result)) for result in search_results
+                   if filter_entry(result) is not None]
 
         def byte_length(i: int) -> int:
             return (i.bit_length() + 7) // 8
@@ -451,23 +453,13 @@ class LdapServer(asyncio.Protocol):
         enc_new_cookie = b""
         if is_paged:
             total_size = len(results)
-            # indicates this is the first page
-            if paged_cookie is None:
-                results = results[:paged_size]
-                new_cookie = paged_size
-                enc_new_cookie = new_cookie.to_bytes(
-                    byte_length(new_cookie), sys.byteorder)
+            results = results[paged_cookie:][:paged_size]
+            # indicates this is the last page
+            if paged_size + paged_cookie >= total_size:
+                enc_new_cookie = b""
             else:
-                # indicates this is the last page
-                if paged_size + paged_cookie >= total_size:
-                    results = results[paged_cookie:]
-                    new_cookie = None
-                    enc_new_cookie = b""
-                else:
-                    results = results[paged_cookie:paged_cookie + paged_size]
-                    new_cookie = paged_cookie + paged_size
-                    enc_new_cookie = new_cookie.to_bytes(
-                        byte_length(new_cookie), sys.byteorder)
+                new_cookie = paged_cookie + paged_size
+                enc_new_cookie = new_cookie.to_bytes(byte_length(new_cookie))
 
         for result_dn, attributes in results:
             reply(pureldap.LDAPSearchResultEntry(

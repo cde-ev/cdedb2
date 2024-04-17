@@ -652,8 +652,8 @@ class TestLDAP(BasicTest):
             self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
 
             # second page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]\
-                ["value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
             self.assertNotEqual(b"", cookie)
             conn.search(
                 search_base=self.root_dn,
@@ -678,8 +678,8 @@ class TestLDAP(BasicTest):
             self.assertEqual(20, len(conn.entries))
 
             # second and last page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]\
-                ["value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
             size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
             self.assertNotEqual(b"", cookie)
             self.assertLess(size, 40)
@@ -691,8 +691,8 @@ class TestLDAP(BasicTest):
                 attributes=["uid"],
             )
             self.assertLess(len(conn.entries), 20)
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]\
-                ["value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
             self.assertEqual(b"", cookie)
 
     def test_caseinsensitive_attributes(self) -> None:
