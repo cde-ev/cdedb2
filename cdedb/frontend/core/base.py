@@ -720,14 +720,15 @@ class CoreBaseFrontend(AbstractFrontend):
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
+            is_receiving = (
+                addr not in defect_addresses if (addr := addresses.get(mailinglist_id))
+                else persona['username'] not in defect_addresses)
             grouped[ml.sortkey][mailinglist_id] = {
                 'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
                 'is_active': ml.is_active,
-                'is_receiving': ((addr := addresses.get(mailinglist_id))
-                                    and addr not in defect_addresses
-                                 or persona['username'] not in defect_addresses)
+                'is_receiving': is_receiving,
             }
 
         return self.render(rs, "show_user_mailinglists", {
