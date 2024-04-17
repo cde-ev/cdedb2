@@ -176,8 +176,10 @@
                     {% for subscriber in list %}
                         <li class="hide-hover-container clearfix-after">
                             {% if subscriber in defects %}
+                                {{ util.make_icon('exclamation-triangle', aclass="text-danger",
+                                        title=gettext("Subscribed with defect address, will not receive any mails.")) }}
                                 {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id'],
-                                            aclass='text-muted', title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                                            aclass='text-muted') }}
                             {% else %}
                                 {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% endif %}

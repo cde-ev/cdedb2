@@ -61,9 +61,11 @@
                             {% endif %}
                             <li class="hide-hover-container clearfix-after{% if not ml['is_active'] or not ml['is_receiving'] %} text-muted{% endif %}">
                                 {{ util.state_checkbox(state) }}
-                                {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"],
-                                             title=gettext("Subscribed with defect address, will not receive any mails.")
-                                                   if not ml['is_receiving'] else None) }}
+                                {% if not ml['is_receiving'] %}
+                                    {{ util.make_icon('exclamation-triangle', aclass="text-danger",
+                                            title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                                {% endif %}
+                                {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"]) }}
                             {% if state == enums["SubscriptionState"].subscription_override %}
                                 {{ gettext("(override)") }}
                             {% elif state == enums["SubscriptionState"].unsubscription_override %}

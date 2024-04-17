@@ -79,8 +79,10 @@
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {% if subscription_override in defects %}
+                            {{ util.make_icon('exclamation-triangle', aclass="text-danger",
+                                        title=gettext("Subscribed with defect address, will not receive any mails.")) }}
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id'],
-                                        aclass='text-muted', title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                                        aclass='text-muted') }}
                         {% else %}
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                         {% endif %}
