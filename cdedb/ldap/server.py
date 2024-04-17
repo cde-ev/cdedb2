@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import sys
 from asyncio.transports import BaseTransport, Transport
 from collections.abc import Coroutine
 from typing import Any, Callable, Optional, Protocol
@@ -305,22 +306,20 @@ class LdapServer(asyncio.Protocol):
         is_paged = False
         paged_size = 0
         paged_cookie = 0
-        if controls:
-            for controlType, _, controlValue in controls:
-                if controlType == PagedResultsControlType:
-                    control_values = pureber.BERSequence.fromBER(
-                        pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
-                    ).data[0]
-                    logger.debug(f"Control values: {control_values.data}")
-                    paged_size = control_values[0].value
-                    # Signaling we should return the first page.
-                    if control_values[1].value == b"":
-                        paged_cookie = 0
-                    else:
-                        paged_cookie = int.from_bytes(control_values[1].value)
-                    is_paged = (paged_size != 0)
-                    logger.debug(f"Received Paged size: {paged_size}")
-                    logger.debug(f"Received Paged cookie: {paged_cookie}")
+        for controlType, _, controlValue in (controls or []):
+            if controlType != PagedResultsControlType:
+                continue
+            control_values = pureber.BERSequence.fromBER(
+                pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
+            ).data[0]
+            logger.debug(f"Control values: {control_values.data}")
+            paged_size = control_values[0].value
+            # Signaling we should return the first page.
+            if control_values[1].value != b"":
+                paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
+            is_paged = (paged_size != 0)
+            logger.debug(f"Received Paged size: {paged_size}")
+            logger.debug(f"Received Paged cookie: {paged_cookie}")
 
         # short-circuit if the requested entry is the root entry
         # ignore the paged_search request, since its only one entry
@@ -445,9 +444,6 @@ class LdapServer(asyncio.Protocol):
         results = [(result.dn, filter_entry(result)) for result in search_results
                    if filter_entry(result) is not None]
 
-        def byte_length(i: int) -> int:
-            return (i.bit_length() + 7) // 8
-
         total_size = 0
         new_cookie = None
         enc_new_cookie = b""
@@ -459,7 +455,9 @@ class LdapServer(asyncio.Protocol):
                 enc_new_cookie = b""
             else:
                 new_cookie = paged_cookie + paged_size
-                enc_new_cookie = new_cookie.to_bytes(byte_length(new_cookie))
+                # determine the number of bytes we need to encode the cookie
+                enc_new_cookie = new_cookie.to_bytes(
+                    (new_cookie.bit_length() + 7) // 8, sys.byteorder)
 
         for result_dn, attributes in results:
             reply(pureldap.LDAPSearchResultEntry(
