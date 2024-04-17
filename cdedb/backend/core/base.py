@@ -2813,7 +2813,8 @@ class CoreBaseBackend(AbstractBackend):
         # first, query core.personas
         query = """
             SELECT
-                def.id, def.address, def.notes, core.personas.id AS user_id
+                def.id, def.address, def.status, def.notes,
+                core.personas.id AS user_id
             FROM core.defect_addresses AS def
                 LEFT JOIN core.personas ON def.address = core.personas.username
         """
@@ -2828,8 +2829,9 @@ class CoreBaseBackend(AbstractBackend):
         # second, query ml.subscription_addresses
         query = """
             SELECT
-                def.address, array_remove(array_agg(sa.mailinglist_id), NULL) AS ml_ids,
-                sa.persona_id AS subscriber_id, def.id
+                def.id, def.address, def.status, def.notes,
+                array_remove(array_agg(sa.mailinglist_id), NULL) AS ml_ids,
+                sa.persona_id AS subscriber_id
             FROM core.defect_addresses AS def
                 LEFT JOIN ml.subscription_addresses AS sa ON def.address = sa.address
         """
@@ -2837,7 +2839,7 @@ class CoreBaseBackend(AbstractBackend):
         if persona_ids:
             query += " WHERE sa.persona_id = ANY(%s)"
             params = (persona_ids,)
-        query += " GROUP BY def.address, def.id, subscriber_id"
+        query += " GROUP BY def.id, def.address, def.status, def.notes, subscriber_id"
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
 

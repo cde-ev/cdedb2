@@ -441,6 +441,8 @@ GRANT DELETE ON core.changelog TO cdb_admin;
 CREATE TABLE  core.defect_addresses (
         id                      serial PRIMARY KEY,
         address                 varchar NOT NULL UNIQUE,
+        -- see cdedb.database.constants.EmailDefectStatus
+        status                  integer NOT NULL,
         notes                   varchar
 );
 GRANT SELECT, DELETE on core.defect_addresses TO cdb_persona;

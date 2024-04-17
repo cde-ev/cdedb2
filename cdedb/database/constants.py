@@ -45,6 +45,16 @@ class PersonaChangeStati(CdEIntEnum):
 
 
 @enum.unique
+class EmailDefectStatus(CdEIntEnum):
+    """Spec for status of core.defect_addresses."""
+    unconfirmed = 1
+    mailinglists_disabled = 8
+    all_disabled = 10
+    removed = 20
+    unsuccessful_transmission = 40
+
+
+@enum.unique
 class RegistrationPartStati(CdEIntEnum):
     """Spec for field status of event.registration_parts."""
     not_applied = -1  #:

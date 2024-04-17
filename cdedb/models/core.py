@@ -1,16 +1,18 @@
 """Dataclass definitions of core realm."""
 
 import dataclasses
-from typing import Optional, Collection
+from typing import Collection, Optional
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject
+from cdedb.database.constants import EmailDefectStatus
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 
 @dataclasses.dataclass
 class DefectAddress(CdEDataclass):
     address: vtypes.Email
+    status: EmailDefectStatus
     notes: Optional[str] = None
     # This persona has this address as username.
     user_id: Optional[vtypes.ID] = None

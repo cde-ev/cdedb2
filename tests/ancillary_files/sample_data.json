@@ -3899,10 +3899,12 @@
     ],
     "core.defect_addresses": [
         {
-            "address": "defect@example.com"
+            "address": "defect@example.com",
+            "status": 10
         },
         {
             "address": "anton@example.cde",
+            "status": 10,
             "notes": "Einfach kaputt gegangen..."
         }
     ],
