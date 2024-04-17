@@ -627,6 +627,71 @@ class TestLDAP(BasicTest):
         )
         self.single_result_search(search_filter, expectation, attributes=attributes)
 
+    def test_search_pagination(self) -> None:
+        """Test search with pagedResultsControl."""
+        search_filter = (
+            "(&"
+            "(objectclass=inetOrgPerson)"
+            ")"
+        )
+
+        with ldap3.Connection(
+            self.server, user=self.test_dua_dn, password=self.test_dua_pw,
+            raise_exceptions=True
+        ) as conn:
+            # first page
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=2,
+                paged_cookie=None,
+                attributes=["uid"],
+            )
+            self.assertEqual(2, len(conn.entries))
+            self.assertEqual(['1'], conn.entries[0].entry_attributes_as_dict["uid"])
+            self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
+
+            # second page
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["cookie"]
+            self.assertNotEqual(b"", cookie)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=2,
+                paged_cookie=cookie,
+                attributes=["uid"],
+            )
+            self.assertEqual(2, len(conn.entries))
+            self.assertEqual(['3'], conn.entries[0].entry_attributes_as_dict["uid"])
+            self.assertEqual(['4'], conn.entries[1].entry_attributes_as_dict["uid"])
+
+            # next try, with more results
+            # first page
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=20,
+                paged_cookie=None,
+                attributes=["uid"],
+            )
+            self.assertEqual(20, len(conn.entries))
+
+            # second and last page
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["cookie"]
+            size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
+            self.assertNotEqual(b"", cookie)
+            self.assertLess(size, 40)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=20,
+                paged_cookie=cookie,
+                attributes=["uid"],
+            )
+            self.assertLess(len(conn.entries), 20)
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["cookie"]
+            self.assertEqual(b"", cookie)
+
     def test_caseinsensitive_attributes(self) -> None:
         user_id = 9
         attributes = ["objectClass", "cn", "givenName", "mail", "uid"]
