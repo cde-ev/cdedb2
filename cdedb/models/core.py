@@ -23,18 +23,9 @@ class DefectAddress(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "DefectAddress":
-        data["id"] = None
         if "ml_ids" in data:
             data["ml_ids"] = set(data["ml_ids"])
         return super().from_database(data)
-
-    @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject],
-                           ) -> dict[str, "DefectAddress"]:
-        return {
-            da.address: da
-            for da in super().many_from_database(list_of_data).values()
-        }
 
     @property
     def persona_ids(self) -> set[vtypes.ID]:
