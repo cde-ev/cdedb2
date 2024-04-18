@@ -12,6 +12,10 @@ of ``docker compose`` (which is a separate plugin) is advised for ease of
 use.  Theoretically the images and the compose file can also be run by podman
 or similar OCI compatibel tools.
 
+To get started, clone the git repository and activate our custom :ref:`githooks`::
+
+  git config core.hooksPath .githooks
+
 The following commands assume that you are a member of the docker group
 or have gained the proper permissions by other means like sudo.
 
@@ -42,7 +46,7 @@ This applies to (almost) all subcommands.
 Should you see the need to manually rebuild them you can do so using
 ``docker compose build``.
 
-.. note:: To build the dev-container you will first need to build the non-dev
+.. warning:: To build the dev-container you will first need to build the non-dev
           variant as the dependency is not publicly resolvable.
 
 Starting the containers
