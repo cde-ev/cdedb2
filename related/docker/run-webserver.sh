@@ -9,7 +9,7 @@ if [ ! -e /var/log/cdedb ]; then
     python3 -m cdedb filesystem --owner www-cde log create
 fi
 if [ ! -e /var/lib/cdedb ]; then
-    python3 -m cdedb filesystem --owner www-cde storage create
+    python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 fi
 
 export SCRIPT_NAME=/db
