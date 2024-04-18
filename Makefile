@@ -236,4 +236,4 @@ sample-data-dump:
 
 .PHONY: sample-data
 sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-cde
+	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data
