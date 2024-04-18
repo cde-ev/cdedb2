@@ -324,7 +324,7 @@ class AssemblyBackend(AbstractBackend):
                 query.constraints.append(
                     (f"is_{realm}_realm", QueryOperators.equal, False))
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
-        else:  # pragma: no cover
+        else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 

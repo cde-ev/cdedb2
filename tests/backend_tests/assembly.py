@@ -54,6 +54,16 @@ class TestAssemblyBackend(BackendTest):
             with self.assertRaises(PrivilegeError):
                 self.assembly.check_attendance(self.key, assembly_id=1, persona_id=1)
 
+        query = Query(
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
+            [],
+            [],
+            [],
+        )
+        with self.assertRaises(RuntimeError):
+            self.assembly.submit_general_query(self.key, query)
+
     @as_users("viktor")
     def test_archived_user_search(self) -> None:
         # Search for pure assembly users.
