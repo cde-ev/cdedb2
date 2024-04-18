@@ -16,7 +16,7 @@ Restart=on-failure
 
 # we need to access the /etc/cdedb/secrets.py file which is only accessible to www-cde
 User=www-cde
-Group=www-cde
+Group=www-data
 # restrict the privileges of the running process
 RemoveIPC=true
 PrivateTmp=true

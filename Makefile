@@ -63,7 +63,7 @@ I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*
 
 .PHONY: cron
 cron:
-	sudo -u www-cde /cdedb2/bin/cron_execute.py
+	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:

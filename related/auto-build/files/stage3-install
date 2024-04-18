@@ -154,7 +154,7 @@ echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
 # Create the log directory. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde log create
+python3 -m cdedb filesystem --owner www-cde --group www-data log create
 
 echo ""
 echo "Setting up ldap..."

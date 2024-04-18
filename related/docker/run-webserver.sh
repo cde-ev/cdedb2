@@ -6,15 +6,16 @@ cd /cdedb2
 # Be paranoid about filesystem locations. This should not be necessary, but
 # sadly is. Can probably be removed after #3427 is resolved.
 if [ ! -e /var/log/cdedb ]; then
-    python3 -m cdedb filesystem --owner www-cde log create
+    python3 -m cdedb filesystem --owner www-cde --group www-data log create
 fi
 if [ ! -e /var/lib/cdedb ]; then
     python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 fi
 
 export SCRIPT_NAME=/db
-sudo --preserve-env=SCRIPT_NAME -u www-cde /usr/bin/gunicorn --forwarded-allow-ips="*" \
-     -w 4 --bind localhost:8998 --daemon --reload wsgi.cdedb-app:application
+sudo --preserve-env=SCRIPT_NAME -u www-cde -g www-data /usr/bin/gunicorn \
+     --forwarded-allow-ips="*" -w 4 --bind localhost:8998 --daemon --reload \
+     wsgi.cdedb-app:application
 unset SCRIPT_NAME
 
 cd /

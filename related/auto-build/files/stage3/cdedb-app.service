@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=notify
 User=www-cde
-Group=www-cde
+Group=www-data
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
