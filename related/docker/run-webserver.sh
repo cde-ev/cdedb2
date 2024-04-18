@@ -14,7 +14,7 @@ fi
 
 export SCRIPT_NAME=/db
 sudo --preserve-env=SCRIPT_NAME -u www-cde /usr/bin/gunicorn --forwarded-allow-ips="*" \
-     -w 4 --bind localhost:8998 wsgi.cdedb-app:application --daemon
+     -w 4 --bind localhost:8998 --daemon --reload wsgi.cdedb-app:application
 unset SCRIPT_NAME
 
 cd /
