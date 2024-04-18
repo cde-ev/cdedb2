@@ -73,10 +73,14 @@ def get_default_configpath() -> None:
     help="Use this user as the owner.",
     default=get_user,
     show_default="current user")
+@click.option("--group",
+    help="Use this group for file permissions.",
+    default=None,
+    show_default="same as owner")
 @click.pass_context
-def filesystem(ctx: click.Context, owner: str) -> None:
+def filesystem(ctx: click.Context, owner: str, group: Optional[str]) -> None:
     """Preparations regarding the file system."""
-    ctx.obj = owner
+    ctx.obj = {'user': owner, 'group': group}
 
 
 @filesystem.group(name="storage")
@@ -87,20 +91,20 @@ def storage() -> None:
 @storage.command(name="create")
 @click.pass_obj
 @pass_config
-def create_storage_cmd(config: TestConfig, owner: str) -> None:
+def create_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
     """Create the file storage."""
     click.echo(f"Create storage directory at {config['STORAGE_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         create_storage(config)
 
 
 @storage.command(name="populate")
 @click.pass_obj
 @pass_config
-def populate_storage_cmd(config: TestConfig, owner: str) -> None:
+def populate_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
     """Populate the file storage with sample data."""
     click.echo(f"Populate storage directory at {config['STORAGE_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         populate_storage(config)
         populate_sample_event_keepers(config)
 
@@ -109,11 +113,11 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @click.argument('event_id', type=int)
 @click.pass_obj
 @pass_config
-def populate_event_keeper_cmd(config: TestConfig, owner: str, event_id: int) -> None:
+def populate_event_keeper_cmd(config: TestConfig, ownership: Dict[str, str], event_id: int) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
     click.echo(f"Populate event keeper at {path}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         path.mkdir(parents=True, exist_ok=True)
         populate_event_keeper(config, [event_id])
 
@@ -126,10 +130,10 @@ def log() -> None:
 @log.command(name="create")
 @click.pass_obj
 @pass_config
-def create_log_cmd(config: TestConfig, owner: str) -> None:
+def create_log_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
     """Create the log storage."""
     click.echo(f"Create log directory at {config['LOG_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         create_log(config)
 
 
@@ -241,11 +245,15 @@ def compile_sample_data_sql(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
+@click.option("--group",
+    help="Use this group for file permissions.",
+    default=None,
+    show_default="same as owner")
 @pass_config
-def apply_sample_data(config: TestConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> None:
     """Repopulates the application with sample data."""
     config, secrets = reset_config(config)
-    with switch_user(owner):
+    with switch_user(owner, group):
         create_log(config)
         create_storage(config)
         populate_storage(config)
