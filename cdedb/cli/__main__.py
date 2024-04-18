@@ -7,7 +7,7 @@ import difflib
 import json
 import pathlib
 import sys
-from typing import Any
+from typing import Any, Dict, Optional
 
 import click
 

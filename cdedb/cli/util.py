@@ -2,6 +2,7 @@
 import contextlib
 import functools
 import getpass
+import grp
 import io
 import os
 import pathlib
