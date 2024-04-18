@@ -7,7 +7,7 @@ import difflib
 import json
 import pathlib
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import click
 
@@ -91,7 +91,7 @@ def storage() -> None:
 @storage.command(name="create")
 @click.pass_obj
 @pass_config
-def create_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
+def create_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Create the file storage."""
     click.echo(f"Create storage directory at {config['STORAGE_DIR']}.")
     with switch_user(**ownership):
@@ -101,7 +101,7 @@ def create_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
 @storage.command(name="populate")
 @click.pass_obj
 @pass_config
-def populate_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
+def populate_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Populate the file storage with sample data."""
     click.echo(f"Populate storage directory at {config['STORAGE_DIR']}.")
     with switch_user(**ownership):
@@ -113,7 +113,8 @@ def populate_storage_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
 @click.argument('event_id', type=int)
 @click.pass_obj
 @pass_config
-def populate_event_keeper_cmd(config: TestConfig, ownership: Dict[str, str], event_id: int) -> None:
+def populate_event_keeper_cmd(config: TestConfig, ownership: dict[str, str],
+                              event_id: int) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
     click.echo(f"Populate event keeper at {path}.")
@@ -130,7 +131,7 @@ def log() -> None:
 @log.command(name="create")
 @click.pass_obj
 @pass_config
-def create_log_cmd(config: TestConfig, ownership: Dict[str, str]) -> None:
+def create_log_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Create the log storage."""
     click.echo(f"Create log directory at {config['LOG_DIR']}.")
     with switch_user(**ownership):
