@@ -138,7 +138,7 @@ class AssemblyBackend(AbstractBackend):
     is_assembly_locked: _IsAssemblyLockedProtocol = singularize(
         are_assemblies_locked, "assembly_ids", "assembly_id")
 
-    @access("persona")
+    @access("assembly")
     def presider_infos(self, rs: RequestState, persona_ids: Collection[int],
                        ) -> dict[int, set[int]]:
         """List assemblies managed by specific personas."""
@@ -148,8 +148,7 @@ class AssemblyBackend(AbstractBackend):
             persona_ids, entity_key="persona_id")
         ret = {}
         for anid in persona_ids:
-            ret[anid] = {e['assembly_id']
-                         for e in data if e['persona_id'] == anid}
+            ret[anid] = {e['assembly_id'] for e in data if e['persona_id'] == anid}
         return ret
 
     class _PresiderInfoProtocol(Protocol):
@@ -158,7 +157,7 @@ class AssemblyBackend(AbstractBackend):
     presider_info: _PresiderInfoProtocol = singularize(
         presider_infos, "persona_ids", "persona_id")
 
-    @access("persona")
+    @access("assembly")
     def is_presider(self, rs: RequestState, *, assembly_id: Optional[int] = None,
                     ballot_id: Optional[int] = None,
                     attachment_id: Optional[int] = None) -> bool:
@@ -192,6 +191,8 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of assembly_id, ballot_id and attachment_id has to be provided.
         """
+        if "assembly" not in rs.user.roles:
+            return False
         if "member" in rs.user.roles or self.is_presider(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
                 attachment_id=attachment_id):
@@ -328,7 +329,7 @@ class AssemblyBackend(AbstractBackend):
         return self.general_query(rs, query, aggregate=aggregate)
 
     @internal
-    @access("persona")
+    @access("assembly")
     def get_assembly_ids(self, rs: RequestState, *,
                          ballot_ids: Optional[Collection[int]] = None,
                          attachment_ids: Optional[Collection[int]] = None,
@@ -348,7 +349,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @internal
-    @access("persona")
+    @access("assembly")
     def get_assembly_id(self, rs: RequestState, *, ballot_id: Optional[int] = None,
                         attachment_id: Optional[int] = None) -> int:
         """Singular version of `get_assembly_ids`.
@@ -375,7 +376,7 @@ class AssemblyBackend(AbstractBackend):
         return unwrap(ret)
 
     @internal
-    @access("persona")
+    @access("assembly", "ml_admin")
     def check_attendance(self, rs: RequestState, *, assembly_id: Optional[int] = None,
                          ballot_id: Optional[int] = None,
                          attachment_id: Optional[int] = None,
@@ -403,10 +404,6 @@ class AssemblyBackend(AbstractBackend):
         if persona_id == rs.user.persona_id and "assembly" not in rs.user.roles:
             return False
 
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of assembly mailinglists.
-        if not {"assembly", "ml_admin"} & rs.user.roles:  # pragma: no cover
-            raise PrivilegeError(n_("Not privileged to access assembly tables"))
         with Atomizer(rs):
             if assembly_id is None:
                 assembly_id = self.get_assembly_id(
