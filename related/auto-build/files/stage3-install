@@ -87,7 +87,7 @@ chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
-chown www-cde:www-cde /etc/cdedb-mailman-htpasswd
+chown www-cde:www-data /etc/cdedb-mailman-htpasswd
 chmod 640 /etc/cdedb-mailman-htpasswd
 
 echo ""

@@ -146,7 +146,7 @@ RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
     && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
     \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
-    && chown www-cde:www-cde /etc/cdedb-mailman-htpasswd \
+    && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
     && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
