@@ -1450,8 +1450,8 @@ class EventBaseBackend(EventLowLevelBackend):
             author_name = make_persona_name(persona)
             author_email = rs.user.username
         self._event_keeper.commit(
-            event_id, json_serialize(export), commit_msg, author_name, author_email,
-            may_drop=may_drop, logs=logs)
+            event_id, json_serialize(export, sort_keys=True), commit_msg, author_name,
+            author_email, may_drop=may_drop, logs=logs)
         return export
 
     @internal
