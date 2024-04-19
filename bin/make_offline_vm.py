@@ -163,8 +163,8 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     if not args.test:
         cmd.insert(6, '--owner')
         cmd.insert(7, 'www-cde')
-        cmd.insert(6, '--group')
-        cmd.insert(7, 'www-data')
+        cmd.insert(8, '--group')
+        cmd.insert(9, 'www-data')
     subprocess.run(cmd, check=True)
 
     print("Make orgas into admins")
