@@ -217,14 +217,15 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     other participant's rooming preferences text.
     """
     patterns = [
-        inverse_diacritic_patterns(re.escape(f"{given_name} {persona['family_name']}"))
+        inverse_diacritic_patterns(
+            re.escape(rf"{given_name.strip()}\s+{persona['family_name'].strip()}"))
         for given_name in persona['given_names'].split()
     ]
     patterns.append(inverse_diacritic_patterns(re.escape(
-        f"{persona['display_name']} {persona['family_name']}")))
+        rf"{persona['display_name'].strip()}\s+{persona['family_name'].strip()}")))
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
-        patterns.append(re.escape(persona['username']))
+        patterns.append(re.escape(persona['username'].strip()))
     return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
 
 
