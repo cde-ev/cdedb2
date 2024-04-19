@@ -77,20 +77,16 @@ def switch_user(user: str, group: Optional[str] = None) -> Generator[None, None,
     new_uid = wanted_user.pw_uid
     new_gid = wanted_group.gr_gid if wanted_group else wanted_user.pw_gid
     try:
-        if original_gid != new_gid:
-            os.setegid(new_gid)
-        if original_uid != new_uid:
-            os.seteuid(new_uid)
+        os.setegid(new_gid)
+        os.seteuid(new_uid)
         yield
     except PermissionError as e:
         raise PermissionError(
             f"Insufficient permissions to switch to user {user}.",
         ) from e
     finally:
-        if original_gid != new_gid:
-            os.setegid(original_gid)
-        if original_uid != new_uid:
-            os.seteuid(original_uid)
+        os.setegid(original_gid)
+        os.seteuid(original_uid)
 
 
 def get_user() -> str:
