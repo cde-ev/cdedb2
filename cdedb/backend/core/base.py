@@ -1410,7 +1410,7 @@ class CoreBaseBackend(AbstractBackend):
             * The persona being involved (orga/registration) with any recent event.
             * The persona being involved (presider/attendee) with an active assembly.
             * The persona being a pure assembly user.
-            * The persona being explicitly subscribed to any mailinglist.          
+            * The persona being explicitly subscribed to any mailinglist.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         reference_date = affirm(datetime.date, reference_date or now().date())
