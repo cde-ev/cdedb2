@@ -63,7 +63,7 @@ CREATE TABLE core.personas (
             CHECK (NOT is_cdelokal_admin OR is_ml_realm),
         -- allows auditing, i.e. viewing of all logs
         is_auditor              boolean NOT NULL DEFAULT False,
-        CONSTRAINT personas_auditor
+        CONSTRAINT personas_cde_auditor
             CHECK (NOT is_auditor OR is_cde_realm),
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
@@ -88,6 +88,8 @@ CREATE TABLE core.personas (
         -- a persona is visible/may search
         -- iff is_searchable and is_member are both TRUE
         is_searchable           boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_cde_searchable
+            CHECK (NOT is_searchable OR is_cde_realm),
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
@@ -121,11 +123,11 @@ CREATE TABLE core.personas (
         -- see cdedb.database.constants.Genders
         gender                  integer,
         CONSTRAINT personas_realm_gender
-            CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
+            CHECK((is_cde_realm OR is_event_realm) = (gender IS NOT NULL)),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
-        CONSTRAINT personas_birthday
-            CHECK(NOT is_event_realm OR birthday is NOT NULL),
+        CONSTRAINT personas_realm_birthday
+            CHECK((is_cde_realm OR is_event_realm) = (birthday is NOT NULL)),
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,
@@ -159,30 +161,30 @@ CREATE TABLE core.personas (
         free_form               varchar,
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
-            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+            CHECK(is_cde_realm = (balance IS NOT NULL)),
         donation                numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_donation
-            CHECK(NOT is_cde_realm OR donation IS NOT NULL),
+            CHECK(is_cde_realm = (donation IS NOT NULL)),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
-        CONSTRAINT personas_cde_consent
-            CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
+        CONSTRAINT personas_cde_decided_search
+            CHECK(is_cde_realm = (decided_search IS NOT NULL)),
         -- True for trial members (first semester after the first official academy)
         trial_member            boolean,
-        CONSTRAINT personas_cde_trial
-            CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        CONSTRAINT personas_cde_trial_member
+            CHECK(is_cde_realm = (trial_member IS NOT NULL)),
         CONSTRAINT personas_trial_member_implicits
-            CHECK (NOT trial_member OR is_member),
+            CHECK(NOT trial_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
-        CONSTRAINT personas_cde_bub
-            CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
+        CONSTRAINT personas_cde_bub_search
+            CHECK(is_cde_realm = (bub_search IS NOT NULL)),
         -- file name of image
         foto                    varchar DEFAULT NULL,
         -- wants to receive the exPuls in printed form
         paper_expuls            boolean DEFAULT TRUE,
-        CONSTRAINT personas_cde_expuls
-            CHECK(NOT is_cde_realm OR paper_expuls IS NOT NULL),
+        CONSTRAINT personas_cde_paper_expuls
+            CHECK(is_cde_realm = (paper_expuls IS NOT NULL)),
         -- automatically managed attribute containing all above values as a
         -- string for fulltext search
         fulltext                varchar NOT NULL

@@ -1638,10 +1638,10 @@ class CoreBaseBackend(AbstractBackend):
                 'free_form': None,
                 'balance': 0 if persona['balance'] is not None else None,
                 'donation': 0 if persona['donation'] is not None else None,
-                'decided_search': False,
+                'decided_search': False if persona['is_cde_realm'] else None,
                 # 'trial_member' already adjusted
-                'bub_search': False,
-                'paper_expuls': True,
+                'bub_search': False if persona['is_cde_realm'] else None,
+                'paper_expuls': True if persona['is_cde_realm'] else None,
                 # 'foto' already adjusted
                 # 'fulltext' is set automatically
             }

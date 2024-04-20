@@ -153,19 +153,19 @@ and then insert the following close to the end of
 note, that this is syntax for apache-2.4 (which differs from apache-2.2).
 
 Next we need to create the directory for uploaded data (where
-``www-data`` is the user running Apache)::
+``www-cde`` is the user running Apache)::
 
-  python3 -m cdedb filesystem --owner www-data storage create
+  python3 -m cdedb filesystem --owner www-cde storage create
 
 To populate the storage with sample data, run additionally::
 
-  python3 -m cdedb filesystem --owner www-data storage populate
+  python3 -m cdedb filesystem --owner www-cde storage populate
 
 Finally we need a directory where logging files resist. The directory
-needs to be writable by the user running Apache (default ``www-data``). To
+needs to be writable by the user running Apache (default ``www-cde``). To
 create the default log directory, you can call::
 
-  python3 -m cdedb filesystem --owner www-data log create
+  python3 -m cdedb filesystem --owner www-cde log create
 
 Running it
 ----------

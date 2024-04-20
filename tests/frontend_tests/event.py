@@ -53,9 +53,8 @@ class TestEventFrontend(FrontendTest):
         current = self.event.get_registration(self.key, reg_id)
         data = {
             'registration_id': reg_id,
-            'date': payment,
+            'date': payment or now().date(),
             # used in log entry
-            'original_date': now().date(),
             'amount': amount_paid - current['amount_paid'],
         }
         self.event.book_fees(self.key, event_id, [data])
@@ -2617,7 +2616,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("farin")
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
              "UPDATE event.registrations SET amount_paid = '684.48',"
-             " payment = '2018-01-04' WHERE persona_id = 100;")
+             " payment = '2018-01-04' WHERE persona_id = 100;"
+             "UPDATE event.registrations SET payment = NULL WHERE persona_id = 9;")
     def test_batch_fee(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2633,12 +2633,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 -100.00;DB-100-7;Abukara;Akira;01.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line1_infos")
+        self.assertPresence("Zu viel Geld.", div="line2_infos")
         self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
-        f['full_payment'].checked = True
         f['fee_data'] = """
 373.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
@@ -2646,14 +2645,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 -100.00;DB-100-7;Abukara;Akira;01.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
-        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_infos")
+        self.assertPresence("Zu viel Geld.", div="line2_infos")
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld", div="line0_warnings")
-        self.assertPresence("Zu viel Geld", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld", div="line0_infos")
+        self.assertPresence("Zu viel Geld", div="line2_infos")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
@@ -2678,14 +2677,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
-        self.assertPresence("Teilnahmebeitrag ausstehend")
+        self.assertPresence("Bezahlt am 01.04.2018")
         self.assertPresence("Bereits Bezahlt 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 04.01.2018")
+        self.assertPresence("Bezahlt am 02.02.2014")
         self.assertPresence("Bereits Bezahlt 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2761,20 +2760,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Zu viel Geld.", div="line0_warnings", check_div=False)
         self.assertPresence("Mehrere Überweisungen für diese Person.",
                             div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line1_warnings")
+        self.assertPresence("Zu viel Geld.", div="line1_infos")
 
         f['fee_data'] = """
 400;DB-5-1;Eventis;Emilia;01.04.18
 66.49;DB-5-1;Eventis;Emilia;02.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
-        self.assertNonPresence("Zu viel Geld.", div="line1_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_infos")
+        self.assertNonPresence("Zu viel Geld.", div="line1_infos")
         self.assertPresence("Mehrere Überweisungen für diese Person.",
                             div="line1_warnings")
 
     @as_users("farin")
-    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
+             "UPDATE event.registrations SET payment = NULL;")
     def test_batch_fee_twice(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2800,8 +2800,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                           {'href': '/event/event/1/registration/2/show'})
             self.assertTitle(
                 "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-            self.assertNonPresence("Bezahlt am 01.04.2018")
-            self.assertNonPresence("Bezahlt am 02.02.2014")
+            self.assertPresence("Bezahlt am 01.04.2018")
             self.assertPresence("Bereits Bezahlt 266,49 €")
 
         self.traverse({'href': '/event/$'},
@@ -2830,7 +2829,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle(
             "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 02.04.2018")
+        self.assertNonPresence("Bezahlt am 02.04.2018")
+        self.assertPresence("Bezahlt am 01.04.2018")
         self.assertPresence("Bereits Bezahlt 466,49 €")
         # Check log
         self.traverse({'href': '/event/event/1/log'})
@@ -4398,19 +4398,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
         self.assertPresence('Leere Datei.', div='notifications')
 
-        # now check empty pdfs
+        # Test nametags
+        save = self.response
         self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = save
+
+        # now check empty pdfs
         self.get('/event/event/2/download/courselists?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.get('/event/event/2/download/coursepuzzle?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/participantlist\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
 
         # but the latex source code should still be available
         save = self.response

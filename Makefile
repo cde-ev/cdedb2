@@ -6,7 +6,7 @@ help:
 	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
 	@echo "General:"
-	@echo "cron                -- trigger cronjob execution (as user www-data)"
+	@echo "cron                -- trigger cronjob execution (as user www-cde)"
 	@echo "doc                 -- build documentation"
 	@echo "reload              -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo ""
@@ -63,7 +63,7 @@ I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*
 
 .PHONY: cron
 cron:
-	sudo -u www-data /cdedb2/bin/cron_execute.py
+	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -76,7 +76,7 @@ reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
 else
-	sudo systemctl restart apache2
+	sudo systemctl restart cdedb-app.service
 endif
 
 
@@ -236,4 +236,4 @@ sample-data-dump:
 
 .PHONY: sample-data
 sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-data
+	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data

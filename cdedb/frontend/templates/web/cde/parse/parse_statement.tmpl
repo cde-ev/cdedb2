@@ -217,17 +217,11 @@
             {{ util.form_input_submit(name="validate", label=gettext("Validate"), icon="sync-alt", horizontal=False) }}
             {% if not params["has_error"] %}
                 {% for account in enums["Accounts"] if account in params["accounts"] %}
-                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()), aclass="btn btn-default",
-                        value=account, name="excel", icon='download') }}
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()),
+                        aclass="btn btn-default", value=account, name="excel", icon='download') }}
                 {% endfor %}
-                {% if params["memberships"] %}
-                    {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership", aclass="btn btn-default",
-                        name="membership", icon='download') }}
-                {% endif %}
-                {% for event_id in params["events"] %}
-                    {{ util.input_submit(label=gettext("%(shortname)s participants")|format(shortname=events[event_id]['shortname']),
-                        aclass="btn btn-default", value=event_id, name="event", icon='download') }}
-                {% endfor %}
+                {{ util.input_submit(label=gettext("Download DB-Import"), value="db_import", aclass="btn btn-default",
+                        name="db_import", icon="download") }}
             {% endif %}
             </div>
         </form>
