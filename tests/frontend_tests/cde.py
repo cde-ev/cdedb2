@@ -91,52 +91,64 @@ class TestCdEFrontend(FrontendTest):
                     deadline = deadline.replace(month=8)
             return deadline.replace(
                 year=deadline.year + periods_left // 2)
-        persona_data = {
-            "balance": 0,
-            "trial_member": False,
+
+        def _assert_ejection_deadline(date_str: str, persona: CdEDBObject,
+                                      period: CdEDBObject) -> None:
+            self.assertEqual(
+                datetime.date.fromisoformat(date_str),
+                _calculate_ejection_deadline(persona, period),
+            )
+
+        member = {
+            'balance': 0,
+            'trial_member': False,
         }
-        period_data = {
+        trial_member = {
+            'balance': 0,
+            'trial_member': True,
+        }
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-02-01", member, period)
+        _assert_ejection_deadline("2020-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
+        _assert_ejection_deadline("2021-08-01", member, period)
+        _assert_ejection_deadline("2022-02-01", trial_member, period)
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
               "katarina")
