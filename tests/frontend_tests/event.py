@@ -6452,13 +6452,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
+
+        # Create a token.
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
-        f['title'] = "New Token!"
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "New Token!"
         self.submit(f)
         new_token_id, secret = self.fetch_orga_token()
+
+        # Change it.
+        self.traverse({'href': f"/event/event/{event_id}/droid/{new_token_id}/change"})
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = ""
+        f['notes'] = "Spam"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "Changed title"
+        self.submit(f)
+        deletion_form = self.response.forms[f'deleteorgatokenform{new_token_id}']
+
+        # Test and compare exports.
         orga_token = self.event.get_orga_token(self.key, new_token_id)
 
         with self.switch_user("anonymous"):
