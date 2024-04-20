@@ -994,6 +994,7 @@ class TestEventFrontend(FrontendTest):
         # fields
         self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
                             div="field-definition-notes", exact=True)
+        self.assertPresence("Kursfelder", div="fieldsummaryform")
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -1025,6 +1026,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
         self.assertNotIn('field_name_9', f.fields)
+
+        if self.user_in("annika"):
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/list'},
+                          {'href': '/event/event/2/show'},
+                          {'href': '/event/event/2/field/summary'})
+            self.assertNonPresence("Kursfelder", div="fieldsummaryform")
 
     @event_keeper
     @as_users("garcia")

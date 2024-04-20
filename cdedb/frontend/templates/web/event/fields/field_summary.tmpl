@@ -19,6 +19,11 @@
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
+{% set exempt = [] %}
+{% if not ambience['event']['tracks'] %}
+    {% do exempt.append(enums['FieldAssociations'].course) %}
+{% endif %}
+
 {# Macro for a general field, that can have each role in the DynamicRow workflow.
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
@@ -73,7 +78,7 @@
                 {% if drow_name('association', field_id) not in values %}
                     <div class="association-input-container">
                         {{ util.form_input_select(label=gettext("Category"), name=drow_name('association', field_id),
-                                                  entries=enums['FieldAssociations']|enum_entries(processing=gettext),
+                                                  entries=enums['FieldAssociations']|enum_entries(processing=gettext, exempt=exempt),
                                                   attributes=util.drow_basename('association')|s if newrow else '',
                                                   actualreadonly=not changeable,
                                                   aclass='drow-input form-control association-input') }}
@@ -119,9 +124,7 @@
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/field_summary') }}
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">
-            {% for association in enums['FieldAssociations']
-                    if not (association == enums['FieldAssociations'].course
-                            and not ambience['event']['tracks']) -%}
+            {% for association in enums['FieldAssociations'] if association not in exempt -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
                             role="tab">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
@@ -129,7 +132,7 @@
             {%- endfor %}
         </ul>
         <div class="tab-content" id="associations_tabcontent">
-            {% for association in enums['FieldAssociations'] %}
+            {% for association in enums['FieldAssociations'] if association not in exempt %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association }}">
                     <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
