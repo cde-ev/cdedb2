@@ -1370,7 +1370,7 @@ class TestCoreBackend(BackendTest):
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
              f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
-    @prepsql(f"DELETE FROM ml.subscription_states"
+    @prepsql("DELETE FROM ml.subscription_states"
              " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
         self.login("anton")

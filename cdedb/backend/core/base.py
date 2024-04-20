@@ -1425,7 +1425,10 @@ class CoreBaseBackend(AbstractBackend):
 
             if persona['is_member'] or persona['is_archived']:
                 return False
-                
+
+            # Pure assembly users represent external representants for our assemblies.
+            # As assemblies are rare and they do not need to log in to participate,
+            # the archival would catch many false positives.
             if persona['is_assembly_realm'] and not persona['is_cde_realm']:
                 return False
 
