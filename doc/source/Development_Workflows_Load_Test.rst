@@ -13,7 +13,7 @@ installed on the host generating the load.
 The VM processing the load needs to be prepared with additional sample data as
 follows::
 
-    make sample-data ; sudo -u www-cde bin/insert_huge_data.py -f 200 -v
+    make sample-data ; sudo -u www-cde -g www-data bin/insert_huge_data.py -f 200 -v
 
 .. note:: This step will take a considerable amount of time (think an hour).
 

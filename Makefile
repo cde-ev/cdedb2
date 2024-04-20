@@ -63,7 +63,7 @@ I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*
 
 .PHONY: cron
 cron:
-	sudo -u www-cde /cdedb2/bin/cron_execute.py
+	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -74,7 +74,7 @@ doc:
 reload: i18n-compile
 	python3 -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo apachectl restart # FIXME adapt to gunicorn
+	sudo apachectl restart
 else
 	sudo systemctl restart cdedb-app.service
 endif
@@ -236,4 +236,4 @@ sample-data-dump:
 
 .PHONY: sample-data
 sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-cde
+	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data

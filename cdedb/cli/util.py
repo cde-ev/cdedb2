@@ -2,6 +2,7 @@
 import contextlib
 import functools
 import getpass
+import grp
 import io
 import os
 import pathlib
@@ -67,14 +68,17 @@ def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @contextlib.contextmanager
-def switch_user(user: str) -> Generator[None, None, None]:
+def switch_user(user: str, group: Optional[str] = None) -> Generator[None, None, None]:
     """Use as context manager to temporary switch the running user's effective uid."""
     original_uid = os.geteuid()
     original_gid = os.getegid()
     wanted_user = pwd.getpwnam(user)
+    wanted_group = grp.getgrnam(group) if group else None
+    new_uid = wanted_user.pw_uid
+    new_gid = wanted_group.gr_gid if wanted_group else wanted_user.pw_gid
     try:
-        os.setegid(wanted_user.pw_gid)
-        os.seteuid(wanted_user.pw_uid)
+        os.setegid(new_gid)
+        os.seteuid(new_uid)
         yield
     except PermissionError as e:
         raise PermissionError(

@@ -6,11 +6,12 @@ After=network.target
 [Service]
 Type=notify
 User=www-cde
-Group=www-cde
+Group=www-data
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
-ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 4 wsgi.cdedb-app:application
+# Add --reload for easier development, this is not intended for production use
+ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 4 --reload wsgi.cdedb-app:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5

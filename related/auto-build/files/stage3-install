@@ -89,7 +89,7 @@ chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 cp /media/cdrom0/mailman-htpasswd /etc/cdedb-mailman-htpasswd
-chown www-cde:www-cde /etc/cdedb-mailman-htpasswd
+chown www-cde:www-data /etc/cdedb-mailman-htpasswd
 chmod 640 /etc/cdedb-mailman-htpasswd
 
 echo ""
@@ -106,7 +106,7 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # Create the storage dir itself. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde storage create
+python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 
 echo ""
 echo "Setting up dummy ldap because cyclic dependency..."
@@ -156,7 +156,7 @@ echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
 # Create the log directory. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde log create
+python3 -m cdedb filesystem --owner www-cde --group www-data log create
 
 echo ""
 echo "Setting up ldap..."
