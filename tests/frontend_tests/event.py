@@ -2224,6 +2224,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @event_keeper
     @as_users("garcia")
+    def test_event_fees(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge",
+                      "Teilnahmebeitrag hinzufügen")
+        f = self.response.forms['configureeventfeeform']
+        f['title'] = "New fee!"
+        f['kind'] = const.EventFeeType.common
+        f['amount'] = 1
+        f['condition'] = "field.unknown_field OR part.unknown_part"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'condition', "Unknown field(s): 'unknown_field'")
+        self.assertValidationError(
+            'condition', "Unknown part shortname(s): 'unknown_part'")
+        f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
+        self.submit(f)
+
+        # TODO: actually add some tests for conditions.
+
+    @event_keeper
+    @as_users("garcia")
     def test_waitlist(self) -> None:
         # Create some new fields.
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
