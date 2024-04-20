@@ -6477,6 +6477,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         droid_export['timestamp'] = orga_export['timestamp']
         self.assertEqual(orga_export, droid_export)
 
+        # Revoke the used token.
+        self.get(f"/event/event/{event_id}/droid/summary")
+        f = self.response.forms[f'revokeorgatokenform{new_token_id}']
+        self.submit(f)
+
+        # Test deletion:
+        self.submit(deletion_form, check_notification=False)
+        self.assertPresence(
+            "Ein Orga-Token kann nicht mehr gelöscht werden, nachdem es benutzt wurde.",
+            div="notifications")
+
+        self.traverse("Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "To be deleted."
+        f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
+        f = self.response.forms[f'deleteorgatokenform{new_token_id}']
+        self.submit(f)
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "New Token!",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_changed,
+                'change_note': "'New Token!' -> 'Changed title'",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_revoked,
+                'change_note': "Changed title",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "To be deleted.",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_deleted,
+                'change_note': "To be deleted.",
+            }
+        ]
+        self.assertLogEqual(
+            log_expectation, 'event', event_id=event_id, offset=self.EVENT_LOG_OFFSET)
+
     @as_users("anton")
     def test_event_fee_stats(self) -> None:
         event_id = 2
