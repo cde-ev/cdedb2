@@ -1342,8 +1342,10 @@ class CdEMailmanClient(mailmanclient.Client):
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
-        If the list is not managed by mailman, this function returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1364,8 +1366,10 @@ class CdEMailmanClient(mailmanclient.Client):
     def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
-        If the list is not managed by mailman, this returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
