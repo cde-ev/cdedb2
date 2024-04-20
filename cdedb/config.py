@@ -425,13 +425,13 @@ class Config(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         return self._configchain.__len__()
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         name = self.__class__.__name__
         return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
 
@@ -469,15 +469,15 @@ class LazyConfig(Config):
         self.__init()
         return super().__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         self.__init()
         return super().__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         self.__init()
         return super().__len__()
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         self.__init()
         return super().__repr__()
 
@@ -525,15 +525,15 @@ class SecretsConfig(Mapping[str, Any]):
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production
         if pathlib.Path("/PRODUCTIONVM").is_file():
-            self._configchain = collections.ChainMap(override)
+            self._configchain = collections.ChainMap(override)  # pragma: no cover
         else:
             self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         return self._configchain.__len__()
