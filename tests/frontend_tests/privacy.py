@@ -553,8 +553,7 @@ class TestPrivacyFrontend(FrontendTest):
                             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                                    check_div=False)
                     else:
-                        msg = f"Forget {self.user['given_name']} in case {realm}."
-                        raise RuntimeError(msg)
+                        self.fail(f"Forgot {self.user['given_name']} in case {realm}.")
                 self.logout()
 
     def test_profile_of_disabled_user(self) -> None:

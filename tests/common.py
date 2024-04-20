@@ -308,17 +308,13 @@ class BasicTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
-        def parse_datetime(s: Optional[str]) -> Optional[datetime.datetime]:
+        def parse_datetime(s: str) -> datetime.datetime:
             # Magic placeholder that is replaced with the current time.
-            if s is None:
-                return None
             if s == "---now---":
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
-        def parse_date(s: Optional[str]) -> Optional[datetime.date]:
-            if s is None:
-                return None
+        def parse_date(s: str) -> datetime.date:
             if s == "---now---":
                 return nearly_now().date()
             return datetime.date.fromisoformat(s)
@@ -1263,7 +1259,7 @@ class FrontendTest(BackendTest):
             return self.response.text
         tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
         if not tmp:
-            raise AssertionError("Div not found.", div)
+            self.fail(f"Div '{div}' not found.")
         content = tmp[0]
         return content.text_content()
 
@@ -1275,7 +1271,7 @@ class FrontendTest(BackendTest):
         if not self.response.content_type == "text/html":
             self.fail("No valid html document.")
         if self.response.lxml.xpath("//*[@id='{}']".format(div)):
-            self.fail("Element with id {} found".format(div))
+            self.fail(f"Element with id {div} found")
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
         """Assert that the form input has a specific HTML DOM attribute.
@@ -1290,9 +1286,9 @@ class FrontendTest(BackendTest):
         tmp = (self.response.html.find_all(id=anid)
                or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", anid)
+            self.fail(f"ID '{anid}' not found.")
         if len(tmp) != 1:
-            raise AssertionError("More or less then one hit.", anid)
+            self.fail(f"More or less then one hit ({len(tmp)}) for div '{anid}'.")
         checkbox = tmp[0]
         if "data-checked" in checkbox.attrs:
             self.assertEqual(str(status), checkbox['data-checked'])
@@ -1300,7 +1296,7 @@ class FrontendTest(BackendTest):
             self.assertEqual("checkbox", checkbox['type'])
             self.assertEqual(status, checkbox.get('checked') == 'checked')
         else:
-            raise ValueError("Id doesnt belong to a checkbox", anid)
+            self.fail(f"ID '{anid}' doesn't belong to a checkbox: {checkbox!r}")
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False, msg: Optional[str] = None) -> None:
@@ -1332,16 +1328,11 @@ class FrontendTest(BackendTest):
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
-            try:
-                content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
-            except IndexError:
-                if check_div:
-                    raise AssertionError(
-                        f"Specified div {div!r} not found.") from None
-                else:
-                    pass
-            else:
-                self.assertNotIn(s.strip(), content.text_content())
+            tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+            if tmp:
+                self.assertNotIn(s.strip(), tmp[0].text_content())
+            elif check_div:
+                self.fail(f"Specified div {div!r} not found.")
 
     def assertNotification(self, ntext: Optional[str] = None,
                            ntype: Optional[str] = None, *, static: bool = False,
@@ -1441,26 +1432,25 @@ class FrontendTest(BackendTest):
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif not nodes:
-                raise AssertionError(f"No input with name {f!r} found.")
-            else:
-                raise AssertionError(f"More than one input with name {f!r}"
-                                     f" found. Need to specify index.")
+            elif not nodes:  # pragma: no cover
+                self.fail(f"No input with name {f!r} found.")
+            else:  # pragma: no cover
+                self.fail(f"More than one input with name {f!r} found."
+                          f" Need to specify index.")
         else:
             try:
                 node = nodes[index]
-            except IndexError:
-                raise AssertionError(f"Input with name {f!r} and index {index}"
-                                     f" not found. {len(nodes)} inputs with"
-                                     f" name {f!r} found.") from None
+            except IndexError:  # pragma: no cover
+                raise self.failureException(
+                    f"Input with name {f!r} and index {index} not found."
+                    f" {len(nodes)} inputs with name {f!r} found.") from None
 
         # From https://devhints.io/xpath#class-check
         container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             f"' has-{kind} ')]")
         if not container:
-            raise AssertionError(
-                f"Input with name {f!r} is not contained in an .has-{kind} box")
+            self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
         normalized = re.sub(r'\s+', ' ', container[0].text_content())
         errmsg = (f"Expected error message not found near input with name {f!r}:\n"
                   f"{normalized}")
@@ -1498,10 +1488,10 @@ class FrontendTest(BackendTest):
             if content_pat and not content_pat(el_content):
                 printlog("  Skipped: doesn't match description")
                 continue
-            printlog("  Link found")
-            raise AssertionError(
-                "{} tag with {} == {} and content \"{}\" has been found."
-                .format(tag, href_attr, element[href_attr], el_content))
+            printlog("  Link found")  # pragma: no cover
+            self.fail(
+                f"Tag '{tag}' with {href_attr} == {element[href_attr]}"
+                f" and content '{el_content}' has been found.")
 
     def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
@@ -1708,8 +1698,7 @@ class FrontendTest(BackendTest):
         for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')
         if present:
-            raise AssertionError(
-                f"Unexpected sidebar elements '{present}' found.")
+            self.fail(f"Unexpected sidebar elements '{present}' found.")
 
     def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None,
                                   ) -> None:
@@ -1954,8 +1943,8 @@ class CronTest(CdEDBTest):
     def tearDownClass(cls) -> None:
         super().tearDownClass()
         if not cls._remaining_tests and cls._remaining_periodics:
-            raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._remaining_periodics}")
+            raise cls.failureException(
+                f"The following cron-periodics never ran: {cls._remaining_periodics}")
 
     def setUp(self) -> None:
         super().setUp()

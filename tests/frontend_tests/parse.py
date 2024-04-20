@@ -22,10 +22,7 @@ class TestParseFrontend(FrontendTest):
     def csv_submit(self, form: webtest.Form, button: str = "",
                    value: Optional[str] = None) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
-        try:
-            self.assertEqual(self.response.text[0], "\ufeff")
-        except AssertionError:
-            self.assertPresence("Erfolg", div="notifications")
+        self.assertEqual(self.response.text[0], "\ufeff")
         self.response.text = self.response.text[1:]
 
     @staticmethod

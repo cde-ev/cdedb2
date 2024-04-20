@@ -2116,11 +2116,8 @@ class TestCoreFrontend(FrontendTest):
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
-        elif self.user:
-            self.get('/core/genesis/request')
         else:
-            self.get('/')
-            self.traverse({'description': 'Account anfordern'})
+            self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():

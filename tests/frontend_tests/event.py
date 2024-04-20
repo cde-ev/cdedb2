@@ -433,14 +433,10 @@ class TestEventFrontend(FrontendTest):
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
-        # not registered, not event admin
+        # not registered, not event admin (auditor can see only global log).
         if self.user_in('martin', 'vera', 'werner', 'katarina'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga | finance_admin
-        # same, but auditor
-        elif self.user_in('katarina'):
-            ins = everyone | not_registered | {"Log"}
-            out = registered | registered_or_orga | orga | finance_admin - {"Log"}
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga

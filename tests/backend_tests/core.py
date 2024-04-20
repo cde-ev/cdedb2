@@ -119,8 +119,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
             # Validate cde/total data if applicable
             if not persona['is_cde_realm']:
@@ -132,8 +132,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
     @as_users("anton", "berta", "janis")
     def test_set_persona(self) -> None:
@@ -513,7 +513,7 @@ class TestCoreBackend(BackendTest):
             elif members == 8:
                 member_total = "114.76"
             else:
-                raise RuntimeError("Test needs adjustment.")
+                self.fail("Test needs adjustment.")
             data = {'persona_id': persona_id, 'code': code, 'total': "725.87",
                     'delta': None, 'new_balance': None, 'transaction_date': None,
                     'members': members, 'member_total': member_total}

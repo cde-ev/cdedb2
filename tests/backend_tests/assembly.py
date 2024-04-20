@@ -1796,8 +1796,8 @@ class TestAssemblyBackend(BackendTest):
                 if assemblies[assembly_id]['is_active']:
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
                 else:
-                    with self.assertRaises(ValueError):
-                        self.assembly.set_assembly(self.key, {'id': assembly_id})
+                    self.fail(f"Unexpected inactive assembly for"
+                              f" presider '{self.user['display_name']}'.")
 
             for assembly_id in non_presided_assemblies:
                 with self.assertRaises(PrivilegeError):
@@ -1941,9 +1941,8 @@ class TestAssemblyBackend(BackendTest):
 
                     if self.assembly.check_attendance(
                             self.key, assembly_id=assembly_id):
-                        self.assembly.has_voted(self.key, ballot_id)
-
-                        self.assembly.get_vote(self.key, ballot_id, None)
+                        self.fail(f"Unexpected attended assembly for"
+                                  f" member '{self.user['display_name']}'.")
                     else:
                         with self.assertRaises(PrivilegeError):
                             self.assembly.has_voted(self.key, ballot_id)
