@@ -1908,7 +1908,7 @@ class TestAssemblyBackend(BackendTest):
                                     self.key, attachment_id,
                                 ),
                             )
-                    except (DeletionImpossibleError, DeletionBlockedError):
+                    except (DeletionImpossibleError, DeletionBlockedError):  # pragma: no cover
                         pass
 
             with self.assertRaises(PrivilegeError):

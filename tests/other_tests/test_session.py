@@ -268,7 +268,7 @@ class TestSessionFrontend(FrontendTest):
         self.app.reset()
         try:
             self.submit(f, check_notification=False)
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             self.fail("Input validation not checked when submitting csrf-protected"
                       " form withput sessionkey.")
 

@@ -91,8 +91,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_event_admin_view(self, inspected: UserObject) -> Set[str]:
         expected: Set[str] = set()
-        for field in expected:
-            self.assertPresence(field, div=self.FIELD_TO_DIV[field])
+        # for field in expected:
+        #     self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_relative_admin_view(inspected)
         checked.update(self._profile_event_context_view(inspected))
         return expected | checked
@@ -155,8 +155,8 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_orga_view(self, inspected: UserObject) -> Set[str]:
         expected: Set[str] = set()
-        for field in expected:
-            self.assertPresence(field, div=self.FIELD_TO_DIV[field])
+        # for field in expected:
+        #     self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_event_context_view(inspected)
         return expected | checked
 

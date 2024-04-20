@@ -3777,13 +3777,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for part_group_id, part_group in event.part_groups.items():
             # Skip all part groups with at most one part.
             if len(part_group.parts) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in part_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
             if len(StatisticMixin.get_track_ids(
                     event, part_group_id=part_group_id)) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in track_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
@@ -3809,7 +3809,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_id=part_id))
             for pg_id, reg_ids in row['part_groups'].items():
                 if len(StatisticMixin.get_track_ids(event, part_group_id=pg_id)) <= 1:
-                    continue
+                    continue  # pragma: no cover
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
 
     @as_users("garcia")

@@ -145,7 +145,7 @@ class TestParseFrontend(FrontendTest):
                 assertion, key = k.split("_", 1)
             if assertion == "In":
                 self.assertIn(v, adict[key])
-            elif assertion == "NotIn":
+            elif assertion == "NotIn":  # pragma: no cover
                 self.assertNotIn(v, adict[key])
             else:
                 self.assertEqual(v, adict[k])

@@ -226,13 +226,13 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             attr = getattr(backend, name)
             # Special case for the `subman.SubscriptionManager`
             if name == "subman":
-                return attr
+                return attr  # pragma: no cover # TODO: coverage
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(f"Attribute {name} not public")
+                raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
@@ -240,8 +240,9 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
                 try:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
-                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
-                                       " the test?") from e
+                    raise RuntimeError(  # pragma: no cover
+                        "Did you forget to add a `@storage` decorator to the test?"
+                    ) from e
 
             return wrapper
 
@@ -428,7 +429,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -444,7 +445,7 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):
+        if self.user_in("anonymous"):  # pragma: no cover
             if not allow_anonymous:
                 raise self.failureException("Already logged out.")
         self.core.logout(self.key)
@@ -541,7 +542,7 @@ class BrowserTest(CdEDBTest):
             except socket.timeout:
                 time.sleep(.1)
         else:
-            raise RuntimeError('Test server failed to start.')
+            raise RuntimeError('Test server failed to start.')  # pragma: no cover
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -930,7 +931,7 @@ class FrontendTest(BackendTest):
         # set `do_scrap` to True to capture a snapshot of all visited pages
         # TODO move this in the TestConfig?
         cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
-        if cls.do_scrap:
+        if cls.do_scrap:  # pragma: no cover
             # create a parent directory for all dumps
             dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
             dump_root.mkdir(exist_ok=True)
@@ -941,7 +942,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def tearDownClass(cls) -> None:
         super().tearDownClass()
-        if cls.do_scrap:
+        if cls.do_scrap:  # pragma: no cover
             # make scrap_path directory and content publicly readable
             folder = pathlib.Path(cls.scrap_path)
             folder.chmod(0o0755)  # 0755/drwxr-xr-x
@@ -965,7 +966,7 @@ class FrontendTest(BackendTest):
         self._log_generation_time()
 
     def _scrap(self) -> None:
-        if self.do_scrap and self.response.status_int // 100 == 2:
+        if self.do_scrap and self.response.status_int // 100 == 2:  # pragma: no cover
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
@@ -1064,7 +1065,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")
+                "Cannot specify button value without specifying button name.")  # pragma: no cover
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1132,7 +1133,7 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):
+        if self.user_in("anonymous"):  # pragma: no cover
             if not allow_anonymous:
                 raise self.failureException("Already logged out.")
         else:
@@ -1229,7 +1230,7 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
 
     def fetch_orga_token(self) -> Tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
@@ -1473,7 +1474,7 @@ class FrontendTest(BackendTest):
 
         def printlog(s: str) -> None:
             if verbose:
-                print(s)
+                print(s)  # pragma: no cover
 
         for element in self.response.html.find_all(tag):
             el_html = str(element)
@@ -1513,7 +1514,7 @@ class FrontendTest(BackendTest):
                 self.get(f"/event/event/{event_id}/log")
             else:
                 self.get("/event/log")
-        elif realm == "assembly":
+        elif realm == "assembly":  # pragma: no cover # TODO
             entities = self.assembly.get_assemblies(self.key, entity_ids)
             if assembly_id := kwargs.get('assembly_id'):
                 specific_log = True
@@ -1523,7 +1524,7 @@ class FrontendTest(BackendTest):
         elif realm == "ml":
             entities = {ml_id: ml.to_database() for ml_id, ml
                         in self.ml.get_mailinglists(self.key, entity_ids).items()}
-            if ml_id := kwargs.get('mailinglist_id'):
+            if ml_id := kwargs.get('mailinglist_id'):  # pragma: no cover # TODO
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
             else:
@@ -1798,7 +1799,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -1872,7 +1873,7 @@ class MultiAppFrontendTest(FrontendTest):
     def get_app(self) -> webtest.TestApp:
         return self.apps[self.current_app]
 
-    def set_app(self, value: webtest.TestApp) -> None:
+    def set_app(self, value: webtest.TestApp) -> None:  # pragma: no cover
         self.apps[self.current_app] = value
 
     app = property(fget=get_app, fset=set_app)
@@ -1885,7 +1886,7 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
         self.current_app = i
 
 
@@ -1980,7 +1981,7 @@ class CronTest(CdEDBTest):
 
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
-            raise ValueError("Must specify jobs to run.")
+            raise ValueError("Must specify jobs to run.")  # pragma: no cover
         self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:
