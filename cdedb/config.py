@@ -46,11 +46,11 @@ def get_configpath(fallback: bool = False) -> pathlib.Path:
     """
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    if fallback:
+    if fallback:  # pragma: no cover
         _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
         set_configpath(DEFAULT_CONFIGPATH)
         return DEFAULT_CONFIGPATH
-    raise RuntimeError("No config path set!")
+    raise RuntimeError("No config path set!")  # pragma: no cover
 
 
 # TODO where exactly does this log?
@@ -74,7 +74,7 @@ except FileNotFoundError:  # pragma: no cover, only catch git executable not fou
         _git_commit = (
             (_repopath / ".git" / _git_commit.removeprefix("ref: ")).read_text().strip()
         )
-except subprocess.CalledProcessError as e:
+except subprocess.CalledProcessError as e:  # pragma: no cover
     # It can happen that we use a git worktree where the primary repository
     # is outside of the sandbox/VM in which we are running.
     _git_reference = (_repopath / ".git").read_text().strip()
@@ -384,7 +384,7 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     spec = importlib.util.spec_from_file_location("override", str(path))
     if not spec or not spec.loader:
-        raise ImportError
+        raise ImportError  # pragma: no cover
     override = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(override)
     return {key: getattr(override, key) for key in dir(override)}
@@ -406,10 +406,10 @@ class Config(Mapping[str, Any]):
         _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
 
         if not configpath:
-            raise RuntimeError(f"No configpath for {name} provided!")
+            raise RuntimeError(f"No configpath for {name} provided!")  # pragma: no cover
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of {name}, config file"
-                               f" {configpath} not found!")
+            raise RuntimeError(  # pragma: no cover
+                f"During initialization of {name}, config file {configpath} not found!")
 
         override = self._process_config_overwrite()
         self._configchain = collections.ChainMap(override, _DEFAULTS)
@@ -513,10 +513,11 @@ class SecretsConfig(Mapping[str, Any]):
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
 
         if not configpath:
-            raise RuntimeError("No configpath for SecretsConfig provided!")
+            raise RuntimeError("No configpath for SecretsConfig provided!")  # pragma: no cover
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of SecretsConfig, config file"
-                               f" {configpath} not found!")
+            raise RuntimeError(  # pragma: no cover
+                f"During initialization of SecretsConfig,"
+                f" config file {configpath} not found!")
 
         override = _import_from_file(configpath)
         override = {
