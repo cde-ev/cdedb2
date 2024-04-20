@@ -199,7 +199,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             return self
         else:
             if self.status != psycopg2.extensions.STATUS_READY:
-                raise RuntimeError(n_("Connection in use!"))
+                raise RuntimeError(n_("Connection in use!"))  # pragma: no cover
             # clear saved exception
             self._saved_etype = None
             self._saved_evalue = None
@@ -235,7 +235,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
     def decontaminate(self) -> None:
         """Reduce recursion by one."""
         if self._radiation_level <= 0:
-            raise RuntimeError(n_("No contamination!"))
+            raise RuntimeError(n_("No contamination!"))  # pragma: no cover
         self._radiation_level -= 1
 
     @property
