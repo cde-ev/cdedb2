@@ -226,7 +226,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             attr = getattr(backend, name)
             # Special case for the `subman.SubscriptionManager`
             if name == "subman":
-                return attr  # pragma: no cover # TODO: coverage
+                return attr  # TODO: coverage
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
@@ -1514,7 +1514,7 @@ class FrontendTest(BackendTest):
                 self.get(f"/event/event/{event_id}/log")
             else:
                 self.get("/event/log")
-        elif realm == "assembly":  # pragma: no cover # TODO
+        elif realm == "assembly":  # TODO: coverage
             entities = self.assembly.get_assemblies(self.key, entity_ids)
             if assembly_id := kwargs.get('assembly_id'):
                 specific_log = True
@@ -1524,7 +1524,7 @@ class FrontendTest(BackendTest):
         elif realm == "ml":
             entities = {ml_id: ml.to_database() for ml_id, ml
                         in self.ml.get_mailinglists(self.key, entity_ids).items()}
-            if ml_id := kwargs.get('mailinglist_id'):  # pragma: no cover # TODO
+            if ml_id := kwargs.get('mailinglist_id'):  # TODO: coverage
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
             else:
