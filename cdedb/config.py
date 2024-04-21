@@ -46,11 +46,11 @@ def get_configpath(fallback: bool = False) -> pathlib.Path:
     """
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    if fallback:  # pragma: no cover
+    if fallback:  # TODO: coverage?
         _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
         set_configpath(DEFAULT_CONFIGPATH)
         return DEFAULT_CONFIGPATH
-    raise RuntimeError("No config path set!")  # pragma: no cover
+    raise RuntimeError("No config path set!")  # TODO: coverage
 
 
 # TODO where exactly does this log?
@@ -425,12 +425,15 @@ class Config(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
     def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
     def __len__(self) -> int:  # pragma: no cover
         return self._configchain.__len__()
 
+    # The repr is only relevant for debugging.
     def __repr__(self) -> str:  # pragma: no cover
         name = self.__class__.__name__
         return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
@@ -469,6 +472,8 @@ class LazyConfig(Config):
         self.__init()
         return super().__getitem__(key)
 
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
     def __iter__(self) -> Iterator[str]:  # pragma: no cover
         self.__init()
         return super().__iter__()
@@ -477,6 +482,7 @@ class LazyConfig(Config):
         self.__init()
         return super().__len__()
 
+    # The repr is only relevant for debugging.
     def __repr__(self) -> str:  # pragma: no cover
         self.__init()
         return super().__repr__()
@@ -532,6 +538,8 @@ class SecretsConfig(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
     def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
