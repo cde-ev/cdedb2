@@ -1746,6 +1746,10 @@ class AssemblyBackend(AbstractBackend):
                           ) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
+        assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+        if not self.is_presider(rs, assembly_id=assembly_id):
+            raise PrivilegeError(n_(
+                "Must have privileged access to delete attachment."))
         blockers = self.delete_attachment_blockers(rs, attachment_id)
         if "assembly_is_locked" in blockers:
             raise DeletionImpossibleError(n_(  # TODO: coverage
@@ -1761,12 +1765,8 @@ class AssemblyBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             current = self.get_attachment(rs, attachment_id)
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
-            if not self.is_presider(rs, assembly_id=assembly_id):
-                raise PrivilegeError(n_(
-                    "Must have privileged access to delete attachment."))  # TODO: coverage
             if cascade:
                 if "ballots" in cascade:
                     with Silencer(rs):
