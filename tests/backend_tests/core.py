@@ -1369,15 +1369,21 @@ class TestCoreBackend(BackendTest):
                         self.core.get_persona_latest_session(self.key, u["id"]))
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
+        self.login("anton")
+        self.event.delete_registration(self.key, 7,
+                                       ("registration_parts", "course_choices",
+                                        "registration_tracks"))
         for u in USER_DICT.values():
             self.login("vera")
             if u["id"] is None:
                 continue
             with self.subTest(u=u["id"]):
                 res = self.core.is_persona_automatically_archivable(self.key, u["id"])
-                if u["id"] == 18:
+                if u["id"] == 4:
                     self.assertTrue(res)
                     key = self.key
                     self.core.set_persona(

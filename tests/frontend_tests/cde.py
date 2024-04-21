@@ -2032,7 +2032,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     @as_users("farin")
     def test_semester(self) -> None:
         link = {'description': 'Semesterverwaltung'}

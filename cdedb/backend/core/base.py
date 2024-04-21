@@ -1409,6 +1409,7 @@ class CoreBaseBackend(AbstractBackend):
             * The persona having been manually changed/created in the last two years.
             * The persona being involved (orga/registration) with any recent event.
             * The persona being involved (presider/attendee) with an active assembly.
+            * The persona being a pure assembly user.
             * The persona being explicitly subscribed to any mailinglist.
         """
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1423,6 +1424,12 @@ class CoreBaseBackend(AbstractBackend):
                 return False
 
             if persona['is_member'] or persona['is_archived']:
+                return False
+
+            # Pure assembly users represent external representants for our assemblies.
+            # As assemblies are rare and they do not need to log in to participate,
+            # the archival would catch many false positives.
+            if persona['is_assembly_realm'] and not persona['is_cde_realm']:
                 return False
 
             # Check latest user session.
