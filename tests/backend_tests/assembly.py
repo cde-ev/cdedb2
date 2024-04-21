@@ -12,7 +12,6 @@ from cdedb.backend.assembly import BallotConfiguration
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, PrivilegeError, get_hash, nearly_now, now,
 )
-from cdedb.common.exceptions import DeletionBlockedError, DeletionImpossibleError
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from tests.common import (
