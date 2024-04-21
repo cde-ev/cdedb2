@@ -1796,8 +1796,12 @@ class TestAssemblyBackend(BackendTest):
                 if assemblies[assembly_id]['is_active']:
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
                 else:
-                    self.fail(f"Unexpected inactive assembly for"
-                              f" presider '{self.user['display_name']}'.")
+                    # No inactive assembly exists in sample data.
+                    # with self.assertRaises(ValueError):
+                    #     self.assembly.set_assembly(self.key, {'id': assembly_id})
+                    self.fail(
+                        f"Sample data changed to include inactive assembly for"
+                        f" presider '{self.user['display_name']}'.")
 
             for assembly_id in non_presided_assemblies:
                 with self.assertRaises(PrivilegeError):
@@ -1900,16 +1904,13 @@ class TestAssemblyBackend(BackendTest):
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
 
                 for attachment_id in all_attachment_ids[assembly_id]:
-                    try:
-                        with self.assertRaises(PrivilegeError):
-                            self.assembly.delete_attachment(
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.delete_attachment(
+                            self.key, attachment_id,
+                            self.assembly.delete_attachment_blockers(
                                 self.key, attachment_id,
-                                self.assembly.delete_attachment_blockers(
-                                    self.key, attachment_id,
-                                ),
-                            )
-                    except (DeletionImpossibleError, DeletionBlockedError):  # pragma: no cover
-                        pass
+                            ),
+                        )
 
             with self.assertRaises(PrivilegeError):
                 self.assembly.retrieve_log(
@@ -1941,8 +1942,12 @@ class TestAssemblyBackend(BackendTest):
 
                     if self.assembly.check_attendance(
                             self.key, assembly_id=assembly_id):
-                        self.fail(f"Unexpected attended assembly for"
-                                  f" member '{self.user['display_name']}'.")
+                        # No attended assembly exists.
+                        # self.assembly.has_voted(self.key, ballot_id)
+                        # self.assembly.get_vote(self.key, ballot_id)
+                        self.fail(
+                            f"Sample data changed to include attended assembly for"
+                            f" member '{self.user['display_name']}'.")
                     else:
                         with self.assertRaises(PrivilegeError):
                             self.assembly.has_voted(self.key, ballot_id)
