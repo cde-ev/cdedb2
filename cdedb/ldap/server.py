@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
+import sys
 from asyncio.transports import BaseTransport, Transport
 from collections.abc import Coroutine
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Protocol
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
@@ -19,9 +20,18 @@ from ldaptor.protocols.pureldap import (
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
-ReplyCallback = Callable[[pureldap.LDAPProtocolResponse], None]
+# see RFC 2696
+PagedResultsControlType = b"1.2.840.113556.1.4.319"
+
+KNOWN_CONTROL_TYPES = [PagedResultsControlType]
 
 logger = logging.getLogger(__name__)
+
+
+class ReplyCallback(Protocol):
+    def __call__(self, response: pureldap.LDAPProtocolResponse,
+                 controls: Optional[list[Any]] = None) -> None:
+        ...
 
 
 class LdapServer(asyncio.Protocol):
@@ -103,7 +113,7 @@ class LdapServer(asyncio.Protocol):
             return
 
         for controlType, criticality, controlValue in controls:
-            if criticality:
+            if criticality and controlType not in KNOWN_CONTROL_TYPES:
                 raise ldaperrors.LDAPUnavailableCriticalExtension(
                     b"Unknown control %s" % controlType)
 
@@ -142,9 +152,10 @@ class LdapServer(asyncio.Protocol):
         assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
         logger.debug(f"S<-C {repr(msg)}")
 
-        def reply(response: pureldap.LDAPProtocolResponse) -> None:
+        def reply(response: pureldap.LDAPProtocolResponse,
+                  controls: Optional[list[Any]] = None) -> None:
             """Send a message back to the client."""
-            response_msg = pureldap.LDAPMessage(response, id=msg.id)
+            response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
             logger.debug(f"S->C {repr(response_msg)}")
             self.transport.write(response_msg.toWire())
 
@@ -266,6 +277,22 @@ class LdapServer(asyncio.Protocol):
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
+    # see RFC 2696
+    # pagedResultsControl ::= SEQUENCE {
+    #         controlType     1.2.840.113556.1.4.319,
+    #         criticality     BOOLEAN DEFAULT FALSE,
+    #         controlValue    searchControlValue
+    # }
+    #
+    # realSearchControlValue ::= SEQUENCE {
+    #         size            INTEGER (0..maxInt),
+    #                                 -- requested page size from client
+    #                                 -- result set size estimate from server
+    #         cookie          OCTET STRING
+    # }
+    #
+    # We decided to store the offset of the last page (the ordinal of the last entry
+    # which was already returned) in the cookie.
     async def handle_LDAPSearchRequest(
         self,
         request: LDAPSearchRequest,
@@ -276,7 +303,26 @@ class LdapServer(asyncio.Protocol):
         self.check_controls(controls)
         base_dn = DistinguishedName(request.baseObject)
 
+        is_paged = False
+        paged_size = 0
+        paged_cookie = 0
+        for controlType, _, controlValue in (controls or []):
+            if controlType != PagedResultsControlType:
+                continue
+            control_values = pureber.BERSequence.fromBER(
+                pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
+            ).data[0]
+            logger.debug(f"Control values: {control_values.data}")
+            paged_size = control_values[0].value
+            # Signaling we should return the first page.
+            if control_values[1].value != b"":
+                paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
+            is_paged = (paged_size != 0)
+            logger.debug(f"Received Paged size: {paged_size}")
+            logger.debug(f"Received Paged cookie: {paged_cookie}")
+
         # short-circuit if the requested entry is the root entry
+        # ignore the paged_search request, since its only one entry
         if (
             request.baseObject == b""
             and request.scope == pureldap.LDAP_SCOPE_baseObject
@@ -395,12 +441,38 @@ class LdapServer(asyncio.Protocol):
                     (key, attributes.get(key)) for key in request.attributes
                     if key in attributes]
 
-        for result in search_results:
-            filtered_attributes = filter_entry(result)
-            if filtered_attributes is not None:
-                reply(pureldap.LDAPSearchResultEntry(
-                    objectName=result.dn.getText(), attributes=filtered_attributes))
+        results = [(result.dn, filter_entry(result)) for result in search_results
+                   if filter_entry(result) is not None]
 
-        reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode))
+        total_size = 0
+        new_cookie = None
+        enc_new_cookie = b""
+        if is_paged:
+            total_size = len(results)
+            results = results[paged_cookie:][:paged_size]
+            # indicates this is the last page
+            if paged_size + paged_cookie >= total_size:
+                enc_new_cookie = b""
+            else:
+                new_cookie = paged_cookie + paged_size
+                # determine the number of bytes we need to encode the cookie
+                enc_new_cookie = new_cookie.to_bytes(
+                    (new_cookie.bit_length() + 7) // 8, sys.byteorder)
+
+        for result_dn, attributes in results:
+            reply(pureldap.LDAPSearchResultEntry(
+                objectName=result_dn.getText(), attributes=attributes))
+
+        controls = None
+        if is_paged:
+            control_value = pureber.BERSequence([
+                pureber.BERInteger(total_size), pureber.BEROctetString(enc_new_cookie)
+            ])
+            controls = [(PagedResultsControlType, None, control_value)]
+            logger.debug(f"Returned Paged size: {total_size}")
+            logger.debug(f"Retruned Paged cookie: {new_cookie}")
+
+        reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode),
+              controls=controls)
 
         return None
