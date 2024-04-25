@@ -1297,6 +1297,7 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'interests': NoneType,
     'free_form': NoneType,
     'trial_member': NoneType,
+    'honorary_member': NoneType,
     'decided_search': NoneType,
     'bub_search': NoneType,
     'foto': NoneType,
@@ -1332,6 +1333,7 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'interests': Optional[str],
     'free_form': Optional[str],
     'trial_member': bool,
+    'honorary_member': bool,
     'decided_search': bool,
     'bub_search': bool,
     # 'foto': Optional[str], # No foto -- this is another special
@@ -1417,6 +1419,7 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'balance': NonNegativeDecimal,
     'donation': NonNegativeDecimal,
     'trial_member': bool,
+    'honrary_member': bool,
     'decided_search': bool,
     'bub_search': bool,
     'foto': Optional[str],
@@ -1488,7 +1491,11 @@ def _persona(
     if "is_member" in val and "trial_member" in val:
         if val["trial_member"] and not val["is_member"]:
             errs.append(ValueError("trial_member", n_(
-                "Trial membership implies membership.")))
+                "Trial membership requires membership.")))
+    if "is_member" in val and "honorary_member" in val:
+        if val["honorary_member"] and not val["is_member"]:
+            errs.append(ValueError("honorary_member", n_(
+                "Honorary membership requires membership.")))
     for suffix in ("", "2"):
         if val.get('postal_code' + suffix):
             try:

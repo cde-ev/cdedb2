@@ -851,7 +851,7 @@ class CoreBaseBackend(AbstractBackend):
             if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
-        if (("is_member" in data or "trial_member" in data)
+        if (set(data) & {"is_member", "trial_member", "honorary_member"}
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or not {"membership", "purge"} & set(allow_specials))):
             raise PrivilegeError(n_("Membership modification prevented."))
@@ -1268,6 +1268,7 @@ class CoreBaseBackend(AbstractBackend):
     def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
                                     is_member: Optional[bool] = None,
                                     trial_member: Optional[bool] = None,
+                                    honorary_member: Optional[bool] = None,
                                     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1282,21 +1283,26 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
         trial_member = affirm_optional(bool, trial_member)
+        honorary_member = affirm_optional(bool, honorary_member)
         with Atomizer(rs):
-            current = self.retrieve_persona(rs, persona_id, (
-                'is_member', 'balance', 'is_cde_realm', 'trial_member'))
+            current = self.get_total_persona(rs, persona_id)
 
-            # Determine the target state of (trial) membership
-            if trial_member is None:
-                trial_member = current['trial_member']
+            # Determine target state.
             if is_member is None:
                 is_member = current['is_member']
+            if trial_member is None:
+                trial_member = current['trial_member']
+            if honorary_member is None:
+                honorary_member = current['honorary_member']
 
             # Do some sanity checks
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
             if trial_member and not is_member:
-                raise ValueError(n_("Trial membership implies membership."))
+                raise ValueError(n_("Trial membership requires membership."))
+            if honorary_member and not is_member:
+                raise ValueError(n_("Honorary membership requires membership."))
+
             if not is_member:
                 # Peek at the CdE-realm, this is somewhat of a transgression,
                 # but sadly necessary duct tape to keep the whole thing working.
@@ -1307,13 +1313,20 @@ class CoreBaseBackend(AbstractBackend):
                     raise RuntimeError(n_("Active lastschrift permit found."))
 
             # check if nothing changed at all
-            if (trial_member == current['trial_member']
-                    and is_member == current['is_member']):
+            if (
+                is_member == current['is_member']
+                and trial_member == current['trial_member']
+                and honorary_member == current['honorary_member']
+            ):
                 rs.notify('info', n_("Nothing changed."))
                 return 1
 
-            update: CdEDBObject = {'id': persona_id, 'is_member': is_member,
-                                   'trial_member': trial_member}
+            update: CdEDBObject = {
+                'id': persona_id,
+                'is_member': is_member,
+                'trial_member': trial_member,
+                'honorary_member': honorary_member,
+            }
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
@@ -1322,23 +1335,22 @@ class CoreBaseBackend(AbstractBackend):
             # Perform logging
             if is_member != current['is_member']:
                 if is_member:
-                    delta = None
-                    new_balance = None
                     code = const.FinanceLogCodes.gain_membership
                 else:
-                    # Display this to be not surprised if you look at the finance log
-                    #  and observe the decreasing of the total balance
-                    delta = decimal.Decimal(0)
-                    new_balance = current["balance"]
                     code = const.FinanceLogCodes.lose_membership
-                self.finance_log(rs, code, persona_id, delta, new_balance)
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
             if trial_member != current['trial_member']:
                 if trial_member:
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-
+            if honorary_member != current['honorary_member']:
+                if honorary_member:
+                    code = const.FinanceLogCodes.grant_honorary_membership
+                else:
+                    code = const.FinanceLogCodes.revoke_honorary_membership
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
         return ret
 
     @access("core_admin", "meta_admin")

@@ -450,6 +450,8 @@ class FinanceLogCodes(CdEIntEnum):
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
     #: Fallback for strange cases
+    grant_honorary_membership = 51  #:
+    revoke_honorary_membership = 52  #:
     other = 99
 
 

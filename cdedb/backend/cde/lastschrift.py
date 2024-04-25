@@ -32,7 +32,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: Optional[bool] = None,
-            trial_member: Optional[bool] = None,
+            trial_member: Optional[bool] = None, honorary_member: Optional[bool] = None,
     ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
@@ -50,6 +50,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
         trial_member = affirm_optional(bool, trial_member)
+        honorary_member = affirm_optional(bool, honorary_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
@@ -74,7 +75,8 @@ class CdELastschriftBackend(CdEBaseBackend):
                             "Failed to revoke active lastschrift permit"))
                     revoked_permit = lastschrift_id
             code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member=is_member, trial_member=trial_member)
+                rs, persona_id, is_member=is_member, trial_member=trial_member,
+                honorary_member=honorary_member)
         return code, revoked_permit, collateral_transaction
 
     @access("cde", "core_admin", "cde_admin")

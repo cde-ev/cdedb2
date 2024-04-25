@@ -62,6 +62,7 @@ PERSONA_TEMPLATE = {
     'interests': None,
     'free_form': None,
     'trial_member': None,
+    'honorary_member': None,
     'decided_search': None,
     'bub_search': None,
     'foto': None,
