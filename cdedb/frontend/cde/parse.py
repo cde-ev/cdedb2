@@ -353,7 +353,7 @@ class CdEParseMixin(CdEBaseFrontend):
                         ))
                     elif amount:
                         registration = self.eventproxy.get_registration(
-                            rs, unwrap(registration_ids))
+                            rs, unwrap(registration_ids.keys()))
                         if registration['id'] in amounts_paid:
                             amount_paid = amounts_paid[registration['id']]
                         else:
