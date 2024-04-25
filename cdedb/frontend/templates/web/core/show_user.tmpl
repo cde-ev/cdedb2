@@ -236,6 +236,17 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}
                     </dd>
                 {% endif %}
+                {% if 'honorary_member' in data and data['honorary_member'] %}
+                    <div id="honorary-member">
+                        <dt title="{% trans %}Honorary Member{% endtrans %}">
+                            {% trans %}Honorary Member{% endtrans %}
+                        </dt>
+                        <dd>
+                            {{ util.deko_checkbox(checked=data['honorary_member'], anid="honorary_member_checkbox",
+                                                  titles=[gettext("No"), gettext("Yes")]) }}
+                        </dd>
+                    </div>
+                {% endif %}
             </dl>
 
             {# Only a check if the realm bits are contained in data #}
@@ -393,7 +404,7 @@
         {% endif %}
 
         {% if 'paper_expuls' in data %}
-            <dl id=paper-expuls class="dl-horizontal">
+            <dl id="paper-expuls" class="dl-horizontal">
                 <dt title="{% trans %}Printed exPuls{% endtrans %}">
                     {% trans %}Printed exPuls{% endtrans %}
                 </dt>
