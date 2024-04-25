@@ -326,6 +326,7 @@ class TestCoreBackend(BackendTest):
             'interests': "Ocarinas",
             'free_form': None,
             'trial_member': True,
+            'honorary_member': False,
             'decided_search': False,
             'bub_search': False,
             'foto': None,
@@ -467,15 +468,14 @@ class TestCoreBackend(BackendTest):
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
-            if key in ('trial_member', 'decided_search', 'bub_search'):
-                if persona[key] is None:
-                    persona[key] = False
-            if key == "paper_expuls":
-                if persona[key] is None:
-                    persona[key] = True
-            if key == "donation":
-                if persona[key] is None:
-                    persona[key] = decimal.Decimal(0)
+            persona.update({
+                'trial_member': False,
+                'honorary_member': False,
+                'decided_search': False,
+                'bub_search': False,
+                'paper_expuls': True,
+                'donation': decimal.Decimal(0),
+            })
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
@@ -950,6 +950,7 @@ class TestCoreBackend(BackendTest):
             'balance': decimal.Decimal("0.00"),
             'donation': decimal.Decimal("0.00"),
             'trial_member': True,
+            'honorary_member': False,
             'decided_search': False,
             'bub_search': False,
             'address2': None,
@@ -1093,6 +1094,7 @@ class TestCoreBackend(BackendTest):
             'telephone': '+495432987654321',
             'timeline': 'Überall',
             'trial_member': False,
+            'honorary_member': False,
             'username': 'berta@example.cde',
             'weblink': '<https://www.bundestag.cde>'})
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))

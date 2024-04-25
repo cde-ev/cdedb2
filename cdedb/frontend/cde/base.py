@@ -410,6 +410,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'display_name': persona['display_name'] or persona['given_names'],
             'trial_member': False,
+            'honorary_member': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
             'bub_search': False,

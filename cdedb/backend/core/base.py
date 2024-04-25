@@ -1817,6 +1817,7 @@ class CoreBaseBackend(AbstractBackend):
                 'donation': 0,
                 'decided_search': False,
                 'trial_member': False,
+                'honorary_member': False,
                 'bub_search': False,
                 'paper_expuls': True,
             }

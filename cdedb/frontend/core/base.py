@@ -1080,8 +1080,10 @@ class CoreBaseFrontend(AbstractFrontend):
         ret: set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
-            "balance", "bub_search", "decided_search", "foto", "trial_member"}
+        hidden_cde_fields = (hidden_fields | {
+            "balance", "bub_search", "decided_search", "foto", "trial_member",
+            "honorary_member",
+        }) - {"is_searchable"}
         roles_to_fields = {
             "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
             "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
@@ -1577,21 +1579,22 @@ class CoreBaseFrontend(AbstractFrontend):
             # rather lengthy to specify the exact set of them
             del data[key]
         persona = self.coreproxy.get_total_persona(rs, persona_id)
-        merge_dicts(data, persona)
         # Specific fixes by target realm
         if target_realm == "cde":
             reference = {**CDE_TRANSITION_FIELDS}
-            for key in ('trial_member', 'decided_search', 'bub_search'):
-                if data[key] is None:
-                    data[key] = False
-            if data['paper_expuls'] is None:
-                data['paper_expuls'] = True
-            if data['donation'] is None:
-                data['donation'] = decimal.Decimal("0.0")
+            persona.update({
+                'trial_member': False,
+                'honorary_member': False,
+                'decided_search': False,
+                'bub_search': False,
+                'paper_expuls': True,
+                'donation': decimal.Decimal(0),
+            })
         elif target_realm == "event":
             reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
+        merge_dicts(data, persona)
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]

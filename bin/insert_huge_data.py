@@ -74,6 +74,7 @@ def persona(context: argparse.Namespace) -> int:
         'interests': '',
         'free_form': '',
         'trial_member': False,
+        'honorary_member': False,
         'decided_search': True,
         'bub_search': True,
         'foto': None,

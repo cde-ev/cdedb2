@@ -1419,7 +1419,7 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'balance': NonNegativeDecimal,
     'donation': NonNegativeDecimal,
     'trial_member': bool,
-    'honrary_member': bool,
+    'honorary_member': bool,
     'decided_search': bool,
     'bub_search': bool,
     'foto': Optional[str],
