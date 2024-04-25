@@ -158,6 +158,8 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.lastschrift_transaction_skip"),
     n_("FinanceLogCodes.lastschrift_transaction_cancelled"),
     n_("FinanceLogCodes.lastschrift_transaction_revoked"),
+    n_("FinanceLogCodes.honorary_membership_granted"),
+    n_("FinanceLogCodes.honorary_membership_revoked"),
     n_("FinanceLogCodes.other"),
 
     n_("FieldAssociations.registration"),

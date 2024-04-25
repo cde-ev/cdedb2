@@ -844,21 +844,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Daten sind für andere Mitglieder sichtbar.")
 
         # grant membership
-        self.traverse({'description': 'Status ändern'})
+        self.traverse('Status ändern')
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
 
         # grant trial membership
-        self.traverse({'description': 'Status ändern'})
+        self.traverse('Status ändern')
         self.assertPresence("Probemitgliedschaft gewähren")
-        f = self.response.forms['modifymembershipform']
+        f = self.response.forms['modifytrialmembershipform']
         self.submit(f, button="trial_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
+        self.assertPresence("Probemitglied", div='membership', exact=True)
 
         # revoke membership and trial membership
         self.traverse({'description': 'Status ändern'})
@@ -869,21 +869,20 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
         # grant membership and trial membership
-        self.traverse({'description': 'Status ändern'})
-        self.assertPresence("Zum Mitglied machen")
-        f = self.response.forms['modifymembershipform']
-        f['trial_member'].checked = True
-        self.submit(f)
-        self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
-
-        # revoke trial membership
-        self.traverse({'description': 'Status ändern'})
-        self.assertPresence("Probemitgliedschaft terminieren")
-        f = self.response.forms['modifymembershipform']
+        self.traverse('Status ändern')
+        self.assertPresence("Probemitgliedschaft (und Mitgliedschaft) gewähren")
+        f = self.response.forms['modifytrialmembershipform']
         self.submit(f, button="trial_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
+        self.assertPresence("Probemitglied", div='membership', exact=True)
+
+        # revoke trial membership
+        self.traverse('Status ändern')
+        self.assertPresence("Probemitgliedschaft beenden")
+        f = self.response.forms['modifytrialmembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Bertå Beispiel")
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
 
     @as_users("farin")
     def test_iban_visibility(self) -> None:
@@ -956,8 +955,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("+49 160 20479204", div='contact-mobile', exact=True)
         self.assertPresence("12345 Lynna", div='address')
         self.assertPresence("Ligusterweg 4", div='address2')
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div='membership')
+        self.assertPresence("Probemitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
@@ -1612,8 +1610,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div="membership")
+        self.assertPresence("Probemitglied", div="membership")
         self.assertNonPresence("Geburtsname", div='personal-information')
 
         self.response = save_response

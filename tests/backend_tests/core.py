@@ -519,8 +519,8 @@ class TestCoreBackend(BackendTest):
                     'delta': None, 'new_balance': None, 'transaction_date': None,
                     'members': members, 'member_total': member_total}
             if code == const.FinanceLogCodes.lose_membership:
-                data["delta"] = "0.00"
-                data["new_balance"] = "1.00"
+                data["delta"] = None
+                data["new_balance"] = None
                 data["member_total"] = "113.76"
             return data
 
@@ -533,7 +533,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(ValueError) as ccm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=persona_id, is_member=False)
-        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+        self.assertEqual(str(ccm.exception), "Trial membership requires membership.")
 
         # Test revoking trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
@@ -553,7 +553,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(ValueError) as ccm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=persona_id, trial_member=True)
-        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+        self.assertEqual(str(ccm.exception), "Trial membership requires membership.")
 
         # Test granting membership
         self.assertGreater(self.core.change_membership_easy_mode(
