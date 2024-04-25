@@ -1347,9 +1347,9 @@ class CoreBaseBackend(AbstractBackend):
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
             if honorary_member != current['honorary_member']:
                 if honorary_member:
-                    code = const.FinanceLogCodes.grant_honorary_membership
+                    code = const.FinanceLogCodes.honorary_membership_granted
                 else:
-                    code = const.FinanceLogCodes.revoke_honorary_membership
+                    code = const.FinanceLogCodes.honorary_membership_revoked
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
         return ret
 
