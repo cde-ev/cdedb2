@@ -434,7 +434,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                     rs, persona_id, new_balance, code,
                     change_note="Erfolgreicher Lastschrifteinzug.")
                 # We provide membership directly after the successful transaction.
-                self.change_membership(rs, persona_id, is_member=True)
+                self.core.change_membership_easy_mode(rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:

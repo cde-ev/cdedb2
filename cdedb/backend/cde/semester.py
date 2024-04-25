@@ -568,7 +568,8 @@ class CdESemesterBackend(CdELastschriftBackend):
                 raise ValueError(n_("Balance too low."))
             else:
                 if persona['trial_member']:
-                    self.change_membership(rs, persona_id, trial_member=False)
+                    self.core.change_membership_easy_mode(
+                        rs, persona_id, trial_member=False)
                     period_update['balance_trialmembers'] = \
                         period['balance_trialmembers'] + 1
                 else:
