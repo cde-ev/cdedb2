@@ -397,10 +397,6 @@ class CdELastschriftBackend(CdEBaseBackend):
 
         :param status: If this is ``failed`` the direct debit permit is revoked
           so that no further transactions are issued for it.
-        :param tally: The actual amount of money that was moved. This may be
-          negative if we incur fees for failed transactions. In case of
-          success the balance of the persona is increased by the yearly
-          membership fee.
         """
         transaction_id = affirm(vtypes.ID, transaction_id)
         status = affirm(const.LastschriftTransactionStati, status)
