@@ -223,7 +223,7 @@
                 {% call(entry) print_multifield_history(['is_member', 'trial_member']) %}
                     {% if entry['is_member'] %}
                         {% if entry['honorary_member'] and entry['trial_member'] %}
-                            {% trans %}Honorary Trial Member{% endtrans %}
+                            {% trans %}Honorary & Trial Member{% endtrans %}
                         {% elif entry['honorary_member'] %}
                             {% trans %}Honorary Member{% endtrans %}
                         {% elif entry['trial_member'] %}
