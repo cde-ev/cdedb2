@@ -232,4 +232,7 @@ def execute_sql_script(
                         for x in cur:
                             click.echo(x)
                     except psycopg2.ProgrammingError as e:
-                        click.echo(e)
+                        if str(e) == "no results to fetch":
+                            pass
+                        else:
+                            click.echo(e)
