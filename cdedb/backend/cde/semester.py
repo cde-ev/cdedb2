@@ -491,12 +491,14 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'ejection_state': persona_id,
             }
             persona = self.core.get_cde_user(rs, persona_id)
-            do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member'])
+            do_eject = (
+                    persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                    and not persona['trial_member']
+                    and not persona['honorary_member']
+            )
             if do_eject:
                 self.change_membership(rs, persona_id, is_member=False)
-                period_update['ejection_count'] = \
-                    period['ejection_count'] + 1
+                period_update['ejection_count'] = period['ejection_count'] + 1
             else:
                 persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)
