@@ -54,25 +54,37 @@ class CdESemesterBackend(CdELastschriftBackend):
         Mostly for use by the 'Semesterverwaltung'.
         """
         with Atomizer(rs):
-            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
-                     " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = True AND balance < %s "
-                     " AND trial_member = False")
-            data = self.query_one(
-                rs, query, (self.conf["MEMBERSHIP_FEE"],))
+            query = """
+                SELECT COALESCE(SUM(balance), 0) as total, COUNT(*) as count FROM core.personas
+                WHERE is_member = True AND balance < %s AND trial_member = False
+            """
+            data = self.query_one(rs, query, (self.conf["MEMBERSHIP_FEE"],))
             ret = {
                 'low_balance_members': data['count'] if data else 0,
                 'low_balance_total': data['total'] if data else 0,
             }
             query = "SELECT COUNT(*) FROM core.personas WHERE is_member = True"
-            ret['total_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas"
-                     " WHERE is_member = True AND trial_member = True")
-            ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas AS p"
-                     " JOIN cde.lastschrift AS l ON p.id = l.persona_id"
-                     " WHERE p.is_member = True AND p.balance < %s"
-                     " AND p.trial_member = False AND l.revoked_at IS NULL")
+            ret['total_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            """
+            ret['trial_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND honorary_member = False
+            """
+            ret['honorary_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*)
+                FROM core.personas AS p JOIN cde.lastschrift AS l ON p.id = l.persona_id
+                WHERE
+                    p.is_member = True
+                    AND p.balance < %s
+                    AND p.trial_member = False
+                    AND p.honorary_member = False
+                    AND l.revoked_at IS NULL
+            """
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
         return ret

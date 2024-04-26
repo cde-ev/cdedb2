@@ -209,6 +209,9 @@
                                 {% trans trial_count=stats['trial_members'] %}
                                     Additionally, we have {{ trial_count }} trial members.
                                 {% endtrans %}
+                                {% trans honorary_count=stats['honorary_members'] %}
+                                    And {{ honorary_count }} honorary members.
+                                {% endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">

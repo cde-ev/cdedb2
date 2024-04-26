@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-04-26 00:24+0200\n"
+"POT-Creation-Date: 2024-04-26 02:05+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -90,7 +90,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
-#: cdedb/backend/assembly.py:328 cdedb/backend/cde/base.py:590
+#: cdedb/backend/assembly.py:328 cdedb/backend/cde/base.py:597
 #: cdedb/backend/core/base.py:2784 cdedb/backend/event/query.py:633
 #: cdedb/backend/ml.py:310 cdedb/backend/past_event.py:760
 msgid "Bad scope."
@@ -411,8 +411,8 @@ msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
-#: cdedb/backend/assembly.py:2350 cdedb/backend/cde/base.py:486
-#: cdedb/backend/cde/lastschrift.py:450 cdedb/backend/common.py:469
+#: cdedb/backend/assembly.py:2350 cdedb/backend/cde/base.py:493
+#: cdedb/backend/cde/lastschrift.py:451 cdedb/backend/common.py:469
 #: cdedb/backend/core/base.py:2265 cdedb/backend/event/base.py:1140
 #: cdedb/common/__init__.py:257 cdedb/frontend/assembly/ballot.py:521
 #: cdedb/frontend/cde/base.py:680 cdedb/frontend/cde/lastschrift.py:530
@@ -434,71 +434,75 @@ msgstr "Unmöglich."
 msgid "No period exists."
 msgstr "Es existiert kein Semester."
 
-#: cdedb/backend/cde/base.py:284
+#: cdedb/backend/cde/base.py:289
 msgid "num_members"
 msgstr "Mitglieder"
 
-#: cdedb/backend/cde/base.py:284
+#: cdedb/backend/cde/base.py:289
 msgid "num_of_searchable"
 msgstr "davon suchbar"
 
-#: cdedb/backend/cde/base.py:284
+#: cdedb/backend/cde/base.py:289
 msgid "num_of_trial"
 msgstr "davon Probemitglieder"
 
-#: cdedb/backend/cde/base.py:285
-msgid "num_all"
-msgstr "Alle Accounts"
-
-#: cdedb/backend/cde/base.py:285
+#: cdedb/backend/cde/base.py:290
 msgid "num_ex_members"
 msgstr "Inaktive Mitglieder"
 
-#: cdedb/backend/cde/base.py:285
+#: cdedb/backend/cde/base.py:290
+msgid "num_of_honorary"
+msgstr "davon Ehrenmitglieder"
+
+#: cdedb/backend/cde/base.py:290
 msgid "num_of_printed_expuls"
 msgstr "davon mit gedrucktem exPuls"
 
-#: cdedb/backend/cde/base.py:298
+#: cdedb/backend/cde/base.py:291
+msgid "num_all"
+msgstr "Alle Accounts"
+
+#: cdedb/backend/cde/base.py:305
 msgid "members_by_country"
 msgstr "Mitglieder nach Land"
 
-#: cdedb/backend/cde/base.py:302
+#: cdedb/backend/cde/base.py:309
 msgid "members_by_city"
 msgstr "Mitglieder nach Stadt"
 
-#: cdedb/backend/cde/base.py:311
+#: cdedb/backend/cde/base.py:318
 msgid "members_by_birthday"
 msgstr "Mitglieder nach Geburtsjahr"
 
-#: cdedb/backend/cde/base.py:347
+#: cdedb/backend/cde/base.py:354
 msgid "members_by_first_event"
 msgstr "Mitglieder nach erster Veranstaltung"
 
-#: cdedb/backend/cde/base.py:350
+#: cdedb/backend/cde/base.py:357
 msgid "users_by_first_event"
 msgstr "Accounts nach erster Veranstaltung"
 
-#: cdedb/backend/cde/base.py:372
+#: cdedb/backend/cde/base.py:379
 msgid "unique_participants_per_year"
 msgstr "Verschiedene CdE-Akademie-Teilnehmer"
 
-#: cdedb/backend/cde/base.py:413
+#: cdedb/backend/cde/base.py:420
 msgid "Cannot restore purged account."
 msgstr "Geleerter Account kann nicht wiederhergestellt werden."
 
-#: cdedb/backend/cde/base.py:454
+#: cdedb/backend/cde/base.py:461
 msgid "Need extra data."
 msgstr "Weitere Daten benötigt."
 
-#: cdedb/backend/cde/base.py:475 cdedb/frontend/cde/base.py:505
+#: cdedb/backend/cde/base.py:482 cdedb/frontend/cde/base.py:505
 msgid "May not grant trial membership to member."
 msgstr "Probemitgliedschaft für Mitglieder nicht erlaubt."
 
-#: cdedb/backend/cde/base.py:555 cdedb/backend/core/base.py:2071
+#: cdedb/backend/cde/base.py:562 cdedb/backend/core/base.py:2071
 msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
-#: cdedb/backend/cde/base.py:570 cdedb/backend/event/query.py:267
+#: cdedb/backend/cde/base.py:577 cdedb/backend/event/query.py:267
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -540,7 +544,7 @@ msgstr "Löschen von %(type)s wird verhindert von %(block)s."
 msgid "Unable to cascade %(blocker)s."
 msgstr "Kaskadierung für %(blocker)s nicht möglich."
 
-#: cdedb/backend/cde/lastschrift.py:357 cdedb/backend/cde/lastschrift.py:550
+#: cdedb/backend/cde/lastschrift.py:357 cdedb/backend/cde/lastschrift.py:551
 msgid "Lastschrift already revoked."
 msgstr "Lastschriftmandat bereits widerrufen."
 
@@ -557,68 +561,68 @@ msgstr "Die ausgewählte Aktion ist nicht final."
 msgid "Transaction already tallied."
 msgstr "Die Transaktion wurde bereits verbucht."
 
-#: cdedb/backend/cde/lastschrift.py:484
+#: cdedb/backend/cde/lastschrift.py:485
 msgid "Transaction was not successful."
 msgstr "Lastschrifteinzug fehlgeschlagen."
 
-#: cdedb/backend/cde/semester.py:93
+#: cdedb/backend/cde/semester.py:105
 msgid "This period does not exist."
 msgstr "Dieses Semester existiert nicht."
 
-#: cdedb/backend/cde/semester.py:106
+#: cdedb/backend/cde/semester.py:118
 msgid "Only able to modify current period."
 msgstr "Nur das aktuelle Semester kann bearbeitet werden."
 
-#: cdedb/backend/cde/semester.py:155
+#: cdedb/backend/cde/semester.py:167
 msgid "Current period not finalized."
 msgstr "Das aktuelle Semester ist noch nicht abgeschlossen."
 
-#: cdedb/backend/cde/semester.py:176
+#: cdedb/backend/cde/semester.py:188
 msgid "Billing already done for this period."
 msgstr "Zahlungserinnerung für dieses Semester bereits verschickt."
 
-#: cdedb/backend/cde/semester.py:198
+#: cdedb/backend/cde/semester.py:210
 msgid "Archival notifications done for this period."
 msgstr ""
 "Archivierungsbenachrichtigungen für dieses Semester bereits verschickt."
 
-#: cdedb/backend/cde/semester.py:218
+#: cdedb/backend/cde/semester.py:230
 msgid "Wrong timing for automated archival."
 msgstr "Falscher Zeitpunkt für automatische Archivierung."
 
-#: cdedb/backend/cde/semester.py:238 cdedb/frontend/cde/semester.py:178
+#: cdedb/backend/cde/semester.py:250 cdedb/frontend/cde/semester.py:178
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/backend/cde/semester.py:260
+#: cdedb/backend/cde/semester.py:272
 msgid "Not the right time to finish balance update."
 msgstr "Falscher Zeitpunkt um Guthabenaktualisierung zu beenden."
 
-#: cdedb/backend/cde/semester.py:282
+#: cdedb/backend/cde/semester.py:294
 msgid "Wrong timing for removing exmembers."
 msgstr "Falscher Zeitpunkt zum Streichen von Exmitgliedern."
 
-#: cdedb/backend/cde/semester.py:309
+#: cdedb/backend/cde/semester.py:321
 msgid "No exPuls exists."
 msgstr "Es existiert keine exPuls-Ausgabe."
 
-#: cdedb/backend/cde/semester.py:319
+#: cdedb/backend/cde/semester.py:331
 msgid "This exPuls does not exist."
 msgstr "Diese exPuls-Ausgabe existiert nicht."
 
-#: cdedb/backend/cde/semester.py:330
+#: cdedb/backend/cde/semester.py:342
 msgid "Only able to modify current expuls."
 msgstr "Nur der aktuelle exPuls kann bearbeitet werden."
 
-#: cdedb/backend/cde/semester.py:340
+#: cdedb/backend/cde/semester.py:352
 msgid "Current expuls not finalized."
 msgstr "Der aktuelle exPuls ist noch nicht abgeschlossen."
 
-#: cdedb/backend/cde/semester.py:367
+#: cdedb/backend/cde/semester.py:379
 msgid "Addresscheck already done for this expuls."
 msgstr "Adressabfrage für diesen ExPuls bereits durchgeführt."
 
-#: cdedb/backend/cde/semester.py:568
+#: cdedb/backend/cde/semester.py:579
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
@@ -4014,43 +4018,43 @@ msgstr "Versand der Zahlungsauffordderungen begonnen."
 msgid "Started sending archival notifications."
 msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
 
-#: cdedb/frontend/cde/semester.py:226
+#: cdedb/frontend/cde/semester.py:225
 msgid "Started updating exmember balance."
 msgstr "Aktualisierung der Exmitglieder Guthaben gestartet."
 
-#: cdedb/frontend/cde/semester.py:228
+#: cdedb/frontend/cde/semester.py:227
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde/semester.py:230
+#: cdedb/frontend/cde/semester.py:229
 msgid "Started automated archival."
 msgstr "Automatische Archivierung inaktiveer Accounts begonnen."
 
-#: cdedb/frontend/cde/semester.py:248
+#: cdedb/frontend/cde/semester.py:247
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde/semester.py:260
+#: cdedb/frontend/cde/semester.py:258
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde/semester.py:278
+#: cdedb/frontend/cde/semester.py:276
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde/semester.py:299
+#: cdedb/frontend/cde/semester.py:297
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde/semester.py:302
+#: cdedb/frontend/cde/semester.py:300
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
 
-#: cdedb/frontend/cde/semester.py:313
+#: cdedb/frontend/cde/semester.py:311
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde/semester.py:316
+#: cdedb/frontend/cde/semester.py:314
 msgid "New expuls started."
 msgstr "Nächster exPuls initialisiert."
 
@@ -7890,7 +7894,9 @@ msgstr "Mitgliedsbeitrag"
 msgid ""
 "You are an honorary member, therefore your membership will not automatically "
 "expire."
-msgstr "Du bist Ehrenmitglied, daher läuft deine Mitgliedschaft nicht automatisch aus."
+msgstr ""
+"Du bist Ehrenmitglied, daher läuft deine Mitgliedschaft nicht automatisch "
+"aus."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:100
 #, python-format
@@ -8400,7 +8406,7 @@ msgid "Finalized"
 msgstr "Finalisiert"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:172
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:306
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:309
 msgid "Semester"
 msgstr "Semester"
 
@@ -9161,7 +9167,7 @@ msgid "%(count)s archival emails have been sent so far."
 msgstr "%(count)s Archivierungsmails wurden bisher versandt."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:105
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:391
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:394
 msgid "Only one Test-Mail"
 msgstr "Nur einzelne Testmail"
 
@@ -9170,12 +9176,12 @@ msgid "Include Address-Check"
 msgstr "Mit Adressabfrage"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:112
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:395
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:398
 msgid "Send Mails"
 msgstr "Mails verschicken"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:117
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:223
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:226
 #, python-format
 msgid "Done on the %(date)s."
 msgstr "Erledigt am %(date)s."
@@ -9266,32 +9272,37 @@ msgstr "Davon %(low_last_count)s mit Einzugsermächtigung."
 msgid "Additionally, we have %(trial_count)s trial members."
 msgstr "Zusätzlich gibt es %(trial_count)s Probemitglieder."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:216
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:212
+#, python-format
+msgid "And %(honorary_count)s honorary members."
+msgstr "Sowie %(honorary_count)s Ehrenmitglieder."
+
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:219
 msgid "Process Accounts"
 msgstr "Nutzer verarbeiten"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:220
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:258
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:422
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:223
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:261
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:425
 msgid "To be done later."
 msgstr "Später zu erledigen."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:227
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:230
 #, python-format
 msgid "%(count)s memberships were ended."
 msgstr "%(count)s Mitgliedschaften beendet."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:231
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:234
 #, python-format
 msgid "%(count)s accounts were archived."
 msgstr "%(count)s Benutzer archiviert."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:245
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:289
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:248
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:292
 msgid "Update Balances"
 msgstr "Guthaben aktualisieren"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:250
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:253
 msgid ""
 "Subtract the membership fee from all members. Trial members lose their trial "
 "membership instead and are normal members afterwards."
@@ -9300,144 +9311,144 @@ msgstr ""
 "verlieren stattdessen ihre Probemitgliedschaft und sind danach normale "
 "Mitglieder."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:263
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:266
 #, python-format
 msgid "Member Balance done up until %(state)s."
 msgstr "Mitgliedsguthaben erledigt bis %(state)s."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:268
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:271
 #, python-format
 msgid "A total of %(total)s member balance has been deducted so far."
 msgstr "Bisher wurde %(total)s Mitgliedsguthaben abgebucht."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:272
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:275
 #, python-format
 msgid "%(count)s trial memberships have been ended so far."
 msgstr "%(count)s Probemitgliedschaften wurden bisher beendet."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:278
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:281
 #, python-format
 msgid "%(total_count)s Members in total."
 msgstr "Insgesamt %(total_count)s Mitglieder."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:282
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:285
 #, python-format
 msgid "%(trial_count)s of these are trial members."
 msgstr "Davon %(trial_count)s Probemitglieder."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:299
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:302
 msgid "Semester History"
 msgstr "Semesterhistorie"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:300
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:303
 msgid "widen semester history"
 msgstr "Semesterhistorie breiter anzeigen"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:307
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:310
 msgid "Billing Mails Sent"
 msgstr "Zahlungs&shy;aufforderungen"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:308
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:311
 msgid "Billing Done"
 msgstr "Zahlungs&shy;aufforderungen erledigt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:309
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:312
 msgid "Archival Notifications Sent"
 msgstr "Archivierungs&shy;benach&shy;richtigungen verschickt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:310
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:313
 msgid "Archival Notifications Done"
 msgstr "Archivierungs&shy;benach&shy;richtigungen verschickt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:311
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:314
 msgid "Balance of Exmembers"
 msgstr "Guthaben von Exmitgliedern"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:312
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:315
 msgid "Affected Exmembers"
 msgstr "Betroffene Exmitglieder"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:313
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:316
 msgid "Exmember Update Done"
 msgstr "Exmitglieder Aktualisierung erledigt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:314
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:317
 msgid "Members Ejected"
 msgstr "Gestrichene Mitglieder"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:315
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:318
 msgid "Ejection Balance"
 msgstr "Gestrichenes Guthaben"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:316
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:319
 msgid "Ejection Done"
 msgstr "Streichung inaktiver Mitglieder erledigt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:317
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:320
 msgid "Accounts Archived"
 msgstr "Archivierte Benutzer"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:318
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:321
 msgid "Automated Archival Done"
 msgstr "Automatische Archivierung abgeschlossen"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:319
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:322
 msgid "Trial Memberships Ended"
 msgstr "Beendete Probe&shy;mitglied&shy;schaften"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:320
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:323
 msgid "Balance Deducted"
 msgstr "Abgebuchtes Guthaben"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:321
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:324
 msgid "Balance Update Done"
 msgstr "Guthaben&shy;aktualisierung erledigt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:322
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:325
 msgid "Semester Done"
 msgstr "Semester erledigt"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:358
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:361
 msgid "exPuls-Semester"
 msgstr "exPuls-Semester"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:361
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:364
 #, python-format
 msgid "The next exPuls will be number %(number)s."
 msgstr "Der nächste exPuls trägt die Nummer %(number)s."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:370
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:373
 msgid "Send Address-Checks"
 msgstr "Adressabfragen verschicken"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:375
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:378
 #, python-format
 msgid "Done on the %(date)s. %(count)s emails were sent."
 msgstr "Erledigt am %(date)s. %(count)s E-Mails versandt."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:382
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:385
 #, python-format
 msgid "Done up until %(state)s. %(count)s emails have been sent so far."
 msgstr "Erledigt bis %(state)s. %(count)s E-Mails wurden bisher versandt."
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:403
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:406
 msgid "Mark as done"
 msgstr "Als erledigt markieren"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:413
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:419
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:416
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:422
 msgid "Next exPuls"
 msgstr "Nächster exPuls"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:429
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:432
 msgid "exPuls History"
 msgstr "exPuls-Historie"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:433
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:436
 msgid "Issue"
 msgstr "Ausgabe"
 
-#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:434
+#: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:437
 msgid "Addresscheck Mails Sent"
 msgstr "Adressabfragen"
 
