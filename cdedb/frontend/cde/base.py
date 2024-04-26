@@ -307,6 +307,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'trial_member': False,
             'honorary_member': False,
+            'is_searchable': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
         }
