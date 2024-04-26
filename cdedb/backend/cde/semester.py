@@ -562,7 +562,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_state': persona_id,
             }
             if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                    and not persona['trial_member']):
+                    and not (persona['trial_member'] or persona['honorary_member'])):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
@@ -573,16 +573,17 @@ class CdESemesterBackend(CdELastschriftBackend):
                     period_update['balance_trialmembers'] = \
                         period['balance_trialmembers'] + 1
                 else:
-                    new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
-                    note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                        money_filter(self.conf["MEMBERSHIP_FEE"]))
+                    if not persona['honorary_member']:
+                        persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
+                        period_update['balance_total'] = (
+                                period['balance_total'] + self.conf["MEMBERSHIP_FEE"])
+                        note = (f"Mitgliedsbeitrag abgebucht"
+                                f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
+                    else:
+                        note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
                     self.core.change_persona_balance(
-                        rs, persona_id, new_b,
-                        const.FinanceLogCodes.deduct_membership_fee,
-                        change_note=note)
-                    new_total = (period['balance_total']
-                                 + self.conf["MEMBERSHIP_FEE"])
-                    period_update['balance_total'] = new_total
+                        rs, persona_id, persona['balance'],
+                        const.FinanceLogCodes.deduct_membership_fee, change_note=note)
             self.set_period(rs, period_update)
             return True, persona
 
