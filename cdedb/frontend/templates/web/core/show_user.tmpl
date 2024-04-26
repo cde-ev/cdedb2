@@ -465,7 +465,7 @@
                     <dd id="address">
                         {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
                         {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
-                        {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
+                        {{ data['postal_code'] }} {{ data['location'] }}{% if data['postal_code'] or data['location'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country']) }}
                     </dd>
                 </dl>
