@@ -429,6 +429,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
                 delta = self.annual_membership_fee(rs)
+                # TODO: skip this for honorary members?
                 new_balance = user['balance'] + delta
                 ret *= self.core.change_persona_balance(
                     rs, persona_id, new_balance, code,
