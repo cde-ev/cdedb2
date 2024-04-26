@@ -72,7 +72,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             ret['trial_members'] = unwrap(self.query_one(rs, query, ()))
             query = """
                 SELECT COUNT(*) FROM core.personas
-                WHERE is_member = True AND honorary_member = False
+                WHERE is_member = True AND honorary_member = True
             """
             ret['honorary_members'] = unwrap(self.query_one(rs, query, ()))
             query = """
