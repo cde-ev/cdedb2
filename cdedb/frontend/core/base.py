@@ -1325,6 +1325,25 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
+    @access("persona")
+    def contact_form(self, rs: RequestState) -> Response:
+        """Render form."""
+        addresses = self.conf["CONTACT_ADDRESSES"]
+        return self.render(rs, "contact", {"addresses": addresses})
+
+    @access("persona", modi={"POST"})
+    @REQUESTdata("to", "anonymous_from", "subject", "msg")
+    def contact(self, rs: RequestState, to: str, anonymous_from: bool,
+                subject: str, msg: str) -> Response:
+        if rs.has_validation_errors() or to not in self.conf["CONTACT_ADDRESSES"]:
+            return self.contact_form(rs)
+
+        # TODO: Send message and copy to author.
+        self.logger.info(f"Persona {rs.user.persona_id} used the contact form.")
+
+        rs.notify("success", n_("Message sent!"))
+        return self.redirect(rs, "core/index")
+
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:

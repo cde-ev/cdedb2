@@ -14,6 +14,8 @@
                     icon="user", active=(sidenav_active=='core_mydata')) }}
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="wrench", active=(sidenav_active=='core_admins')) }}
+            {{ util.href(cdedblink("core/contact"), gettext("Contact"), aclass="list-group-item",
+                    icon="at", active=(sidenav_active=='core_contact')) }}
         </div>
         {% if user.admin_views.intersection(("core_user", "cde_user", "event_user", "genesis", "meta_admin", "auditor")) %}
             <div class="list-group tear-down">

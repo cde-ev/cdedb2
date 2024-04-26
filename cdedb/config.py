@@ -235,6 +235,13 @@ _DEFAULTS = {
     # mailinglist for ballot tallies
     "BALLOT_TALLY_MAILINGLIST_URL": "https://db.cde-ev.de/db/ml/mailinglist/91/show",
 
+    # email addresses for the global contact form
+    "CONTACT_ADDRESSES": {
+        "vorstand@cde-ev.de": "Vorstand",
+        "probleme-mit-dem-vorstand@lists.cde-ev.de": "Ansprechpartner für Probleme mit dem Vorstand",
+        "feedback@lists.cde-ev.de": "Feedback-Team",
+    },
+
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",
     # mailman REST API user

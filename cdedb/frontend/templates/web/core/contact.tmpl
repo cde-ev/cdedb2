@@ -1,0 +1,41 @@
+{% set sidenav_active='core_contact' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}
+    	Contact Form
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/contact_form"), gettext("Contact"), active="True") }}
+{% endblock %}
+{% block content %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#changeinfoform').cdedbProtectChanges();
+        });
+    </script>
+    <p>
+        {% trans website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")) %}
+            This form provides an alternative avenue to direct email to contact various groups in the CdE.
+            In particular, it allows to do so anonymously. In this case, you will not receive an answer.
+            However, in any case you will receive a confirmation of your message by email.
+            A complete list of teams is provided on the {{ website }}.
+        {% endtrans %}
+
+    </p>
+    <form action="{{ cdedblink('core/contact') }}" method="POST" id="changeinfoform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/contact') }}
+        {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), info=gettext("Descriptions and Membership of these groups is found on the %(website)s.")|format(
+                                               website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}
+        {{ util.form_input_checkbox(name="anonymous_from", label=gettext("Send message anonymously")) }}
+        {{ util.form_input_text(name="subject", label=gettext("Subject")) }}
+        {{ util.form_input_textarea(name="msg", label=gettext("Message"), rows=10, info=gettext("Please describe your concerns as well as what you would like to be done about them.")) }}
+        <div>
+            {{ util.form_input_submit(label=gettext("Send"), icon="paper-plane") }}
+        </div>
+    </form>
+{% endblock %}
