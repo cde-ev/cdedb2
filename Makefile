@@ -82,7 +82,7 @@ ifeq ($(wildcard /CONTAINER),/CONTAINER)
         --bind localhost:8998 --daemon --reload \
         wsgi.cdedb-app:application
 else
-	sudo systemctl restart cdedb-app.service
+	sudo systemctl restart apache2.service cdedb-app.service
 endif
 
 
