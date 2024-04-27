@@ -439,7 +439,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                     user['balance'] += self.annual_membership_fee(rs)
                     ret *= self.core.change_persona_balance(
                         rs, persona_id, user['balance'], code,
-                        change_note = "Erfolgreicher Lastschrifteinzug.",
+                        change_note="Erfolgreicher Lastschrifteinzug.",
                         transaction_date=transaction['payment_date'],
                     )
                     if not user['is_member']:

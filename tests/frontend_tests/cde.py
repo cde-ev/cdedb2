@@ -1160,7 +1160,7 @@ class TestCdEFrontend(FrontendTest):
         f['transaction_ids'] = [1001, 1002]
         self.submit(f, button="success")
 
-        payment_date = self.app.app.cde._calculate_payment_date()
+        payment_date = self.app.app.cde._calculate_payment_date()  # pylint: disable=protected-access
         log_expectation = [
             {
                 'code': const.FinanceLogCodes.lastschrift_transaction_issue,
