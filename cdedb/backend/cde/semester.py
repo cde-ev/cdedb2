@@ -55,8 +55,15 @@ class CdESemesterBackend(CdELastschriftBackend):
         """
         with Atomizer(rs):
             query = """
-                SELECT COALESCE(SUM(balance), 0) as total, COUNT(*) as count FROM core.personas
-                WHERE is_member = True AND balance < %s AND trial_member = False
+                SELECT
+                    COALESCE(SUM(balance), 0) as total,
+                    COUNT(*) as count
+                FROM core.personas
+                WHERE
+                    is_member = True
+                    AND balance < %s
+                    AND trial_member = False
+                    AND honorary_member = False
             """
             data = self.query_one(rs, query, (self.conf["MEMBERSHIP_FEE"],))
             ret = {

@@ -285,6 +285,10 @@
                                 {% trans trial_count=stats['trial_members'] %}
                                     {{ trial_count }} of these are trial members.
                                 {% endtrans %}
+                                <br />
+                                {% trans honorary_count=stats['honorary_members'] %}
+                                    {{ honorary_count }} of these are honorary members.
+                                {% endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">

@@ -9336,6 +9336,9 @@ msgstr "Insgesamt %(total_count)s Mitglieder."
 msgid "%(trial_count)s of these are trial members."
 msgstr "Davon %(trial_count)s Probemitglieder."
 
+msgid "%(honorary_count)s of these are honorary members."
+msgstr "Davon %(honorary_count)s Ehrenmitglieder."
+
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:302
 msgid "Semester History"
 msgstr "Semesterhistorie"
