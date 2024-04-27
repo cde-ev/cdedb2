@@ -2155,13 +2155,14 @@ class CoreBaseBackend(AbstractBackend):
         fulltext_input = copy.deepcopy(data)
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
+        # For the sake of correct logging, we stash these as changes
+        membership_keys = ('is_member', 'trial_member', 'honorary_member')
+        stash = {k: data.pop(k) for k in membership_keys}
+        data.update({
+            k: False if data.get('is_cde_realm') else None
+            for k in membership_keys
+        })
         with Atomizer(rs):
-            is_member = trial_member = None
-            if data.get('is_cde_realm'):
-                # For the sake of correct logging, we stash these as changes
-                is_member = data.get('is_member')
-                trial_member = data.get('trial_member')
-                data['is_member'] = data['trial_member'] = False
 
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
@@ -2178,9 +2179,8 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
 
             # apply the previously stashed changes
-            if is_member or trial_member:
-                self.change_membership_easy_mode(
-                    rs, new_id, is_member=is_member, trial_member=trial_member)
+            if any(stash.values()):
+                self.change_membership_easy_mode(rs, new_id, **stash)
         return new_id
 
     @access("anonymous")
