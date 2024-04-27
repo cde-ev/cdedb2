@@ -509,9 +509,9 @@ class TestCoreBackend(BackendTest):
                 rs, persona_id, ("is_member", "trial_member"))
 
         def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
-            if members == 7:
+            if members == 8:
                 member_total = "113.76"
-            elif members == 8:
+            elif members == 9:
                 member_total = "114.76"
             else:
                 raise RuntimeError("Test needs adjustment.")
@@ -540,14 +540,14 @@ class TestCoreBackend(BackendTest):
             self.key, persona_id, trial_member=False), 0)
         expectation["trial_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 9))
 
         # Test revoking membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=False), 0)
         expectation["is_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 8))
 
         # Test granting trial membership
         with self.assertRaises(ValueError) as ccm:
@@ -560,30 +560,30 @@ class TestCoreBackend(BackendTest):
             self.key, persona_id, is_member=True), 0)
         expectation["is_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 9))
 
         # Test granting trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, trial_member=True), 0)
         expectation["trial_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 9))
 
         # Test revoking membership and trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=False, trial_member=False), 0)
         expectation["is_member"] = expectation["trial_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
-        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 7))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 8))
 
         # Test granting trial membership and membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=True, trial_member=True), 0)
         expectation["is_member"] = expectation["trial_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
-        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 9))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 9))
 
         self.assertLogEqual(logs, realm="finance", offset=3)
 
@@ -1124,7 +1124,7 @@ class TestCoreBackend(BackendTest):
             "persona_id": persona_id,
             "delta": "-5.00",
             "new_balance": "0.00",
-            "members": 7,
+            "members": 8,
             "total": "724.87",
             "member_total": "113.76",
             "transaction_date": None,

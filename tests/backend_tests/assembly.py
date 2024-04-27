@@ -437,7 +437,7 @@ class TestAssemblyBackend(BackendTest):
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
             'abs_quorum': 0,
             'rel_quorum': 83,
-            'quorum': 9,
+            'quorum': 10,
             'title': 'Farbe des Logos',
             'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22,
                                             tzinfo=datetime.timezone.utc),

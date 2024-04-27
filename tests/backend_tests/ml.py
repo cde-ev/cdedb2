@@ -1356,6 +1356,7 @@ class TestMlBackend(BackendTest):
             7: SS.implicit,
             9: SS.implicit,
             15: SS.implicit,
+            42: SS.implicit,
             100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
@@ -1567,6 +1568,7 @@ class TestMlBackend(BackendTest):
                 7: 'garcia@example.cde',
                 9: 'inga@example.cde',
                 15: 'olaf@example.cde',
+                42: 'petra@example.cde',
                 100: 'akira@example.cde',
             }
             self.assertEqual(expectation,

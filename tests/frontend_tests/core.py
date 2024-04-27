@@ -1545,7 +1545,7 @@ class TestCoreFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [26]", div='query-results')
+        self.assertPresence("Ergebnis [27]", div='query-results')
         self.assertPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value
