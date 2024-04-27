@@ -4230,7 +4230,7 @@
             "iban": "DE22100100500123456789",
             "account_owner": null,
             "account_address": null,
-            "granted_at": "2023-08-12T00:00:00.0000000+00:00",
+            "granted_at": "2023-08-12T00:00:00+00:00",
             "revoked_at": null,
             "revision": 2,
             "notes": null

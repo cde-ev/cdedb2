@@ -1398,6 +1398,7 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.pending,
             15: SS.implicit,
+            42: SS.implicit,
             100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
@@ -1416,6 +1417,7 @@ class TestMlBackend(BackendTest):
             7: SS.implicit,
             9: SS.implicit,
             15: SS.implicit,
+            42: SS.implicit,
             100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
