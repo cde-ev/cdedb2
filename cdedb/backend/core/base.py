@@ -2159,8 +2159,9 @@ class CoreBaseBackend(AbstractBackend):
         membership_keys = ('is_member', 'trial_member', 'honorary_member')
         stash = {k: data.pop(k) for k in membership_keys}
         data.update({
-            k: False if data.get('is_cde_realm') else None
-            for k in membership_keys
+            'is_member': False,
+            'trial_member': False if data.get('is_cde_realm') else None,
+            'honorary_member': False if data.get('is_cde_realm') else None,
         })
         with Atomizer(rs):
 
