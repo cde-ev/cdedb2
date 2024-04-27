@@ -499,7 +499,7 @@ class BackendTest(CdEDBTest):
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id',):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):

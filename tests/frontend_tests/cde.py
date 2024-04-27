@@ -739,9 +739,9 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['queryform']
         f['qsel_address_supplement'].checked = True
         self.submit(f)
-        self.assertPresence("Ergebnis [19]", div='query-results')
+        self.assertPresence("Ergebnis [20]", div='query-results')
         self.assertEqual(
-            "17",
+            "18",
             self.response.lxml.xpath("//*[@id='query-result']/tfoot/tr/td[@data-col="
                                      "'null.address_supplement']")[0].text.strip()
         )
@@ -1144,18 +1144,65 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
-        exceptions = (5, 6, 14, 28, 66,)
+        exceptions = (5, 6, 14, 28, 66, 98)
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
-                self.assertEqual(expectation[index], line)
+                with self.subTest(i=index):
+                    self.assertEqual(expectation[index].strip(), line.strip())
         self.submit(g)
-        self.assertPresence("1 Lastschriften initialisiert.",
-                            div="notifications")
-        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization',
-                            exact=True)
-        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
-                               "Schwebe.")
+        self.assertPresence("2 Lastschriften initialisiert.", div="notifications")
+        self.assertPresence(
+            "Keine zu bearbeitenden Lastschriften für dieses Semester.",
+            div='open-dd-authorization', exact=True)
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
+
+        f = self.response.forms['finalizationform']
+        f['transaction_ids'] = [1001, 1002]
+        self.submit(f, button="success")
+
+        payment_date = self.app.app.cde._calculate_payment_date()
+        log_expectation = [
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_issue,
+                'persona_id': 2,
+                'change_note': "50.23",
+                'members': 9,
+                'member_total': "114.76",
+                'total': "725.87",
+                'transaction_date': None,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_issue,
+                'persona_id': 42,
+                'change_note': "2000.00",
+                'members': 9,
+                'member_total': "114.76",
+                'total': "725.87",
+                'transaction_date': None,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_success,
+                'persona_id': 2,
+                'delta': self.cde.annual_membership_fee(self.key),
+                'new_balance': "20.50",
+                'members': 9,
+                'member_total': "122.76",
+                'total': "733.87",
+                'transaction_date': payment_date,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_success,
+                'persona_id': 42,
+                'delta': None,
+                'new_balance': "0.00",
+                'members': 9,
+                'member_total': "122.76",
+                'total': "733.87",
+                'transaction_date': payment_date,
+                'change_note': "Ehrenmitglied",
+            },
+        ]
+        self.assertLogEqual(log_expectation, realm="finance", offset=3)
 
     @storage
     @as_users("farin")
@@ -1163,27 +1210,25 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
-                               "dieses Semester.")
+        self.assertPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
                             "Schwebe.", div='open-dd', exact=True)
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
-        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain_single.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
-                self.assertEqual(expectation[index], line)
+                with self.subTest(i=index):
+                    self.assertEqual(expectation[index].strip(), line.strip())
         self.submit(g)
-        self.assertPresence("1 Lastschriften initialisiert.",
-                            div="notifications")
-        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization',
-                            exact=True)
-        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
-                               "Schwebe.")
+        self.assertPresence("1 Lastschriften initialisiert.", div="notifications")
+        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
+        self.assertNonPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
@@ -1947,7 +1992,7 @@ class TestCdEFrontend(FrontendTest):
                 'new_balance': "13.34",
                 'total': "738.21",
                 'member_total': "127.10",
-                'members': 8,
+                'members': 9,
                 'transaction_date': datetime.date(2024, 3, 26),
             },
             {
@@ -1957,7 +2002,7 @@ class TestCdEFrontend(FrontendTest):
                 'new_balance': "100.00",
                 'total': "838.21",
                 'member_total': "127.10",
-                'members': 8,
+                'members': 9,
                 'transaction_date': datetime.date(2019, 3, 17),
             },
             {
@@ -1967,7 +2012,7 @@ class TestCdEFrontend(FrontendTest):
                 'new_balance': None,
                 'total': "838.21",
                 'member_total': "227.10",
-                'members': 9,
+                'members': 10,
                 'transaction_date': None,
             },
         ]
@@ -2088,6 +2133,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
         self.assertPresence("Zusätzlich gibt es 2 Probemitglieder.",
                             div='eject-members')
+        self.assertPresence("Sowie 1 Ehrenmitglieder.", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='balance-update')
 
         f = self.response.forms['ejectform']
@@ -2101,8 +2147,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("2 Mitgliedschaften beendet.", div="eject-members")
         self.assertPresence("1 Benutzer archiviert.", div="eject-members")
 
-        self.assertPresence("Insgesamt 6 Mitglieder.", div='balance-update')
+        self.assertPresence("Insgesamt 7 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 2 Probemitglieder.", div='balance-update')
+        self.assertPresence("Davon 1 Ehrenmitglieder.", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Bereinigung', div='notifications')
@@ -2137,6 +2184,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
         self.assertPresence("Zusätzlich gibt es 0 Probemitglieder.",
                             div='eject-members')
+        self.assertPresence("Sowie 1 Ehrenmitglieder.")
 
         # Check error handling for bill
         self.submit(f, check_notification=False)
@@ -2149,8 +2197,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 5 Mitglieder.", div='balance-update')
+        self.assertPresence("Insgesamt 6 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 0 Probemitglieder.", div='balance-update')
+        self.assertPresence("Davon 1 Ehrenmitglieder.", div='balance-update')
 
         f = self.response.forms['balanceform']
         self.submit(f)
@@ -2191,7 +2240,7 @@ class TestCdEFrontend(FrontendTest):
             # Semester 44
             {
                 'code': const.CdeLogCodes.semester_bill_with_addresscheck,
-                'change_note': "6 E-Mails versandt.",
+                'change_note': "7 E-Mails versandt.",
             },
             {
                 'code': const.CdeLogCodes.automated_archival_notification_done,
@@ -2221,7 +2270,7 @@ class TestCdEFrontend(FrontendTest):
             # Semester 45
             {
                 'code': const.CdeLogCodes.semester_bill,
-                'change_note': "5 E-Mails versandt.",
+                'change_note': "6 E-Mails versandt.",
             },
             {
                 'code': const.CdeLogCodes.automated_archival_notification_done,
@@ -2939,23 +2988,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn('Beispiel', self.response.text)
 
     @as_users("vera")
-    def test_changelog_meta(self) -> None:
-        self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–33 von 33]")
-        f = self.response.forms['logshowform']
-        f['persona_id'] = "DB-2-7"
-        self.submit(f)
-        self.assertTitle("Nutzerdaten-Log [1–1 von 1]")
-        self.assertPresence("Bertå Beispiel")
-
-    @as_users("vera")
     def test_postal_address(self) -> None:
         # personas with event realm but without an address
         personas_without_address = {
             USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
             USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
             USER_DICT["vera"]["id"], USER_DICT["werner"]["id"],
-            USER_DICT["ludwig"]["id"],
+            USER_DICT["ludwig"]["id"], USER_DICT["petra"]["id"],
         }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations

@@ -4224,13 +4224,13 @@
             "notes": null
         },
         {
-            "id": 1001,
+            "id": 4,
             "submitted_by": 32,
             "persona_id": 42,
             "iban": "DE22100100500123456789",
             "account_owner": null,
             "account_address": null,
-            "granted_at": "---now---",
+            "granted_at": "2023-08-12T00:00:00.0000000+00:00",
             "revoked_at": null,
             "revision": 2,
             "notes": null
