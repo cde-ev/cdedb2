@@ -884,6 +884,43 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertå Beispiel")
         self.assertPresence("CdE-Mitglied", div='membership', exact=True)
 
+        # Revoke honorary membership.
+        self.admin_view_profile('petra')
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
+        self.traverse("Status ändern")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
+
+        # Grant honorary membership.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
+
+        # Also grant trial memberhip.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifytrialmembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehren- und Probemitglied", div='membership', exact=True)
+
+        # Revoke everything.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f, button="is_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertNonPresence("itglied", div='membership')
+
+        # Grant membership and honorary membership.
+        self.traverse("Status änder")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
+
     @as_users("farin")
     def test_iban_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
