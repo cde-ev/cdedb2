@@ -2116,11 +2116,8 @@ class TestCoreFrontend(FrontendTest):
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
-        elif self.user:
-            self.get('/core/genesis/request')
         else:
-            self.get('/')
-            self.traverse({'description': 'Account anfordern'})
+            self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
@@ -2653,10 +2650,10 @@ class TestCoreFrontend(FrontendTest):
             data_fields = self.ML_GENESIS_DATA
         elif realm == "event":
             data_fields = self.EVENT_GENESIS_DATA
-        elif realm == "cde":
+        elif realm == "cde":  # pragma: no cover
             data_fields = self.CDE_GENESIS_DATA
         else:
-            data_fields = {}
+            self.fail(f"Doppelganger test-helper not implemented for {realm!r}-realm.")
 
         # Override default fields with current user.
         dg_data = data_fields.copy()
