@@ -402,12 +402,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 constraints.append(constraint)
                 continue  # skip constraints.append below
             if operator == _ops.empty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NULL OR {0} = '' )"
                 else:
                     phrase = "( {0} IS NULL )"
             elif operator == _ops.nonempty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
@@ -419,7 +419,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
                 if operator in (_ops.equalornull, _ops.unequalornull):
-                    if query.spec[field] == "str":
+                    if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
                         phrase += " OR {0} IS NULL )"
