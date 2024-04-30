@@ -54,7 +54,7 @@ class CourseChoiceValidationAux(NamedTuple):
 
 
 @dataclasses.dataclass
-class FeeStatSingle:
+class FeeStatsOneFee:
     total_owed: decimal.Decimal = decimal.Decimal(0)
     total_paid: decimal.Decimal = decimal.Decimal(0)
     registrations_owed: set[int] = dataclasses.field(default_factory=set)
@@ -62,11 +62,11 @@ class FeeStatSingle:
 
 
 @dataclasses.dataclass
-class FeeStatsKind:
-    by_fee: dict[vtypes.ProtoID, FeeStatSingle] = \
-        dataclasses.field(default_factory=lambda: defaultdict(FeeStatSingle))
+class FeeStatsOneKind:
+    by_fee: dict[vtypes.ProtoID, FeeStatsOneFee] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneFee))
 
-    def __getitem__(self, item: vtypes.ProtoID) -> FeeStatSingle:
+    def __getitem__(self, item: vtypes.ProtoID) -> FeeStatsOneFee:
         return self.by_fee[item]
 
     @cached_property
@@ -88,8 +88,8 @@ class FeeStatsKind:
 
 @dataclasses.dataclass
 class FeeStatsTotal:
-    by_kind: dict[const.EventFeeType, FeeStatsKind] = \
-        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsKind))
+    by_kind: dict[const.EventFeeType, FeeStatsOneKind] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneKind))
 
     surplus_total: decimal.Decimal = decimal.Decimal(0)
     surplus_registrations: set[int] = dataclasses.field(default_factory=set)
@@ -99,10 +99,10 @@ class FeeStatsTotal:
 
     unpaid_registrations: set[int] = dataclasses.field(default_factory=set)
 
-    def __getitem__(self, item: const.EventFeeType) -> FeeStatsKind:
+    def __getitem__(self, item: const.EventFeeType) -> FeeStatsOneKind:
         return self.by_kind[item]
 
-    def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsKind]]:
+    def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsOneKind]]:
         return iter(self.by_kind.items())
 
     @cached_property

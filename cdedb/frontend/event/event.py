@@ -8,9 +8,7 @@ This also includes all functionality directly avalable on the `show_event` page.
 """
 
 import copy
-import dataclasses
 import datetime
-import decimal
 import re
 from collections import OrderedDict
 from collections.abc import Collection
@@ -46,14 +44,6 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.models.ml import (
     EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
 )
-
-
-@dataclasses.dataclass
-class RemainingOwedQuery:
-    query: Query
-    count: int
-    ids: set[int]
-    amount: Optional[decimal.Decimal]
 
 
 class EventEventMixin(EventBaseFrontend):
