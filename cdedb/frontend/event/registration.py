@@ -999,7 +999,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             **payment_data,
         })
 
-
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata("skip", "change_note")
