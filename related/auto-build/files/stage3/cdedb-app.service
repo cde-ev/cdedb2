@@ -11,8 +11,10 @@ RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
 # Add --reload for easier development, this is not intended for production use
+# dPROD no --reload
 ExecStart=/usr/bin/gunicorn --forwarded-allow-ips="*" -w 4 --reload wsgi.cdedb-app:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
-PrivateTmp=true
+# dPROD PrivateTmp=true
+PrivateTmp=false
