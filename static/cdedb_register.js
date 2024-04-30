@@ -111,7 +111,12 @@
                 }
                 if (part_selects.length) {
                     part_selects.each(function () {
-                        if ($(this).get()[0].value === "RegistrationPartStati.participant") {
+                        value = $(this).get()[0].value;
+                        if (
+                            value === "RegistrationPartStati.participant"
+                            || value === "RegistrationPartStati.applied"
+                            || value === "RegistrationPartStati.waitlist"
+                        ) {
                             part_ids.push($(this).data("part_id"))
                         }
                     });
@@ -178,13 +183,16 @@
                         fee_summary.each(function() {
                             $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
                             title = $(this).find('#active-fee-title');
-                            orig_title = title.data('orig-title');
+                            active_checkbox = $(this).find('#checkbox-active');
+                            inactive_checkbox = $(this).find('#checkbox-inactive');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
-                                title.html(constants['deko_true'] + orig_title);
-                                title.attr('title', constants['title_active']).removeClass('alert-danger').addClass('alert-success');
+                                active_checkbox.show();
+                                inactive_checkbox.hide();
+                                title.removeClass('alert-danger').addClass('alert-success');
                             } else {
-                                title.html(constants['deko_false'] + orig_title);
-                                title.attr('title', constants['title_inactive']).removeClass('alert-success').addClass('alert-danger');
+                                active_checkbox.hide();
+                                inactive_checkbox.show();
+                                title.removeClass('alert-success').addClass('alert-danger');
                             }
                         });
                     }
