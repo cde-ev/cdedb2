@@ -619,6 +619,7 @@ class QueryResultEntryFormat(enum.Enum):
     username = 2
     event_course = 10
     event_lodgement = 11
+    event_fee = 12
     date = 20
     datetime = 21
     bool = 22
@@ -773,6 +774,12 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
+            if field in (
+                    "reg.amount_paid",
+                    "reg.amount_owed",
+                    "reg.remaining_owed",
+            ):
+                return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):
