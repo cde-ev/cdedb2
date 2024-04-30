@@ -1530,19 +1530,19 @@ class EventRegistrationBackend(EventBaseBackend):
         for reg in self.get_registrations(rs, reg_ids).values():
             reg_fee = self._calculate_complex_fee(rs, reg, event=event)
 
+            if reg['amount_owed'] > reg['amount_paid']:
+                if reg['amount_paid']:
+                    stats.insufficient_total += reg['amount_paid']
+                    stats.insufficient_registrations.add(reg['id'])
+                else:
+                    stats.unpaid_registrations.add(reg['id'])
             for fee_id in reg_fee.active_fees:
                 fee = event.fees[fee_id]
                 fee_stat = stats[fee.kind][fee.id]
 
                 fee_stat.total_owed += fee.amount
                 fee_stat.registrations_owed.add(reg['id'])
-                if reg['amount_owed'] > reg['amount_paid']:
-                    if reg['amount_paid']:
-                        stats.insufficient_total += reg['amount_paid']
-                        stats.insufficient_registrations.add(reg['id'])
-                    else:
-                        stats.unpaid_registrations.add(reg['id'])
-                else:
+                if reg['amount_paid'] >= reg['amount_owed']:
                     fee_stat.total_paid += fee.amount
                     fee_stat.registrations_paid.add(reg['id'])
                     if reg['amount_paid'] > reg['amount_owed']:
