@@ -879,7 +879,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         spec = scope.get_spec()
         if query:
-            query = check_validation(rs, vtypes.Query, query, "query")
+            query = check_validation(rs, Query, query, "query")
             if query and query.scope != scope:
                 raise ValueError(n_("Scope mismatch."))
         elif is_search:

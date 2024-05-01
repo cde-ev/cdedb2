@@ -54,6 +54,7 @@ import collections
 import copy
 import dataclasses
 import datetime
+import decimal
 import distutils.util
 import functools
 import io
@@ -69,7 +70,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
-    Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
+    Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
     get_type_hints, overload,
 )
 
@@ -89,7 +90,7 @@ import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
+    CdEDBObject, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
     compute_checkdigit, now, parse_date, parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
@@ -97,7 +98,7 @@ from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MAX_QUERY_ORDERS, MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS,
-    QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    Query, QueryOperators, QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
