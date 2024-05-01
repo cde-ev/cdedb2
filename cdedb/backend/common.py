@@ -240,6 +240,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         """
         return f"{cls.realm}_admin" in rs.user.roles
 
+    # coverage: We do not expect to trigger an exception to be logged by this.
     def cgitb_log(self) -> None:  # pragma: no cover
         """Log the current exception.
 
