@@ -26,7 +26,7 @@ def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
         @functools.wraps(func)
         def new_func(self, *fargs, **fkwargs):  # type: ignore[no-untyped-def]
             if 'page' in fkwargs:
-                raise ValueError('Argument `page` already present.')
+                raise ValueError('Argument `page` already present.')  # pragma: no cover
             with sync_playwright() as pw:
                 # FIXME webkit fails to log in mysteriously
                 # FIXME firefox fails to deterministically reproduce result
@@ -41,10 +41,10 @@ def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
         return new_func
 
     if len(args) > 0:
-        raise ValueError('Unexpected positional argument.')
+        raise ValueError('Unexpected positional argument.')  # pragma: no cover
 
     def mp(func: Callable) -> Callable:  # type: ignore[type-arg]
-        return make_page(func, headless=headless)
+        return make_page(func, headless=headless, timeout=timeout)
     return mp
 
 
@@ -72,7 +72,7 @@ class TestBrowser(BrowserTest):
     """
 
     @storage
-    @make_page
+    @make_page()
     def test_js_interactive_vote(self, page: Page) -> None:
         """Cast a vote with the interactive voting facility.
 

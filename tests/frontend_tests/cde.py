@@ -91,52 +91,64 @@ class TestCdEFrontend(FrontendTest):
                     deadline = deadline.replace(month=8)
             return deadline.replace(
                 year=deadline.year + periods_left // 2)
-        persona_data = {
-            "balance": 0,
-            "trial_member": False,
+
+        def _assert_ejection_deadline(date_str: str, persona: CdEDBObject,
+                                      period: CdEDBObject) -> None:
+            self.assertEqual(
+                datetime.date.fromisoformat(date_str),
+                _calculate_ejection_deadline(persona, period),
+            )
+
+        member = {
+            'balance': 0,
+            'trial_member': False,
         }
-        period_data = {
+        trial_member = {
+            'balance': 0,
+            'trial_member': True,
+        }
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-02-01", member, period)
+        _assert_ejection_deadline("2020-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
+        _assert_ejection_deadline("2021-08-01", member, period)
+        _assert_ejection_deadline("2022-02-01", trial_member, period)
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
               "katarina")
@@ -1826,75 +1838,99 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertFalse(f['checksum'].value)
         content = self.response.lxml.xpath(
-            "//div[@id='{}']".format("content"))[0].text_content()
-        _, content = content.split(" Zeile 1:")
-        output = []
-        for i in range(2, 7):
-            head, content = content.split(" Zeile {}:".format(i))
-            output.append(head)
-        head, _ = content.split("Validieren")
-        output.append(head)
+            "//ol[@id='transfer-validation']")[0].text_content()
+        output = re.split(r" Zeile \d+:", content)[1:]
         expectation: Tuple[Tuple[str, ...], ...] = (
-            (r"persona_id:\W*Darf nicht leer sein.",
-             r"family_name:\W*Darf nicht leer sein.",
-             r"given_names:\W*Darf nicht leer sein.",
-             r"amount:.*\W*Ungültige Eingabe für eine Dezimalzahl.",),
-            (r"persona_id:\W*Falsches Format.",),
-            (r"family_name:\W*Nachname passt nicht.",),
-            (r"persona_id:\W*Falsches Format.",),
-            (r"amount:\W*Überweisungsbetrag ist negativ.",),
-            tuple(),
-            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
-            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
-            )
-        for ex, out in zip(expectation, output):
+            (
+                "category: Darf nicht leer sein.",
+                "date: Kein Datum gefunden.",
+                "amount: Ungültige Eingabe für einen Betrag.",
+                "persona_id: Darf nicht leer sein.",
+                "family_name: Darf nicht leer sein.",
+                "given_names: Darf nicht leer sein.",
+                "category: Unzulässige Kategorie",
+            ),
+            (
+                "date: Ungültige Eingabe für ein Datum.",
+                "persona_id: Falsches Format.",
+            ),
+            (
+                "persona_id: Falsches Format.",
+                "category: Unzulässige Kategorie.",
+            ),
+            (
+                "amount: Ungültige Eingabe für einen Betrag.",
+            ),
+            (
+                "amount: Muss größer als Null sein.",
+                "given_names: Vornamen passen nicht zusammen.",
+            ),
+            (
+                "persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                "amount: Zu viel Geld.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+            ),
+        )
+        for ex, out in zip(expectation, output, strict=True):  # type: ignore[call-overload]  # TODO: obsolete with mypy set to python3.10
+            out = re.sub(r"\s+", " ", out)
             for piece in ex:
-                self.assertTrue(re.search(piece, out))
+                with self.subTest(search=piece, target=out):
+                    self.assertRegex(out, piece)
         lines = f['transfers'].value.split('\n')
-        inputdata = '\n'.join(lines[4:8]).replace('-12.34', '12.34')
+        inputdata = '\n'.join(
+            lines[4:]
+        ).replace(
+            '-12.34', '12.34'
+        ).replace(
+            'Party50', 'Mitgliedsbeitrag'
+        ).replace(
+            'Charly', 'Charly C.'
+        ).replace(
+            'Daniel', 'Daniel D.'
+        )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
 
         # second round
         self.assertPresence("Bestätigen")
-        self.assertPresence("Saldo: 151,09 €", div='saldo', exact=True)
+        self.assertPresence("Gesamtsumme 486,33 €", div='saldo-table')
+        self.assertPresence("Mitgliedsbeiträge 112,34 €", div='saldo-table')
+        self.assertPresence("Große Testakademie 2222 373,99 €", div='saldo-table')
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
-                            div="notifications")
+        self.assertPresence(
+            "2 Mitgliedsbeiträge verbucht. 1 neue Mitglieder.", div="notifications")
+        self.assertPresence(
+            "1 Überweisungen verbucht für Große Testakademie 2222",
+            div="notifications")
+        self.assertPresence(
+            "1 Erstattungen eingetragen für Große Testakademie 2222",
+            div="notifications")
 
-        log_expectation: list[CdEDBObject] = [
-            # sample data entry:
-            {
-                'persona_id': 9,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "5.00",
-                'new_balance': "5.00",
-                'total': "725.87",
-                'member_total': "114.76",
-                'members': 7,
-                'submitted_by': 32,
-                'transaction_date': now().date(),
-            },
+        finance_log_expectation: list[CdEDBObject] = [
             # new entries:
             {
                 'persona_id': 3,
                 'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
                 'delta': "12.34",
                 'new_balance': "13.34",
                 'total': "738.21",
                 'member_total': "127.10",
                 'members': 8,
-                'transaction_date': None,
+                'transaction_date': datetime.date(2024, 3, 26),
             },
             {
                 'persona_id': 4,
                 'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
                 'delta': "100.00",
                 'new_balance': "100.00",
                 'total': "838.21",
@@ -1905,7 +1941,6 @@ class TestCdEFrontend(FrontendTest):
             {
                 'persona_id': 4,
                 'code': const.FinanceLogCodes.gain_membership,
-                'change_note': None,
                 'delta': None,
                 'new_balance': None,
                 'total': "838.21",
@@ -1913,51 +1948,43 @@ class TestCdEFrontend(FrontendTest):
                 'members': 9,
                 'transaction_date': None,
             },
-            {
-                'persona_id': 6,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "25.00",
-                'new_balance': "47.20",
-                'total': "863.21",
-                'member_total': "252.10",
-                'members': 9,
-                'transaction_date': datetime.date(2019, 3, 15),
-            },
-            {
-                'persona_id': 6,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "13.75",
-                'new_balance': "60.95",
-                'total': "876.96",
-                'member_total': "265.85",
-                'members': 9,
-                'transaction_date': datetime.date(2019, 3, 16),
-            },
         ]
         self.assertLogEqual(
-            log_expectation, realm="finance",
+            finance_log_expectation, realm="finance",
             codes=[const.FinanceLogCodes.increase_balance,
-                   const.FinanceLogCodes.gain_membership])
+                   const.FinanceLogCodes.gain_membership],
+            offset=1,
+        )
+        event_log_expectation = [
+            {
+                'persona_id': 1,
+                'code': const.EventLogCodes.registration_payment_received,
+                'change_note': "400,00 € am 15.03.2019 gezahlt.",
+            },
+            {
+                'persona_id': 1,
+                'code': const.EventLogCodes.registration_payment_reimbursed,
+                'change_note': "26,01 € am 16.03.2019 zurückerstattet.",
+            }
+        ]
+        self.assertLogEqual(
+            event_log_expectation, realm="event", event_id=1,
+            codes=[const.EventLogCodes.registration_payment_received,
+                   const.EventLogCodes.registration_payment_reimbursed],
+        )
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungshistorie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "
                             "(Überwiesen am 17.03.2019)")
-        self.admin_view_profile("ferdinand")
-        self.traverse("Änderungshistorie")
-        self.assertPresence("Guthabenänderung um 25,00 € auf 47,20 €"
-                            " (Überwiesen am 15.03.2019)")
-        self.assertPresence("Guthabenänderung um 13,75 € auf 60,95 €"
-                            " (Überwiesen am 16.03.2019)")
 
         # Test for correctly applying duplicate transfer with same amount.
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        f['transfers'] = """"10";"DB-1-9";"Administrator";"Anton Armin A.";"15.03.2019"
-"10";"DB-1-9";"Administrator";"Anton Armin A.";"16.03.2019"
+        f['transfers'] = """
+"15.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
+"16.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
 """.strip()
         self.submit(f, check_notification=False)
         self.assertPresence("Mehrere Überweisungen für diesen Account"
@@ -1965,7 +1992,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("2 Überweisungen gebucht. 0 neue Mitglieder",
+        self.assertPresence("2 Mitgliedsbeiträge verbucht. 0 neue Mitglieder",
                             div="notifications")
         self.admin_view_profile("anton")
         self.traverse("Änderungshistorie")
@@ -1990,8 +2017,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms['transfersform']
-        # This file has a newline at the end, which needs to be stripped or it
-        # causes the checksum to differ and require a third round.
 
         with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
             data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
@@ -2001,7 +2026,7 @@ class TestCdEFrontend(FrontendTest):
             "money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
-        self.submit(f)
+        self.submit(f, verbose=True)
 
     @as_users("farin")
     def test_money_transfer_low_balance(self) -> None:
@@ -2011,7 +2036,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms["transfersform"]
-        f["transfers"] = "1.00;DB-4-3;Dino;Daniel D.;"
+        f["transfers"] = "01.01.1900;1.00;DB-4-3;Dino;Daniel D.;Mitgliedsbeitrag"
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f)
@@ -2019,7 +2044,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     @as_users("farin")
     def test_semester(self) -> None:
         link = {'description': 'Semesterverwaltung'}

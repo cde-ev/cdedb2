@@ -53,9 +53,8 @@ class TestEventFrontend(FrontendTest):
         current = self.event.get_registration(self.key, reg_id)
         data = {
             'registration_id': reg_id,
-            'date': payment,
+            'date': payment or now().date(),
             # used in log entry
-            'original_date': now().date(),
             'amount': amount_paid - current['amount_paid'],
         }
         self.event.book_fees(self.key, event_id, [data])
@@ -434,14 +433,10 @@ class TestEventFrontend(FrontendTest):
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
-        # not registered, not event admin
+        # not registered, not event admin (auditor can see only global log).
         if self.user_in('martin', 'vera', 'werner', 'katarina'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga | finance_admin
-        # same, but auditor
-        elif self.user_in('katarina'):
-            ins = everyone | not_registered | {"Log"}
-            out = registered | registered_or_orga | orga | finance_admin - {"Log"}
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
@@ -994,6 +989,7 @@ class TestEventFrontend(FrontendTest):
         # fields
         self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
                             div="field-definition-notes", exact=True)
+        self.assertPresence("Kursfelder", div="fieldsummaryform")
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -1025,6 +1021,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
         self.assertNotIn('field_name_9', f.fields)
+
+        if self.user_in("annika"):
+            self.traverse({'href': '/event/$'},
+                          {'href': '/event/list'},
+                          {'href': '/event/event/2/show'},
+                          {'href': '/event/event/2/field/summary'})
+            self.assertNonPresence("Kursfelder", div="fieldsummaryform")
 
     @event_keeper
     @as_users("garcia")
@@ -2229,6 +2232,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @event_keeper
     @as_users("garcia")
+    def test_event_fees(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge",
+                      "Teilnahmebeitrag hinzufügen")
+        f = self.response.forms['configureeventfeeform']
+        f['title'] = "New fee!"
+        f['kind'] = const.EventFeeType.common
+        f['amount'] = 1
+        f['condition'] = "field.unknown_field OR part.unknown_part"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'condition', "Unknown field(s): 'unknown_field'")
+        self.assertValidationError(
+            'condition', "Unknown part shortname(s): 'unknown_part'")
+        f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
+        self.submit(f)
+
+        # TODO: actually add some tests for conditions.
+
+    @event_keeper
+    @as_users("garcia")
     def test_waitlist(self) -> None:
         # Create some new fields.
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -2609,7 +2632,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("farin")
     @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
              "UPDATE event.registrations SET amount_paid = '684.48',"
-             " payment = '2018-01-04' WHERE persona_id = 100;")
+             " payment = '2018-01-04' WHERE persona_id = 100;"
+             "UPDATE event.registrations SET payment = NULL WHERE persona_id = 9;")
     def test_batch_fee(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2625,12 +2649,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 -100.00;DB-100-7;Abukara;Akira;01.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line1_infos")
+        self.assertPresence("Zu viel Geld.", div="line2_infos")
         self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
-        f['full_payment'].checked = True
         f['fee_data'] = """
 373.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
@@ -2638,14 +2661,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 -100.00;DB-100-7;Abukara;Akira;01.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
-        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_infos")
+        self.assertPresence("Zu viel Geld.", div="line2_infos")
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld", div="line0_warnings")
-        self.assertPresence("Zu viel Geld", div="line2_warnings")
+        self.assertPresence("Nicht genug Geld", div="line0_infos")
+        self.assertPresence("Zu viel Geld", div="line2_infos")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
@@ -2670,14 +2693,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
-        self.assertPresence("Teilnahmebeitrag ausstehend")
+        self.assertPresence("Bezahlt am 01.04.2018")
         self.assertPresence("Bereits Bezahlt 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 04.01.2018")
+        self.assertPresence("Bezahlt am 02.02.2014")
         self.assertPresence("Bereits Bezahlt 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2753,20 +2776,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Zu viel Geld.", div="line0_warnings", check_div=False)
         self.assertPresence("Mehrere Überweisungen für diese Person.",
                             div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line1_warnings")
+        self.assertPresence("Zu viel Geld.", div="line1_infos")
 
         f['fee_data'] = """
 400;DB-5-1;Eventis;Emilia;01.04.18
 66.49;DB-5-1;Eventis;Emilia;02.04.18
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
-        self.assertNonPresence("Zu viel Geld.", div="line1_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_infos")
+        self.assertNonPresence("Zu viel Geld.", div="line1_infos")
         self.assertPresence("Mehrere Überweisungen für diese Person.",
                             div="line1_warnings")
 
     @as_users("farin")
-    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
+             "UPDATE event.registrations SET payment = NULL;")
     def test_batch_fee_twice(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2792,8 +2816,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                           {'href': '/event/event/1/registration/2/show'})
             self.assertTitle(
                 "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-            self.assertNonPresence("Bezahlt am 01.04.2018")
-            self.assertNonPresence("Bezahlt am 02.02.2014")
+            self.assertPresence("Bezahlt am 01.04.2018")
             self.assertPresence("Bereits Bezahlt 266,49 €")
 
         self.traverse({'href': '/event/$'},
@@ -2822,7 +2845,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle(
             "Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 02.04.2018")
+        self.assertNonPresence("Bezahlt am 02.04.2018")
+        self.assertPresence("Bezahlt am 01.04.2018")
         self.assertPresence("Bereits Bezahlt 466,49 €")
         # Check log
         self.traverse({'href': '/event/event/1/log'})
@@ -3781,13 +3805,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for part_group_id, part_group in event.part_groups.items():
             # Skip all part groups with at most one part.
             if len(part_group.parts) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in part_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
             if len(StatisticMixin.get_track_ids(
                     event, part_group_id=part_group_id)) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in track_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
@@ -3813,7 +3837,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_id=part_id))
             for pg_id, reg_ids in row['part_groups'].items():
                 if len(StatisticMixin.get_track_ids(event, part_group_id=pg_id)) <= 1:
-                    continue
+                    continue  # pragma: no cover
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
 
     @as_users("garcia")
@@ -4385,36 +4409,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # first check empty csv
         self.traverse({'href': '/event/event/2/download/csv_registrations'})
         self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/csv_courses'})
+        self.get('/event/event/2/download/csv_courses')
         self.assertPresence('Leere Datei.', div='notifications')
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
         self.assertPresence('Leere Datei.', div='notifications')
 
-        # now check empty pdfs
+        # Test nametags
+        save = self.response
         self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = save
+
+        # now check empty pdfs
+        self.get('/event/event/2/download/courselists?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/courselists\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/coursepuzzle\\?runs=2'})
+        self.assertNonPresence('konnte nicht kompiliert werden.')
+        self.get('/event/event/2/download/coursepuzzle?runs=2')
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
         self.traverse({'href': '/event/event/2/download/participantlist\\?runs=2'})
         self.assertPresence('Leeres PDF.', div='notifications')
+        self.assertNonPresence('konnte nicht kompiliert werden.')
 
         # but the latex source code should still be available
         save = self.response
         self.response = save.click(href='/event/event/2/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(href='/event/event/2/download/courselists\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.response = save.click(
             href='/event/event/2/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(href='/event/event/2/download/coursepuzzle\\?runs=0')
-        self.assertPresence('documentclass')
         self.response = save.click(
             href='/event/event/2/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
@@ -6427,13 +6456,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
+
+        # Create a token.
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
-        f['title'] = "New Token!"
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "New Token!"
         self.submit(f)
         new_token_id, secret = self.fetch_orga_token()
+
+        # Change it.
+        self.traverse({'href': f"/event/event/{event_id}/droid/{new_token_id}/change"})
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = ""
+        f['notes'] = "Spam"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "Changed title"
+        self.submit(f)
+        deletion_form = self.response.forms[f'deleteorgatokenform{new_token_id}']
+
+        # Test and compare exports.
         orga_token = self.event.get_orga_token(self.key, new_token_id)
 
         with self.switch_user("anonymous"):
@@ -6451,6 +6497,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         droid_export['timestamp'] = orga_export['timestamp']
         self.assertEqual(orga_export, droid_export)
+
+        # Revoke the used token.
+        self.get(f"/event/event/{event_id}/droid/summary")
+        f = self.response.forms[f'revokeorgatokenform{new_token_id}']
+        self.submit(f)
+
+        # Test deletion:
+        self.submit(deletion_form, check_notification=False)
+        self.assertPresence(
+            "Ein Orga-Token kann nicht mehr gelöscht werden, nachdem es benutzt wurde.",
+            div="notifications")
+
+        self.traverse("Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "To be deleted."
+        f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
+        f = self.response.forms[f'deleteorgatokenform{new_token_id}']
+        self.submit(f)
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "New Token!",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_changed,
+                'change_note': "'New Token!' -> 'Changed title'",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_revoked,
+                'change_note': "Changed title",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "To be deleted.",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_deleted,
+                'change_note': "To be deleted.",
+            }
+        ]
+        self.assertLogEqual(
+            log_expectation, 'event', event_id=event_id, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("anton")
     def test_event_fee_stats(self) -> None:

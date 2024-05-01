@@ -8,6 +8,7 @@ from tests.other_tests.test_browser import TestBrowser
 from tests.other_tests.test_common import TestCommon
 from tests.other_tests.test_config import TestConfig
 from tests.other_tests.test_database import TestDatabase
+from tests.other_tests.test_huge_data import TestHugeData
 from tests.other_tests.test_offline import TestOffline
 from tests.other_tests.test_script import TestScript
 from tests.other_tests.test_session import (

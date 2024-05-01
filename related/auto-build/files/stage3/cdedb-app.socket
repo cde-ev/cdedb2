@@ -1,0 +1,8 @@
+[Unit]
+Description=CdEDB Application server socket
+
+[Socket]
+ListenStream=8998
+
+[Install]
+WantedBy=sockets.target

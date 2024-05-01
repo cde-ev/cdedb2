@@ -31,17 +31,17 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
         if value is None:
             tmp[key] = "NULL"
         elif isinstance(value, datetime.datetime):
-            tmp[key] = "timestamptz '{}'".format(value.isoformat())
+            tmp[key] = f"timestamptz '{value.isoformat()}'"
         elif isinstance(value, datetime.date):
-            tmp[key] = "date '{}'".format(value.isoformat())
+            tmp[key] = f"date '{value.isoformat()}'"
         elif isinstance(value, str):
-            tmp[key] = "'{}'".format(value)
+            tmp[key] = f"'{value}'"
         elif isinstance(value, numbers.Number):
-            tmp[key] = "{}".format(value)
+            tmp[key] = f"{value}"
         elif isinstance(value, collections.abc.Mapping):
-            tmp[key] = "'{}'::jsonb".format(json.dumps(value))
+            tmp[key] = f"'{json.dumps(value)}'::jsonb"
         else:
-            raise ValueError("Unknown datum {} -> {}".format(key, value))
+            raise ValueError(f"Unknown datum {key} -> {value}")  # pragma: no cover
     keys = tuple(tmp)
     return INSERT_TEMPLATE.format(table=table, columns=", ".join(keys),
                                   values=", ".join(tmp[key] for key in keys))

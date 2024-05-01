@@ -1,0 +1,18 @@
+Hallo {{ transfer.persona['display_name'] }},
+
+Deine Überweisung für die Veranstaltung
+    "{{ event['title'] }}"
+über {{ transfer.amount|money }} ist bei uns angekommen.
+
+{% if transfer.registration['amount_paid'] < transfer.registration['amount_owed'] %}
+Damit deine Anmeldung als vollständig zählt musst du noch {{ (transfer.registration['amount_owed'] - transfer.registration['amount_paid'])|money }} bezahlen.
+
+{% endif -%}
+
+{% if event['orga_address'] %}
+Wenn Du Fragen hast, so erreichst Du uns unter <{{ event['orga_address'] }}>
+
+{% endif %}
+
+Viele Grüße
+das Orga-Team

@@ -193,7 +193,7 @@ class TestCommon(BasicTest):
                     check=True, capture_output=True, text=True,
                     env={"LC_MESSAGES": "en"}  # makes parsing easier
                 )
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError as e:  # pragma: no cover
                 self.fail(f"Translation check failed:\n{e.stderr}")
 
         matches = {

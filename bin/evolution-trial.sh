@@ -60,26 +60,26 @@ while read -r evolution; do
         sudo CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
              python3 -m cdedb dev execute-sql-script --as-postgres -vv \
              -f cdedb/database/evolutions/$evolution \
-             -o $evolution_output --outfile-append
+             -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
         python3 -m cdedb dev execute-sql-script -vv \
              -f cdedb/database/evolutions/$evolution \
-             -o $evolution_output --outfile-append
+             -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
         # we use a testconfig for the ci call, so we need to make the test module accessible
         PYTHONPATH="$(python3 -m cdedb config get REPOSITORY_PATH)"
-        sudo -u www-data \
+        sudo -u www-cde -g www-data \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
             PYTHONPATH=$PYTHONPATH \
             CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH \
-            python3 cdedb/database/evolutions/$evolution
+            python3 cdedb/database/evolutions/$evolution || echo "Error while applying $evolution"
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi

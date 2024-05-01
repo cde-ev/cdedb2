@@ -119,8 +119,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
             # Validate cde/total data if applicable
             if not persona['is_cde_realm']:
@@ -132,8 +132,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
     @as_users("anton", "berta", "janis")
     def test_set_persona(self) -> None:
@@ -513,7 +513,7 @@ class TestCoreBackend(BackendTest):
             elif members == 8:
                 member_total = "114.76"
             else:
-                raise RuntimeError("Test needs adjustment.")
+                self.fail("Test needs adjustment.")
             data = {'persona_id': persona_id, 'code': code, 'total': "725.87",
                     'delta': None, 'new_balance': None, 'transaction_date': None,
                     'members': members, 'member_total': member_total}
@@ -1369,15 +1369,21 @@ class TestCoreBackend(BackendTest):
                         self.core.get_persona_latest_session(self.key, u["id"]))
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
+        self.login("anton")
+        self.event.delete_registration(self.key, 7,
+                                       ("registration_parts", "course_choices",
+                                        "registration_tracks"))
         for u in USER_DICT.values():
             self.login("vera")
             if u["id"] is None:
                 continue
             with self.subTest(u=u["id"]):
                 res = self.core.is_persona_automatically_archivable(self.key, u["id"])
-                if u["id"] == 18:
+                if u["id"] == 4:
                     self.assertTrue(res)
                     key = self.key
                     self.core.set_persona(

@@ -2911,7 +2911,8 @@ class TestEventBackend(BackendTest):
                 if key in new:
                     del new[key]
             for key in ('payment',):
-                if new.get(key):
+                # coverage: Setting payment via partial import is disallowed.
+                if new.get(key):  # pragma: no cover
                     try:
                         new[key] = datetime.date.fromisoformat(new[key])
                     except AttributeError:

@@ -1038,6 +1038,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_path.unlink()
             self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
             self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
+            self.logger.debug(e.stderr)
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = f"/tmp/cdedb-latex-error-{tstamp}.tex"
@@ -1357,8 +1358,10 @@ class CdEMailmanClient(mailmanclient.Client):
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
-        If the list is not managed by mailman, this function returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1379,8 +1382,10 @@ class CdEMailmanClient(mailmanclient.Client):
     def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
-        If the list is not managed by mailman, this returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
