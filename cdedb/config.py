@@ -531,7 +531,7 @@ class SecretsConfig(Mapping[str, Any]):
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production
         if pathlib.Path("/PRODUCTIONVM").is_file():
-            self._configchain = collections.ChainMap(override)  # pragma: no cover
+            self._configchain = collections.ChainMap(override)
         else:
             self._configchain = collections.ChainMap(override, _SECRECTS_DEFAULTS)
 
