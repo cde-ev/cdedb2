@@ -51,21 +51,77 @@
             {{ ambience['event']['registration_text']|md }}
         {% endcall %}
     {% endif %}
-    {% if fee %}
-    {% if registration['amount_paid'] >= fee %}
-        {{ util.h(n_("Payment"), underline=true) }}
-        <p>
-            {% trans fee=fee|money(lang=lang) %}
-                You have already paid the registration fee of {{ fee }}.
-            {% endtrans %}
-        </p>
+    {% if not ambience['event']['iban'] and not fee %}
+        {# No fee. #}
+    {% elif not fee and not to_pay %}
+        {# No fee. #}
     {% else %}
-        {% set to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
-        {% if ambience['event']['iban'] %}
+        {{ util.h(n_("Payment"), underline=true) }}
+        {% if complex_fee.is_complex() %}
+            <p>
+                {% trans %}
+                    Your fee consists of:
+                {% endtrans %}
+            </p>
+            <table class="table-slim table-condensed table-hover panel-default" style="background: #f0f0f0">
+                <tbody>
+                    {% for kind, amount in complex_fee.by_kind.items() if amount %}
+                        <tr>
+                            <td>
+                                {{ gettext(kind|string) }}
+                            </td>
+                            <td class="text-right">
+                                {{ amount|money(lang=lang) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="summary">
+                        <td>
+                            {% trans %}Total{% endtrans %}
+                        </td>
+                        <td class="text-right">
+                            {{ complex_fee.amount|money(lang=lang) }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% else %}
+            <p>
+                {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}
+            </p>
+        {% endif %}
+        {% if to_pay == 0 %}
+            <p>
+                {% trans fee=fee|money(lang=lang) %}
+                    You have already paid the registration fee of {{ fee }}.
+                {% endtrans %}
+            </p>
+        {% elif to_pay > 0 %}
+            <p>
+                {% if registration['amount_paid'] %}
+                    {% trans paid=registration['amount_paid']|money(lang=lang) %}
+                        You have already paid {{ paid }}.
+                    {% endtrans %}
+                {% endif %}
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    Complete your registration by paying the outstanding amount of {{ to_pay }}.
+                {% endtrans %}
+            </p>
+        {% elif to_pay < 0 %}
+            <p>
+                {% trans fee=fee|money(lang=lang), to_pay=-to_pay|money(lang=lang) %}
+                    You have overpaid your fee of {{ fee }} by {{ to_pay }}.
+                    The orgas will contact you regarding your refund.
+                {% endtrans %}
+            </p>
+        {% endif %}
+        {% if ambience['event']['iban'] and to_pay > 0 %}
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
                          aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
-            {{ util.h(n_("Bank Transfer"), underline=true) }}
+            {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
             <script nonce="{{ csp_nonce }}">
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
@@ -74,10 +130,11 @@
             </script>
 
             <p>
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    Please transfer {{ to_pay }} to the following Account.
+                {% endtrans %}
                 {% trans %}
-                    Please keep in mind that your Registration will only be complete, once
-                    you pay your participation fee. Please transfer {{ to_pay }} to the following
-                    Account. Please make sure, the recipient does not have to pay any fees,
+                    Please make sure, the recipient does not have to pay any fees,
                     especially when paying internationally.
                 {% endtrans %}
             </p>
@@ -101,7 +158,7 @@
                     </tr>
                     <tr>
                         <td>{% trans %}Amount{% endtrans %}</td>
-                        <td>{{ to_pay }}</td>
+                        <td>{{ to_pay|money(lang=lang) }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Reference{% endtrans %}</td>
@@ -109,20 +166,6 @@
                     </tr>
                 </tbody>
             </table>
-        {% else %}
-            {{ util.h(n_("Payment"), underline=true) }}
-            <p>
-                {% trans %}
-                    The orgas will tell you separately how to pay your fee of {{ to_pay }}.
-                {% endtrans %}
-            </p>
-        {% endif %}
-        <p>
-            {% trans fee=fee|money(lang=lang), amount_paid=registration['amount_paid']|money(lang=lang) %}
-                We have already registered a payment of {{ amount_paid }}. The total registration fee is {{ fee }}.
-            {% endtrans %}
-        </p>
-        {% if ambience['event']['iban'] %}
             <p class="text-muted">
                 {{ util.make_icon('info-circle') }}
                 {% trans %}
@@ -134,13 +177,12 @@
         {% if complex_fee.nonmember_surcharge %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
-                {% trans additional_fee=complex_fee.nonmember_surcharge|money(lang=lang) %}
-                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
-                {% endtrans %}
+                    {% trans additional_fee=complex_fee.nonmember_surcharge|money(lang=lang) %}
+                        Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
+                    {% endtrans %}
                 </p>
             </div>
         {% endif %}
-    {% endif %}
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
