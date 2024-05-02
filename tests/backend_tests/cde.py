@@ -12,7 +12,9 @@ from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now, prepsql
+from tests.common import (
+    USER_DICT, BackendTest, as_users, execsql, get_user, nearly_now, prepsql,
+)
 
 
 class TestCdEBackend(BackendTest):
@@ -501,9 +503,11 @@ class TestCdEBackend(BackendTest):
         # now check it
         self.assertLogEqual([], 'cde')
 
-    @prepsql("UPDATE core.personas SET balance = 1 WHERE is_cde_realm = True")
+    @prepsql("UPDATE core.personas SET balance = 1, is_member = True"
+             " WHERE is_cde_realm = True AND is_archived = False")
     @as_users("vera")
-    def test_cde_user_aggregate(self) -> None:
+    def test_query_aggregate(self) -> None:
+        other_user = get_user("berta")
         query = Query(
             QueryScope.cde_user, QueryScope.cde_user.get_spec(),
             ['balance'], (), ()
@@ -522,9 +526,9 @@ class TestCdEBackend(BackendTest):
         pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
         self.pastevent.add_participant(
             self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
-        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        pevent_id_duplicate = self.pastevent.create_past_event(self.key, pevent_data)
         self.pastevent.add_participant(
-            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
 
         # Check that the aggregate sums correctly.
         result = self.cde.submit_general_query(self.key, query, aggregate=False)
@@ -533,4 +537,40 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(
             sum((e['balance'] for e in result), start=decimal.Decimal(0)),
             aggregates[0]['sum.balance']
+        )
+
+        # Check duplication in core search:
+        query = Query(
+            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            ['is_member'],
+            [
+                ('personas.id', QueryOperators.equal, self.user['id']),
+            ],
+            [],
+        )
+        aggregates = self.core.submit_general_query(self.key, query, aggregate=True)
+        self.assertEqual(1, aggregates[0]['sum.is_member'])
+
+        # Check that filtering by past event works.
+        self.pastevent.remove_participant(
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.add_participant(
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=other_user['id'])
+        query = Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            ['personas.id', 'is_member'],
+            [
+                ('pevent_id', QueryOperators.oneof, [pevent_id, pevent_id_duplicate]),
+            ],
+            [],
+        )
+        self.assertEqual(
+            {self.user['id'], other_user['id']},
+            {e['id'] for e in self.cde.submit_general_query(self.key, query)}
+        )
+        self.assertEqual(
+            2,
+            self.cde.submit_general_query(
+                self.key, query, aggregate=True,
+            )[0]['sum.is_member'],
         )
