@@ -43,8 +43,8 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
 def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
                  other_values: dict[str, bool], *,
                  outer_operator: Optional[str] = None, top_level: bool = True, condition_only: bool = False,
-                 ) -> tuple[bool, str]:
-    functions: dict[str, Callable[[list[tuple[bool, str]]], tuple[bool, str]]] = {
+                 ) -> tuple[Optional[bool], str]:
+    functions: dict[str, Callable[[list[tuple[Optional[bool], str]]], tuple[Optional[bool], str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
         'or': lambda sr: (sub_results[0][0] or sub_results[1][0], f"{sub_results[0][1]} <b>or</b> {sub_results[1][1]}"),
         'xor': lambda sr: (sub_results[0][0] != sub_results[1][0], f"{sub_results[0][1]} <b>xor</b> {sub_results[1][1]}"),
@@ -74,18 +74,18 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
         if condition_only:
             value = None
 
-    format = 'neutral' if value is None else 'true' if value else 'false'
+    status = 'neutral' if value is None else 'true' if value else 'false'
 
     if name in ('and', 'or', 'xor'):
         if outer_operator is not None and name != outer_operator:
-            return value, f'<span class="block {format}"><b>(</b>{text}<b>)</b></span>'
+            return value, f'<span class="block {status}"><b>(</b>{text}<b>)</b></span>'
         elif top_level:
-            return value, f'<span class="block {format}">{text}</span>'
+            return value, f'<span class="block {status}">{text}</span>'
         else:
             return value, text
     elif name in ('true', 'false', 'field', 'part', 'bool'):
-        return value, f'<span class="atom {format}">{text}</span>'
+        return value, f'<span class="atom {status}">{text}</span>'
     elif name == 'not':
-        return value, f'<span class="block {format}">{text}</span>'
+        return value, f'<span class="block {status}">{text}</span>'
     else:
         raise RuntimeError()
