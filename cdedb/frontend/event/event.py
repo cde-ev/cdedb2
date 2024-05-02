@@ -52,6 +52,7 @@ from cdedb.models.ml import (
 class RemainingOwedQuery:
     query: Query
     count: int
+    ids: set[int]
     amount: Optional[decimal.Decimal]
 
 
@@ -572,11 +573,50 @@ class EventEventMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/part_summary")
 
+    @staticmethod
+    def _get_payment_query(
+            event: models.Event, constraints: Collection[QueryConstraint],
+    ) -> Query:
+        return Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=[
+                "persona.id", "persona.given_names", "persona.family_name",
+                "persona.username",
+                "reg.payment", "reg.remaining_owed", "reg.amount_owed",
+                "reg.amount_paid",
+            ],
+            constraints=constraints,
+            order=[
+                ("persona.family_name", True),
+                ("persona.given_names", True),
+            ],
+        )
+
+    def _get_payment_query_by_ids(self, event: models.Event, ids: Collection[int],
+                                  ) -> Query:
+        if ids:
+            constraints: list[QueryConstraint] = [
+                ("reg.id", QueryOperators.oneof, ids),
+            ]
+        else:
+            # Avoid selecting all registrations.
+            constraints = [
+                ("reg.id", QueryOperators.empty, None),
+            ]
+        return self._get_payment_query(event, constraints)
+
     @access("event")
     @event_guard()
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
-        return self.render(rs, "event/fee/fee_summary")
+        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+
+        return self.render(rs, "event/fee/fee_summary", {
+            'fee_stats': fee_stats,
+            'get_query':
+                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
+        })
 
     @access("event")
     @event_guard()
@@ -584,46 +624,23 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        def _paid_query(constraints: Collection[QueryConstraint],
-                        sum_col: Optional[str] = None) -> RemainingOwedQuery:
-            query = Query(
-                QueryScope.registration,
-                QueryScope.registration.get_spec(event=rs.ambience['event']),
-                ["reg.id", "persona.given_names", "persona.family_name",
-                 "persona.username", "reg.remaining_owed", "reg.amount_owed",
-                 "reg.amount_paid"],
-                constraints,
-                (("persona.family_name", True), ("persona.given_names", True)),
-            )
-            count = len(self.eventproxy.submit_general_query(
-                rs, query, event_id=event_id))
-            amount = None
-            if sum_col:
-                aggregates = unwrap(self.eventproxy.submit_general_query(
-                    rs, query, event_id=event_id, aggregate=True))
-                amount = aggregates[f"sum.{sum_col}"] or decimal.Decimal(0)
-
-            return RemainingOwedQuery(query, count, amount)
-
-        incomplete_paid = _paid_query(
-            (("reg.remaining_owed", QueryOperators.greater, 0.00),
-             ("reg.amount_paid", QueryOperators.greater, 0.00)),
-            "reg.amount_paid",
-        )
-        not_paid = _paid_query(
-            (("reg.remaining_owed", QueryOperators.greater, 0.00),
-             ("reg.amount_paid", QueryOperators.less, 0.01)),
-        )
-        surplus = _paid_query(
-            (("reg.remaining_owed", QueryOperators.less, 0.00),),
-            "reg.remaining_owed")
-        # Remaining owed is negative in this case
-        assert surplus.amount is not None
-        surplus.amount = -surplus.amount
+        incomplete_paid = self._get_payment_query(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.greater, 0.00),
+            ("reg.amount_paid", QueryOperators.greater, 0.00),
+        ])
+        not_paid = self._get_payment_query(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.greater, 0.00),
+            ("reg.amount_paid", QueryOperators.less, 0.01),
+        ])
+        surplus = self._get_payment_query(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.less, 0.00),
+        ])
 
         return self.render(rs, "event/fee/fee_stats", {
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
+            'get_query':
+                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
         })
 
     @access("event")

@@ -424,6 +424,14 @@
     {% endif %}
 {% endmacro %}
 
+{% macro active_fee_registration_query_link(registration_ids, label=None) %}
+    {% with query = get_query(registration_ids) %}
+        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()),
+                     registration_ids|length|string + (" " + label if label else ""), icon='list',
+                     title=gettext("View Registrations")) }}
+    {% endwith %}
+{% endmacro %}
+
 {#  Print a summary of all relevant fees.
     Has esssentially three different usage modes:
 
@@ -446,6 +454,7 @@
                 <th>{% trans %}Type{% endtrans %}</th>
                 <th>{% trans %}Title{% endtrans %}</th>
                 <th>{% trans %}Amount{% endtrans %}</th>
+                {% if not js_preview and not complex_fee %}<th>{% trans %}Registrations{% endtrans %}</th>{% endif %}
                 <th>{% trans %}Condition{% endtrans %}</th>
                 {% if not js_preview %}<th></th>{% endif %}
             </tr>
@@ -484,6 +493,13 @@
                         {{ fee.amount|money(lang=lang) }}
                     </strong>
                 </td>
+                {% if not js_preview and not comlex_fee %}
+                    <td class="nowrap">
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed")) }}
+                        <br />
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid")) }}
+                    </td>
+                {% endif %}
                 <td id="active-fee-condition" class="nowrap">
                     {% if complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
