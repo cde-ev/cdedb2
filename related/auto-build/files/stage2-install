@@ -30,7 +30,7 @@ cp /media/cdrom0/ldap.pem /etc/ldap/certs
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
-# dPROD only main, no backports
+# dPROD only main, no backports (less choice necessary)
 cat > /etc/apt/sources.list <<EOF
 deb http://deb.debian.org/debian bookworm main contrib non-free
 deb-src http://deb.debian.org/debian bookworm main contrib non-free
