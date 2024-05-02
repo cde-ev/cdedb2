@@ -41,7 +41,8 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
 
 
 def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-                 other_values: dict[str, bool], outer_operator: Optional[str] = None, top_level: bool = True,
+                 other_values: dict[str, bool], *,
+                 outer_operator: Optional[str] = None, top_level: bool = True, condition_only: bool = False,
                  ) -> tuple[bool, str]:
     functions: dict[str, Callable[[list[tuple[bool, str]]], tuple[bool, str]]] = {
         'and': lambda sr: (sub_results[0][0] and sub_results[1][0], f"{sub_results[0][1]} <b>and</b> {sub_results[1][1]}"),
@@ -56,26 +57,35 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
     operator = name if name in ('and', 'or', 'xor') else ('' if name == 'not' else None)
 
     if name == "field":
-        value, text = field_values[result[0]], f"field.{result[0]}"
+        value, text = None if condition_only else field_values[result[0]], f"field.{result[0]}"
     elif name == "part":
-        value, text = part_values[result[0]], f"part.{result[0]}"
+        value, text = None if condition_only else part_values[result[0]], f"part.{result[0]}"
     elif name == "bool":
-        value, text = other_values[result[0]], f"{result[0]}"
+        value, text = None if condition_only else other_values[result[0]], f"{result[0]}"
     else:
-        sub_results = [visual_debug(token, field_values, part_values, other_values, operator, False)
-                       for token in result]
+        sub_results = [
+            visual_debug(
+                token, field_values, part_values, other_values,
+                outer_operator=operator, top_level=False, condition_only=condition_only,
+            )
+            for token in result
+        ]
         value, text = functions[name](sub_results)
+        if condition_only:
+            value = None
+
+    format = 'neutral' if value is None else 'true' if value else 'false'
 
     if name in ('and', 'or', 'xor'):
         if outer_operator is not None and name != outer_operator:
-            return value, f"<span class=\"block {'true' if value else 'false'}\"><b>(</b>{text}<b>)</b></span>"
+            return value, f'<span class="block {format}"><b>(</b>{text}<b>)</b></span>'
         elif top_level:
-            return value, f"<span class=\"block {'true' if value else 'false'}\">{text}</span>"
+            return value, f'<span class="block {format}">{text}</span>'
         else:
             return value, text
     elif name in ('true', 'false', 'field', 'part', 'bool'):
-        return value, f"<span class=\"atom {'true' if value else 'false'}\">{text}</span>"
+        return value, f'<span class="atom {format}">{text}</span>'
     elif name == 'not':
-        return value, f"<span class=\"block {'true' if value else 'false'}\">{text}</span>"
+        return value, f'<span class="block {format}">{text}</span>'
     else:
         raise RuntimeError()

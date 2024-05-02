@@ -484,11 +484,11 @@
                         {{ fee.amount|money(lang=lang) }}
                     </strong>
                 </td>
-                <td id="active-fee-condition">
+                <td id="active-fee-condition" class="nowrap">
                     {% if complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
                     {% else %}
-                        <pre>{{ fee.condition }}</pre>
+                        {{ fee.visual_debug|safe }}
                     {% endif %}
                 </td>
                 {% if not js_preview %}
