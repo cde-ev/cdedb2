@@ -66,8 +66,7 @@ empty[#femptypass]_.
     sshfs cdedb@localhost:/cdedb2/ /path/to/mountpoint/ -p 20022
 
 For ease of use it may be advisable to put these commands into script
-files. Additionally it helps to put your ssh public key into the (new)
-file ``/home/cdedb2/.ssh/authorized_keys`` to suppress password queries.
+files.
 
 .. _accessing-vm-windows:
 
