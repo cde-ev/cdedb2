@@ -168,7 +168,7 @@
                                           value=gettext("Activate JavaScript for automatic fee preview.")) }}
 
                 {% if preview %}
-                    {{ generic_event.fee_composition_table() }}
+                    {{ generic_event.fee_composition_table(js_preview=True) }}
                 {% endif %}
             </div>
         </div>

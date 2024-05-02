@@ -660,7 +660,7 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td {
+tr.ls-selected td, tr:target td{
     background: #d9edf7;
 }
 .ls-item {

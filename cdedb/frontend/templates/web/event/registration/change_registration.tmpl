@@ -90,7 +90,7 @@
                     {% trans %}Fee{% endtrans %}:
                     <span id="fee-preview">{% trans %}Activate JavaScript for automatic fee preview.{% endtrans %}</span>
                 </summary>
-                {{ generic_event.fee_composition_table() }}
+                {{ generic_event.fee_composition_table(js_preview=True) }}
             </details>
         </div>
 

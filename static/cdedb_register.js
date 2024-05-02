@@ -92,7 +92,7 @@
         // Find the elements that will be replaced by this function.
         fee_preview = form.find('[id="fee-preview"]');
         nonmember_surcharge = form.find('[id="nonmember-surcharge"]');
-        fee_summary = form.find('[id="active-fee"]');
+        eventfee_rows = form.find('[class="eventfee"]');
 
         updateFeePreview = function() {
             /**
@@ -179,8 +179,8 @@
                      *
                      * Color the lines and display a deko checkbox depending on whether each fee is active or not.
                      */
-                    if (fee_summary) {
-                        fee_summary.each(function() {
+                    if (eventfee_rows) {
+                        eventfee_rows.each(function() {
                             $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
                             title = $(this).find('#active-fee-title');
                             active_checkbox = $(this).find('#checkbox-active');
@@ -218,8 +218,8 @@
         if (is_member_checkbox.length) {
             is_member_checkbox.change(updateFeePreview);
         }
-        if (fee_summary.length) {
-            fee_summary.parents('table').show();
+        if (eventfee_rows.length) {
+            form.find("#fee-summary").show();
         }
 
         updateFeePreview();
