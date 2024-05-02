@@ -56,7 +56,8 @@ FeeStats = dict[str, dict[const.EventFeeType, decimal.Decimal]]
 
 
 @dataclasses.dataclass
-class RegistrationFee:
+class ComplexRegistrationFee:
+    """Contaings all information relevant to the total fee of one registration."""
     amount: decimal.Decimal
     active_fees: set[vtypes.ProtoID]
     visual_debug: dict[int, str]
@@ -1262,7 +1263,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
-                              visual_debug: bool = False) -> RegistrationFee:
+                              visual_debug: bool = False) -> ComplexRegistrationFee:
         """Public access point for retrieving complex fee data."""
         registration_id = affirm(vtypes.ID, registration_id)
         registration = self.get_registration(rs, registration_id)
@@ -1278,7 +1279,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @staticmethod
     def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, visual_debug: bool = False,
-                               ) -> RegistrationFee:
+                               ) -> ComplexRegistrationFee:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1328,7 +1329,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     other_bools,
                 )[1]
 
-        return RegistrationFee(
+        return ComplexRegistrationFee(
             amount=amount, active_fees=active_fees,
             visual_debug=visual_debug_data, by_kind=fees_by_kind,
         )
@@ -1337,7 +1338,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: Collection[int], is_member: Optional[bool],
                        is_orga: Optional[bool], field_values: dict[str, bool],
-                       ) -> RegistrationFee:
+                       ) -> ComplexRegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
