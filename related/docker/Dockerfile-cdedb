@@ -117,7 +117,9 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     'playwright>=1.37.0'
 
 # get the configuration files from the autobuild
-COPY ./related/docker/cdedb-entrypoint.sh ./related/docker/run-webserver.sh ./related/auto-build/files/stage3 /tmp/autobuild/
+COPY ./related/docker/cdedb-entrypoint.sh ./related/docker/run-all.sh \
+     ./related/docker/run-gunicorn.sh ./related/auto-build/files/stage3 \
+     /tmp/autobuild/
 
 # This does the following:
 # - pacify newer git versions concerned about unsafe directory permissions
@@ -131,7 +133,8 @@ COPY ./related/docker/cdedb-entrypoint.sh ./related/docker/run-webserver.sh ./re
 # - create the cdedb user and enable passwordless sudo,
 # - create the magic file to signal that we are inside a container.
 RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
-    && cp /tmp/autobuild/run-webserver.sh /run-webserver.sh \
+    && cp /tmp/autobuild/run-all.sh /run-all.sh \
+    && cp /tmp/autobuild/run-gunicorn.sh /run-gunicorn.sh \
     \
     && cp /tmp/autobuild/gitconfig /etc/gitconfig \
     \
@@ -181,7 +184,7 @@ WORKDIR /cdedb2
 
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
-CMD ["/run-webserver.sh"]
+CMD ["/run-all.sh"]
 
 USER cdedb
 RUN pip install --break-system-packages ruff==0.1.1
