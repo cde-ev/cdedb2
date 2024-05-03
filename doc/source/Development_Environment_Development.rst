@@ -5,7 +5,11 @@ In :ref:`sample-data` the available data sets are listed (mainly existing
 accounts). Source controle is done via git. Upon login with ssh a short
 summary of useful commands is displayed -- this is reproduced below.
 
-.. literalinclude:: motd.txt
+.. literalinclude:: motd-vm.txt
+   :caption: TODO VM
+
+.. literalinclude:: motd-container.txt
+   :caption: TODO Container
 
 Performance
 -----------
