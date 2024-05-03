@@ -491,6 +491,7 @@ _QUERY_SPECS = {
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "trial_member": QuerySpecEntry("bool", n_("Trial Member")),
+            "honorary_member": QuerySpecEntry("bool", n_("Honorary Member")),
             "paper_expuls": QuerySpecEntry("bool", n_("Printed exPuls")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),

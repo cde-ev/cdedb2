@@ -54,25 +54,44 @@ class CdESemesterBackend(CdELastschriftBackend):
         Mostly for use by the 'Semesterverwaltung'.
         """
         with Atomizer(rs):
-            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
-                     " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = True AND balance < %s "
-                     " AND trial_member = False")
-            data = self.query_one(
-                rs, query, (self.conf["MEMBERSHIP_FEE"],))
+            query = """
+                SELECT
+                    COALESCE(SUM(balance), 0) as total,
+                    COUNT(*) as count
+                FROM core.personas
+                WHERE
+                    is_member = True
+                    AND balance < %s
+                    AND trial_member = False
+                    AND honorary_member = False
+            """
+            data = self.query_one(rs, query, (self.conf["MEMBERSHIP_FEE"],))
             ret = {
                 'low_balance_members': data['count'] if data else 0,
                 'low_balance_total': data['total'] if data else 0,
             }
             query = "SELECT COUNT(*) FROM core.personas WHERE is_member = True"
-            ret['total_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas"
-                     " WHERE is_member = True AND trial_member = True")
-            ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas AS p"
-                     " JOIN cde.lastschrift AS l ON p.id = l.persona_id"
-                     " WHERE p.is_member = True AND p.balance < %s"
-                     " AND p.trial_member = False AND l.revoked_at IS NULL")
+            ret['total_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            """
+            ret['trial_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND honorary_member = True
+            """
+            ret['honorary_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*)
+                FROM core.personas AS p JOIN cde.lastschrift AS l ON p.id = l.persona_id
+                WHERE
+                    p.is_member = True
+                    AND p.balance < %s
+                    AND p.trial_member = False
+                    AND p.honorary_member = False
+                    AND l.revoked_at IS NULL
+            """
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
         return ret
@@ -479,12 +498,14 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'ejection_state': persona_id,
             }
             persona = self.core.get_cde_user(rs, persona_id)
-            do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member'])
+            do_eject = (
+                    persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                    and not persona['trial_member']
+                    and not persona['honorary_member']
+            )
             if do_eject:
                 self.change_membership(rs, persona_id, is_member=False)
-                period_update['ejection_count'] = \
-                    period['ejection_count'] + 1
+                period_update['ejection_count'] = period['ejection_count'] + 1
             else:
                 persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)
@@ -562,26 +583,28 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_state': persona_id,
             }
             if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                    and not persona['trial_member']):
+                    and not (persona['trial_member'] or persona['honorary_member'])):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
             else:
                 if persona['trial_member']:
-                    self.change_membership(rs, persona_id, trial_member=False)
+                    self.core.change_membership_easy_mode(
+                        rs, persona_id, trial_member=False)
                     period_update['balance_trialmembers'] = \
                         period['balance_trialmembers'] + 1
                 else:
-                    new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
-                    note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                        money_filter(self.conf["MEMBERSHIP_FEE"]))
+                    if not persona['honorary_member']:
+                        persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
+                        period_update['balance_total'] = (
+                                period['balance_total'] + self.conf["MEMBERSHIP_FEE"])
+                        note = (f"Mitgliedsbeitrag abgebucht"
+                                f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
+                    else:
+                        note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
                     self.core.change_persona_balance(
-                        rs, persona_id, new_b,
-                        const.FinanceLogCodes.deduct_membership_fee,
-                        change_note=note)
-                    new_total = (period['balance_total']
-                                 + self.conf["MEMBERSHIP_FEE"])
-                    period_update['balance_total'] = new_total
+                        rs, persona_id, persona['balance'],
+                        const.FinanceLogCodes.deduct_membership_fee, change_note=note)
             self.set_period(rs, period_update)
             return True, persona
 

@@ -135,7 +135,7 @@ class TestCdEBackend(BackendTest):
                 ("birthday", QueryOperators.less, datetime.datetime.now())],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 100},
+        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
                          {e['id'] for e in result})
 
     @as_users("vera")
@@ -173,9 +173,9 @@ class TestCdEBackend(BackendTest):
 
     @as_users("farin")
     def test_lastschrift(self) -> None:
-        expectation = {2: 2}
+        expectation = {2: 2, 4: 42}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
-        expectation = {1: 2, 2: 2, 3: 100}
+        expectation = {1: 2, 2: 2, 3: 100, 4: 42}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=None))
         expectation = {1: 2, 3: 100}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=False))
@@ -202,7 +202,7 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
-        self.assertEqual({}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({4: 42}, self.cde.list_lastschrift(self.key))
         self.assertEqual(
             {1: 2, 2: 2, 3: 100}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
@@ -216,7 +216,7 @@ class TestCdEBackend(BackendTest):
         donation = decimal.Decimal(9)
         new_id = self.cde.create_lastschrift(self.key, newdata, donation)
         self.assertLess(0, new_id)
-        self.assertEqual({new_id: 3}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({4: 42, new_id: 3}, self.cde.list_lastschrift(self.key))
         # the donation is tracked in core.personas
         user = self.core.get_cde_user(self.key, persona_id=3)
         self.assertEqual(donation, user["donation"])

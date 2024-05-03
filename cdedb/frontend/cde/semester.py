@@ -109,9 +109,12 @@ class CdESemesterMixin(CdEBaseFrontend):
 
                     address = make_postal_address(rrs, persona)
                     transaction_subject = make_membership_fee_reference(persona)
-                    endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                                  and not persona['trial_member']
-                                  and not lastschrift)
+                    endangered = (
+                            persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                            and not persona['trial_member']
+                            and not persona['honorary_member']
+                            and not lastschrift
+                    )
                     if endangered:
                         subject = "Deine Mitgliedschaft läuft aus"
                     else:

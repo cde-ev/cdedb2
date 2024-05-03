@@ -305,7 +305,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
-            'bub_search': False,
+            'trial_member': False,
+            'honorary_member': False,
+            'is_searchable': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
         }
@@ -322,8 +324,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_assembly_realm': True,
             'is_active': True,
             'decided_search': False,
-            'paper_expuls': True,
-            'donation': decimal.Decimal(0),
+            'bub_search': False,
         }
         data.update(defaults)
         return super().create_user(rs, data)
@@ -410,6 +411,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'display_name': persona['display_name'] or persona['given_names'],
             'trial_member': False,
+            'honorary_member': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
             'bub_search': False,

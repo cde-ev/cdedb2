@@ -496,7 +496,7 @@ class BackendTest(CdEDBTest):
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id',):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -798,6 +798,16 @@ USER_DICT: Dict[str, UserObject] = {
         'given_names': "Ludwig",
         'family_name': "Lokus",
         'default_name_format': "Ludwig Lokus",
+    },
+    "petra": {
+        'id': 42,
+        'DB-ID': "DB-42-6",
+        'username': "petra@example.cde",
+        'password': "secret",
+        'display_name': "Petra",
+        'given_names': "Petra",
+        'family_name': "Philanthrop",
+        'default_name_format': "Petra Philanthrop",
     },
     "viktor": {
         'id': 48,
