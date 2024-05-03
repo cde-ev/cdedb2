@@ -2,14 +2,15 @@ Developing
 ==========
 
 In :ref:`sample-data` the available data sets are listed (mainly existing
-accounts). Source controle is done via git. Upon login with ssh a short
-summary of useful commands is displayed -- this is reproduced below.
+accounts). Source controle is done via git. Upon login (VM or container) a
+short summary of useful commands is displayed -- this is reproduced below.
 
 .. literalinclude:: motd-vm.txt
-   :caption: TODO VM
+   :caption: Command listing (VM-variant, container-variant slightly diverges)
 
-.. literalinclude:: motd-container.txt
-   :caption: TODO Container
+Many useful actions are triggered via a ``Makefile``. Change the working
+directory to the repository root and invoke ``make`` to see a list of
+available options.
 
 Performance
 -----------
@@ -21,7 +22,7 @@ working with test data.
 * Replace ``cache=writethrough`` by ``cache=writeback`` or even
   ``cache=unsafe`` when running the VM.
 
-* In the file `/etc/postgresql/12/main/postgresql.conf` in the VM set the
+* In the file `/etc/postgresql/15/main/postgresql.conf` in the VM set the
   following options in the ``WRITE AHEAD LOG`` section::
 
     fsync = off

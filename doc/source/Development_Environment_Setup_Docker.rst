@@ -9,7 +9,7 @@ Prerequisites
 
 To utilise the images you need to have Docker installed. Furthermore the use
 of ``docker compose`` (which is a separate plugin) is advised for ease of
-use.  Theoretically the images and the compose file can also be run by podman
+use.  The images and the compose file can also be run by podman
 or similar OCI compatibel tools.
 
 To get started, clone the git repository and activate our custom :ref:`githooks`::
@@ -25,8 +25,9 @@ Variants
 There are two variants of the Docker environment, configured via separate
 compose files. These are as follows.
 
-- ``related/docker/docker-compose-run.yaml`` for simply running the CdEDB; this
-  does not provide additional functionality to keep the environment lean
+- ``related/docker/docker-compose-run.yaml`` for simply running the CdEDB;
+  this does not provide additional functionality to keep the environment lean
+  (used in the CI)
 - ``related/docker/docker-compose-dev.yaml`` is a superset of the previous and
   provides additional functionality for developing the CdEDB especially also
   from inside the container (e.g. installing reasonable editors)
@@ -67,6 +68,16 @@ To shutdown the containers you can either press CTRL+C
 if you started the containers attached
 or run ``docker compose down`` otherwise.
 
+.. warning::
+
+    Note that the development variant mounts the repository read-write into
+    the container. Depending on your local docker setup (e.g. when remapping
+    user-ids for the container) this may cause problems with file ownership if
+    new files are created from inside the container.
+
+    To avoid this create new files on the host (mainly applies to ``make``
+    targets such as ``make doc``).
+
 Initializing the containers
 ---------------------------
 
@@ -91,15 +102,6 @@ To do this you can run the following:
     $ make doc
     $ docker compose --file related/docker/docker-compose.yaml exec app python3 -m cdedb dev apply-sample-data
 
-.. warning::
-
-    Currently it is advised to run make targets which generate files
-    from the host to ensure proper permissions on the files.
-    You may also experiment with executing them from within the containers
-    when running as another user however this is somewhat complicated.
-    Properly mapping the container user to the host user is a future TODO.
-
-
 Using the containers
 --------------------
 
@@ -118,8 +120,6 @@ Additionally ``adminer``
 can be reached using `localhost:8080 <http://localhost:8080>`_.
 The ldap server listens at `localhost:8389 <https://localhost:8389>`_.
 
-Some development commands like ``pylint`` are however not installed
-inside the containers to keep them light and should be run locally.
 For more information refer to the ``docker``/``docker compose`` documentation
 or execute ``docker compose help``.
 
