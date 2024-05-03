@@ -88,4 +88,4 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
     elif name == 'not':
         return value, f'<span class="block {status}">{text}</span>'
     else:
-        raise RuntimeError()
+        raise RuntimeError()  # pragma: no cover
