@@ -48,7 +48,7 @@ Accessing -- Linux
 
 Once the VM is up and running you can access it in the following ways. The
 password for the ``cdedb`` user (used for access via ssh etc.) is
-``akademie``.
+empty[#femptypass]_.
 
 * web: Open https://localhost:20443/ in a browser of your choice.
 * ssh::
@@ -66,8 +66,7 @@ password for the ``cdedb`` user (used for access via ssh etc.) is
     sshfs cdedb@localhost:/cdedb2/ /path/to/mountpoint/ -p 20022
 
 For ease of use it may be advisable to put these commands into script
-files. Additionally it helps to put your ssh public key into the (new)
-file ``/home/cdedb2/.ssh/authorized_keys`` to suppress password queries.
+files.
 
 .. _accessing-vm-windows:
 
@@ -125,3 +124,8 @@ Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
         \\sshfs.r\cdedb@192.168.56.10\cdedb2
 
   Nun sollte die VM als Netzlaufwerk eingehängt worden sein.
+
+.. rubric:: Footnotes
+
+.. [#femptypass] Yes this really works. The password prompt should even be
+                 omitted and the login performed right away.
