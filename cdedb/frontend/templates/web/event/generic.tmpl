@@ -493,7 +493,7 @@
                         {{ fee.amount|money(lang=lang) }}
                     </strong>
                 </td>
-                {% if not js_preview and not comlex_fee %}
+                {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
                         {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed")) }}
                         <br />
