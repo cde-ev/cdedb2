@@ -1,6 +1,7 @@
 {% set sidenav_active='event_fees' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Fee Stats ({{ title }})
@@ -22,22 +23,29 @@
             <tr>
                 <th>{% trans %}Type{% endtrans %}</th>
                 <th class="text-right">{% trans %}Owed{% endtrans %}</th>
+                <th></th>
                 <th class="text-right">{% trans %}Paid{% endtrans %}</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
-            {% for fee_kind in enums['EventFeeType'] %}
+            {% for fee_kind, kind_stats in fee_stats %}
                 <tr>
                     <td>{{ util.make_icon(fee_kind.get_icon()) + nbsp }}{{ gettext(fee_kind|string) }}</td>
-                    <td class="text-right {{ 'text-danger' if fee_stats['owed'][fee_kind] < 0 }}">
+                    <td class="text-right {{ 'text-danger' if kind_stats.total_owed < 0 }}">
                         <strong>
-                            {{ fee_stats['owed'][fee_kind]|money(lang=lang) }}
+                            {{ kind_stats.total_owed|money(lang=lang) }}
                         </strong>
                     </td>
-                    <td class="text-right {{ 'text-danger' if fee_stats['paid'][fee_kind] < 0 }}">
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(kind_stats.registrations_owed, gettext("Registrations")) }}
+                    </td>
+                    <td class="text-right {{ 'text-danger' if kind_stats.total_paid < 0 }}">
                         <strong>
-                            {{ fee_stats['paid'][fee_kind]|money(lang=lang) }}
+                            {{ kind_stats.total_paid|money(lang=lang) }}
                         </strong>
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(kind_stats.registrations_paid, gettext("Registrations")) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -46,11 +54,14 @@
                     <td class="text-right">
                         –
                     </td>
-                    <td class="text-right {{ 'text-danger' if surplus.amount < 0 }}">
+                    <td></td>
+                    <td class="text-right {{ 'text-danger' if fee_stats.surplus_total < 0 }}">
                         <strong>
-                            {{ util.href(cdedblink('event/registration_query', surplus.query.serialize_to_url()),
-                                         surplus.amount|money(lang=lang)) }}
+                            {{ fee_stats.surplus_total|money(lang=lang) }}
                         </strong>
+                    </td>
+                    <td>
+                        {{ generic_event.active_fee_registration_query_link(fee_stats.surplus_registrations, gettext("Registrations")) }}
                     </td>
                 </tr>
         </tbody>
@@ -58,45 +69,46 @@
             <tr class="summary">
                 {# No suitable free icon exists, but that's fine. We need the spacing though. #}
                 <td>{{ util.make_icon("") + nbsp }}{{ gettext("Total") }}</td>
-                {% set total_owed = fee_stats['owed'].values()|sum %}
-                <td class="text-right {{ 'text-danger' if total_owed < 0 }}">
+                <td class="text-right {{ 'text-danger' if fee_stats.total_owed < 0 }}">
                     <strong>
-                        {{ total_owed|money(lang=lang) }}
+                        {{ fee_stats.total_owed|money(lang=lang) }}
                     </strong>
                 </td>
-                {% set total_paid = fee_stats['paid'].values()|sum + surplus.amount %}
+                <td></td>
+                {% set total_paid = fee_stats.total_paid + fee_stats.surplus_total %}
                 <td class="text-right {{ 'text-danger' if total_paid < 0 }}">
                     <strong>
                         {{ total_paid|money(lang=lang) }}
                     </strong>
                 </td>
+                <td></td>
             </tr>
         </tfoot>
     </table>
-    {% if not_paid.count or incomplete_paid.count %}
+    {% if fee_stats.insufficient_registrations or fee_stats.unpaid_registrations %}
     <hr />
-        {% if incomplete_paid.count %}
+        {% if fee_stats.insufficient_registrations %}
         <p class="text-warning">
             {{ util.make_icon('exclamation-triangle') }}
-            {% trans incomplete_paid_count=incomplete_paid.count,
-                     incomplete_paid_amount=incomplete_paid.amount|money(lang=lang), paid=gettext("Paid") %}
+            {% trans incomplete_paid_count=fee_stats.insufficient_registrations|length,
+                     incomplete_paid_amount=fee_stats.insufficient_total|money(lang=lang), paid=gettext("Paid") %}
                 {{ incomplete_paid_count }} people have paid {{ incomplete_paid_amount }} without hitting their owed amount.
                 Their payment can not be split by type and has been excluded from the "{{ paid }}" column above.
             {% endtrans %}
             <br />
-            {{ util.href(cdedblink('event/registration_query', incomplete_paid.query.serialize_to_url()),
-                             gettext("View in Registrations"), icon='list') }}
+            {{ util.href(cdedblink(incomplete_paid.scope.get_target(redirect=True), incomplete_paid.serialize_to_url()),
+                         gettext("View Registrations"), icon='list') }}
         </p>
         {% endif %}
-        {% if not_paid.count %}
+        {% if fee_stats.unpaid_registrations %}
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
-            {% trans not_paid_count=not_paid.count %}
+            {% trans not_paid_count=fee_stats.unpaid_registrations|length %}
                 {{ not_paid_count }} people have not paid anything of their fee yet.
             {% endtrans %}
             <br />
-            {{ util.href(cdedblink('event/registration_query', not_paid.query.serialize_to_url()),
-                             gettext("View in Registrations"), icon='list') }}
+            {{ util.href(cdedblink(not_paid.scope.get_target(redirect=True), not_paid.serialize_to_url()),
+                             gettext("View Registrations"), icon='list') }}
         </p>
         {% endif %}
     {% endif %}
