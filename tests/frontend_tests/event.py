@@ -433,14 +433,10 @@ class TestEventFrontend(FrontendTest):
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
-        # not registered, not event admin
+        # not registered, not event admin (auditor can see only global log).
         if self.user_in('martin', 'vera', 'werner', 'katarina'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga | finance_admin
-        # same, but auditor
-        elif self.user_in('katarina'):
-            ins = everyone | not_registered | {"Log"}
-            out = registered | registered_or_orga | orga | finance_admin - {"Log"}
         # registered
         elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
@@ -2236,6 +2232,26 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @event_keeper
     @as_users("garcia")
+    def test_event_fees(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge",
+                      "Teilnahmebeitrag hinzufügen")
+        f = self.response.forms['configureeventfeeform']
+        f['title'] = "New fee!"
+        f['kind'] = const.EventFeeType.common
+        f['amount'] = 1
+        f['condition'] = "field.unknown_field OR part.unknown_part"
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            'condition', "Unknown field(s): 'unknown_field'")
+        self.assertValidationError(
+            'condition', "Unknown part shortname(s): 'unknown_part'")
+        f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
+        self.submit(f)
+
+        # TODO: actually add some tests for conditions.
+
+    @event_keeper
+    @as_users("garcia")
     def test_waitlist(self) -> None:
         # Create some new fields.
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
@@ -3789,13 +3805,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         for part_group_id, part_group in event.part_groups.items():
             # Skip all part groups with at most one part.
             if len(part_group.parts) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in part_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
             if len(StatisticMixin.get_track_ids(
                     event, part_group_id=part_group_id)) <= 1:
-                continue
+                continue  # pragma: no cover
             for stat in track_stats:
                 _test_one_stat(stat, part_group_id=part_group_id)
 
@@ -3821,7 +3837,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_id=part_id))
             for pg_id, reg_ids in row['part_groups'].items():
                 if len(StatisticMixin.get_track_ids(event, part_group_id=pg_id)) <= 1:
-                    continue
+                    continue  # pragma: no cover
                 _test_grouper_link(reg_ids, grouper.get_link_id(x, part_group_id=pg_id))
 
     @as_users("garcia")
@@ -6440,13 +6456,30 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
+
+        # Create a token.
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Orga-Tokens",
                       "Orga-Token erstellen")
         f = self.response.forms['configureorgatokenform']
-        f['title'] = "New Token!"
         f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "New Token!"
         self.submit(f)
         new_token_id, secret = self.fetch_orga_token()
+
+        # Change it.
+        self.traverse({'href': f"/event/event/{event_id}/droid/{new_token_id}/change"})
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = ""
+        f['notes'] = "Spam"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('title', "Darf nicht leer sein")
+        f['title'] = "Changed title"
+        self.submit(f)
+        deletion_form = self.response.forms[f'deleteorgatokenform{new_token_id}']
+
+        # Test and compare exports.
         orga_token = self.event.get_orga_token(self.key, new_token_id)
 
         with self.switch_user("anonymous"):
@@ -6464,6 +6497,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         droid_export['timestamp'] = orga_export['timestamp']
         self.assertEqual(orga_export, droid_export)
+
+        # Revoke the used token.
+        self.get(f"/event/event/{event_id}/droid/summary")
+        f = self.response.forms[f'revokeorgatokenform{new_token_id}']
+        self.submit(f)
+
+        # Test deletion:
+        self.submit(deletion_form, check_notification=False)
+        self.assertPresence(
+            "Ein Orga-Token kann nicht mehr gelöscht werden, nachdem es benutzt wurde.",
+            div="notifications")
+
+        self.traverse("Orga-Token erstellen")
+        f = self.response.forms['configureorgatokenform']
+        f['title'] = "To be deleted."
+        f['etime'] = datetime.datetime(now().year + 1, 1, 1)
+        self.submit(f)
+        new_token_id, secret = self.fetch_orga_token()
+        f = self.response.forms[f'deleteorgatokenform{new_token_id}']
+        self.submit(f)
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "New Token!",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_changed,
+                'change_note': "'New Token!' -> 'Changed title'",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_revoked,
+                'change_note': "Changed title",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_created,
+                'change_note': "To be deleted.",
+            },
+            {
+                'code': const.EventLogCodes.orga_token_deleted,
+                'change_note': "To be deleted.",
+            }
+        ]
+        self.assertLogEqual(
+            log_expectation, 'event', event_id=event_id, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("anton")
     def test_event_fee_stats(self) -> None:

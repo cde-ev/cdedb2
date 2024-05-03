@@ -99,6 +99,7 @@ def populate_storage(conf: Config) -> None:
         "picture.jpg",  # core: profile foto
         "batch_admission.csv",  # cde: sample input for batch admission
         "sepapain.xml",  # cde: example result of sepapain lastschrift file
+        "sepapain_single.xml",  # cde: example result of sepapain lastschrift file
         "statement.csv",  # cde: sample input for parse_statement
         "money_transfers.csv",  # cde: sample input for member fees (money transfers)
         "money_transfers_valid.csv",  # cde: valid sample input for money transfers

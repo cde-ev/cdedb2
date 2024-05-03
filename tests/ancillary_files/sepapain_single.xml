@@ -5,8 +5,8 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
 		<GrpHdr>
 			<MsgId>1442438515.600722-OukDdlmT74</MsgId>
 			<CreDtTm>2015-09-16T21:21:55.618487+00:00</CreDtTm>
-			<NbOfTxs>2</NbOfTxs>
-			<CtrlSum>2050.23</CtrlSum>
+			<NbOfTxs>1</NbOfTxs>
+			<CtrlSum>50.23</CtrlSum>
 			<InitgPty>
 				<Nm>CdE e.V.</Nm>
 			</InitgPty>
@@ -15,8 +15,8 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                 <PmtInfId>1442438515.600722-OukDdlmT74-RCUR</PmtInfId>
                                 <PmtMtd>DD</PmtMtd>
                                 <BtchBookg>false</BtchBookg>
-                                <NbOfTxs>2</NbOfTxs>
-                                <CtrlSum>2050.23</CtrlSum>
+                                <NbOfTxs>1</NbOfTxs>
+                                <CtrlSum>50.23</CtrlSum>
                                 <PmtTpInf>
                                         <SvcLvl>
                                                 <Cd>SEPA</Cd>
@@ -33,7 +33,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                                 <Ctry>DE</Ctry>
                                                 <AdrLine>Musterstrasse 123</AdrLine>
                                                 <AdrLine>00000 Teststadt</AdrLine>
-
+                                                
                                         </PstlAdr>
                                 </Cdtr>
                                 <CdtrAcct>
@@ -94,40 +94,8 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                                         <Ustrd>DB-2-7, Beispiel, Bertalotta LSI Mitgliedsbeitrag u. Spende CdE e.V. z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe</Ustrd>
                                                 </RmtInf>
                                         </DrctDbtTxInf>
-                                <DrctDbtTxInf>
-                                                <PmtId>
-                                                        <EndToEndId>CDE-I25-42-6-4-3-15.594588</EndToEndId>
-                                                </PmtId>
-                                                <InstdAmt Ccy="EUR">2000.00</InstdAmt>
-                                                <DrctDbtTx>
-                                                        <MndtRltdInf>
-                                                                <MndtId>CDE-I25-42-6-4-3</MndtId>
-                                                                <DtOfSgntr>2023-08-12</DtOfSgntr>
-                                                                <AmdmntInd>false</AmdmntInd>
-                                                        </MndtRltdInf>
-                                                </DrctDbtTx>
-                                                <DbtrAgt>
-                                                        <FinInstnId>
-                                                                <Othr>
-                                                                        <Id>NOTPROVIDED</Id>
-
-                                                                </Othr>
-                                                        </FinInstnId>
-                                                </DbtrAgt>
-                                                <Dbtr>
-                                                        <Nm>Petra Philanthrop</Nm>
-                                                </Dbtr>
-                                                <DbtrAcct>
-                                                        <Id>
-                                                                <IBAN>DE22100100500123456789</IBAN>
-                                                        </Id>
-                                                </DbtrAcct>
-                                                <RmtInf>
-                                                        <Ustrd>DB-42-6, Philanthrop, Petra LSI Mitgliedsbeitrag u. Spende CdE e.V. z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe</Ustrd>
-                                                </RmtInf>
-                                        </DrctDbtTxInf>
-
+                                
 		        </PmtInf>
-
+		
 	</CstmrDrctDbtInitn>
 </Document>

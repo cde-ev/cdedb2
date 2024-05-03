@@ -175,6 +175,11 @@ CREATE TABLE core.personas (
             CHECK(is_cde_realm = (trial_member IS NOT NULL)),
         CONSTRAINT personas_trial_member_implicits
             CHECK(NOT trial_member OR is_member),
+        honorary_member         boolean,
+        CONSTRAINT personas_cde_honorary_member
+            CHECK(is_cde_realm = (honorary_member IS NOT NULL)),
+        CONSTRAINT personas_honorary_member_implicits
+            CHECK(NOT honorary_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub_search
@@ -426,6 +431,7 @@ CREATE TABLE core.changelog (
         donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
+        honorary_member         boolean,
         bub_search              boolean,
         foto                    varchar,
         paper_expuls            boolean

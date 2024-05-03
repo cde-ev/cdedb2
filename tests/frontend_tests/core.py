@@ -1545,7 +1545,7 @@ class TestCoreFrontend(FrontendTest):
         f['qop_is_archived'] = ""
         f['qval_is_archived'] = ""
         self.submit(f)
-        self.assertPresence("Ergebnis [26]", div='query-results')
+        self.assertPresence("Ergebnis [27]", div='query-results')
         self.assertPresence("Anton", div='query-result')
 
         f['qop_given_names'] = QueryOperators.match.value
@@ -1886,7 +1886,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Änderungshistorie")
         self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
         self.assertPresence("Gen 1", div="is_member-1")
-        self.assertPresence("Probemitgliedschaft", div="is_member-1")
+        self.assertPresence("Probemitglied", div="is_member-1")
         self.assertPresence("Aktuell", div="is_member-panic")
         self.assertPresence("Kein Mitglied", div="is_member-panic")
 
@@ -1984,7 +1984,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
-        self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
+        self.assertNonPresence("Probemitglied", div="cde-membership")
         self.traverse("Änderungshistorie")
         self.assertPresence(change_note, div="generation2")
 
@@ -2008,8 +2008,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Nina Neubauer")
         self.assertPresence("0,00 €", div='balance')
-        self.assertPresence("CdE-Mitglied", div="cde-membership")
-        self.assertPresence("Probemitgliedschaft", div="cde-membership")
+        self.assertPresence("Probemitglied", div="cde-membership")
         self.assertPresence("PfingstAkademie", div="past-events")
         self.assertPresence("Swish", div="past-events")
         self.assertPresence("Kursleiter", div="past-events")
@@ -2116,11 +2115,8 @@ class TestCoreFrontend(FrontendTest):
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
-        elif self.user:
-            self.get('/core/genesis/request')
         else:
-            self.get('/')
-            self.traverse({'description': 'Account anfordern'})
+            self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
@@ -2412,7 +2408,6 @@ class TestCoreFrontend(FrontendTest):
             self.submit(f)
             self.assertTitle("Zelda Zeruda-Hime")
             self.assertPresence("0,00 €", div="balance")
-            self.assertPresence("CdE-Mitglied", div="cde-membership")
             self.assertPresence("Probemitglied", div="cde-membership")
         self.logout()
         self.get(link)
@@ -2653,10 +2648,10 @@ class TestCoreFrontend(FrontendTest):
             data_fields = self.ML_GENESIS_DATA
         elif realm == "event":
             data_fields = self.EVENT_GENESIS_DATA
-        elif realm == "cde":
+        elif realm == "cde":  # pragma: no cover
             data_fields = self.CDE_GENESIS_DATA
         else:
-            data_fields = {}
+            self.fail(f"Doppelganger test-helper not implemented for {realm!r}-realm.")
 
         # Override default fields with current user.
         dg_data = data_fields.copy()

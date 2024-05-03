@@ -1080,8 +1080,10 @@ class CoreBaseFrontend(AbstractFrontend):
         ret: set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
-            "balance", "bub_search", "decided_search", "foto", "trial_member"}
+        hidden_cde_fields = (hidden_fields | {
+            "balance", "bub_search", "decided_search", "foto", "trial_member",
+            "honorary_member",
+        }) - {"is_searchable"}
         roles_to_fields = {
             "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
             "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
@@ -1577,21 +1579,22 @@ class CoreBaseFrontend(AbstractFrontend):
             # rather lengthy to specify the exact set of them
             del data[key]
         persona = self.coreproxy.get_total_persona(rs, persona_id)
-        merge_dicts(data, persona)
         # Specific fixes by target realm
         if target_realm == "cde":
             reference = {**CDE_TRANSITION_FIELDS}
-            for key in ('trial_member', 'decided_search', 'bub_search'):
-                if data[key] is None:
-                    data[key] = False
-            if data['paper_expuls'] is None:
-                data['paper_expuls'] = True
-            if data['donation'] is None:
-                data['donation'] = decimal.Decimal("0.0")
+            persona.update({
+                'trial_member': False,
+                'honorary_member': False,
+                'decided_search': False,
+                'bub_search': False,
+                'paper_expuls': True,
+                'donation': decimal.Decimal(0),
+            })
         elif target_realm == "event":
             reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
+        merge_dicts(data, persona)
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
@@ -1630,28 +1633,31 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        return self.render(rs, "modify_membership", {
-            "trial_member": persona["trial_member"]})
+        return self.render(rs, "modify_membership", {'persona': persona})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member", "trial_member")
+    @REQUESTdata("is_member", "trial_member", "honorary_member", _omit_missing=True)
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool, trial_member: bool) -> Response:
+                          is_member: Optional[bool] = None,
+                          trial_member: Optional[bool] = None,
+                          honorary_member: Optional[bool] = None,
+                          ) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
-        if trial_member and not is_member:
-            rs.append_validation_error(("trial_member", ValueError(
-                n_("Trial membership implies membership."))))
-        if rs.has_validation_errors():
-            return self.modify_membership_form(rs, persona_id)
+        if is_member is False:
+            trial_member = honorary_member = False
+        if trial_member or honorary_member:
+            is_member = True
+        rs.ignore_validation_errors()
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
                 self.cdeproxy.change_membership(
-                    rs, persona_id, is_member=is_member, trial_member=trial_member))
+                    rs, persona_id, is_member=is_member, trial_member=trial_member,
+                    honorary_member=honorary_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))

@@ -32,7 +32,7 @@ class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
             self, rs: RequestState, persona_id: int, is_member: Optional[bool] = None,
-            trial_member: Optional[bool] = None,
+            trial_member: Optional[bool] = None, honorary_member: Optional[bool] = None,
     ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
@@ -50,6 +50,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
         trial_member = affirm_optional(bool, trial_member)
+        honorary_member = affirm_optional(bool, honorary_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
@@ -74,7 +75,8 @@ class CdELastschriftBackend(CdEBaseBackend):
                             "Failed to revoke active lastschrift permit"))
                     revoked_permit = lastschrift_id
             code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member=is_member, trial_member=trial_member)
+                rs, persona_id, is_member=is_member, trial_member=trial_member,
+                honorary_member=honorary_member)
         return code, revoked_permit, collateral_transaction
 
     @access("cde", "core_admin", "cde_admin")
@@ -330,7 +332,10 @@ class CdELastschriftBackend(CdEBaseBackend):
         """The amount of a lastschrift transaction."""
         persona_id = affirm(vtypes.ID, persona_id)
         user = self.core.get_cde_user(rs, persona_id)
-        return user["donation"] + self.annual_membership_fee(rs)
+        ret = user["donation"]
+        if not user['honorary_member']:
+            ret += self.annual_membership_fee(rs)
+        return ret
 
     @access("finance_admin")
     def issue_lastschrift_transaction_batch(
@@ -395,10 +400,6 @@ class CdELastschriftBackend(CdEBaseBackend):
 
         :param status: If this is ``failed`` the direct debit permit is revoked
           so that no further transactions are issued for it.
-        :param tally: The actual amount of money that was moved. This may be
-          negative if we incur fees for failed transactions. In case of
-          success the balance of the persona is increased by the yearly
-          membership fee.
         """
         transaction_id = affirm(vtypes.ID, transaction_id)
         status = affirm(const.LastschriftTransactionStati, status)
@@ -425,18 +426,26 @@ class CdELastschriftBackend(CdEBaseBackend):
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
             lastschrift = self.get_lastschrift(rs, transaction['lastschrift_id'])
             persona_id = lastschrift['persona_id']
-            delta = None
-            new_balance = None
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
-                delta = self.annual_membership_fee(rs)
-                new_balance = user['balance'] + delta
-                ret *= self.core.change_persona_balance(
-                    rs, persona_id, new_balance, code,
-                    change_note="Erfolgreicher Lastschrifteinzug.")
-                # We provide membership directly after the successful transaction.
-                self.change_membership(rs, persona_id, is_member=True)
+                if user['honorary_member']:
+                    self.core.finance_log(
+                        rs, code, persona_id, delta=None, new_balance=user['balance'],
+                        change_note="Ehrenmitglied",
+                        transaction_date=transaction['payment_date'],
+                    )
+                else:
+                    user['balance'] += self.annual_membership_fee(rs)
+                    ret *= self.core.change_persona_balance(
+                        rs, persona_id, user['balance'], code,
+                        change_note="Erfolgreicher Lastschrifteinzug.",
+                        transaction_date=transaction['payment_date'],
+                    )
+                    # We provide membership directly after the successful transaction.
+                    if not user['is_member']:
+                        self.core.change_membership_easy_mode(
+                            rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
@@ -450,7 +459,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 code = const.FinanceLogCodes.lastschrift_transaction_cancelled
             else:
                 raise RuntimeError(n_("Impossible."))
-            self.core.finance_log(rs, code, persona_id, delta, new_balance,
+            self.core.finance_log(rs, code, persona_id, delta=None, new_balance=None,
                                   change_note=str(update['tally']))
         return ret
 

@@ -42,6 +42,7 @@ def update_defaults(table: str, entry: CdEDBObject) -> CdEDBObject:
         'balance': 0 if cde else None,
         'donation': 0 if cde else None,
         'trial_member': False if cde else None,
+        'honorary_member': False if cde else None,
         'decided_search': True if cde else None,
         'bub_search': False if cde else None,
         'paper_expuls': True if cde else None,
