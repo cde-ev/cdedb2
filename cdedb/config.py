@@ -76,7 +76,7 @@ except FileNotFoundError:  # pragma: no cover, only catch git executable not fou
         )
 except subprocess.CalledProcessError as e:  # pragma: no cover
     # It can happen that we use a git worktree where the primary repository
-    # is outside of the sandbox/VM in which we are running.
+    # is outside of the sandbox/VM in which we are running. Testing this is infeasible.
     _git_reference = (_repopath / ".git").read_text().strip()
     if not _git_reference.startswith("gitdir: "):
         raise RuntimeError("Unable to determine git commit") from e

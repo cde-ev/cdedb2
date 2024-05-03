@@ -570,6 +570,7 @@ class DatabaseLock:
             cur.execute(query, (params,))
             self.rs._conn.tpc_prepare()
         except psycopg2.errors.LockNotAvailable:  # pragma: no cover
+            # coverage: covered by `tests.backend.common` but not registered correctly.
             # No lock was acquired, abort
             self.rs._conn.tpc_rollback()
             self.xid = None
