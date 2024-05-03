@@ -211,20 +211,25 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     return list(wishes.values()), problems
 
 
+def escape(s: str) -> str:
+    return inverse_diacritic_patterns(re.escape(s.strip()))
+
+
 def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
     """
     patterns = [
-        inverse_diacritic_patterns(re.escape(f"{given_name} {persona['family_name']}"))
+        rf"{escape(given_name)}\s+{persona['family_name']}"
         for given_name in persona['given_names'].split()
     ]
-    patterns.append(inverse_diacritic_patterns(re.escape(
-        f"{persona['display_name']} {persona['family_name']}")))
+    patterns.append(
+        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
+    )
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
-        patterns.append(re.escape(persona['username']))
+        patterns.append(re.escape(persona['username'].strip()))
     return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
 
 

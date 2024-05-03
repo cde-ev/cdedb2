@@ -521,7 +521,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
-        json = json_serialize(data)
+        json = json_serialize(data, sort_keys=True)
         return self.send_file(
             rs, mimetype="application/json", data=json, inline=False,
             filename="{}_partial_export_event.json".format(
@@ -534,7 +534,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
         return self.send_file(
-            rs, mimetype="application/json", data=json_serialize(data))
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
 
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:
