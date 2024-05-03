@@ -225,7 +225,7 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         for given_name in persona['given_names'].split()
     ]
     patterns.append(
-        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}"
+        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
     )
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
