@@ -2248,6 +2248,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
+        self.assertHasClass("eventfee-title-1", "alert-danger")
+        self.assertHasClass("eventfee-title-2", "alert-success")
+        self.assertHasClass("eventfee-title-3", "alert-success")
+        self.assertHasClass("eventfee-title-4", "alert-danger")
+
         # TODO: actually add some tests for conditions.
 
     @event_keeper

@@ -181,8 +181,8 @@
                      */
                     if (eventfee_rows) {
                         eventfee_rows.each(function() {
-                            $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
-                            title = $(this).find('#active-fee-title');
+                            $(this).find('.active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
+                            title = $(this).find('.active-fee-title');
                             active_checkbox = $(this).find('#checkbox-active');
                             inactive_checkbox = $(this).find('#checkbox-inactive');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {

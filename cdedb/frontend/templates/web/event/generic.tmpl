@@ -466,8 +466,8 @@
                     {# {{ util.make_icon('chalkboard-teacher', title=gettext("Event Fee")) }} #}
                     {{ util.make_icon(fee.kind.get_icon(), title=gettext(fee.kind|string)) }}
                 </td>
-                <td id="active-fee-title" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
-                        class="{% if not js_preview and complex_fee %}
+                <td id="eventfee-title-{{ fee.id }}" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
+                        class="active-fee-title {% if not js_preview and complex_fee %}
                             {{ "text-danger alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
                         {% endif %}">
                     {% if js_preview %}
@@ -500,7 +500,7 @@
                         {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid")) }}
                     </td>
                 {% endif %}
-                <td id="active-fee-condition" class="nowrap">
+                <td class="active-fee-condition nowrap">
                     {% if complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
                     {% else %}
