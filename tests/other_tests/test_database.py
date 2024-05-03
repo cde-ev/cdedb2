@@ -66,23 +66,25 @@ class TestDatabase(unittest.TestCase):
         with Atomizer(rs):
             _affirm_atomized_context(rs)
 
+        # The following context managers raise an error during __enter__.
+        #  The pass is required syntactically, but never run.
         with Atomizer(rs):
             with self.assertRaises(RuntimeError):
                 with DatabaseLock(rs):
-                    pass
+                    pass  # pragma: no cover
 
         # Add missing attribute of actual RequestState.
         rs.is_quiet = False
 
         with self.assertRaises(RuntimeError):
             with Silencer(rs):
-                pass
+                pass  # pragma: no cover
 
         with Atomizer(rs):
             with Silencer(rs):
                 with self.assertRaises(RuntimeError):
                     with Silencer(rs):
-                        pass
+                        pass  # pragma: no cover
 
     def test_suppressed_exception(self) -> None:
         factory = connection_pool_factory(
