@@ -31,3 +31,8 @@ mount:
 #: Connect via ssh into the running VM.
 login:
 	ssh -p 10022 cdedb@localhost
+
+.PHONY: sync-into-vm
+#: Copy the state of the outside repository into the VM.
+sync-into-vm:
+	./sync-into-vm.sh

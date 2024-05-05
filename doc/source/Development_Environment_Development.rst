@@ -84,28 +84,30 @@ or add the following line from your ``.git/info/attributes`` file::
 Sample dev setup
 ----------------
 
-Here is a description of my setup hopefully aiding new devs in
-setup. This is by no means a mandatory setup. First an overview of the
-directory structure::
+Here is a description of the setup as provided by makefile in directory
+``related/auto-build/runtime``. This is by no means a mandatory setup, but
+hopefully useful for somebody. First an overview of the directory structure::
 
-    /home/markus/DB/
-    ├── cdedb2/
+    /home/markus/cdedb2/
+    ├── related
+    │   ├── auto-build
+    │   │   ├── runtime
+    │   │   │   ├── Makefile
+    │   │   │   ├── share
+    │   │   │   ├── image.qcow2
+    │   │   │   └── ...
+    │   │   └── ...
     │   └── ...
-    ├── vm-repo/
-    │   └── ...
-    ├── image.qcow2
-    ├── run-vm.sh
-    └── ssh-vm.sh
+    └── ...
 
-Everything lives inside the directory ``/home/markus/DB/`` where
-``cdedb2/`` is a clone of the git repository. Most development happens
-in this directory. Then there is the VM image ``image.qcow2`` which is
-started by the script ``run-vm.sh``. This script additionally uses
-sshfs to mount the git repository inside the VM to the directory
-``vm-repo/``. Finally the script ``ssh-vm.sh`` logs into the VM.
+Everything lives inside the directory ``/home/markus/cdedb2/`` which is a
+clone of the git repository. Most development happens in this directory. Then
+there is the VM image ``image.qcow2`` inside ``related/auto-build/runtime``
+which is started by ``make start``. With ``make mount``
+sshfs is used to mount the git repository inside the VM to the directory
+``share/``. Finally by ``make ssh`` one can log into the VM.
 
-The typical change is developed in ``cdedb2/`` and committed
-there. Then the commit is transferred to the VM by issuing the command
-``git pull ../cdedb2/`` inside the ``vm-repo/`` directory. Now the
-test suite is executed inside the VM and if successful the change is
-pushed from ``cdedb2/`` to the server.
+The typical change is developed in ``cdedb2/`` and committed there. Then the
+commit is transferred to the VM by issuing ``make sync-into-vm`` in the
+``runtime/`` directory. Now the test suite is executed inside the VM and if
+successful the change is pushed from ``cdedb2/`` to the server.
