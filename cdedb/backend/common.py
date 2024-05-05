@@ -317,8 +317,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 # distinct count for primary keys is necessary for queries that
                 # duplicate rows due to JOIN, e.g. cde user search
                 agg[
-                    f'COUNT(DISTINCT {query.scope.get_primary_key(short=True)})'
-                    f' FILTER (WHERE "{field_as}" IS NULL)'
+                    f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"
                 if query.spec[field].type in ("int", "float"):
                     agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
