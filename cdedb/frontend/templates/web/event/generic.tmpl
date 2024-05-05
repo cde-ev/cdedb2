@@ -468,7 +468,7 @@
                 </td>
                 <td id="eventfee-title-{{ fee.id }}" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
                         class="active-fee-title {% if not js_preview and complex_fee %}
-                            {{ "text-danger alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
+                            {{ "alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
                         {% endif %}">
                     {% if js_preview %}
                         {{ util.deko_checkbox(True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
