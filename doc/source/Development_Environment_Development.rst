@@ -94,7 +94,7 @@ can run the test suite first to see whether everything is ready::
   ./bin/check.py
 
 Now start the apache and access ``https://localhost:10443/db/`` with a
-browser.
+browser (where 10443 is the port used for forwarding).
 
 Refreshing the running instance
 -------------------------------
