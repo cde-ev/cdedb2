@@ -81,6 +81,39 @@ or add the following line from your ``.git/info/attributes`` file::
 
     *.po merge
 
+Running it
+----------
+
+Last step before startup is compiling the GNU gettext .mo files for i18n::
+
+  make i18n-compile
+
+Now, check if postgres and pgbouncer are running. Optionally you
+can run the test suite first to see whether everything is ready::
+
+  ./bin/check.py
+
+Now start the apache and access ``https://localhost:10443/db/`` with a
+browser.
+
+Refreshing the running instance
+-------------------------------
+
+Changes to the code can be propagate as follows to the current instance. For
+templates no action is necessary. For the python code the gunicorn server
+should also automatically reload on changes. If anything jams the workers can
+be restarted::
+
+  sudo systemctl restart apache2 gunicorn
+
+You can use the make target ``reload`` to easily re-compile i18n and trigger
+the worker reload::
+
+  make reload
+
+For the database you should restart pgbouncer (which probably has some open
+connections left) before doing ``make sample-data``.
+
 Sample dev setup
 ----------------
 
