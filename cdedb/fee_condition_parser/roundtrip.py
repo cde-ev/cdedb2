@@ -84,6 +84,8 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
         else:
             return value, text
     elif name in ('true', 'false', 'field', 'part', 'bool'):
+        if value is None:
+            return value, f'<span class="">{text}</span>'
         return value, f'<span class="atom {status}">{text}</span>'
     elif name == 'not':
         return value, f'<span class="block {status}">{text}</span>'
