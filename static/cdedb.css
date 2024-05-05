@@ -1096,12 +1096,13 @@ tr.money-negative>td {
 
 /* Event Fees */
 tr.eventfee > td.money-negative {
-    background-color: #dff0d8;
+    /*color: #3c763d;*/
+    /*background-color: #dff0d8;*/
     color: #449d44;
 }
 tr.eventfee > td.money-positive {
-    color: #31708f;
-    background-color: #d9edf7;
+    /*color: #31708f;*/
+    /*background-color: #d9edf7;*/
 }
 
 /* ************** *
