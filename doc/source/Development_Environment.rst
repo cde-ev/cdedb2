@@ -32,7 +32,7 @@ directories ``related/auto-build`` and ``related/docker``.
 Quickstart
 ----------
 
-.. note:: The following section does omit many details and options for a
+.. note:: The following section does omit many details and options. For a
           more comprehensive account follow the links above.
 
 VM
