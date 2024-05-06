@@ -811,7 +811,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:  # type: ignore[literal-required]
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore[literal-required]
+            if header in headers:
+                msg[header] = headers[header]  # type: ignore[literal-required]
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
