@@ -1,3 +1,5 @@
+DOCKER-COMPOSE ?= docker compose
+
 .PHONY: help
 #: Show this help.
 help:
@@ -9,45 +11,45 @@ help:
 .PHONY: build
 #: Build docker image for development environment. (Note dep on build-runtime!)
 build: build-runtime
-	docker compose --file docker-compose-dev.yaml build
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml build
 
 .PHONY: clean
 #: Reset state of development environment (deletes volumes).
 clean:
-	docker compose --file docker-compose-dev.yaml --volumes down
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml --volumes down
 
 .PHONY: start
 #: Start up the development environment.
 start:
-	docker compose --file docker-compose-dev.yaml up
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml up
 
 .PHONY: shell
 #: Open shell in development environment.
 shell:
-	docker compose --file docker-compose-dev.yaml exec -u cdedb app bash
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml exec -u cdedb app bash
 
 .PHONY: psql
 #: Access postgres database directly.
 psql:
-	docker compose exec cdb psql -U cdb -d cdb
+	$(DOCKER-COMPOSE) exec cdb psql -U cdb -d cdb
 
 .PHONY: build-runtime
 #: Build docker image for runtime environment.
 build-runtime:
-	docker compose --file docker-compose-run.yaml build
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml build
 
 .PHONY: clean-runtime
 #: Reset state of runtime environment (deletes volumes).
 clean-runtime:
-	docker compose --file docker-compose-run.yaml --volumes down
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml --volumes down
 
 .PHONY: start-runtime
 #: Start up the runtime environment.
 start-runtime:
-	docker compose --file docker-compose-run.yaml up
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml up
 
 .PHONY: shell-runtime
 #: Open shell in runtime environment.
 shell-runtime:
-	docker compose --file docker-compose-run.yaml exec -u cdedb app bash
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml exec -u cdedb app bash
 
