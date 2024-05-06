@@ -2725,7 +2725,7 @@ class CoreBaseBackend(AbstractBackend):
         if self.sql_insert(
             rs, models.AnonymousMessageData.database_table, message.to_database(),
         ):
-            return str(message.id)
+            return message.message_id
         return None
 
     @access("core_admin")

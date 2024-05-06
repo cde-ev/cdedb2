@@ -242,8 +242,6 @@ _DEFAULTS = {
             "Ansprechpartner für Probleme mit dem Vorstand",
         "feedback@lists.cde-ev.de": "Feedback-Team",
     },
-    "CONTACT_SENDER": "kontakt@cde-ev.de",
-    "CONTACT_SENDER_ANONYMOUS": "anonymous@cde-ev.de",
 
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",

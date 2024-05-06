@@ -8,6 +8,7 @@ from typing import Dict, Optional, Tuple, Union
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
@@ -3122,7 +3123,8 @@ LG Emilia
                 "Nachrichten-ID: (?P<message_id>.+)\n",
                 sent_anonymous,
             ):
-                message_id = result['message_id']
+                message_id, key = models_core.AnonymousMessageData.parse_message_id(
+                    result['message_id'])
             else:
                 self.fail("Failed to extract message id.")
 
@@ -3142,15 +3144,15 @@ LG Emilia
             self.submit(f, check_notification=False)
             self.assertValidationError('message_id', "Wrong format.")
 
-            f['message_id'] = "a" * 16 + message_id[16:]
+            f['message_id'] = "a" * 16 + key
             self.submit(f, check_notification=False)
             self.assertValidationError('message_id', "Unknown message id.")
 
-            f['message_id'] = message_id[:16] + "a" * 43 + message_id[-1]
+            f['message_id'] = message_id + "a" * (len(key) - 1) + key[-1]
             self.submit(f, check_notification=False)
             self.assertValidationError('message_id', "Invalid decryption key.")
 
-            f['message_id'] = message_id
+            f['message_id'] = message_id + key
             self.submit(f)
 
             reply = self.fetch_mail_content(0)

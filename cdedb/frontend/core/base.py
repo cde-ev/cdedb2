@@ -1356,8 +1356,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': self.conf["CONTACT_SENDER_ANONYMOUS"],
-                    'Reply-To': self.conf["CONTACT_SENDER_ANONYMOUS"],
+                    'From': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
                 },
                 {
                     'message_id': message.format_message_id(key),
@@ -1367,7 +1367,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         else:
             name = rs.user.persona_name()
-            sender = self.conf["CONTACT_SENDER"]
+            sender = self.conf["NOREPLY_ADDRESS"]
             self.do_mail(
                 rs, "contact",
                 {
@@ -1411,7 +1411,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.render(rs, "contact_reply")
         try:
             message_id_, key = models.AnonymousMessageData.parse_message_id(message_id)
-            message = self.coreproxy.get_anonymous_message(rs, message_id)
+            message = self.coreproxy.get_anonymous_message(rs, message_id_)
             anonymous_message = self.coreproxy.get_anonymous_message(rs, message_id_)
             message.decrypt(key)
             del message_id
