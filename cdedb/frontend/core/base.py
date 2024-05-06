@@ -1439,7 +1439,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     'To': {persona['username'], message.username},
                     'From': message.recipient,
                     'Reply-To': self.conf["NOREPLY_ADDRESS"],
-                    'Subject': "Antwort auf deine Nachricht",
+                    'Subject': f"Re: {original_subject}",
                 },
                 {
                     'persona': persona,
