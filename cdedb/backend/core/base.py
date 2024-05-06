@@ -21,6 +21,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -2713,6 +2714,36 @@ class CoreBaseBackend(AbstractBackend):
         for persona_id, persona_ in ret.items():
             persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
         return ret
+
+    @access("persona")
+    def log_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+
+        message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
+
+        if self.sql_insert(
+            rs, models.AnonymousMessageData.database_table, message.to_database(),
+        ):
+            return str(message.id)
+        return None
+
+    @access("core_admin")
+    def get_anonymous_message(
+            self, rs: RequestState, message_id: str,
+    ) -> models.AnonymousMessageData:
+
+        affirm(vtypes.Base64, message_id)
+
+        message_data = self.sql_select_one(
+            rs, models.AnonymousMessageData.database_table,
+            models.AnonymousMessageData.database_fields(),
+            message_id, models.AnonymousMessageData.entity_key,
+        )
+        if not message_data:
+            raise KeyError(n_("Unknown message id."))
+
+        return models.AnonymousMessageData.from_database(message_data)
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:

@@ -45,6 +45,10 @@
         {% endif %}
         {% if "core" in user.admin_views %}
             <div class="list-group tear-down">
+                {{ util.href(cdedblink("core/contact_reply_form"), gettext("Reply to Anonymous Message"), aclass="list-group-item",
+                             icon="paper-plane", active=(sidenav_active=='core_contact_reply')) }}
+            </div>
+            <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
                         icon="tags", active=(sidenav_active=='core_meta')) }}
             </div>

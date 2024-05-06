@@ -50,6 +50,7 @@ Instead, we provide some convenient wrappers around them for frontend and backen
 Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
+import base64
 import collections
 import copy
 import dataclasses
@@ -84,6 +85,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
@@ -193,6 +195,7 @@ DATACLASS_TO_VALIDATORS: Mapping[type[Any], type[CdEDBObject]] = {
     models_droid.OrgaToken: OrgaToken,
     GenericLogFilter: LogFilter,
     models_event.CustomQueryFilter: CustomQueryFilter,
+    models_core.AnonymousMessageData: AnonymousMessage,
 }
 
 
@@ -1026,6 +1029,35 @@ def _token_string(
         raise ValidationSummary(ValueError(argname, n_(
             "Must not contain whitespace or parentheses.")))
     return TokenString(val)
+
+
+@_add_typed_validator
+def _base64(
+        val: Any, argname: Optional[str] = None, **kwargs: Any,
+) -> Base64:
+
+    val = _ALL_TYPED[str](val, argname, **kwargs)
+    try:
+        _ = base64.b64decode(val, b"-_", validate=True)
+    except ValueError:
+        raise ValidationSummary(ValueError(argname, n_(
+            "Invalid Base64 string."))) from None
+
+    return Base64(val)
+
+
+@_add_typed_validator
+def _anonymous_mesage(
+        val: Any, argname: str = models_core.AnonymousMessageData.__qualname__,
+        creation: bool = False, **kwargs: Any,
+) -> AnonymousMessage:
+    val = _mapping(val, argname, **kwargs)
+
+    mandatory, optional = models_core.AnonymousMessageData.validation_fields(
+        creation=creation)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+
+    return AnonymousMessage(val)
 
 
 # TODO manual handling of @_add_typed_validator inside decorator or storage?

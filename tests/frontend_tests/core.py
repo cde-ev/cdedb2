@@ -3074,3 +3074,97 @@ class TestCoreFrontend(FrontendTest):
             for log in logs:
                 self.assertNonPresence(log, div="sidebar-navigation")
             self._click_admin_view_button("Kassenprüfer")
+
+    def test_contact(self) -> None:
+        with self.switch_user("emilia"):
+            self.traverse("Contact")
+            f = self.response.forms['contactform']
+            for recipient in self.conf["CONTACT_ADDRESSES"]:
+                f['to'] = recipient
+            f['subject'] = subject = "Ich habe ein Problem!"
+            f['anonymous_from'] = False
+            f['msg'] = msg = """Es gab viel zu wenig Rum-Trauben-Nuss-Schokolade
+auf der letzten Akademie, das geht so nicht.
+
+LG Emilia
+"""
+            self.submit(f)
+
+            sent = self.fetch_mail_content(0)
+            receipt = self.fetch_mail_content(1)
+
+            self.assertIn(msg, sent)
+            self.assertIn("Emilia E. Eventis", sent)
+            self.assertIn(msg, receipt)
+            self.assertIn(subject, receipt)
+            self.assertIn("Anonym: Nein", receipt)
+
+            f['anonymous_from'] = True
+            f['msg'] = msg_anonymous = "\n".join(msg.split("\n")[:-2])
+            self.submit(f)
+
+            sent_anonymous = self.fetch_mail_content(0)
+            receipt_anonymous = self.fetch_mail_content(1)
+
+            self.assertIn(msg_anonymous, sent_anonymous)
+            self.assertNotIn("Emmy", sent_anonymous)
+            self.assertNotIn("Emilia", sent_anonymous)
+            self.assertIn(msg_anonymous, receipt_anonymous)
+            self.assertIn(subject, receipt_anonymous)
+            self.assertIn("Emmy", receipt_anonymous)
+            self.assertIn("Anonym: Ja", receipt_anonymous)
+            self.assertIn(
+                "Die Empfänger können auf deine Nachricht antworten",
+                receipt_anonymous,
+            )
+
+            if result := re.search(
+                "Nachrichten-ID: (?P<message_id>.+)\n",
+                sent_anonymous,
+            ):
+                message_id = result['message_id']
+            else:
+                self.fail("Failed to extract message id.")
+
+        with self.switch_user("farin"):
+            self.traverse("Reply to Anonymous Message")
+            f = self.response.forms['replyform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError('message_id', "Darf nicht leer sein.")
+            self.assertValidationError('reply_message', "Darf nicht leer sein.")
+
+            f['reply_message'] = reply_msg = "Wir kaufen mehr, versprochen!"
+            f['message_id'] = "$&()"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('message_id', "Invalid Base64 string.")
+
+            f['message_id'] = "abcd"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('message_id', "Wrong format.")
+
+            f['message_id'] = "a" * 16 + message_id[16:]
+            self.submit(f, check_notification=False)
+            self.assertValidationError('message_id', "Unknown message id.")
+
+            f['message_id'] = message_id[:16] + "a" * 43 + message_id[-1]
+            self.submit(f, check_notification=False)
+            self.assertValidationError('message_id', "Invalid decryption key.")
+
+            f['message_id'] = message_id
+            self.submit(f)
+
+            reply = self.fetch_mail_content(0)
+            reply_receipt = self.fetch_mail_content(1)
+
+            self.assertIn(reply_msg, reply)
+            self.assertIn(subject, reply)
+            self.assertIn("Emmy", reply)
+            self.assertIn(
+                "Zu diesem Zwecke wurde die Anonymität deiner Nachricht"
+                " __nicht__ aufgehoben.",
+                reply,
+            )
+            self.assertNotIn("Emmy", reply_receipt)
+            self.assertNotIn("Emilia", reply_receipt)
+            self.assertIn(reply_msg, reply_receipt)
+            self.assertIn(subject, reply_receipt)

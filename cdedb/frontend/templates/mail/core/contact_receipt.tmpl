@@ -1,0 +1,15 @@
+Hallo {{ user.display_name }},
+
+Deine Nachricht über das Kontaktformular ist angekommen.
+
+{% if anonymous %}
+Die Empfänger können auf deine Nachricht antworten, ohne dabei Aufschluss
+über deine Identität zu erhalten.
+
+{% endif %}
+Betreff: {{ subject }}
+Empfänger: {{ to }}
+Anonym: {{ "Ja" if anonymous else "Nein" }}
+Text:
+
+{{ message }}

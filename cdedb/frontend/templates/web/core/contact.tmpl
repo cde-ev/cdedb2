@@ -15,7 +15,7 @@
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#changeinfoform').cdedbProtectChanges();
+            $('#contactform').cdedbProtectChanges();
         });
     </script>
     <p>
@@ -27,7 +27,7 @@
         {% endtrans %}
 
     </p>
-    <form action="{{ cdedblink('core/contact') }}" method="POST" id="changeinfoform" class="form-horizontal">
+    <form action="{{ cdedblink('core/contact') }}" method="POST" id="contactform" class="form-horizontal">
         {{ util.anti_csrf_token('core/contact') }}
         {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), info=gettext("Descriptions and Membership of these groups is found on the %(website)s.")|format(
                                                website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}

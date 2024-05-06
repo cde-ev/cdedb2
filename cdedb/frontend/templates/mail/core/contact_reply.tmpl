@@ -1,0 +1,12 @@
+Hallo {{ persona['display_name'] }}!
+
+Du hast eine Antwort auf eine anonyme Nachricht erhalten.
+Zu diesem Zwecke wurde die Anonymität deiner Nachricht __nicht__ aufgehoben.
+
+Urprünglicher Betreff: {{ original_subject }}
+Empfänger: <{{ original_recipient }}>
+Zeitpunkt der ursprünglichen Nachricht: {{ ctime|datetime(lang="de") }}
+
+---
+
+{{ reply_message }}

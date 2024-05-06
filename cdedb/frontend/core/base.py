@@ -21,11 +21,14 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, User,
     make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
 )
-from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
+from cdedb.common.exceptions import (
+    ArchiveError, CryptographyError, PrivilegeError, ValidationWarning,
+)
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
@@ -1337,12 +1340,137 @@ class CoreBaseFrontend(AbstractFrontend):
                 subject: str, msg: str) -> Response:
         if rs.has_validation_errors() or to not in self.conf["CONTACT_ADDRESSES"]:
             return self.contact_form(rs)
+        assert rs.user.persona_id is not None and rs.user.username is not None
 
-        # TODO: Send message and copy to author.
-        self.logger.info(f"Persona {rs.user.persona_id} used the contact form.")
+        if anonymous_from:
+            message, key = models.AnonymousMessageData.encrypt(
+                recipient=to, persona_id=rs.user.persona_id,
+                username=rs.user.username, subject=subject,
+            )
+            if not self.coreproxy.log_anonymous_message(rs, message):
+                rs.notify("error", "Something went wrong.")
+                return self.contact_form(rs)
+
+            self.do_mail(
+                rs, "contact_anonymous",
+                {
+                    'To': (to,),
+                    'Subject': subject,
+                    'From': self.conf["CONTACT_SENDER_ANONYMOUS"],
+                    'Reply-To': self.conf["CONTACT_SENDER_ANONYMOUS"],
+                },
+                {
+                    'message_id': message.format_message_id(key),
+                    'message': msg,
+                    'to': to,
+                },
+            )
+        else:
+            name = rs.user.persona_name()
+            sender = self.conf["CONTACT_SENDER"]
+            self.do_mail(
+                rs, "contact",
+                {
+                    'To': (to,),
+                    'Subject': subject,
+                    'From': f"{name} via Kontaktformular <{sender}>",
+                    'Reply-To': rs.user.username,
+                },
+                {
+                    'message': msg,
+                    'name': name,
+                },
+            )
+        self.do_mail(
+            rs, "contact_receipt",
+            {
+                'To': (rs.user.username,),
+                'Subject': "Deine Nachricht ist angekommen.",
+                'From': self.conf["NOREPLY_ADDRESS"],
+                'Reply-To': self.conf["NOREPLY_ADDRESS"],
+            },
+            {
+                'message': msg, 'subject': subject, 'to': to,
+                'anonymous': anonymous_from,
+            },
+        )
 
         rs.notify("success", n_("Message sent!"))
         return self.redirect(rs, "core/index")
+
+    @access("core_admin")
+    def contact_reply_form(self, rs: RequestState) -> Response:
+        return self.render(rs, "contact_reply")
+
+    @access("core_admin", modi={"POST"})
+    @REQUESTdata("message_id", "reply_message")
+    def contact_reply(
+            self, rs: RequestState, message_id: vtypes.Base64, reply_message: str,
+    ) -> Response:
+        if rs.has_validation_errors():
+            return self.render(rs, "contact_reply")
+        try:
+            message_id_, key = models.AnonymousMessageData.parse_message_id(message_id)
+            message = self.coreproxy.get_anonymous_message(rs, message_id)
+            anonymous_message = self.coreproxy.get_anonymous_message(rs, message_id_)
+            message.decrypt(key)
+            del message_id
+            del message_id_
+            del key
+        except ValueError:
+            rs.append_validation_error(("message_id", ValueError(n_("Wrong format."))))
+        except KeyError as e:
+            rs.append_validation_error(("message_id", e))
+        except CryptographyError:
+            rs.append_validation_error((
+                "message_id",
+                RuntimeError(n_("Invalid decryption key.")),
+            ))
+        else:
+            # Can't have validation errors in the else branch.
+            rs.ignore_validation_errors()
+            assert message.persona_id and message.username and message.subject
+            persona = self.coreproxy.get_persona(rs, message.persona_id)
+            original_subject = message.subject
+
+            self.do_mail(
+                rs, "contact_reply",
+                {
+                    'To': {persona['username'], message.username},
+                    'From': message.recipient,
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'Subject': "Antwort auf deine Nachricht",
+                },
+                {
+                    'persona': persona,
+                    'reply_message': reply_message,
+                    'original_subject': original_subject,
+                    'original_recipient': message.recipient,
+                    'ctime': message.ctime,
+                },
+            )
+            del message
+            del persona
+
+            self.do_mail(
+                rs, "contact_reply_receipt",
+                {
+                    'To': (anonymous_message.recipient,),
+                    'From':
+                        f"{rs.user.persona_name()} via <{anonymous_message.recipient}>",
+                    'Reply-To': anonymous_message.recipient,
+                    'Subject': "Nachricht beantwortet.",
+                },
+                {
+                    'reply_message': reply_message,
+                    'anonymous_message': anonymous_message,
+                    'original_subject': original_subject,
+                },
+            )
+            rs.notify("success", n_("Reply sent."))
+            return self.redirect(rs, "core/index")
+        rs.ignore_validation_errors()
+        return self.render(rs, "contact_reply")
 
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,

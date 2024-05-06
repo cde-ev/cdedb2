@@ -238,9 +238,12 @@ _DEFAULTS = {
     # email addresses for the global contact form
     "CONTACT_ADDRESSES": {
         "vorstand@cde-ev.de": "Vorstand",
-        "probleme-mit-dem-vorstand@lists.cde-ev.de": "Ansprechpartner für Probleme mit dem Vorstand",
+        "probleme-mit-dem-vorstand@lists.cde-ev.de":
+            "Ansprechpartner für Probleme mit dem Vorstand",
         "feedback@lists.cde-ev.de": "Feedback-Team",
     },
+    "CONTACT_SENDER": "kontakt@cde-ev.de",
+    "CONTACT_SENDER_ANONYMOUS": "anonymous@cde-ev.de",
 
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",
