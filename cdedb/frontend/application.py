@@ -24,7 +24,7 @@ from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, RequestState, User, glue, make_proxy, now,
     setup_logger,
 )
-from cdedb.common.exceptions import PrivilegeError, QuotaException
+from cdedb.common.exceptions import CryptographyError, PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
@@ -342,7 +342,9 @@ class Application(BaseApp):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
 
-            self.cgitb_log()
+            # Suppress stack trace logging for critical errors containing secrets.
+            if not isinstance(e, CryptographyError):
+                self.cgitb_log()
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
