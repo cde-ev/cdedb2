@@ -9,5 +9,4 @@ elif (( NUM > 1 )); then
     exit 2
 fi
 
-IMAGE=$(ls -1 ./*.qcow2)
-echo "$IMAGE"
+echo "$(ls -1 ./*.qcow2)"
