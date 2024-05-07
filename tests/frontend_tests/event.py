@@ -1753,21 +1753,23 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence(
-            "Anmeldung erst mit Überweisung des Teilnahmebeitrags")
-        self.assertPresence("573,99 € auf folgendes Konto")
-        self.assertPresence(
-            "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Um deine Anmeldung zu vervollständigen, überweise bitte den"
+            " fehlenden Betrag von 573,99 €.")
+        self.assertPresence("Bitte überweise 573,99 € auf folgendes Konto")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("473,99 € auf folgendes Konto")
+        self.assertPresence("Bitte überweise 473,99 € auf folgendes Konto")
+        self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence(
-            "100,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Um deine Anmeldung zu vervollständigen, überweise bitte den"
+            " fehlenden Betrag von 473,99 €.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
         self.assertNonPresence("1000,00")
-        self.assertPresence("573,99 € bereits bezahlt.")
+        self.assertPresence(
+            "Du hast 426,01 € mehr bezahlt als deinen Teilnahmebeitrag von 573,99 €.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
 
         # Payment checks without iban
@@ -1781,8 +1783,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+        self.assertPresence("Du hast bereits 200,00 € bezahlt.")
         self.assertPresence(
-            "200,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Um deine Anmeldung zu vervollständigen, überweise bitte den"
+            " fehlenden Betrag von 373,99 €.")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
