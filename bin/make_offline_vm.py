@@ -362,8 +362,8 @@ def work(
             )
             # If that didn't work, add a new one.
             if not Config()[offline_deploy_key]:
-                with open(str(config_path), 'a', encoding='UTF-8') as conf:
-                    conf.write(f"\n{offline_deploy_key} = True\n")
+                with open(str(config_path), 'a', encoding='UTF-8') as conf_file:
+                    conf_file.write(f"\n{offline_deploy_key} = True\n")
 
     if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
