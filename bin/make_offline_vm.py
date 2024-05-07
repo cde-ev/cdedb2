@@ -95,6 +95,41 @@ def make_meta_info(cur: DictCursor) -> None:
     cur.execute(query, tuple())
 
 
+def shift_existing_ids(tables: list[str], shift_amount: int) -> None:
+    connection = Script(dbuser="cdb", check_system_user=False).rs().conn
+    with connection:
+        with connection.cursor() as cur:
+            query = """
+                SELECT
+                    conname,
+                    nspname || '.' || relname AS tablename,
+                    pg_catalog.pg_get_constraintdef(pg_constraint.oid, true) AS condef
+                FROM
+                    pg_catalog.pg_constraint
+                    INNER JOIN pg_catalog.pg_class
+                        ON pg_constraint.conrelid = pg_class.oid
+                    INNER JOIN pg_catalog.pg_namespace
+                        ON pg_class.relnamespace = pg_namespace.oid
+                WHERE
+                    contype = 'f' AND confupdtype != 'c'
+                ORDER BY
+                    relname
+            """
+            cur.execute(query, ())
+            for x in list(cur.fetchall()):
+                cur.execute(
+                    f"ALTER TABLE {x['tablename']}"
+                    f" DROP CONSTRAINT {x['conname']}",
+                )
+                cur.execute(
+                    f"ALTER TABLE {x['tablename']}"
+                    f" ADD CONSTRAINT {x['conname']} {x['condef']} ON UPDATE CASCADE",
+                )
+            for table in tables:
+                query = f"""UPDATE {table} SET id = id + {shift_amount}"""
+                cur.execute(query, ())
+
+
 def update_event(cur: DictCursor, event: CdEDBObject) -> None:
     query = """UPDATE event.events SET lodge_field_id = %s"""
     cur.execute(query, [event['lodge_field_id']])
@@ -117,7 +152,7 @@ def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
 def work(
         data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         extra_packages: bool = False, no_extra_packages: bool = False,
-        dev_mode: bool = False,
+        dev_mode: bool = False, keep_data: bool = False, offline_mode: bool = True,
 ) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
@@ -134,7 +169,7 @@ def work(
     print("Found data for event '{}' exported {}.".format(
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
-    if not data['event.events'][str(data['id'])]['offline_lock']:
+    if offline_mode and not data['event.events'][str(data['id'])]['offline_lock']:
         print("Event not locked in online instance at time of export."
               "\nIn case of simultaneous changes in offline and online"
               " instance there will be data loss."
@@ -148,18 +183,21 @@ def work(
         print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
-    print("Clean current instance (deleting all data)")
-    if is_interactive:
-        if input("Are you sure (type uppercase YES)? ").strip() != "YES":
-            print("Aborting.")
-            sys.exit()
-    clean_script = repo_path / "tests/ancillary_files/clean_data.sql"
-    with connection as conn:
-        with conn.cursor() as curr:
-            curr.execute(clean_script.read_text())
-    # Also clean out the event keeper storage
-    for thing in (conf['STORAGE_DIR'] / 'event_keeper').iterdir():
-        subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
+    if keep_data:
+        shift_existing_ids((k for k in data if '.' in k), 1_000_000)
+    else:
+        print("Clean current instance (deleting all data)")
+        if is_interactive:
+            if input("Are you sure (type uppercase YES)? ").strip() != "YES":
+                print("Aborting.")
+                sys.exit()
+        clean_script = repo_path / "tests/ancillary_files/clean_data.sql"
+        with connection as conn:
+            with conn.cursor() as curr:
+                curr.execute(clean_script.read_text())
+        # Also clean out the event keeper storage
+        for thing in (conf['STORAGE_DIR'] / 'event_keeper').iterdir():
+            subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
     cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
@@ -195,6 +233,7 @@ def work(
         with conn.cursor() as curr:
             curr.execute(query)
 
+    # Order matters here:
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
         'event.part_groups', 'event.part_group_parts',
@@ -251,25 +290,31 @@ def work(
                 params = tuple(datum[key] for key in keys)
                 cur.execute(query, params)
 
-    print("Checking whether everything was transferred.")
-    fails = []
-    with conn as con:
-        with con.cursor() as cur:
-            for table in tables:
-                target_count = len(data[table])
-                query = "SELECT COUNT(*) AS count FROM {}".format(table)
-                cur.execute(query)
-                real_count = cur.fetchone()['count']
-                if target_count != real_count:
-                    fails.append("Table {} has {} not {} entries".format(
-                        table, real_count, target_count))
-    if fails:
-        print("Errors detected.")
-        for fail in fails:
-            print(fail)
-        raise RuntimeError("Data transfer was not successful.")
-    else:
-        print("Everything in place.")
+    if not keep_data:
+        print("Checking whether everything was transferred.")
+        fails = []
+        with conn as con:
+            with con.cursor() as cur:
+                for table in tables:
+                    target_count = len(data[table])
+                    query = "SELECT COUNT(*) AS count FROM {}".format(table)
+                    cur.execute(query)
+                    real_count = cur.fetchone()['count']
+                    if target_count != real_count:
+                        fails.append("Table {} has {} not {} entries".format(
+                            table, real_count, target_count))
+        if fails:
+            print("Errors detected.")
+            for fail in fails:
+                print(fail)
+            raise RuntimeError("Data transfer was not successful.")
+        else:
+            print("Everything in place.")
+        if not offline_mode:
+            with conn as con:
+                with con.cursor() as cur:
+                    cur.execute("INSERT INTO cde.org_period (id) VALUES (42)")
+                    cur.execute("INSERT INTO cde.expuls_period (id) VALUES (42)")
 
     # Adjust config.
     config_path = get_configpath()
@@ -288,21 +333,22 @@ def work(
         print("Protecting data from accidental reset")
         subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
-    # mark the config as offline vm
-    offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
-    if not Config()[offline_deploy_key]:
-        # Try replacing config entry.
-        subprocess.run(
-            [
-                "sudo", "sed", "-i", "-e",
-                f"s/{offline_deploy_key} = False/{offline_deploy_key} = True/",
-                str(config_path),
-            ], check=True,
-        )
-        # If that didn't work, add a new one.
+    if offline_mode:
+        # mark the config as offline vm
+        offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
         if not Config()[offline_deploy_key]:
-            with open(str(config_path), 'a', encoding='UTF-8') as conf:
-                conf.write(f"\n{offline_deploy_key} = True\n")
+            # Try replacing config entry.
+            subprocess.run(
+                [
+                    "sudo", "sed", "-i", "-e",
+                    f"s/{offline_deploy_key} = False/{offline_deploy_key} = True/",
+                    str(config_path),
+                ], check=True,
+            )
+            # If that didn't work, add a new one.
+            if not Config()[offline_deploy_key]:
+                with open(str(config_path), 'a', encoding='UTF-8') as conf:
+                    conf.write(f"\n{offline_deploy_key} = True\n")
 
     if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
@@ -343,6 +389,10 @@ if __name__ == "__main__":
                         help="Never install additional packages.")
     parser.add_argument('--dev', action="store_true",
                         help="Setup offline VM for development/manual testing.")
+    parser.add_argument('--keep-data', action="store_true",
+                        help="Do not remove existing data.")
+    parser.add_argument('--no-offline-flag', action="store_true",
+                        help="Do not set the config flag for offline mode.")
     args = parser.parse_args()
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
@@ -361,5 +411,6 @@ if __name__ == "__main__":
     work(
         data_path, config, is_interactive=not args.not_interactive,
         extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages,
-        dev_mode=args.dev,
+        dev_mode=args.dev, keep_data=args.keep_data,
+        offline_mode=not args.no_offline_flag,
     )
