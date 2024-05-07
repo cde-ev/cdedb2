@@ -488,7 +488,7 @@
                         {{ fee.title }}
                     {% endif %}
                 </td>
-                <td class="text-right {{ "money-negative" if fee.amount < 0 else "money-positive" }}">
+                <td class="text-right nowrap {{ "money-negative" if fee.amount < 0 else "money-positive" }}">
                     <strong>
                         {{ fee.amount|money(lang=lang) }}
                     </strong>
