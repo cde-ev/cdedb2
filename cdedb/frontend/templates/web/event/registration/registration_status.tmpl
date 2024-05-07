@@ -150,6 +150,12 @@
                     (up to a few weeks) until the payment is registered here.
                 {% endtrans %}
             </p>
+        {% elif not ambience['event'].iban and to_pay > 0 %}
+            <p>
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    The orgas will tell you separately how to pay your fee of {{ to_pay }}.
+                {% endtrans %}
+            </p>
         {% endif %}
         {% if complex_fee.nonmember_surcharge %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
