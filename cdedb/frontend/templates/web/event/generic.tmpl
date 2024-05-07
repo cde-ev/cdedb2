@@ -423,3 +423,113 @@
         </span>
     {% endif %}
 {% endmacro %}
+
+{% macro active_fee_registration_query_link(registration_ids, label=None) %}
+    {% with query = get_query(registration_ids) %}
+        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()),
+                     registration_ids|length|string + (" " + label if label else ""), icon='list',
+                     title=gettext("View Registrations")) }}
+    {% endwith %}
+{% endmacro %}
+
+{#  Print a summary of all relevant fees.
+    Has esssentially three different usage modes:
+
+    js_preview = True:
+        Used on the `registration_preview` page. Uses js and the `precompute_fee`
+        endpoint to display the correct checkboxes and add css classes to active fees.
+    js_preview = False and complex_fee is None:
+        Used on the global fee summary. Display the fee notes on this page, but don't
+        show checkboxes or add classes to active fees (since there is no registration
+        to decide whether they are active).
+    js_preview = False and complex_fee is not None:
+        Used on the registration fee summary. Do not display notes, but mark active
+        fees statically without js.
+#}
+
+{% macro fee_composition_table(js_preview=False) %}
+    <table id="fee-summary" class="table" {% if js_preview %}style="display: none"{% endif %}>
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Amount{% endtrans %}</th>
+                {% if not js_preview and not complex_fee %}<th>{% trans %}Registrations{% endtrans %}</th>{% endif %}
+                <th>{% trans %}Condition{% endtrans %}</th>
+                {% if not js_preview %}<th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for fee in ambience['event'].fees.values()|sort %}
+            <tr id="eventfee_{{ fee.id }}" data-fee_id="{{ fee.id }}" class="eventfee">
+                <td>
+                    {# {{ util.make_icon('chalkboard-teacher', title=gettext("Event Fee")) }} #}
+                    {{ util.make_icon(fee.kind.get_icon(), title=gettext(fee.kind|string)) }}
+                </td>
+                <td id="eventfee-title-{{ fee.id }}" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
+                        class="active-fee-title {% if not js_preview and complex_fee %}
+                            {{ "alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
+                        {% endif %}">
+                    {% if js_preview %}
+                        {{ util.deko_checkbox(True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
+                        {{ util.deko_checkbox(False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
+                    {% elif complex_fee %}
+                        {{ util.deko_checkbox(fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
+                    {% endif %}
+                    {% if not js_preview and not complex_fee %}
+                        <strong>
+                            {{ fee.title }}
+                        </strong>
+                        {%- if fee.notes %}
+                            <br />
+                            {{ fee.notes }}
+                        {% endif %}
+                    {% else %}
+                        {{ fee.title }}
+                    {% endif %}
+                </td>
+                <td class="text-right nowrap {{ "money-negative" if fee.amount < 0 else "money-positive" }}">
+                    <strong>
+                        {{ fee.amount|money(lang=lang) }}
+                    </strong>
+                </td>
+                {% if not js_preview and not complex_fee %}
+                    <td class="nowrap">
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed")) }}
+                        <br />
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid")) }}
+                    </td>
+                {% endif %}
+                <td class="active-fee-condition nowrap">
+                    {% if complex_fee %}
+                        {{ complex_fee.visual_debug[fee.id]|safe }}
+                    {% else %}
+                        {{ fee.visual_debug|safe }}
+                    {% endif %}
+                </td>
+                {% if not js_preview %}
+                    <td class="nowrap b-left">
+                        {% if complex_fee %}
+                            {{ util.href(cdedblink("event/fee_summary") + "#eventfee_{}".format(fee.id), label=None,
+                                         title=gettext("Go to event fee summary"), icon="chevron-right",
+                                         aclass="btn btn-sm btn-info") }}
+                        {% else %}
+                            {{ util.href(
+                                cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
+                                title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
+                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning") }}
+                            <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
+                                  method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
+                                {{ util.anti_csrf_token("event/delete_fee") }}
+                                {{ util.input_submit(
+                                    title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
+                                    icon='trash-alt', label=None, aclass="btn btn-sm btn-danger") }}
+                            </form>
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}

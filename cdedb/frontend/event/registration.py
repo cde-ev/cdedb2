@@ -467,15 +467,15 @@ class EventRegistrationMixin(EventBaseFrontend):
                          " (already included in the above figure).")
         nonmember_msg = msg % {
             'additional_fee': money_filter(
-                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or "",
+                complex_fee.nonmember_surcharge, lang=rs.lang) or "",
         }
 
         ret = {
             'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
             'nonmember': nonmember_msg,
-            'show_nonmember': complex_fee.nonmember_surcharge,
-            'active_fees': complex_fee.fee.active_fees,
-            'visual_debug': complex_fee.fee.visual_debug,
+            'show_nonmember': bool(complex_fee.nonmember_surcharge),
+            'active_fees': complex_fee.active_fees,
+            'visual_debug': complex_fee.visual_debug,
         }
         return Response(json_serialize(ret), mimetype='application/json')
 
@@ -987,6 +987,16 @@ class EventRegistrationMixin(EventBaseFrontend):
             'violation_severity': constraint_violations['max_severity'],
             **payment_data,
             **course_choice_parameters,
+        })
+
+    @access("event")
+    @event_guard()
+    def show_registration_fee(self, rs: RequestState, event_id: int,
+                              registration_id: int) -> Response:
+        """Display detailed information about amount owed and individual fees."""
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
+        return self.render(rs, "registration/registration_fee_summary", {
+            **payment_data,
         })
 
     @access("event")

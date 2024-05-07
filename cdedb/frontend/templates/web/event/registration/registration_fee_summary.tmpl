@@ -1,0 +1,52 @@
+{% set sidenav_active='registrations' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block title %}
+    {% trans persona_name=util.persona_name(persona) %}
+        Fee Details for {{ persona_name }}
+    {% endtrans %} ({{ ambience['event']['title'] }})
+{% endblock %}
+{% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
+    {{ util.context_heading(gettext("Fee Details"),
+                            util.persona_name(persona), 'user', gettext("Registration"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), active=True) }}
+{% endblock %}
+
+{% block content %}
+
+    <h4 class="heading-underline">{% trans %}Overview{% endtrans %}</h4>
+    <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
+    <dd>
+        {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+    </dd>
+    <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
+    <dd>
+        {{ ambience['registration']['amount_paid']|money(lang=lang) }}
+    </dd>
+    <dt title="{% trans %}Remaining Owed{% endtrans %}">{% trans %}Remaining Owed{% endtrans %}</dt>
+    <dd>
+        {{ to_pay|money(lang=lang) }}
+    </dd>
+    <dt title="{% trans %}Payment{% endtrans %}">{% trans %}Payment{% endtrans %}</dt>
+    <dd>
+        {% if ambience['registration']['payment'] %}
+            {% trans date=ambience['registration']['payment']|date(lang=lang) %}
+                Paid on {{ date }}
+            {% endtrans %}
+        {% else %}
+            <em>{% trans %}Pending{% endtrans %}</em>
+        {% endif %}
+    </dd>
+
+    <h4 class="heading-underline">{% trans %}Composition of the fee{% endtrans %}</h4>
+    {{ generic_event.fee_composition_table() }}
+{% endblock %}

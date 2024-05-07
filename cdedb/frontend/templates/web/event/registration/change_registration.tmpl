@@ -90,28 +90,7 @@
                     {% trans %}Fee{% endtrans %}:
                     <span id="fee-preview">{% trans %}Activate JavaScript for automatic fee preview.{% endtrans %}</span>
                 </summary>
-                <table class="table" style="display: none">
-                    <thead>
-                        <tr>
-                            <th>{% trans %}Title{% endtrans %}</th>
-                            <th>{% trans %}Amount{% endtrans %}</th>
-                            <th>{% trans %}Condition{% endtrans %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for fee in ambience['event']['fees'].values()|sort %}
-                        <tr id="active-fee" data-fee_id="{{ fee.id }}">
-                            <td class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</td>
-                            <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
-                                <strong>
-                                    {{ fee['amount']|money(lang=lang) }}
-                                </strong>
-                            </td>
-                            <td id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                {{ generic_event.fee_composition_table(js_preview=True) }}
             </details>
         </div>
 
@@ -130,10 +109,6 @@
             'persona_id': {{ persona['id'] }},
             'is_member': {{ ambience['registration']['is_member']|tojson }},
             'is_orga': {{ (persona['id'] in ambience['event']['orgas'])|tojson }},
-            'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',
-            'deko_false': '{{ util.deko_checkbox(False).strip() + nbsp }}',
-            'title_active': '{{ gettext("Active") }}',
-            'title_inactive': '{{ gettext("Inactive") }}',
         }
         $('#changeregistrationform').cdedbProtectChanges().cdedbFeePreview(feePreviewConstants);
     </script>

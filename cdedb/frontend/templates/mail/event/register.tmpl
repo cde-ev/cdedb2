@@ -19,7 +19,7 @@ Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ reference }}
 
 {% if complex_fee.nonmember_surcharge %}
-Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge_amount|money }}
+Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge|money }}
 bezahlen (bereits in der obigen Summe enthalten).
 {% if "cde" in user.roles %}
 

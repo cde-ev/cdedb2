@@ -1268,7 +1268,7 @@ class FrontendTest(BackendTest):
         """Retrieve the content of the (first) element with the given id."""
         if self.response.content_type == "text/plain":
             return self.response.text
-        tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
             self.fail(f"Div '{div}' not found.")
         content = tmp[0]
@@ -1281,7 +1281,7 @@ class FrontendTest(BackendTest):
         """
         if not self.response.content_type == "text/html":
             self.fail("No valid html document.")
-        if self.response.lxml.xpath("//*[@id='{}']".format(div)):
+        if self.response.lxml.xpath(f"//*[@id='{div}']"):
             self.fail(f"Element with id {div} found")
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
@@ -1291,6 +1291,13 @@ class FrontendTest(BackendTest):
         more easy to use.
         """
         self.assertIn(attr, input_field.attrs)
+
+    def assertHasClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
