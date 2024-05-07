@@ -114,8 +114,11 @@ def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
         cur.execute(query, (track['course_room_field_id'], track['id']))
 
 
-def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
-         extra_packages: bool = False, no_extra_packages: bool = False) -> None:
+def work(
+        data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
+        extra_packages: bool = False, no_extra_packages: bool = False,
+        dev_mode: bool = False,
+) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     # connect to the database, using elevated access
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
@@ -268,18 +271,38 @@ def work(data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
     else:
         print("Everything in place.")
 
-    print("Enabling offline mode")
+    # Adjust config.
     config_path = get_configpath()
-    # make sure to unset the development vm config option, so we do not clash
-    subprocess.run(
-        ["sudo", "sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
-         str(config_path)], check=True)
-    # mark the config as offline vm
-    with open(str(config_path), 'a', encoding='UTF-8') as conf:
-        conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
-    print("Protecting data from accidental reset")
-    subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
+    if not dev_mode:
+        print("Enabling offline mode")
+        # make sure to unset the development vm config option, so we do not clash
+        subprocess.run(
+            [
+                "sudo", "sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
+                str(config_path),
+            ],
+            check=True,
+        )
+
+        print("Protecting data from accidental reset")
+        subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
+
+    # mark the config as offline vm
+    offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
+    if not Config()[offline_deploy_key]:
+        # Try replacing config entry.
+        subprocess.run(
+            [
+                "sudo", "sed", "-i", "-e",
+                f"s/{offline_deploy_key} = False/{offline_deploy_key} = True/",
+                str(config_path),
+            ], check=True,
+        )
+        # If that didn't work, add a new one.
+        if not Config()[offline_deploy_key]:
+            with open(str(config_path), 'a', encoding='UTF-8') as conf:
+                conf.write(f"\n{offline_deploy_key} = True\n")
 
     if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
@@ -318,6 +341,8 @@ if __name__ == "__main__":
                         help="Unconditionally install additional packages.")
     parser.add_argument('-E', '--no-extra-packages', action="store_true",
                         help="Never install additional packages.")
+    parser.add_argument('--dev', action="store_true",
+                        help="Setup offline VM for development/manual testing.")
     args = parser.parse_args()
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
@@ -333,5 +358,8 @@ if __name__ == "__main__":
         set_configpath(DEFAULT_CONFIGPATH)
         config = Config()
 
-    work(data_path, config, is_interactive=not args.not_interactive,
-         extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages)
+    work(
+        data_path, config, is_interactive=not args.not_interactive,
+        extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages,
+        dev_mode=args.dev,
+    )
