@@ -63,30 +63,7 @@
                     Your fee consists of:
                 {% endtrans %}
             </p>
-            <table class="table-slim table-condensed table-hover panel-default" style="background: #f0f0f0">
-                <tbody>
-                    {% for kind, amount in complex_fee.by_kind.items() if amount %}
-                        <tr>
-                            <td>
-                                {{ gettext(kind|string) }}
-                            </td>
-                            <td class="text-right">
-                                {{ amount|money(lang=lang) }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="summary">
-                        <td>
-                            {% trans %}Total{% endtrans %}
-                        </td>
-                        <td class="text-right">
-                            {{ complex_fee.amount|money(lang=lang) }}
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+            {{ generic_event.fee_breakdown_by_kind() }}
         {% else %}
             <p>
                 {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}

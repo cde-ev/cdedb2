@@ -84,15 +84,7 @@
 
         {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration) }}
 
-        <div class="panel panel-primary">
-            <details class="panel-body">
-                <summary>
-                    {% trans %}Fee{% endtrans %}:
-                    <span id="fee-preview">{% trans %}Activate JavaScript for automatic fee preview.{% endtrans %}</span>
-                </summary>
-                {{ generic_event.fee_composition_table(js_preview=True) }}
-            </details>
-        </div>
+        {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
 
         <div class="panel panel-primary">
             <div class="panel-body">
