@@ -152,11 +152,10 @@ def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
 def work(
         data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
         extra_packages: bool = False, no_extra_packages: bool = False,
-        dev_mode: bool = False, keep_data: bool = False, offline_mode: bool = True,
+        dev_mode: bool = False, keep_data: bool = False, sample_data: bool = False,
+        offline_mode: bool = True,
 ) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
-    # connect to the database, using elevated access
-    connection = Script(dbuser="cdb", check_system_user=False).rs().conn
 
     print("Loading exported event")
     with open(data_path, encoding='UTF-8') as infile:
@@ -183,8 +182,24 @@ def work(
         print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
-    if keep_data:
-        shift_existing_ids((k for k in data if '.' in k), 1_000_000)
+    if sample_data:
+        print("Clean current instance (deleting all data)")
+        if is_interactive:
+            if input("Are you sure (type uppercase YES)? ").strip() != "YES":
+                print("Aborting.")
+                sys.exit()
+        cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'dev', 'apply-sample-data']
+        if not args.test:
+            cmd.append('--owner')
+            cmd.append('www-cde')
+            cmd.append('--group')
+            cmd.append('www-data')
+        subprocess.run(cmd, check=True)
+
+    # connect to the database, using elevated access
+    connection = Script(dbuser="cdb", check_system_user=False).rs().conn
+    if keep_data or sample_data:
+        shift_existing_ids([k for k in data if '.' in k], 1_000_000)
     else:
         print("Clean current instance (deleting all data)")
         if is_interactive:
@@ -290,7 +305,7 @@ def work(
                 params = tuple(datum[key] for key in keys)
                 cur.execute(query, params)
 
-    if not keep_data:
+    if not keep_data and not sample_data:
         print("Checking whether everything was transferred.")
         fails = []
         with conn as con:
@@ -389,10 +404,13 @@ if __name__ == "__main__":
                         help="Never install additional packages.")
     parser.add_argument('--dev', action="store_true",
                         help="Setup offline VM for development/manual testing.")
-    parser.add_argument('--keep-data', action="store_true",
-                        help="Do not remove existing data.")
     parser.add_argument('--no-offline-flag', action="store_true",
                         help="Do not set the config flag for offline mode.")
+    parser.add_argument('--keep-data', action="store_true",
+                        help="Do not remove existing data. May cause this to fail.")
+    parser.add_argument('--sample-data', action="store_true",
+                        help="Also populate with sample data."
+                             " Could conceivably cause this to fail.")
     args = parser.parse_args()
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
@@ -411,6 +429,6 @@ if __name__ == "__main__":
     work(
         data_path, config, is_interactive=not args.not_interactive,
         extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages,
-        dev_mode=args.dev, keep_data=args.keep_data,
+        dev_mode=args.dev, keep_data=args.keep_data, sample_data=args.sample_data,
         offline_mode=not args.no_offline_flag,
     )
