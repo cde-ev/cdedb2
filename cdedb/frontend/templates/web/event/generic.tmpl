@@ -572,11 +572,11 @@
     Skip fee kinds that sum to zero, unless `show_all=True`.
 #}
 {% macro fee_breakdown_by_kind(show_all=False) -%}
-    <table class="table-slim table-condensed table-hover panel-default" style="background: #f0f0f0">
+    <table class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
             {% for kind, amount in complex_fee.by_kind.items() if amount or show_all %}
                 <tr>
-                    <td>
+                    <td style="padding-right: 1em">
                         {{ gettext(kind|string) }}
                     </td>
                     <td class="text-right">
