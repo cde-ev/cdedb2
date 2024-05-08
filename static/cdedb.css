@@ -569,8 +569,7 @@ p.textbox {
     background: #eee;
     font-weight: bold;
 }
-.table>tbody>tr.summary>td, .table>tbody>tr.summary>th,
-.table>tfoot>tr.summary>td, .table>tfoot>tr.summary>th {
+tr.summary>td, tr.summary>th {
     border-top: 3px double #888;
     font-weight: bold;
 }

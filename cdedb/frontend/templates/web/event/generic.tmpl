@@ -533,3 +533,67 @@
         </tbody>
     </table>
 {% endmacro %}
+
+{% macro fee_preview_panel(show_composition=False, hideable=False) %}
+    <div class="panel panel-primary">
+        <div class="panel-body">
+            <noscript>
+                {% trans %}
+                    Activate JavaScript for automatic fee preview.
+                {% endtrans %}
+            </noscript>
+            {% if hideable %}
+                <details>
+                    <summary>
+                        <strong>
+                            {% trans %}Fee Preview{% endtrans %}
+                        </strong>
+                    </summary>
+            {% endif %}
+            <div id="fee-preview" style="display: none">
+                {% if caller %}
+                    {{ caller() }}
+                {% endif %}
+                {{ util.form_input_static(label=gettext("Fee"), anid="fee-amount", value="…") }}
+            </div>
+            {% if show_composition %}
+                {{ fee_composition_table(js_preview=True) }}
+            {% endif %}
+            {% if hideable %}
+                </details>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+
+{#  Print a breakdown of the fee composition for registration status and preview during registration.
+
+    Skip fee kinds that sum to zero, unless `show_all=True`.
+#}
+{% macro fee_breakdown_by_kind(show_all=False) -%}
+    <table class="table-slim table-condensed bg-info" style="color: #333">
+        <tbody>
+            {% for kind, amount in complex_fee.by_kind.items()|sort if amount or show_all %}
+                <tr>
+                    <td style="padding-right: 1em">
+                        {{ gettext(kind|string) }}
+                    </td>
+                    <td class="text-right">
+                        {{ amount|money(lang=lang) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="summary">
+                <td>
+                    {% trans %}Total{% endtrans %}
+                </td>
+                <td class="text-right">
+                    {{ complex_fee.amount|money(lang=lang) }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+{%- endmacro %}

@@ -110,12 +110,7 @@
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=part_options) }}
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
-                                              value=gettext("Activate JavaScript for automatic fee preview.")) }}
-                </div>
-            </div>
+            {{ generic_event.fee_preview_panel() }}
 
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
@@ -157,21 +152,14 @@
                 </p>
             {% endif %}
         {% endcall %}
-        <div class="panel panel-primary">
-            <div class="panel-body">
-                {% if preview %}
-                    {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
-                    {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
-                                                defaultvalue="True") }}
-                {% endif %}
-                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview", aclass="font-bold",
-                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
 
-                {% if preview %}
-                    {{ generic_event.fee_composition_table(js_preview=True) }}
-                {% endif %}
-            </div>
-        </div>
+        {% call generic_event.fee_preview_panel(show_composition=True) %}
+            {% if preview %}
+                {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
+                {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
+                                            defaultvalue="True") }}
+            {% endif %}
+        {% endcall %}
 
         {% if not preview %}
             {% if age.with_guardian() %}
