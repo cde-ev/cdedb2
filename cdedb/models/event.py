@@ -385,23 +385,36 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+    )
+    # Exclude during creation, update and request.
+    event_id: vtypes.ProtoID = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True},
+    )
 
     kind: const.EventFeeType
     title: str
-    amount: decimal.Decimal
-    condition: vtypes.EventFeeCondition
+    amount: Optional[decimal.Decimal]
+    condition: Optional[vtypes.EventFeeCondition]
     notes: Optional[str]
+
+    def is_conditional(self) -> bool:
+        return self.amount is not None and self.condition is not None
+
+    def is_personalized(self) -> bool:
+        return self.amount is None and self.condition is None
 
     @functools.cached_property
     def visual_debug(self) -> str:
+        if not self.is_conditional():
+            return ""
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
             parse_result, {}, {}, {}, condition_only=True)[1]
 
     def get_sortkey(self) -> Sortkey:
-        return self.kind, self.title, self.amount
+        return self.kind, self.title, self.amount or decimal.Decimal(0)
 
 
 @dataclasses.dataclass
@@ -826,6 +839,42 @@ class RegistrationTrack(EventDataclass):
     instructed: Optional[Course]
 
     choices: list[Course]
+
+    def get_sortkey(self) -> Sortkey:
+        return (0, )
+
+
+@dataclasses.dataclass
+class PersonalizedFee(EventDataclass):
+    database_table = "event.personalized_fees"
+    entity_key = "registration_id"
+
+    registration_id: vtypes.ID
+    fee_id: vtypes.ID
+
+    amount: Optional[decimal.Decimal]
+
+    def get_query(self) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        if self.amount:
+            query = f"""
+                INSERT INTO {self.database_table}
+                (registration_id, fee_id, amount)
+                VALUES (%s, %s, %s)
+                ON CONFLICT(registration_id, fee_id)
+                DO UPDATE SET amount = EXCLUDED.amount
+                RETURNING id
+            """
+            params: tuple["DatabaseValue_s", ...] = (
+                self.registration_id, self.fee_id, self.amount,
+            )
+            return query, params
+        else:
+            query = f"""
+                DELETE FROM {self.database_table}
+                WHERE registration_id = %s AND fee_id = %s
+            """
+            params = (self.registration_id, self.fee_id)
+            return query, params
 
     def get_sortkey(self) -> Sortkey:
         return (0, )

@@ -867,10 +867,16 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
+            personalized_fees = models.PersonalizedFee.many_from_database(
+                self.query_all(
+                    rs, *models.PersonalizedFee.get_select_query(registration_ids),
+                ),
+            )
             event_fields = models.EventField.many_from_database(
                 self._get_event_fields(rs, event_id).values())
             for reg in ret.values():
                 reg['tracks'] = {}
+                reg['personalized_fees'] = {}
                 reg['fields'] = cast_fields(reg['fields'], event_fields)
             for reg_track in tdata:
                 reg = ret[reg_track['registration_id']]
@@ -879,6 +885,10 @@ class EventRegistrationBackend(EventBaseBackend):
             for choice in choices:
                 reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
                 reg_track['choices'][choice['course_id']] = choice['rank']
+            for personalized_fee in personalized_fees.values():
+                reg = ret[personalized_fee.registration_id]
+                reg['personalized_fees'][personalized_fee.fee_id] = \
+                    personalized_fee.amount
             for reg in ret.values():
                 for reg_track in reg['tracks'].values():
                     tmp = reg_track['choices']
@@ -1378,18 +1388,25 @@ class EventRegistrationBackend(EventBaseBackend):
             decimal.Decimal)
         visual_debug_data: dict[int, str] = {}
         for fee in event.fees.values():
-            parse_result = fcp_parsing.parse(fee.condition)
-            if fcp_evaluation.evaluate(
-                    parse_result, reg_bool_fields, reg_part_involvement,
-                    other_bools):
-                amount += fee.amount
-                active_fees.add(fee.id)
-                fees_by_kind[fee.kind] += fee.amount
-            if visual_debug:
-                visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
-                    parse_result, reg_bool_fields, reg_part_involvement,
-                    other_bools,
-                )[1]
+            if fee.is_conditional():
+                assert fee.amount is not None
+                parse_result = fcp_parsing.parse(fee.condition)
+                if fcp_evaluation.evaluate(
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools):
+                    amount += fee.amount
+                    active_fees.add(fee.id)
+                    fees_by_kind[fee.kind] += fee.amount
+                if visual_debug:
+                    visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
+                        parse_result, reg_bool_fields, reg_part_involvement,
+                        other_bools,
+                    )[1]
+            else:
+                if personalized_amount := reg['personalized_fees'].get(fee.id):
+                    amount += personalized_amount
+                    active_fees.add(fee.id)
+                    fees_by_kind[fee.kind] += personalized_amount
 
         return ComplexRegistrationFee(
             amount=amount, active_fees=active_fees,
@@ -1453,6 +1470,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 }
                 for part_id in event.parts
             },
+            'personalized_fees': reg['personalized_fees'] if reg else {},
             'fields': fields,
             'is_member': is_member,
             'is_orga': is_orga,
@@ -1531,7 +1549,7 @@ class EventRegistrationBackend(EventBaseBackend):
             kind_stats = stats[fee.kind]  # noqa: F841
 
         for reg in self.get_registrations(rs, reg_ids).values():
-            reg_fee = self._calculate_complex_fee(rs, reg, event=event)
+            complex_fee = self._calculate_complex_fee(rs, reg, event=event)
 
             if reg['amount_owed'] > reg['amount_paid']:
                 if reg['amount_paid']:
@@ -1539,20 +1557,65 @@ class EventRegistrationBackend(EventBaseBackend):
                     stats.insufficient_registrations.add(reg['id'])
                 else:
                     stats.unpaid_registrations.add(reg['id'])
-            for fee_id in reg_fee.active_fees:
+            for fee_id in complex_fee.active_fees:
                 fee = event.fees[fee_id]
                 fee_stat = stats[fee.kind][fee.id]
 
-                fee_stat.total_owed += fee.amount
+                if fee.is_conditional():
+                    assert fee.amount is not None
+                    amount = fee.amount
+                else:
+                    amount = reg['personalized_fees'][fee.id]
+
+                fee_stat.total_owed += amount
                 fee_stat.registrations_owed.add(reg['id'])
                 if reg['amount_paid'] >= reg['amount_owed']:
-                    fee_stat.total_paid += fee.amount
+                    fee_stat.total_paid += amount
                     fee_stat.registrations_paid.add(reg['id'])
                     if reg['amount_paid'] > reg['amount_owed']:
                         stats.surplus_total += reg['amount_paid'] - reg['amount_owed']
                         stats.surplus_registrations.add(reg['id'])
 
         return stats
+
+    @access("event")
+    def set_personalized_fee_amount(
+            self, rs: RequestState, registration_id: int, fee_id: int,
+            amount: Optional[decimal.Decimal],
+    ) -> DefaultReturnCode:
+        """
+        Either set or remove the personalized amount for one combination of reg and fee.
+        """
+        registration_id = affirm(vtypes.ID, registration_id)
+        fee_id = affirm(vtypes.ID, fee_id)
+        amount = affirm_optional(decimal.Decimal, amount)
+
+        with Atomizer(rs):
+            persona_id, event_id = self._get_registration_info(rs, registration_id)
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError
+            event = self.get_event(rs, event_id)
+            if fee_id not in event.fees:
+                raise KeyError
+            if not event.fees[fee_id].is_personalized():
+                raise ValueError
+            personalized_fee = models.PersonalizedFee(
+                id=vtypes.ProtoID(-1),  # Placeholder id.
+                registration_id=registration_id, fee_id=fee_id, amount=amount
+            )
+            ret = self.query_exec(rs, *personalized_fee.get_query())
+            self._update_registration_amount_owed(rs, registration_id)
+            change_note = event.fees[fee_id].title
+            if amount is None:
+                code = const.EventLogCodes.personalized_fee_amount_deleted
+            else:
+                code = const.EventLogCodes.personalized_fee_amount_added
+                change_note += f" ({money_filter(amount)})"
+            self.event_log(
+                rs, code=code, event_id=event_id, persona_id=persona_id,
+                change_note=change_note,
+            )
+            return ret
 
     @internal
     @access("finance_admin")

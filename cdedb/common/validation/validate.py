@@ -2733,53 +2733,43 @@ def _event_field(
     return EventField(val)
 
 
-@_add_typed_validator
-def _event_fee_setter(
-    val: Any, argname: str = "fees",
-    **kwargs: Any,
-) -> EventFeeSetter:
-    """Validate a `CdEDBOptionalMap` of event fees."""
-    val = _mapping(val, argname)
-
-    new_fees = _optional_object_mapping_helper(
-        val, EventFee, argname, creation_only=False, **kwargs)
-
-    return EventFeeSetter(dict(new_fees))
+_create_optional_mapping_validator(EventFee, EventFeeSetter)
 
 
-EVENT_FEE_COMMON_FIELDS: TypeMapping = {
-    "title": str,
-    "notes": Optional[str],  # type: ignore[dict-item]
-    "amount": decimal.Decimal,
-    "condition": EventFeeCondition,
-    "kind": const.EventFeeType,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.EventFee, EventFee)
 def _event_fee(
-    val: Any, argname: str = "event_fee", *,
-    creation: bool = False, **kwargs: Any,
+        val: Any, argname: str, *,
+        event: models_event.Event,
+        **kwargs: Any,
 ) -> EventFee:
+    errs = ValidationSummary()
+    current = event.fees.get(val['id']) if val['id'] > 0 else None
+    if current is not None:
+        if current.amount is None or current.condition is None:
+            if val.get('amount') is not None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot set amount for personalized fee.")))
+            if val.get('condition') is not None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot set condition for personalized fee.")))
+        else:
+            if 'amount' in val and val['amount'] is None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot unset amount for conditional fee.")))
+            if 'condition' in val and val['condition'] is None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot unset condition for conditional fee.")))
 
-    val = _mapping(val, argname, **kwargs)
+    if errs:
+        raise errs
 
-    if creation:
-        mandatory_fields = EVENT_FEE_COMMON_FIELDS
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {}
-        optional_fields = EVENT_FEE_COMMON_FIELDS
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
-    return EventFee(val)
+    return cast(EventFee, val)
 
 
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: CdEDBObject,
+    event: models_event.Event,
     questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any,
 ) -> EventFeeCondition:
@@ -2792,12 +2782,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for field_id, f in event.get('fields', {}).items()
-        if f['association'] == const.FieldAssociations.registration
-           and f['kind'] == const.FieldDatatypes.bool
-           and field_id not in additional_questionnaire_fields
+        f.field_name for f in event.fields.values()
+        if f.association == const.FieldAssociations.registration
+           and f.kind == const.FieldDatatypes.bool
+           and f.id not in additional_questionnaire_fields
     }
-    part_names = {p['shortname'] for p in event['parts'].values()}
+    part_names = {p.shortname for p in event.parts.values()}
 
     try:
         parse_result = fcp_parsing.parse(val)

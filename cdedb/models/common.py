@@ -104,20 +104,32 @@ class CdEDataclass:
         This returns two TypeMapping tuples, for mandatory and optional validation
         fields, respectively. Each TypeMapping maps the name of the field to its type.
         """
-        fields = {field.name: field for field in dataclasses.fields(cls)}
-        # always special case the id, see below
-        del fields["id"]
-        # Fields with init=False are optional, so that objects retrieved from the
-        #  database can pass validation.
-        mandatory = {name: field.type for name, field in fields.items()
-                     if not is_optional_type(field.type) and field.init}
-        optional = {name: field.type for name, field in fields.items()
-                    if is_optional_type(field.type) or not field.init}
-        if creation:
-            mandatory["id"] = vtypes.CreationID
-        else:
-            optional.update(mandatory)
-            mandatory = {"id": vtypes.ID}
+        mandatory: TypeMapping = {}
+        optional: TypeMapping = {}
+        for field in dataclasses.fields(cls):
+            if field.metadata.get('validation_exclude'):
+                continue
+            if creation:
+                if field.metadata.get('creation_exclude'):
+                    continue
+                if field.metadata.get('creation_optional'):
+                    optional[field.name] = field.type
+                    continue
+                if field.name == 'id':
+                    mandatory[field.name] = vtypes.CreationID
+                # Fields with init=False are optional, so that objects retrieved from
+                #  the database can pass validation.
+                elif is_optional_type(field.type) or not field.init:
+                    optional[field.name] = field.type
+                else:
+                    mandatory[field.name] = field.type
+            else:
+                if field.metadata.get('update_exclude'):
+                    continue
+                if field.name == 'id':
+                    mandatory[field.name] = vtypes.ID
+                else:
+                    optional[field.name] = field.type
         return mandatory, optional
 
     @classmethod
@@ -128,8 +140,12 @@ class CdEDataclass:
         """
         field_names = set(cls.database_fields())
         field_names.remove("id")
-        fields = [field for field in dataclasses.fields(cls)
-                  if field.name in field_names and field.init]
+        fields = [
+            field for field in dataclasses.fields(cls)
+            if field.name in field_names
+               and field.init
+               and not field.metadata.get('request_exclude')
+        ]
         return [(field.name, requestdict_field_spec(field)) for field in fields]
 
     @classmethod

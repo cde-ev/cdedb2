@@ -4650,6 +4650,14 @@
             "notes": null
         },
         {
+            "event_id": 1,
+            "kind": 1,
+            "title": "KL-Erstattung",
+            "amount": null,
+            "condition": null,
+            "notes": "Individuelle Höhe"
+        },
+        {
             "event_id": 2,
             "kind": 1,
             "title": "Teilnahmebeitrag Party",
@@ -6720,6 +6728,18 @@
             "track_id": 4,
             "course_id": 6,
             "rank": 2
+        }
+    ],
+    "event.personalized_fees": [
+        {
+            "fee_id": 10,
+            "registration_id": 1,
+            "amount": "-20"
+        },
+        {
+            "fee_id": 10,
+            "registration_id": 3,
+            "amount": "-30"
         }
     ],
     "event.questionnaire_rows": [

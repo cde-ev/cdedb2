@@ -30,7 +30,7 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
     EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
@@ -648,14 +648,16 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
+    @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
                       fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
+        data['id'] = fee_id or -1
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
-                         event=rs.ambience['event'].as_dict(),
-                         questionnaire=questionnaire)
+        fee_data = check(
+            rs, vtypes.EventFee, data, creation=fee_id is None,
+            event=rs.ambience['event'], questionnaire=questionnaire,
+        )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})

@@ -903,8 +903,9 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event.as_dict(),
-                          questionnaire=questionnaire)
+            fees = affirm(
+                vtypes.EventFeeSetter, fees, event=event, questionnaire=questionnaire,
+            )
 
             existing_fees = {unwrap(e) for e in self.sql_select(
                 rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
@@ -939,6 +940,7 @@ class EventBaseBackend(EventLowLevelBackend):
             for x in mixed_existence_sorter(new_fees):
                 new_fee = copy.deepcopy(fees[x])
                 assert new_fee is not None
+                new_fee.pop('id', None)
                 new_fee['event_id'] = event_id
                 ret *= self.sql_insert(rs, "event.event_fees", new_fee)
                 self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,

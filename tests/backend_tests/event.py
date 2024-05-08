@@ -4414,6 +4414,7 @@ class TestEventBackend(BackendTest):
 
         fee_data: CdEDBOptionalMap = {
             -1: {
+                "id": -1,
                 "kind": const.EventFeeType.common,
                 "title": "A",
                 "notes": None,
@@ -4421,6 +4422,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.A",
             },
             -2: {
+                "id": -2,
                 "kind": const.EventFeeType.common,
                 "title": "B",
                 "notes": None,
@@ -4428,6 +4430,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.B",
             },
             -3: {
+                "id": -3,
                 "kind": const.EventFeeType.common,
                 "title": "C",
                 "notes": None,
@@ -4435,6 +4438,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.C",
             },
             -4: {
+                "id": -4,
                 "kind": const.EventFeeType.common,
                 "title": "D",
                 "notes": None,
@@ -4442,6 +4446,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.D",
             },
             -5: {
+                "id": -5,
                 "kind": const.EventFeeType.common,
                 "title": "A und B",
                 "notes": None,
@@ -4449,6 +4454,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.A AND part.B",
             },
             -6: {
+                "id": -6,
                 "kind": const.EventFeeType.common,
                 "title": "B und C",
                 "notes": None,
@@ -4456,6 +4462,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.B AND part.C",
             },
             -7: {
+                "id": -7,
                 "kind": const.EventFeeType.common,
                 "title": "C und D",
                 "notes": None,
@@ -4463,6 +4470,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.C AND part.D",
             },
             -8: {
+                "id": -8,
                 "kind": const.EventFeeType.common,
                 "title": "A und B und C",
                 "notes": None,
@@ -4470,6 +4478,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.A AND part.B AND part.C",
             },
             -9: {
+                "id": -9,
                 "kind": const.EventFeeType.common,
                 "title": "B und C und D",
                 "notes": None,
@@ -4477,6 +4486,7 @@ class TestEventBackend(BackendTest):
                 "condition": "part.B AND part.C AND part.D",
             },
             -10: {
+                "id": -10,
                 "kind": const.EventFeeType.common,
                 "title": "A und B und C und D",
                 "notes": None,
@@ -4752,6 +4762,7 @@ class TestEventBackend(BackendTest):
             },
             'fees': {
                 -1: {
+                    'id': -1,
                     'title': "Externenzusatzbeitrag",
                     'notes': None,
                     'amount': external_fee_amount,
