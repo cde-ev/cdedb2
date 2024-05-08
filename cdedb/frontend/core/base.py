@@ -1491,7 +1491,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata("message_id")
     def rotate_anonymous_message(
-            self, rs: RequestState, message_id: vtypes.Base64
+            self, rs: RequestState, message_id: vtypes.Base64,
     ) -> Response:
         """Render form for reencrypting anonymous message data.
 
