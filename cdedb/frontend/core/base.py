@@ -1409,6 +1409,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def contact_reply_form(
             self, rs: RequestState, message_id: Optional[vtypes.Base64] = None,
     ) -> Response:
+        """Render the reply form. Takes a message id via GET to prefill the form."""
         rs.ignore_validation_errors()
         return self.render(rs, "contact_reply")
 
@@ -1417,6 +1418,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def contact_reply(
             self, rs: RequestState, message_id: vtypes.Base64, reply_message: str,
     ) -> Response:
+        """Send a reply by retrieving and decrypting the stored metadata."""
         if rs.has_validation_errors():
             return self.render(rs, "contact_reply")
         try:
@@ -1484,6 +1486,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 },
             )
             rs.notify("success", n_("Reply sent."))
+            self.coreproxy.log_contact_reply(rs, anonymous_message.recipient)
             return self.redirect(rs, "core/index")
         rs.ignore_validation_errors()
         return self.render(rs, "contact_reply")
@@ -1493,10 +1496,9 @@ class CoreBaseFrontend(AbstractFrontend):
     def rotate_anonymous_message(
             self, rs: RequestState, message_id: vtypes.Base64,
     ) -> Response:
-        """Render form for reencrypting anonymous message data.
+        """Change message id and encryption key for a stored message.
 
-        This changes the message id used to retrieve the message and the encryption
-        key used to secure the payload.
+        Note that this is uses GET, even though it changes state.
         """
         if rs.has_validation_errors():
             rs.notify("error", n_("Invalid message id."))

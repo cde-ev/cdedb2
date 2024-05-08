@@ -167,7 +167,8 @@ class CoreBaseBackend(AbstractBackend):
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
                  persona_id: Optional[int] = None, change_note: Optional[str] = None,
-                 atomized: bool = True) -> DefaultReturnCode:
+                 atomized: bool = True, suppress_persona_id: bool = False,
+                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -186,8 +187,11 @@ class CoreBaseBackend(AbstractBackend):
         query = ("INSERT INTO core.log "
                  "(code, submitted_by, persona_id, change_note) "
                  "VALUES (%s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, rs.user.persona_id, persona_id, change_note))
+        params = (
+            code, rs.user.persona_id if not suppress_persona_id else None, persona_id,
+            change_note,
+        )
+        return self.query_exec(rs, query, params)
 
     @access("persona")
     def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
@@ -200,6 +204,13 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.core_log(rs, const.CoreLogCodes.quota_violation, rs.user.persona_id,
                              atomized=False)
+
+    @access("persona")
+    def log_contact_reply(self, rs: RequestState, recipient: str) -> DefaultReturnCode:
+        """Log who sent a reply to an anonymous message originally sent to whom."""
+        recipient = affirm(vtypes.Email, recipient)
+        return self.core_log(rs, const.CoreLogCodes.reply_to_anonymous_message,
+                             change_note=recipient, atomized=False)
 
     @internal
     @access("cde")
@@ -2727,10 +2738,15 @@ class CoreBaseBackend(AbstractBackend):
 
         message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
 
-        if self.sql_insert(
-            rs, models.AnonymousMessageData.database_table, message.to_database(),
-        ):
-            return message.message_id
+        with Atomizer(rs):
+            if self.sql_insert(
+                rs, models.AnonymousMessageData.database_table, message.to_database(),
+            ):
+                self.core_log(
+                    rs, const.CoreLogCodes.send_anonymous_message,
+                    change_note=message.recipient, suppress_persona_id=True,
+                )
+                return message.message_id
         return None
 
     @access("persona")
@@ -2773,13 +2789,18 @@ class CoreBaseBackend(AbstractBackend):
         del update['ctime']
         del update['recipient']
 
-        if self.sql_update(
-            rs, models.AnonymousMessageData.database_table, update,
-        ):
-            self.logger.info(
-                f"Rotated encryption key and message id for anonymous"
-                f" message {message.id}")
-            return message.message_id
+        with Atomizer(rs):
+            if self.sql_update(
+                rs, models.AnonymousMessageData.database_table, update,
+            ):
+                self.logger.info(
+                    f"Rotated encryption key and message id for anonymous"
+                    f" message {message.id}")
+                self.core_log(
+                    rs, const.CoreLogCodes.rotate_anonymous_message,
+                    change_note=message.recipient,
+                )
+                return message.message_id
         return None
 
     @access("anonymous")

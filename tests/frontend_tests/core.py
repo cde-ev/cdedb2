@@ -3202,3 +3202,31 @@ LG Emilia
             # Test reply.
             f['message_id'] = new_message_id + new_key
             self.submit(f)
+
+            log_expectation = [
+                {
+                    'code': const.CoreLogCodes.send_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': None,
+                },
+                {
+                    'code': const.CoreLogCodes.reply_to_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+                {
+                    'code': const.CoreLogCodes.rotate_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+                {
+                    'code': const.CoreLogCodes.reply_to_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+            ]
+        with self.switch_user('vera'):
+            self.assertLogEqual(
+                log_expectation, realm="core",
+                offset=len(self.get_sample_data('core.log')),
+            )
