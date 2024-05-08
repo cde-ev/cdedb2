@@ -3,7 +3,7 @@
 import datetime as _datetime
 import decimal as _decimal
 from collections.abc import MutableMapping as _MutableMapping
-from typing import TYPE_CHECKING as TYPE_CHECKING, Any as _Any, NewType as _NewType
+from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
 
