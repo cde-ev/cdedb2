@@ -1826,13 +1826,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
 
+        # participant in all parts
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.participant
+        f['part2.status'] = const.RegistrationPartStati.participant
+        f['part3.status'] = const.RegistrationPartStati.participant
+        self.submit(f)
+        self.traverse("Meine Anmeldung")
+        self.assertPresence("Regulärer Beitrag 584,49 €")
+        self.assertPresence("Solidarische Reduktion -0,01 €")
+        self.assertPresence("Gesamtsumme 584,48 €")
+
         # participant again, only for one part
         self.get('/event/event/1/registration/1/change')
         f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.not_applied
+        f['part2.status'] = const.RegistrationPartStati.not_applied
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
-        self.traverse({'href': 'registration/status'})
+        self.traverse("Meine Anmeldung")
         self.assertPresence("450,99 €")
         self.assertNonPresence("bereits bezahlt")
         self.assertPresence(payment_pending)
