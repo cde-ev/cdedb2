@@ -740,7 +740,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def do_mail(self, rs: RequestState, templatename: str,
                 headers: Headers, params: Optional[CdEDBObject] = None,
-                attachments: Optional[Collection[Attachment]] = None) -> Optional[str]:
+                attachments: Optional[Collection[Attachment]] = None,
+                suppress_logging: bool = False,
+                ) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -761,7 +763,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         msg = self._create_mail(text, headers, attachments)
-        ret = self._send_mail(msg)
+        ret = self._send_mail(msg, suppress_logging)
         if ret:
             # This is mostly intended for the test suite.
             rs.notify("info", n_("Stored email to hard drive at %(path)s"),
@@ -951,7 +953,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                            filename=attachment['filename'])
         return ret
 
-    def _send_mail(self, msg: email.message.Message) -> Optional[str]:
+    def _send_mail(self, msg: email.message.Message, suppress_logging: bool = False,
+                   ) -> Optional[str]:
         """Helper for getting an email onto the wire.
 
         :returns: Name of the file the email was saved in -- however this
@@ -973,7 +976,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
+        if not suppress_logging:
+            self.logger.info(
+                f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,

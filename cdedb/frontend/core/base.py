@@ -1368,6 +1368,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     'message_id': message_id,
                     'message': message,
                 },
+                suppress_logging=True,
             )
         else:
             name = rs.user.persona_name()
@@ -1397,6 +1398,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'message': msg, 'subject': subject, 'to': to,
                 'anonymous': anonymous_from,
             },
+            suppress_logging=anonymous_from,
         )
 
         rs.notify("success", n_("Message sent!"))
@@ -1461,6 +1463,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     'original_recipient': message.recipient,
                     'ctime': message.ctime,
                 },
+                suppress_logging=True,
             )
             del message
             del persona
