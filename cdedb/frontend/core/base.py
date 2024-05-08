@@ -1542,7 +1542,6 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Something wnet wrong."))
         return self.redirect(rs, "core/index")
 
-
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,
                                ) -> Response:
