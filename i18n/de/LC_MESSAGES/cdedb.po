@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-05-07 19:19+0200\n"
+"POT-Creation-Date: 2024-05-08 14:25+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2279,7 +2279,7 @@ msgstr "Pronomen auf Namensschild"
 
 #: cdedb/common/query/__init__.py:882
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:62
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:39
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:43
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:59
 msgid "Payment"
 msgstr "Bezahlung"
@@ -2295,7 +2295,7 @@ msgid "Amount Owed"
 msgstr "Insgesamt zu zahlender Betrag"
 
 #: cdedb/common/query/__init__.py:885
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:35
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:39
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:120
 msgid "Remaining Owed"
 msgstr "Übriger zu zahlender Betrag"
@@ -5658,7 +5658,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:109
 #: cdedb/frontend/templates/web/event/questionnaire/configure_additional_questionnaire.tmpl:57
 #: cdedb/frontend/templates/web/event/questionnaire/configure_registration.tmpl:57
-#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:64
+#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:59
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:96
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:221
 #: cdedb/frontend/templates/web/generic.tmpl:316
@@ -12491,7 +12491,6 @@ msgstr "Ende"
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:29
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:39
 #: cdedb/frontend/templates/web/event/generic.tmpl:557
-#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:49
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:69
 msgid "Fee"
 msgstr "Teilnahmebeitrag"
@@ -13989,7 +13988,6 @@ msgid "Delete fee %(fee_title)s"
 msgstr "Teilnahmebeitrag %(fee_title)s löschen"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:541
-#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:50
 msgid "Activate JavaScript for automatic fee preview."
 msgstr ""
 "Aktiviere JavaScript um eine automatische Teilnahmebeitragvorschau zu "
@@ -14922,7 +14920,7 @@ msgstr "Hinweis des Orgateams"
 msgid "Additional Information"
 msgstr "Weitere Angaben"
 
-#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:57
+#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:52
 msgid ""
 "Because you were not a CdE-Member at registration, you might have to pay an "
 "additional fee."
@@ -15169,23 +15167,23 @@ msgstr "Teilnahmebeitragsdetails für %(persona_name)s"
 msgid "Fee Details"
 msgstr "Teilnahmebeitragsdetails"
 
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:31
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:35
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:116
 msgid "Already Paid"
 msgstr "Bereits Bezahlt"
 
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:42
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:46
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:105
 #, python-format
 msgid "Paid on %(date)s"
 msgstr "Bezahlt am %(date)s"
 
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:46
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:50
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:109
 msgid "Pending"
 msgstr "ausstehend"
 
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:50
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:54
 msgid "Composition of the fee"
 msgstr "Zusammensetzung des Teilnahmebeitrags"
 
@@ -15227,20 +15225,17 @@ msgstr "Du hast bereits %(paid)s bezahlt."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:85
 #, python-format
-msgid ""
-"Complete your registration by paying the outstanding amount of %(to_pay)s."
-msgstr ""
-"Um deine Anmeldung zu vervollständigen, überweise bitte den fehlenden Betrag "
-"von %(to_pay)s."
+msgid "You still need to pay the outstanding amount of %(to_pay)s."
+msgstr "Du musst noch den übrigen Betrag von %(to_pay)s bezahlen."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:91
 #, python-format
 msgid ""
-"You have overpaid your fee of %(fee)s by %(to_pay)s. The orgas will contact "
-"you regarding your refund."
+"You have overpaid your fee of %(fee)s by %(to_pay)s. The orgas will be in "
+"contact with you."
 msgstr ""
 "Du hast %(to_pay)s mehr bezahlt als deinen Teilnahmebeitrag von %(fee)s. Die "
-"Orgas werden sich bei dir bezüglich einer Erstattung melden."
+"Orgas werden sich disebezüglich bei dir melden."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:100
 msgid "Bank transfer data as QR code"

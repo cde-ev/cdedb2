@@ -83,14 +83,14 @@
                     {% endtrans %}
                 {% endif %}
                 {% trans to_pay=to_pay|money(lang=lang) %}
-                    Complete your registration by paying the outstanding amount of {{ to_pay }}.
+                    You still need to pay the outstanding amount of {{ to_pay }}.
                 {% endtrans %}
             </p>
         {% elif to_pay < 0 %}
             <p>
                 {% trans fee=fee|money(lang=lang), to_pay=-to_pay|money(lang=lang) %}
                     You have overpaid your fee of {{ fee }} by {{ to_pay }}.
-                    The orgas will contact you regarding your refund.
+                    The orgas will be in contact with you.
                 {% endtrans %}
             </p>
         {% endif %}
