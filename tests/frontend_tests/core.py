@@ -125,7 +125,9 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "martin", "nina", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
-        everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
+        everyone = {
+            "Index", "Übersicht", "Meine Daten", "Administratorenübersicht", "Contact",
+        }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
         core_admin = {"Nutzer verwalten", "Metadaten"}
