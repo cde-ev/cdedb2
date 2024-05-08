@@ -574,7 +574,7 @@
 {% macro fee_breakdown_by_kind(show_all=False) -%}
     <table class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
-            {% for kind, amount in complex_fee.by_kind.items() if amount or show_all %}
+            {% for kind, amount in complex_fee.by_kind.items()|sort if amount or show_all %}
                 <tr>
                     <td style="padding-right: 1em">
                         {{ gettext(kind|string) }}
