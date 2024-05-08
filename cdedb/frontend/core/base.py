@@ -1338,18 +1338,22 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdata("to", "anonymous_from", "subject", "msg")
     def contact(self, rs: RequestState, to: str, anonymous_from: bool,
                 subject: str, msg: str) -> Response:
+        """Send a possibly anonymous message."""
         if rs.has_validation_errors() or to not in self.conf["CONTACT_ADDRESSES"]:
             return self.contact_form(rs)
         assert rs.user.persona_id is not None and rs.user.username is not None
 
         if anonymous_from:
             message, key = models.AnonymousMessageData.encrypt(
-                recipient=to, persona_id=rs.user.persona_id,
-                username=rs.user.username, subject=subject,
+                recipient=to, persona_id=vtypes.ID(vtypes.ProtoID(rs.user.persona_id)),
+                username=vtypes.Email(rs.user.username), subject=subject,
             )
             if not self.coreproxy.log_anonymous_message(rs, message):
                 rs.notify("error", "Something went wrong.")
                 return self.contact_form(rs)
+
+            message_id = message.format_message_id(key)
+            del key
 
             self.do_mail(
                 rs, "contact_anonymous",
@@ -1360,9 +1364,9 @@ class CoreBaseFrontend(AbstractFrontend):
                     'Reply-To': self.conf["NOREPLY_ADDRESS"],
                 },
                 {
-                    'message_id': message.format_message_id(key),
-                    'message': msg,
-                    'to': to,
+                    'message_text': msg,
+                    'message_id': message_id,
+                    'message': message,
                 },
             )
         else:
@@ -1398,11 +1402,15 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify("success", n_("Message sent!"))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin")
-    def contact_reply_form(self, rs: RequestState) -> Response:
+    @access("persona")
+    @REQUESTdata("message_id")
+    def contact_reply_form(
+            self, rs: RequestState, message_id: Optional[vtypes.Base64] = None,
+    ) -> Response:
+        rs.ignore_validation_errors()
         return self.render(rs, "contact_reply")
 
-    @access("core_admin", modi={"POST"})
+    @access("persona", modi={"POST"})
     @REQUESTdata("message_id", "reply_message")
     def contact_reply(
             self, rs: RequestState, message_id: vtypes.Base64, reply_message: str,
@@ -1422,6 +1430,11 @@ class CoreBaseFrontend(AbstractFrontend):
         except KeyError as e:
             rs.append_validation_error(("message_id", e))
         except CryptographyError:
+            if 'message' in locals():
+                # noinspection PyUnboundLocalVariable
+                self.logger.error(
+                    f"User {rs.user.persona_id} tried to decrypt anonymous message"
+                    f" ({message.id}) with an incorrect decryption key.")
             rs.append_validation_error((
                 "message_id",
                 RuntimeError(n_("Invalid decryption key.")),
@@ -1471,6 +1484,61 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
         rs.ignore_validation_errors()
         return self.render(rs, "contact_reply")
+
+    @access("persona")
+    @REQUESTdata("message_id")
+    def rotate_anonymous_message(
+            self, rs: RequestState, message_id: vtypes.Base64
+    ) -> Response:
+        """Render form for reencrypting anonymous message data.
+
+        This changes the message id used to retrieve the message and the encryption
+        key used to secure the payload.
+        """
+        if rs.has_validation_errors():
+            rs.notify("error", n_("Invalid message id."))
+            return self.redirect(rs, "core/index")
+        try:
+            message_id_, key = models.AnonymousMessageData.parse_message_id(message_id)
+            message = self.coreproxy.get_anonymous_message(rs, message_id_)
+            message.decrypt(key)
+            del message_id
+            del message_id_
+            del key
+        except (ValueError, KeyError, CryptographyError):
+            rs.notify("error", n_("Invalid message id."))
+            return self.redirect(rs, "core/index")
+
+        new_key = message.rotate()
+
+        if self.coreproxy.rotate_anonymous_message(rs, message):
+            new_message_id = message.format_message_id(new_key)
+            original_subject = message.subject
+            anonymous_message = self.coreproxy.get_anonymous_message(
+                rs, message.message_id)
+            del new_key
+            del message
+
+            self.do_mail(
+                rs, "contact_rotate",
+                {
+                    'To': (anonymous_message.recipient,),
+                    'Subject': "Anonyme Nachricht neu verschlüsselt",
+                    'From': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                },
+                {
+                    'message_id': new_message_id,
+                    'anonymous_message': anonymous_message,
+                    'original_subject': original_subject,
+                },
+            )
+            rs.notify("success", n_(
+                "Encryption has been updated. New message id has been sent."))
+        else:
+            rs.notify("error", n_("Something wnet wrong."))
+        return self.redirect(rs, "core/index")
+
 
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,

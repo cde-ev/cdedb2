@@ -2719,6 +2719,11 @@ class CoreBaseBackend(AbstractBackend):
     def log_anonymous_message(
             self, rs: RequestState, message: models.AnonymousMessageData,
     ) -> Optional[str]:
+        """Save encrypted metadata regarding an anonymous message sent via contact form.
+
+        This is so that one may reply to the anonymous message without needing to know
+        who sent it.
+        """
 
         message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
 
@@ -2728,10 +2733,15 @@ class CoreBaseBackend(AbstractBackend):
             return message.message_id
         return None
 
-    @access("core_admin")
+    @access("persona")
     def get_anonymous_message(
             self, rs: RequestState, message_id: str,
     ) -> models.AnonymousMessageData:
+        """Retrieve the metadata for an anonymous message using a unique message id.
+
+        Note that the message id is a random base64 string, not a numeric id, even
+        though the stored message _also_ has a numeric id.
+        """
 
         affirm(vtypes.Base64, message_id)
 
@@ -2741,9 +2751,36 @@ class CoreBaseBackend(AbstractBackend):
             message_id, models.AnonymousMessageData.entity_key,
         )
         if not message_data:
+            self.logger.error(
+                f"User {rs.user.persona_id} tried to retrieve an anonymous message"
+                f" using an invalid message id {message_id}.")
             raise KeyError(n_("Unknown message id."))
 
         return models.AnonymousMessageData.from_database(message_data)
+
+    @access("persona")
+    def rotate_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+        """Update the encryption key, and the message id of a stored anonymous message.
+
+        This is to be done should the message id (including the key) leak.
+        """
+
+        message = affirm_dataclass(models.AnonymousMessageData, message)
+
+        update = message.to_database()
+        del update['ctime']
+        del update['recipient']
+
+        if self.sql_update(
+            rs, models.AnonymousMessageData.database_table, update,
+        ):
+            self.logger.info(
+                f"Rotated encryption key and message id for anonymous"
+                f" message {message.id}")
+            return message.message_id
+        return None
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:

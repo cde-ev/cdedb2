@@ -14,6 +14,7 @@ from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
     make_persona_name,
 )
+from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
@@ -3128,8 +3129,8 @@ LG Emilia
             else:
                 self.fail("Failed to extract message id.")
 
-        with self.switch_user("farin"):
-            self.traverse("Reply to Anonymous Message")
+        with self.switch_user("inga"):
+            self.get("/core/contact/reply")
             f = self.response.forms['replyform']
             self.submit(f, check_notification=False)
             self.assertValidationError('message_id', "Darf nicht leer sein.")
@@ -3170,3 +3171,32 @@ LG Emilia
             self.assertNotIn("Emilia", reply_receipt)
             self.assertIn(reply_msg, reply_receipt)
             self.assertIn(subject, reply_receipt)
+
+            # Rotate message id and encryption key:
+            self.get(f"/core/contact/rotate?message_id={message_id + key}")
+
+            # Extract new secrets.
+            rotate_notice = self.fetch_mail_content()
+            if result := re.search(
+                "Nachrichten-ID: (?P<message_id>.+)\n",
+                rotate_notice,
+            ):
+                new_message_id, new_key = \
+                    models_core.AnonymousMessageData.parse_message_id(
+                        result['message_id'])
+            else:
+                self.fail("Failed to extract message id.")
+
+            # Test retrieval.
+            with self.assertRaises(KeyError):
+                self.core.get_anonymous_message(self.key, message_id)
+            message = self.core.get_anonymous_message(self.key, new_message_id)
+
+            # Test decryption.
+            with self.assertRaises(CryptographyError):
+                message.decrypt(key)
+            message.decrypt(new_key)
+
+            # Test reply.
+            f['message_id'] = new_message_id + new_key
+            self.submit(f)

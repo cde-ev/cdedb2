@@ -1,7 +1,10 @@
-Hier ist eine anonyme Nachricht, die euch über das Kontaktformular zugesandt wurde.
+Zur folgenden anonymen Nachricht wurde eine neue Nachrichten-ID generiert:
 
-Nachrichten-ID: {{ message_id }}
-Zeitpunkt der Nachrict: {{ message.ctime|datetime(lang="de") }}
+Urprünglicher Betreff: {{ original_subject }}
+Empfänger der ursprünglichen Nachricht: <{{ anonymous_message.recipient }}>
+Zeitpunkt der ursprünglichen Nachricht: {{ anonymous_message.ctime|datetime(lang="de") }}
+
+Neue Nachrichten-ID: {{ message_id }}
 
 Um auf die Nachricht zu antworten besucht diesen Link:
 {{ cdedblink("core/contact_reply", {'message_id': message_id}) }}
@@ -12,7 +15,3 @@ Falls erforderlich könnt ihr unter diesem Link eine neue Nachrichten-ID generie
 und so die alte deaktivieren:
 
 {{ cdedblink("core/rotate_anonymous_message", {'message_id': message_id}) }}
-
----
-
-{{ message_text }}

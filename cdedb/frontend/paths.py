@@ -53,6 +53,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="contact_reply_form"),
                 rule("/reply", methods=_POST,
                      endpoint="contact_reply"),
+                rule("/rotate", methods=_GET,
+                     endpoint="rotate_anonymous_message"),
             )),
             rule("/log", methods=_GET,
                  endpoint="view_log"),

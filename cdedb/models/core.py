@@ -36,7 +36,7 @@ class AnonymousMessageData(CdEDataclass):
     subject: Optional[str] = dataclasses.field(init=False, default=None)
 
     @staticmethod
-    def format_data(persona_id: int, username: str, subject: str) -> str:
+    def format_data(persona_id: vtypes.ID, username: vtypes.Email, subject: str) -> str:
         return f"{persona_id} <{username}> {subject}"
 
     @staticmethod
@@ -65,6 +65,10 @@ class AnonymousMessageData(CdEDataclass):
             raise ValueError(f"Could not parse message id: {message_id}")
 
     @staticmethod
+    def create_message_id() -> vtypes.Base64:
+        return vtypes.Base64(token_urlsafe(12))
+
+    @staticmethod
     def _encrypt(data: str) -> tuple[str, str]:
         key = Fernet.generate_key()
         encrypted_data = Fernet(key).encrypt(data.encode("utf-8"))
@@ -80,13 +84,14 @@ class AnonymousMessageData(CdEDataclass):
 
     @classmethod
     def encrypt(
-            cls, recipient: str, persona_id: int, username: str, subject: str,
+            cls, recipient: str, persona_id: vtypes.ID, username: vtypes.Email,
+            subject: str,
     ) -> tuple["Self", str]:
         data, key = cls._encrypt(cls.format_data(persona_id, username, subject))
         return (
             cls(
                 id=vtypes.ProtoID(-1),
-                message_id=vtypes.Base64(token_urlsafe(12)),
+                message_id=cls.create_message_id(),
                 recipient=vtypes.Email(recipient),
                 ctime=now(),
                 encrypted_data=data,
@@ -100,6 +105,19 @@ class AnonymousMessageData(CdEDataclass):
         except Exception as e:
             raise CryptographyError(*e.args) from None
         self.persona_id, self.username, self.subject = self.parse_data(decrypted)
+
+    def rotate(self, key: Optional[str] = None) -> str:
+        if self.persona_id is None:
+            if key is None:
+                raise ValueError("Need decryption key to rotate encryption.")
+            self.decrypt(key)
+        assert self.persona_id is not None
+        assert self.username is not None
+        assert self.subject is not None
+        data = self.format_data(self.persona_id, self.username, self.subject)
+        self.encrypted_data, new_key = self._encrypt(data)
+        self.message_id = self.create_message_id()
+        return new_key
 
     def get_sortkey(self) -> Sortkey:
         return self.recipient, self.ctime
