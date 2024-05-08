@@ -108,7 +108,7 @@
             </div>
         {% endif %}
 
-        {% if dashboard['orga'] %}
+        {% if dashboard.get('orga') %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
@@ -172,7 +172,7 @@
             </div>
         {% endif %}
 
-        {% if 'moderator' in dashboard %}
+        {% if dashboard.get('moderator') %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
