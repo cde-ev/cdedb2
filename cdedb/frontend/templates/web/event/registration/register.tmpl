@@ -153,7 +153,7 @@
             {% endif %}
         {% endcall %}
 
-        {% call generic_event.fee_preview_panel(show_composition=True) %}
+        {% call generic_event.fee_preview_panel(show_composition=preview) %}
             {% if preview %}
                 {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
                 {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
