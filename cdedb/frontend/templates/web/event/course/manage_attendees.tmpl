@@ -36,9 +36,19 @@
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                                {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
                                 <tr id="attendee-{{ track_id }}-{{ registration_id }}">
                                     <td>
+                                        {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                         {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
+                                        {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
+                                                == ambience['course']['id'] %}
+                                            ({% trans %}Instr.{% endtrans %})
+                                        {%- endif %}
+                                        {%- if not registration_part_status.is_involved() %}</s>{% endif -%}
+                                        {% if registration_part_status != enums['RegistrationPartStati'].participant %}
+                                            <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
+                                        {% endif -%}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),

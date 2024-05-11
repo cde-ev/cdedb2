@@ -50,7 +50,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def check_lodgement_problems(
             cls, event: models.Event, lodgements: CdEDBObjectMap,
             registrations: CdEDBObjectMap, personas: CdEDBObjectMap,
-            all_inhabitants: dict[int, dict[int, LodgementInhabitants]],
+            all_involved_inhabitants: dict[int, dict[int, LodgementInhabitants]],
     ) -> list[LodgementProblem]:
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
@@ -75,7 +75,7 @@ class EventLodgementMixin(EventBaseFrontend):
         for lodgement_id in lodgements:
             for part_id in event.parts:
                 lodgement = lodgements[lodgement_id]
-                inhabitants = all_inhabitants[lodgement_id][part_id]
+                inhabitants = all_involved_inhabitants[lodgement_id][part_id]
                 reg, cm = inhabitants
                 if len(reg) + len(cm) > (lodgement['regular_capacity']
                                          + lodgement['camping_mat_capacity']):
@@ -133,8 +133,9 @@ class EventLodgementMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
-        # Get inhabitants per lodgement, part and status.
-        inhabitants = self.eventproxy.get_grouped_inhabitants(rs, event_id)
+        # Get (involved) inhabitants per lodgement, part and status.
+        inhabitants = self.eventproxy.get_grouped_inhabitants(rs, event_id,
+                                                              only_involved=True)
 
         # Sum inhabitants per group, part and status.
         inhabitants_per_group = {
@@ -289,8 +290,10 @@ class EventLodgementMixin(EventBaseFrontend):
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         raw_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event_id, lodgement_ids=(lodgement_id,))
+        raw_involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
+            rs, event_id, lodgement_ids=(lodgement_id,), only_involved=True)
         inhabitants = {
-            part_id: raw_inhabitants[lodgement_id][part_id].all
+            part_id: list(raw_inhabitants[lodgement_id][part_id].all)
             for part_id in rs.ambience['event'].parts
         }
         registrations = self.eventproxy.get_registrations(
@@ -298,12 +301,25 @@ class EventLodgementMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, [r['persona_id'] for r in registrations.values()], event_id=event_id)
 
+        # Sort not-involved attendees to the bottom of the list
+        for part_id, inhabitant_group in inhabitants.items():
+            inhabitant_group.sort(key=lambda anid:
+            not registrations[anid]['parts'][part_id]['status'].is_involved())
+
+        inhabitant_numbers = {
+            part_id: (len(raw_involved_inhabitants[lodgement_id]
+                          .get(part_id, LodgementInhabitants()).regular),
+                      len(raw_involved_inhabitants[lodgement_id]
+                          .get(part_id, LodgementInhabitants()).camping_mat))
+            for part_id in rs.ambience['event'].parts
+        }
+
         camping_mat_field_names = self._get_camping_mat_field_names(
             rs.ambience['event'])
 
         problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
-            registrations, personas, raw_inhabitants)
+            registrations, personas, raw_involved_inhabitants)
 
         if not any(reg_ids for reg_ids in inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
@@ -314,6 +330,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 QueryScope.registration.get_spec(event=rs.ambience['event']),
                 fields_of_interest=[
                     'persona.given_names', 'persona.family_name',
+                    f'part{part_id}.status',
                     f'part{part_id}.lodgement_id', f'part{part_id}.is_camping_mat',
                 ],
                 constraints=[
@@ -340,7 +357,8 @@ class EventLodgementMixin(EventBaseFrontend):
 
         return self.render(rs, "lodgement/show_lodgement", {
             'groups': groups, 'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'problems': problems,
+            'inhabitants': inhabitants, 'inhabitant_numbers': inhabitant_numbers,
+            'problems': problems,
             'make_inhabitants_query': make_inhabitants_query,
             'camping_mat_field_names': camping_mat_field_names,
             'prev_lodgement': prev_lodge, 'next_lodgement': next_lodge,
@@ -552,8 +570,12 @@ class EventLodgementMixin(EventBaseFrontend):
             reg['persona_id'] for reg in registrations.values()))
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
-            key="lodgement_id", personas=personas)
+            key="lodgement_id", personas=personas, only_present=False,
+            only_involved=False)
         for part_id in rs.ambience['event'].parts:
+            # Sort not-involved attendees to the bottom of the list
+            inhabitants[(lodgement_id, part_id)].sort(key=lambda anid:
+                not registrations[anid]['parts'][part_id]['status'].is_involved())
             merge_dicts(rs.values, {
                 f'is_camping_mat_{part_id}_{registration_id}':
                     registrations[registration_id]['parts'][part_id][
@@ -706,7 +728,8 @@ class EventLodgementMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
         inhabitants = self.calculate_groups(
-            lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id")
+            lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id",
+            only_present=False, only_involved=False)
 
         new_regs: CdEDBObjectMap = {}
         change_notes = []

@@ -118,8 +118,8 @@
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s%s+%s%s"|format(assign_counts[course_id][track.id][0], nbsp, nbsp,
-                                                                assign_counts[course_id][track.id][1])) }}
+                                             "%s%s+%s%s"|format(assign_counts[course_id][track.id][2], nbsp, nbsp,
+                                                                assign_counts[course_id][track.id][3])) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
                                 <td class="text-right">

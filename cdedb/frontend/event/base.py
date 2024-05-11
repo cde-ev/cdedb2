@@ -418,7 +418,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     def calculate_groups(entity_ids: Collection[int], event: models.Event,
                          registrations: CdEDBObjectMap, key: str,
                          personas: Optional[CdEDBObjectMap] = None,
-                         instructors: bool = True,
+                         instructors: bool = True, only_present: bool = True,
+                         only_involved: bool = True,
                          ) -> dict[tuple[int, int], Collection[int]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
@@ -430,6 +431,10 @@ class EventBaseFrontend(AbstractUserFrontend):
           lists by name, so that the can be displayed sorted.
         :param instructors: Include instructors of courses. No effect for
           lodgements.
+        :param only_present: Exclude personas which are not present at the event in the
+          specified event part.
+        :param only_involved: Exclude personas which are not involved in specified event
+          part at all.
         """
         tracks = event.tracks
         if key == "course_id":
@@ -450,7 +455,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
-                   const.RegistrationPartStati(part['status']).is_present())
+                   (const.RegistrationPartStati(part['status']).is_present()
+                    or not only_present) and
+                   (const.RegistrationPartStati(part['status']).is_involved()
+                    or not only_involved))
             if (ret and key == "course_id" and not instructors
                     and instance['course_instructor'] == entity_id):
                 ret = False
