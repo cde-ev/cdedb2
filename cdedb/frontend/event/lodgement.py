@@ -304,7 +304,7 @@ class EventLodgementMixin(EventBaseFrontend):
         # Sort not-involved attendees to the bottom of the list
         for part_id, inhabitant_group in inhabitants.items():
             inhabitant_group.sort(key=lambda anid:
-            not registrations[anid]['parts'][part_id]['status'].is_involved())
+            not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
 
         inhabitant_numbers = {
             part_id: (len(raw_involved_inhabitants[lodgement_id]
@@ -575,7 +575,7 @@ class EventLodgementMixin(EventBaseFrontend):
         for part_id in rs.ambience['event'].parts:
             # Sort not-involved attendees to the bottom of the list
             inhabitants[(lodgement_id, part_id)].sort(key=lambda anid:
-                not registrations[anid]['parts'][part_id]['status'].is_involved())
+                not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
             merge_dicts(rs.values, {
                 f'is_camping_mat_{part_id}_{registration_id}':
                     registrations[registration_id]['parts'][part_id][

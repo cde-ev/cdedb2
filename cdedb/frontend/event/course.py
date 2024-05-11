@@ -94,7 +94,7 @@ class EventCourseMixin(EventBaseFrontend):
             for (_cid, track_id), attendee_group in attendees.items():
                 part_id = rs.ambience['event'].tracks[track_id].part.id
                 attendee_group.sort(key=lambda anid:
-                not registrations[anid]['parts'][part_id]['status'].is_involved())
+                not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
             involved_attendees = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
                 key="course_id", personas=personas, instructors=True,
@@ -739,7 +739,7 @@ class EventCourseMixin(EventBaseFrontend):
         for (_cid, track_id), attendee_group in attendees.items():
             part_id = rs.ambience['event'].tracks[track_id].part.id
             attendee_group.sort(key=lambda anid:
-            not registrations[anid]['parts'][part_id]['status'].is_involved())
+            not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
 
         # Generate options for the multi select boxes
         def _check_without_course(registration_id: int, track_id: int) -> bool:
