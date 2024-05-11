@@ -420,7 +420,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                          personas: Optional[CdEDBObjectMap] = None,
                          instructors: bool = True, only_present: bool = True,
                          only_involved: bool = True,
-                         ) -> dict[tuple[int, int], Collection[int]]:
+                         ) -> dict[tuple[int, int], list[int]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
