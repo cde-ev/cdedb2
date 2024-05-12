@@ -277,8 +277,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
-                # distinct count for primary keys is necessary for queries that
-                # duplicate rows due to JOIN, e.g. cde user search
                 agg[
                     f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"

@@ -20,7 +20,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
-from cdedb.common.query import QueryOperators
+from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
@@ -36,6 +36,7 @@ from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
     storage,
 )
+import cdedb.models.event as models
 
 
 class TestEventFrontend(FrontendTest):
@@ -6478,6 +6479,39 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("Eigene Filter")
         self.assertNonPresence("Bringt Kugeln mit")
         self.assertPresence("brings_kugeln")
+
+        new_fields = {
+            -1: {
+                'field_name': 'TEST',
+                'title': 'Test',
+                'kind': const.FieldDatatypes.bool,
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+            },
+            -2: {
+                'field_name': 'TEST2',
+                'title': 'Test 2',
+                'kind': const.FieldDatatypes.bool,
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+            },
+        }
+        self.event.set_event(self.key, 1, {'id': 1, 'fields': new_fields})
+        new_filter = models.CustomQueryFilter(
+            id=-1,
+            event_id=1,
+            scope=QueryScope.registration,
+            title='Test',
+            fields={'reg_fields.xfield_TEST', 'reg_fields.xfield_TEST2'},
+            notes=None,
+        )
+        new_filter.event = None
+        self.event.add_custom_query_filter(self.key, new_filter)
+        self.traverse("Anmeldungen")
+        f = self.response.forms['queryform']
+        f[f'qop_{new_filter.get_field_string()}'] = QueryOperators.equal.value
+        f[f'qval_{new_filter.get_field_string()}'] = True
+        self.submit(f)
 
     @as_users("garcia")
     def test_orga_droid(self) -> None:
