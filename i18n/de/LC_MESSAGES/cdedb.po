@@ -15255,7 +15255,7 @@ msgid ""
 "Please make sure, the recipient does not have to pay any fees, especially "
 "when paying internationally."
 msgstr ""
-"Achte bitte bei internationalen ÜBerweisungen darauf, dass der Empfänger "
+"Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger "
 "keine Gebühren zahlen muss."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:148
