@@ -6635,6 +6635,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids.append(self.event.create_registration(self.key, reg_data))
         reg_data['persona_id'] = 3
         reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 4
+        reg_data['fields'] = {}
+        reg_data['parts'][4]['status'] = const.RegistrationPartStati.cancelled
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
         registrations = self.event.get_registrations(self.key, reg_ids)
         self.assertEqual(
             decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
@@ -6644,6 +6648,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
         self.assertEqual(
             decimal.Decimal("435.00"), registrations[reg_ids[3]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("0.00"), registrations[reg_ids[4]]['amount_owed'])
 
         # set amount_paid
         self._set_payment_info(
@@ -6652,6 +6658,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             reg_ids[1], event_id, registrations[reg_ids[1]]['amount_owed'])
         self._set_payment_info(
             reg_ids[3], event_id, decimal.Decimal("200.00"))
+        self._set_payment_info(
+            reg_ids[4], event_id, decimal.Decimal("123.00"))
 
         self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
                       "Beitrags-Statistik")
@@ -6664,8 +6672,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             "Solidarische Reduktion -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen")
         self.assertNonPresence("Solidarische Erhöhung")
         self.assertPresence("Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
-        self.assertPresence("Überschuss – 0,00 € 0 Anmeldungen")
-        self.assertPresence("Gesamtsumme 1.297,01 € 437,01 €")
+        self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen")
+
+        save = self.response
+        self.traverse({'linkid': 'surplus_query'})
+        self.assertPresence("Ergebnis [1]", div="query-results")
+        self.response = save
+
+        self.assertPresence("Gesamtsumme 1.297,01 € 560,01 €")
         self.assertPresence("1 Personen haben 200,00 € gezahlt, ohne")
         self.assertPresence("1 Personen haben noch nichts")
         self.traverse("In Anmeldungsliste anzeigen")
