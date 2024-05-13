@@ -23,6 +23,7 @@ git checkout $OLDREVISION
 echo ""
 echo "Creating pristine database and gathering list of evolutions."
 ls cdedb/database/evolutions > /tmp/oldevolutions.txt
+ls related/deploy > /tmp/olddeploys.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
 if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 $OLDREVISION; then
@@ -44,6 +45,8 @@ echo "Compiling list of evolutions to apply:"
 truncate -s0 /tmp/todoevolutions.txt
 ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
 (grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
+ls related/deploy | sort > /tmp/newdeploys.txt
+(grep /tmp/newdeploys.txt -v -f /tmp/olddeploys.txt > /tmp/tododeploys.txt) || true
 echo ""
 cat /tmp/todoevolutions.txt
 
@@ -99,6 +102,9 @@ python3 -m cdedb dev describe-database -o /tmp/pristine-description.txt
 
 # perform check
 echo ""
+echo "NEW DEPLOY INSTRUCTIONS:"
+cat /tmp/tododeploys.txt
+echo ""
 echo "DATABASE COMPARISON (this should be empty):"
 comm -3 <(sort /tmp/evolved-description.txt) \
      <(sort /tmp/pristine-description.txt) > /tmp/database_difference.txt
@@ -108,9 +114,13 @@ echo "EVOLUTION OUTPUT:"
 cat /tmp/output-evolution.txt
 echo ""
 echo "OLD: $OLDREVISION NEW: $NEWREVISION"
+echo ""
 
 if [[ -s /tmp/database_difference.txt ]]; then
     exit 1
+elif [[ -s /tmp/todoevolutions.txt ]] && [[ ! -s /tmp/tododeploys.txt ]]; then
+    echo "Evolution without deploy!"
+    exit 2
 else
     exit 0
 fi
