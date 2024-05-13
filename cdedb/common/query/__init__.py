@@ -660,14 +660,15 @@ class Query:
             for entry, ascending in self.order]
         # Fix our fix
         changed_fields = set()
-        for column in self.fields_of_interest:
-            for moniker in column.split(","):
-                if '"' in moniker:
-                    changed_fields.add(moniker)
+        for moniker in self.fields_of_interest:
+            if '"' in moniker:
+                changed_fields.add(moniker)
         for column, _, _ in self.constraints:
             for moniker in column.split(","):
                 if '"' in moniker:
                     changed_fields.add(moniker)
+            if '"' in column:
+                changed_fields.add(column)
         for moniker, _ in self.order:
             if '"' in moniker:
                 changed_fields.add(moniker)
