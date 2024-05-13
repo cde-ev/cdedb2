@@ -168,7 +168,10 @@ def work(
     print("Found data for event '{}' exported {}.".format(
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
-    if offline_mode and not data['event.events'][str(data['id'])]['offline_lock']:
+    if (
+            not data['event.events'][str(data['id'])]['offline_lock']
+            and (not dev_mode or offline_mode)
+    ):
         print("Event not locked in online instance at time of export."
               "\nIn case of simultaneous changes in offline and online"
               " instance there will be data loss."
@@ -182,7 +185,7 @@ def work(
         print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
-    if sample_data:
+    if dev_mode and sample_data:
         print("Clean current instance (deleting all data)")
         if is_interactive:
             if input("Are you sure (type uppercase YES)? ").strip() != "YES":
@@ -198,7 +201,7 @@ def work(
 
     # connect to the database, using elevated access
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
-    if keep_data or sample_data:
+    if dev_mode and (keep_data or sample_data):
         shift_existing_ids([k for k in data if '.' in k], 1_000_000)
     else:
         print("Clean current instance (deleting all data)")
@@ -305,7 +308,7 @@ def work(
                 params = tuple(datum[key] for key in keys)
                 cur.execute(query, params)
 
-    if not keep_data and not sample_data:
+    if not dev_mode or (not keep_data and not sample_data):
         print("Checking whether everything was transferred.")
         fails = []
         with conn as con:
@@ -325,7 +328,7 @@ def work(
             raise RuntimeError("Data transfer was not successful.")
         else:
             print("Everything in place.")
-        if not offline_mode:
+        if dev_mode and not offline_mode:
             with conn as con:
                 with con.cursor() as cur:
                     cur.execute("INSERT INTO cde.org_period (id) VALUES (42)")
@@ -348,7 +351,7 @@ def work(
         print("Protecting data from accidental reset")
         subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
-    if offline_mode:
+    if not dev_mode or offline_mode:
         # mark the config as offline vm
         offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
         if not Config()[offline_deploy_key]:
@@ -405,12 +408,15 @@ if __name__ == "__main__":
     parser.add_argument('--dev', action="store_true",
                         help="Setup offline VM for development/manual testing.")
     parser.add_argument('--no-offline-flag', action="store_true",
-                        help="Do not set the config flag for offline mode.")
+                        help="Do not set the config flag for offline mode."
+                             " Only available with '--dev'.")
     parser.add_argument('--keep-data', action="store_true",
-                        help="Do not remove existing data. May cause this to fail.")
+                        help="Do not remove existing data. May cause this to fail."
+                             " Only available with '--dev'.")
     parser.add_argument('--sample-data', action="store_true",
                         help="Also populate with sample data."
-                             " Could conceivably cause this to fail.")
+                             " Could conceivably cause this to fail."
+                             " Only available with '--dev'.")
     args = parser.parse_args()
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
