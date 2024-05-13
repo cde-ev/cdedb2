@@ -51,18 +51,18 @@ class AnonymousMessageData(CdEDataclass):
         else:
             raise ValueError(f"Could not parse data: {data}")
 
-    def format_message_id(self, key: str) -> str:
+    def format_secret(self, key: str) -> str:
         return f"{self.message_id}{key}"
 
     @staticmethod
-    def parse_message_id(message_id: str) -> tuple[str, str]:
+    def parse_secret(secret: str) -> tuple[str, str]:
         # The message_id has 12 bytes, which is 16 characters in Base64.
         #  The key has 32 bytes, which is 43 characters plus 1 (padding) in Base64.
         pattern = re.compile(r"[a-zA-Z0-9-_=]{60}")
-        if pattern.fullmatch(message_id):
-            return message_id[:16], message_id[16:]
+        if pattern.fullmatch(secret):
+            return secret[:16], secret[16:]
         else:
-            raise ValueError(f"Could not parse message id: {message_id}")
+            raise ValueError(f"Could not parse secret: {secret}")
 
     @staticmethod
     def create_message_id() -> vtypes.Base64:

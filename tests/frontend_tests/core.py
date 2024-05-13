@@ -3122,40 +3122,37 @@ LG Emilia
                 receipt_anonymous,
             )
 
-            if result := re.search(
-                "Nachrichten-ID: (?P<message_id>.+)\n",
-                sent_anonymous,
-            ):
-                message_id, key = models_core.AnonymousMessageData.parse_message_id(
-                    result['message_id'])
+            if result := re.search("Geheimnis: (?P<secret>.+)\n", sent_anonymous):
+                message_id, key = models_core.AnonymousMessageData.parse_secret(
+                    result['secret'])
             else:
-                self.fail("Failed to extract message id.")
+                self.fail("Failed to extract secret.")
 
         with self.switch_user("inga"):
             self.get("/core/contact/reply")
             f = self.response.forms['replyform']
             self.submit(f, check_notification=False)
-            self.assertValidationError('message_id', "Darf nicht leer sein.")
+            self.assertValidationError('secret', "Darf nicht leer sein.")
             self.assertValidationError('reply_message', "Darf nicht leer sein.")
 
             f['reply_message'] = reply_msg = "Wir kaufen mehr, versprochen!"
-            f['message_id'] = "$&()"
+            f['secret'] = "$&()"
             self.submit(f, check_notification=False)
-            self.assertValidationError('message_id', "Invalid Base64 string.")
+            self.assertValidationError('secret', "Invalid Base64 string.")
 
-            f['message_id'] = "abcd"
+            f['secret'] = "abcd"
             self.submit(f, check_notification=False)
-            self.assertValidationError('message_id', "Wrong format.")
+            self.assertValidationError('secret', "Wrong format.")
 
-            f['message_id'] = "a" * 16 + key
+            f['secret'] = "a" * 16 + key
             self.submit(f, check_notification=False)
-            self.assertValidationError('message_id', "Unknown message id.")
+            self.assertValidationError('secret', "Invalid secret.")
 
-            f['message_id'] = message_id + "a" * (len(key) - 1) + key[-1]
+            f['secret'] = message_id + "a" * (len(key) - 1) + key[-1]
             self.submit(f, check_notification=False)
-            self.assertValidationError('message_id', "Invalid decryption key.")
+            self.assertValidationError('secret', "Invalid secret.")
 
-            f['message_id'] = message_id + key
+            f['secret'] = message_id + key
             self.submit(f)
 
             reply = self.fetch_mail_content(0)
@@ -3175,19 +3172,15 @@ LG Emilia
             self.assertIn(subject, reply_receipt)
 
             # Rotate message id and encryption key:
-            self.get(f"/core/contact/rotate?message_id={message_id + key}")
+            self.get(f"/core/contact/rotate?secret={message_id + key}")
 
             # Extract new secrets.
             rotate_notice = self.fetch_mail_content()
-            if result := re.search(
-                "Nachrichten-ID: (?P<message_id>.+)\n",
-                rotate_notice,
-            ):
-                new_message_id, new_key = \
-                    models_core.AnonymousMessageData.parse_message_id(
-                        result['message_id'])
+            if result := re.search("Geheimnis: (?P<secret>.+)\n", rotate_notice):
+                new_message_id, new_key = models_core.AnonymousMessageData.parse_secret(
+                    result['secret'])
             else:
-                self.fail("Failed to extract message id.")
+                self.fail("Failed to extract secret.")
 
             # Test retrieval.
             with self.assertRaises(KeyError):
@@ -3200,7 +3193,7 @@ LG Emilia
             message.decrypt(new_key)
 
             # Test reply.
-            f['message_id'] = new_message_id + new_key
+            f['secret'] = new_message_id + new_key
             self.submit(f)
 
             log_expectation = [

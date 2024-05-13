@@ -1,17 +1,17 @@
 Hier ist eine anonyme Nachricht, die euch über das Kontaktformular zugesandt wurde.
 
-Nachrichten-ID: {{ message_id }}
+Geheimnis: {{ secret }}
 Zeitpunkt der Nachrict: {{ message.ctime|datetime(lang="de") }}
 
 Um auf die Nachricht zu antworten besucht diesen Link:
-{{ cdedblink("core/contact_reply", {'message_id': message_id}) }}
+{{ cdedblink("core/contact_reply", {'secret': secret}) }}
 
-Jeder der Zugriff auf die obige Nachrichten-ID, bzw. den obigen Link hat, kann
+Jeder der Zugriff auf das obige Geheimnis, bzw. den obigen Link hat, kann
 auf die Nachricht antworten, jedoch nicht deren Inhalt sehen.
-Falls erforderlich könnt ihr unter diesem Link eine neue Nachrichten-ID generieren
-und so die alte deaktivieren:
+Falls erforderlich könnt ihr unter diesem Link einen neues Geheimnis generieren
+und so das alte deaktivieren:
 
-{{ cdedblink("core/rotate_anonymous_message", {'message_id': message_id}) }}
+{{ cdedblink("core/rotate_anonymous_message", {'secret': secret}) }}
 
 ---
 

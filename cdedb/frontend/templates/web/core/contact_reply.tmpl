@@ -20,7 +20,7 @@
     </script>
     <form action="{{ cdedblink('core/contact_reply') }}" method="POST" id="replyform" class="form-horizontal">
         {{ util.anti_csrf_token('core/contact_reply') }}
-        {{ util.form_input_text(name="message_id", label=gettext("Message ID"), info=gettext("Enter the message id exactly as in the original message.")) }}
+        {{ util.form_input_text(name="secret", label=gettext("Secret"), info=gettext("Enter the secret exactly as in the original message.")) }}
         {{ util.form_input_textarea(name="reply_message", label=gettext("Reply"), rows=10, info=gettext("A copy of the reply will be sent to the original recipient.")) }}
         <div>
             {{ util.form_input_submit(label=gettext("Send"), icon="paper-plane") }}
