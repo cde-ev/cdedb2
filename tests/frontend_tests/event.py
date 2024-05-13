@@ -17,6 +17,7 @@ import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
@@ -36,7 +37,6 @@ from tests.common import (
     USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
     storage,
 )
-import cdedb.models.event as models
 
 
 class TestEventFrontend(FrontendTest):
@@ -6498,14 +6498,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         }
         self.event.set_event(self.key, 1, {'id': 1, 'fields': new_fields})
         new_filter = models.CustomQueryFilter(
-            id=-1,
-            event_id=1,
+            id=-1,  # type: ignore[arg-type]
+            event_id=1,  # type: ignore[arg-type]
             scope=QueryScope.registration,
             title='Test',
             fields={'reg_fields.xfield_TEST', 'reg_fields.xfield_TEST2'},
             notes=None,
         )
-        new_filter.event = None
+        new_filter.event = None  # type: ignore[assignment]
         self.event.add_custom_query_filter(self.key, new_filter)
         self.traverse("Anmeldungen")
         f = self.response.forms['queryform']
