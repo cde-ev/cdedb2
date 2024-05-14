@@ -75,7 +75,7 @@ class EntityKeeper:
             completed.check_returncode()
         return completed
 
-    def init(self, entity_id: int) -> "EntityKeeper":
+    def init(self, entity_id: int, exists_ok: bool = False) -> "EntityKeeper":
         """Actually initialize the repository.
 
         This takes care of all the dirty work regarding git configuration and
@@ -85,7 +85,7 @@ class EntityKeeper:
         entity_id = affirm(int, entity_id)
         full_dir = self._dir / str(entity_id)
 
-        full_dir.mkdir()
+        full_dir.mkdir(exist_ok=exists_ok)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
         self._run(["git", "init", "-b", "master"], cwd=full_dir)
         self._run(["git", "config", "user.name", "CdE-Datenbank"], cwd=full_dir)

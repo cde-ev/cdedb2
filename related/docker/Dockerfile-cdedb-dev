@@ -8,5 +8,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     nano \
     emacs
 
+COPY ./doc/source/motd-container.txt /etc/motd.txt
+
+RUN echo "\ncat /etc/motd.txt\n" >> /home/cdedb/.bashrc \
+    && echo "\ncat /etc/motd.txt\n" >> /root/.bashrc
+
 # The local repo is mounted from the host, thus setting it globally.
 RUN sudo -u cdedb git config --global core.hooksPath .githooks

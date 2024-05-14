@@ -273,33 +273,33 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         fields = {column: column.replace('"', '') for field in query.fields_of_interest
                   for column in field.split(",")}
+        aggregate_select = ""
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
-                # distinct count for primary keys is necessary for queries that
-                # duplicate rows due to JOIN, e.g. cde user search
-                agg[(f"COUNT(DISTINCT {query.scope.get_primary_key()})"
-                     f" FILTER (WHERE {field} IS NULL)")] = f"null.{field_as}"
+                agg[
+                    f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
+                ] = f"null.{field_as}"
                 if query.spec[field].type in ("int", "float"):
-                    agg[f"SUM({field})"] = f"sum.{field_as}"
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
-                    agg[f"AVG({field})"] = f"avg.{field_as}"
-                    agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
+                    agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'AVG("{field_as}")'] = f"avg.{field_as}"
+                    agg[f'STDDEV_SAMP("{field_as}")'] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
-                    agg[f"SUM({field}::int)"] = f"sum.{field_as}"
+                    agg[f'SUM("{field_as}"::int)'] = f"sum.{field_as}"
                 elif query.spec[field].type in ("date", "datetime"):
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     # TODO add avg for dates
-            select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
+            aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
-            if not view:
-                view = query.scope.get_aggregate_view()
-        else:
-            select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-            select += ', ' + query.scope.get_primary_key()
-        q, params = self._construct_query(query, select, distinct=distinct, view=view)
+        select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
+        select += ', ' + query.scope.get_primary_key()
+        q, params = self._construct_query(
+            query, select, distinct=distinct, view=view,
+            aggregate_select=aggregate_select,
+        )
         data = self.query_all(rs, q, params)
 
         if aggregate:
@@ -316,7 +316,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(query: Query, select: str, distinct: bool,
-                         view: Optional[str]) -> tuple[str, list[DatabaseValue]]:
+                         view: Optional[str], aggregate_select: str,
+                         ) -> tuple[str, list[DatabaseValue]]:
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -327,7 +328,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
         view = view or query.scope.get_view()
-        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: list[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
@@ -365,12 +365,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 constraints.append(constraint)
                 continue  # skip constraints.append below
             if operator == _ops.empty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NULL OR {0} = '' )"
                 else:
                     phrase = "( {0} IS NULL )"
             elif operator == _ops.nonempty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
@@ -382,7 +382,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
                 if operator in (_ops.equalornull, _ops.unequalornull):
-                    if query.spec[field] == "str":
+                    if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
                         phrase += " OR {0} IS NULL )"
@@ -431,8 +431,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
+        where = ""
         if constraints:
-            q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
+            where = f'WHERE ({") AND (".join(constraints)})'
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view} {where}"
+        if aggregate_select:
+            q = f"SELECT {aggregate_select} FROM ({q}) AS tmp"
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []

@@ -17,10 +17,11 @@ import segno.helpers
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
-from cdedb.common.query import QueryOperators
+from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
@@ -1753,21 +1754,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence(
-            "Anmeldung erst mit Überweisung des Teilnahmebeitrags")
-        self.assertPresence("573,99 € auf folgendes Konto")
-        self.assertPresence(
-            "0,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Du musst noch den übrigen Betrag von 573,99 € bezahlen.")
+        self.assertPresence("Bitte überweise 573,99 € auf folgendes Konto")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("473,99 € auf folgendes Konto")
+        self.assertPresence("Bitte überweise 473,99 € auf folgendes Konto")
+        self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence(
-            "100,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Du musst noch den übrigen Betrag von 473,99 € bezahlen.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
         self.assertNonPresence("1000,00")
-        self.assertPresence("573,99 € bereits bezahlt.")
+        self.assertPresence(
+            "Du hast 426,01 € mehr bezahlt als deinen Teilnahmebeitrag von 573,99 €.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
 
         # Payment checks without iban
@@ -1781,8 +1782,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+        self.assertPresence("Du hast bereits 200,00 € bezahlt.")
         self.assertPresence(
-            "200,00 € eingegangen. Der volle Teilnahmebeitrag beträgt 573,99 €")
+            "Du musst noch den übrigen Betrag von 373,99 € bezahlen.")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
@@ -1822,13 +1824,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse("angemeldet")
         self.assertNonPresence(payment_pending)
 
+        # participant in all parts
+        self.get('/event/event/1/registration/1/change')
+        f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.participant
+        f['part2.status'] = const.RegistrationPartStati.participant
+        f['part3.status'] = const.RegistrationPartStati.participant
+        self.submit(f)
+        self.traverse("Meine Anmeldung")
+        self.assertPresence("Regulärer Beitrag 584,49 €")
+        self.assertPresence("Solidarische Reduktion -0,01 €")
+        self.assertPresence("Gesamtsumme 584,48 €")
+
         # participant again, only for one part
         self.get('/event/event/1/registration/1/change')
         f = self.response.forms['changeregistrationform']
+        f['part1.status'] = const.RegistrationPartStati.not_applied
+        f['part2.status'] = const.RegistrationPartStati.not_applied
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
-        self.traverse({'href': 'registration/status'})
+        self.traverse("Meine Anmeldung")
         self.assertPresence("450,99 €")
         self.assertNonPresence("bereits bezahlt")
         self.assertPresence(payment_pending)
@@ -2247,6 +2263,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             'condition', "Unknown part shortname(s): 'unknown_part'")
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
+
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
+        self.assertHasClass("eventfee-title-1", "alert-success")
+        self.assertHasClass("eventfee-title-2", "alert-success")
+        self.assertHasClass("eventfee-title-3", "alert-success")
+        self.assertHasClass("eventfee-title-4", "alert-danger")
+        self.assertHasClass("eventfee-title-5", "alert-danger")
+        self.assertHasClass("eventfee-title-6", "alert-danger")
+        self.assertHasClass("eventfee-title-7", "alert-danger")
+        self.assertHasClass("eventfee-title-8", "alert-success")
+        self.assertHasClass("eventfee-title-9", "alert-success")
 
         # TODO: actually add some tests for conditions.
 
@@ -6453,6 +6480,39 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertNonPresence("Bringt Kugeln mit")
         self.assertPresence("brings_kugeln")
 
+        new_fields = {
+            -1: {
+                'field_name': 'TEST',
+                'title': 'Test',
+                'kind': const.FieldDatatypes.bool,
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+            },
+            -2: {
+                'field_name': 'TEST2',
+                'title': 'Test 2',
+                'kind': const.FieldDatatypes.bool,
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+            },
+        }
+        self.event.set_event(self.key, 1, {'id': 1, 'fields': new_fields})
+        new_filter = models.CustomQueryFilter(
+            id=-1,  # type: ignore[arg-type]
+            event_id=1,  # type: ignore[arg-type]
+            scope=QueryScope.registration,
+            title='Test',
+            fields={'reg_fields.xfield_TEST', 'reg_fields.xfield_TEST2'},
+            notes=None,
+        )
+        new_filter.event = None  # type: ignore[assignment]
+        self.event.add_custom_query_filter(self.key, new_filter)
+        self.traverse("Anmeldungen")
+        f = self.response.forms['queryform']
+        f[f'qop_{new_filter.get_field_string()}'] = QueryOperators.equal.value
+        f[f'qval_{new_filter.get_field_string()}'] = True
+        self.submit(f)
+
     @as_users("garcia")
     def test_orga_droid(self) -> None:
         event_id = 1
@@ -6575,6 +6635,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         reg_ids.append(self.event.create_registration(self.key, reg_data))
         reg_data['persona_id'] = 3
         reg_ids.append(self.event.create_registration(self.key, reg_data))
+        reg_data['persona_id'] = 4
+        reg_data['fields'] = {}
+        reg_data['parts'][4]['status'] = const.RegistrationPartStati.cancelled
+        reg_ids.append(self.event.create_registration(self.key, reg_data))
         registrations = self.event.get_registrations(self.key, reg_ids)
         self.assertEqual(
             decimal.Decimal("0.01"), registrations[reg_ids[0]]['amount_owed'])
@@ -6584,22 +6648,38 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             decimal.Decimal("425.00"), registrations[reg_ids[2]]['amount_owed'])
         self.assertEqual(
             decimal.Decimal("435.00"), registrations[reg_ids[3]]['amount_owed'])
+        self.assertEqual(
+            decimal.Decimal("0.00"), registrations[reg_ids[4]]['amount_owed'])
+
         # set amount_paid
-        for reg_id in [reg_ids[0], reg_ids[1]]:
-            self._set_payment_info(
-                reg_id, event_id, registrations[reg_id]['amount_owed'])
-        self._set_payment_info(reg_ids[3], event_id, decimal.Decimal("200.00"))
+        self._set_payment_info(
+            reg_ids[0], event_id, registrations[reg_ids[0]]['amount_owed'])
+        self._set_payment_info(
+            reg_ids[1], event_id, registrations[reg_ids[1]]['amount_owed'])
+        self._set_payment_info(
+            reg_ids[3], event_id, decimal.Decimal("200.00"))
+        self._set_payment_info(
+            reg_ids[4], event_id, decimal.Decimal("123.00"))
+
         self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmebeiträge",
                       "Beitrags-Statistik")
         self.assertTitle("Beitrags-Statistik (CdE-Party 2050)")
-        self.assertPresence("Regulärer Beitrag 40,00 € 20,00 €")
-        self.assertPresence("Stornokosten 0,00 € 0,00 €")
-        self.assertPresence("Externenbeitrag 2,00 € 2,00 €")
-        self.assertPresence("Solidarische Reduktion -4,99 € -4,99 €")
-        self.assertPresence("Solidarische Erhöhung 0,00 € 0,00 €")
-        self.assertPresence("Spende 1.260,00 € 420,00 €")
-        self.assertPresence("Überschuss – 0,00 €")
-        self.assertPresence("Gesamtsumme 1.297,01 € 437,01 €")
+        self.assertPresence(
+            "Regulärer Beitrag 40,00 € 4 Anmeldungen 20,00 € 2 Anmeldungen")
+        self.assertPresence("Stornokosten 0,00 € 0 Anmeldungen 0,00 € 0 Anmeldungen")
+        self.assertPresence("Externenbeitrag 2,00 € 1 Anmeldungen 2,00 € 1 Anmeldungen")
+        self.assertPresence(
+            "Solidarische Reduktion -4,99 € 1 Anmeldungen -4,99 € 1 Anmeldungen")
+        self.assertNonPresence("Solidarische Erhöhung")
+        self.assertPresence("Spende 1.260,00 € 3 Anmeldungen 420,00 € 1 Anmeldungen")
+        self.assertPresence("Überschuss – 123,00 € 1 Anmeldungen")
+
+        save = self.response
+        self.traverse({'linkid': 'surplus_query'})
+        self.assertPresence("Ergebnis [1]", div="query-results")
+        self.response = save
+
+        self.assertPresence("Gesamtsumme 1.297,01 € 560,01 €")
         self.assertPresence("1 Personen haben 200,00 € gezahlt, ohne")
         self.assertPresence("1 Personen haben noch nichts")
         self.traverse("In Anmeldungsliste anzeigen")
@@ -6619,3 +6699,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Berta")
         self.assertPresence(
             "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+
+        self.traverse("Teilnahmebeiträge")
+        self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Teilnahmebeitrag Party 15,00 € 4 Zu Zahlen 2 Bezahlt")
+        self.assertPresence(
+            "Absager TODO: add real condition once implemented."
+            " 7,50 € 0 Zu Zahlen 0 Bezahlt")
+        self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
+        self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")

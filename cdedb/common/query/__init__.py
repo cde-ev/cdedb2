@@ -206,21 +206,6 @@ class QueryScope(CdEIntEnum):
         """
         return _QUERY_VIEWS.get(self, "core.personas")
 
-    def get_aggregate_view(self) -> str:
-        """Like self.get_view() but to be used for calculating aggregates.
-
-        Since some views use joins to allow filtering, they break the aggregation
-        by duplicating rows. We workaround this by using a variant of the view
-        without such joins.
-
-        If no aggregate view is defined, use the regular one instead.
-
-        Note that the complex event views override this anyway, since they use
-        joins differently resulting in no duplicated rows.
-        """
-
-        return _AGGREGATE_VIEWS.get(self) or self.get_view()
-
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
 
@@ -379,24 +364,6 @@ _QUERY_VIEWS = {
         LEFT OUTER JOIN past_event.events
             ON courses.pevent_id = events.id
         """,
-}
-
-# See `QueryScope.get_aggregate_view()`.
-_AGGREGATE_VIEWS = {
-    QueryScope.cde_user: (_CDE_USER_AGGREGATE_VIEW := """core.personas
-        LEFT OUTER JOIN (
-            SELECT
-                id, granted_at, revoked_at,
-                revoked_at IS NULL AS active_lastschrift,
-                persona_id
-            FROM cde.lastschrift
-            WHERE (granted_at, persona_id) IN (
-                SELECT MAX(granted_at) AS granted_at, persona_id
-                FROM cde.lastschrift GROUP BY persona_id
-            )
-        ) AS lastschrift ON personas.id = lastschrift.persona_id
-        """),
-    QueryScope.all_cde_users: _CDE_USER_AGGREGATE_VIEW,
 }
 
 # See QueryScope.get_primary_key().
@@ -620,6 +587,7 @@ class QueryResultEntryFormat(enum.Enum):
     username = 2
     event_course = 10
     event_lodgement = 11
+    event_fee = 12
     date = 20
     datetime = 21
     bool = 22
@@ -692,14 +660,15 @@ class Query:
             for entry, ascending in self.order]
         # Fix our fix
         changed_fields = set()
-        for column in self.fields_of_interest:
-            for moniker in column.split(","):
-                if '"' in moniker:
-                    changed_fields.add(moniker)
+        for moniker in self.fields_of_interest:
+            if '"' in moniker:
+                changed_fields.add(moniker)
         for column, _, _ in self.constraints:
             for moniker in column.split(","):
                 if '"' in moniker:
                     changed_fields.add(moniker)
+            if '"' in column:
+                changed_fields.add(column)
         for moniker, _ in self.order:
             if '"' in moniker:
                 changed_fields.add(moniker)
@@ -774,6 +743,12 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
+            if field in (
+                    "reg.amount_paid",
+                    "reg.amount_owed",
+                    "reg.remaining_owed",
+            ):
+                return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):

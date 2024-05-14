@@ -43,12 +43,14 @@ If you dont know how to do this, take a look at the first point in
 :ref:`accessing-vm-windows`. Note that there are multiple port forwardings,
 for ``20022``, ``20389``, ``20443`` and ``5000``.
 
+.. _accessing-vm-linux:
+
 Accessing -- Linux
 ------------------
 
 Once the VM is up and running you can access it in the following ways. The
 password for the ``cdedb`` user (used for access via ssh etc.) is
-``akademie``.
+empty [#femptypass]_.
 
 * web: Open https://localhost:20443/ in a browser of your choice.
 * ssh::
@@ -66,17 +68,20 @@ password for the ``cdedb`` user (used for access via ssh etc.) is
     sshfs cdedb@localhost:/cdedb2/ /path/to/mountpoint/ -p 20022
 
 For ease of use it may be advisable to put these commands into script
-files. Additionally it helps to put your ssh public key into the (new)
-file ``/home/cdedb2/.ssh/authorized_keys`` to suppress password queries.
+files.
 
 .. _accessing-vm-windows:
 
 Accessing -- Windows
 --------------------
 
+.. note:: Mittlerweile ist WSL (Windows Subsystem for Linux) soweit gereift,
+          dass es empfehlenswert ist mithilfe dieses die Anweisungen in
+          :ref:`accessing-vm-linux` zu nutzen.
+
 Das Ansprechen der VM ist unter Windows etwas komplizierter als unter Linux.
 Im Folgenden werden die Arbeitsschritte einmal für VirtualBox durchgegangen.
-Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
+Das Passwort für den Nutzer ``cdedb`` der VM ist leer.
 
 * Web: Im VirtualBox Manager, bearbeite die VM
 
@@ -125,3 +130,8 @@ Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
         \\sshfs.r\cdedb@192.168.56.10\cdedb2
 
   Nun sollte die VM als Netzlaufwerk eingehängt worden sein.
+
+.. rubric:: Footnotes
+
+.. [#femptypass] Yes this really works. The password prompt should even be
+                 omitted and the login performed right away.

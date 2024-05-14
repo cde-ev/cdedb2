@@ -32,6 +32,7 @@ doc/source/Handbuch_Email_Templates.rst
 related/auto-build/distfiles/**
 related/auto-build/images/**
 related/auto-build/work/**
+related/auto-build/runtime/share/**
 
 # i18n working and compiled data
 i18n/cdedb.pot
