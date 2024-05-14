@@ -278,7 +278,7 @@ class TestEventModels(BackendTest):
             fees={
                 1: models.EventFee(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag Warmup',
                     amount=decimal.Decimal('10.50'),
@@ -287,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventFee(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 1. Hälfte',
                     amount=decimal.Decimal('123.00'),
@@ -296,7 +296,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventFee(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 2. Hälfte',
                     amount=decimal.Decimal('450.99'),
@@ -305,7 +305,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.EventFee(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
@@ -314,7 +314,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.EventFee(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
@@ -323,7 +323,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.EventFee(
                     id=6,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
@@ -332,7 +332,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventFee(
                     id=7,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.external,
                     title='Externenzusatzbeitrag',
                     amount=decimal.Decimal('5.00'),
@@ -341,7 +341,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventFee(
                     id=8,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.solidary_reduction,
                     title='Mengenrabatt',
                     amount=decimal.Decimal('-0.01'),
@@ -350,7 +350,7 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.EventFee(
                     id=9,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Orgarabatt',
                     amount=decimal.Decimal('-50.00'),
