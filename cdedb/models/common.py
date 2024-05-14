@@ -43,6 +43,39 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
 
 @dataclass
 class CdEDataclass:
+    """
+
+    The behavior of some of the default methods of this parent class can be modified by
+    setting metadata on dataclass fields:
+
+    - 'validation_exclude':
+        If True, alway omit this field from `cls.validation_fields()`.
+        Can be used for fields that are magically inserted elsewhere.
+    - 'creation_exclude':
+        If True, omit this field from `cls.validation_fields(creation=True)`.
+        Can be used to make use of SQL default values.
+    - 'update_exclude':
+        If True, omit this field from `cls.validation_fields(creation=False)`.
+        Can be used to make a field immutable.
+    - 'creation_optional':
+        If True, make this field optional in `cls.validation_fields(creation=True)`.
+        Can be used to make use of SQL default values, while also allowing overrides.
+    - 'request_exclude':
+        If True, exclude the field from `cls.requestdict_fields()`.
+        Can be used for fields that are not submitted via form, but taken from URL.
+    - 'database_exclude':
+        If True, exclude the field from `cls.database_fields()`, which excludes it from
+        being written to or read from the database.
+        Can be used for fields that are specifically calculated or magically inserted
+        elsewhere.
+    - 'database_include':
+        If True, include the field in `cls.database_fields()` even if it would
+        otherwise not be.
+        Can be used to select fields with type list or set from the database.
+    - 'asdict_exclude':
+        If True, exclude the field from `self.asdict()`.
+        Can be used to avoid read-only fields being validated.
+    """
     id: vtypes.ProtoID
 
     database_table: ClassVar[str]
@@ -165,7 +198,7 @@ class CdEDataclass:
         field names to field values.
 
         This is an almost 1:1 copy of dataclasses.asdict. However, we need to exclude
-        the backward references to avoid infinit recursion, so we need to dig into
+        the backward references to avoid infinite recursion, so we need to dig into
         the implementation details here...
         """
         return self._asdict_inner(self, dict)
@@ -220,6 +253,9 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
+        if field.metadata.get('asdict_exclude'):
+            return False
+        # TODO: do not use the repr for this.
         return field.repr
 
     @abc.abstractmethod

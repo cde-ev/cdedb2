@@ -357,6 +357,17 @@ class TestEventModels(BackendTest):
                     condition='part.1.H. and part.2.H. and is_orga',  # type: ignore[arg-type]
                     notes=None,
                 ),
+                10: models.EventFee(
+                    id=10,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    kind=const.EventFeeType.common,
+                    title="KL-Erstattung",
+                    notes="Individuelle Höhe",
+                    amount=None,
+                    condition=None,
+                    amount_min=decimal.Decimal('-30.00'),
+                    amount_max=decimal.Decimal('-20.00'),
+                ),
             },
             part_groups={},
             track_groups={},
@@ -364,18 +375,14 @@ class TestEventModels(BackendTest):
 
         reality = self.event.get_event(self.key, event_id)
 
-        self.assertEqual(
-            expectation.fields,
-            reality.fields,
-        )
-        self.assertEqual(
-            expectation.to_database(),
-            reality.to_database(),
-        )
-        self.assertEqual(
-            vars(expectation),
-            vars(reality),
-        )
+        self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.tracks, reality.tracks)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
+        self.assertEqual(expectation.to_database(), reality.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
+        self.assertEqual(expectation, reality)
 
         event_id = vtypes.ProtoID(4)
 
@@ -494,7 +501,7 @@ class TestEventModels(BackendTest):
             fees={
                 16: models.EventFee(
                     id=16,  # type: ignore[arg-type]
-                    event_id=event_id,
+                    event_id=event_id,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -629,8 +636,13 @@ class TestEventModels(BackendTest):
 
         self.assertEqual(expectation.tracks, reality.tracks)
         self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
         self.assertEqual(expectation.track_groups, reality.track_groups)
         self.assertEqual(expectation.part_groups, reality.part_groups)
+        self.assertEqual(expectation.to_database(), expectation.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
     @as_users("anton")

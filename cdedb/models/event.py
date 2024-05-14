@@ -469,30 +469,15 @@ class EventField(EventDataclass):
 class CustomQueryFilter(EventDataclass):
     database_table = "event.custom_query_filters"
 
-    event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+    )
+    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exlude': True})
 
-    scope: QueryScope
+    scope: QueryScope = dataclasses.field(metadata={'update_exlude': True})
     title: str
     notes: Optional[str]
     fields: set[str] = dataclasses.field(metadata={'database_include': True})
-
-    fixed_fields = ("event_id", "event", "scope")
-
-    @classmethod
-    def validation_fields(cls, *, creation: bool,
-                          ) -> tuple[vtypes.TypeMapping, vtypes.TypeMapping]:
-        mandatory, optional = super().validation_fields(creation=creation)
-        for key in cls.fixed_fields:
-            if key in optional:
-                del optional[key]
-        optional['event'] = Any  # type: ignore[assignment]
-        return mandatory, optional
-
-    @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['scope'] = QueryScope(data['scope'])
-        return super().from_database(data)
 
     def __post_init__(self) -> None:
         if isinstance(self.fields, str):  # type: ignore[unreachable]

@@ -234,6 +234,8 @@ def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool
     subtype, validator = _validate_dataclass_preprocess(type_, value)
     if hasattr(value, 'to_validation'):
         val = value.to_validation()
+    elif hasattr(value, 'as_dict'):
+        val = value.as_dict()
     else:
         val = dataclasses.asdict(value)
     validated = validate_assert(
