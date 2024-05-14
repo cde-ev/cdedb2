@@ -389,15 +389,38 @@ class EventFee(EventDataclass):
         init=False, compare=False, repr=False, metadata={'validation_exclude': True},
     )
     # Exclude during creation, update and request.
-    event_id: vtypes.ProtoID = dataclasses.field(
+    event_id: vtypes.ID = dataclasses.field(
         metadata={'validation_exclude': True, 'request_exclude': True},
     )
 
     kind: const.EventFeeType
     title: str
-    amount: Optional[decimal.Decimal]
-    condition: Optional[vtypes.EventFeeCondition]
     notes: Optional[str]
+
+    condition: Optional[vtypes.EventFeeCondition]
+    amount: Optional[decimal.Decimal]
+    amount_min: Optional[decimal.Decimal] = dataclasses.field(
+        default=None, metadata={'database_exclude': True})
+    amount_max: Optional[decimal.Decimal] = dataclasses.field(
+        default=None, metadata={'database_exclude': True})
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT {','.join(cls.database_fields())}, amount_min, amount_max
+            FROM {cls.database_table} AS fee
+            LEFT OUTER JOIN (
+                SELECT fee_id, MIN(amount) AS amount_min, MAX(amount) AS amount_max
+                FROM {PersonalizedFee.database_table}
+                GROUP BY fee_id
+            ) AS personalized ON personalized.fee_id = fee.id
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
+
 
     def is_conditional(self) -> bool:
         return self.amount is not None and self.condition is not None

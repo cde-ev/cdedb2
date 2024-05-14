@@ -432,13 +432,41 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro _print_fee_amount(amount) %}
-    <td class="text-right {{ "money-negative" if amount < 0 else "money-positive" }}">
+{% macro _fee_amount_td(amount) %}
+    <td class="text-right">
+        {{ _print_fee_amount(amount) }}
+    </td>
+{% endmacro %}
+
+{% macro _print_fee_amount(amount) -%}
+    <strong class="{{ "money-negative" if (amount or 0) < 0 else "money-positive" }}">
+        {%- if amount is not none -%}
+            {{- amount|money(lang=lang) -}}
+        {%- else -%}
+            –
+        {%- endif -%}
+    </strong>
+{%- endmacro %}
+
+{% macro _fee_amount_range_td(fee) %}
+    <td class="text-right">
         <strong>
-            {{ amount|money(lang=lang) }}
+            {{ _print_fee_amount_range(fee) }}
         </strong>
     </td>
 {% endmacro %}
+
+{% macro _print_fee_amount_range(fee) -%}
+    {%- if fee.amount_min is none or fee.amount_max is none -%}
+        –
+    {%- elif fee.amount_min == fee.amount_max -%}
+        {{ _print_fee_amount(fee.amount_min) }}
+    {%- else -%}
+        {{ _print_fee_amount(fee.amount_min) }}
+        –
+        {{ _print_fee_amount(fee.amount_max) }}
+    {%- endif -%}
+{%- endmacro %}
 
 {#  Print a summary of all relevant fees.
     Has esssentially three different usage modes:
@@ -496,23 +524,19 @@
                     {% endif %}
                 </td>
                 {% if fee.amount %}
-                    {{ _print_fee_amount(fee.amount) }}
+                    {{ _fee_amount_td(fee.amount) }}
                     {% if complex_fee %}
                         <td></td>
                     {% endif %}
                 {% elif js_preview %}
                     {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
-                        {{ _print_fee_amount(ambience['registration']['personalized_fees'][fee.id]) }}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id]) }}
                     {% else %}
-                        <td class="text-right">
-                            <strong>
-                                X - Y €
-                            </strong>
-                        </td>
+                        {{ _fee_amount_td(None) }}
                     {% endif %}
                 {% elif complex_fee %}
                     {% if fee.id in ambience['registration']['personalized_fees'] %}
-                        {{ _print_fee_amount(ambience['registration']['personalized_fees'][fee.id]) }}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id]) }}
                         <td>
                             <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
@@ -533,11 +557,7 @@
                         </form>
                     {% endif %}
                 {% else %}
-                    <td class="text-right">
-                        <strong>
-                            X - Y €
-                        </strong>
-                    </td>
+                    {{ _fee_amount_range_td(fee) }}
                 {% endif %}
                 {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
@@ -551,6 +571,9 @@
                         <i>
                             {% trans %}Personalized Fee{% endtrans %}
                         </i>
+                        {% if fee.amount_min is not none and (js_preview or complex_fee) %}
+                            ({{ _print_fee_amount_range(fee) }})
+                        {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
                     {% else %}
