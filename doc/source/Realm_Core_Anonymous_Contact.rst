@@ -96,33 +96,151 @@ reencrypted with a newly generated key. The new secret is sent to the original
 recipient(s). In addition a new message id is generated, so the entire secret will be
 new.
 
-Threats
--------
+Potential Actors and Threats
+----------------------------
 
-- **Server Access**:
-    Due the symmetric encryption, there is no direct way for anyone to discover the
-    identity without bypassing the encryption, even with full server access, because
-    the key is never stored anywhere and the identity is not directly logged either.
-    Server (or database) access would allow an attacker to attack the encryption
-    offline, circumventing any serverside logging and rate limiting.
-    Note that apache access logs contain additional information which might allow
-    someone with server access to discover the identity of an anonymous sender.
-- **Guessing the Secret**:
-    The frontend for responding to messages only requires the user to be logged in
-    and to provide a valid secret. This makes it theoretically possible to guess a key,
-    which is why usage of invalid secrets is logged.
-    In practice the secret consists of 44 Bytes of Entropy and should be unfeasible to
-    guess.
-- **The Secret Leaking**:
-    A leaked secret, e.g. by someone accidently forwarding the mail in which the
-    secret was sent, allows anyone (with an account) to reply to the corresponding
-    message, but not to discover the identity of the sender, unless they also have
-    server/database access.
-    In order to mitigate this, anyone with the secret may also trigger a rotation of
-    the encryption key, sending a new secret to the recipients of the original message.
-- **Intercepting Outgoing Mails**:
-    Since most configured recipients for the contact form are actually mailinglists
-    no special care is taken to protect the actual mails. Thus if one of these mails is
-    intercepted along the way, both the content of the message, as well as the identity
-    of the anonymous sender could be compromised.
-    This implementation makes no effort to protect against this kind of threat.
+- **Uninvolved**:
+
+  An uninvolved actor is not party to any exchange of anonymous messages. Their only
+  capability is the usage of the CdEDB frontend.
+
+  There exists no frontend overview of existing or previous anonymous messages,
+  regardless of the privileges of the uninvolved user.
+
+  However core admins may view the Core Log, where every sent anonymous message and
+  every reply is logged. However the only information in this log is the time at which
+  an anonymous possibilitymessage was sent and the recipient.
+  For replies the user sending the reply is logged along with the time of the reply and
+  the original recipient.
+
+  Threats:
+    - Unprivileged user:
+
+      - None
+    - Core Admin:
+
+      - Knowledge of the time when anonymous messages are sent may provide advantages
+        for other side channel attacks. This is deemed acceptable, since Core Admins
+        are trusted users and we want there to be a way to have an overview of the
+        usage of the contact facility via the frontend.
+
+- **Sender of an anonmyous message**:
+
+  Any user, regardless of their privileges may use the form to send anonymous messages.
+  The sender does not receive the secret associated with their message.
+
+  Threats:
+    - Misuse of the anonymous contact form (spam, trolling, verbal abuse, etc.)
+
+      - Mitigated by the principle of accountability.
+      - The user sending the message has no access to the corresponding secret.
+
+- **Unprivileged Responder**:
+
+  Any user, regardless of their privileges may use the form to reply to anonymous
+  messages, provided they know (or are able to guess) the corresponding secret of
+  a message.
+  An unprivileged responder is a user who is trying to use the form to reply to a
+  message they are not meant to.
+
+  Threats:
+    - Use of leaked secret.
+
+      - If an unprivileged user gains access to a valid secret, they may reply
+        to the corresponding message just in the same way as a privileged user would.
+        This could reduce the trust of the user into the process and the contacted
+        institution.
+      - Knowledge of the secret does not give the user access to any sensitive
+        information via the frontend (like the identity of the sender, subject of the
+        message or content of the message).
+      - This is mitigated by logging all replies, and sending a copy of each reply
+        to the actual recipients, so that such unprivileged responsed do not go
+        unnoticed.
+      - The reply will also contain the name and username of the responder,
+        meaning the original sender should be able to see if they received an invalid
+        reply, especially since the intended recipients are able to inform them about
+        this incident.
+      - Further mitigated by the option to rotate the encryption with knowledge of the
+        secret. The secret will then again only be known to the intended recipients.
+        (Although the makeup of the recipients could have changed in the meantime,
+        see below).
+    - Guessing a secret.
+
+      - Unsurprisingly, successfully guessing a secret has the same consequences as
+        knowledge of a leaked secret does. The threat is also mitigated by the same
+        mechanisms.
+      - Additionally guessing the secret is mitigated by (internal) logging of such
+        attempts (providing an invalid secret via the form).
+      - Furthermore the search space for guessing a valid secret is extremely large
+        (44 Bytes or ~350 Bits).
+
+- **Recipient of an anonymous message**:
+
+  The recipient of an anonymous message has knowledge of the associated secret and
+  thus the capability to reply to that message, as well as rotate the encryption for
+  this message.
+  Additionally they have knowledge of the actual content of the anonymous message.
+
+  Knowledge of the secret and the message content comes with the implicit capability
+  to (unintentionally or intentionally) leak either.
+
+  Threats:
+    - Leaking of the message content:
+
+      - There is not much that can be done, should a recipient of an anonmyous message
+        (whether intentionally or not) leak the content of such a message.
+    - Leaking of the secret:
+
+      - The consequences of and mitigations for after leaking the secret to others are
+        discussed above.
+
+- **Uninvolved Server-Admin**:
+
+  An admin with advanced access to the CdEDB-Server has the capability to retrieve the
+  encrypted data and the unencrypted metadata for all anonymous messages.
+
+  They do not have the capability to decrypt the identity of the sender, or the
+  subject of the message, without circumventing the encryption.
+
+  Threats:
+    - Offline attack on encryption:
+
+      - By extracting the encrypted data from the database, a server admins has the
+        capability to attack the encryption offline, thus bypassing all logging and
+        other mitigations like rate limiting.
+      - Not much can be done to prevent this, however the strength of the symmetric
+        encryption should be enough to still make this unfeasible.
+    - Sidechannel (Length of Encrypted Data):
+
+      - The length of the encrypted data increases with the length of the username of
+        the sender and the subject of the message. This allows the Server-Admin to gain
+        some information and differentiate different messages even across encryption
+        rotations.
+    - Sidechannel (Reconfiguration of Contact Recipients):
+
+      - A server admin can alter the configuration, so that messages are sent to
+        arbitrary email addresses rather than the intended recipients.
+
+Sidechannel Attacks
+^^^^^^^^^^^^^^^^^^^
+
+- **ML-Admin with knowledge of secret**:
+
+  For recipients which are mailinglists a mailinglist admin (or another admin with
+  privileges for the mailinglist) has the capability to remove all regular subscribers
+  of the mailinglist, add themself as a subscriber and then (with knowledge of the
+  secret) rotate the encryption for a message.
+
+  This causes the new secret to only be sent to the malicious admin, rendering the
+  intended recipients unable to reply to (or even to rotate the encryption of) the
+  affected message.
+
+  The rotated message can be identified from the internal log. This allows a server
+  admin to delete the compromised message. Changes to mailinglist subscribers via the
+  frontend are logged.
+
+- **Interception of unencrypted emails**:
+
+  Since most recipients are mailinglists (and even if they weren't), we cannot send the
+  actual mails in an encrypted form. Interception of emails may leak both a secret and
+  the actual message contents to the intercepting party.
