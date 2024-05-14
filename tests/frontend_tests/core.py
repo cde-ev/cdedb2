@@ -133,7 +133,7 @@ class TestCoreFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
         everyone = {
-            "Index", "Übersicht", "Meine Daten", "Administratorenübersicht", "Contact",
+            "Index", "Übersicht", "Meine Daten", "Administratorenübersicht", "Kontakt",
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
