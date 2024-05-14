@@ -1536,9 +1536,9 @@ class CoreBaseFrontend(AbstractFrontend):
                 },
             )
             rs.notify("success", n_(
-                "Encryption has been updated. New message id has been sent."))
+                "Encryption has been updated. New secret has been sent."))
         else:
-            rs.notify("error", n_("Something wnet wrong."))
+            rs.notify("error", n_("Something went wrong."))
         return self.redirect(rs, "core/index")
 
     @access("meta_admin")
