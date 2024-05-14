@@ -2761,7 +2761,11 @@ def _event_fee(
             if 'condition' in val and val['condition'] is None:
                 errs.append(ValueError(
                     'condition', n_("Cannot unset condition for conditional fee.")))
-
+    else:
+        if (val['amount'] is None) != (val['condition'] is None):
+            for k in ('amount', 'condition'):
+                errs.append(ValueError(
+                    k, n_("Cannot have amount without condition or vice versa.")))
     if errs:
         raise errs
 
