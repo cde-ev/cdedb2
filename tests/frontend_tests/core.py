@@ -3088,7 +3088,7 @@ class TestCoreFrontend(FrontendTest):
 
     def test_contact(self) -> None:
         with self.switch_user("emilia"):
-            self.traverse("Contact")
+            self.traverse("Kontakt")
             f = self.response.forms['contactform']
             for recipient in self.conf["CONTACT_ADDRESSES"]:
                 f['to'] = recipient
@@ -3145,19 +3145,19 @@ LG Emilia
             f['reply_message'] = reply_msg = "Wir kaufen mehr, versprochen!"
             f['secret'] = "$&()"
             self.submit(f, check_notification=False)
-            self.assertValidationError('secret', "Invalid Base64 string.")
+            self.assertValidationError('secret', "Ungültige Base64 Zeichenkette.")
 
             f['secret'] = "abcd"
             self.submit(f, check_notification=False)
-            self.assertValidationError('secret', "Wrong format.")
+            self.assertValidationError('secret', "Falsches Format.")
 
             f['secret'] = "a" * 16 + key
             self.submit(f, check_notification=False)
-            self.assertValidationError('secret', "Invalid secret.")
+            self.assertValidationError('secret', "Ungültiges Geheimnis.")
 
             f['secret'] = message_id + "a" * (len(key) - 1) + key[-1]
             self.submit(f, check_notification=False)
-            self.assertValidationError('secret', "Invalid secret.")
+            self.assertValidationError('secret', "Ungültiges Geheimnis.")
 
             f['secret'] = message_id + key
             self.submit(f)
