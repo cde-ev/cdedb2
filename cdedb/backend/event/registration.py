@@ -383,11 +383,13 @@ class EventRegistrationBackend(EventBaseBackend):
             ret *= self.sql_insert(rs, "event.course_choices", new_choice)
         return ret
 
-    def _get_registration_info(self, rs: RequestState,
-                               reg_id: int) -> Optional[CdEDBObject]:
+    def _get_registration_info(self, rs: RequestState, reg_id: int) -> tuple[int, int]:
         """Helper to retrieve basic registration information."""
-        return self.sql_select_one(
+        reg_info = self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
+        if not reg_info:
+            raise KeyError(n_("Registration does not exist."))
+        return reg_info['persona_id'], reg_info['event_id']
 
     @access("event")
     def list_persona_registrations(
@@ -900,15 +902,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
+            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)
 
             # Perform sanity checks.
-            self._track_groups_sanity_check(rs, current['event_id'])
+            self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
@@ -984,10 +984,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
-            persona_id, event_id = current['persona_id'], current['event_id']
+            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
@@ -1082,12 +1079,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
-            current = self.get_registration(rs, data['id'])
-            update = {
-                'id': data['id'],
-                'amount_owed': self._calculate_single_fee(rs, current, event=event),
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+            self._update_registration_amount_owed(rs, data['id'])
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1260,21 +1252,32 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
+    def _update_registration_amount_owed(
+            self, rs: RequestState, registration_id: int,
+    ) -> DefaultReturnCode:
+        """
+        Update the amount owed for one registration.
+
+        If not given, the amount will be calculated beforehand.
+        """
+        self.affirm_atomized_context(rs)
+        amount = self.calculate_fee(rs, registration_id)
+
+        update = {
+            'id': registration_id,
+            'amount_owed': amount,
+        }
+        return self.sql_update(rs, models.Registration.database_table, update)
+
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
                                           ) -> DefaultReturnCode:
+        """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
-        fees = self.calculate_fees(rs, registration_ids)
-
-        # TODO: make this more efficient by cahing parse results and evaluators somehow.
 
         ret = 1
-        for reg_id, amount_owed in fees.items():
-            update = {
-                'id': reg_id,
-                'amount_owed': amount_owed,
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+        for reg_id in registration_ids:
+            ret *= self._update_registration_amount_owed(rs, reg_id)
 
         return ret
 

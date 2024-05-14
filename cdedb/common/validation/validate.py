@@ -54,6 +54,7 @@ import collections
 import copy
 import dataclasses
 import datetime
+import decimal
 import distutils.util
 import functools
 import io
@@ -69,7 +70,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
 from types import TracebackType
 from typing import (
-    Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
+    Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
     get_type_hints, overload,
 )
 
@@ -89,7 +90,7 @@ import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
+    CdEDBObject, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
     compute_checkdigit, now, parse_date, parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
@@ -97,7 +98,7 @@ from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     MAX_QUERY_ORDERS, MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS,
-    QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    Query, QueryOperators, QueryOrder, QueryScope, QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
@@ -365,6 +366,51 @@ def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
     _ALL_TYPED[return_type] = fun
 
     return fun
+
+
+def _create_optional_mapping_validator(inner_type: type[Any], return_type: type[T], *,
+                                       creation_only: bool = False) -> None:
+    def the_validator(val: Any, argname: str = return_type.__qualname__, **kwargs: Any,
+                      ) -> T:
+        val = _mapping(val, argname)
+        val = _optional_object_mapping_helper(
+            val, inner_type, argname, creation_only=creation_only, **kwargs)
+        return cast(T, val)
+    _add_typed_validator(the_validator, return_type)
+
+
+def _create_dataclass_validator(type_: type[DC], return_type: type[T],
+                                ) -> Callable[[F], F]:
+    def the_validator(val: Any, argname: str = type_.__qualname__, *,
+                      creation: bool = False, **kwargs: Any) -> T:
+        val = _mapping(val, argname, **kwargs)
+
+        if issubclass(type_, GenericLogFilter):
+            mandatory, optional = type_.validation_fields()
+        elif issubclass(type_, CdEDataclass):
+            mandatory, optional = type_.validation_fields(creation=creation)
+        else:
+            raise RuntimeError("Impossible.")
+
+        val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
+
+        return cast(T, val)
+
+    _add_typed_validator(the_validator, return_type)
+
+    def the_decorator(fun: F) -> F:
+        del _ALL_TYPED[return_type]
+
+        @functools.wraps(fun)
+        def wrapper(val: Any, argname: str = type_.__qualname__, **kwargs: Any) -> T:
+            val = the_validator(val, argname, **kwargs)
+            val = fun(val, argname, **kwargs)
+            return cast(T, val)
+
+        _add_typed_validator(wrapper, return_type)
+        return cast(F, wrapper)
+
+    return the_decorator
 
 
 def _examine_dictionary_fields(
@@ -2516,23 +2562,7 @@ def _event_part_group(
     return EventPartGroup(val)
 
 
-@_add_typed_validator
-def _event_part_group_setter(
-    val: Any, argname: str = "part_groups",
-    **kwargs: Any,
-) -> EventPartGroupSetter:
-    """Validate a `CdEDBOptionalMap` of part groups.
-
-    This is basically identical to the validation of the `fields` and `parts` keys of
-    the `vtypes.Event` validator, but is separate because this has a separate backend
-    setter.
-    """
-    val = _mapping(val, argname)
-
-    new_part_groups = _optional_object_mapping_helper(
-        val, EventPartGroup, argname, creation_only=False, **kwargs)
-
-    return EventPartGroupSetter(dict(new_part_groups))
+_create_optional_mapping_validator(EventPartGroup, EventPartGroupSetter)
 
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
@@ -2608,18 +2638,7 @@ def _event_track_group(
     return EventTrackGroup(val)
 
 
-@_add_typed_validator
-def _event_track_group_setter(
-    val: Any, argname: str = "track_groups",
-    **kwargs: Any,
-) -> EventTrackGroupSetter:
-    """Validate a `CdEDBOptionalMap` of track groups."""
-    val = _mapping(val, argname)
-
-    new_track_groups = _optional_object_mapping_helper(
-        val, EventTrackGroup, argname, creation_only=False, **kwargs)
-
-    return EventTrackGroupSetter(dict(new_track_groups))
+_create_optional_mapping_validator(EventTrackGroup, EventTrackGroupSetter)
 
 
 EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
