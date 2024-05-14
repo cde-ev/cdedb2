@@ -596,7 +596,8 @@
                                 {{ util.anti_csrf_token("event/delete_fee") }}
                                 {{ util.input_submit(
                                     title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
-                                    icon='trash-alt', label=None, aclass="btn btn-sm btn-danger") }}
+                                    icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                    label=None, aclass="btn btn-sm btn-danger") }}
                             </form>
                         {% endif %}
                     </td>
