@@ -77,43 +77,50 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Suchmaske", div='qf_title')
         self.assertNonPresence("Search Mask")
 
-    @as_users("anton", "berta")
+    @as_users("anton", "berta", "martin")
     def test_index(self) -> None:
         self.assertTitle("CdE-Datenbank")
         self.assertPresence("Meine Daten", div='sidebar')
-        self.assertPresence("Orga-Veranstaltungen", div='orga-box')
-        if self.user_in("berta"):
-            self.assertNonPresence("Log")
-            self.assertNonPresence("Admin-Änderungen")
-            self.assertNonPresence("Nutzer verwalten")
-            self.assertNonPresence("Aktivenforum 2000")
-            self.assertPresence("Aktivenforum 2001", div='moderator-box')
-            # Check if there is actually the correct request
-            self.traverse({'href': '/ml/mailinglist/7/management',
-                           'description': "1 Abonnement-Anfrage"})
-            self.traverse({'href': '/'})
-            self.assertTitle("CdE-Datenbank")
+        if self.user_in("anton", "berta"):
+            self.assertPresence("Orga-Veranstaltungen", div='orga-box')
+            if self.user_in("berta"):
+                self.assertNonPresence("Log")
+                self.assertNonPresence("Admin-Änderungen")
+                self.assertNonPresence("Nutzer verwalten")
+                self.assertNonPresence("Aktivenforum 2000")
+                self.assertPresence("Aktivenforum 2001", div='moderator-box')
+                # Check if there is actually the correct request
+                self.traverse({'href': '/ml/mailinglist/7/management',
+                               'description': "1 Abonnement-Anfrage"})
+                self.traverse({'href': '/'})
+                self.assertTitle("CdE-Datenbank")
+            else:
+                self.assertPresence("Account-Log", div='sidebar')
+                self.assertPresence("Admin-Änderungen", div='sidebar')
+                self.assertPresence("Nutzer verwalten", div='sidebar')
+                self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
+                self.assertPresence("Platin-Lounge", div='moderator-box')
+                # Check moderation notification
+                self.assertPresence("Moderatoren-Liste", div='moderator-box')
+                self.traverse({'href': '/ml/mailinglist/12/moderate',
+                               'description': "3 E-Mails"})
+                self.traverse({'href': '/'})
+                self.assertTitle("CdE-Datenbank")
+            self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
+            self.assertPresence("Orga-Veranstaltungen", div='orga-box')
+            self.assertPresence("CdE-Party 2050", div='orga-box')
+            self.assertNonPresence("Große Testakademie 2222", div='orga-box')
+            self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
+                                div='event-box')
+            self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
+            self.assertPresence("Internationaler Kongress", div='assembly-box')
         else:
-            self.assertPresence("Account-Log", div='sidebar')
-            self.assertPresence("Admin-Änderungen", div='sidebar')
-            self.assertPresence("Nutzer verwalten", div='sidebar')
-            self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
-            self.assertPresence("Platin-Lounge", div='moderator-box')
-            # Check moderation notification
-            self.assertPresence("Moderatoren-Liste", div='moderator-box')
-            self.traverse({'href': '/ml/mailinglist/12/moderate',
-                           'description': "3 E-Mails"})
-            self.traverse({'href': '/'})
-            self.assertTitle("CdE-Datenbank")
-        self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
-        self.assertPresence("CdE-Party 2050", div='orga-box')
-        self.assertNonPresence("Große Testakademie 2222", div='orga-box')
+            self.assertNonPresence("Moderierte Mailinglisten")
+            self.assertNonPresence("Organisierte Veranstaltungen")
+            self.assertNonPresence("Aktuelle Versammlungen")
         self.assertPresence("Aktuelle Veranstaltungen", div='event-box')
         self.assertPresence("Große Testakademie 2222", div='event-box')
-        self.assertPresence("bereits angemeldet, Bezahlung ausstehend", div='event-box')
         self.assertNonPresence("CdE-Party 2050", div='event-box')
-        self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
-        self.assertPresence("Internationaler Kongress", div='assembly-box')
 
     def test_anonymous_index(self) -> None:
         self.get('/')

@@ -26,7 +26,11 @@
     <h4 class="heading-underline">{% trans %}Overview{% endtrans %}</h4>
     <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
     <dd>
-        {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+        {% if complex_fee.is_complex() %}
+            {{ generic_event.fee_breakdown_by_kind() }}
+        {% else %}
+            {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+        {% endif %}
     </dd>
     <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
     <dd>

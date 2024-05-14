@@ -38,14 +38,16 @@
                         </strong>
                     </td>
                     <td class="">
-                        {{ generic_event.active_fee_registration_query_link(kind_stats.registrations_owed, gettext("Registrations")) }}
+                        {{ generic_event.active_fee_registration_query_link(
+                                kind_stats.registrations_owed, gettext("Registrations"), anid="{}_owed_query".format(fee_kind.name)) }}
                     </td>
                     <td class="text-right {{ 'text-danger' if kind_stats.total_paid < 0 }}">
                         <strong>
                             {{ kind_stats.total_paid|money(lang=lang) }}
                         </strong>
                     <td class="">
-                        {{ generic_event.active_fee_registration_query_link(kind_stats.registrations_paid, gettext("Registrations")) }}
+                        {{ generic_event.active_fee_registration_query_link(
+                                kind_stats.registrations_paid, gettext("Registrations"), anid="{}_paid_query".format(fee_kind.name)) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -61,7 +63,9 @@
                         </strong>
                     </td>
                     <td>
-                        {{ generic_event.active_fee_registration_query_link(fee_stats.surplus_registrations, gettext("Registrations")) }}
+                        {{ generic_event.active_fee_registration_query_link(
+                                fee_stats.surplus_registrations, gettext("Registrations"),
+                                anid="surplus_query", query=surplus) }}
                     </td>
                 </tr>
         </tbody>
@@ -97,7 +101,7 @@
             {% endtrans %}
             <br />
             {{ util.href(cdedblink(incomplete_paid.scope.get_target(redirect=True), incomplete_paid.serialize_to_url()),
-                         gettext("View Registrations"), icon='list') }}
+                         gettext("View Registrations"), icon='list', anid="incomplete_paid_query") }}
         </p>
         {% endif %}
         {% if fee_stats.unpaid_registrations %}
@@ -108,7 +112,7 @@
             {% endtrans %}
             <br />
             {{ util.href(cdedblink(not_paid.scope.get_target(redirect=True), not_paid.serialize_to_url()),
-                             gettext("View Registrations"), icon='list') }}
+                             gettext("View Registrations"), icon='list', anid="not_paid_query") }}
         </p>
         {% endif %}
     {% endif %}

@@ -470,8 +470,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                 complex_fee.nonmember_surcharge, lang=rs.lang) or "",
         }
 
+        fee_breakdown_template = """
+{%- import "web/event/generic.tmpl" as generic_event with context -%}
+{{- generic_event.fee_breakdown_by_kind() -}}
+"""
+        fee_breakdown_html = self.jinja_env.from_string(fee_breakdown_template).render(
+            complex_fee=complex_fee, gettext=rs.gettext, lang=rs.lang,
+        )
+
+        if complex_fee.is_complex():
+            fee_preview = fee_breakdown_html
+        else:
+            fee_preview = money_filter(complex_fee.amount, lang=rs.lang) or ""
+
         ret = {
-            'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
+            'fee': fee_preview,
             'nonmember': nonmember_msg,
             'show_nonmember': bool(complex_fee.nonmember_surcharge),
             'active_fees': complex_fee.active_fees,

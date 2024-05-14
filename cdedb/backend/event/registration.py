@@ -1557,6 +1557,10 @@ class EventRegistrationBackend(EventBaseBackend):
                     stats.insufficient_registrations.add(reg['id'])
                 else:
                     stats.unpaid_registrations.add(reg['id'])
+            elif reg['amount_paid'] > reg['amount_owed']:
+                stats.surplus_total += reg['amount_paid'] - reg['amount_owed']
+                stats.surplus_registrations.add(reg['id'])
+
             for fee_id in complex_fee.active_fees:
                 fee = event.fees[fee_id]
                 fee_stat = stats[fee.kind][fee.id]
@@ -1572,9 +1576,6 @@ class EventRegistrationBackend(EventBaseBackend):
                 if reg['amount_paid'] >= reg['amount_owed']:
                     fee_stat.total_paid += amount
                     fee_stat.registrations_paid.add(reg['id'])
-                    if reg['amount_paid'] > reg['amount_owed']:
-                        stats.surplus_total += reg['amount_paid'] - reg['amount_owed']
-                        stats.surplus_registrations.add(reg['id'])
 
         return stats
 
