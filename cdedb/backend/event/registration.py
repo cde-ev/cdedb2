@@ -1610,7 +1610,7 @@ class EventRegistrationBackend(EventBaseBackend):
             if amount is None:
                 code = const.EventLogCodes.personalized_fee_amount_deleted
             else:
-                code = const.EventLogCodes.personalized_fee_amount_added
+                code = const.EventLogCodes.personalized_fee_amount_set
                 change_note += f" ({money_filter(amount)})"
             self.event_log(
                 rs, code=code, event_id=event_id, persona_id=persona_id,

@@ -518,7 +518,7 @@ class EventLogCodes(CdEIntEnum):
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
     registration_status_changed = 300  #:
-    personalized_fee_amount_added = 400  #:
+    personalized_fee_amount_set = 400  #:
     personalized_fee_amount_deleted = 401  #:
 
 
