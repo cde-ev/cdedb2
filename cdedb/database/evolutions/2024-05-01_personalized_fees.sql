@@ -1,7 +1,7 @@
 BEGIN;
     CREATE TABLE event.personalized_fees (
             id                      bigserial PRIMARY KEY,
-            fee_id                  integer NOT NULL REFERENCES event.event_fees(id),
+            fee_id                  integer NOT NULL REFERENCES event.event_fees(id) ON DELETE CASCADE,
             registration_id         integer NOT NULL REFERENCES event.registrations(id),
             amount                  numeric(8, 2) NOT NULL
     );

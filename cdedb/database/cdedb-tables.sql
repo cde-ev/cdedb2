@@ -1059,7 +1059,7 @@ GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 
 CREATE TABLE event.personalized_fees (
         id                      bigserial PRIMARY KEY,
-        fee_id                  integer NOT NULL REFERENCES event.event_fees(id),
+        fee_id                  integer NOT NULL REFERENCES event.event_fees(id) ON DELETE CASCADE,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         UNIQUE (fee_id, registration_id),
         amount                  numeric(8, 2) NOT NULL

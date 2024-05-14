@@ -1602,7 +1602,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError
             personalized_fee = models.PersonalizedFee(
                 id=vtypes.ProtoID(-1),  # Placeholder id.
-                registration_id=registration_id, fee_id=fee_id, amount=amount
+                registration_id=registration_id, fee_id=fee_id, amount=amount,
             )
             ret = self.query_exec(rs, *personalized_fee.get_query())
             self._update_registration_amount_owed(rs, registration_id)
