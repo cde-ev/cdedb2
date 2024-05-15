@@ -642,7 +642,10 @@ class EventLowLevelBackend(AbstractBackend):
                 # Substitute changed shortnames in existing fee conditions.
                 q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
                 fee_conditions: dict[int, str] = {
-                    e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
+                    e['id']: e['condition']
+                    for e in self.query_all(rs, q, (event_id,))
+                    if e['condition']
+                }
 
                 # Update any fee conditions that changed
                 #  (i.e. those referencing a part which got a new shortname).
