@@ -1748,27 +1748,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
-        self.assertPresence("373,99 € auf folgendes Konto")
+        self.assertPresence("353,99 € auf folgendes Konto")
 
         # Payment checks with iban
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 573,99 € bezahlen.")
-        self.assertPresence("Bitte überweise 573,99 € auf folgendes Konto")
+            "Du musst noch den übrigen Betrag von 553,99 € bezahlen.")
+        self.assertPresence("Bitte überweise 553,99 € auf folgendes Konto")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("Bitte überweise 473,99 € auf folgendes Konto")
+        self.assertPresence("Bitte überweise 453,99 € auf folgendes Konto")
         self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 473,99 € bezahlen.")
+            "Du musst noch den übrigen Betrag von 453,99 € bezahlen.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
         self.assertNonPresence("1000,00")
         self.assertPresence(
-            "Du hast 426,01 € mehr bezahlt als deinen Teilnahmebeitrag von 573,99 €.")
+            "Du hast 446,01 € mehr bezahlt als deinen Teilnahmebeitrag von 553,99 €.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
 
         # Payment checks without iban
@@ -1784,7 +1784,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
         self.assertPresence("Du hast bereits 200,00 € bezahlt.")
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 373,99 € bezahlen.")
+            "Du musst noch den übrigen Betrag von 353,99 € bezahlen.")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
@@ -1832,9 +1832,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
         self.traverse("Meine Anmeldung")
-        self.assertPresence("Regulärer Beitrag 584,49 €")
+        self.assertPresence("Regulärer Beitrag 564,49 €")
         self.assertPresence("Solidarische Reduktion -0,01 €")
-        self.assertPresence("Gesamtsumme 584,48 €")
+        self.assertPresence("Gesamtsumme 564,48 €")
 
         # participant again, only for one part
         self.get('/event/event/1/registration/1/change')
@@ -1845,7 +1845,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("450,99 €")
+        self.assertPresence("430,99 €")
         self.assertNonPresence("bereits bezahlt")
         self.assertPresence(payment_pending)
 

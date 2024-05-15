@@ -162,7 +162,7 @@
     },
     "event.registrations": {
         "1": {
-            "amount_owed": "573.99",
+            "amount_owed": "553.99",
             "amount_paid": "200.00",
             "event_id": 1,
             "checkin": null,
@@ -205,7 +205,7 @@
             "real_persona_id": null
         },
         "3": {
-            "amount_owed": "534.48",
+            "amount_owed": "504.48",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -1538,6 +1538,15 @@
             "amount": "-50.00",
             "condition": "part.1.H. and part.2.H. and is_orga",
             "notes": null
+        },
+        "10": {
+            "id": 10,
+            "event_id": 1,
+            "kind": 1,
+            "title": "KL-Erstattung",
+            "amount": null,
+            "condition": null,
+            "notes": "Individuelle Höhe"
         }
     },
     "event.event_parts": {

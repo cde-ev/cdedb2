@@ -499,8 +499,8 @@ class TestEventModels(BackendTest):
             fields={},
             custom_query_filters={},
             fees={
-                16: models.EventFee(
-                    id=16,  # type: ignore[arg-type]
+                17: models.EventFee(
+                    id=17,  # type: ignore[arg-type]
                     event_id=event_id,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",

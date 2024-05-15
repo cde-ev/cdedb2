@@ -180,7 +180,7 @@
             },
             "is_member": true,
             "amount_paid": "200.00",
-            "amount_owed": "573.99",
+            "amount_owed": "553.99",
             "parts": {
                 "1": {
                     "status": -1,
@@ -349,7 +349,7 @@
             },
             "is_member": true,
             "amount_paid": "0.00",
-            "amount_owed": "534.48",
+            "amount_owed": "504.48",
             "parts": {
                 "1": {
                     "status": 2,
@@ -745,6 +745,12 @@
                 "condition": "part.1.H. and part.2.H. and is_orga",
                 "kind": 1,
                 "notes": null
+            },
+            "KL-Erstattung": {
+                "amount": null,
+                "condition": null,
+                "kind": 1,
+                "notes": "Individuelle Höhe"
             }
         },
         "parts": {

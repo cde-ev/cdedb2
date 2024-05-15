@@ -1325,6 +1325,8 @@ class EventBaseBackend(EventLowLevelBackend):
             del fee['id']
             del fee['event_id']
             del fee['title']
+            del fee['amount_min']
+            del fee['amount_max']
         for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']
