@@ -2264,6 +2264,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.traverse({'linkid': "eventfee1001_change"})
+        f = self.response.forms['configureeventfeeform']
+        f['notes'] = "Some more information."
+        self.submit(f)
+
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
         self.assertHasClass("eventfee-title-1", "alert-success")
         self.assertHasClass("eventfee-title-2", "alert-success")
