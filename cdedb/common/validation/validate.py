@@ -3505,7 +3505,9 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID,
                           'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
-                          'condition': str, 'amount': decimal.Decimal}),
+                          'condition': Optional[str],  # type: ignore[dict-item]
+                          'amount': Optional[decimal.Decimal],  # type: ignore[dict-item]
+                          }),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),

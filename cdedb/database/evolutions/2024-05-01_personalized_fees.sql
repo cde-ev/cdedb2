@@ -9,7 +9,7 @@ BEGIN;
     CREATE INDEX personalized_fees_registration_id_idx ON event.personalized_fees(registration_id);
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
     GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
-    GRANT SELECT ON event.personalized_fees_id TO cdb_anonymous;
+    GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
     ALTER TABLE event.event_fees ALTER COLUMN amount DROP NOT NULL;
     ALTER TABLE event.event_fees ALTER COLUMN condition DROP NOT NULL;
