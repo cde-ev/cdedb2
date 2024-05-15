@@ -622,12 +622,6 @@ class Transaction:
             # Check outgoing active payments.
             if PostingPatterns.payment.search(self.posting):
 
-                # Special case for outgoing donations.
-                if ReferencePatterns.donation.search(self.reference):
-                    self.type = TransactionType.Donation
-                    self.type_confidence = ConfidenceLevel.Full
-                    return
-
                 # Check for refund of participant fee:
                 if ReferencePatterns.event_fee_refund.search(self.reference):
                     self.type = TransactionType.EventFeeRefund
@@ -647,6 +641,12 @@ class Transaction:
                         self.type = TransactionType.EventExpenses
                     else:
                         self.type = TransactionType.Expenses
+                    self.type_confidence = confidence
+                    return
+
+                # Special case for outgoing donations.
+                if ReferencePatterns.donation.search(self.reference):
+                    self.type = TransactionType.Donation
                     self.type_confidence = confidence
                     return
 
