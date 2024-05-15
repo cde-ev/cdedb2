@@ -20,7 +20,8 @@ from cdedb.common.sorting import xsorted
 
 
 def generate_event_registration_default_queries(
-        event: models_event.Event, spec: QuerySpec) -> dict[str, Query]:
+        event: models_event.Event, spec: QuerySpec,
+) -> dict[str, Query]:
     """
     Generate default queries for registration_query.
 
@@ -31,12 +32,30 @@ def generate_event_registration_default_queries(
     :param spec: The Query Spec, dynamically generated for the event
     :return: Dict of default queries
     """
-    default_sort = (("persona.family_name", True),
-                    ("persona.given_names", True),
-                    ("reg.id", True))
+    scope = QueryScope.registration
+
+    default_fields_of_interest = (
+        "persona.family_name", "persona.given_names", "persona.username",
+    )
+    payment_fields_of_interest = (
+        "reg.payment", "reg.amount_paid", "reg.amount_owed", "reg.remaining_owed",
+    )
+
+    default_sort = (
+        ("persona.family_name", True),
+        ("persona.given_names", True),
+        ("reg.id", True),
+    )
+    payment_sort = (
+        ("reg.payment", True),
+    )
 
     all_part_stati_column = ",".join(
         f"part{part_id}.status" for part_id in xsorted(event.parts))
+    any_part_participant_constraint = (
+        all_part_stati_column, QueryOperators.equal,
+        const.RegistrationPartStati.participant.value,
+    )
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]
@@ -59,90 +78,92 @@ def generate_event_registration_default_queries(
 
     queries = {
         n_("00_query_event_registration_all"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            tuple(),
-            (("reg.id", True),)),
+            scope, spec,
+            default_fields_of_interest,
+            (),
+            default_sort,
+        ),
         n_("02_query_event_registration_orgas"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("persona.id", QueryOperators.oneof, event.orgas),),
-            default_sort),
+            scope, spec,
+            default_fields_of_interest,
+            (
+                ("reg.is_orga", QueryOperators.equal, True),
+            ),
+            default_sort,
+        ),
         n_("10_query_event_registration_not_paid"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("reg.payment", QueryOperators.empty, None),),
-            default_sort),
+            scope, spec,
+            default_fields_of_interest + payment_fields_of_interest,
+            (
+                ("reg.remaining_owed", QueryOperators.greater, 0),
+            ),
+            payment_sort + default_sort,
+        ),
         n_("12_query_event_registration_paid"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "reg.payment"),
-            (("reg.payment", QueryOperators.nonempty, None),),
-            (("reg.payment", False), ("persona.family_name", True),
-             ("persona.given_names", True))),
+            scope, spec,
+            default_fields_of_interest + payment_fields_of_interest,
+            (
+                ("reg.remaining_owed", QueryOperators.lessequal, 0),
+            ),
+            payment_sort + default_sort,
+        ),
         n_("14_query_event_registration_participants"): Query(
-            QueryScope.registration, spec,
-            all_part_stati_column.split(",") +
-            ["persona.given_names", "persona.family_name"],
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
+            scope, spec,
+            all_part_stati_column.split(",") + default_fields_of_interest,
+            (
+                any_part_participant_constraint,
+            ),
+            default_sort,
+        ),
         n_("20_query_event_registration_non_members"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name"),
-            (("persona.is_member", QueryOperators.equal, False),),
-            default_sort),
+            scope, spec,
+            default_fields_of_interest + ("reg.is_member",),
+            (
+                ("reg.is_member", QueryOperators.equal, False),
+            ),
+            default_sort,
+        ),
         n_("30_query_event_registration_orga_notes"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "reg.orga_notes"),
-            (("reg.orga_notes", QueryOperators.nonempty, None),),
-            default_sort),
+            scope, spec,
+            default_fields_of_interest + ("reg.orga_notes"),
+            (
+                ("reg.orga_notes", QueryOperators.nonempty, None),
+            ),
+            default_sort,
+        ),
         n_("32_query_event_registration_notes"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "reg.notes"),
-            (("reg.notes", QueryOperators.nonempty, None),),
-            default_sort),
-        n_("40_query_event_registration_u18"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event.begin, 18)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("42_query_event_registration_u16"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event.begin, 16)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("44_query_event_registration_u14"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event.begin, 14)),),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
-        n_("50_query_event_registration_minors_no_consent"): Query(
-            QueryScope.registration, spec,
-            ("persona.given_names", "persona.family_name", "persona.birthday"),
-            (("persona.birthday", QueryOperators.greater,
-              deduct_years(event.begin, 18)),
-             ("reg.parental_agreement", QueryOperators.equal, False)),
-            (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True))),
+            scope, spec,
+            default_fields_of_interest + ("reg.notes",),
+            (
+                ("reg.notes", QueryOperators.nonempty, None),
+            ),
+            default_sort,
+        ),
         n_("60_query_dokuteam_course_picture"): Query(
-            QueryScope.registration, spec, dokuteam_course_picture_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),), default_sort),
+            scope, spec,
+            dokuteam_course_picture_fields_of_interest,
+            (
+                any_part_participant_constraint,
+            ),
+            default_sort,
+        ),
         n_("61_query_dokuteam_dokuforge"): Query(
-            QueryScope.registration, spec, dokuteam_dokuforge_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),
-             ("reg.list_consent", QueryOperators.equal, True)), default_sort),
+            scope, spec,
+            dokuteam_dokuforge_fields_of_interest,
+            (
+                any_part_participant_constraint,
+                ("reg.list_consent", QueryOperators.equal, True),  # TODO: why?
+            ),
+            default_sort,
+        ),
         n_("62_query_dokuteam_address_export"): Query(
-            QueryScope.registration, spec, dokuteam_address_fields_of_interest,
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),), default_sort),
+            scope, spec,
+            dokuteam_address_fields_of_interest,
+            (
+                any_part_participant_constraint,
+            ),
+            default_sort,
+        ),
     }
 
     return queries
@@ -167,90 +188,119 @@ def generate_event_course_default_queries(
         n_("50_query_dokuteam_courselist"): Query(
             QueryScope.event_course, spec,
             ("course.nr", "course.shortname", "course.title"),
-            ((takes_place, QueryOperators.equal, True),),
-            (("course.nr", True),)),
+            (
+                (takes_place, QueryOperators.equal, True),
+            ),
+            (
+                ("course.nr", True),
+            ),
+        ),
     }
 
     return queries
 
+_default_fields_of_interest = (
+    "personas.id", "given_names", "family_name",
+)
+
+_default_sort = (
+    ("family_name", True),
+    ("given_names", True),
+    ("personas.id", True),
+)
+
+_not_archived_constraint = ("is_archived", QueryOperators.equal, False)
 
 DEFAULT_QUERIES = {
-        QueryScope.all_cde_users: {
-            n_("00_query_cde_user_all"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("02_query_cde_members"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),
-                 ("is_member", QueryOperators.equal, True)),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("10_query_cde_user_trial_members"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),
-                 ("trial_member", QueryOperators.equal, True)),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("20_query_cde_user_expuls"): Query(
-                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "address",
-                 "address_supplement", "postal_code", "location", "country"),
-                (("is_archived", QueryOperators.equal, False),
-                 ("is_member", QueryOperators.equal, True),
-                 ("paper_expuls", QueryOperators.equal, True),
-                 ("address", QueryOperators.nonempty, None)),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.all_event_users: {
-            n_("00_query_event_user_all"): Query(
-                QueryScope.event_user, QueryScope.event_user.get_spec(),
-                ("personas.id", "given_names", "family_name", "birth_name"),
-                (("is_archived", QueryOperators.equal, False),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-            n_("10_query_event_user_minors"): Query(
-                QueryScope.event_user, QueryScope.event_user.get_spec(),
-                ("personas.id", "given_names", "family_name",
-                 "birthday"),
-                (("is_archived", QueryOperators.equal, False),
-                 ("birthday", QueryOperators.greater,
-                  deduct_years(now().date(), 18))),
-                (("birthday", True), ("family_name", True),
-                 ("given_names", True))),
-        },
-        QueryScope.all_core_users: {
-            n_("00_query_core_user_all"): Query(
-                QueryScope.core_user, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),),
-                (("family_name", True), ("given_names", True), ("personas.id", True))),
-            n_("10_query_core_any_admin"): Query(
-                QueryScope.core_user, QueryScope.core_user.get_spec(),
-                ("personas.id", "given_names", "family_name", *ADMIN_KEYS),
-                (("is_archived", QueryOperators.equal, False),
-                 (",".join(ADMIN_KEYS), QueryOperators.equal, True)),
-                (("family_name", True), ("given_names", True), ("personas.id", True))),
-        },
-        QueryScope.all_assembly_users: {
-            n_("00_query_assembly_user_all"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
-        QueryScope.all_ml_users: {
-            n_("00_query_ml_user_all"): Query(
-                QueryScope.persona, QueryScope.persona.get_spec(),
-                ("personas.id", "given_names", "family_name"),
-                (("is_archived", QueryOperators.equal, False),),
-                (("family_name", True), ("given_names", True),
-                 ("personas.id", True))),
-        },
+    QueryScope.all_cde_users: {
+        n_("00_query_cde_user_all"): Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+            ),
+            _default_sort,
+        ),
+        n_("02_query_cde_members"): Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+                ("is_member", QueryOperators.equal, True),
+            ),
+            _default_sort,
+        ),
+        n_("10_query_cde_user_trial_members"): Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+                ("trial_member", QueryOperators.equal, True),
+            ),
+            _default_sort,
+        ),
+        n_("20_query_cde_user_expuls"): Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            (
+                "personas.id", "given_names", "family_name", "address",
+                "address_supplement", "postal_code", "location", "country",
+            ),
+            (
+                _not_archived_constraint,
+                ("is_member", QueryOperators.equal, True),
+                ("paper_expuls", QueryOperators.equal, True),
+                ("address", QueryOperators.nonempty, None),
+            ),
+            _default_sort,
+        ),
+    },
+    QueryScope.all_event_users: {
+        n_("00_query_event_user_all"): Query(
+            QueryScope.event_user, QueryScope.event_user.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+            ),
+            _default_sort,
+        ),
+    },
+    QueryScope.all_core_users: {
+        n_("00_query_core_user_all"): Query(
+            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+            ),
+            _default_sort,
+        ),
+        n_("10_query_core_any_admin"): Query(
+            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            _default_fields_of_interest + tuple(ADMIN_KEYS),
+            (
+                _not_archived_constraint,
+                (",".join(ADMIN_KEYS), QueryOperators.equal, True),
+            ),
+            _default_sort,
+        ),
+    },
+    QueryScope.all_assembly_users: {
+        n_("00_query_assembly_user_all"): Query(
+            QueryScope.persona, QueryScope.persona.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+            ),
+            _default_sort,
+        ),
+    },
+    QueryScope.all_ml_users: {
+        n_("00_query_ml_user_all"): Query(
+            QueryScope.persona, QueryScope.persona.get_spec(),
+            _default_fields_of_interest,
+            (
+                _not_archived_constraint,
+            ),
+            _default_sort,
+        ),
+    },
 }
