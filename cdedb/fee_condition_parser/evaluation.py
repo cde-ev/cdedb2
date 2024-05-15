@@ -28,8 +28,10 @@ def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: Ab
         raise RuntimeError(" ".join(msgs))
 
 
-def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
+def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
     referenced_names = ReferencedNames()
+    if result is None:
+        return referenced_names
     if result.get_name() == "field":
         referenced_names.field_names.add(result[0])
     elif result.get_name() == "part":

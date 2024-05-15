@@ -401,7 +401,9 @@ class EventLowLevelBackend(AbstractBackend):
                                   ) -> dict[int, ReferencedNames]:
         """Retrieve a map of event fee id to collection of names referenced by it."""
         return {
-            fd['id']: get_referenced_names(fcp_parsing.parse(fd['condition']))
+            fd['id']: get_referenced_names(
+                fcp_parsing.parse(fd['condition']) if fd['condition'] else None,
+            )
             for fd in self.sql_select(
                 rs, "event.event_fees", ("id", "condition"), (event_id,),
                 entity_key="event_id")

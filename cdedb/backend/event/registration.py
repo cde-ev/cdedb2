@@ -1128,6 +1128,7 @@ class EventRegistrationBackend(EventBaseBackend):
             persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
             data['is_member'] = persona['is_member']
+            data['personalized_fees'] = {}
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
