@@ -39,7 +39,7 @@ from cdedb.common.fields import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 
@@ -1217,9 +1217,9 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         registration_id = affirm(vtypes.ID, registration_id)
         reg = self.get_registration(rs, registration_id)
-        if (not self.is_orga(rs, event_id=reg['event_id'])
-                and not self.is_admin(rs)):
+        if not self.is_orga(rs, event_id=reg['event_id']):
             raise PrivilegeError(n_("Not privileged."))
+        event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
 
         blockers = self.delete_registration_blockers(rs, registration_id)
@@ -1253,8 +1253,22 @@ class EventRegistrationBackend(EventBaseBackend):
                     rs, registration_id)
 
             if not blockers:
+                personalized_fee_ids = [
+                    e['fee_id'] for e in self.sql_select(
+                        rs, models.PersonalizedFee.database_table, ("fee_id",),
+                        (registration_id,), entity_key="registration_id",
+                    )
+                ]
+
                 ret *= self.sql_delete_one(
                     rs, "event.registrations", registration_id)
+
+                for fee_id in mixed_existence_sorter(personalized_fee_ids):
+                    self.event_log(
+                        rs, const.EventLogCodes.personalized_fee_amount_deleted,
+                        event_id=reg['event_id'], persona_id=reg['persona_id'],
+                        change_note=event.fees[fee_id].title,
+                    )
                 self.event_log(rs, const.EventLogCodes.registration_deleted,
                                reg['event_id'], persona_id=reg['persona_id'])
             else:
