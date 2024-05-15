@@ -2673,7 +2673,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-373.99;DB-1-9;Admin;Anton;01.04.18
+353.99;DB-1-9;Admin;Anton;01.04.18
 455.99;DB-5-1;Eventis;Emilia;01.04.18
 589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
@@ -2687,7 +2687,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-373.98;DB-1-9;Admin;Anton;01.04.18
+353.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 -100.00;DB-100-7;Abukara;Akira;01.04.18
@@ -2726,7 +2726,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 01.04.2018")
-        self.assertPresence("Bereits Bezahlt 573,98 €")
+        self.assertPresence("Bereits Bezahlt 553,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
@@ -2755,7 +2755,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             {
                 'persona_id': 1,
                 'code': const.EventLogCodes.registration_payment_received,
-                'change_note': "373,98 € am 01.04.2018 gezahlt.",
+                'change_note': "353,98 € am 01.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {

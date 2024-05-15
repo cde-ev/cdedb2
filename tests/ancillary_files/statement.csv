@@ -8,8 +8,8 @@ Bezeichnung Auftragskonto;IBAN Auftragskonto;BIC Auftragskonto;Bankname Auftrags
 8068900;DE26370205000008068900;BFSWDE33XXX;Bank für Sozialwirtschaft;24.12.2018;24.12.2018;Garcia Generalis;;;Dauerauftragsgutschr;DB-7-8, Garci Generalis;2,50;EUR;;;;;;
 8068900;DE26370205000008068900;BFSWDE33XXX;Bank für Sozialwirtschaft;25.12.2018;25.12.2018;Berta Beispiel;;;Überweisungsgutschr.;DB-2-7, Beispiel, Bertalotta;5,00;EUR;;;;;;
 8068900;DE26370205000008068900;BFSWDE33XXX;Bank für Sozialwirtschaft;26.12.2018;26.12.2018;Anton Administrator;;;Überweisungsgutschr.;DB 1-9;10,00;EUR;;;;;;
-8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;27.12.2018;27.12.2018;Garcia Generalis;;;Überweisungsgutschr.;Garcia G. Generalis, db 7 8;534,48;EUR;;;;;;
-8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;28.12.2018;28.12.2018;Anton Administrator;;;Überweisungsgutschr.;Anton Armin A. Administrator, Grosse Testakademie 2222, DB-1-9;373,99;EUR;;;;;;
+8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;27.12.2018;27.12.2018;Garcia Generalis;;;Überweisungsgutschr.;Garcia G. Generalis, db 7 8;504,48;EUR;;;;;;
+8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;28.12.2018;28.12.2018;Anton Administrator;;;Überweisungsgutschr.;Anton Armin A. Administrator, Grosse Testakademie 2222, DB-1-9;353,99;EUR;;;;;;
 8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;29.12.2018;29.12.2018;Anton Administrator;;;Überweisungsauftrag;KL-Erstattung TestAka, Anton Armin A. Administrator;-584,49;EUR;;;;;;
 8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;30.12.2018;30.12.2018;;;;Abschluss;KONTOFUEHRUNGSGEBUEHREN;-52,50;EUR;;;;;;
 8068901;DE96370205000008068901;BFSWDE33XXX;Bank für Sozialwirtschaft;31.12.2018;31.12.2018;;;;Abschluss;Gebührenpfl. Posten. 206 Genutzte Freiposten. 300;-18,54;EUR;;;;;;
