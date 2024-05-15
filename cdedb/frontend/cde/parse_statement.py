@@ -139,10 +139,12 @@ class PostingPatterns:
 class ReferencePatterns:
     """Common patterns for references belonging to specific types of transactions."""
 
-    event_fee = re.compile(r"Teiln(ahme|ehmer)[-\s]*(beitrag)?", flags=re.I)
+    event_fee = re.compile(r"(Teiln(ahme|ehmer)|TN)[-\s]*(beitrag)?", flags=re.I)
 
     event_fee_refund = re.compile(
-        r"Erstattung (Teilnahmebeitrag|(Erste|Zweite) Rate|Anzahlung)", flags=re.I)
+        r"Erstattung ((Teilnahme|TN-?)beitrag|(Erste|Zweite) Rate|Anzahlung)",
+        flags=re.I,
+    )
 
     event_fee_instructor_refund = re.compile(r"KL[-\s]Erstattung", flags=re.I)
 
