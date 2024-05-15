@@ -385,6 +385,8 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
+    id: vtypes.ProtoID = dataclasses.field(metadata={'creation_exclude': True})
+
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata={'validation_exclude': True},
     )
@@ -420,7 +422,6 @@ class EventFee(EventDataclass):
         """
         params = (entities,)
         return query, params
-
 
     def is_conditional(self) -> bool:
         return self.amount is not None and self.condition is not None

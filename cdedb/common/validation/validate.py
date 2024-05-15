@@ -2741,11 +2741,11 @@ _create_optional_mapping_validator(EventFee, EventFeeSetter)
 @_create_dataclass_validator(models_event.EventFee, EventFee)
 def _event_fee(
         val: Any, argname: str, *,
-        event: models_event.Event,
+        event: CdEDBObject,
         **kwargs: Any,
 ) -> EventFee:
     errs = ValidationSummary()
-    current = event.fees.get(val['id']) if val['id'] > 0 else None
+    current = event['fees'].get(val.get('id'))
     if current is not None:
         if current.amount is None or current.condition is None:
             if val.get('amount') is not None:
@@ -2775,7 +2775,7 @@ def _event_fee(
 @_add_typed_validator
 def _event_fee_condition(
     val: Any, argname: str = "event_fee_condition", *,
-    event: models_event.Event,
+    event: CdEDBObject,
     questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
     **kwargs: Any,
 ) -> EventFeeCondition:
@@ -2788,12 +2788,12 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f.field_name for f in event.fields.values()
-        if f.association == const.FieldAssociations.registration
-           and f.kind == const.FieldDatatypes.bool
-           and f.id not in additional_questionnaire_fields
+        f['field_name'] for f in event.get('fields', {}).values()
+        if f['association'] == const.FieldAssociations.registration
+           and f['kind'] == const.FieldDatatypes.bool
+           and f['id'] not in additional_questionnaire_fields
     }
-    part_names = {p.shortname for p in event.parts.values()}
+    part_names = {p['shortname'] for p in event['parts'].values()}
 
     try:
         parse_result = fcp_parsing.parse(val)
