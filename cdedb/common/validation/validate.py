@@ -2380,10 +2380,11 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
+                val = _ALL_TYPED[atype](
+                    val, argname, creation=creation, id_=anid, **kwargs)
             else:
                 val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
-                    val, argname, creation=creation, **kwargs)
+                    val, argname, creation=creation, id_=anid, **kwargs)
             ret[anid] = val
 
     if errs:
@@ -2741,13 +2742,14 @@ _create_optional_mapping_validator(EventFee, EventFeeSetter)
 @_create_dataclass_validator(models_event.EventFee, EventFee)
 def _event_fee(
         val: Any, argname: str, *,
+        id_: ProtoID,
         event: CdEDBObject,
         **kwargs: Any,
 ) -> EventFee:
     errs = ValidationSummary()
-    current = event['fees'].get(val.get('id'))
+    current = event['fees'].get(id_)
     if current is not None:
-        if current.amount is None or current.condition is None:
+        if current['amount'] is None or current['condition'] is None:
             if val.get('amount') is not None:
                 errs.append(ValueError(
                     'amount', n_("Cannot set amount for personalized fee.")))
@@ -2791,7 +2793,7 @@ def _event_fee_condition(
         f['field_name'] for f in event.get('fields', {}).values()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
-           and f['id'] not in additional_questionnaire_fields
+           and f.get('id') not in additional_questionnaire_fields
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 

@@ -385,7 +385,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    id: vtypes.ProtoID = dataclasses.field(metadata={'creation_exclude': True})
+    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
 
     event: Event = dataclasses.field(
         init=False, compare=False, repr=False, metadata={'validation_exclude': True},
@@ -402,9 +402,9 @@ class EventFee(EventDataclass):
     condition: Optional[vtypes.EventFeeCondition]
     amount: Optional[decimal.Decimal]
     amount_min: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'database_exclude': True})
+        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
     amount_max: Optional[decimal.Decimal] = dataclasses.field(
-        default=None, metadata={'database_exclude': True})
+        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
 
     @classmethod
     def get_select_query(cls, entities: Collection[int],

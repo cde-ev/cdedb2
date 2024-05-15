@@ -652,11 +652,10 @@ class EventEventMixin(EventBaseFrontend):
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
                       fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
-        data['id'] = fee_id or -1
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
-            rs, vtypes.EventFee, data, creation=fee_id is None,
-            event=rs.ambience['event'], questionnaire=questionnaire,
+            rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
+            event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
         )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
