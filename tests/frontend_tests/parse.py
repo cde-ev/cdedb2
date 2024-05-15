@@ -247,6 +247,15 @@ class TestParseFrontend(FrontendTest):
 
         self.check_dict(
             result[0],
+            amount_german="-584,49",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            transaction_date="29.12.2018",
+            category_old="TestAka",
+        )
+        self.check_dict(
+            result[1],
             amount_german="373,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -255,7 +264,7 @@ class TestParseFrontend(FrontendTest):
             category_old="TestAka",
         )
         self.check_dict(
-            result[1],
+            result[2],
             amount_german="534,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
@@ -264,7 +273,7 @@ class TestParseFrontend(FrontendTest):
             category_old="TestAka",
         )
         self.check_dict(
-            result[2],
+            result[3],
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -273,7 +282,7 @@ class TestParseFrontend(FrontendTest):
             category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[3],
+            result[4],
             amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
@@ -282,7 +291,7 @@ class TestParseFrontend(FrontendTest):
             category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[4],
+            result[5],
             amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
@@ -291,7 +300,7 @@ class TestParseFrontend(FrontendTest):
             category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[5],
+            result[6],
             amount_german="2,50",
             cdedbid="DB-4-3",
             family_name="Dino",
@@ -300,7 +309,7 @@ class TestParseFrontend(FrontendTest):
             category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[6],
+            result[7],
             amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
@@ -309,7 +318,7 @@ class TestParseFrontend(FrontendTest):
             category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[7],
+            result[8],
             amount_german="466,49",
             cdedbid="DB-5-1",
             family_name="Eventis",
@@ -440,13 +449,13 @@ class TestParseFrontend(FrontendTest):
             result[2],
             transaction_date="29.12.2018",
             amount_german="-584,49",
-            cdedbid="",
-            family_name="",
-            given_names="",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
             category_old="TestAka",
             account_nr="8068901",
             account_holder="Anton Administrator",
-            In_reference="KL-Erstattung TestAka, Anton Armin A. Administrator",
+            In_reference="KL-Erstattung TestAka, Anton Armin A. Administrator (DB-1-9)",
         )
         self.check_dict(
             result[3],

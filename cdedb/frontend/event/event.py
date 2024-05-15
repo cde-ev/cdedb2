@@ -616,11 +616,11 @@ class EventEventMixin(EventBaseFrontend):
 
         incomplete_paid = self._get_payment_query(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
-            ("reg.amount_paid", QueryOperators.greater, 0.00),
+            ("reg.amount_paid", QueryOperators.unequal, 0),
         ])
         not_paid = self._get_payment_query(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
-            ("reg.amount_paid", QueryOperators.less, 0.01),
+            ("reg.amount_paid", QueryOperators.equal, 0),
         ])
         surplus = self._get_payment_query(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.less, 0.00),
