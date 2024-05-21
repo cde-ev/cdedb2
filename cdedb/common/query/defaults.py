@@ -109,7 +109,7 @@ def generate_event_registration_default_queries(
         ),
         n_("14_query_event_registration_participants"): Query(
             scope, spec,
-            all_part_stati_column.split(",") + default_fields_of_interest,
+            tuple(all_part_stati_column.split(",")) + default_fields_of_interest,
             (
                 any_part_participant_constraint,
             ),
@@ -125,7 +125,7 @@ def generate_event_registration_default_queries(
         ),
         n_("30_query_event_registration_orga_notes"): Query(
             scope, spec,
-            default_fields_of_interest + ("reg.orga_notes"),
+            default_fields_of_interest + ("reg.orga_notes",),
             (
                 ("reg.orga_notes", QueryOperators.nonempty, None),
             ),
