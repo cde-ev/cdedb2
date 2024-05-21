@@ -12,7 +12,6 @@ about the event to be created. They can be obtained by calling the respective fu
 
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
-from cdedb.common import deduct_years, now
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpec
 from cdedb.common.roles import ADMIN_KEYS
@@ -198,6 +197,7 @@ def generate_event_course_default_queries(
     }
 
     return queries
+
 
 _default_fields_of_interest = (
     "personas.id", "given_names", "family_name",
