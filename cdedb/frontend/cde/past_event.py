@@ -19,7 +19,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -28,7 +28,7 @@ from cdedb.common.validation.validate import (
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
-    check_validation as check, csv_output,
+    check_validation as check,
 )
 
 COURSESEARCH_DEFAULTS = {
