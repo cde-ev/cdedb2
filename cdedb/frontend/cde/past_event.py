@@ -165,28 +165,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
-    @access("cde_admin")
-    def download_past_event_participantlist(self, rs: RequestState,
-                                            pevent_id: int) -> Response:
-        """Provide a download of a participant list for a past event."""
-        scope = QueryScope.past_event_user
-        query = Query(
-            scope, scope.get_spec(),
-            ("personas.id", "given_names", "display_name", "family_name", "address",
-             "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id)],
-            (("family_name", True), ("given_names", True),
-             ("personas.id", True)))
-
-        result = self.cdeproxy.submit_general_query(rs, query)
-        fields: list[str] = []
-        for csvfield in query.fields_of_interest:
-            fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
-        return self.send_csv_file(
-            rs, data=csv_data, inline=False,
-            filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
-
     @access("member", "cde_admin")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
