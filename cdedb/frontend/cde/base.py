@@ -203,12 +203,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
                         ('phone', ValueError(n_("Wrong formatting."))))
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
+        near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
         if pl and pu:
             defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
         elif pl:
             defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} 99999"
         elif pu:
             defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
+        elif near_pc:
+            defaults['qop_postal_code,postal_code2'] = QueryOperators.oneof
+            defaults['qval_postal_code,postal_code2'] = " ".join(
+                self.cdeproxy.get_nearby_postal_codes(rs, near_pc, 15))
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         scope = QueryScope.cde_member

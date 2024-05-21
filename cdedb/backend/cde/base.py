@@ -594,3 +594,26 @@ class CdEBaseBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
+
+    @access("searchable")
+    def get_nearby_postal_codes(self, rs: RequestState, postal_code: str, limit: int,
+                                ) -> list[str]:
+        postal_code = affirm(str, postal_code)
+
+        q = """SELECT earth FROM core.postal_code_locations WHERE postal_code = %s"""
+        data = self.query_all(rs, q, (postal_code,))
+
+        if not data:
+            return []
+        earth_pos = data[0]['earth']
+
+        q = """
+            SELECT postal_code
+            FROM core.postal_code_locations
+            WHERE earth_distance(earth, %s) / 1000 < %s
+        """
+        return [
+            e['postal_code'] for e in self.query_all(
+                rs, q, (earth_pos, limit),
+            )
+        ]
