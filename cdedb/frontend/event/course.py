@@ -6,8 +6,10 @@ endpoints related to managing an events courses, participants' course choices
 and courses' attendees.
 """
 
+import collections
 from collections import OrderedDict
 from collections.abc import Collection
+from dataclasses import dataclass
 from typing import Optional, cast
 
 from werkzeug import Response
@@ -668,54 +670,45 @@ class EventCourseMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        choice_counts = {
-            course_id: {
-                (track_id, i): sum(
-                    1 for reg in registrations.values()
-                    if (len(reg['tracks'][track_id]['choices']) > i
-                        and reg['tracks'][track_id]['choices'][i] == course_id
-                        and (reg['parts'][tracks[track_id].part_id]['status']
-                             in include_states)))
-                for track_id, track in tracks.items()
-                for i in range(track.num_choices)
-            }
-            for course_id in course_ids
-        }
-        # Helper for calculation of assign_counts
-        involved_attendees_lists = {
-            course_id: {
-                track_id: [
-                    reg for reg in registrations.values()
-                    if reg['tracks'][track_id]['course_id'] == course_id
-                    and reg['parts'][track.part_id]['status'].is_involved()]
-                for track_id, track in tracks.items()
-            }
-            for course_id in course_ids
-        }
-        # Tuple of (number of involved learners,
-        #           number of involved instructors,
-        #           number of learners filtered by status,
-        #           number of instructors filtered by status)
-        # for each course in each track
+        # Generate choice counts and helper lists for attendee counts
+        choice_counts = {(course_id, track_id): [0] * track.num_choices
+                         for track_id, track in tracks.items()
+                         for course_id in course_ids}
+        involved_attendees_lists = collections.defaultdict(list)
+        for reg in registrations.values():
+            for track_id, track in tracks.items():
+                if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
+                    for i, choice in enumerate(reg['tracks'][track_id]['choices']):
+                        choice_counts[(choice, track_id)][i] += 1
+                course_id = reg['tracks'][track_id]['course_id']
+                if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
+                        and course_id is not None):
+                    involved_attendees_lists[(course_id, track_id)].append(reg)
+
+        @dataclass(frozen=True)
+        class CourseTrackAssignCounts:
+            num_involved_learners: int
+            num_involved_instructors: int
+            num_learners_filtered: int
+            num_instructors_filtered: int
+
         assign_counts = {
-            course_id: {
-                track_id: (
-                    sum(1 for reg in course_track_p_data
-                        if reg['tracks'][track_id]['course_instructor'] != course_id),
-                    sum(1 for reg in course_track_p_data
-                        if reg['tracks'][track_id]['course_instructor'] == course_id),
-                    sum(1 for reg in course_track_p_data
-                        if reg['tracks'][track_id]['course_instructor'] != course_id
-                        and (reg['parts'][tracks[track_id].part_id]['status']
-                             in include_states)),
-                    sum(1 for reg in course_track_p_data
-                        if reg['tracks'][track_id]['course_instructor'] == course_id
-                        and (reg['parts'][tracks[track_id].part_id]['status']
+            (course_id, track_id): CourseTrackAssignCounts(
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] != course_id),
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] == course_id),
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] != course_id
+                    and (reg['parts'][tracks[track_id].part_id]['status']
                             in include_states)),
-                )
-                for track_id, course_track_p_data in course_p_data.items()
-            }
-            for course_id, course_p_data in involved_attendees_lists.items()
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] == course_id
+                    and (reg['parts'][tracks[track_id].part_id]['status']
+                        in include_states)),
+            )
+            for track_id in tracks
+            for course_id in course_ids
         }
 
         return self.render(rs, "course/course_stats", {
