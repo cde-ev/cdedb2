@@ -16,7 +16,7 @@ build: build-runtime
 .PHONY: clean
 #: Reset state of development environment (deletes volumes).
 clean:
-	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml --volumes down
+	$(DOCKER-COMPOSE) --file docker-compose-dev.yaml down --volumes
 
 .PHONY: start
 #: Start up the development environment.
@@ -41,7 +41,7 @@ build-runtime:
 .PHONY: clean-runtime
 #: Reset state of runtime environment (deletes volumes).
 clean-runtime:
-	$(DOCKER-COMPOSE) --file docker-compose-run.yaml --volumes down
+	$(DOCKER-COMPOSE) --file docker-compose-run.yaml down --volumes
 
 .PHONY: start-runtime
 #: Start up the runtime environment.
