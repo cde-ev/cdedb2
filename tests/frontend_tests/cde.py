@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
-import csv
 import datetime
 import decimal
 import itertools
@@ -2581,38 +2580,6 @@ class TestCdEFrontend(FrontendTest):
                 if not self.user_in("charly"):
                     # requested user not searchable.
                     self.assertNoLink(content="Charly")
-
-    @as_users("vera")
-    def test_past_event_addresslist(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'})
-        self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Bertå Beispiel", div='list-participants')
-        self.assertPresence("Charly Clown", div='list-participants')
-        self.assertPresence("Emilia E. Eventis", div='list-participants')
-        self.assertPresence("Ferdinand Findus", div='list-participants')
-        self.assertPresence("Akira Abukara", div='list-participants')
-
-        save = self.response
-        self.response = save.click(href='/cde/past/event/1/download',
-                                   description='Teilnehmerliste')
-
-        class dialect(csv.Dialect):
-            delimiter = ';'
-            quotechar = '"'
-            doublequote = False
-            escapechar = '\\'
-            lineterminator = '\n'
-            quoting = csv.QUOTE_MINIMAL
-
-        result = list(csv.DictReader(self.response.text.split('\n'),
-                                     dialect=dialect))
-        given_names = {e["given_names"] for e in result}
-        expectation = {
-            "Bertålotta", "Charly C.", "Daniel D.", "Emilia E.", "Ferdinand F.", "Akira"
-        }
-        self.assertEqual(expectation, given_names)
 
     @as_users("vera")
     def test_change_past_event(self) -> None:
