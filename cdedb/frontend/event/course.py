@@ -330,8 +330,8 @@ class EventCourseMixin(EventBaseFrontend):
             problems = []
             for course_id, course in courses.items():
                 problem_tracks = [
-                    track_id
-                    for track_id in event.tracks
+                    track
+                    for track_id, track in event.tracks.items()
                     if test(course, track_id)]
                 if problem_tracks:
                     problems.append((course_id, problem_tracks))
@@ -366,9 +366,9 @@ class EventCourseMixin(EventBaseFrontend):
             problems = []
             for reg_id, reg in registrations.items():
                 problem_tracks = [
-                    track_id
+                    track
                     for part_id, part in event.parts.items()
-                    for track_id in part.tracks
+                    for track_id, track in part.tracks.items()
                     if test(reg, reg['parts'][part_id],
                             reg['tracks'][track_id])]
                 if problem_tracks:
