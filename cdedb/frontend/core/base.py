@@ -1341,7 +1341,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Send a possibly anonymous message."""
         if to is not None and to not in self.conf["CONTACT_ADDRESSES"]:
             rs.append_validation_error(("to", ValueError(n_("Invalid choice."))))
-        anonymous_from = None
+        anonymous_from = False
         if anonymous is not None:
             if anonymous == "yes":
                 anonymous_from = True
