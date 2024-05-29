@@ -29,9 +29,14 @@
     </p>
     <form action="{{ cdedblink('core/contact') }}" method="POST" id="contactform" class="form-horizontal">
         {{ util.anti_csrf_token('core/contact') }}
-        {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), info=gettext("Descriptions and Membership of these teams can be found on the %(website)s.")|format(
-                                               website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}
-        {{ util.form_input_checkbox(name="anonymous_from", label=gettext("Send message anonymously")) }}
+        {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), nulloption="",
+                                  info=gettext("Descriptions and Membership of these teams can be found on the %(website)s.")|format(
+                                      website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}
+        {{ util.form_input_select(name="anonymous", label=gettext("Anonymity"), nulloption="",
+                                  entries=[
+                                      ("yes", gettext("Send message anonymously.")),
+                                      ("no", gettext("Tell them it was me.")),
+                                  ]) }}
         {{ util.form_input_text(name="subject", label=gettext("Subject")) }}
         {{ util.form_input_textarea(name="msg", label=gettext("Message"), rows=10, info=gettext("Please describe your concerns as well as what you would like to be done about them.")) }}
         <div>

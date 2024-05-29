@@ -3090,10 +3090,20 @@ class TestCoreFrontend(FrontendTest):
         with self.switch_user("emilia"):
             self.traverse("Kontakt")
             f = self.response.forms['contactform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError('to', "Darf nicht leer sein.")
+            self.assertValidationError('anonymous', "Darf nicht leer sein.")
+            self.assertValidationError('subject', "Darf nicht leer sein.")
+            self.assertValidationError('msg', "Darf nicht leer sein.")
+
+            f['to'].force_value("test@example.cde")
+            self.submit(f, check_notification=False)
+            self.assertValidationError('to', "Unzulässige Auswahl.")
+
             for recipient in self.conf["CONTACT_ADDRESSES"]:
                 f['to'] = recipient
             f['subject'] = subject = "Ich habe ein Problem!"
-            f['anonymous_from'] = False
+            f['anonymous'] = "no"
             f['msg'] = msg = """Es gab viel zu wenig Rum-Trauben-Nuss-Schokolade
 auf der letzten Akademie, das geht so nicht.
 
@@ -3110,7 +3120,7 @@ LG Emilia
             self.assertIn(subject, receipt)
             self.assertIn("Anonym: Nein", receipt)
 
-            f['anonymous_from'] = True
+            f['anonymous'] = "yes"
             f['msg'] = msg_anonymous = "\n".join(msg.split("\n")[:-2])
             self.submit(f)
 

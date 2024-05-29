@@ -1335,11 +1335,22 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "contact", {"addresses": addresses})
 
     @access("persona", modi={"POST"})
-    @REQUESTdata("to", "anonymous_from", "subject", "msg")
-    def contact(self, rs: RequestState, to: str, anonymous_from: bool,
-                subject: str, msg: str) -> Response:
+    @REQUESTdata("to", "anonymous", "subject", "msg")
+    def contact(self, rs: RequestState, to: str, anonymous: str, subject: str,
+                msg: str) -> Response:
         """Send a possibly anonymous message."""
-        if rs.has_validation_errors() or to not in self.conf["CONTACT_ADDRESSES"]:
+        if to is not None and to not in self.conf["CONTACT_ADDRESSES"]:
+            rs.append_validation_error(("to", ValueError(n_("Invalid choice."))))
+        anonymous_from = None
+        if anonymous is not None:
+            if anonymous == "yes":
+                anonymous_from = True
+            elif anonymous == "no":
+                anonymous_from = False
+            else:
+                rs.append_validation_error((
+                    "anonymous", ValueError(n_("Invalid choice."))))
+        if rs.has_validation_errors():
             return self.contact_form(rs)
         assert rs.user.persona_id is not None and rs.user.username is not None
 
