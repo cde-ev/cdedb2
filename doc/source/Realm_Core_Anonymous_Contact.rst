@@ -28,8 +28,9 @@ the other interests. Therefore we store the identity of the anonymous sender in 
 encrypted form, allowing the recipients of the anonymous message to retrieve this data
 in order to realise the other two interests.
 
-Anonymity will not be violated in practice, in order to respond to a message, however
-the act of holding an abuser accountable purposely violates the anonymity of the sender.
+In order to respond to a message, the anonymity of the sender is not be violated
+(in practice). In contrast the act of holding an abuser accountable purposely violates
+this anonymity.
 
 Accountability
 ^^^^^^^^^^^^^^
@@ -66,7 +67,7 @@ Definition of Terms
   of 32 random Bytes encoded as 44 urlsafe Base64 characters (including padding).
   Internally half of the key is actually used for message signing, rather than
   encryption, meaning that the encryption uses 16 Bytes or 128 Bit.
-- The ``secret`` refers to the string of 60 urlsage Base64 characters that is the
+- The ``secret`` refers to the string of 60 urlsafe Base64 characters that is the
   concatenation of the ``message id`` and the ``encryption key``. The secret is sent
   to the recipients of an anonymous message and is required to respond to a message
   or to rotate it's encryption. It can be split into its parts by taking the first
@@ -109,7 +110,7 @@ Potential Actors and Threats
 
   However core admins may view the Core Log, where every sent anonymous message and
   every reply is logged. However the only information in this log is the time at which
-  an anonymous possibilitymessage was sent and the recipient.
+  an anonymous message was sent and the recipient.
   For replies the user sending the reply is logged along with the time of the reply and
   the original recipient.
 
@@ -154,7 +155,7 @@ Potential Actors and Threats
         information via the frontend (like the identity of the sender, subject of the
         message or content of the message).
       - This is mitigated by logging all replies, and sending a copy of each reply
-        to the actual recipients, so that such unprivileged responsed do not go
+        to the actual recipients, so that such unprivileged responses do not go
         unnoticed.
       - The reply will also contain the name and username of the responder,
         meaning the original sender should be able to see if they received an invalid
@@ -239,8 +240,12 @@ Sidechannel Attacks
   admin to delete the compromised message. Changes to mailinglist subscribers via the
   frontend are logged.
 
-- **Interception of unencrypted emails**:
+- **Interception of email**:
 
   Since most recipients are mailinglists (and even if they weren't), we cannot send the
   actual mails in an encrypted form. Interception of emails may leak both a secret and
   the actual message contents to the intercepting party.
+
+  Similar access to the full messages is possible via administrative access to CdE mail
+  infrastructure, i.e. the `mail2`-vm and the `mailman`/`postorius` services which keep
+  records of all mails sent (to a cde mailinglist).
