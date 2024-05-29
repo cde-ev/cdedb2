@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-05-29 14:53+0200\n"
+"POT-Creation-Date: 2024-05-29 15:21+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -1941,7 +1941,7 @@ msgstr "Land"
 #: cdedb/frontend/templates/web/ml/base.tmpl:36
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
-#: cdedb/frontend/templates/web/util.tmpl:979
+#: cdedb/frontend/templates/web/util.tmpl:985
 msgid "Mailinglists"
 msgstr "Mailinglisten"
 
@@ -1961,7 +1961,7 @@ msgstr "Bereich"
 #: cdedb/frontend/templates/web/event/base.tmpl:137
 #: cdedb/frontend/templates/web/event/event/index.tmpl:5
 #: cdedb/frontend/templates/web/event/event/index.tmpl:10
-#: cdedb/frontend/templates/web/util.tmpl:978
+#: cdedb/frontend/templates/web/util.tmpl:984
 msgid "Events"
 msgstr "Veranstaltungen"
 
@@ -1971,13 +1971,13 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:5
 #: cdedb/frontend/templates/web/base.tmpl:169
-#: cdedb/frontend/templates/web/util.tmpl:980
+#: cdedb/frontend/templates/web/util.tmpl:986
 msgid "Assemblies"
 msgstr "Versammlungen"
 
 #: cdedb/common/query/__init__.py:418
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:25
-#: cdedb/frontend/templates/web/util.tmpl:977
+#: cdedb/frontend/templates/web/util.tmpl:983
 msgid "cde_realm"
 msgstr "CdE"
 
@@ -6935,7 +6935,7 @@ msgstr "Benutzer-Administration"
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:183
 #: cdedb/frontend/templates/web/ml/base.tmpl:121
-#: cdedb/frontend/templates/web/util.tmpl:1001
+#: cdedb/frontend/templates/web/util.tmpl:1007
 msgid "Auditor"
 msgstr "Kassenprüfer"
 
@@ -7641,7 +7641,7 @@ msgid "Line %(lineno)s"
 msgstr "Zeile %(lineno)s"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:95
-#: cdedb/frontend/templates/web/util.tmpl:964
+#: cdedb/frontend/templates/web/util.tmpl:970
 msgid "born"
 msgstr "geb. am"
 
@@ -9793,42 +9793,42 @@ msgstr ""
 "bestötigt werden."
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
-#: cdedb/frontend/templates/web/util.tmpl:993
+#: cdedb/frontend/templates/web/util.tmpl:999
 msgid "Meta-Admin"
 msgstr "Meta-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:994
+#: cdedb/frontend/templates/web/util.tmpl:1000
 msgid "Core-Admin"
 msgstr "Core-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
-#: cdedb/frontend/templates/web/util.tmpl:995
+#: cdedb/frontend/templates/web/util.tmpl:1001
 msgid "CdE-Admin"
 msgstr "CdE-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
-#: cdedb/frontend/templates/web/util.tmpl:996
+#: cdedb/frontend/templates/web/util.tmpl:1002
 msgid "Finance-Admin"
 msgstr "Finanz-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
-#: cdedb/frontend/templates/web/util.tmpl:997
+#: cdedb/frontend/templates/web/util.tmpl:1003
 msgid "Event-Admin"
 msgstr "Veranstaltungs-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:43
-#: cdedb/frontend/templates/web/util.tmpl:998
+#: cdedb/frontend/templates/web/util.tmpl:1004
 msgid "Mailinglist-Admin"
 msgstr "Mailinglisten-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
-#: cdedb/frontend/templates/web/util.tmpl:999
+#: cdedb/frontend/templates/web/util.tmpl:1005
 msgid "CdElokal-Admin"
 msgstr "CdElokal-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:47
-#: cdedb/frontend/templates/web/util.tmpl:1000
+#: cdedb/frontend/templates/web/util.tmpl:1006
 msgid "Assembly-Admin"
 msgstr "Versammlungs-Admin"
 
@@ -9931,30 +9931,41 @@ msgstr "Verifizierungs-E-Mail abschicken"
 msgid "Contact Form"
 msgstr "Kontaktformular"
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:22
-#, python-format
+#: cdedb/frontend/templates/web/core/contact.tmpl:16
+msgid "Hint"
+msgstr "Hinweis"
+
+#: cdedb/frontend/templates/web/core/contact.tmpl:18
 msgid ""
-"This form provides an alternative avenue to direct email to contact various "
-"teams in the CdE. In particular, it allows to do so anonymously, while still "
-"giving them the option to reply. You will receive a confirmation of your "
-"message via email. A complete list of teams can be found on the %(website)s."
+"This tool provides an alternative way of contacting various teams in the "
+"CdE. This can be done anonymously or in your own name. When used to send an "
+"anonymous message, the CdEDB allows the contacted team to reply to your "
+"message without discovering your identity."
 msgstr ""
-"Über dieses Formular kannst du verschiedene Teams des CdE erreichen, ohne "
-"ihnen eine Mail schreiben zu müssen. Insbeosndere erlaubt es dir eine "
-"anonyme Nachricht zu schicken, auf die dennoch geantwortet werden kann. Du "
-"erhältst eine Empfangsbestätigung zu deiner Nachricht per Mail. Auf der "
-"%(website)s findest du eine vollständige Auflistung aller Teams."
+"Dieses Tool stellt eine Alternative dar, um Kontakt mit verschiedenen Teams "
+"im Verein aufzunehmen. Dies kann anonym oder mit Namensnennung geschehen, "
+"wobei die Datenbank es den kontaktierten Teams ermöglicht, auch anonyme "
+"Kontaktaufnahmen zu beantworten."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:22
-#: cdedb/frontend/templates/web/core/contact.tmpl:34
-msgid "Website"
-msgstr "Website"
+#: cdedb/frontend/templates/web/core/contact.tmpl:27
+msgid ""
+"General feedback and improvement suggestions on any topic may be adressed to "
+"the \"Feedback-Team\". For complaints about or issues with specific "
+"individuals address your message to the board (\"Vorstand\") or to the "
+"\"Beschwerdestelle für Probleme mit dem Vorstand\", if the individual in "
+"question is themself a part of the board (\"Vorstand\")."
+msgstr ""
+"Insbesondere können Feedback und Verbesserungsvorschläge zu jeglichen Themen "
+"im Verein an das \"Feedback-Team\" adressiert werden. Für personenbezogene "
+"Beschwerden zuständig ist derzeit der \"Vorstand\" beziehungsweise, falls "
+"der Vorstand selbst betroffen ist, die \"Beschwerdestelle für Probleme mit "
+"dem Vorstand\". Wähle dafür bitte im Feld unten die entsprechende Stelle aus."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:32
+#: cdedb/frontend/templates/web/core/contact.tmpl:39
 msgid "To"
 msgstr "An"
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:33
+#: cdedb/frontend/templates/web/core/contact.tmpl:40
 #, python-format
 msgid ""
 "Descriptions and Membership of these teams can be found on the %(website)s."
@@ -9962,27 +9973,31 @@ msgstr ""
 "Auf der %(website)s findest du weitere Informationen sowie die "
 "Mitgliederlisten dieser Teams."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:35
+#: cdedb/frontend/templates/web/core/contact.tmpl:41
+msgid "Website"
+msgstr "Website"
+
+#: cdedb/frontend/templates/web/core/contact.tmpl:42
 msgid "Anonymity"
 msgstr "Anonymität"
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:37
+#: cdedb/frontend/templates/web/core/contact.tmpl:44
 msgid "Send message anonymously."
 msgstr "Nachricht anonym verschicken."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:38
+#: cdedb/frontend/templates/web/core/contact.tmpl:45
 msgid "Tell them it was me."
 msgstr "Mich als Abesender anzeigen."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:40
+#: cdedb/frontend/templates/web/core/contact.tmpl:47
 msgid "Subject"
 msgstr "Betreff"
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:41
+#: cdedb/frontend/templates/web/core/contact.tmpl:48
 msgid "Message"
 msgstr "Nachricht"
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:41
+#: cdedb/frontend/templates/web/core/contact.tmpl:49
 msgid ""
 "Please describe your concerns as well as what you would like to be done "
 "about them."
@@ -9990,10 +10005,14 @@ msgstr ""
 "Bitte beschreibe dein Anliegen, sowie was wir tun können um dir dabei zu "
 "helfen."
 
-#: cdedb/frontend/templates/web/core/contact.tmpl:43
+#: cdedb/frontend/templates/web/core/contact.tmpl:51
 #: cdedb/frontend/templates/web/core/contact_reply.tmpl:26
 msgid "Send"
 msgstr "Abschicken"
+
+#: cdedb/frontend/templates/web/core/contact.tmpl:52
+msgid "A copy of this message wil be sent to you."
+msgstr "Du wirst eine Kopie dieser Nachricht erhalten."
 
 #: cdedb/frontend/templates/web/core/contact_reply.tmpl:7
 #: cdedb/frontend/templates/web/core/contact_reply.tmpl:13
@@ -15811,12 +15830,12 @@ msgid "First"
 msgstr "Erste"
 
 #: cdedb/frontend/templates/web/logging.tmpl:173
-#: cdedb/frontend/templates/web/util.tmpl:1016
+#: cdedb/frontend/templates/web/util.tmpl:1022
 msgid "Previous"
 msgstr "Vorherige"
 
 #: cdedb/frontend/templates/web/logging.tmpl:201
-#: cdedb/frontend/templates/web/util.tmpl:1020
+#: cdedb/frontend/templates/web/util.tmpl:1026
 msgid "Next"
 msgstr "Nächste"
 
@@ -16653,67 +16672,67 @@ msgstr ""
 "Leere Zeichenketten-Werte mit Standardwert werden nicht unterstützt. "
 "Standard: {} Wert: {}"
 
-#: cdedb/frontend/templates/web/util.tmpl:736
+#: cdedb/frontend/templates/web/util.tmpl:742
 msgid "from"
 msgstr "von"
 
-#: cdedb/frontend/templates/web/util.tmpl:737
+#: cdedb/frontend/templates/web/util.tmpl:743
 #, python-format
 msgid "%s from"
 msgstr "%s von"
 
-#: cdedb/frontend/templates/web/util.tmpl:738
+#: cdedb/frontend/templates/web/util.tmpl:744
 msgid "to"
 msgstr "bis"
 
-#: cdedb/frontend/templates/web/util.tmpl:739
+#: cdedb/frontend/templates/web/util.tmpl:745
 #, python-format
 msgid "%s to"
 msgstr "%s bis"
 
-#: cdedb/frontend/templates/web/util.tmpl:836
+#: cdedb/frontend/templates/web/util.tmpl:842
 #, python-format
 msgid "Hide %(label)s"
 msgstr "%(label)s ausblenden"
 
-#: cdedb/frontend/templates/web/util.tmpl:836
+#: cdedb/frontend/templates/web/util.tmpl:842
 #, python-format
 msgid "Show %(label)s"
 msgstr "%(label)s anzeigen"
 
-#: cdedb/frontend/templates/web/util.tmpl:839
+#: cdedb/frontend/templates/web/util.tmpl:845
 msgid "(enabled)"
 msgstr "(aktiv)"
 
-#: cdedb/frontend/templates/web/util.tmpl:883
+#: cdedb/frontend/templates/web/util.tmpl:889
 msgid "Info!"
 msgstr "Info!"
 
-#: cdedb/frontend/templates/web/util.tmpl:883
+#: cdedb/frontend/templates/web/util.tmpl:889
 msgid "Success!"
 msgstr "Erfolg!"
 
-#: cdedb/frontend/templates/web/util.tmpl:884
+#: cdedb/frontend/templates/web/util.tmpl:890
 msgid "Error!"
 msgstr "Fehler!"
 
-#: cdedb/frontend/templates/web/util.tmpl:884
+#: cdedb/frontend/templates/web/util.tmpl:890
 msgid "Warning!"
 msgstr "Warnung!"
 
-#: cdedb/frontend/templates/web/util.tmpl:923
+#: cdedb/frontend/templates/web/util.tmpl:929
 msgid "Permanent link"
 msgstr "Direktlink"
 
-#: cdedb/frontend/templates/web/util.tmpl:959
+#: cdedb/frontend/templates/web/util.tmpl:965
 msgid "archived"
 msgstr "archiviert"
 
-#: cdedb/frontend/templates/web/util.tmpl:969
+#: cdedb/frontend/templates/web/util.tmpl:975
 msgid "(not a member)"
 msgstr "(kein Mitglied)"
 
-#: cdedb/frontend/templates/web/util.tmpl:971
+#: cdedb/frontend/templates/web/util.tmpl:977
 msgid "(trial member)"
 msgstr "(Probemitglied)"
 

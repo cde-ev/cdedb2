@@ -703,7 +703,7 @@
 
 {% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
-        small=False, horizontal=True, title=none) %}
+        small=False, horizontal=True, title=none, info=none) %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
                                readonly=readonly, horizontal=horizontal, small=small) }}
@@ -712,6 +712,12 @@
         <div{% if horizontal %} class="
             {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
         "{% endif %}>
+            {%- if info -%}
+                <p class="text-info">
+                    {{- make_icon('info-circle') }}{{ nbsp  }}
+                    {{- info -}}
+                </p>
+            {%- endif %}
             {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
