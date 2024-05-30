@@ -1379,7 +1379,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     'message': message,
                     'secret': secret,
                 },
-                suppress_logging=True,
+                suppress_subject_logging=True,
             )
         else:
             name = rs.user.persona_name()
@@ -1409,7 +1409,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'message': msg, 'subject': subject, 'to': to,
                 'anonymous': anonymous_from,
             },
-            suppress_logging=anonymous_from,
+            suppress_recipient_logging=anonymous_from,
         )
 
         rs.notify("success", n_("Message sent!"))
@@ -1473,7 +1473,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     'original_recipient': message.recipient,
                     'ctime': message.ctime,
                 },
-                suppress_logging=True,
+                suppress_recipient_logging=True,
+                suppress_subject_logging=True,
             )
             del message
             del persona
@@ -1519,6 +1520,11 @@ class CoreBaseFrontend(AbstractFrontend):
             del message_id
             del key
         except (ValueError, KeyError, CryptographyError):
+            if 'message' in locals():
+                # noinspection PyUnboundLocalVariable
+                self.logger.error(
+                    f"User {rs.user.persona_id} tried to rotate anonymous message"
+                    f" ({message.id}) with an incorrect decryption key.")
             rs.notify("error", n_("Invalid secret."))
             return self.redirect(rs, "core/index")
 
