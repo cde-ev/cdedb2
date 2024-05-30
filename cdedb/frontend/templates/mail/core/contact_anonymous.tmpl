@@ -1,7 +1,7 @@
 Hier ist eine anonyme Nachricht, die euch über das Kontaktformular zugesandt wurde.
 
 Geheimnis: {{ secret }}
-Zeitpunkt der Nachrict: {{ message.ctime|datetime(lang="de") }}
+Zeitpunkt der Nachricht: {{ message.ctime|datetime(lang="de") }}
 
 Um auf die Nachricht zu antworten besucht diesen Link:
 {{ cdedblink("core/contact_reply", {'secret': secret}) }}
