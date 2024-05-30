@@ -35,7 +35,7 @@ this anonymity.
 Accountability
 ^^^^^^^^^^^^^^
 
-In order to hold an abuser accountable it is not sufficient to decrypt the store
+In order to hold an abuser accountable it is not sufficient to decrypt the stored
 identity for internal use, rather it needs to also be *revealed* to someone.
 
 Since this is only required in actual cases of abuse, there is no implementation to do
@@ -50,7 +50,7 @@ Responding to Messages
 In order to respond to an anonymous message, the recipient needs to provide the secret
 (which is only known to them and not saved anywhere), allowing for the internal
 retrieval of the stored identity in order to send the reply. During this process the
-identity is decrypted but not acutally revealed to the responding user.
+identity is decrypted but not actually revealed to the responding user.
 
 Responding requires being logged in, but other than providing the secret no other
 authorisation checks are made.
@@ -154,9 +154,9 @@ Potential Actors and Threats
       - Knowledge of the secret does not give the user access to any sensitive
         information via the frontend (like the identity of the sender, subject of the
         message or content of the message).
-      - This is mitigated by logging all replies, and sending a copy of each reply
-        to the actual recipients, so that such unprivileged responses do not go
-        unnoticed.
+      - This is mitigated by logging all replies (including persona id of the user
+        replying), and sending a copy of each reply to the actual recipients, so that
+        such unprivileged responses do not go unnoticed.
       - The reply will also contain the name and username of the responder,
         meaning the original sender should be able to see if they received an invalid
         reply, especially since the intended recipients are able to inform them about
