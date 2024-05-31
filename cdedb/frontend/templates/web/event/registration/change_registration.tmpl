@@ -60,8 +60,10 @@
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part.id), label=gettext("Status"), attributes='data-part_id=' + part.id|s,
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
-                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {% if lodgements %}
+                {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                          entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {% endif %}
             {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat")) }}
 
             {% for track in ambience['event']['tracks'].values()|sort if track['part_id'] == part.id %}
