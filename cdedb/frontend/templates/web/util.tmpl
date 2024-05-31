@@ -440,10 +440,10 @@
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
-        aclass="", attributes='', addon='', markdown=False, errorname=none) %}
+        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
-                                markdown=markdown, errorname=errorname) %}
+                                markdown=markdown, errorname=errorname, wide=wide) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
@@ -487,9 +487,10 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False) %}
+        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
+        wide=False) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                            actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
@@ -616,9 +617,10 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False) %}
+        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
+        wide=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
@@ -703,7 +705,7 @@
 
 {% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
-        small=False, horizontal=True, title=none, info=none) %}
+        small=False, horizontal=True, title=none, info=none, wide=False) %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
                                readonly=readonly, horizontal=horizontal, small=small) }}
