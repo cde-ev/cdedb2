@@ -8,11 +8,13 @@ from typing import Dict, Optional, Tuple, Union
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
     make_persona_name,
 )
+from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
@@ -130,7 +132,9 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "martin", "nina", "vera", "werner", "katarina")
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
-        everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
+        everyone = {
+            "Index", "Übersicht", "Meine Daten", "Administratorenübersicht", "Kontakt",
+        }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
         core_admin = {"Nutzer verwalten", "Metadaten"}
@@ -3081,3 +3085,158 @@ class TestCoreFrontend(FrontendTest):
             for log in logs:
                 self.assertNonPresence(log, div="sidebar-navigation")
             self._click_admin_view_button("Kassenprüfer")
+
+    def test_contact(self) -> None:
+        with self.switch_user("emilia"):
+            self.traverse("Kontakt")
+            f = self.response.forms['contactform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError('to', "Darf nicht leer sein.")
+            self.assertValidationError('anonymous', "Darf nicht leer sein.")
+            self.assertValidationError('subject', "Darf nicht leer sein.")
+            self.assertValidationError('msg', "Darf nicht leer sein.")
+
+            f['to'].force_value("test@example.cde")
+            self.submit(f, check_notification=False)
+            self.assertValidationError('to', "Unzulässige Auswahl.")
+
+            for recipient in self.conf["CONTACT_ADDRESSES"]:
+                f['to'] = recipient
+            f['subject'] = subject = "Ich habe ein Problem!"
+            f['anonymous'] = "no"
+            f['msg'] = msg = """Es gab viel zu wenig Rum-Trauben-Nuss-Schokolade
+auf der letzten Akademie, das geht so nicht.
+
+LG Emilia
+"""
+            self.submit(f)
+
+            sent = self.fetch_mail_content(0)
+            receipt = self.fetch_mail_content(1)
+
+            self.assertIn(msg, sent)
+            self.assertIn("Emilia E. Eventis", sent)
+            self.assertIn(msg, receipt)
+            self.assertIn(subject, receipt)
+            self.assertIn("Anonym: Nein", receipt)
+
+            f['anonymous'] = "yes"
+            f['msg'] = msg_anonymous = "\n".join(msg.split("\n")[:-2])
+            self.submit(f)
+
+            sent_anonymous = self.fetch_mail_content(0)
+            receipt_anonymous = self.fetch_mail_content(1)
+
+            self.assertIn(msg_anonymous, sent_anonymous)
+            self.assertNotIn("Emmy", sent_anonymous)
+            self.assertNotIn("Emilia", sent_anonymous)
+            self.assertIn(msg_anonymous, receipt_anonymous)
+            self.assertIn(subject, receipt_anonymous)
+            self.assertIn("Emmy", receipt_anonymous)
+            self.assertIn("Anonym: Ja", receipt_anonymous)
+            self.assertIn(
+                "Die Empfänger können auf deine Nachricht antworten",
+                receipt_anonymous,
+            )
+
+            if result := re.search("Geheimnis: (?P<secret>.+)\n", sent_anonymous):
+                message_id, key = models_core.AnonymousMessageData.parse_secret(
+                    result['secret'])
+            else:
+                self.fail("Failed to extract secret.")
+
+        with self.switch_user("inga"):
+            self.get("/core/contact/reply")
+            f = self.response.forms['replyform']
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Darf nicht leer sein.")
+            self.assertValidationError('reply_message', "Darf nicht leer sein.")
+
+            f['reply_message'] = reply_msg = "Wir kaufen mehr, versprochen!"
+            f['secret'] = "$&()"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Ungültige Base64 Zeichenkette.")
+
+            f['secret'] = "abcd"
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Falsches Format.")
+
+            f['secret'] = "a" * 16 + key
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Ungültiges Geheimnis.")
+
+            f['secret'] = message_id + "a" * (len(key) - 1) + key[-1]
+            self.submit(f, check_notification=False)
+            self.assertValidationError('secret', "Ungültiges Geheimnis.")
+
+            f['secret'] = message_id + key
+            self.submit(f)
+
+            reply = self.fetch_mail_content(0)
+            reply_receipt = self.fetch_mail_content(1)
+
+            self.assertIn(reply_msg, reply)
+            self.assertIn(subject, reply)
+            self.assertIn("Emmy", reply)
+            self.assertIn(
+                "Zu diesem Zwecke wurde die Anonymität deiner Nachricht"
+                " __nicht__ aufgehoben.",
+                reply,
+            )
+            self.assertNotIn("Emmy", reply_receipt)
+            self.assertNotIn("Emilia", reply_receipt)
+            self.assertIn(reply_msg, reply_receipt)
+            self.assertIn(subject, reply_receipt)
+
+            # Rotate message id and encryption key:
+            self.get(f"/core/contact/rotate?secret={message_id + key}")
+
+            # Extract new secrets.
+            rotate_notice = self.fetch_mail_content()
+            if result := re.search("Geheimnis: (?P<secret>.+)\n", rotate_notice):
+                new_message_id, new_key = models_core.AnonymousMessageData.parse_secret(
+                    result['secret'])
+            else:
+                self.fail("Failed to extract secret.")
+
+            # Test retrieval.
+            with self.assertRaises(KeyError):
+                self.core.get_anonymous_message(self.key, message_id)
+            message = self.core.get_anonymous_message(self.key, new_message_id)
+
+            # Test decryption.
+            with self.assertRaises(CryptographyError):
+                message.decrypt(key)
+            message.decrypt(new_key)
+
+            # Test reply.
+            f['secret'] = new_message_id + new_key
+            self.submit(f)
+
+            log_expectation = [
+                {
+                    'code': const.CoreLogCodes.send_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': None,
+                },
+                {
+                    'code': const.CoreLogCodes.reply_to_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+                {
+                    'code': const.CoreLogCodes.rotate_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+                {
+                    'code': const.CoreLogCodes.reply_to_anonymous_message,
+                    'change_note': list(self.conf["CONTACT_ADDRESSES"])[-1],
+                    'submitted_by': self.user['id'],
+                },
+            ]
+        with self.switch_user('vera'):
+            self.assertLogEqual(
+                log_expectation, realm="core",
+                offset=len(self.get_sample_data('core.log')),
+            )

@@ -21,6 +21,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -166,7 +167,8 @@ class CoreBaseBackend(AbstractBackend):
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
                  persona_id: Optional[int] = None, change_note: Optional[str] = None,
-                 atomized: bool = True) -> DefaultReturnCode:
+                 atomized: bool = True, suppress_persona_id: bool = False,
+                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -185,8 +187,11 @@ class CoreBaseBackend(AbstractBackend):
         query = ("INSERT INTO core.log "
                  "(code, submitted_by, persona_id, change_note) "
                  "VALUES (%s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, rs.user.persona_id, persona_id, change_note))
+        params = (
+            code, rs.user.persona_id if not suppress_persona_id else None, persona_id,
+            change_note,
+        )
+        return self.query_exec(rs, query, params)
 
     @access("persona")
     def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
@@ -199,6 +204,13 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.core_log(rs, const.CoreLogCodes.quota_violation, rs.user.persona_id,
                              atomized=False)
+
+    @access("persona")
+    def log_contact_reply(self, rs: RequestState, recipient: str) -> DefaultReturnCode:
+        """Log who sent a reply to an anonymous message originally sent to whom."""
+        recipient = affirm(vtypes.Email, recipient)
+        return self.core_log(rs, const.CoreLogCodes.reply_to_anonymous_message,
+                             change_note=recipient, atomized=False)
 
     @internal
     @access("cde")
@@ -2713,6 +2725,83 @@ class CoreBaseBackend(AbstractBackend):
         for persona_id, persona_ in ret.items():
             persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
         return ret
+
+    @access("persona")
+    def log_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+        """Save encrypted metadata regarding an anonymous message sent via contact form.
+
+        This is so that one may reply to the anonymous message without needing to know
+        who sent it.
+        """
+
+        message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
+
+        with Atomizer(rs):
+            if self.sql_insert(
+                rs, models.AnonymousMessageData.database_table, message.to_database(),
+            ):
+                self.core_log(
+                    rs, const.CoreLogCodes.send_anonymous_message,
+                    change_note=message.recipient, suppress_persona_id=True,
+                )
+                return message.message_id
+        return None
+
+    @access("persona")
+    def get_anonymous_message(
+            self, rs: RequestState, message_id: str,
+    ) -> models.AnonymousMessageData:
+        """Retrieve the metadata for an anonymous message using a unique message id.
+
+        Note that the message id is a random base64 string, not a numeric id, even
+        though the stored message _also_ has a numeric id.
+        """
+
+        affirm(vtypes.Base64, message_id)
+
+        message_data = self.sql_select_one(
+            rs, models.AnonymousMessageData.database_table,
+            models.AnonymousMessageData.database_fields(),
+            message_id, models.AnonymousMessageData.entity_key,
+        )
+        if not message_data:
+            self.logger.error(
+                f"User {rs.user.persona_id} tried to retrieve an anonymous message"
+                f" using an invalid message id {message_id}.")
+            raise KeyError(n_("Unknown message id."))
+
+        return models.AnonymousMessageData.from_database(message_data)
+
+    @access("persona")
+    def rotate_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+        """Update the encryption key, and the message id of a stored anonymous message.
+
+        This is to be done should the message id (including the key) leak.
+        """
+
+        message = affirm_dataclass(models.AnonymousMessageData, message)
+
+        update = message.to_database()
+        del update['ctime']
+        del update['recipient']
+
+        with Atomizer(rs):
+            if self.sql_update(
+                rs, models.AnonymousMessageData.database_table, update,
+            ):
+                self.logger.info(
+                    f"Rotated encryption key and message id for anonymous"
+                    f" message {message.id}")
+                self.core_log(
+                    rs, const.CoreLogCodes.rotate_anonymous_message,
+                    change_note=message.recipient,
+                )
+                return message.message_id
+        return None
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:
