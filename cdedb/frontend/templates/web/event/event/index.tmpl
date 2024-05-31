@@ -37,9 +37,13 @@
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
                     {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
-                    {% if event['registration_start'] is none or now() <= event['registration_start'] %}
+                    {% if event['registration_start'] is none %}
                         {% trans %}
-                            Registration in future.
+                            Registration in future™.
+                        {% endtrans %}
+                    {% elif now() <= event['registration_start'] %}
+                        {% trans start_time=event['registration_start']|datetime(lang=lang) %}
+                            Registration starting {{ start_time }}
                         {% endtrans %}
                     {% elif event['registration_soft_limit'] is none or now() <= event['registration_soft_limit'] %}
                         {% trans %}

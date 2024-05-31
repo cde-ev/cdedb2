@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-05-31 20:50+0000\n"
+"POT-Creation-Date: 2024-05-31 21:06+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2512,7 +2512,7 @@ msgid "takes place"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:1116
-#: cdedb/frontend/templates/web/event/event/index.tmpl:148
+#: cdedb/frontend/templates/web/event/event/index.tmpl:152
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:31
 msgid "is cancelled"
 msgstr ""
@@ -8572,7 +8572,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/create_course.tmpl:15
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:14
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:17
-#: cdedb/frontend/templates/web/event/event/index.tmpl:131
+#: cdedb/frontend/templates/web/event/event/index.tmpl:135
 #: cdedb/frontend/templates/web/event/fields/field_set.tmpl:33
 #: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:29
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
@@ -8597,8 +8597,8 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/past_event/list_past_events.tmpl:4
-#: cdedb/frontend/templates/web/event/event/index.tmpl:154
-#: cdedb/frontend/templates/web/event/event/index.tmpl:157
+#: cdedb/frontend/templates/web/event/event/index.tmpl:158
+#: cdedb/frontend/templates/web/event/event/index.tmpl:161
 msgid "Past Events_[[long form]]"
 msgstr ""
 
@@ -9968,7 +9968,7 @@ msgstr "(ab %(date)s annuntiari potest)"
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:42
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:50
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:67
-#: cdedb/frontend/templates/web/event/event/index.tmpl:124
+#: cdedb/frontend/templates/web/event/event/index.tmpl:128
 #: cdedb/frontend/templates/web/event/fields/field_set.tmpl:31
 #: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:27
 #: cdedb/frontend/templates/web/event/generic.tmpl:457
@@ -9988,7 +9988,7 @@ msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:161
 #: cdedb/frontend/templates/web/event/base.tmpl:46
-#: cdedb/frontend/templates/web/event/event/index.tmpl:127
+#: cdedb/frontend/templates/web/event/event/index.tmpl:131
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:12
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:15
 msgid "Statistics"
@@ -10027,40 +10027,40 @@ msgid "Current Events"
 msgstr "Eventus praesentes"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:227
-#: cdedb/frontend/templates/web/event/event/index.tmpl:65
+#: cdedb/frontend/templates/web/event/event/index.tmpl:69
 #, fuzzy, python-format
 msgid "already %(registered)s"
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:227
 #: cdedb/frontend/templates/web/core/index.tmpl:239
-#: cdedb/frontend/templates/web/event/event/index.tmpl:65
-#: cdedb/frontend/templates/web/event/event/index.tmpl:77
+#: cdedb/frontend/templates/web/event/event/index.tmpl:69
+#: cdedb/frontend/templates/web/event/event/index.tmpl:81
 msgid "registered"
 msgstr "annuntiatus:a (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:231
-#: cdedb/frontend/templates/web/event/event/index.tmpl:69
+#: cdedb/frontend/templates/web/event/event/index.tmpl:73
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:197
 msgid "payment pending"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:236
 #: cdedb/frontend/templates/web/event/base.tmpl:19
-#: cdedb/frontend/templates/web/event/event/index.tmpl:74
+#: cdedb/frontend/templates/web/event/event/index.tmpl:78
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:26
 msgid "Questionnaire"
 msgstr "Interrogatio"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:239
-#: cdedb/frontend/templates/web/event/event/index.tmpl:77
+#: cdedb/frontend/templates/web/event/event/index.tmpl:81
 #, fuzzy, python-format
 msgid "formerly %(registered)s"
 msgstr "annuntiatus:a (TODO: gender specific string)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:245
 #: cdedb/frontend/templates/web/event/base.tmpl:23
-#: cdedb/frontend/templates/web/event/event/index.tmpl:83
+#: cdedb/frontend/templates/web/event/event/index.tmpl:87
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:28
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:169
 msgid "Register"
@@ -12749,53 +12749,59 @@ msgid "current and future events"
 msgstr "Eventus praesentes"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:41
-msgid "Registration in future."
-msgstr ""
+#, fuzzy
+msgid "Registration in future™."
+msgstr "Annuntiationes"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:45
+#, fuzzy, python-format
+msgid "Registration starting %(start_time)s"
+msgstr "(ab %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/index.tmpl:49
 msgid "Registration is open."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:49
+#: cdedb/frontend/templates/web/event/event/index.tmpl:53
 msgid "Late-Registration is open."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:53
+#: cdedb/frontend/templates/web/event/event/index.tmpl:57
 msgid "Event is happening."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:57
+#: cdedb/frontend/templates/web/event/event/index.tmpl:61
 msgid "Event is past."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:86
-#: cdedb/frontend/templates/web/event/event/index.tmpl:99
+#: cdedb/frontend/templates/web/event/event/index.tmpl:90
+#: cdedb/frontend/templates/web/event/event/index.tmpl:103
 #, python-format
 msgid "(until %(date)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:90
+#: cdedb/frontend/templates/web/event/event/index.tmpl:94
 #, python-format
 msgid "(late registrations until %(date)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:94
+#: cdedb/frontend/templates/web/event/event/index.tmpl:98
 msgid "(only late registrations possible)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:109
+#: cdedb/frontend/templates/web/event/event/index.tmpl:113
 msgid "There are currently no event registrations open."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:114
+#: cdedb/frontend/templates/web/event/event/index.tmpl:118
 msgid "Organized Events"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:140
+#: cdedb/frontend/templates/web/event/event/index.tmpl:144
 msgid "Other Events"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:157
+#: cdedb/frontend/templates/web/event/event/index.tmpl:161
 #, python-format
 msgid ""
 "Previous CdE events, including their courses and participants, can be found "
@@ -12803,12 +12809,12 @@ msgid ""
 "is a %(list)s of all events which have not been cleansed yet."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:158
-#: cdedb/frontend/templates/web/event/event/index.tmpl:163
+#: cdedb/frontend/templates/web/event/event/index.tmpl:162
+#: cdedb/frontend/templates/web/event/event/index.tmpl:167
 msgid "list"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/index.tmpl:163
+#: cdedb/frontend/templates/web/event/event/index.tmpl:167
 #, python-format
 msgid ""
 "Previous CdE events are accessible to members only – together with Junior- "
