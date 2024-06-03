@@ -24,7 +24,7 @@ import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import CdEDBObject, PathLike, setup_logger
+from cdedb.common import CdEDBObject, PathLike, now, setup_logger
 from cdedb.config import Config
 from cdedb.filter import datetime_filter
 
@@ -111,6 +111,13 @@ class EntityKeeper:
             # For example, this is the case for deleting an archived event.
             pass
 
+    @staticmethod
+    def format_datetime(dt: datetime.datetime) -> bytes:
+        formatstr = "%Y-%m-%dT%H:%M:%S%z"
+        formatted = datetime_filter(dt, formatstr=formatstr)
+        assert formatted is not None
+        return formatted.encode("utf-8")
+
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
                may_drop: bool = True, logs: Optional[Sequence[CdEDBObject]] = None,
@@ -145,16 +152,14 @@ class EntityKeeper:
                 commit.append("-m")
                 commit.append(formated_logs)
                 # set the date of the commit to the ctime of the latest log entry
-                commit.append("--date")
-                # formatted logs only exist if log_timestamp_key is not None
-                assert self.log_timestamp_key is not None
-                timestamp: datetime.datetime = logs[-1][self.log_timestamp_key]
-                formatstr = "%Y-%m-%dT%H:%M:%S+%z"
-                formated_timestamp = datetime_filter(timestamp, formatstr=formatstr)
-                # the formated timestamp is not None, since we passed in a valid
-                # datetime object
-                assert formated_timestamp is not None
-                commit.append(formated_timestamp.encode("utf-8"))
+                commit.extend([
+                    "--date", self.format_datetime(logs[-1][self.log_timestamp_key]),
+                ])
+            else:
+                # explicitly set commit date. Allows mocking time for testing.
+                commit.extend([
+                    "--date", self.format_datetime(now()),
+                ])
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode())
