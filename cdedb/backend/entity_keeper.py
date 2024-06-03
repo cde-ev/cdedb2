@@ -195,12 +195,10 @@ class EntityKeeper:
                      check=False, cwd=full_dir).returncode:
             return None
         # get the timestamp of the last commit in ISO 8601 format
-        # sadly, git show does not return proper iso format, so this does not work:
-        # self._run(["git", "show", "-s", "--format=%ci", "HEAD"], cwd=full_dir)
-        # so, we use git log instead, where -1 restrict the results to the latest commit
-        # and iso-strict-local format shows the correct iso 8601 format...
-        response = self._run(["git", "log", "--date=iso-strict-local", "-1",
-                              "--pretty=%cd"], cwd=full_dir)
+        # Important: Use "%ad" instead of "%cd" to use the date excplicitly set when
+        #  committing, rather than the time of the commit.
+        response = self._run(["git", "show", "-s", "--format=%ad",
+                              "--date=iso-strict-local", "HEAD"], cwd=full_dir)
         # the response contains a \n
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)

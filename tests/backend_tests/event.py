@@ -5,11 +5,14 @@ import collections.abc
 import copy
 import datetime
 import decimal
+import functools
 import json
+import time
 import unittest
 from typing import Any, Dict, List, Optional, cast
 
 import freezegun
+import freezegun.api
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.errors
@@ -4801,3 +4804,56 @@ class TestEventBackend(BackendTest):
         self.cde.change_membership(self.key, persona_id, False)
         self.assertEqual(
             decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+
+    @event_keeper
+    @as_users("anton")
+    def test_event_keeper_log_entries(self) -> None:
+        event_id = 1
+
+        def normalize_reference_time(dt: datetime.datetime) -> datetime.datetime:
+            return datetime.datetime.fromisoformat(
+                self.event._event_keeper.format_datetime(dt).decode())
+
+        base_time = now() + datetime.timedelta(hours=1)
+        delta = datetime.timedelta(minutes=42)
+
+        # Convert reference time to same format as parsed time because of tz trouble.
+        reference_time = normalize_reference_time(base_time)
+
+        self.event.event_keeper_commit(
+            self.key, event_id, "pre test", after_change=True,
+        )
+        # Ensure that the commit time matches the current (non-frozen) time.
+        self.assertEqual(
+            nearly_now(delta=datetime.timedelta(milliseconds=10)),
+            self.event._event_keeper.latest_logtime(event_id),
+        )
+
+        with freezegun.freeze_time(base_time) as frozen_time:
+            frozen_time.tick(delta)
+
+            # Create any log entry.
+            pdf_data = (self.testfile_dir / "form.pdf").read_bytes()
+            self.event.change_minor_form(self.key, event_id, pdf_data)
+
+            # Retrieve the time of the log entry.
+            log = self.event.retrieve_log(
+                self.key, EventLogFilter(length=1)
+            )[1][0]
+            log_reference_time = normalize_reference_time(log['ctime'])
+
+            frozen_time.tick(delta)
+
+            # Create a commit and ensure that the commit time matches the log time
+            #  instead of the current (frozen) time.
+            self.event.event_keeper_commit(
+                self.key, event_id, "foo bar", after_change=True,
+            )
+            self.assertEqual(
+                log_reference_time,
+                self.event._event_keeper.latest_logtime(event_id),
+            )
+            self.assertNotEqual(
+                reference_time,
+                self.event._event_keeper.latest_logtime(event_id),
+            )
