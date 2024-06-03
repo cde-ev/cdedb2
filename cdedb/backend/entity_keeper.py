@@ -34,8 +34,7 @@ tabulate.PRESERVE_WHITESPACE = True
 
 class EntityKeeper:
     def __init__(self, conf: Config, directory: PathLike,
-                 log_keys: Optional[Sequence[str]] = None,
-                 log_timestamp_key: Optional[str] = None):
+                 log_keys: Sequence[str], log_timestamp_key: str):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
@@ -202,7 +201,7 @@ class EntityKeeper:
         return datetime.datetime.fromisoformat(timestamp)
 
     def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
-        if self.log_keys is None or self.log_timestamp_key is None:
+        if not self.log_keys:
             return None
 
         summary = f"Es gab {len(logs)} neue Logeinträge seit dem letzten Commit."
