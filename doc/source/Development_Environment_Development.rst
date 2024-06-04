@@ -2,10 +2,15 @@ Developing
 ==========
 
 In :ref:`sample-data` the available data sets are listed (mainly existing
-accounts). Source controle is done via git. Upon login with ssh a short
-summary of useful commands is displayed -- this is reproduced below.
+accounts). Source controle is done via git. Upon login (VM or container) a
+short summary of useful commands is displayed -- this is reproduced below.
 
-.. literalinclude:: motd.txt
+.. literalinclude:: motd-vm.txt
+   :caption: Command listing (VM-variant, container-variant slightly diverges)
+
+Many useful actions are triggered via a ``Makefile``. Change the working
+directory to the repository root and invoke ``make`` to see a list of
+available options.
 
 Performance
 -----------
@@ -17,7 +22,7 @@ working with test data.
 * Replace ``cache=writethrough`` by ``cache=writeback`` or even
   ``cache=unsafe`` when running the VM.
 
-* In the file `/etc/postgresql/12/main/postgresql.conf` in the VM set the
+* In the file `/etc/postgresql/15/main/postgresql.conf` in the VM set the
   following options in the ``WRITE AHEAD LOG`` section::
 
     fsync = off
@@ -76,31 +81,66 @@ or add the following line from your ``.git/info/attributes`` file::
 
     *.po merge
 
+Running it
+----------
+
+Last step before startup is compiling the GNU gettext .mo files for i18n::
+
+  make i18n-compile
+
+Now, check if postgres and pgbouncer are running. Optionally you
+can run the test suite first to see whether everything is ready::
+
+  ./bin/check.py
+
+Now start the apache and access ``https://localhost:10443/db/`` with a
+browser (where 10443 is the port used for forwarding).
+
+Refreshing the running instance
+-------------------------------
+
+Changes to the code can be propagate as follows to the current instance. For
+templates no action is necessary. For the python code the gunicorn server
+should also automatically reload on changes. If anything jams the workers can
+be restarted::
+
+  sudo systemctl restart apache2 gunicorn
+
+You can use the make target ``reload`` to easily re-compile i18n and trigger
+the worker reload::
+
+  make reload
+
+For the database you should restart pgbouncer (which probably has some open
+connections left) before doing ``make sample-data``.
+
 Sample dev setup
 ----------------
 
-Here is a description of my setup hopefully aiding new devs in
-setup. This is by no means a mandatory setup. First an overview of the
-directory structure::
+Here is a description of the setup as provided by makefile in directory
+``related/auto-build/runtime``. This is by no means a mandatory setup, but
+hopefully useful for somebody. First an overview of the directory structure::
 
-    /home/markus/DB/
-    ├── cdedb2/
+    /home/markus/cdedb2/
+    ├── related
+    │   ├── auto-build
+    │   │   ├── runtime
+    │   │   │   ├── Makefile
+    │   │   │   ├── share
+    │   │   │   ├── image.qcow2
+    │   │   │   └── ...
+    │   │   └── ...
     │   └── ...
-    ├── vm-repo/
-    │   └── ...
-    ├── image.qcow2
-    ├── run-vm.sh
-    └── ssh-vm.sh
+    └── ...
 
-Everything lives inside the directory ``/home/markus/DB/`` where
-``cdedb2/`` is a clone of the git repository. Most development happens
-in this directory. Then there is the VM image ``image.qcow2`` which is
-started by the script ``run-vm.sh``. This script additionally uses
-sshfs to mount the git repository inside the VM to the directory
-``vm-repo/``. Finally the script ``ssh-vm.sh`` logs into the VM.
+Everything lives inside the directory ``/home/markus/cdedb2/`` which is a
+clone of the git repository. Most development happens in this directory. Then
+there is the VM image ``image.qcow2`` inside ``related/auto-build/runtime``
+which is started by ``make start``. With ``make mount``
+sshfs is used to mount the git repository inside the VM to the directory
+``share/``. Finally by ``make ssh`` one can log into the VM.
 
-The typical change is developed in ``cdedb2/`` and committed
-there. Then the commit is transferred to the VM by issuing the command
-``git pull ../cdedb2/`` inside the ``vm-repo/`` directory. Now the
-test suite is executed inside the VM and if successful the change is
-pushed from ``cdedb2/`` to the server.
+The typical change is developed in ``cdedb2/`` and committed there. Then the
+commit is transferred to the VM by issuing ``make sync-into-vm`` in the
+``runtime/`` directory. Now the test suite is executed inside the VM and if
+successful the change is pushed from ``cdedb2/`` to the server.

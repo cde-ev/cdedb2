@@ -76,6 +76,9 @@ I18N_STRINGS = (
     n_("CoreLogCodes.realm_change"),
     n_("CoreLogCodes.username_change"),
     n_("CoreLogCodes.quota_violation"),
+    n_("CoreLogCodes.send_anonymous_message"),
+    n_("CoreLogCodes.reply_to_anonymous_message"),
+    n_("CoreLogCodes.rotate_anonymous_message"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),

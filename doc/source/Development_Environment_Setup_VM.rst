@@ -43,12 +43,14 @@ If you dont know how to do this, take a look at the first point in
 :ref:`accessing-vm-windows`. Note that there are multiple port forwardings,
 for ``20022``, ``20389``, ``20443`` and ``5000``.
 
+.. _accessing-vm-linux:
+
 Accessing -- Linux
 ------------------
 
 Once the VM is up and running you can access it in the following ways. The
 password for the ``cdedb`` user (used for access via ssh etc.) is
-empty[#femptypass]_.
+empty [#femptypass]_.
 
 * web: Open https://localhost:20443/ in a browser of your choice.
 * ssh::
@@ -73,9 +75,13 @@ files.
 Accessing -- Windows
 --------------------
 
+.. note:: Mittlerweile ist WSL (Windows Subsystem for Linux) soweit gereift,
+          dass es empfehlenswert ist mithilfe dieses die Anweisungen in
+          :ref:`accessing-vm-linux` zu nutzen.
+
 Das Ansprechen der VM ist unter Windows etwas komplizierter als unter Linux.
 Im Folgenden werden die Arbeitsschritte einmal für VirtualBox durchgegangen.
-Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
+Das Passwort für den Nutzer ``cdedb`` der VM ist leer.
 
 * Web: Im VirtualBox Manager, bearbeite die VM
 

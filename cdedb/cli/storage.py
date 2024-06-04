@@ -135,7 +135,7 @@ def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
     """
     keeper = EntityKeeper(conf, 'event_keeper')
     for event_id in event_ids:
-        keeper.init(event_id)
+        keeper.init(event_id, exists_ok=True)
         keeper.commit(event_id, "", "Initialer Commit.")
 
 

@@ -408,6 +408,9 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    send_anonymous_message = 100  #:
+    reply_to_anonymous_message = 101  #:
+    rotate_anonymous_message = 102  #:
 
 
 @enum.unique

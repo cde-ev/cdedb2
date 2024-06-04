@@ -1,4 +1,4 @@
-Programming Environment
+Development Environment
 =======================
 
 .. toctree::
@@ -8,16 +8,46 @@ Programming Environment
    Development_Environment_Setup_VM
    Development_Environment_Setup_Docker
    Development_Environment_Development
-   Development_Environment_Manual
 
-On :doc:`Development_Environment_Setup_VM`
-you can find everything to setup the prebuilt VM-image.
-This can be used for developing and offline usage.
-Alternatively you can take a look at :doc:`Development_Environment_Setup_Docker`
-where you can find instruction on how to use the docker container.
-If you want to use the VM or container for developing purpose,
-you should take a look at :doc:`Development_Environment_Development`
-after reading either the page about setting up the VM or Docker.
+The initial step is to clone the `CdEDB repository
+<https://tracker.cde-ev.de/gitea/cdedb/cdedb2.git>`_ with ``git``. To get
+access, please `create an account
+<https://tracker.cde-ev.de/gitea/user/sign_up>`_ and contact us at cdedb ät
+lists.cde-ev.de.
 
-The page about :doc:`Development_Environment_Manual` is mostly for documentation purpose --
-it is strongly recommended to use the prebuilt VM-image or the Docker container.
+There are two environments provided:
+
+* A prebuilt VM-image usable for development as well as offline usage. See
+  :doc:`Development_Environment_Setup_VM`.
+* A Docker container which provides the usual container (dis-)advantages. See
+  :doc:`Development_Environment_Setup_Docker`.
+
+Once set up for developing, take a look at
+:doc:`Development_Environment_Development` for instructions on how to use the
+environment.
+
+For details about the internals of the environment please look in the
+directories ``related/auto-build`` and ``related/docker``.
+
+Quickstart
+----------
+
+.. note:: The following section does omit many details and options. For a
+          more comprehensive account follow the links above.
+
+VM
+~~~
+
+Change working directory to ``related/auto-build/runtime``. Download a
+qcow2-image `according to the wiki
+<https://tracker.cde-ev.de/gitea/cdedb/cdedb2/wiki/Home>`_. Invoke ``make`` to
+see a list of possible actions (actual commands can be found in the
+``Makefile``). You probably want to ``make start`` the VM.
+
+Docker
+~~~~~~
+
+Change working directory to ``related/docker``. Invoke ``make`` to see a list
+of possible actions (actual commands can be found in the ``Makefile``). You
+probably want to ``make build`` an image and then ``make start`` it.
+

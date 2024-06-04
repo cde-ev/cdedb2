@@ -1,0 +1,17 @@
+Zur folgenden anonymen Nachricht wurde ein neues Geheimnis generiert:
+
+Urprünglicher Betreff: {{ original_subject }}
+Empfänger der ursprünglichen Nachricht: <{{ anonymous_message.recipient }}>
+Zeitpunkt der ursprünglichen Nachricht: {{ anonymous_message.ctime|datetime(lang="de") }}
+
+Neues Geheimnis: {{ new_secret }}
+
+Um auf die Nachricht zu antworten besucht diesen Link:
+{{ cdedblink("core/contact_reply", {'secret': new_secret}) }}
+
+Jeder der Zugriff auf das obige Geheimnis, bzw. den obigen Link hat, kann
+auf die Nachricht antworten, jedoch nicht deren Inhalt sehen.
+Falls erforderlich könnt ihr unter diesem Link ein neues Geheimnis generieren
+und so das alte deaktivieren:
+
+{{ cdedblink("core/rotate_anonymous_message", {'secret': new_secret}) }}

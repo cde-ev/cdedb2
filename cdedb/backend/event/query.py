@@ -111,7 +111,11 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 return f"""
                     (
                         SELECT {', '.join(REGISTRATION_FIELDS)},
-                            amount_owed - amount_paid AS remaining_owed
+                            amount_owed - amount_paid AS remaining_owed,
+                            EXISTS (
+                                SELECT * FROM event.orgas
+                                WHERE persona_id = registrations.persona_id AND event_id = {event_id}
+                            ) AS is_orga
                         FROM event.registrations
                         WHERE event_id = {event_id}
                     ) AS reg

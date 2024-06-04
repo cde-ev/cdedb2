@@ -408,7 +408,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return (part['status'].has_to_pay()
                     and reg['amount_owed'] > reg['amount_paid'])
         elif self == self.orgas_not_paid:
-            return (reg['amount_owed'] > reg['amount_paid']
+            return (part['status'].has_to_pay()
+                    and reg['amount_owed'] > reg['amount_paid']
                     and reg['persona_id'] in event.orgas)
         elif self == self.no_parental_agreement:
             return (part['status'].is_involved() and part['age_class'].is_minor()
@@ -525,7 +526,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
                 [],
                 [
                     _participant_constraint(part),
-                    ('persona.id', QueryOperators.oneof, tuple(event.orgas)),
+                    ('reg.is_orga', QueryOperators.equal, True),
                 ],
                 [],
             )
@@ -554,8 +555,8 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             return (
                 [f"part{part.id}.status"],
                 [
-                    _participant_constraint(part),
-                    ('persona.id', QueryOperators.oneof, tuple(event.orgas)),
+                    _has_to_pay_constraint(part),
+                    ('reg.is_orga', QueryOperators.equal, True),
                     ('reg.remaining_owed', QueryOperators.greater, 0),
                 ],
                 [],

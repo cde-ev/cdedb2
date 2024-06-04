@@ -1,0 +1,60 @@
+{% set sidenav_active='core_contact' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}
+    	Contact Form
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/contact_form"), gettext("Contact"), active="True") }}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <p class="col-sm-10">
+            {% trans %}
+                This tool provides an alternative way of contacting various teams in the CdE.
+                This can be done anonymously or in your own name.
+                When used to send an anonymous message, the CdEDB allows the contacted team
+                to reply to your message without discovering your identity.
+            {% endtrans %}
+        </p>
+
+        <p class="col-sm-10">
+            {% trans %}
+                General feedback and improvement suggestions on any topic may be adressed to the
+                "Feedback-Team".
+                For complaints about or issues with specific individuals address your message to
+                the board ("Vorstand") or to the "Ansprechpartner für Probleme mit dem Vorstand",
+                if the individual in question is themself a part of the board ("Vorstand").
+            {% endtrans %}
+        </p>
+    </div>
+
+    <form action="{{ cdedblink('core/contact') }}" method="POST" id="contactform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/contact') }}
+        {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), nulloption="", small=True, wide=True,
+                                  info=gettext("Descriptions and Membership of these teams can be found on the %(website)s.")|format(
+                                      website=util.href('https://www.cde-ev.de/teams/uebersicht/', gettext("Website")))|s) }}
+        {{ util.form_input_select(name="anonymous", label=gettext("Anonymity"), nulloption="", small=True, wide=True,
+                                  entries=[
+                                      ("yes", gettext("Send message anonymously.")),
+                                      ("no", gettext("Tell them it was me.")),
+                                  ]) }}
+        {{ util.form_input_text(name="subject", label=gettext("Subject"), small=True, wide=True) }}
+        {{ util.form_input_textarea(name="msg", label=gettext("Message"), rows=10, small=True, wide=True,
+                                    info=gettext("Please describe your concerns as well as what you would like to be done about them.")) }}
+        <div>
+            {{ util.form_input_submit(label=gettext("Send"), icon="paper-plane", small=True,
+                                      info=gettext("A copy of this message wil be sent to you.")) }}
+        </div>
+    </form>
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#contactform').cdedbProtectChanges();
+        });
+    </script>
+{% endblock %}
