@@ -135,7 +135,7 @@ echo "--------------------------------------------"
 useradd -s /bin/bash -m cdb
 useradd -s /bin/bash -m cdedb
 # dPROD locked password instead of none
-passwd --delete
+passwd --delete cdedb
 groupadd --system www-cde
 useradd --system -g www-cde -d /var/lib/cdedb -M www-cde
 
