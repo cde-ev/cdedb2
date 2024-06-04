@@ -5,9 +5,7 @@ import collections.abc
 import copy
 import datetime
 import decimal
-import functools
 import json
-import time
 import unittest
 from typing import Any, Dict, List, Optional, cast
 
@@ -4808,6 +4806,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("anton")
     def test_event_keeper_log_entries(self) -> None:
+        # pylint: disable=protected-access
         event_id = 1
 
         def normalize_reference_time(dt: datetime.datetime) -> datetime.datetime:
