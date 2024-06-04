@@ -1,0 +1,11 @@
+BEGIN;
+    UPDATE core.changelog SET gender = NULL WHERE NOT is_cde_realm AND NOT is_event_realm AND gender IS NOT NULL;
+    UPDATE core.changelog SET birthday = NULL WHERE NOT is_cde_realm AND NOT is_event_realm AND birthday IS NOT NULL;
+    UPDATE core.changelog SET is_searchable = False WHERE NOT is_cde_realm AND is_searchable;
+    UPDATE core.changelog SET balance = NULL WHERE NOT is_cde_realm AND balance IS NOT NULL;
+    UPDATE core.changelog SET donation = NULL WHERE NOT is_cde_realm AND donation IS NOT NULL;
+    UPDATE core.changelog SET decided_search = NULL WHERE NOT is_cde_realm AND decided_search IS NOT NULL;
+    UPDATE core.changelog SET trial_member = NULL WHERE NOT is_cde_realm AND trial_member IS NOT NULL;
+    UPDATE core.changelog SET bub_search = NULL WHERE NOT is_cde_realm AND bub_search IS NOT NULL;
+    UPDATE core.changelog SET paper_expuls = NULL WHERE NOT is_cde_realm AND paper_expuls IS NOT NULL;
+COMMIT;

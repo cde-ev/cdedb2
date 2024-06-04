@@ -2,10 +2,12 @@
 # pylint: disable=missing-module-docstring
 
 import unittest
-from typing import Any
+from typing import Any, cast
 
 import psycopg2.extensions
 
+from cdedb.backend.common import DatabaseLock, Silencer, _affirm_atomized_context
+from cdedb.common import RequestState
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (
     Atomizer, ConnectionContainer, IrradiatedConnection, connection_pool_factory,
@@ -56,6 +58,33 @@ class TestDatabase(unittest.TestCase):
             self.assertNotEqual(psycopg2.extensions.STATUS_READY,
                                 nested_conn.status)
         self.assertEqual(psycopg2.extensions.STATUS_READY, nested_conn.status)
+
+        rs = cast(RequestState, rs)
+
+        with self.assertRaises(RuntimeError):
+            _affirm_atomized_context(rs)
+        with Atomizer(rs):
+            _affirm_atomized_context(rs)
+
+        # The following context managers raise an error during __enter__.
+        #  The pass is required syntactically, but never run.
+        with Atomizer(rs):
+            with self.assertRaises(RuntimeError):
+                with DatabaseLock(rs):
+                    pass  # pragma: no cover
+
+        # Add missing attribute of actual RequestState.
+        rs.is_quiet = False
+
+        with self.assertRaises(RuntimeError):
+            with Silencer(rs):
+                pass  # pragma: no cover
+
+        with Atomizer(rs):
+            with Silencer(rs):
+                with self.assertRaises(RuntimeError):
+                    with Silencer(rs):
+                        pass  # pragma: no cover
 
     def test_suppressed_exception(self) -> None:
         factory = connection_pool_factory(

@@ -5,26 +5,23 @@ echo ""
 echo "cdedb - sandbox system: stage2"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
-echo "Prefer IPv4 over IPv6..."
-echo "--------------------------------------------"
-
-echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
-
-echo ""
 echo "Providing the host keys..."
 echo "--------------------------------------------"
 
+# dPROD different ssh keys
 mkdir -p /etc/ssh
 chmod 755 /etc/ssh
 cp /media/cdrom0/ssh_host* /etc/ssh
 chmod 600 /etc/ssh/ssh_host*
 chmod 644 /etc/ssh/ssh_host*.pub
 
+# dPROD uses LetsEncrypt
 mkdir -p /etc/ssl/apache2
 cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
+# dPROD not present
 # add the self-signed certificate to the trusted ldap certificates
 # (note the following step in stage3)
 mkdir -p /etc/ldap/certs
@@ -33,6 +30,7 @@ cp /media/cdrom0/ldap.pem /etc/ldap/certs
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
+# dPROD only main, no backports (less choice necessary)
 cat > /etc/apt/sources.list <<EOF
 deb http://deb.debian.org/debian bookworm main contrib non-free
 deb-src http://deb.debian.org/debian bookworm main contrib non-free
@@ -100,6 +98,7 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     segno==1.5.2
 
 # devtools
+# dPROD not present
 python3 -m pip install --no-cache-dir --break-system-packages \
     mypy==1.4.0 \
     flake8==3.8.4 \
@@ -126,6 +125,7 @@ echo "will fail with a helpful error message."
 echo ""
 echo "Disable private temp for Apache (this should be dev only)..."
 echo "--------------------------------------------"
+# dPROD PrivateTmp=true
 sed -i -e 's/PrivateTmp=true/PrivateTmp=false/' /lib/systemd/system/apache2.service
 
 echo ""
@@ -133,9 +133,14 @@ echo "Setting up system..."
 echo "--------------------------------------------"
 
 useradd -s /bin/bash -m cdb
-useradd -s /bin/bash -m -p REw.iVaxV7gAI cdedb # password: akademie
+useradd -s /bin/bash -m cdedb
+# dPROD locked password instead of none
+passwd --delete cdedb
 groupadd --system www-cde
 useradd --system -g www-cde -d /var/lib/cdedb -M www-cde
+
+# dPROD allow empty passwords
+echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
@@ -144,7 +149,9 @@ echo "" >> /home/cdedb/.bashrc
 sudo -u cdedb touch /home/cdedb/.bash_profile
 echo "cd /cdedb2" >> /home/cdedb/.bash_profile
 echo "" >> /home/cdedb/.bash_profile
+# dPROD no sudo privileges (personalized accounts instead)
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 
 cat > /etc/motd <<EOF
 
@@ -162,6 +169,7 @@ echo "--------------------------"
 
 mkdir -p /home/cdedb/.ssh
 chmod 755 /home/cdedb/.ssh
+# dPROD different ssh keys
 cp /media/cdrom0/ssh_user_rsa_key /home/cdedb/.ssh/id_rsa
 cp /media/cdrom0/ssh_user_rsa_key.pub /home/cdedb/.ssh/id_rsa.pub
 cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts

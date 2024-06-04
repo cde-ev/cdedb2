@@ -223,6 +223,8 @@ class CdEParseMixin(CdEBaseFrontend):
                 if t.type in {
                     TransactionType.MembershipFee,
                     TransactionType.EventFee,
+                    TransactionType.EventFeeRefund,
+                    TransactionType.InstructorRefund,
                 }
             ]
             fields = parse.ExportFields.db_import

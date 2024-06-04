@@ -76,5 +76,12 @@ class DeletionImpossibleError(Exception):
     """Exception signalling that deletion is permanently blocked."""
 
 
+class CryptographyError(Exception):
+    """Exception signalling that a cryptographic action failed.
+
+    Suppresses detailed logging to avoid leaking secrets into log.
+    """
+
+
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""

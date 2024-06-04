@@ -90,26 +90,26 @@
                 <tr>
                     <td>{% trans %}Public Lists by part{% endtrans %}</td>
                     <td>
-                        {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id]}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
+                        {% for part in ambience['event']['parts'].values()|sort %}
+                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part.id]}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
                         {% endfor %}
                     </td>
                     <td>
-                        {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id]}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
+                        {% for part in ambience['event']['parts'].values()|sort %}
+                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part.id]}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
                         {% endfor %}
                     </td>
                 </tr>
                 <tr>
                     <td>{% trans %}Orga Lists by part{% endtrans %}</td>
                     <td>
-                        {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id], 'orgas_only': True}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
+                        {% for part in ambience['event']['parts'].values()|sort %}
+                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part.id], 'orgas_only': True}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
                         {% endfor %}
                     </td>
                     <td>
-                        {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id], 'orgas_only': True}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
+                        {% for part in ambience['event']['parts'].values()|sort %}
+                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part.id], 'orgas_only': True}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
                         {% endfor %}
                     </td>
                 </tr>

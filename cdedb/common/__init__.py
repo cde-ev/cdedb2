@@ -136,6 +136,13 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
+    def persona_name(self) -> str:
+        return make_persona_name({
+            'given_names': self.given_names,
+            'display_name': self.display_name,
+            'family_name': self.family_name,
+        })
+
 
 if TYPE_CHECKING:
     from cdedb.frontend.common import AmbienceDict

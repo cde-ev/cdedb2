@@ -19,7 +19,8 @@ User=www-cde
 Group=www-cde
 # restrict the privileges of the running process
 RemoveIPC=true
-PrivateTmp=true
+# dPROD PrivateTmp=true
+PrivateTmp=false
 NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectHome=read-only

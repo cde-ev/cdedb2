@@ -83,12 +83,12 @@ class CdEDataclass:
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
-                SELECT {','.join(cls.database_fields())}
-                FROM {cls.database_table}
-                WHERE {entity_key or cls.entity_key} = ANY(%s)
-            """
+            SELECT {','.join(cls.database_fields())}
+            FROM {cls.database_table}
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
         params = (entities,)
         return query, params
 

@@ -569,8 +569,7 @@ p.textbox {
     background: #eee;
     font-weight: bold;
 }
-.table>tbody>tr.summary>td, .table>tbody>tr.summary>th,
-.table>tfoot>tr.summary>td, .table>tfoot>tr.summary>th {
+tr.summary>td, tr.summary>th {
     border-top: 3px double #888;
     font-weight: bold;
 }
@@ -660,7 +659,7 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td {
+tr.ls-selected td, tr:target td{
     background: #d9edf7;
 }
 .ls-item {
@@ -1094,6 +1093,16 @@ tr.money-negative>td {
     background-color: #ffe9e9;
 }
 
+/* Event Fees */
+tr.eventfee > td.money-negative {
+    /*color: #3c763d;*/
+    /*background-color: #dff0d8;*/
+    color: #449d44;
+}
+tr.eventfee > td.money-positive {
+    /*color: #31708f;*/
+    /*background-color: #d9edf7;*/
+}
 
 /* ************** *
  * Helper classes *

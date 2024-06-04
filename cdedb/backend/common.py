@@ -8,7 +8,6 @@ template for all services.
 
 import abc
 import cgitb
-import copy
 import functools
 import logging
 import sys
@@ -95,43 +94,6 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
             return cast(Mapping[Any, T], data)[param]
 
     return singularized
-
-
-def batchify(function: Callable[..., T],
-             array_param_name: str = "data",
-             singular_param_name: str = "data") -> Callable[..., list[T]]:
-    """This takes a function and returns a batchified version.
-
-    The function has to accept an a singular parameter.
-    The singular parameter has either to be a keyword only parameter
-    or the first positional parameter after the request state.
-    Batchification creates a function which accepts an array instead
-    and loops over this array wrapping everything in a database transaction.
-    It returns an array of all return values.
-
-    :param array_param_name: new name of the batchified parameter
-    :param singular_param_name: name of the parameter to batchify
-    """
-
-    @functools.wraps(function)
-    def batchified(self: AbstractBackend, rs: RequestState, *args: Any,
-                   **kwargs: Any) -> list[T]:
-        ret = []
-        with Atomizer(rs):
-            if array_param_name in kwargs:
-                param = kwargs.pop(array_param_name)
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[singular_param_name] = datum
-                    ret.append(function(self, rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(function(self, rs, *new_args, **kwargs))
-        return ret
-
-    return batchified
 
 
 def read_conditional_write_composer(
@@ -278,7 +240,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         """
         return f"{cls.realm}_admin" in rs.user.roles
 
-    def cgitb_log(self) -> None:
+    # coverage: We do not expect to trigger an exception to be logged by this.
+    def cgitb_log(self) -> None:  # pragma: no cover
         """Log the current exception.
 
         This uses the standard logger and formats the exception with cgitb.
@@ -310,33 +273,33 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         fields = {column: column.replace('"', '') for field in query.fields_of_interest
                   for column in field.split(",")}
+        aggregate_select = ""
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
-                # distinct count for primary keys is necessary for queries that
-                # duplicate rows due to JOIN, e.g. cde user search
-                agg[(f"COUNT(DISTINCT {query.scope.get_primary_key()})"
-                     f" FILTER (WHERE {field} IS NULL)")] = f"null.{field_as}"
+                agg[
+                    f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
+                ] = f"null.{field_as}"
                 if query.spec[field].type in ("int", "float"):
-                    agg[f"SUM({field})"] = f"sum.{field_as}"
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
-                    agg[f"AVG({field})"] = f"avg.{field_as}"
-                    agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
+                    agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'AVG("{field_as}")'] = f"avg.{field_as}"
+                    agg[f'STDDEV_SAMP("{field_as}")'] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
-                    agg[f"SUM({field}::int)"] = f"sum.{field_as}"
+                    agg[f'SUM("{field_as}"::int)'] = f"sum.{field_as}"
                 elif query.spec[field].type in ("date", "datetime"):
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     # TODO add avg for dates
-            select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
+            aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
-            if not view:
-                view = query.scope.get_aggregate_view()
-        else:
-            select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-            select += ', ' + query.scope.get_primary_key()
-        q, params = self._construct_query(query, select, distinct=distinct, view=view)
+        select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
+        select += ', ' + query.scope.get_primary_key()
+        q, params = self._construct_query(
+            query, select, distinct=distinct, view=view,
+            aggregate_select=aggregate_select,
+        )
         data = self.query_all(rs, q, params)
 
         if aggregate:
@@ -353,7 +316,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(query: Query, select: str, distinct: bool,
-                         view: Optional[str]) -> tuple[str, list[DatabaseValue]]:
+                         view: Optional[str], aggregate_select: str,
+                         ) -> tuple[str, list[DatabaseValue]]:
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -364,7 +328,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
         view = view or query.scope.get_view()
-        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: list[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
@@ -402,12 +365,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 constraints.append(constraint)
                 continue  # skip constraints.append below
             if operator == _ops.empty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NULL OR {0} = '' )"
                 else:
                     phrase = "( {0} IS NULL )"
             elif operator == _ops.nonempty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
@@ -419,7 +382,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
                 if operator in (_ops.equalornull, _ops.unequalornull):
-                    if query.spec[field] == "str":
+                    if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
                         phrase += " OR {0} IS NULL )"
@@ -468,8 +431,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
+        where = ""
         if constraints:
-            q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
+            where = f'WHERE ({") AND (".join(constraints)})'
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view} {where}"
+        if aggregate_select:
+            q = f"SELECT {aggregate_select} FROM ({q}) AS tmp"
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -552,8 +519,8 @@ class Silencer:
     def __enter__(self) -> None:
         if self.rs.is_quiet:
             raise RuntimeError("Already silenced. Reentrant use is unsupported.")
-        self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
+        self.rs.is_quiet = True
 
     def __exit__(self, atype: type[Exception], value: Exception,
                  tb: TracebackType) -> None:
@@ -600,13 +567,14 @@ class DatabaseLock:
 
         self.xid = self.rs._conn.xid(42, "cdedb_database_lock", str(self.id))
         if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
-            raise RuntimeError("Connection not ready!")
+            raise RuntimeError("Connection not ready!")  # pragma: no cover
         try:
             self.rs._conn.tpc_begin(self.xid)
             cur = self.rs._conn.cursor()
             cur.execute(query, (params,))
             self.rs._conn.tpc_prepare()
-        except psycopg2.errors.LockNotAvailable:
+        except psycopg2.errors.LockNotAvailable:  # pragma: no cover
+            # coverage: covered by `tests.backend.common` but not registered correctly.
             # No lock was acquired, abort
             self.rs._conn.tpc_rollback()
             self.xid = None
@@ -621,7 +589,7 @@ class DatabaseLock:
                 # connection available for further use
                 self.rs._conn.reset()
             elif self.xid:
-                raise RuntimeError("Transaction exists, but status is not prepared.")
+                raise RuntimeError("Transaction exists, but status is not prepared.")  # pragma: no cover
 
         return self if was_locking_successful else None
 
@@ -631,7 +599,7 @@ class DatabaseLock:
             # We are not atomized so a commit is always possible
             self.rs._conn.commit()
         if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
-            raise RuntimeError(f"Connection not ready but {self.rs._conn.status}!")
+            raise RuntimeError(f"Connection not ready but {self.rs._conn.status}!")  # pragma: no cover
         if self.xid:
             # release the lock only when actually having acquired it
             self.rs._conn.tpc_commit(self.xid)

@@ -10,6 +10,7 @@ import unittest
 from typing import Any, Dict, List, Optional, cast
 
 import freezegun
+import freezegun.api
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.errors
@@ -1157,7 +1158,8 @@ class TestEventBackend(BackendTest):
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, event_id))
         expectation: CdEDBObjectMap = {
-            1: {'amount_owed': decimal.Decimal("573.99"),
+            1: {
+                'amount_owed': decimal.Decimal("573.99"),
                 'amount_paid': decimal.Decimal("200.00"),
                 'checkin': None,
                 'ctime': nearly_now(),
@@ -1177,41 +1179,57 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': True,
                 'parts': {
-                    1: {'is_camping_mat': False,
+                    1: {
+                        'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 1,
-                        'status': -1},
-                    2: {'is_camping_mat': False,
+                        'status': const.RegistrationPartStati.not_applied,
+                    },
+                    2: {
+                        'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 1,
-                        'status': 1},
-                    3: {'is_camping_mat': False,
+                        'status': const.RegistrationPartStati.applied,
+                    },
+                    3: {
+                        'is_camping_mat': False,
                         'lodgement_id': 1,
                         'part_id': 3,
                         'registration_id': 1,
-                        'status': 2}},
+                        'status': const.RegistrationPartStati.participant,
+                    },
+                },
                 'tracks': {
-                    1: {'choices': [1, 3, 4, 2],
+                    1: {
+                        'choices': [1, 3, 4, 2],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
-                        'track_id': 1},
-                    2: {'choices': [2],
+                        'track_id': 1,
+                    },
+                    2: {
+                        'choices': [2],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
-                        'track_id': 2},
-                    3: {'choices': [1, 4],
+                        'track_id': 2,
+                    },
+                    3: {
+                        'choices': [1, 4],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
-                        'track_id': 3}},
+                        'track_id': 3,
+                    },
+                },
                 'payment': None,
                 'persona_id': 1,
-                'real_persona_id': None},
-            2: {'amount_owed': decimal.Decimal("466.49"),
+                'real_persona_id': None,
+            },
+            2: {
+                'amount_owed': decimal.Decimal("466.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'ctime': nearly_now(),
@@ -1231,41 +1249,57 @@ class TestEventBackend(BackendTest):
                 'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
                 'parental_agreement': True,
                 'parts': {
-                    1: {'is_camping_mat': False,
+                    1: {
+                        'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 2,
-                        'status': 3},
-                    2: {'is_camping_mat': False,
+                        'status': const.RegistrationPartStati.waitlist,
+                    },
+                    2: {
+                        'is_camping_mat': False,
                         'lodgement_id': 4,
                         'part_id': 2,
                         'registration_id': 2,
-                        'status': 4},
-                    3: {'is_camping_mat': False,
+                        'status': const.RegistrationPartStati.guest,
+                    },
+                    3: {
+                        'is_camping_mat': False,
                         'lodgement_id': 4,
                         'part_id': 3,
                         'registration_id': 2,
-                        'status': 2}},
+                        'status': const.RegistrationPartStati.participant,
+                    },
+                },
                 'tracks': {
-                    1: {'choices': [5, 4, 2, 1],
+                    1: {
+                        'choices': [5, 4, 2, 1],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 2,
-                        'track_id': 1},
-                    2: {'choices': [3],
+                        'track_id': 1,
+                    },
+                    2: {
+                        'choices': [3],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 2,
-                        'track_id': 2},
-                    3: {'choices': [4, 2],
+                        'track_id': 2,
+                    },
+                    3: {
+                        'choices': [4, 2],
                         'course_id': 1,
                         'course_instructor': 1,
                         'registration_id': 2,
-                        'track_id': 3}},
+                        'track_id': 3,
+                    },
+                },
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
-                'real_persona_id': None},
-            4: {'amount_owed': decimal.Decimal("431.99"),
+                'real_persona_id': None,
+            },
+            4: {
+                'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
                 'ctime': nearly_now(),
@@ -1286,40 +1320,56 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': False,
                 'parts': {
-                    1: {'is_camping_mat': False,
+                    1: {
+                        'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 4,
-                        'status': 6},
-                    2: {'is_camping_mat': False,
+                        'status': const.RegistrationPartStati.rejected,
+                    },
+                    2: {
+                        'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 4,
-                        'status': 5},
-                    3: {'is_camping_mat': True,
+                        'status': const.RegistrationPartStati.cancelled,
+                    },
+                    3: {
+                        'is_camping_mat': True,
                         'lodgement_id': 2,
                         'part_id': 3,
                         'registration_id': 4,
-                        'status': 2}},
+                        'status': const.RegistrationPartStati.participant,
+                    },
+                },
                 'tracks': {
-                    1: {'choices': [2, 1, 4, 5],
+                    1: {
+                        'choices': [2, 1, 4, 5],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 4,
-                        'track_id': 1},
-                    2: {'choices': [4],
+                        'track_id': 1,
+                    },
+                    2: {
+                        'choices': [4],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 4,
-                        'track_id': 2},
-                    3: {'choices': [1, 2],
+                        'track_id': 2,
+                    },
+                    3: {
+                        'choices': [1, 2],
                         'course_id': 1,
                         'course_instructor': None,
                         'registration_id': 4,
-                        'track_id': 3}},
+                        'track_id': 3,
+                    },
+                },
                 'payment': datetime.date(2014, 4, 4),
                 'persona_id': 9,
-                'real_persona_id': None}}
+                'real_persona_id': None,
+            },
+        }
         self.assertEqual(expectation,
                          self.event.get_registrations(self.key, (1, 2, 4)))
         data: CdEDBObject = {
@@ -1329,11 +1379,11 @@ class TestEventBackend(BackendTest):
             'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
-                    'status': 2,
+                    'status': const.RegistrationPartStati.participant,
                     'lodgement_id': 2,
                 },
                 3: {
-                    'status': 6,
+                    'status': const.RegistrationPartStati.rejected,
                     'lodgement_id': None,
                 }
             },
@@ -1377,15 +1427,15 @@ class TestEventBackend(BackendTest):
             'parts': {
                 1: {
                     'lodgement_id': None,
-                    'status': 1,
+                    'status': const.RegistrationPartStati.applied,
                 },
                 2: {
                     'lodgement_id': None,
-                    'status': 1,
+                    'status': const.RegistrationPartStati.applied,
                 },
                 3: {
                     'lodgement_id': None,
-                    'status': 1,
+                    'status': const.RegistrationPartStati.applied,
                 },
             },
             'tracks': {
@@ -4752,3 +4802,57 @@ class TestEventBackend(BackendTest):
         self.cde.change_membership(self.key, persona_id, False)
         self.assertEqual(
             decimal.Decimal(0), self.event.calculate_fee(self.key, new_reg_id))
+
+    @event_keeper
+    @as_users("anton")
+    def test_event_keeper_log_entries(self) -> None:
+        # pylint: disable=protected-access
+        event_id = 1
+
+        def normalize_reference_time(dt: datetime.datetime) -> datetime.datetime:
+            return datetime.datetime.fromisoformat(
+                self.event._event_keeper.format_datetime(dt).decode())
+
+        base_time = now() + datetime.timedelta(hours=1)
+        delta = datetime.timedelta(minutes=42)
+
+        # Convert reference time to same format as parsed time because of tz trouble.
+        reference_time = normalize_reference_time(base_time)
+
+        self.event.event_keeper_commit(
+            self.key, event_id, "pre test", after_change=True,
+        )
+        # Ensure that the commit time matches the current (non-frozen) time.
+        self.assertEqual(
+            nearly_now(delta=datetime.timedelta(milliseconds=10)),
+            self.event._event_keeper.latest_logtime(event_id),
+        )
+
+        with freezegun.freeze_time(base_time) as frozen_time:
+            frozen_time.tick(delta)
+
+            # Create any log entry.
+            pdf_data = (self.testfile_dir / "form.pdf").read_bytes()
+            self.event.change_minor_form(self.key, event_id, pdf_data)
+
+            # Retrieve the time of the log entry.
+            log = self.event.retrieve_log(
+                self.key, EventLogFilter(length=1)
+            )[1][0]
+            log_reference_time = normalize_reference_time(log['ctime'])
+
+            frozen_time.tick(delta)
+
+            # Create a commit and ensure that the commit time matches the log time
+            #  instead of the current (frozen) time.
+            self.event.event_keeper_commit(
+                self.key, event_id, "foo bar", after_change=True,
+            )
+            self.assertEqual(
+                log_reference_time,
+                self.event._event_keeper.latest_logtime(event_id),
+            )
+            self.assertNotEqual(
+                reference_time,
+                self.event._event_keeper.latest_logtime(event_id),
+            )

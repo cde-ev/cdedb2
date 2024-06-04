@@ -222,8 +222,12 @@
             {% call history_field(gettext("CdE-Membership")) %}
                 {% call(entry) print_multifield_history(['is_member', 'trial_member']) %}
                     {% if entry['is_member'] %}
-                        {% if entry['trial_member'] %}
-                            {% trans %}Trial Membership{% endtrans %}
+                        {% if entry['honorary_member'] and entry['trial_member'] %}
+                            {% trans %}Honorary & Trial Member{% endtrans %}
+                        {% elif entry['honorary_member'] %}
+                            {% trans %}Honorary Member{% endtrans %}
+                        {% elif entry['trial_member'] %}
+                            {% trans %}Trial Member{% endtrans %}
                         {% else %}
                             {% trans %}CdE-Member{% endtrans %}
                         {% endif %}

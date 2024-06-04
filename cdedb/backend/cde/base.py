@@ -244,8 +244,8 @@ class CdEBaseBackend(AbstractBackend):
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
-            num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_honorary,
+            num_of_printed_expuls, num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -262,6 +262,11 @@ class CdEBaseBackend(AbstractBackend):
                 FROM core.personas
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
+            (
+                SELECT COUNT(*) AS num_of_honorary
+                FROM core.personas
+                WHERE is_member = True AND honorary_member = True
+            ) AS honorary_count,
             (
                 SELECT COUNT(*) AS num_of_printed_expuls
                 FROM core.personas
@@ -282,7 +287,9 @@ class CdEBaseBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
+            n_("num_of_honorary"), n_("num_of_printed_expuls"), n_("num_ex_members"),
+            n_("num_all"),
+        ))
 
         def query_stats(select: str, condition: str, order: str, limit: int = 0,
                         ) -> OrderedDict[str, int]:
@@ -431,6 +438,7 @@ class CdEBaseBackend(AbstractBackend):
                     'is_ml_realm': True,
                     'decided_search': False,
                     'trial_member': False,
+                    'honorary_member': False,
                     'paper_expuls': True,
                     'donation': decimal.Decimal(0),
                     'bub_search': False,

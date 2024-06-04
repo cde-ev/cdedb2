@@ -36,6 +36,8 @@ from typing import (
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
 from cdedb.common.query import (
     QueryScope, QuerySpec, QuerySpecEntry, make_course_query_spec,
@@ -172,7 +174,7 @@ class Event(EventDataclass):
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
                 {', '.join(cls.database_fields())},
@@ -391,6 +393,12 @@ class EventFee(EventDataclass):
     amount: decimal.Decimal
     condition: vtypes.EventFeeCondition
     notes: Optional[str]
+
+    @functools.cached_property
+    def visual_debug(self) -> str:
+        parse_result = fcp_parsing.parse(self.condition)
+        return fcp_roundtrip.visual_debug(
+            parse_result, {}, {}, {}, condition_only=True)[1]
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount

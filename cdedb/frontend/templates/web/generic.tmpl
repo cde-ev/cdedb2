@@ -63,6 +63,8 @@
                                    anid="input_checkbox_is_member") }}
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Member"),
                                        anid="input_checkbox_trial_member") }}
+            {{ util.form_input_checkbox(name="honorary_member", label=gettext("Honorary Member"),
+                                        anid="input_checkbox_trial_member") }}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
                                    anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
@@ -553,6 +555,8 @@
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
                                         {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
+                                    {% elif format_spec == ResultFormat.event_fee %}
+                                        {{ util.href(cdedblink("event/show_registration_fee", {'registration_id': row[primary_field]}), text, title=gettext("Fee Details")) }}
                                     {% else %}
                                         {{ text }}
                                     {% endif %}

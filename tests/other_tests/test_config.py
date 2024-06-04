@@ -2,6 +2,7 @@
 # pylint: disable=missing-module-docstring
 
 import pathlib
+import subprocess
 import unittest
 from typing import ClassVar
 
@@ -55,3 +56,16 @@ class TestConfig(unittest.TestCase):
         set_configpath(current_configpath)
         testsecret = SecretsConfig()
         self.assertEqual(testsecret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")
+
+    def test_production_secrets(self) -> None:
+        production_vm_marker = pathlib.Path("/PRODUCTIONVM")
+
+        dev_secrets = SecretsConfig()
+        self.assertIn("URL_PARAMETER_SALT", dev_secrets)
+
+        try:
+            subprocess.call(["sudo", "touch", production_vm_marker])
+            production_secrets = SecretsConfig()
+            self.assertNotIn("URL_PARAMETER_SALT", production_secrets)
+        finally:
+            subprocess.call(["sudo", "rm", production_vm_marker])

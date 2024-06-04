@@ -12,11 +12,7 @@ if [ ! -e /var/lib/cdedb ]; then
     python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 fi
 
-export SCRIPT_NAME=/db
-sudo --preserve-env=SCRIPT_NAME -u www-cde -g www-data /usr/bin/gunicorn \
-     --forwarded-allow-ips="*" -w 4 --bind localhost:8998 --daemon --reload \
-     wsgi.cdedb-app:application
-unset SCRIPT_NAME
+/run-gunicorn.sh
 
 cd /
 

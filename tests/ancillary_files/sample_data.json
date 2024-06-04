@@ -56,6 +56,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -117,6 +118,7 @@
             "donation": "42.23",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
             "paper_expuls": true,
@@ -178,6 +180,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": true,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -239,6 +242,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -300,6 +304,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null,
@@ -361,6 +366,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -422,6 +428,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -483,6 +490,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -544,6 +552,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": true,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -605,6 +614,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null,
@@ -666,6 +676,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null,
@@ -727,6 +738,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -788,6 +800,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -849,6 +862,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null,
@@ -910,6 +924,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -971,6 +986,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1032,6 +1048,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1093,6 +1110,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null,
@@ -1154,6 +1172,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1215,6 +1234,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1276,6 +1296,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1337,6 +1358,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1398,6 +1420,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -1459,7 +1482,70 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
+            "foto": null,
+            "paper_expuls": true,
+            "fulltext": null
+        },
+        {
+            "id": 42,
+            "username": "petra@example.cde",
+            "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
+            "is_active": true,
+            "notes": "Ehrenmitglied, weil hat voll viel gespendet.",
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": true,
+            "is_searchable": false,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Petra",
+            "given_names": "Petra",
+            "family_name": "Philanthrop",
+            "title": null,
+            "name_supplement": null,
+            "pronouns": null,
+            "pronouns_nametag": false,
+            "pronouns_profile": false,
+            "gender": 1,
+            "birthday": "2023-08-12",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": "DE",
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": "DE",
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "donation": "2000.00",
+            "decided_search": false,
+            "trial_member": false,
+            "honorary_member": true,
+            "bub_search": false,
             "foto": null,
             "paper_expuls": true,
             "fulltext": null
@@ -1520,6 +1606,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true,
@@ -1581,6 +1668,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true,
@@ -1780,6 +1868,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -1846,6 +1935,7 @@
             "donation": "42.23",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
             "paper_expuls": true
@@ -1912,6 +2002,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": true,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -1978,6 +2069,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -2044,6 +2136,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null
@@ -2110,6 +2203,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2176,6 +2270,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2242,6 +2337,7 @@
             "donation": "0.00",
             "decided_search": false,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2308,6 +2404,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": true,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -2374,6 +2471,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null
@@ -2440,6 +2538,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null
@@ -2506,6 +2605,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": true,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -2572,6 +2672,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2638,6 +2739,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null
@@ -2704,6 +2806,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2770,6 +2873,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2836,6 +2940,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2902,6 +3007,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -2968,6 +3074,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3034,6 +3141,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3100,6 +3208,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -3166,6 +3275,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -3232,6 +3342,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3298,6 +3409,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": true,
             "foto": null,
             "paper_expuls": true
@@ -3364,6 +3476,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3430,6 +3543,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3496,6 +3610,7 @@
             "donation": null,
             "decided_search": null,
             "trial_member": null,
+            "honorary_member": null,
             "bub_search": null,
             "foto": null,
             "paper_expuls": null
@@ -3562,6 +3677,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3628,6 +3744,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3694,6 +3811,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3760,6 +3878,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3826,6 +3945,7 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3892,6 +4012,74 @@
             "donation": "0.00",
             "decided_search": true,
             "trial_member": false,
+            "honorary_member": false,
+            "bub_search": false,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
+            "submitted_by": 1,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 1,
+            "change_note": "Init.",
+            "automated_change": false,
+            "code": 2,
+            "persona_id": 42,
+            "username": "petra@example.cde",
+            "is_active": true,
+            "notes": "Ehrenmitglied, weil hat voll viel gespendet.",
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": true,
+            "is_searchable": false,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Petra",
+            "given_names": "Petra",
+            "family_name": "Philanthrop",
+            "title": null,
+            "name_supplement": null,
+            "gender": 1,
+            "pronouns": null,
+            "pronouns_nametag": false,
+            "pronouns_profile": false,
+            "birthday": "2023-08-12",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": "DE",
+            "birth_name": null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": "DE",
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "0.00",
+            "donation": "2000.00",
+            "decided_search": false,
+            "trial_member": false,
+            "honorary_member": true,
             "bub_search": false,
             "foto": null,
             "paper_expuls": true
@@ -3916,6 +4104,7 @@
             "atime": "---now---"
         }
     ],
+    "core.anonymous_messages": [],
     "cde.org_period": [
         {
             "id": 41,
@@ -4044,6 +4233,18 @@
             "granted_at": "2005-02-22T20:22:22.222222+00:00",
             "revoked_at": "2006-02-22T20:22:22.222222+00:00",
             "revision": 1,
+            "notes": null
+        },
+        {
+            "id": 4,
+            "submitted_by": 32,
+            "persona_id": 42,
+            "iban": "DE22100100500123456789",
+            "account_owner": null,
+            "account_address": null,
+            "granted_at": "2023-08-12T00:00:00+00:00",
+            "revoked_at": null,
+            "revision": 2,
             "notes": null
         }
     ],
@@ -9002,6 +9203,11 @@
         },
         {
             "mailinglist_id": 1,
+            "persona_id": 42,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
             "persona_id": 100,
             "subscription_state": 30
         },
@@ -9073,6 +9279,11 @@
         {
             "mailinglist_id": 2,
             "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 42,
             "subscription_state": 2
         },
         {
@@ -9442,6 +9653,11 @@
         },
         {
             "mailinglist_id": 13,
+            "persona_id": 42,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
             "persona_id": 48,
             "subscription_state": 1
         },
@@ -9488,6 +9704,11 @@
         {
             "mailinglist_id": 51,
             "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 42,
             "subscription_state": 30
         },
         {
@@ -9563,6 +9784,11 @@
         {
             "mailinglist_id": 52,
             "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 42,
             "subscription_state": 2
         },
         {
@@ -9848,6 +10074,11 @@
         {
             "mailinglist_id": 67,
             "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 42,
             "subscription_state": 30
         },
         {

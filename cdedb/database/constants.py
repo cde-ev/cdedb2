@@ -418,6 +418,9 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    send_anonymous_message = 100  #:
+    reply_to_anonymous_message = 101  #:
+    rotate_anonymous_message = 102  #:
 
 
 @enum.unique
@@ -459,6 +462,8 @@ class FinanceLogCodes(CdEIntEnum):
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
     #: Fallback for strange cases
     other = 99
 

@@ -44,12 +44,7 @@
         {{ util.h(n_("Additional Information"), underline=true) }}
         {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
-        <div class="panel panel-primary">
-            <div class="panel-body">
-                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
-                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
-            </div>
-        </div>
+        {{ generic_event.fee_preview_panel() }}
 
         {% if not was_member %}
             <div class="heading-underline text-info" style="font-weight: bold;">

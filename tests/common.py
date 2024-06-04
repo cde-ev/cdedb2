@@ -227,6 +227,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             # Special case for the `subman.SubscriptionManager`
             if name == "subman":
                 return attr  # TODO: coverage
+            if name == "_event_keeper":
+                return attr
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
@@ -496,7 +498,7 @@ class BackendTest(CdEDBTest):
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id',):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -798,6 +800,16 @@ USER_DICT: Dict[str, UserObject] = {
         'given_names': "Ludwig",
         'family_name': "Lokus",
         'default_name_format': "Ludwig Lokus",
+    },
+    "petra": {
+        'id': 42,
+        'DB-ID': "DB-42-6",
+        'username': "petra@example.cde",
+        'password': "secret",
+        'display_name': "Petra",
+        'given_names': "Petra",
+        'family_name': "Philanthrop",
+        'default_name_format': "Petra Philanthrop",
     },
     "viktor": {
         'id': 48,
@@ -1258,7 +1270,7 @@ class FrontendTest(BackendTest):
         """Retrieve the content of the (first) element with the given id."""
         if self.response.content_type == "text/plain":
             return self.response.text
-        tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
             self.fail(f"Div '{div}' not found.")
         content = tmp[0]
@@ -1271,7 +1283,7 @@ class FrontendTest(BackendTest):
         """
         if not self.response.content_type == "text/html":
             self.fail("No valid html document.")
-        if self.response.lxml.xpath("//*[@id='{}']".format(div)):
+        if self.response.lxml.xpath(f"//*[@id='{div}']"):
             self.fail(f"Element with id {div} found")
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
@@ -1281,6 +1293,13 @@ class FrontendTest(BackendTest):
         more easy to use.
         """
         self.assertIn(attr, input_field.attrs)
+
+    def assertHasClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""

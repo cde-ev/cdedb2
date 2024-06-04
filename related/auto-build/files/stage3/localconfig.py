@@ -19,3 +19,11 @@ if pathlib.Path('/CONTAINER').is_file():
     LDAP_KEY_PATH = pathlib.Path("/etc/ssl/ldap/ldap.key")
     # there is no pgbouncer so the postgres port is the original one
     DB_PORT = 5432
+
+# dPROD relevant excerpt from actual config follows:
+# SECRETS_CONFIGPATH = pathlib.Path("/etc/cdedb/secrets.py")
+# LOG_DIR = pathlib.Path("/var/log/cdedb")
+# MAILMAN_HOST = "10.10.0.2:8001"
+# LDAP_HOST = "ldap.cde-ev.de"
+# LDAP_PEM_PATH = pathlib.Path("/var/local/letsencrypt/certs/ldap.cde-ev.de.pem")
+# LDAP_KEY_PATH = pathlib.Path("/etc/letsencrypt/domainkeys/ldap.cde-ev.de.key")

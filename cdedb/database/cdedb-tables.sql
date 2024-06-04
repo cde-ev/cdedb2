@@ -175,6 +175,11 @@ CREATE TABLE core.personas (
             CHECK(is_cde_realm = (trial_member IS NOT NULL)),
         CONSTRAINT personas_trial_member_implicits
             CHECK(NOT trial_member OR is_member),
+        honorary_member         boolean,
+        CONSTRAINT personas_cde_honorary_member
+            CHECK(is_cde_realm = (honorary_member IS NOT NULL)),
+        CONSTRAINT personas_honorary_member_implicits
+            CHECK(NOT honorary_member OR is_member),
         -- if True this member's data may be passed on to BuB
         bub_search              boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_bub_search
@@ -426,6 +431,7 @@ CREATE TABLE core.changelog (
         donation                numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
+        honorary_member         boolean,
         bub_search              boolean,
         foto                    varchar,
         paper_expuls            boolean
@@ -466,6 +472,17 @@ CREATE TABLE core.locks (
 );
 GRANT SELECT, UPDATE ON core.locks_id_seq TO cdb_admin;
 GRANT INSERT, SELECT, DELETE, UPDATE ON core.locks TO cdb_admin;
+
+CREATE TABLE core.anonymous_messages (
+        id                      serial PRIMARY KEY,
+        message_id              varchar NOT NULL UNIQUE,
+        recipient               varchar NOT NULL,
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        encrypted_data          varchar NOT NULL
+);
+CREATE INDEX anonymous_messages_message_id_idx ON core.anonymous_messages(message_id);
+GRANT SELECT, UPDATE(message_id, encrypted_data), INSERT ON core.anonymous_messages TO cdb_persona;
+GRANT SELECT, UPDATE ON core.anonymous_messages_id_seq TO cdb_persona;
 
 ---
 --- SCHEMA cde

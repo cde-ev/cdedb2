@@ -21,6 +21,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
@@ -167,7 +168,8 @@ class CoreBaseBackend(AbstractBackend):
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
                  persona_id: Optional[int] = None, change_note: Optional[str] = None,
-                 atomized: bool = True) -> DefaultReturnCode:
+                 atomized: bool = True, suppress_persona_id: bool = False,
+                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -186,8 +188,11 @@ class CoreBaseBackend(AbstractBackend):
         query = ("INSERT INTO core.log "
                  "(code, submitted_by, persona_id, change_note) "
                  "VALUES (%s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, rs.user.persona_id, persona_id, change_note))
+        params = (
+            code, rs.user.persona_id if not suppress_persona_id else None, persona_id,
+            change_note,
+        )
+        return self.query_exec(rs, query, params)
 
     @access("persona")
     def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
@@ -200,6 +205,13 @@ class CoreBaseBackend(AbstractBackend):
         """
         return self.core_log(rs, const.CoreLogCodes.quota_violation, rs.user.persona_id,
                              atomized=False)
+
+    @access("persona")
+    def log_contact_reply(self, rs: RequestState, recipient: str) -> DefaultReturnCode:
+        """Log who sent a reply to an anonymous message originally sent to whom."""
+        recipient = affirm(vtypes.Email, recipient)
+        return self.core_log(rs, const.CoreLogCodes.reply_to_anonymous_message,
+                             change_note=recipient, atomized=False)
 
     @internal
     @access("cde")
@@ -852,7 +864,7 @@ class CoreBaseBackend(AbstractBackend):
             if any(data[key] for key in ADMIN_KEYS):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
-        if (("is_member" in data or "trial_member" in data)
+        if (set(data) & {"is_member", "trial_member", "honorary_member"}
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or not {"membership", "purge"} & set(allow_specials))):
             raise PrivilegeError(n_("Membership modification prevented."))
@@ -1269,6 +1281,7 @@ class CoreBaseBackend(AbstractBackend):
     def change_membership_easy_mode(self, rs: RequestState, persona_id: int, *,
                                     is_member: Optional[bool] = None,
                                     trial_member: Optional[bool] = None,
+                                    honorary_member: Optional[bool] = None,
                                     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1283,21 +1296,26 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
         trial_member = affirm_optional(bool, trial_member)
+        honorary_member = affirm_optional(bool, honorary_member)
         with Atomizer(rs):
-            current = self.retrieve_persona(rs, persona_id, (
-                'is_member', 'balance', 'is_cde_realm', 'trial_member'))
+            current = self.get_total_persona(rs, persona_id)
 
-            # Determine the target state of (trial) membership
-            if trial_member is None:
-                trial_member = current['trial_member']
+            # Determine target state.
             if is_member is None:
                 is_member = current['is_member']
+            if trial_member is None:
+                trial_member = current['trial_member']
+            if honorary_member is None:
+                honorary_member = current['honorary_member']
 
             # Do some sanity checks
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Not a CdE account."))
             if trial_member and not is_member:
-                raise ValueError(n_("Trial membership implies membership."))
+                raise ValueError(n_("Trial membership requires membership."))
+            if honorary_member and not is_member:
+                raise ValueError(n_("Honorary membership requires membership."))
+
             if not is_member:
                 # Peek at the CdE-realm, this is somewhat of a transgression,
                 # but sadly necessary duct tape to keep the whole thing working.
@@ -1308,13 +1326,20 @@ class CoreBaseBackend(AbstractBackend):
                     raise RuntimeError(n_("Active lastschrift permit found."))
 
             # check if nothing changed at all
-            if (trial_member == current['trial_member']
-                    and is_member == current['is_member']):
+            if (
+                is_member == current['is_member']
+                and trial_member == current['trial_member']
+                and honorary_member == current['honorary_member']
+            ):
                 rs.notify('info', n_("Nothing changed."))
                 return 1
 
-            update: CdEDBObject = {'id': persona_id, 'is_member': is_member,
-                                   'trial_member': trial_member}
+            update: CdEDBObject = {
+                'id': persona_id,
+                'is_member': is_member,
+                'trial_member': trial_member,
+                'honorary_member': honorary_member,
+            }
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
@@ -1323,23 +1348,22 @@ class CoreBaseBackend(AbstractBackend):
             # Perform logging
             if is_member != current['is_member']:
                 if is_member:
-                    delta = None
-                    new_balance = None
                     code = const.FinanceLogCodes.gain_membership
                 else:
-                    # Display this to be not surprised if you look at the finance log
-                    #  and observe the decreasing of the total balance
-                    delta = decimal.Decimal(0)
-                    new_balance = current["balance"]
                     code = const.FinanceLogCodes.lose_membership
-                self.finance_log(rs, code, persona_id, delta, new_balance)
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
             if trial_member != current['trial_member']:
                 if trial_member:
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-
+            if honorary_member != current['honorary_member']:
+                if honorary_member:
+                    code = const.FinanceLogCodes.honorary_membership_granted
+                else:
+                    code = const.FinanceLogCodes.honorary_membership_revoked
+                self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
         return ret
 
     @access("core_admin", "meta_admin")
@@ -1806,6 +1830,7 @@ class CoreBaseBackend(AbstractBackend):
                 'donation': 0,
                 'decided_search': False,
                 'trial_member': False,
+                'honorary_member': False,
                 'bub_search': False,
                 'paper_expuls': True,
             }
@@ -2143,13 +2168,15 @@ class CoreBaseBackend(AbstractBackend):
         fulltext_input = copy.deepcopy(data)
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
+        # For the sake of correct logging, we stash these as changes
+        membership_keys = ('is_member', 'trial_member', 'honorary_member')
+        stash = {k: data.pop(k) for k in membership_keys}
+        data.update({
+            'is_member': False,
+            'trial_member': False if data.get('is_cde_realm') else None,
+            'honorary_member': False if data.get('is_cde_realm') else None,
+        })
         with Atomizer(rs):
-            is_member = trial_member = None
-            if data.get('is_cde_realm'):
-                # For the sake of correct logging, we stash these as changes
-                is_member = data.get('is_member')
-                trial_member = data.get('trial_member')
-                data['is_member'] = data['trial_member'] = False
 
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
@@ -2166,9 +2193,8 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
 
             # apply the previously stashed changes
-            if is_member or trial_member:
-                self.change_membership_easy_mode(
-                    rs, new_id, is_member=is_member, trial_member=trial_member)
+            if any(stash.values()):
+                self.change_membership_easy_mode(rs, new_id, **stash)
         return new_id
 
     @access("anonymous")
@@ -2700,6 +2726,83 @@ class CoreBaseBackend(AbstractBackend):
         for persona_id, persona_ in ret.items():
             persona_['may_be_edited'] = self._is_relative_admin(rs, persona_)
         return ret
+
+    @access("persona")
+    def log_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+        """Save encrypted metadata regarding an anonymous message sent via contact form.
+
+        This is so that one may reply to the anonymous message without needing to know
+        who sent it.
+        """
+
+        message = affirm_dataclass(models.AnonymousMessageData, message, creation=True)
+
+        with Atomizer(rs):
+            if self.sql_insert(
+                rs, models.AnonymousMessageData.database_table, message.to_database(),
+            ):
+                self.core_log(
+                    rs, const.CoreLogCodes.send_anonymous_message,
+                    change_note=message.recipient, suppress_persona_id=True,
+                )
+                return message.message_id
+        return None
+
+    @access("persona")
+    def get_anonymous_message(
+            self, rs: RequestState, message_id: str,
+    ) -> models.AnonymousMessageData:
+        """Retrieve the metadata for an anonymous message using a unique message id.
+
+        Note that the message id is a random base64 string, not a numeric id, even
+        though the stored message _also_ has a numeric id.
+        """
+
+        affirm(vtypes.Base64, message_id)
+
+        message_data = self.sql_select_one(
+            rs, models.AnonymousMessageData.database_table,
+            models.AnonymousMessageData.database_fields(),
+            message_id, models.AnonymousMessageData.entity_key,
+        )
+        if not message_data:
+            self.logger.error(
+                f"User {rs.user.persona_id} tried to retrieve an anonymous message"
+                f" using an invalid message id {message_id}.")
+            raise KeyError(n_("Unknown message id."))
+
+        return models.AnonymousMessageData.from_database(message_data)
+
+    @access("persona")
+    def rotate_anonymous_message(
+            self, rs: RequestState, message: models.AnonymousMessageData,
+    ) -> Optional[str]:
+        """Update the encryption key, and the message id of a stored anonymous message.
+
+        This is to be done should the message id (including the key) leak.
+        """
+
+        message = affirm_dataclass(models.AnonymousMessageData, message)
+
+        update = message.to_database()
+        del update['ctime']
+        del update['recipient']
+
+        with Atomizer(rs):
+            if self.sql_update(
+                rs, models.AnonymousMessageData.database_table, update,
+            ):
+                self.logger.info(
+                    f"Rotated encryption key and message id for anonymous"
+                    f" message {message.id}")
+                self.core_log(
+                    rs, const.CoreLogCodes.rotate_anonymous_message,
+                    change_note=message.recipient,
+                )
+                return message.message_id
+        return None
 
     @access("anonymous")
     def get_meta_info(self, rs: RequestState) -> CdEDBObject:

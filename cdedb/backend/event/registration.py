@@ -11,7 +11,8 @@ import dataclasses
 import datetime
 import decimal
 from collections import defaultdict
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
+from functools import cached_property
 from typing import Any, NamedTuple, Optional, Protocol, TypeVar
 
 import psycopg2.extensions
@@ -52,42 +53,88 @@ class CourseChoiceValidationAux(NamedTuple):
     orga_input: bool
 
 
-FeeStats = dict[str, dict[const.EventFeeType, decimal.Decimal]]
+@dataclasses.dataclass
+class FeeStatsOneFee:
+    total_owed: decimal.Decimal = decimal.Decimal(0)
+    total_paid: decimal.Decimal = decimal.Decimal(0)
+    registrations_owed: set[int] = dataclasses.field(default_factory=set)
+    registrations_paid: set[int] = dataclasses.field(default_factory=set)
 
 
 @dataclasses.dataclass
-class RegistrationFee:
+class FeeStatsOneKind:
+    by_fee: dict[vtypes.ProtoID, FeeStatsOneFee] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneFee))
+
+    def __getitem__(self, item: vtypes.ProtoID) -> FeeStatsOneFee:
+        return self.by_fee[item]
+
+    @cached_property
+    def total_owed(self) -> decimal.Decimal:
+        return sum(s.total_owed for s in self.by_fee.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def total_paid(self) -> decimal.Decimal:
+        return sum(s.total_paid for s in self.by_fee.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def registrations_owed(self) -> set[int]:
+        return set().union(*(stat.registrations_owed for stat in self.by_fee.values()))
+
+    @cached_property
+    def registrations_paid(self) -> set[int]:
+        return set().union(*(stat.registrations_paid for stat in self.by_fee.values()))
+
+
+@dataclasses.dataclass
+class FeeStatsTotal:
+    by_kind: dict[const.EventFeeType, FeeStatsOneKind] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneKind))
+
+    surplus_total: decimal.Decimal = decimal.Decimal(0)
+    surplus_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    insufficient_total: decimal.Decimal = decimal.Decimal(0)
+    insufficient_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    unpaid_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    def __getitem__(self, item: const.EventFeeType) -> FeeStatsOneKind:
+        return self.by_kind[item]
+
+    def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsOneKind]]:
+        return iter(self.by_kind.items())
+
+    @cached_property
+    def total_owed(self) -> decimal.Decimal:
+        return sum(s.total_owed for s in self.by_kind.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def total_paid(self) -> decimal.Decimal:
+        return sum(s.total_paid for s in self.by_kind.values()) or decimal.Decimal(0)
+
+
+@dataclasses.dataclass
+class ComplexRegistrationFee:
+    """Contaings all information relevant to the total fee of one registration."""
     amount: decimal.Decimal
     active_fees: set[vtypes.ProtoID]
     visual_debug: dict[int, str]
     by_kind: dict[const.EventFeeType, decimal.Decimal]
 
-
-@dataclasses.dataclass
-class RegistrationFeeData:
-    member_fee: RegistrationFee
-    nonmember_fee: RegistrationFee
-    is_member: bool
-
-    @property
-    def fee(self) -> RegistrationFee:
-        return self.member_fee if self.is_member else self.nonmember_fee
-
-    @property
-    def amount(self) -> decimal.Decimal:
-        return self.fee.amount
+    def is_complex(self) -> bool:
+        return any(
+            amount for kind, amount in self.by_kind.items()
+            if kind != const.EventFeeType.common
+        )
 
     @property
     def donation(self) -> decimal.Decimal:
-        return self.fee.by_kind[const.EventFeeType.donation]
+        return self.by_kind[const.EventFeeType.donation]
 
     @property
-    def nonmember_surcharge_amount(self) -> decimal.Decimal:
-        return self.nonmember_fee.amount - self.member_fee.amount
-
-    @property
-    def nonmember_surcharge(self) -> bool:
-        return not self.is_member and self.nonmember_surcharge_amount > 0
+    def nonmember_surcharge(self) -> decimal.Decimal:
+        return self.by_kind[const.EventFeeType.external]
 
 
 class EventRegistrationBackend(EventBaseBackend):
@@ -336,11 +383,13 @@ class EventRegistrationBackend(EventBaseBackend):
             ret *= self.sql_insert(rs, "event.course_choices", new_choice)
         return ret
 
-    def _get_registration_info(self, rs: RequestState,
-                               reg_id: int) -> Optional[CdEDBObject]:
+    def _get_registration_info(self, rs: RequestState, reg_id: int) -> tuple[int, int]:
         """Helper to retrieve basic registration information."""
-        return self.sql_select_one(
+        reg_info = self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
+        if not reg_info:
+            raise KeyError(n_("Registration does not exist."))
+        return reg_info['persona_id'], reg_info['event_id']
 
     @access("event")
     def list_persona_registrations(
@@ -853,15 +902,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
+            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)
 
             # Perform sanity checks.
-            self._track_groups_sanity_check(rs, current['event_id'])
+            self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
@@ -937,10 +984,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
-            persona_id, event_id = current['persona_id'], current['event_id']
+            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
@@ -1035,12 +1079,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
-            current = self.get_registration(rs, data['id'])
-            update = {
-                'id': data['id'],
-                'amount_owed': self._calculate_single_fee(rs, current, event=event),
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+            self._update_registration_amount_owed(rs, data['id'])
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1213,21 +1252,32 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
+    def _update_registration_amount_owed(
+            self, rs: RequestState, registration_id: int,
+    ) -> DefaultReturnCode:
+        """
+        Update the amount owed for one registration.
+
+        If not given, the amount will be calculated beforehand.
+        """
+        self.affirm_atomized_context(rs)
+        amount = self.calculate_fee(rs, registration_id)
+
+        update = {
+            'id': registration_id,
+            'amount_owed': amount,
+        }
+        return self.sql_update(rs, models.Registration.database_table, update)
+
     def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
                                           ) -> DefaultReturnCode:
+        """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
-        fees = self.calculate_fees(rs, registration_ids)
-
-        # TODO: make this more efficient by cahing parse results and evaluators somehow.
 
         ret = 1
-        for reg_id, amount_owed in fees.items():
-            update = {
-                'id': reg_id,
-                'amount_owed': amount_owed,
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+        for reg_id in registration_ids:
+            ret *= self._update_registration_amount_owed(rs, reg_id)
 
         return ret
 
@@ -1275,13 +1325,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_complex_fee(self, rs: RequestState, registration_id: int,
-                              visual_debug: bool = False) -> RegistrationFeeData:
+                              visual_debug: bool = False) -> ComplexRegistrationFee:
         """Public access point for retrieving complex fee data."""
         registration_id = affirm(vtypes.ID, registration_id)
         registration = self.get_registration(rs, registration_id)
         event = self.get_event(rs, registration['event_id'])
-        return self._calculate_complex_fee(rs, registration, event=event,
-                                           visual_debug=visual_debug)
+        return self._calculate_complex_fee(
+            rs, registration, event=event, visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
                               event: models.Event) -> decimal.Decimal:
@@ -1291,7 +1341,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @staticmethod
     def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
                                event: models.Event, visual_debug: bool = False,
-                               ) -> RegistrationFeeData:
+                               ) -> ComplexRegistrationFee:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1305,8 +1355,6 @@ class EventRegistrationBackend(EventBaseBackend):
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
-        ret = {}
-
         reg_part_involvement = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
@@ -1317,44 +1365,42 @@ class EventRegistrationBackend(EventBaseBackend):
             if f.association == const.FieldAssociations.registration
                and f.kind == const.FieldDatatypes.bool
         }
-        for tmp_is_member in (True, False):
-            # Other bools can be added here, but also require adjustment to the parser.
-            other_bools = {
-                'is_orga': reg.get('is_orga', reg['persona_id'] in event.orgas),
-                'is_member': tmp_is_member,
-                'any_part': any(reg_part_involvement.values()),
-                'all_parts': all(reg_part_involvement.values()),
-            }
-            amount = decimal.Decimal(0)
-            active_fees = set()
-            fees_by_kind: dict[const.EventFeeType, decimal.Decimal] = defaultdict(
-                decimal.Decimal)
-            visual_debug_data: dict[int, str] = {}
-            for fee in event.fees.values():
-                parse_result = fcp_parsing.parse(fee.condition)
-                if fcp_evaluation.evaluate(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools):
-                    amount += fee.amount
-                    active_fees.add(fee.id)
-                    fees_by_kind[fee.kind] += fee.amount
-                if visual_debug:
-                    visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
-                        parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools,
-                    )[1]
-            ret[tmp_is_member] = RegistrationFee(
-                amount, active_fees, visual_debug_data, fees_by_kind)
+        # Other bools can be added here, but also require adjustment to the parser.
+        other_bools = {
+            'is_orga': reg.get('is_orga', reg['persona_id'] in event.orgas),
+            'is_member': reg['is_member'],
+            'any_part': any(reg_part_involvement.values()),
+            'all_parts': all(reg_part_involvement.values()),
+        }
+        amount = decimal.Decimal(0)
+        active_fees = set()
+        fees_by_kind: dict[const.EventFeeType, decimal.Decimal] = defaultdict(
+            decimal.Decimal)
+        visual_debug_data: dict[int, str] = {}
+        for fee in event.fees.values():
+            parse_result = fcp_parsing.parse(fee.condition)
+            if fcp_evaluation.evaluate(
+                    parse_result, reg_bool_fields, reg_part_involvement,
+                    other_bools):
+                amount += fee.amount
+                active_fees.add(fee.id)
+                fees_by_kind[fee.kind] += fee.amount
+            if visual_debug:
+                visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
+                    parse_result, reg_bool_fields, reg_part_involvement,
+                    other_bools,
+                )[1]
 
-        return RegistrationFeeData(
-            member_fee=ret[True], nonmember_fee=ret[False], is_member=reg['is_member'],
+        return ComplexRegistrationFee(
+            amount=amount, active_fees=active_fees,
+            visual_debug=visual_debug_data, by_kind=fees_by_kind,
         )
 
     @access("event")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: Collection[int], is_member: Optional[bool],
                        is_orga: Optional[bool], field_values: dict[str, bool],
-                       ) -> RegistrationFeeData:
+                       ) -> ComplexRegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
@@ -1463,36 +1509,51 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_fee_stats(self, rs: RequestState, event_id: int,
-                      ) -> FeeStats:
+                      ) -> FeeStatsTotal:
         """Group and sum the paid fees by type.
 
-        This calculates the sum over both owed and paid fees, for each kind of event
-        fees individually. If people have paid more or less than the owed amount,
-        special treatment is needed:
+        This aggregates all registrations that owe a certain event fee as well as the
+        total amount owed. The same thing is done separately for registrations that have
+        actually paid that fee.
 
-        * The share of the paid amount excessive the owed amount can not be assigned to
-          a specific fee type, and is therefore not included.
-        * If the paid amount is less than the owed amount, it can not be split into the
-          respective kinds of owed fees at all. Therefore, these payments are not
-          included at all.
+        The share of payments exceeding the respective amount owed cannot be attributed
+        to a specific fee type and is tracked seperately.
+
+        Insufficient payments cannot be split into the respective kinds of owed fee.
+        They are excluded from the paid totals, but tracked separately.
         """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
-        ret: FeeStats = {
-            'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
-            'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
-        }
+        stats = FeeStatsTotal()
+        for fee in event.fees.values():
+            # Create an entry in the defaultdict.
+            kind_stats = stats[fee.kind]  # noqa: F841
 
         for reg in self.get_registrations(rs, reg_ids).values():
-            reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
-            paid = reg['amount_paid'] >= reg['amount_owed']
-            for kind, amount in reg_fee.by_kind.items():
-                ret['owed'][kind] += amount
-                if paid:
-                    ret['paid'][kind] += amount
+            reg_fee = self._calculate_complex_fee(rs, reg, event=event)
 
-        return ret
+            if reg['amount_owed'] > reg['amount_paid']:
+                if reg['amount_paid']:
+                    stats.insufficient_total += reg['amount_paid']
+                    stats.insufficient_registrations.add(reg['id'])
+                else:
+                    stats.unpaid_registrations.add(reg['id'])
+            elif reg['amount_paid'] > reg['amount_owed']:
+                stats.surplus_total += reg['amount_paid'] - reg['amount_owed']
+                stats.surplus_registrations.add(reg['id'])
+
+            for fee_id in reg_fee.active_fees:
+                fee = event.fees[fee_id]
+                fee_stat = stats[fee.kind][fee.id]
+
+                fee_stat.total_owed += fee.amount
+                fee_stat.registrations_owed.add(reg['id'])
+                if reg['amount_paid'] >= reg['amount_owed']:
+                    fee_stat.total_paid += fee.amount
+                    fee_stat.registrations_paid.add(reg['id'])
+
+        return stats
 
     @internal
     @access("finance_admin")
