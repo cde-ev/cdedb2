@@ -1,9 +1,12 @@
 [flake8]
 max-line-length = 88
 extend-ignore =
-    W503  # line break before binop, mutually exclusive to W504
-    F811  # redefinition, false-positves due to @overload
-    E122  # these and the following should be dropped after a run of autopep8
+    # line break before binop, mutually exclusive to W504 
+    W503
+    # redefinition, false-positves due to @overload
+    F811
+    # these and the following should be dropped after a run of autopep8
+    E122
     E127
     E128
     E131
@@ -17,7 +20,8 @@ per-file-ignores =
     tests/backend_tests/__init__.py:F401
     tests/frontend_tests/__init__.py:F401
     tests/ldap_tests/__init__.py:F401
-    tests/ldap_tests/backend.py:F841  # TODO: remove this once we improve the tests.
+    # TODO: remove this once we improve the tests.
+    tests/ldap_tests/backend.py:F841
     tests/other_tests/__init__.py:F401
     # TODO potentially refactor the import config mechanism
     tests/config/*:F401,F403
