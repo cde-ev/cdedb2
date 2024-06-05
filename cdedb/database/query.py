@@ -97,19 +97,25 @@ class SqlQueryBackend:
                     for x in cur.fetchall())
 
     def sql_insert(self, container: ConnectionContainer, table: str, data: CdEDBObject,
-                   entity_key: str = "id", drop_on_conflict: bool = False) -> int:
+                   entity_key: str = "id", drop_on_conflict: bool = False,
+                   update_on_conflict: bool = False) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
 
         :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
+        :param update_on_conflict: Whether to upsert if conflicting with a constraint
         :returns: id of inserted row
         """
+        if drop_on_conflict and update_on_conflict:
+            raise ValueError("Only one conflict resolution may be chosen.")
         keys = tuple(key for key in data)
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
                  f" ({', '.join(('%s',) * len(keys))})")
         if drop_on_conflict:
             query += " ON CONFLICT DO NOTHING"
+        if update_on_conflict:
+            query += " ON CONFLICT DO UPDATE"
         query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(container, query, params)) or 0
