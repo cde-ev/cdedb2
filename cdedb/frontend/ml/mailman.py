@@ -243,7 +243,8 @@ The original message as received by Mailman is attached.
             rs, db_list.id, states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
             rs, db_list.id, persona_ids)
-        defect_addresses = self.coreproxy.list_defect_addresses(rs)
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, EmailStatus.defect_states())
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Before updating subscribers, delete spurious (un)subscription requests
@@ -259,7 +260,7 @@ The original message as received by Mailman is attached.
             address: make_persona_name(personas[pid])
             for pid, address in db_addresses.items() if address
         }
-        actual_db_subscribers = set(db_subscribers) - defect_addresses
+        actual_db_subscribers = set(db_subscribers) - set(defect_addresses)
         mm_subscribers = {m.email: m for m in mm_list.members}
 
         new_subs = actual_db_subscribers - set(mm_subscribers)

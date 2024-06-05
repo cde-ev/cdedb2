@@ -49,8 +49,8 @@ class EmailStatus(CdEIntEnum):
     """Spec for status of core.email_status.
 
     This is intended to be extended in future revisions. Potential further
-    states are: unconfirmed, mailinglists_disabled, all_disabled, removed,
-    unsuccessful_transmission.
+    states are: whitelist, unconfirmed, mailinglists_disabled, all_disabled,
+    removed, unsuccessful_transmission.
     """
     normal = 1
     defect = 10

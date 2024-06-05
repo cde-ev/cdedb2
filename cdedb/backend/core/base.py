@@ -2900,11 +2900,23 @@ class CoreBaseBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @access("core_admin", "ml_admin")
-    def list_defect_addresses(self, rs: RequestState) -> set[str]:
-        """List all defect mail addresses known to the CdEDB."""
-        query = "SELECT address FROM core.email_status WHERE status = ANY(%s)"
-        data = self.query_all(rs, query, (EmailStatus.defect_states(),))
-        return {e['address'] for e in data}
+    def list_email_states(
+            self, rs: RequestState,
+            states: Optional[Collection[vtypes.EmailStatus]] = None
+    ) -> dict[str: vtypes.EmailStatus]:
+        """List all explicit email states known to the CdEDB.
+
+        This is mainly used for handling defect addresses.
+
+        :param states: Restrict to addresses with one of these states.
+        """
+        query = "SELECT address, status FROM core.email_status"
+        params = tuple()
+        if states:
+            query += " WHERE status = ANY(%s)"
+            params += (states,)
+        data = self.query_all(rs, query, params)
+        return {e['address']: e['status'] for e in data}
 
     @access("ml")
     def get_defect_addresses(
