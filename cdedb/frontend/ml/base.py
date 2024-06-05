@@ -558,7 +558,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         defect_addresses = self.coreproxy.list_email_states(
-            rs, EmailStatus.defect_states())
+            rs, const.EmailStatus.defect_states())
         requests = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(const.SubscriptionState.pending,))
         persona_ids = (set(ml.moderators) | set(subscribers.keys()) | set(requests))
@@ -624,7 +624,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                                                  allow_restricted=False)
         # determine defect addresses used as subscription_override
         defect_addresses = self.coreproxy.list_email_states(
-            rs,EmailStatus.defect_states())
+            rs, const.EmailStatus.defect_states())
         subscription_addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, subscription_overrides)
         defects = {anid for anid in subscription_overrides

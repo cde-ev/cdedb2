@@ -2941,7 +2941,7 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN core.personas ON def.address = core.personas.username
             WHERE def.status = ANY(%s)
         """
-        params: tuple[set[vtypes.ID], ...] = (EmailStatus.defect_states(),)
+        params: tuple[set[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
         if persona_ids:
             query += "AND core.personas.id = ANY(%s)"
             params += (persona_ids, )
@@ -2959,7 +2959,7 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN ml.subscription_addresses AS sa ON def.address = sa.address
             WHERE def.status = ANY(%s)
         """
-        params: tuple[list[vtypes.ID], ...] = (EmailStatus.defect_states(),)
+        params: tuple[list[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
         if persona_ids:
             query += " AND sa.persona_id = ANY(%s)"
             params += (persona_ids,)
@@ -2972,11 +2972,11 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "ml_admin")
     def mark_email_status(
-            self, rs: RequestState, address: str, status: EmailStatus,
+            self, rs: RequestState, address: str, status: const.EmailStatus,
             notes: Optional[str] = None
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
-        status = affirm(vtypes.EmailStatus, status)
+        status = affirm(const.EmailStatus, status)
         notes = affirm_optional(str, notes)
 
         code = self.sql_insert(

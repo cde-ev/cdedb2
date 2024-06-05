@@ -11,7 +11,7 @@ import mailmanclient as mmc
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
 from cdedb.common import RequestState, make_persona_name
-from cdedb.database.constants import LockType
+from cdedb.database.constants import EmailStatus, LockType
 from cdedb.frontend.common import cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.models.ml import Mailinglist
