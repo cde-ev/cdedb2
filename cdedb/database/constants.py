@@ -45,13 +45,19 @@ class PersonaChangeStati(CdEIntEnum):
 
 
 @enum.unique
-class EmailDefectStatus(CdEIntEnum):
-    """Spec for status of core.defect_addresses."""
-    unconfirmed = 1
-    mailinglists_disabled = 8
-    all_disabled = 10
-    removed = 20
-    unsuccessful_transmission = 40
+class EmailStatus(CdEIntEnum):
+    """Spec for status of core.email_status.
+
+    This is intended to be extended in future revisions. Potential further
+    states are: unconfirmed, mailinglists_disabled, all_disabled, removed,
+    unsuccessful_transmission.
+    """
+    normal = 1
+    defect = 10
+
+    @classmethod
+    def defect_states(cls) -> tuple["EmailStatus", ...]:
+        return (cls.defect,)
 
 
 @enum.unique

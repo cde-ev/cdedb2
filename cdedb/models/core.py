@@ -5,7 +5,7 @@ import dataclasses
 import datetime
 import re
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Collection, Optional
+from typing import TYPE_CHECKING, Optional
 
 from cryptography.fernet import Fernet
 
@@ -13,8 +13,8 @@ import cdedb.common.validation.types as vtypes
 from cdedb.common import now, CdEDBObject
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.sorting import Sortkey
-from cdedb.database.constants import EmailDefectStatus
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.database.constants import EmailStatus
+from cdedb.models.common import CdEDataclass
 
 __all__ = ["AnonymousMessageData"]
 
@@ -23,9 +23,9 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass
-class DefectAddress(CdEDataclass):
+class EmailAddressStatus(CdEDataclass):
     address: vtypes.Email
-    status: EmailDefectStatus
+    status: EmailStatus
     notes: Optional[str] = None
     # This persona has this address as username.
     user_id: Optional[vtypes.ID] = None
@@ -34,10 +34,10 @@ class DefectAddress(CdEDataclass):
     # The mailinglists where this address is used as explicit address.
     ml_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
-    database_table = "core.defect_addresses"
+    database_table = "core.email_states"
 
     @classmethod
-    def from_database(cls, data: CdEDBObject) -> "DefectAddress":
+    def from_database(cls, data: CdEDBObject) -> "EmailAddressStatus":
         if "ml_ids" in data:
             data["ml_ids"] = set(data["ml_ids"])
         return super().from_database(data)
@@ -51,6 +51,9 @@ class DefectAddress(CdEDataclass):
         if self.subscriber_id:
             ret.add(self.subscriber_id)
         return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.status, self.address)
 
 
 @dataclasses.dataclass

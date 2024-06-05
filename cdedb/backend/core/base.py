@@ -2902,8 +2902,8 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin", "ml_admin")
     def list_defect_addresses(self, rs: RequestState) -> set[str]:
         """List all defect mail addresses known to the CdEDB."""
-        query = "SELECT address FROM core.defect_addresses"
-        data = self.query_all(rs, query, ())
+        query = "SELECT address FROM core.email_status WHERE status = ANY(%s)"
+        data = self.query_all(rs, query, (EmailStatus.defect_states(),))
         return {e['address'] for e in data}
 
     @access("ml")
@@ -2927,11 +2927,12 @@ class CoreBaseBackend(AbstractBackend):
                 core.personas.id AS user_id
             FROM core.defect_addresses AS def
                 LEFT JOIN core.personas ON def.address = core.personas.username
+            WHERE def.status = ANY(%s)
         """
-        params: tuple[set[vtypes.ID], ...] = tuple()
+        params: tuple[set[vtypes.ID], ...] = (EmailStatus.defect_states(),)
         if persona_ids:
-            query += "WHERE core.personas.id = ANY(%s)"
-            params = (persona_ids, )
+            query += "AND core.personas.id = ANY(%s)"
+            params += (persona_ids, )
         data = collections.defaultdict(dict)
         for e in self.query_all(rs, query, params):
             data[e['address']] = e
@@ -2944,11 +2945,12 @@ class CoreBaseBackend(AbstractBackend):
                 sa.persona_id AS subscriber_id
             FROM core.defect_addresses AS def
                 LEFT JOIN ml.subscription_addresses AS sa ON def.address = sa.address
+            WHERE def.status = ANY(%s)
         """
-        params: tuple[list[vtypes.ID], ...] = tuple()
+        params: tuple[list[vtypes.ID], ...] = (EmailStatus.defect_states(),)
         if persona_ids:
-            query += " WHERE sa.persona_id = ANY(%s)"
-            params = (persona_ids,)
+            query += " AND sa.persona_id = ANY(%s)"
+            params += (persona_ids,)
         query += " GROUP BY def.id, def.address, def.status, def.notes, subscriber_id"
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
@@ -2957,22 +2959,22 @@ class CoreBaseBackend(AbstractBackend):
         return {val.address: val for val in ret.values()}
 
     @access("core_admin", "ml_admin")
-    def add_defect_address(
-        self, rs: RequestState, address: str, notes: Optional[str] = None
+    def mark_email_status(
+            self, rs: RequestState, address: str, status: EmailStatus,
+            notes: Optional[str] = None
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
+        status = affirm(vtypes.EmailStatus, status)
         notes = affirm_optional(str, notes)
 
-        # check the address is not already marked as defect
-        query = "SELECT address FROM core.defect_addresses WHERE address = %s"
-        if self.query_one(rs, query, (address,)):
-            raise ValueError(n_("Address already marked as defect."))
-        code = self.sql_insert(rs, DefectAddress.database_table,
-                               {"address": address, "notes": notes})
+        code = self.sql_insert(
+            rs, DefectAddress.database_table,
+            {"address": address, "status": status, "notes": notes},
+            update_on_conflict=True)
         return code
 
     @access("core_admin", "ml_admin")
-    def remove_defect_address(
+    def remove_email_status(
         self, rs: RequestState, address: str
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
