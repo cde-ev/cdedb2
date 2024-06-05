@@ -4085,9 +4085,9 @@
             "paper_expuls": true
         }
     ],
-    "core.defect_addresses": [
+    "core.email_states": [
         {
-            "address": "defect@example.com",
+            "address": "new-anton@example.cde",
             "status": 10
         },
         {
