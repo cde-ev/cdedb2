@@ -103,7 +103,7 @@ class FeeStatsTotal:
         return self.by_kind[item]
 
     def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsOneKind]]:
-        return iter(self.by_kind.items())
+        return iter(xsorted(self.by_kind.items()))
 
     @cached_property
     def total_owed(self) -> decimal.Decimal:
@@ -121,6 +121,9 @@ class ComplexRegistrationFee:
     active_fees: set[vtypes.ProtoID]
     visual_debug: dict[int, str]
     by_kind: dict[const.EventFeeType, decimal.Decimal]
+
+    def __iter__(self) -> Iterator[tuple[const.EventFeeType, decimal.Decimal]]:
+        return iter(xsorted(self.by_kind.items()))
 
     def is_complex(self) -> bool:
         return any(
