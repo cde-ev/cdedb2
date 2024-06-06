@@ -2776,12 +2776,16 @@ def _event_fee(
         val: Any, argname: str, *,
         id_: ProtoID,
         event: CdEDBObject,
+        personalized: Optional[bool] = None,
         **kwargs: Any,
 ) -> EventFee:
     errs = ValidationSummary()
     current = event['fees'].get(id_)
-    if current is not None:
-        if current['amount'] is None or current['condition'] is None:
+    if current is not None and personalized is None:
+        personalized = (current['amount'] is None or current['condition'] is None)
+
+    if personalized is not None:
+        if personalized:
             if val.get('amount') is not None:
                 errs.append(ValueError(
                     'amount', n_("Cannot set amount for personalized fee.")))

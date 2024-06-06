@@ -635,27 +635,37 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState,
-                           event_id: int, fee_id: Optional[int] = None) -> Response:
+    @REQUESTdata("personalized")
+    def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
+                           fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
+        rs.ignore_validation_errors()
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'].as_dict())
-        return self.render(rs, "event/fee/configure_fee")
+                personalized = rs.ambience['fee'].is_personalized()
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {
+                'personalized': personalized,
+            },
+        )
 
     @access("event", modi={"POST"})
     @event_guard()
+    @REQUESTdata("personalized")
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                      fee_id: Optional[int] = None) -> Response:
+                      personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
             rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
             event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
+            personalized=personalized,
         )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
