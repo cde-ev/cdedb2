@@ -587,7 +587,7 @@ class EventEventMixin(EventBaseFrontend):
     def _get_payment_query(
             self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
     ) -> Query:
-        fee = event.fees.get(fee_id)
+        fee = event.fees.get(fee_id or 0)
         if fee and fee.is_personalized():
             constraints: list[QueryConstraint] = [
                 (f"fee{fee.id}.amount", QueryOperators.nonempty, None),
