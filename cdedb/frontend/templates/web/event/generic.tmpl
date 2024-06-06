@@ -541,7 +541,7 @@
                             <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
                                 {{ util.anti_csrf_token("event/delete_personalized_fee") }}
-                                {{ util.input_submit(icon='minus', label=None, aclass="btn btn-sm btn-danger") }}
+                                {{ util.input_submit(icon='minus', label=None, aclass="btn btn-xs btn-danger") }}
                             </form>
                         </td>
                     {% else %}
@@ -552,7 +552,7 @@
                                 {{ util.input_text("amount", attributes='style="float:right;width:5em"'|safe) }}
                             </td>
                             <td>
-                                {{ util.input_submit(icon='plus', label=None, aclass="btn btn-sm btn-success") }}
+                                {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
                             </td>
                         </form>
                     {% endif %}
@@ -585,7 +585,7 @@
                         {% if complex_fee %}
                             {{ util.href(cdedblink("event/fee_summary") + "#eventfee_{}".format(fee.id), label=None,
                                          title=gettext("Go to event fee summary"), icon="chevron-right",
-                                         aclass="btn btn-sm btn-info") }}
+                                         aclass="btn btn-xs btn-info") }}
                         {% else %}
                             {{ util.href(
                                 cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
