@@ -42,8 +42,10 @@
     {% if ambience['fee'] %}
         {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
+    {% elif personalized %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Personalized Fee"), active=True) }}
     {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Fee"), active=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Conditional Fee"), active=True) }}
     {% endif %}
 {% endblock %}
 
