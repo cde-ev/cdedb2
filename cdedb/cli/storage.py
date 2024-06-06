@@ -133,7 +133,7 @@ def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
 
     This is needed for instances populated with sample data, and for offline instances.
     """
-    keeper = EntityKeeper(conf, 'event_keeper')
+    keeper = EntityKeeper(conf, 'event_keeper', log_keys=[], log_timestamp_key="")
     for event_id in event_ids:
         keeper.init(event_id, exists_ok=True)
         keeper.commit(event_id, "", "Initialer Commit.")

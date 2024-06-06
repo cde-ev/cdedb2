@@ -13598,7 +13598,7 @@ msgstr "Minderjährigenformular entfernen"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:248
 msgid "The minor form will be permanently deleted."
-msgstr "Das Minderjähgigenformular wird erndgülig gelöscht werden."
+msgstr "Das Minderjährigenformular wird endgülig gelöscht werden."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:253
 msgid "No Form present – Minors cannot register"
