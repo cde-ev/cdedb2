@@ -749,6 +749,8 @@ class Query:
                     "reg.remaining_owed",
             ):
                 return QueryResultEntryFormat.event_fee
+            if re.match(r"fee\d+\.amount", field):
+                return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):
@@ -894,6 +896,11 @@ def make_registration_query_spec(event: "models.Event",
         "ctime.creation_time": QuerySpecEntry("datetime", n_("Registration Time")),
         "mtime.modification_time":
             QuerySpecEntry("datetime", n_("Last Modification Time")),
+        **{
+            f"fee{fee.id}.amount": QuerySpecEntry(
+                "float", n_("Personalized Amount"), fee.title)
+            for fee in event.fees.values() if fee.is_personalized()
+        },
     }
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:

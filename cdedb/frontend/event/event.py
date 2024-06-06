@@ -564,8 +564,9 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/part_summary")
 
     @staticmethod
-    def _get_payment_query(
+    def _get_payment_query_base(
             event: models.Event, constraints: Collection[QueryConstraint],
+            fee: Optional[models.EventFee] = None,
     ) -> Query:
         return Query(
             QueryScope.registration,
@@ -575,7 +576,7 @@ class EventEventMixin(EventBaseFrontend):
                 "persona.username",
                 "reg.payment", "reg.remaining_owed", "reg.amount_owed",
                 "reg.amount_paid",
-            ],
+            ] + ([f"fee{fee.id}.amount"] if fee else []),
             constraints=constraints,
             order=[
                 ("persona.family_name", True),
@@ -583,10 +584,16 @@ class EventEventMixin(EventBaseFrontend):
             ],
         )
 
-    def _get_payment_query_by_ids(self, event: models.Event, ids: Collection[int],
-                                  ) -> Query:
-        if ids:
+    def _get_payment_query(
+            self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
+    ) -> Query:
+        fee = event.fees.get(fee_id)
+        if fee and fee.is_personalized():
             constraints: list[QueryConstraint] = [
+                (f"fee{fee.id}.amount", QueryOperators.nonempty, None),
+            ]
+        elif ids:
+            constraints = [
                 ("reg.id", QueryOperators.oneof, ids),
             ]
         else:
@@ -594,7 +601,7 @@ class EventEventMixin(EventBaseFrontend):
             constraints = [
                 ("reg.id", QueryOperators.empty, None),
             ]
-        return self._get_payment_query(event, constraints)
+        return self._get_payment_query_base(event, constraints, fee)
 
     @access("event")
     @event_guard()
@@ -605,7 +612,9 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/fee/fee_summary", {
             'fee_stats': fee_stats,
             'get_query':
-                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
         })
 
     @access("event")
@@ -614,15 +623,15 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        incomplete_paid = self._get_payment_query(rs.ambience['event'], [
+        incomplete_paid = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
             ("reg.amount_paid", QueryOperators.unequal, 0),
         ])
-        not_paid = self._get_payment_query(rs.ambience['event'], [
+        not_paid = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
             ("reg.amount_paid", QueryOperators.equal, 0),
         ])
-        surplus = self._get_payment_query(rs.ambience['event'], [
+        surplus = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.less, 0.00),
         ])
 
@@ -630,7 +639,9 @@ class EventEventMixin(EventBaseFrontend):
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
             'get_query':
-                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
         })
 
     @access("event")
