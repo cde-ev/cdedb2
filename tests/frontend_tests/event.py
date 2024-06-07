@@ -6714,3 +6714,83 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
         self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
         self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")
+
+    @as_users("garcia")
+    def test_personalized_event_fees(self) -> None:
+        event_id = 1
+
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge")
+        self.assertPresence("KL-Erstattung", div="eventfee_10")
+        self.assertPresence("-30,00 € – -20,00 €", div="eventfee_10")
+        self.assertPresence("Personalisierter Teilnahmebeitrag", div="eventfee_10")
+
+        self.traverse("Personalisierten Teilnahmebeitrag hinzufügen")
+        f = self.response.forms['configureeventfeeform']
+        self.assertIsNone(f.get('amount', default=None))
+        self.assertIsNone(f.get('condition', default=None))
+        f['title'] = "Rabatt auf Ehrenhomiebasis"
+        f['kind'] = const.EventFeeType.solidary_reduction
+        self.submit(f)
+
+        self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
+        self.assertPresence("–", exact=True, div="eventfee_amount_1001")
+
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
+        self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
+        self.assertPresence("Personalisierter Teilnahmebeitrag", exact=True,
+                            div="eventfee_condition_1001")
+        f = self.response.forms['addpersonalizedfeeform1001']
+        f['amount'] = "-33.33"
+        self.submit(f)
+
+        self.assertPresence("Personalisierter Teilnahmebeitrag (-33,33 €)", exact=True,
+                            div="eventfee_condition_1001")
+        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+        self.traverse("Teilnahmebeiträge")
+        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+        self.traverse({'linkid': "eventfee_owed_1001"})
+        self.traverse(r"-33,33\s€")
+
+        f = self.response.forms['deletepersonalizedfeeform1001']
+        self.submit(f)
+
+        f = self.response.forms['addpersonalizedfeeform1001']
+        f['amount'] = 69
+        self.submit(f)
+        self.traverse("Teilnahmebeiträge")
+        f = self.response.forms['deleteeventfeeform1001']
+        self.submit(f)
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.fee_modifier_created,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_set,
+                'change_note': "Rabatt auf Ehrenhomiebasis (-33,33 €)",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_set,
+                'change_note': "Rabatt auf Ehrenhomiebasis (69,00 €)",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.fee_modifier_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, "event", event_id=event_id, offset=self.EVENT_LOG_OFFSET,
+        )

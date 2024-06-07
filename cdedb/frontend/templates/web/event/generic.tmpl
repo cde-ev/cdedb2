@@ -432,8 +432,8 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro _fee_amount_td(amount) %}
-    <td class="text-right">
+{% macro _fee_amount_td(amount, fee_id) %}
+    <td class="text-right" id="eventfee_amount_{{ fee_id }}">
         {{ _print_fee_amount(amount) }}
     </td>
 {% endmacro %}
@@ -449,7 +449,7 @@
 {%- endmacro %}
 
 {% macro _fee_amount_range_td(fee) %}
-    <td class="text-right">
+    <td class="text-right" id="eventfee_amount_{{ fee.id }}">
         <strong>
             {{ _print_fee_amount_range(fee) }}
         </strong>
@@ -524,19 +524,19 @@
                     {% endif %}
                 </td>
                 {% if fee.amount %}
-                    {{ _fee_amount_td(fee.amount) }}
+                    {{ _fee_amount_td(fee.amount, fee.id) }}
                     {% if complex_fee %}
                         <td></td>
                     {% endif %}
                 {% elif js_preview %}
                     {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
-                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id]) }}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
                     {% else %}
-                        {{ _fee_amount_td(None) }}
+                        {{ _fee_amount_td(None, fee.id) }}
                     {% endif %}
                 {% elif complex_fee %}
                     {% if fee.id in ambience['registration']['personalized_fees'] %}
-                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id]) }}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
                         <td>
                             <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
                                   method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
@@ -561,12 +561,12 @@
                 {% endif %}
                 {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id) }}
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id, anid="eventfee_owed_" + fee.id|string) }}
                         <br />
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id) }}
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id, anid="eventfee_paid_" + fee.id|string) }}
                     </td>
                 {% endif %}
-                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}">
+                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}" id="eventfee_condition_{{ fee.id }}">
                     {% if not fee.condition %}
                         <i>
                             {% trans %}Personalized Fee{% endtrans %}
