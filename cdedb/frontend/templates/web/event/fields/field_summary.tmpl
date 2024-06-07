@@ -23,9 +23,6 @@
 {% if not ambience['event']['tracks'] %}
     {% do exempt.append(enums['FieldAssociations'].course) %}
 {% endif %}
-{% if not lodgements_exist %}
-    {% do exempt.append(enums['FieldAssociations'].lodgement) %}
-{% endif %}
 
 {# Macro for a general field, that can have each role in the DynamicRow workflow.
    non-deletable rows have a disabled 'delete'-checkbox,

@@ -62,7 +62,6 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
-        lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
         for part in rs.ambience['event'].parts.values():
             if part.waitlist_field:
                 referenced.add(part.waitlist_field.id)
@@ -72,8 +71,7 @@ class EventFieldMixin(EventBaseFrontend):
             if track.course_room_field:
                 referenced.add(track.course_room_field.id)
         return self.render(rs, "fields/field_summary", {
-            'referenced': referenced, 'locked': locked,
-            'lodgements_exist': lodgements_exist})
+            'referenced': referenced, 'locked': locked})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
