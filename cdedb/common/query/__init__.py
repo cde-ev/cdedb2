@@ -1095,7 +1095,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
     spec = {
         "course.id": QuerySpecEntry("id", n_("course id")),
-        "course.course_id": QuerySpecEntry("enum", n_("course"), choices=course_choices),
+        "course.course_id": QuerySpecEntry(
+            "enum", n_("course"), choices=course_choices),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
         "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),
