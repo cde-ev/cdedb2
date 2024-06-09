@@ -172,5 +172,6 @@ VALIDATOR_LOOKUP: dict[str, type[_Any]] = {
     "datetime": _datetime.datetime,
     "bool": bool,
     # This is not strictly accurate, but an acceptable fallback.
-    "enum": str,
+    "enum_int": int,
+    "enum_str": str,
 }
