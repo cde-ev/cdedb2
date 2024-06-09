@@ -903,8 +903,10 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event.as_dict(),
-                          questionnaire=questionnaire)
+            fees = affirm(
+                vtypes.EventFeeSetter, fees, event=event.as_dict(),
+                questionnaire=questionnaire,
+            )
 
             existing_fees = {unwrap(e) for e in self.sql_select(
                 rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
@@ -920,11 +922,37 @@ class EventBaseBackend(EventLowLevelBackend):
                     updated_fees | deleted_fees)}
 
                 if deleted_fees:
+                    personalized_fees = models.PersonalizedFee.many_from_database(
+                        self.query_all(
+                            rs, *models.PersonalizedFee.get_select_query(
+                                deleted_fees, 'fee_id',
+                            ),
+                        ),
+                    )
+                    regs_by_fee = collections.defaultdict(list)
+                    all_regs = set()
+                    for p_fee in personalized_fees.values():
+                        regs_by_fee[int(p_fee.fee_id)].append(p_fee.registration_id)
+                        all_regs.add(p_fee.registration_id)
+                    reg_persona_map = {
+                        e['id']: e['persona_id'] for e in self.sql_select(
+                            rs, models.Registration.database_table,
+                            ('id', 'persona_id'), all_regs,
+                        )
+                    }
                     ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
                     for x in mixed_existence_sorter(deleted_fees):
                         current = current_fee_data[x]
-                        self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                       event_id, change_note=current['title'])
+                        for reg_id in mixed_existence_sorter(regs_by_fee[x]):
+                            self.event_log(
+                                rs, const.EventLogCodes.personalized_fee_amount_deleted,
+                                event_id, reg_persona_map[reg_id],
+                                change_note=current['title'],
+                            )
+                        self.event_log(
+                            rs, const.EventLogCodes.fee_modifier_deleted,
+                            event_id, change_note=current['title'],
+                        )
 
                 for x in mixed_existence_sorter(updated_fees):
                     updated_fee = copy.deepcopy(fees[x])
@@ -939,6 +967,7 @@ class EventBaseBackend(EventLowLevelBackend):
             for x in mixed_existence_sorter(new_fees):
                 new_fee = copy.deepcopy(fees[x])
                 assert new_fee is not None
+                new_fee.pop('id', None)
                 new_fee['event_id'] = event_id
                 ret *= self.sql_insert(rs, "event.event_fees", new_fee)
                 self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
@@ -1296,6 +1325,8 @@ class EventBaseBackend(EventLowLevelBackend):
             del fee['id']
             del fee['event_id']
             del fee['title']
+            del fee['amount_min']
+            del fee['amount_max']
         for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']

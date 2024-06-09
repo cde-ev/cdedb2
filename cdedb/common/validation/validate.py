@@ -237,6 +237,8 @@ def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool
     subtype, validator = _validate_dataclass_preprocess(type_, value)
     if hasattr(value, 'to_validation'):
         val = value.to_validation()
+    elif hasattr(value, 'as_dict'):
+        val = value.as_dict()
     else:
         val = dataclasses.asdict(value)
     validated = validate_assert(
@@ -2410,10 +2412,11 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
+                val = _ALL_TYPED[atype](
+                    val, argname, creation=creation, id_=anid, **kwargs)
             else:
                 val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
-                    val, argname, creation=creation, **kwargs)
+                    val, argname, creation=creation, id_=anid, **kwargs)
             ret[anid] = val
 
     if errs:
@@ -2765,47 +2768,46 @@ def _event_field(
     return EventField(val)
 
 
-@_add_typed_validator
-def _event_fee_setter(
-    val: Any, argname: str = "fees",
-    **kwargs: Any,
-) -> EventFeeSetter:
-    """Validate a `CdEDBOptionalMap` of event fees."""
-    val = _mapping(val, argname)
-
-    new_fees = _optional_object_mapping_helper(
-        val, EventFee, argname, creation_only=False, **kwargs)
-
-    return EventFeeSetter(dict(new_fees))
+_create_optional_mapping_validator(EventFee, EventFeeSetter)
 
 
-EVENT_FEE_COMMON_FIELDS: TypeMapping = {
-    "title": str,
-    "notes": Optional[str],  # type: ignore[dict-item]
-    "amount": decimal.Decimal,
-    "condition": EventFeeCondition,
-    "kind": const.EventFeeType,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.EventFee, EventFee)
 def _event_fee(
-    val: Any, argname: str = "event_fee", *,
-    creation: bool = False, **kwargs: Any,
+        val: Any, argname: str, *,
+        id_: ProtoID,
+        event: CdEDBObject,
+        personalized: Optional[bool] = None,
+        **kwargs: Any,
 ) -> EventFee:
+    errs = ValidationSummary()
+    current = event['fees'].get(id_)
+    if current is not None and personalized is None:
+        personalized = (current['amount'] is None or current['condition'] is None)
 
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = EVENT_FEE_COMMON_FIELDS
-        optional_fields: TypeMapping = {}
+    if personalized is not None:
+        if personalized:
+            if val.get('amount') is not None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot set amount for personalized fee.")))
+            if val.get('condition') is not None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot set condition for personalized fee.")))
+        else:
+            if 'amount' in val and val['amount'] is None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot unset amount for conditional fee.")))
+            if 'condition' in val and val['condition'] is None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot unset condition for conditional fee.")))
     else:
-        mandatory_fields = {}
-        optional_fields = EVENT_FEE_COMMON_FIELDS
+        if (val['amount'] is None) != (val['condition'] is None):
+            for k in ('amount', 'condition'):
+                errs.append(ValueError(
+                    k, n_("Cannot have amount without condition or vice versa.")))
+    if errs:
+        raise errs
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
-    return EventFee(val)
+    return cast(EventFee, val)
 
 
 @_add_typed_validator
@@ -2824,10 +2826,10 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for field_id, f in event.get('fields', {}).items()
+        f['field_name'] for f in event.get('fields', {}).values()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
-           and field_id not in additional_questionnaire_fields
+           and f.get('id') not in additional_questionnaire_fields
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 
@@ -3541,7 +3543,9 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID,
                           'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
-                          'condition': str, 'amount': decimal.Decimal}),
+                          'condition': Optional[str],  # type: ignore[dict-item]
+                          'amount': Optional[decimal.Decimal],  # type: ignore[dict-item]
+                          }),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),

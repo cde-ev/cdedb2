@@ -556,7 +556,7 @@
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
                                         {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_fee %}
-                                        {{ util.href(cdedblink("event/show_registration_fee", {'registration_id': row[primary_field]}), text, title=gettext("Fee Details")) }}
+                                        {{ util.href(cdedblink("event/show_registration_fee", {'registration_id': row[primary_field]}), text|money, title=gettext("Fee Details")) }}
                                     {% else %}
                                         {{ text }}
                                     {% endif %}

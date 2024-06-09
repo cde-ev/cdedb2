@@ -4651,6 +4651,14 @@
             "notes": null
         },
         {
+            "event_id": 1,
+            "kind": 1,
+            "title": "KL-Erstattung",
+            "amount": null,
+            "condition": null,
+            "notes": "Individuelle Höhe"
+        },
+        {
             "event_id": 2,
             "kind": 1,
             "title": "Teilnahmebeitrag Party",
@@ -5867,7 +5875,7 @@
             "is_member": true,
             "payment": null,
             "amount_paid": "200.00",
-            "amount_owed": "573.99",
+            "amount_owed": "553.99",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -5910,7 +5918,7 @@
             "is_member": true,
             "payment": "2014-03-03",
             "amount_paid": "0.00",
-            "amount_owed": "534.48",
+            "amount_owed": "504.48",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -6721,6 +6729,20 @@
             "track_id": 4,
             "course_id": 6,
             "rank": 2
+        }
+    ],
+    "event.personalized_fees": [
+        {
+            "id": 1,
+            "fee_id": 10,
+            "registration_id": 1,
+            "amount": "-20.00"
+        },
+        {
+            "id": 2,
+            "fee_id": 10,
+            "registration_id": 3,
+            "amount": "-30.00"
         }
     ],
     "event.questionnaire_rows": [

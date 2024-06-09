@@ -1956,7 +1956,7 @@ class TestCdEFrontend(FrontendTest):
                 r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
             ),
         )
-        for ex, out in zip(expectation, output, strict=True):  # type: ignore[call-overload]  # TODO: obsolete with mypy set to python3.10
+        for ex, out in zip(expectation, output, strict=True):
             out = re.sub(r"\s+", " ", out)
             for piece in ex:
                 with self.subTest(search=piece, target=out):

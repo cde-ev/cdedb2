@@ -239,6 +239,8 @@ class TestEventBackend(BackendTest):
                     data['fees'][fee_id] = data['fees'][old_fee_id]
                     data['fees'][fee_id]['id'] = fee_id
                     data['fees'][fee_id]['event_id'] = new_id
+                    data['fees'][fee_id]['amount_min'] = None
+                    data['fees'][fee_id]['amount_max'] = None
                     del data['fees'][old_fee_id]
                     break
 
@@ -388,7 +390,9 @@ class TestEventBackend(BackendTest):
         data['fees'][1002].update(updated_fees[1002])
         data['fees'][1003].update(updated_fees[1003])
         data['fees'][1005] = updated_fees[-1]
-        data['fees'][1005].update({'id': 1005, 'event_id': new_id})
+        data['fees'][1005].update({
+            'id': 1005, 'event_id': new_id, 'amount_min': None, 'amount_max': None,
+        })
 
         self.assertEqual(data, self.event.get_event(self.key, new_id).as_dict())
 
@@ -1055,12 +1059,12 @@ class TestEventBackend(BackendTest):
                     'track_id': 3,
                 },
             },
+            'personalized_fees': {},
             'payment': datetime.date(2014, 2, 2),
             'persona_id': 5,
             'real_persona_id': None,
         }
-        self.assertEqual(expectation,
-                         self.event.get_registration(self.key, 2))
+        self.assertEqual(expectation, self.event.get_registration(self.key, 2))
         data = {
             'id': 2,
             'tracks': {2: {'choices': [2, 3, 4]}},
@@ -1072,8 +1076,7 @@ class TestEventBackend(BackendTest):
         expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
         expectation['mtime'] = nearly_now()
-        self.assertEqual(expectation,
-                         self.event.get_registration(self.key, 2))
+        self.assertEqual(expectation, self.event.get_registration(self.key, 2))
 
     @as_users("berta", "paul")
     def test_registering(self) -> None:
@@ -1128,6 +1131,7 @@ class TestEventBackend(BackendTest):
             new_reg['amount_owed'] = decimal.Decimal("589.48")
             new_reg['amount_paid'] = decimal.Decimal("0.00")
             new_reg['payment'] = None
+            new_reg['personalized_fees'] = {}
             new_reg['is_member'] = False
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
@@ -1146,8 +1150,7 @@ class TestEventBackend(BackendTest):
             new_reg['tracks'][3]['choices'] = []
             new_reg['ctime'] = nearly_now()
             new_reg['mtime'] = None
-            self.assertEqual(new_reg,
-                             self.event.get_registration(self.key, new_id))
+            self.assertEqual(new_reg, self.event.get_registration(self.key, new_id))
         else:
             with self.assertRaises(PrivilegeError):
                 self.event.create_registration(self.key, new_reg)
@@ -1159,7 +1162,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
         expectation: CdEDBObjectMap = {
             1: {
-                'amount_owed': decimal.Decimal("573.99"),
+                'amount_owed': decimal.Decimal("553.99"),
                 'amount_paid': decimal.Decimal("200.00"),
                 'checkin': None,
                 'ctime': nearly_now(),
@@ -1223,6 +1226,9 @@ class TestEventBackend(BackendTest):
                         'registration_id': 1,
                         'track_id': 3,
                     },
+                },
+                'personalized_fees': {
+                    10: decimal.Decimal("-20.00"),
                 },
                 'payment': None,
                 'persona_id': 1,
@@ -1294,6 +1300,7 @@ class TestEventBackend(BackendTest):
                         'track_id': 3,
                     },
                 },
+                'personalized_fees': {},
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
                 'real_persona_id': None,
@@ -1365,6 +1372,7 @@ class TestEventBackend(BackendTest):
                         'track_id': 3,
                     },
                 },
+                'personalized_fees': {},
                 'payment': datetime.date(2014, 4, 4),
                 'persona_id': 9,
                 'real_persona_id': None,
@@ -1477,6 +1485,7 @@ class TestEventBackend(BackendTest):
         new_reg['amount_owed'] = decimal.Decimal("584.48")
         new_reg['amount_paid'] = decimal.Decimal("0.00")
         new_reg['payment'] = None
+        new_reg['personalized_fees'] = {}
         new_reg['is_member'] = True
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
@@ -2985,6 +2994,9 @@ class TestEventBackend(BackendTest):
                     if isinstance(new[key], int):
                         new[key] = cmap.get(
                             ('lodgement_groups', new[key]), new[key])
+            for key in ('status',):
+                if key in new:
+                    new[key] = const.RegistrationPartStati(new[key])
             old.update(new)
 
         recursive_update(expectation, delta)
@@ -3286,9 +3298,9 @@ class TestEventBackend(BackendTest):
         if not self.user_in("emilia"):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
-                1: decimal.Decimal("573.99"),
+                1: decimal.Decimal("553.99"),
                 2: decimal.Decimal("466.49"),
-                3: decimal.Decimal("534.48"),
+                3: decimal.Decimal("504.48"),
                 4: decimal.Decimal("431.99"),
                 5: decimal.Decimal("584.48"),
                 6: decimal.Decimal("10.50"),

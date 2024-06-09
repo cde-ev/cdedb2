@@ -1748,27 +1748,27 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
-        self.assertPresence("373,99 € auf folgendes Konto")
+        self.assertPresence("353,99 € auf folgendes Konto")
 
         # Payment checks with iban
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 573,99 € bezahlen.")
-        self.assertPresence("Bitte überweise 573,99 € auf folgendes Konto")
+            "Du musst noch den übrigen Betrag von 553,99 € bezahlen.")
+        self.assertPresence("Bitte überweise 553,99 € auf folgendes Konto")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("Bitte überweise 473,99 € auf folgendes Konto")
+        self.assertPresence("Bitte überweise 453,99 € auf folgendes Konto")
         self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 473,99 € bezahlen.")
+            "Du musst noch den übrigen Betrag von 453,99 € bezahlen.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
         self.assertNonPresence("1000,00")
         self.assertPresence(
-            "Du hast 426,01 € mehr bezahlt als deinen Teilnahmebeitrag von 573,99 €.")
+            "Du hast 446,01 € mehr bezahlt als deinen Teilnahmebeitrag von 553,99 €.")
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
 
         # Payment checks without iban
@@ -1784,7 +1784,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
         self.assertPresence("Du hast bereits 200,00 € bezahlt.")
         self.assertPresence(
-            "Du musst noch den übrigen Betrag von 373,99 € bezahlen.")
+            "Du musst noch den übrigen Betrag von 353,99 € bezahlen.")
 
         # check payment messages for different registration stati
         payment_pending = "Bezahlung ausstehend"
@@ -1832,9 +1832,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
         self.traverse("Meine Anmeldung")
-        self.assertPresence("Regulärer Beitrag 584,49 €")
+        self.assertPresence("Regulärer Beitrag 564,49 €")
         self.assertPresence("Solidarische Reduktion -0,01 €")
-        self.assertPresence("Gesamtsumme 584,48 €")
+        self.assertPresence("Gesamtsumme 564,48 €")
 
         # participant again, only for one part
         self.get('/event/event/1/registration/1/change')
@@ -1845,7 +1845,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
         self.traverse("Meine Anmeldung")
-        self.assertPresence("450,99 €")
+        self.assertPresence("430,99 €")
         self.assertNonPresence("bereits bezahlt")
         self.assertPresence(payment_pending)
 
@@ -2264,6 +2264,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['condition'] = "part.Wu AND (part.1.H. OR part.2.H.)"
         self.submit(f)
 
+        self.traverse({'linkid': "eventfee1001_change"})
+        f = self.response.forms['configureeventfeeform']
+        f['notes'] = "Some more information."
+        self.submit(f)
+
         self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
         self.assertHasClass("eventfee-title-1", "alert-success")
         self.assertHasClass("eventfee-title-2", "alert-success")
@@ -2668,7 +2673,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-373.99;DB-1-9;Admin;Anton;01.04.18
+353.99;DB-1-9;Admin;Anton;01.04.18
 455.99;DB-5-1;Eventis;Emilia;01.04.18
 589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
@@ -2682,7 +2687,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-373.98;DB-1-9;Admin;Anton;01.04.18
+353.98;DB-1-9;Admin;Anton;01.04.18
 589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 -100.00;DB-100-7;Abukara;Akira;01.04.18
@@ -2721,7 +2726,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 01.04.2018")
-        self.assertPresence("Bereits Bezahlt 573,98 €")
+        self.assertPresence("Bereits Bezahlt 553,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
@@ -2750,7 +2755,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             {
                 'persona_id': 1,
                 'code': const.EventLogCodes.registration_payment_received,
-                'change_note': "373,98 € am 01.04.2018 gezahlt.",
+                'change_note': "353,98 € am 01.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
@@ -6709,3 +6714,83 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Externenzusatzbeitrag 2,00 € 1 Zu Zahlen 1 Bezahlt")
         self.assertPresence("Solidarische Reduktion -4,99 € 1 Zu Zahlen 1 Bezahlt")
         self.assertPresence("Generöse Spende 420,00 € 3 Zu Zahlen 1 Bezahlt")
+
+    @as_users("garcia")
+    def test_personalized_event_fees(self) -> None:
+        event_id = 1
+
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge")
+        self.assertPresence("KL-Erstattung", div="eventfee_10")
+        self.assertPresence("-30,00 € – -20,00 €", div="eventfee_10")
+        self.assertPresence("Personalisierter Teilnahmebeitrag", div="eventfee_10")
+
+        self.traverse("Personalisierten Teilnahmebeitrag hinzufügen")
+        f = self.response.forms['configureeventfeeform']
+        self.assertIsNone(f.get('amount', default=None))
+        self.assertIsNone(f.get('condition', default=None))
+        f['title'] = "Rabatt auf Ehrenhomiebasis"
+        f['kind'] = const.EventFeeType.solidary_reduction
+        self.submit(f)
+
+        self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
+        self.assertPresence("–", exact=True, div="eventfee_amount_1001")
+
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
+        self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
+        self.assertPresence("Personalisierter Teilnahmebeitrag", exact=True,
+                            div="eventfee_condition_1001")
+        f = self.response.forms['addpersonalizedfeeform1001']
+        f['amount'] = "-33.33"
+        self.submit(f)
+
+        self.assertPresence("Personalisierter Teilnahmebeitrag (-33,33 €)", exact=True,
+                            div="eventfee_condition_1001")
+        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+        self.traverse("Teilnahmebeiträge")
+        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+        self.traverse({'linkid': "eventfee_owed_1001"})
+        self.traverse(r"-33,33\s€")
+
+        f = self.response.forms['deletepersonalizedfeeform1001']
+        self.submit(f)
+
+        f = self.response.forms['addpersonalizedfeeform1001']
+        f['amount'] = 69
+        self.submit(f)
+        self.traverse("Teilnahmebeiträge")
+        f = self.response.forms['deleteeventfeeform1001']
+        self.submit(f)
+
+        log_expectation = [
+            {
+                'code': const.EventLogCodes.fee_modifier_created,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_set,
+                'change_note': "Rabatt auf Ehrenhomiebasis (-33,33 €)",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_set,
+                'change_note': "Rabatt auf Ehrenhomiebasis (69,00 €)",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.fee_modifier_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+            },
+        ]
+        self.assertLogEqual(
+            log_expectation, "event", event_id=event_id, offset=self.EVENT_LOG_OFFSET,
+        )

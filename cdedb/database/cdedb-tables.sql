@@ -762,8 +762,10 @@ CREATE TABLE event.event_fees (
         -- see cdedb.database.constants.EventFeeType
         kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
-        amount                       numeric(8, 2) NOT NULL,
-        condition                    varchar NOT NULL,
+        amount                       numeric(8, 2),
+        condition                    varchar,
+        CONSTRAINT event_fee_amount_condition
+            CHECK ((amount IS NULL) = (condition IS NULL)),
         notes                        varchar
 );
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_fees TO cdb_persona;
@@ -1065,6 +1067,18 @@ CREATE TABLE event.course_choices (
 CREATE INDEX course_choices_track_id_rank_idx ON event.course_choices(track_id, rank);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
+
+CREATE TABLE event.personalized_fees (
+        id                      bigserial PRIMARY KEY,
+        fee_id                  integer NOT NULL REFERENCES event.event_fees(id) ON DELETE CASCADE,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+        UNIQUE (fee_id, registration_id),
+        amount                  numeric(8, 2) NOT NULL
+);
+CREATE INDEX personalized_fees_registration_id_idx ON event.personalized_fees(registration_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
+GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
+GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
 CREATE TABLE event.questionnaire_rows (
         id                      bigserial PRIMARY KEY,
