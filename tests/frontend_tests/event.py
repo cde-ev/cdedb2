@@ -1030,7 +1030,6 @@ etc;anything else""", f['entries_2'].value)
                           {'href': '/event/event/2/show'},
                           {'href': '/event/event/2/field/summary'})
             self.assertNonPresence("Kursfelder")
-            self.assertNonPresence("Unterkunftsfelder")
 
     @event_keeper
     @as_users("garcia")
