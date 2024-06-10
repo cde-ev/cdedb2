@@ -310,7 +310,7 @@
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
                             <div class="input-group">
-                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
+                                {{ util.input_text("query_name", placeholder=gettext("query name"), anid="query_name_input") }}
                                 {{ util.input_hidden("query_scope", scope) }}
                                 <div class="input-group-btn">
                                     {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
