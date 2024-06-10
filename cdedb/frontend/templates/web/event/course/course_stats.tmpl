@@ -101,8 +101,8 @@
                                      course['shortname']) }}</td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
                         {% if track.id in course['segments'] %}
-                            {% set attendees = assign_counts[course_id][track.id][0] %}
-                            {% set instructors = assign_counts[course_id][track.id][1] %}
+                            {% set attendees = assign_counts[(course_id, track.id)].num_involved_learners %}
+                            {% set instructors = assign_counts[(course_id, track.id)].num_involved_instructors %}
                             {% set aclass = 'course-cancelled' if track.id not in course['active_segments'] and attendees + instructors > 0 else
                                             ('course-cancelled-ok' if track.id not in course['active_segments'] else
                                              ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
@@ -118,8 +118,8 @@
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s%s+%s%s"|format(assign_counts[course_id][track.id][0], nbsp, nbsp,
-                                                                assign_counts[course_id][track.id][1])) }}
+                                             "%s%s+%s%s"|format(assign_counts[(course_id, track.id)].num_learners_filtered, nbsp, nbsp,
+                                                                assign_counts[(course_id, track.id)].num_instructors_filtered)) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
                                 <td class="text-right">
@@ -128,7 +128,7 @@
                                                                                     'position': i,
                                                                                     'include_active': include_active,
                                                                                     'submitform': True}),
-                                             choice_counts[course_id][(track.id, i)]) }}
+                                             choice_counts[(course_id, track.id)][i]) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left"></td>
