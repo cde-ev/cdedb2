@@ -864,7 +864,7 @@ class PersonalizedFee(EventDataclass):
     amount: Optional[decimal.Decimal]
 
     def get_query(self) -> tuple[str, tuple["DatabaseValue_s", ...]]:
-        if self.amount:
+        if self.amount is not None:
             query = f"""
                 INSERT INTO {self.database_table}
                 (registration_id, fee_id, amount)

@@ -6748,15 +6748,25 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
         self.traverse("Teilnahmebeiträge")
         self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+
+        self.traverse({'linkid': "eventfee1_change"})
+        f = self.response.forms['configureeventfeeform']
+        f['amount'] = 0
+        self.submit(f)
+        self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1")
+
         self.traverse({'linkid': "eventfee_owed_1001"})
         self.traverse(r"-33,33\s€")
+        self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1")
 
         f = self.response.forms['deletepersonalizedfeeform1001']
         self.submit(f)
 
         f = self.response.forms['addpersonalizedfeeform1001']
-        f['amount'] = 69
+        f['amount'] = 0
         self.submit(f)
+        self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1001")
+
         self.traverse("Teilnahmebeiträge")
         f = self.response.forms['deleteeventfeeform1001']
         self.submit(f)
@@ -6772,13 +6782,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 'persona_id': self.user['id'],
             },
             {
+                'code': const.EventLogCodes.fee_modifier_changed,
+                'change_note': "Teilnahmebeitrag Warmup",
+            },
+            {
                 'code': const.EventLogCodes.personalized_fee_amount_deleted,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
                 'persona_id': self.user['id'],
             },
             {
                 'code': const.EventLogCodes.personalized_fee_amount_set,
-                'change_note': "Rabatt auf Ehrenhomiebasis (69,00 €)",
+                'change_note': "Rabatt auf Ehrenhomiebasis (0,00 €)",
                 'persona_id': self.user['id'],
             },
             {

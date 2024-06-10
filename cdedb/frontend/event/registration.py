@@ -1021,6 +1021,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         """Add a personalized fee amount for this registration and this fee."""
         if not rs.ambience['fee'].is_personalized():
+            rs.ignore_validation_errors()
             rs.notify(
                 "error", n_("Cannot set personalized amount for conditional fee."),
             )
