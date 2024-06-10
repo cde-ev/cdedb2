@@ -360,7 +360,7 @@ class TestEventModels(BackendTest):
                 10: models.EventFee(
                     id=10,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
-                    kind=const.EventFeeType.common,
+                    kind=const.EventFeeType.instructor_refund,
                     title="KL-Erstattung",
                     notes="Individuelle Höhe",
                     amount=None,

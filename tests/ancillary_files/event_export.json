@@ -1542,7 +1542,7 @@
         "10": {
             "id": 10,
             "event_id": 1,
-            "kind": 1,
+            "kind": 5,
             "title": "KL-Erstattung",
             "amount": null,
             "condition": null,

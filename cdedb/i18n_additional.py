@@ -344,6 +344,7 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
     n_("EventFeeType.solidary_increase"),
+    n_("EventFeeType.instructor_refund"),
 
     #
     # Query datatypes

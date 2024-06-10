@@ -158,16 +158,18 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
+    instructor_refund = 5
     # sorting is not quite nice for historical reasons
     solidary_reduction = 10
-    solidary_increase = 12
     donation = 11
+    solidary_increase = 12
 
     def get_icon(self) -> str:
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
+            EventFeeType.instructor_refund: "book",
             EventFeeType.solidary_reduction: "hand-holding-usd",
             # TODO replace with hand-holding-medical
             EventFeeType.solidary_increase: "hands-helping",

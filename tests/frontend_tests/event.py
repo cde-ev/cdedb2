@@ -1832,7 +1832,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
         self.traverse("Meine Anmeldung")
-        self.assertPresence("Regulärer Beitrag 564,49 €")
+        self.assertPresence("Regulärer Beitrag 584,49 €")
+        self.assertPresence("KL-Erstattung -20,00 €")
         self.assertPresence("Solidarische Reduktion -0,01 €")
         self.assertPresence("Gesamtsumme 564,48 €")
 

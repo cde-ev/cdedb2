@@ -749,7 +749,7 @@
             "KL-Erstattung": {
                 "amount": null,
                 "condition": null,
-                "kind": 1,
+                "kind": 5,
                 "notes": "Individuelle Höhe"
             }
         },
