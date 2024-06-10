@@ -523,7 +523,7 @@
                         {{ fee.title }}
                     {% endif %}
                 </td>
-                {% if fee.amount %}
+                {% if fee.amount is not none %}
                     {{ _fee_amount_td(fee.amount, fee.id) }}
                     {% if complex_fee %}
                         <td></td>
