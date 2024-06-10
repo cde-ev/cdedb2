@@ -97,6 +97,10 @@
                                 {% trans %}Course choices will be displayed after first search.{% endtrans %}
                             </div>
                         {% endif %}
+
+                        {{ util.form_input_text('near_pc', label=gettext("Near ZIP")) }}
+                        {{ util.form_input_select('near_radius', label=gettext("Radius"), entries=choices['near_radius'].items(),
+                                                  nulloption=nbsp, aclass="input-sm") }}
                     </div>
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
@@ -106,7 +110,6 @@
                                                 label=gettext("Address"), aclass="input-sm") }}
                         {{ util.form_input_from_to('postal_lower', 'postal_upper', label=gettext("ZIP"),
                                                 type='number') }}
-                        {{ util.form_input_text('near_pc', label=gettext("Near ZIP")) }}
                         {{ util.form_input_text(name="qval_location,location2", label=gettext("City"),
                                                 aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_country,country2", label=gettext("Country"),

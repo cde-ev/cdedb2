@@ -24,8 +24,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
-    get_hash, merge_dicts, now,
+    CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState,
+    ValidationWarning, deduct_years, get_hash, merge_dicts, now,
 )
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -57,7 +57,7 @@ MEMBERSEARCH_DEFAULTS = {
         QueryOperators.match,
     'qop_postal_code,postal_code2': QueryOperators.between,
     'qop_location,location2': QueryOperators.match,
-    'qop_country,country2': QueryOperators.match,
+    'qop_country,country2': QueryOperators.equal,
     'qop_weblink,specialisation,affiliation,timeline,interests,free_form':
         QueryOperators.match,
     'qop_pevent_id': QueryOperators.equal,
@@ -190,81 +190,117 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.ignore_validation_errors()
             return self.render(rs, "member_search")
         defaults = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
-        # our query facility does not allow + signs, thus special-case it here
-        phone = rs.values['phone'] = rs.request.values.get('phone')
-        if phone:
-            # remove leading zeroes - in database, numbers are stored starting with '+'
-            phone = ("".join(char for char in phone if char in '0123456789')
-                     .removeprefix("0").removeprefix("0"))
-            if phone:
-                defaults['qval_telephone,mobile'] = phone
-            else:
-                rs.append_validation_error(
-                        ('phone', ValueError(n_("Wrong formatting."))))
-        pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
-        pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
-        near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
-        if pl and pu:
-            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
-        elif pl:
-            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} 99999"
-        elif pu:
-            defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
-        elif near_pc:
-            defaults['qop_postal_code,postal_code2'] = QueryOperators.oneof
-            defaults['qval_postal_code,postal_code2'] = " ".join(
-                self.cdeproxy.get_nearby_postal_codes(rs, near_pc, 15))
-        else:
-            defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         scope = QueryScope.cde_member
         spec = scope.get_spec()
-        query = check(rs, vtypes.QueryInput,
-                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
-                      allow_empty=not is_search, separator=" ")
-
-        events = self.pasteventproxy.list_past_events(rs)
-        pevent_id = None
-        if pevent_id := rs.values.get('qval_pevent_id'):
-            try:
-                pevent_id = int(pevent_id)
-            except ValueError:
-                pass
-        courses: dict[int, str] = {}
-        if pevent_id:
-            courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
-        choices = {"pevent_id": events, 'pcourse_id': courses}
-        result: Optional[Sequence[CdEDBObject]] = None
-        count = 0
         cutoff = self.conf["MAX_MEMBER_SEARCH_RESULTS"]
 
-        if rs.has_validation_errors():
-            self._fix_search_validation_error_references(rs)
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': events,
+            'near_radius': self.conf["NEARBY_SEARCH_RADII"],
+        }
+
+        result: Optional[Sequence[CdEDBObject]] = None
+        count = 0
+
+        if not is_search:
+            query = None
         else:
+            # our query facility does not allow + signs, thus special-case it here
+            phone = rs.values['phone'] = rs.request.values.get('phone')
+            if phone:
+                # remove leading zeroes - in database, numbers are stored starting with '+'
+                phone = ("".join(char for char in phone if char in '0123456789')
+                         .removeprefix("0").removeprefix("0"))
+                if phone:
+                    defaults['qval_telephone,mobile'] = phone
+                else:
+                    rs.append_validation_error(
+                            ('phone', ValueError(n_("Wrong formatting."))))
+            pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
+            pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
+            near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
+            near_radius = rs.values['near_radius'] = request_extractor(
+                rs, {'near_radius': int})['near_radius']
+            if pl and pu:
+                defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
+            elif pl:
+                defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} 99999"
+            elif pu:
+                defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
+            if near_pc or near_radius:
+                if pl or pu:
+                    warn = ValidationWarning(n_("Ignored in favor of postal code search."))
+                    rs.extend_validation_errors([
+                        ('near_pc', warn),
+                        ('near_radius', warn),
+                    ])
+                if near_radius and near_radius not in self.conf["NEARBY_SEARCH_RADII"]:
+                    rs.append_validation_error(
+                        ('near_radius', ValueError(n_("Invalid choice."))),
+                    )
+                if not near_pc:
+                    rs.append_validation_error(
+                        ('near_pc', ValueError(n_("Must not be empty."))),
+                    )
+                elif not near_radius:
+                    rs.append_validation_error(
+                        ('near_radius', ValueError(n_("Must not be empty."))),
+                    )
+                else:
+                    defaults['qop_postal_code,postal_code2'] = QueryOperators.oneof
+                    nearby_postal_codes = self.cdeproxy.get_nearby_postal_codes(
+                        rs, near_pc, near_radius)
+                    if not nearby_postal_codes:
+                        rs.append_validation_error(
+                            ('near_pc', ValidationWarning(n_("Unknown postal code."))),
+                        )
+                    defaults['qval_postal_code,postal_code2'] = " ".join(
+                        nearby_postal_codes)
+                    defaults['qval_country,country2'] = self.conf["DEFAULT_COUNTRY"]
+            query = check(rs, vtypes.QueryInput,
+                          scope.mangle_query_input(rs, defaults), "query", spec=spec,
+                          allow_empty=not is_search, separator=" ")
+
+            pevent_id = None
+            if pevent_id := rs.values.get('qval_pevent_id'):
+                try:
+                    pevent_id = int(pevent_id)
+                except ValueError:
+                    pass
+            courses: dict[int, str] = {}
+            if pevent_id:
+                choices['pcourse_id'] = self.pasteventproxy.list_past_courses(
+                    rs, pevent_id)
+
+        if rs.has_validation_errors():
+            self._fix_search_validation_error_references(
+                rs, {'phone', 'near_pc', 'near_radius'})
+        elif is_search:
             assert query is not None
-            if is_search and not query.constraints:
+            if not query.constraints:
                 rs.notify("error", n_("You have to specify some filters."))
-            elif is_search:
 
-                def restrict(constraint: QueryConstraint) -> QueryConstraint:
-                    field, operation, value = constraint
-                    if field == 'fulltext':
-                        value = [fr"\m{val}\M" if len(val) <= 3 else val
-                                 for val in value]
-                    elif len(str(value)) <= 3:
-                        operation = QueryOperators.equal
-                    constraint = (field, operation, value)
-                    return constraint
+            def restrict(constraint: QueryConstraint) -> QueryConstraint:
+                field, operation, value = constraint
+                if field == 'fulltext':
+                    value = [fr"\m{val}\M" if len(val) <= 3 else val
+                             for val in value]
+                elif len(str(value)) <= 3:
+                    operation = QueryOperators.equal
+                constraint = (field, operation, value)
+                return constraint
 
-                query.constraints = [restrict(constrain)
-                                     for constrain in query.constraints]
-                query.fields_of_interest.append('personas.id')
-                result = self.cdeproxy.submit_general_query(rs, query)
-                count = len(result)
-                if count == 1:
-                    return self.redirect_show_user(rs, result[0]['id'], quote_me=True)
-                if count > cutoff:
-                    result = result[:cutoff]
-                    rs.notify("info", n_("Too many query results."))
+            query.constraints = [restrict(constrain)
+                                 for constrain in query.constraints]
+            query.fields_of_interest.append('personas.id')
+            result = self.cdeproxy.submit_general_query(rs, query)
+            count = len(result)
+            if count == 1:
+                return self.redirect_show_user(rs, result[0]['id'], quote_me=True)
+            if count > cutoff:
+                result = result[:cutoff]
+                rs.notify("info", n_("Too many query results."))
 
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
@@ -272,16 +308,20 @@ class CdEBaseFrontend(AbstractUserFrontend):
         })
 
     @staticmethod
-    def _fix_search_validation_error_references(rs: RequestState) -> None:
+    def _fix_search_validation_error_references(
+            rs: RequestState, skip: set[str],
+    ) -> None:
         """A little hack to fix displaying of errors for course and meber search:
 
         The form uses 'qval_<field>' as input name, the validation only returns the
         field's name.
         """
+        appraised = rs.validation_appraised
         current = tuple(rs.retrieve_validation_errors())
         rs.replace_validation_errors(
-            [('qval_' + k, v) if k != 'phone' else (k, v) for k, v in current])  # type: ignore[operator]
-        rs.ignore_validation_errors()
+            [('qval_' + k, v) if k not in skip else (k, v) for k, v in current])  # type: ignore[operator]
+        if appraised:
+            rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")

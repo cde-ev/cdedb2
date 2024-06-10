@@ -474,6 +474,17 @@ CREATE INDEX anonymous_messages_message_id_idx ON core.anonymous_messages(messag
 GRANT SELECT, UPDATE(message_id, encrypted_data), INSERT ON core.anonymous_messages TO cdb_persona;
 GRANT SELECT, UPDATE ON core.anonymous_messages_id_seq TO cdb_persona;
 
+DROP TABLE IF EXISTS core.postal_code_locations;
+CREATE TABLE core.postal_code_locations (
+        postal_code     varchar PRIMARY KEY,
+        name            varchar,
+        earth_location  earth,
+        lat             float8,
+        long            float8
+);
+GRANT SELECT ON core.postal_code_locations TO cdb_persona;
+GRANT ALL PRIVILEGES ON core.postal_code_locations TO cdb;
+
 ---
 --- SCHEMA cde
 ---

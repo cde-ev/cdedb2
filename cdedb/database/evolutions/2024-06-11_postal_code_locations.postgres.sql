@@ -3,7 +3,8 @@ BEGIN;
     DROP TABLE IF EXISTS core.postal_code_locations;
     CREATE TABLE core.postal_code_locations (
             postal_code     varchar PRIMARY KEY,
-            earth           earth,
+            name            varchar,
+            earth_location  earth,
             lat             float8,
             long            float8
     );
@@ -20,7 +21,7 @@ BEGIN;
     FROM '/cdedb2/PLZ.tab'
     DELIMITER E'\t'
     CSV HEADER;
-    INSERT INTO core.postal_code_locations(postal_code, earth, lat, long)
-    SELECT postal_code, ll_to_earth(lat, long), lat, long FROM t;
+    INSERT INTO core.postal_code_locations(postal_code, earth_location, lat, long, name)
+    SELECT postal_code, ll_to_earth(lat, long), lat, long, name FROM t;
     DROP TABLE t;
 COMMIT;
