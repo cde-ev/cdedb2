@@ -228,7 +228,6 @@ class EventQueryMixin(EventBaseFrontend):
             rs.notify_return_code(query_id)
             if query_id:
                 query.query_id = query_id
-                del query_input["query_name"]
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
