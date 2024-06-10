@@ -679,6 +679,8 @@ class EventCourseMixin(EventBaseFrontend):
             for track_id, track in tracks.items():
                 if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
                     for i, choice in enumerate(reg['tracks'][track_id]['choices']):
+                        if i >= track.num_choices:
+                            break
                         choice_counts[(choice, track_id)][i] += 1
                 course_id = reg['tracks'][track_id]['course_id']
                 if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
