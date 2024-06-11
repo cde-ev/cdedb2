@@ -3896,7 +3896,7 @@ def _partial_registration(
         for fee_id, amount in val['personalized_fees'].items():
             try:
                 fee_id = _id(fee_id, 'personalized_fees', **kwargs)
-                amount = _ALL_TYPED[Optional[decimal.Decimal]](
+                amount = _ALL_TYPED[Optional[decimal.Decimal]](  # type: ignore[index]
                     amount, 'personalized_fees', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
