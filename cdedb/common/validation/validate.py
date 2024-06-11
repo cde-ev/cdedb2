@@ -3466,6 +3466,7 @@ def _serialized_event(
         'event.course_choices': Mapping,
         'event.questionnaire_rows': Mapping,
         'event.event_fees': Mapping,
+        'event.personalized_fees': Mapping,
         'event.stored_queries': Mapping,
     }
     optional_tables: TypeMapping = {
@@ -3546,6 +3547,9 @@ def _serialized_event(
                           'condition': Optional[str],  # type: ignore[dict-item]
                           'amount': Optional[decimal.Decimal],  # type: ignore[dict-item]
                           }),
+        'event.personalized_fees': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'fee_id': ID, 'registration_id': ID,
+                          'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),
@@ -3831,6 +3835,7 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_notes': Optional[str],
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
+    'personalized_fees': Mapping,
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3886,6 +3891,18 @@ def _partial_registration(
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
+    if 'personalized_fees' in val:
+        newfees = {}
+        for fee_id, amount in val['personalized_fees'].items():
+            try:
+                fee_id = _id(fee_id, 'personalized_fees', **kwargs)
+                amount = _ALL_TYPED[Optional[decimal.Decimal]](
+                    amount, 'personalized_fees', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                newfees[fee_id] = amount
+        val['personalized_fees'] = newfees
 
     if errs:
         raise errs

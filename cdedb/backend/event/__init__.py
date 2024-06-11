@@ -728,8 +728,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if part['lodgement_id'] in lmap:
                                 tmp_id = part['lodgement_id']
                                 part['lodgement_id'] = lmap[tmp_id]
+                        personalized_fees = new.pop('personalized_fees', {})
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
+                        for fee_id, amount in personalized_fees.items():
+                            self.set_personalized_fee_amount(rs, new_id, fee_id, amount)
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
@@ -763,7 +766,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if data.get('summary'):
                                 change_note = ("Partieller Import: "
                                                + data['summary'])
+                            personalized_fees = changed_reg.pop('personalized_fees', {})
                             self.set_registration(rs, changed_reg, change_note)
+                            for fee_id, amount in personalized_fees.items():
+                                self.set_personalized_fee_amount(
+                                    rs, registration_id, fee_id, amount)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious

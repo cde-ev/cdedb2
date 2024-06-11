@@ -17,6 +17,7 @@ import abc
 import collections
 import copy
 import datetime
+import decimal
 from collections.abc import Collection, Iterable
 from typing import Any, Optional, Protocol
 
@@ -1149,6 +1150,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
                 ('event.course_choices', "track_id", (
                     'id', 'registration_id', 'track_id', 'course_id', 'rank')),
+                (
+                    models.PersonalizedFee.database_table,
+                    models.PersonalizedFee.entity_key,
+                    tuple(models.PersonalizedFee.database_fields()),
+                ),
                 (OrgaToken.database_table, "event_id", tuple(
                     OrgaToken.database_fields())),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
@@ -1165,6 +1171,8 @@ class EventBaseBackend(EventLowLevelBackend):
                     id_range = set(ret['event.event_parts'])
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
+                elif id_name == "registration_id":
+                    id_range = set(ret['event.registrations'])
                 else:
                     raise RuntimeError(n_("Impossible."))
                 if 'id' not in columns:
@@ -1230,6 +1238,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            personalized_fees = models.PersonalizedFee.many_from_database(
+                self.query_all(
+                    rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
+                ),
+            )
             tokens = list_to_dict(self.sql_select(
                 rs, OrgaToken.database_table, OrgaToken.database_fields(),
                 (event_id,), entity_key="event_id"))
@@ -1278,6 +1291,12 @@ class EventBaseBackend(EventLowLevelBackend):
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
+        personalized_fee_lookup: dict[int, dict[int, decimal.Decimal]]
+        personalized_fee_lookup = collections.defaultdict(dict)
+        for personalized_fee in personalized_fees.values():
+            if personalized_fee.amount is not None:
+                personalized_fee_lookup[personalized_fee.registration_id][
+                    personalized_fee.fee_id] = personalized_fee.amount
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
@@ -1301,6 +1320,9 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['tracks'] = tracks
             registration['fields'] = cast_fields(
                 registration['fields'], event.fields)
+            registration['personalized_fees'] = {}
+            for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
+                registration['personalized_fees'][fee_id] = fee_amount
         ret['registrations'] = registrations
 
         ret['event'] = event.as_dict()

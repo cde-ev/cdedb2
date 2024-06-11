@@ -105,6 +105,9 @@
 			"fields": {
 				"transportation": "pedes"
 			},
+			"personalized_fees": {
+				"10": "-45"
+			},
 			"mixed_lodging": false,
 			"orga_notes": "Wir wurden hinters Licht gefuehrt, alles ist anders",
 			"parts": {

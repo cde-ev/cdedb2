@@ -2895,6 +2895,8 @@ class TestEventBackend(BackendTest):
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
+            for fee_id, amount in reg['personalized_fees'].items():
+                reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
@@ -3009,6 +3011,10 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][2]['amount_owed'] = decimal.Decimal("589.48")
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
+        expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
+        expectation['registrations'][3]['personalized_fees'][10] = decimal.Decimal(
+            expectation['registrations'][3]['personalized_fees'][10],
+        )
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -3016,6 +3022,7 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['is_member'] = True
         expectation['registrations'][1002]['ctime'] = nearly_now()
         expectation['registrations'][1002]['mtime'] = None
+        expectation['registrations'][1002]['personalized_fees'] = {}
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
@@ -3113,6 +3120,11 @@ class TestEventBackend(BackendTest):
             {
                 'change_note': 'Partieller Import: Sehr wichtiger Import',
                 'code': const.EventLogCodes.registration_changed,
+                'persona_id': 7,
+            },
+            {
+                'change_note': 'KL-Erstattung (-45,00 €)',
+                'code': const.EventLogCodes.personalized_fee_amount_set,
                 'persona_id': 7,
             },
             {
