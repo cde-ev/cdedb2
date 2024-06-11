@@ -1421,7 +1421,8 @@ class EventRegistrationBackend(EventBaseBackend):
                         other_bools,
                     )[1]
             else:
-                if personalized_amount := reg['personalized_fees'].get(fee.id):
+                personalized_amount = reg['personalized_fees'].get(fee.id)
+                if personalized_amount is not None:
                     amount += personalized_amount
                     active_fees.add(fee.id)
                     fees_by_kind[fee.kind] += personalized_amount
