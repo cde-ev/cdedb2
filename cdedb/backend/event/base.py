@@ -1131,37 +1131,37 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             # Table name; column to scan; fields to extract
             tables: list[tuple[str, str, tuple[str, ...]]] = [
-                ('event.event_parts', "event_id", EVENT_PART_FIELDS),
-                ('event.part_groups', "event_id", PART_GROUP_FIELDS),
+                models.EventPart.full_export_spec(),
+                models.PartGroup.full_export_spec(),
+                models.CourseTrack.full_export_spec(),
+                models.TrackGroup.full_export_spec(),
+                models.Course.full_export_spec("event_id"),
+                models.EventField.full_export_spec(),
+                models.EventFee.full_export_spec(),
+                models.LodgementGroup.full_export_spec(),
+                models.Lodgement.full_export_spec("event_id"),
+                OrgaToken.full_export_spec("event_id"),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
-                ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
-                ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
-                ('event.track_group_tracks', "track_id", (
-                    "track_group_id", "track_id")),
-                ('event.courses', "event_id", COURSE_FIELDS),
+                ('event.track_group_tracks', "track_id", ("track_group_id", "track_id")),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
-                ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
-                ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
-                ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
-                ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
-                ('event.course_choices', "track_id", (
-                    'id', 'registration_id', 'track_id', 'course_id', 'rank')),
                 (
-                    models.PersonalizedFee.database_table,
-                    models.PersonalizedFee.entity_key,
-                    tuple(models.PersonalizedFee.database_fields()),
+                    'event.course_choices',
+                    "track_id",
+                    ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
-                (OrgaToken.database_table, "event_id", tuple(
-                    OrgaToken.database_fields())),
+                models.PersonalizedFee.full_export_spec(),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
-                ('event.log', "event_id", (
-                    'id', 'ctime', 'code', 'submitted_by', 'event_id',
-                    'persona_id', 'change_note')),
+                (
+                    'event.log',
+                    "event_id",
+                    ('id', 'ctime', 'code', 'submitted_by', 'event_id',
+                     'persona_id', 'change_note'),
+                ),
             ]
             personas = set()
             for table, id_name, columns in tables:
