@@ -410,8 +410,8 @@
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        18,
-        1
+        17,
+        2
     ],
     "event.registration_parts": {
         "2": {

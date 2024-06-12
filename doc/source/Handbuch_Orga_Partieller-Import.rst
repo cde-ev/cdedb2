@@ -170,7 +170,7 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
-* Version (18, 1): Personalisierte Teilnahmebeiträge sind nun im Export enthalten.
+* Version (17, 2): Personalisierte Teilnahmebeiträge sind nun im Export enthalten.
   Mit dem partiellen Import können personalisierten Beiträge für einzelne Anmeldungen
   gesetzt werden.
 * Version (17, 1): Für jede Anmeldung wird nun gespeichert und exportiert, ob der
