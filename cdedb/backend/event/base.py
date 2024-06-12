@@ -376,19 +376,18 @@ class EventBaseBackend(EventLowLevelBackend):
             return {}
 
         with Atomizer(rs):
-            data = self.sql_select(
-                rs, OrgaToken.database_table, OrgaToken.database_fields(),
-                orga_token_ids)
+            ret = OrgaToken.many_from_database(
+                self.query_all(
+                    rs, *OrgaToken.get_select_query(orga_token_ids, "id"),
+                ),
+            )
 
-            event_ids = {e['event_id'] for e in data}
+            event_ids = {token.event_id for token in ret.values()}
             if not len(event_ids) == 1:
                 raise ValueError(n_("Only orga tokens from one event allowed."))
             if not self.is_orga(rs, event_id=unwrap(event_ids)):
                 raise PrivilegeError
 
-            ret: dict[int, OrgaToken] = {}
-            for e in data:
-                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):
