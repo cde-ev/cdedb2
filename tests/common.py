@@ -1354,6 +1354,119 @@ class FrontendTest(BackendTest):
             elif check_div:
                 self.fail(f"Specified div {div!r} not found.")
 
+    def assertTextContainedInElement(self, search_text: str, element_tag: str,
+                                     div: str = "content") -> None:
+        """
+        Assert that `search_text` is present and is contained in a specific HTML tag.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent. Each occurance of the `search_text` must be contained in a matching tag.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is present but crossed out via an <s> tag
+            self.assertTextContainedInElement("Anton", "s")
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element found, containing the text '{search_text}'")
+        num_searched_elements_with_matching_ancestor = sum(
+            1
+            for element in elements_with_searchtext
+            if len(element.xpath(f'./ancestor-or-self::{element_tag}')) > 0
+        )
+        if num_searched_elements_with_matching_ancestor < len(elements_with_searchtext):
+            if len(elements_with_searchtext) == 1:
+                self.fail(
+                    "Text '{}' found, but not contained in a <{}>".format(
+                        search_text,
+                        element_tag))
+            else:
+                self.fail(
+                    "Text '{}' found {} times, but only {} of them are contained in a "
+                    "<{}>".format(
+                        search_text,
+                        len(elements_with_searchtext),
+                        num_searched_elements_with_matching_ancestor,
+                        element_tag))
+
+    def assertTextContainedInNthElement(self, search_text: str, element_tag: str,
+                                        n: int, div: str = "content") -> None:
+        """
+        Assert that `search_text` is contained in an n-th sibling `tag` HTML element
+
+        The element may be the direct container of the `search_text` or any parent.
+        For each occurance of the `search_text`, the closest parent of tag name
+        `element_tag` must be the n-th sibling in its parent (starting at 0). Negative n
+        can be used to specify the n-th-last element.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is in the last <li> list item of a list
+            self.assertTextContainedInElement("Anton", "li", -1)
+
+        :param element_tag: HTML element tag name of one of the ancestors of the text
+            occurance, which is checked for its position among its siblings.
+        :param n: Required position of the matching ancestor among its siblings.
+            Positive numbers count from the beginning of the parent (starting at 0),
+            negative numbers count from the end of the parent element (starting at -1).
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element containing the text '{search_text}' found")
+        for element_with_searchtext in elements_with_searchtext:
+            matching_ancestors = element_with_searchtext.xpath(
+                f'./ancestor-or-self::{element_tag}[1]')
+            if len(matching_ancestors) == 0:
+                self.fail(f"Text '{search_text}' found, but at least one occurance is "
+                          f"not in a <{element_tag}>")
+            closest_matching_ancestor = matching_ancestors[0]
+            if n < 0:
+                following_siblings = len(
+                    closest_matching_ancestor.xpath('./following-sibling::*'))
+                actual_n = -1 - following_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+            else:
+                preceding_siblings = len(
+                    closest_matching_ancestor.xpath('./preceding-sibling::*'))
+                actual_n = preceding_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+
+    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str
+                                     ) -> str:
+        """Returns the plain text content of the element containing `search_text`.
+
+        Fails if the search_text is found in more than one HTML element.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent.
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        matching_elements = self.response.lxml.xpath(
+                f'//*[@id="{div}"]//{element_tag}[contains(.,"{search_text}")]')
+        if len(matching_elements) == 0:
+            self.fail(f"Text '{search_text}' not found")
+        elif len(matching_elements) > 1:
+            self.fail(f"Text '{search_text}' found in {len(matching_elements)} "
+                      "(more than one) elements")
+        return ''.join(matching_elements[0].itertext())
+
     def assertNotification(self, ntext: Optional[str] = None,
                            ntype: Optional[str] = None, *, static: bool = False,
                            msg: Optional[str] = None) -> None:

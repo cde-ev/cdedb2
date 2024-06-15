@@ -3618,18 +3618,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'href': '/event/event/1/lodgement/4/show'})
         # check that no suffix is shown after Emilia's name
         self.assertEqual(
-            ''.join(
-                self.response.lxml.xpath(
-                    '//*[@id="inhabitants-2"]//li[contains(.,"Emilia")]')[0]
-                .itertext()).strip(),
+            self.getFullTextOfElementWithText("Emilia", "li", div="inhabitants-2")
+            .strip(),
             "Emilia E. Eventis")
         self.traverse({'href': '/event/event/1/lodgement/4/manage'})
         # check that no suffix is shown after Emilia's name
         self.assertEqual(
-            ''.join(
-                self.response.lxml.xpath(
-                    '//*[@id="inhabitants-2"]//td[contains(.,"Emilia")]')[0]
-                .itertext()).strip(),
+            self.getFullTextOfElementWithText("Emilia", "td", div="inhabitants-2")
+            .strip(),
             "Emilia E. Eventis")
 
         # When CANCELLED, ...
@@ -3644,28 +3640,16 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'href': '/event/event/1/lodgement/4/show'})
         self.assertPresence("Emilia E. Eventis (Abgemeldet)", div="inhabitants-2")
         # Assert "Emilia" is in an <s> (strike-through) element
-        self.assertTrue(
-            self.response.lxml.xpath(
-                '//*[@id="inhabitants-2"]//*[text()[contains(.,"Emilia")]]'
-                '/ancestor-or-self::s'))
+        self.assertTextContainedInElement("Emilia", "s", div="inhabitants-2")
         # Assert "Emilia" is in the last <li> element
-        self.assertFalse(
-            self.response.lxml.xpath(
-                '//*[@id="inhabitants-2"]//li[contains(.,"Emilia")]'
-                '/following-sibling::*'))
+        self.assertTextContainedInNthElement("Emilia", "li", -1, div="inhabitants-2")
         self.assertNonPresence("Überfüllt", div="inhabitants-2")
         self.traverse({'href': '/event/event/1/lodgement/4/manage'})
         self.assertPresence("Emilia E. Eventis (Abgemeldet)", div="inhabitants-2")
         # Assert "Emilia" is in an <s> (strike-through) element
-        self.assertTrue(
-            self.response.lxml.xpath(
-                '//*[@id="inhabitants-2"]//*[text()[contains(.,"Emilia")]]'
-                '/ancestor-or-self::s'))
+        self.assertTextContainedInElement("Emilia", "s", div="inhabitants-2")
         # Assert "Emilia" is in the last <tr> element
-        self.assertFalse(
-            self.response.lxml.xpath(
-                '//*[@id="inhabitants-2"]//tr[contains(.,"Emilia")]'
-                '/following-sibling::*'))
+        self.assertTextContainedInNthElement("Emilia", "tr", -1, div="inhabitants-2")
 
     @event_keeper
     @as_users("garcia")
@@ -4296,18 +4280,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                       {'href': '/event/event/1/course/1/show'})
         # check that no suffix is shown after Inga's name
         self.assertEqual(
-            ''.join(
-                self.response.lxml.xpath(
-                    '//*[@id="track3-attendees"]//li[contains(.,"Inga")]')[0]
-                .itertext()).strip(),
+            self.getFullTextOfElementWithText("Inga", "li", div="track3-attendees")
+            .strip(),
             "Inga Iota")
         self.traverse({'href': '/event/event/1/course/1/manage'})
         # check that no suffix is shown after Inga's name
         self.assertEqual(
-            ''.join(
-                self.response.lxml.xpath(
-                    '//*[@id="track3-attendees"]//td[contains(.,"Inga")]')[0]
-                .itertext()).strip(),
+            self.getFullTextOfElementWithText("Inga", "td", div="track3-attendees")
+            .strip(),
             "Inga Iota")
         # The course check considers the course as full enough
         self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
@@ -4354,29 +4334,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("1 + 1", div="track3-attendees")
         self.assertPresence("Inga Iota (Abgemeldet)", div="track3-attendees")
         # Assert "Inga" is in an <s> (strike-through) element
-        self.assertTrue(
-            self.response.lxml.xpath(
-                '//*[@id="track3-attendees"]//*[text()[contains(.,"Inga")]]'
-                '/ancestor-or-self::s'))
+        self.assertTextContainedInElement("Inga", "s", div="track3-attendees")
         # Assert "Inga" is in the last <li> element
-        self.assertFalse(
-            self.response.lxml.xpath(
-                '//*[@id="track3-attendees"]//li[contains(.,"Inga")]'
-                '/following-sibling::*'))
+        self.assertTextContainedInNthElement("Inga", "li", -1, div="track3-attendees")
         # Now, we're missing a course attendee
         self.assertPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
         self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertPresence("Inga Iota (Abgemeldet)", div="track3-attendees")
         # Assert "Inga" is in an <s> (strike-through) element
-        self.assertTrue(
-            self.response.lxml.xpath(
-                '//*[@id="track3-attendees"]//*[text()[contains(.,"Inga")]]'
-                '/ancestor-or-self::s'))
+        self.assertTextContainedInElement("Inga", "s", div="track3-attendees")
         # Assert "Inga" is in the last <tr> element
-        self.assertFalse(
-            self.response.lxml.xpath(
-                '//*[@id="track3-attendees"]//tr[contains(.,"Inga")]'
-                '/following-sibling::*'))
+        self.assertTextContainedInNthElement("Inga", "tr", -1, div="track3-attendees")
 
     @as_users("garcia")
     def test_lodgement_wishes_graph(self) -> None:
