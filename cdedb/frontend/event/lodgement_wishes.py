@@ -221,15 +221,15 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     other participant's rooming preferences text.
     """
     patterns = [
-        rf"{escape(given_name)}\s+{persona['family_name']}"
+        rf"\b{escape(given_name)}\s+{escape(persona['family_name'])}\b"
         for given_name in persona['given_names'].split()
     ]
     patterns.append(
-        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
+        rf"\b{escape(persona['display_name'])}\s+{escape(persona['family_name'])}\b",
     )
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
-        patterns.append(re.escape(persona['username'].strip()))
+        patterns.append(rf"\b{re.escape(persona['username'].strip())}\b")
     return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
 
 
