@@ -1,8 +1,8 @@
 # /etc/systemd/system/cde-ldap.service
 [Unit]
 Description=CdE LDAP Server
-# use @<cluster_name>.service if possible/necessary
-Requires=postgresql.service
+# use postgresql@<cluster_name>.service if possible/necessary
+Requires=cde-ldap.socket postgresql.service
 After=postgresql.service
 Documentation=https://db.cde-ev.de/doc/API_LDAP.html
 
@@ -27,6 +27,3 @@ NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectHome=read-only
 ProtectSystem=strict
-
-[Install]
-WantedBy=multi-user.target
