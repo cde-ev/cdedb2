@@ -1,4 +1,5 @@
 1. Replace old cde-ldap.service unit under /etc/systemd/system with new one
 2. Drop cde-ldap.socket unit into /etc/systemd/system
+3. Disable cde-ldap.service and enable cde-ldap.socket
 
 (Unit files can be found under related/auto-build/files/stage3/)
