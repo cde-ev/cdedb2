@@ -10297,7 +10297,7 @@ msgstr "Nachricht anonym verschicken."
 
 #: cdedb/frontend/templates/web/core/contact.tmpl:45
 msgid "Tell them it was me."
-msgstr "Mich als Abesender anzeigen."
+msgstr "Mich als Absender anzeigen."
 
 #: cdedb/frontend/templates/web/core/contact.tmpl:47
 msgid "Subject"
