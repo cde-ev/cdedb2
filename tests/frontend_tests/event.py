@@ -991,6 +991,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Die Sortierung der Felder bitte nicht ändern!",
                             div="field-definition-notes", exact=True)
         self.assertPresence("Kursfelder", div="fieldsummaryform")
+        self.assertPresence("Unterkunftsfelder", div="fieldsummaryform")
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_9', f.fields)
@@ -1028,7 +1029,7 @@ etc;anything else""", f['entries_2'].value)
                           {'href': '/event/list'},
                           {'href': '/event/event/2/show'},
                           {'href': '/event/event/2/field/summary'})
-            self.assertNonPresence("Kursfelder", div="fieldsummaryform")
+            self.assertNonPresence("Kursfelder")
 
     @event_keeper
     @as_users("garcia")
@@ -4442,47 +4443,45 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # first check empty csv
         self.traverse({'href': '/event/event/2/download/csv_registrations'})
         self.assertPresence('Leere Datei.', div='notifications')
+        self.assertNonPresence("Kursteilnehmerlisten")
         self.get('/event/event/2/download/csv_courses')
         self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/csv_lodgements'})
+        self.assertNonPresence("Unterkunftbewohnerlisten")
+        self.get('/event/event/2/download/csv_lodgements')
         self.assertPresence('Leere Datei.', div='notifications')
 
         # Test nametags
         save = self.response
         self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.response = save
-
-        # now check empty pdfs
-        self.get('/event/event/2/download/courselists?runs=2')
-        self.assertPresence('Leeres PDF.', div='notifications')
-        self.assertNonPresence('konnte nicht kompiliert werden.')
-        self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
-        self.assertNonPresence('konnte nicht kompiliert werden.')
-        self.get('/event/event/2/download/coursepuzzle?runs=2')
-        self.assertPresence('Leeres PDF.', div='notifications')
-        self.assertNonPresence('konnte nicht kompiliert werden.')
-        self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
-        self.assertNonPresence('konnte nicht kompiliert werden.')
-        self.traverse({'href': '/event/event/2/download/participantlist\\?runs=2'})
-        self.assertPresence('Leeres PDF.', div='notifications')
-        self.assertNonPresence('konnte nicht kompiliert werden.')
-
-        # but the latex source code should still be available
-        save = self.response
         self.response = save.click(href='/event/event/2/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(
-            href='/event/event/2/download/lodgementlists\\?runs=0')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.response = save.click(
-            href='/event/event/2/download/lodgementpuzzle\\?runs=0')
-        self.assertPresence('documentclass')
-        self.response = save.click(
-            href='/event/event/2/download/participantlist\\?runs=0$')
-        self.assertPresence('documentclass')
+        self.response = save
+
+        downloads = [  # name of download, visibility over UI
+            ('participantlist', True),
+            ('courselists', False),
+            ('lodgementlists', False),
+            ('coursepuzzle', False),
+            ('lodgementpuzzle', False),
+        ]
+        for doc, visible in downloads:
+            link = f'/event/event/2/download/{doc}'
+            self.response = save
+            if visible:
+                self.assertIn(link, self.response.text)
+            else:
+                self.assertNoLink(link)
+            # now check empty pdfs
+            self.get(link + '?runs=2')
+            self.assertPresence('Leeres PDF', div='notifications')
+            self.assertNonPresence('konnte nicht kompiliert werden.')
+            # and availability of (empty) LaTeX sources
+            self.get(link + '?runs=0')
+            if link.endswith('lists'):  # downloads with multiple docs are zipped
+                self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+            else:
+                self.assertPresence('documentclass')
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:

@@ -190,6 +190,7 @@
                             </dd>
                         {% endfor %}
 
+                        {% if lodgements %}
                         <dt title="{% trans %}Lodgement{% endtrans %}">{% trans %}Lodgement{% endtrans %}</dt>
                         <dd>
                             {% with lodgement_id = ambience['registration']['parts'][part.id]['lodgement_id'] %}
@@ -203,6 +204,7 @@
                                 {% endif %}
                             {% endwith %}
                         </dd>
+                        {% endif %}
                         <dt title="">{% trans %}Uses Camping Mat{% endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=ambience['registration']['parts'][part.id]['is_camping_mat']) }}

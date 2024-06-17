@@ -30,11 +30,13 @@
                 <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             {% endif %}
+            {% if lodgements_exist %}
             <tr>
                 <td>{% trans %}Lodgement Inhabitant Lists{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% endif %}
             {% if ambience['event']['tracks'] %}
             <tr>
                 <td>
@@ -45,6 +47,7 @@
                 <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             {% endif %}
+            {% if lodgements_exist %}
             <tr>
                 <td>
                     {% trans %}Lodgement Puzzle{% endtrans %}
@@ -53,6 +56,7 @@
                 <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
+            {% endif %}
         </tbody>
     </table>
 
@@ -145,10 +149,12 @@
                 <td>{{ util.href(cdedblink('event/download_csv_courses'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             {% endif %}
+            {% if lodgements_exist %}
             <tr>
                 <td>{% trans %}Lodgement list{% endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_lodgements'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
+            {% endif %}
             {% if ambience['event']['tracks'] %}
             <tr>
                 <td>{% trans %}Dokuteam course list{% endtrans %}</td>
