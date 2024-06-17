@@ -39,11 +39,10 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
-    TRACK_GROUP_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
+    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import EventLogFilter
@@ -1141,7 +1140,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 models.Lodgement.full_export_spec("event_id"),
                 OrgaToken.full_export_spec("event_id"),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
-                ('event.track_group_tracks', "track_id", ("track_group_id", "track_id")),
+                (
+                    'event.track_group_tracks',
+                     "track_id",
+                     ("track_group_id", "track_id"),
+                ),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
