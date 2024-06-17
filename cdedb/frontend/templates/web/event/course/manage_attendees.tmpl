@@ -32,7 +32,7 @@
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
                                                                        else gettext("Assigned Attendees")),
-                                                 aclass="panel-info") %}
+                                                 aclass="panel-info", anid="track{}-attendees".format(track_id)) %}
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}

@@ -3569,6 +3569,89 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("42", div="group_regular_capacity_2")
         self.assertPresence("53", div="total_regular")
 
+    @as_users("garcia")
+    def test_lodgement_display_with_different_participation_stati(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'})
+        self.assertTitle("Unterkünfte (Große Testakademie 2222)")
+        # Precondition: Einzelzelle (4) has currently 2 participants in part 2,
+        # one of them is Emilia, but Emilia is GUEST in this part
+        self.assertPresence("2", div="lodge_inhabitants_2_4")
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(f['part2.status'].value, "RegistrationPartStati.guest")
+        self.assertEqual(f['part2.lodgement_id'].value, "4")
+
+        # Emilia is listed in the inhabitants of the lodgement (with "(Gast)" suffix)
+        self.traverse({'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/4/show'})
+        self.assertPresence("Emilia E. Eventis (Gast)", div="inhabitants-2")
+        # The lodgement check considers the lodgement as overfull
+        self.assertPresence("Überfüllt", div="inhabitants-2")
+        self.traverse({'href': '/event/event/1/lodgement/4/manage'})
+        self.assertPresence("Emilia E. Eventis (Gast)", div="inhabitants-2")
+
+        # Now, put Emilia to the WAITLIST
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        f['part2.status'] = "RegistrationPartStati.waitlist"
+        f.submit()
+
+        # Nothing should have changed, except for the suffix
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("2", div="lodge_inhabitants_2_4")
+        self.traverse({'href': '/event/event/1/lodgement/4/show'})
+        self.assertPresence("Emilia E. Eventis (Warteliste)", div="inhabitants-2")
+        self.assertPresence("Überfüllt", div="inhabitants-2")
+        self.traverse({'href': '/event/event/1/lodgement/4/manage'})
+        self.assertPresence("Emilia E. Eventis (Warteliste)", div="inhabitants-2")
+
+        # As a PARTICIPANT, ...
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        f['part2.status'] = "RegistrationPartStati.participant"
+        f.submit()
+
+        # ... Emilia should be listed without suffix
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("2", div="lodge_inhabitants_2_4")
+        self.traverse({'href': '/event/event/1/lodgement/4/show'})
+        # check that no suffix is shown after Emilia's name
+        self.assertEqual(
+            self.getFullTextOfElementWithText("Emilia", "li", div="inhabitants-2")
+            .strip(),
+            "Emilia E. Eventis")
+        self.traverse({'href': '/event/event/1/lodgement/4/manage'})
+        # check that no suffix is shown after Emilia's name
+        self.assertEqual(
+            self.getFullTextOfElementWithText("Emilia", "td", div="inhabitants-2")
+            .strip(),
+            "Emilia E. Eventis")
+
+        # When CANCELLED, ...
+        self.get('/event/event/1/registration/2/change')
+        f = self.response.forms['changeregistrationform']
+        f['part2.status'] = "RegistrationPartStati.cancelled"
+        f.submit()
+
+        # ... Emilia should be listed with suffix, but stroke-through and not counted
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("1", div="lodge_inhabitants_2_4")
+        self.traverse({'href': '/event/event/1/lodgement/4/show'})
+        self.assertPresence("Emilia E. Eventis (Abgemeldet)", div="inhabitants-2")
+        # Assert "Emilia" is in an <s> (strike-through) element
+        self.assertTextContainedInElement("Emilia", "s", div="inhabitants-2")
+        # Assert "Emilia" is in the last <li> element
+        self.assertTextContainedInNthElement("Emilia", "li", -1, div="inhabitants-2")
+        self.assertNonPresence("Überfüllt", div="inhabitants-2")
+        self.traverse({'href': '/event/event/1/lodgement/4/manage'})
+        self.assertPresence("Emilia E. Eventis (Abgemeldet)", div="inhabitants-2")
+        # Assert "Emilia" is in an <s> (strike-through) element
+        self.assertTextContainedInElement("Emilia", "s", div="inhabitants-2")
+        # Assert "Emilia" is in the last <tr> element
+        self.assertTextContainedInNthElement("Emilia", "tr", -1, div="inhabitants-2")
+
     @event_keeper
     @as_users("garcia")
     def test_lodgement_groups(self) -> None:
@@ -4178,6 +4261,91 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Emilia", div='problem_instructor_wrong_course')
         self.assertPresence("α", div='problem_instructor_wrong_course')
         self.assertPresence("δ", div='problem_instructor_wrong_course')
+
+    @as_users("garcia")
+    def test_course_display_with_different_participation_stati(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/1/show'})
+        # Precondition: Heldentum (1) has currently 2+1 participants in track 3,
+        # one of them is Inga, who is PARTICIPANT in the relevant part (3)
+        self.assertPresence("2 + 1", div="track3-attendees")
+        self.get('/event/event/1/registration/4/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(f['part3.status'].value, "RegistrationPartStati.participant")
+        self.assertEqual(f['track3.course_id'].value, "1")
+
+        # Inga should be listed in the course without suffix
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/1/show'})
+        # check that no suffix is shown after Inga's name
+        self.assertEqual(
+            self.getFullTextOfElementWithText("Inga", "li", div="track3-attendees")
+            .strip(),
+            "Inga Iota")
+        self.traverse({'href': '/event/event/1/course/1/manage'})
+        # check that no suffix is shown after Inga's name
+        self.assertEqual(
+            self.getFullTextOfElementWithText("Inga", "td", div="track3-attendees")
+            .strip(),
+            "Inga Iota")
+        # The course check considers the course as full enough
+        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+
+        # As a GUEST, ...
+        self.get('/event/event/1/registration/4/change')
+        f = self.response.forms['changeregistrationform']
+        f['part3.status'] = "RegistrationPartStati.guest"
+        f.submit()
+
+        # ... Inga should be listed with "(Gast)" suffix
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/1/show'})
+        self.assertPresence("2 + 1", div="track3-attendees")
+        self.assertPresence("Inga Iota (Gast)", div="track3-attendees")
+        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.traverse({'href': '/event/event/1/course/1/manage'})
+        self.assertPresence("Inga Iota (Gast)", div="track3-attendees")
+
+        # Now, put Inga to the WAITLIST
+        self.get('/event/event/1/registration/4/change')
+        f = self.response.forms['changeregistrationform']
+        f['part3.status'] = "RegistrationPartStati.waitlist"
+        f.submit()
+
+        # Nothing should have changed, except for the suffix
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/1/show'})
+        self.assertPresence("2 + 1", div="track3-attendees")
+        self.assertPresence("Inga Iota (Warteliste)", div="track3-attendees")
+        self.assertNonPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.traverse({'href': '/event/event/1/course/1/manage'})
+        self.assertPresence("Inga Iota (Warteliste)", div="track3-attendees")
+
+        # When cancelled, ...
+        self.get('/event/event/1/registration/4/change')
+        f = self.response.forms['changeregistrationform']
+        f['part3.status'] = "RegistrationPartStati.cancelled"
+        f.submit()
+
+        # ... Inga should be listed with suffix, but stroke-through and not counted
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/1/show'})
+        self.assertPresence("1 + 1", div="track3-attendees")
+        self.assertPresence("Inga Iota (Abgemeldet)", div="track3-attendees")
+        # Assert "Inga" is in an <s> (strike-through) element
+        self.assertTextContainedInElement("Inga", "s", div="track3-attendees")
+        # Assert "Inga" is in the last <li> element
+        self.assertTextContainedInNthElement("Inga", "li", -1, div="track3-attendees")
+        # Now, we're missing a course attendee
+        self.assertPresence("Kursteilnehmer zu wenig.", div="track3-attendees")
+        self.traverse({'href': '/event/event/1/course/1/manage'})
+        self.assertPresence("Inga Iota (Abgemeldet)", div="track3-attendees")
+        # Assert "Inga" is in an <s> (strike-through) element
+        self.assertTextContainedInElement("Inga", "s", div="track3-attendees")
+        # Assert "Inga" is in the last <tr> element
+        self.assertTextContainedInNthElement("Inga", "tr", -1, div="track3-attendees")
 
     @as_users("garcia")
     def test_lodgement_wishes_graph(self) -> None:
