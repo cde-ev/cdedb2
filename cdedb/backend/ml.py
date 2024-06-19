@@ -435,13 +435,17 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def add_moderators(self, rs: RequestState, mailinglist_id: int,
-                       persona_ids: Collection[int], change_note: Optional[str] = None,
+                       persona_ids: Collection[int], *,
+                       change_note: Optional[str] = None,
+                       on_creation: bool = False,
                        ) -> DefaultReturnCode:
-        """Add moderators to a mailinglist."""
+        """Add moderators to a mailinglist.
+
+        :param on_creation: On creation, privileges are checked by the caller"""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
-        if not self.may_manage(rs, mailinglist_id):
+        if not self.may_manage(rs, mailinglist_id) and not on_creation:
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
@@ -464,6 +468,10 @@ class MlBackend(AbstractBackend):
                     self.ml_log(rs, const.MlLogCodes.moderator_added, mailinglist_id,
                                 persona_id=anid, change_note=change_note)
                 ret *= r
+
+        # Update session moderator status
+        if rs.user.persona_id in persona_ids:
+            rs.user.moderator.add(mailinglist_id)
 
         return ret
 
@@ -493,6 +501,11 @@ class MlBackend(AbstractBackend):
             if ret:
                 self.ml_log(rs, const.MlLogCodes.moderator_removed, mailinglist_id,
                             persona_id=persona_id, change_note=change_note)
+
+        # Update session moderator status
+        if rs.user.persona_id == persona_id:
+            rs.user.moderator.remove(mailinglist_id)
+
         return ret
 
     @access("ml")
@@ -658,7 +671,9 @@ class MlBackend(AbstractBackend):
         """
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
-        if not data.is_relevant_admin(rs.user):
+        if not (data.is_relevant_admin(rs.user)
+                or (isinstance(data, EventAssociatedMailinglist)
+                    and data.event_id in rs.user.orga)):
             raise PrivilegeError(n_(
                 "Not privileged to create mailinglist of this type."))
         with Atomizer(rs):
@@ -671,7 +686,7 @@ class MlBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
             if data.moderators:
-                self.add_moderators(rs, new_id, data.moderators)
+                self.add_moderators(rs, new_id, data.moderators, on_creation=True)
             self.write_subscription_states(rs, (new_id,))
         return new_id
 

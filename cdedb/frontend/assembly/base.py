@@ -181,6 +181,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         code = self.assemblyproxy.add_assembly_presiders(
             rs, assembly_id, presider_ids)
         rs.notify_return_code(code, error=n_("Action had no effect."))
+        # Update session presider status
+        if rs.user.persona_id in presider_ids:
+            assert rs.user.persona_id is not None
+            rs.user.presider.add(rs.user.persona_id)
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -199,6 +203,9 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
         code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
         rs.notify_return_code(code, error=n_("Action had no effect."))
+        # Update session presider status
+        if rs.user.persona_id == presider_id:
+            rs.user.presider.remove(rs.user.persona_id)
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")

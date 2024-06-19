@@ -392,7 +392,8 @@
     </div>
 
 
-    {% if "event_mgmt" in user.admin_views %}
+    {% if "event_mgmt" in user.admin_views or (
+            values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['event']['orga_address'] %}
                 <div class="row" id="create-orga-list">
@@ -444,7 +445,8 @@
                     </div>
                 </div>
             {% endif %}
-            {% if "cde_admin" in user.roles and not ambience['event']['is_archived']%}
+            {% if "event_mgmt" in user.admin_views %}
+                {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
@@ -506,6 +508,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         {% endcall %}
     {% endif %}
 {% endblock %}
