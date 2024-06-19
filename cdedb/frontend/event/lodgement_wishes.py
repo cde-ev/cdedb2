@@ -230,7 +230,7 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     patterns.append(re.escape(f"DB-{persona['id']}-"))
     if persona['username']:
         patterns.append(rf"\b{re.escape(persona['username'].strip())}\b")
-    return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
+    return re.compile('|'.join(p for p in patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati
