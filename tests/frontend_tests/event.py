@@ -2610,7 +2610,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                             div="lodgement-wishes")
         self.assertPresence("Falls ein Wunsch fehlen sollte", div="lodgement-wishes")
         f['fields.lodge'] = """
-            Anton Armin A. Administrator, garcia@example.cde, DB-100-Y, Daniel D. Dino
+            Anton Armin A. Administrator, garcia@example.cde, DB-100-7, Daniel D. Dino
         """
         self.submit(f)
         self.assertPresence("Folgende Unterbringungswünsche", div="lodgement-wishes")

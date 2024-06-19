@@ -21,6 +21,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
+from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import cdedburl
 
 
@@ -221,16 +222,18 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     other participant's rooming preferences text.
     """
     patterns = [
-        rf"{escape(given_name)}\s+{persona['family_name']}"
+        rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
         for given_name in persona['given_names'].split()
     ]
     patterns.append(
         rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
     )
-    patterns.append(re.escape(f"DB-{persona['id']}-"))
+    persona_id = persona['id']
+    assert isinstance(persona_id, int)
+    patterns.append(re.escape(cdedbid_filter(persona_id)))
     if persona['username']:
-        patterns.append(re.escape(persona['username'].strip()))
-    return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
+        patterns.append(re.escape(persona['username']))
+    return re.compile('|'.join(rf"\b{p.strip()}\b" for p in patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati
