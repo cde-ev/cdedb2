@@ -195,9 +195,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        if rs.ambience['event'].is_archived:
-            rs.notify("error", n_("Event is already archived."))
-            return self.redirect(rs, "event/show_event")
         params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         data = {
             key.removeprefix("fields."): val
@@ -302,7 +299,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def _sanitize_questionnaire_row(row: CdEDBObject) -> CdEDBObject:
         """Small helper to make validation happy.
 
-        The invokation
+        The invocation
         ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
         the retrieval method provides additional information which not
         settable and thus filtered by this method.

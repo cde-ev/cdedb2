@@ -1179,12 +1179,12 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        if not any(rpart['status'] == const.RegistrationPartStati.participant
-                   for reg in registrations.values()
-                   for rpart in reg['parts'].values()):
-            if create_past_event:
+        if create_past_event:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            if not any(rpart['status'] == const.RegistrationPartStati.participant
+                       for reg in registrations.values()
+                       for rpart in reg['parts'].values()):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
@@ -1194,6 +1194,13 @@ class EventEventMixin(EventBaseFrontend):
         if message:
             rs.notify("error", message)
             return self.redirect(rs, "event/show_event")
+
+        # Lock all questionnaire entries
+        aq = const.QuestionnaireUsages.additional
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        for entry in questionnaire:
+            entry['readonly'] = True
+        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
