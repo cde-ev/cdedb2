@@ -956,7 +956,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note=change_note)
             # apply the previously stashed changes
-            if is_member or trial_member:
+            if is_member or trial_member or honorary_member:
                 ret *= self.change_membership_easy_mode(
                     rs, data['id'], is_member=is_member, trial_member=trial_member,
                     honorary_member=honorary_member)
@@ -1282,6 +1282,7 @@ class CoreBaseBackend(AbstractBackend):
 
         :param is_member: Desired target state of membership or None.
         :param trial_member: Desired target state of trial membership or None.
+        :param honorary_member: Desired target state of honorary membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)

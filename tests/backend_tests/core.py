@@ -1105,6 +1105,8 @@ class TestCoreBackend(BackendTest):
     def test_archive(self) -> None:
         persona_id = 3
         with self.switch_user("anton"):
+            self.core.change_membership_easy_mode(self.key, persona_id,
+                                                  honorary_member=True)
             self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
                                   allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
