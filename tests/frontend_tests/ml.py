@@ -1529,7 +1529,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("kassenwart@example.cde / Finanzbericht / Spam score: —",
                             div="1-1001")
         self.assertPresence("illuminati@example.cde / Verschwurbelung"
-                            " / Spam score: 1.108", div="2-1002")
+                            " / Spam score: 1.108 / Reason: naughty joke", div="2-1002")
         self.assertPresence("nigerian_prince@example.cde / unerwartetes Erbe"
                             " / Spam score: 2.725", div="3-1003")
 

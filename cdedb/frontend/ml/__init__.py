@@ -67,6 +67,8 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                         change_note = (
                             f'{sender} / {subject} / '
                             f'Spam score: {headers.get("X-Spam-Score", "—")}')
+                        if reason:
+                            change_note += f' / Reason: {reason}'
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
                             dblist.id, change_note=change_note)
