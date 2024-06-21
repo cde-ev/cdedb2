@@ -1148,7 +1148,7 @@ class CoreBaseFrontend(AbstractFrontend):
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
         if not data:
-            rs.validation_appraised = True
+            rs.ignore_validation_errors()
             return self.change_user_form(rs)
         # take special care for annual donations in combination with lastschrift
         if ("donation" in data
@@ -1176,10 +1176,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
-        for address_row in ('address', 'postal_code', 'location'):
-            e = ValueError("Specifying an address is mandatory.")
-            if not data.get(address_row):
-                rs.append_validation_error((address_row, e))
+        if data['is_event_realm']:
+            for address_row in ('address', 'postal_code', 'location'):
+                e = ValueError("Specifying an address is mandatory.")
+                if not data.get(address_row):
+                    rs.append_validation_error((address_row, e))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."

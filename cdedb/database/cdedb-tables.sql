@@ -130,6 +130,8 @@ CREATE TABLE core.personas (
         mobile                  varchar,
         address_supplement      varchar,
         address                 varchar,
+        -- whether to show precise address in member search
+        show_address            boolean NOT NULL DEFAULT TRUE,
         postal_code             varchar,
         -- probably a city
         location                varchar,
@@ -141,6 +143,8 @@ CREATE TABLE core.personas (
         birth_name              varchar DEFAULT NULL,
         address_supplement2     varchar,
         address2                varchar,
+        -- whether to show precise address in member search
+        show_address2            boolean NOT NULL DEFAULT TRUE,
         postal_code2            varchar,
         -- probably a city
         location2               varchar,
