@@ -634,6 +634,12 @@ class CoreBaseFrontend(AbstractFrontend):
                     "notes"])
             if "orga" not in access_levels:
                 masks.extend(["is_member", "gender", "pronouns_nametag"])
+                # Primary address may be hidden from member search,
+                # but not from orga view.
+                if not data['show_address']:
+                    masks.extend(["address", "address_supplement"])
+            if not data['show_address2']:
+                masks.extend(["address2", "address_supplement2"])
             for key in masks:
                 if key in data:
                     del data[key]
@@ -1171,11 +1177,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
         for address_row in ('address', 'postal_code', 'location'):
-            # TODO: Use staticlink here?
-            e = ValueError(
-                "Specifying address is mandatory. If you want to have your address"
-                " invisible, contact {verwaltung} to opt out of member search.",
-                {'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+            e = ValueError("Specifying an address is mandatory.")
             if not data.get(address_row):
                 rs.append_validation_error((address_row, e))
         if rs.has_validation_errors():
