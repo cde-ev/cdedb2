@@ -989,7 +989,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_has_registrations(self) -> None:
-        self.assertEqual(True, self.event.has_registrations(self.key, 1))
+        self.assertTrue(self.event.has_registrations(self.key, 1))
 
     @as_users("emilia")
     def test_registration_participant(self) -> None:

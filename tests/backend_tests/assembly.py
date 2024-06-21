@@ -853,13 +853,11 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("charly")
     def test_signup(self) -> None:
-        self.assertEqual(False, self.assembly.does_attend(
-            self.key, assembly_id=1))
+        self.assertFalse(self.assembly.does_attend(self.key, assembly_id=1))
         secret = self.assembly.signup(self.key, 1)
         assert secret is not None
         self.assertLess(0, len(secret))
-        self.assertEqual(True, self.assembly.does_attend(
-            self.key, assembly_id=1))
+        self.assertTrue(self.assembly.does_attend(self.key, assembly_id=1))
 
     def test_get_vote(self) -> None:
         testcase = NamedTuple(
@@ -904,7 +902,7 @@ class TestAssemblyBackend(BackendTest):
     @storage
     @as_users("kalif")
     def test_tally(self) -> None:
-        self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
+        self.assertFalse(self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
         with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
             with open(self.conf['STORAGE_DIR'] / "ballot_result/1", 'rb') as g:

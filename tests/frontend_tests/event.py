@@ -3077,13 +3077,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationsform']
-        self.assertEqual(False, f['enable_part2.status'].checked)
-        self.assertEqual(True, f['enable_part3.status'].checked)
+        self.assertFalse(f['enable_part2.status'].checked)
+        self.assertTrue(f['enable_part3.status'].checked)
         self.assertEqual(
             str(const.RegistrationPartStati.participant), f['part3.status'].value)
         f['part3.status'] = const.RegistrationPartStati.cancelled
-        self.assertEqual(False, f['enable_fields.transportation'].checked)
-        self.assertEqual(True, f['enable_fields.may_reserve'].checked)
+        self.assertFalse(f['enable_fields.transportation'].checked)
+        self.assertTrue(f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
         f['fields.transportation'] = "pedes"
         f['fields.may_reserve'] = True
@@ -3114,10 +3114,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         f = self.response.forms['changeregistrationsform']
-        self.assertEqual(True, f['enable_fields.transportation'].checked)
-        self.assertEqual(True, f['enable_fields.may_reserve'].checked)
+        self.assertTrue(f['enable_fields.transportation'].checked)
+        self.assertTrue(f['enable_fields.may_reserve'].checked)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.assertEqual(True, f['fields.may_reserve'].checked)
+        self.assertTrue(f['fields.may_reserve'].checked)
         self.traverse('Anmeldungen', 'Alle Anmeldungen',
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
@@ -3230,7 +3230,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.get("/event/event/1/registration/multiedit?reg_ids=1,2,3,4")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationsform']
-        self.assertEqual(False, f['enable_track2.course_id'].checked)
+        self.assertFalse(f['enable_track2.course_id'].checked)
         self.submit(f)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/3/show'},
@@ -3251,7 +3251,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
-        self.assertEqual(True, f['reg.mixed_lodging'].checked)
+        self.assertTrue(f['reg.mixed_lodging'].checked)
         f['reg.mixed_lodging'].checked = False
         self.assertEqual(
             str(const.RegistrationPartStati.waitlist), f['part1.status'].value)
@@ -3270,7 +3270,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Wir wollen mal nicht so sein.", f['reg.orga_notes'].value)
-        self.assertEqual(False, f['reg.mixed_lodging'].checked)
+        self.assertFalse(f['reg.mixed_lodging'].checked)
         self.assertEqual(
             str(const.RegistrationPartStati.participant), f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
@@ -3347,7 +3347,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Du entkommst uns nicht.", f['reg.orga_notes'].value)
-        self.assertEqual(False, f['reg.mixed_lodging'].checked)
+        self.assertFalse(f['reg.mixed_lodging'].checked)
         self.assertEqual(
             str(const.RegistrationPartStati.applied), f['part1.status'].value)
         self.assertEqual(
@@ -3394,7 +3394,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual(True, f['reg.parental_agreement'].checked)
+        self.assertTrue(f['reg.parental_agreement'].checked)
 
     @event_keeper
     @as_users("garcia")

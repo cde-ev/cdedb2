@@ -136,11 +136,11 @@ class TestMlFrontend(FrontendTest):
     def test_toggleactivity(self) -> None:
         self.realm_admin_view_profile('janis', 'ml')
         checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
-        self.assertEqual(True, checkbox.get('data-checked') == 'True')
+        self.assertTrue(checkbox.get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
         checkbox = self.response.lxml.get_element_by_id('activity_checkbox')
-        self.assertEqual(False, checkbox.get('data-checked') == 'True')
+        self.assertFalse(checkbox.get('data-checked') == 'True')
 
     @as_users("nina", "vera")
     def test_user_search(self) -> None:
