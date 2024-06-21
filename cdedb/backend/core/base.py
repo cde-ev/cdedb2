@@ -933,7 +933,7 @@ class CoreBaseBackend(AbstractBackend):
         change_note = affirm(str, change_note)
         ret = 1
         with Atomizer(rs):
-            is_member = trial_member = None
+            is_member = trial_member = honorary_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
                 tmp = self.get_total_persona(rs, data['id'])
