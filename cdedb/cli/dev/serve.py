@@ -23,7 +23,7 @@ def serve_debugger(test: bool) -> None:
     run_simple(
         "0.0.0.0",
         5000,
-        application,
+        application,  # type: ignore[arg-type]
         use_debugger=True,
         use_evalex=True,
         use_reloader=True,

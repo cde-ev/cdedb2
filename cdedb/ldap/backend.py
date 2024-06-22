@@ -107,8 +107,9 @@ class LDAPsqlBackend:
         # transaction, we utilize the psycopg connection pool for this.
         self.pool = pool
         # load the ldap schemas (and overlays) which are supported
-        self.schema = self.load_schemas("core.schema", "cosine.schema",
-            "inetorgperson.schema", "ipauniqueid.schema", "memberof.overlay")
+        self.schema = self.load_schemas("core.schema", "partial-base.schema",
+            "cosine.schema", "inetorgperson.schema", "ipauniqueid.schema",
+            "memberof.overlay")
         # encrypting dua passwords once at startup, to increase runtime performance
         self._dua_pwds = {name: self.encrypt_password(pwd)
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}

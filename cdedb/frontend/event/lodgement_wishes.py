@@ -16,11 +16,12 @@ import graphviz
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
-    make_persona_name, unwrap,
+    make_persona_name,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
+from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import cdedburl
 
 
@@ -211,21 +212,28 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     return list(wishes.values()), problems
 
 
+def escape(s: str) -> str:
+    return inverse_diacritic_patterns(re.escape(s.strip()))
+
+
 def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
     """
     patterns = [
-        inverse_diacritic_patterns(re.escape(f"{given_name} {persona['family_name']}"))
+        rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
         for given_name in persona['given_names'].split()
     ]
-    patterns.append(inverse_diacritic_patterns(re.escape(
-        f"{persona['display_name']} {persona['family_name']}")))
-    patterns.append(re.escape(f"DB-{persona['id']}-"))
+    patterns.append(
+        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
+    )
+    persona_id = persona['id']
+    assert isinstance(persona_id, int)
+    patterns.append(re.escape(cdedbid_filter(persona_id)))
     if persona['username']:
         patterns.append(re.escape(persona['username']))
-    return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
+    return re.compile('|'.join(rf"\b{p.strip()}\b" for p in patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati
@@ -469,12 +477,12 @@ def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
         registration['fields'].get(camping_mat_field_names[p]),
         registration['parts'][p]['is_camping_mat'])
         for p in presence_parts}
-    parts = (', '.join(f"{event.parts[p].shortname}{icons[p]}"
-                       for p in _sort_parts(presence_parts, event))
-             if len(event.parts) > 1 else unwrap(icons.values()))
+    parts = ', '.join(
+        f"{event.parts[p].shortname if len(event.parts) > 1 else ''}{icons[p]}"
+        for p in _sort_parts(presence_parts, event))
+    persona = personas[registration['persona_id']]
     linebreak = "\n" if parts else ""
-    return (f"{make_persona_name(personas[registration['persona_id']])}"
-            f"{linebreak}{parts}")
+    return f"{make_persona_name(persona)}{linebreak}{parts}"
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,

@@ -24,6 +24,10 @@
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
+        {% if data['id'] in user.orga or 'event_orga' in user.admin_views %}
+            {{ util.href(cdedblink("event/register_form", {"event_id": data['id'], "preview": True}), gettext("Registration Preview"),
+                    aclass="list-group-item", icon="sign-in-alt") }}
+        {% endif %}
         {% if (is_participant and data['participant_info']) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": data['id']}),
                          gettext("Participant info"), aclass='list-group-item', icon='info',

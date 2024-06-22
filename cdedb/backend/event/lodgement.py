@@ -451,6 +451,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
             lodgement_ids: Optional[Collection[int]] = None,
+            only_involved: bool = False,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
@@ -463,6 +464,10 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
+        if only_involved:
+            condition += " AND rp.status = ANY(%s)"
+            params.append([s.value
+                           for s in const.RegistrationPartStati.involved_states()])
         query = f"""
             SELECT
                 lodgement_id, part_id, is_camping_mat AS is_cm,

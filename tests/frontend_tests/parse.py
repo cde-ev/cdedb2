@@ -3,13 +3,16 @@
 import collections
 import csv
 import datetime
+import decimal
 import types
+import unittest.mock
 from typing import Any, Optional, cast
 
 import webtest
 
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models_event
+from cdedb.backend.event import EventBackend
 from cdedb.common import Accounts, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
@@ -19,10 +22,7 @@ class TestParseFrontend(FrontendTest):
     def csv_submit(self, form: webtest.Form, button: str = "",
                    value: Optional[str] = None) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
-        try:
-            self.assertEqual(self.response.text[0], "\ufeff")
-        except AssertionError:
-            self.assertPresence("Erfolg", div="notifications")
+        self.assertEqual(self.response.text[0], "\ufeff")
         self.response.text = self.response.text[1:]
 
     @staticmethod
@@ -80,11 +80,13 @@ class TestParseFrontend(FrontendTest):
                     reference=reference,
                     compile_pattern=parse.Transaction.compile_pattern,
                 ))
-            confidence = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
+            match = parse.Transaction._match_one_event(fake_transaction, event)  # pylint: disable=protected-access
             if expected_confidence is None:
-                self.assertIsNone(confidence)
+                self.assertIsNone(match)
             else:
-                self.assertEqual(expected_confidence, confidence)
+                self.assertIsNotNone(match)
+                assert match is not None
+                self.assertEqual(expected_confidence, match.confidence)
 
         cl = parse.ConfidenceLevel
 
@@ -107,6 +109,34 @@ class TestParseFrontend(FrontendTest):
         match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Medium)
         match(velbert, "Velbert 2019", None)
 
+    def test_fee_matching(self) -> None:
+        # Match TestAka via reference, but Party via amount.
+        amount = decimal.Decimal("3.50")
+        data: CdEDBObject = collections.defaultdict(lambda: None)
+        data.update({
+            'reference': "TestAka",
+            'errors': [],
+            'warnings': [],
+            'amount': amount,
+            'event': None,
+        })
+        transaction = parse.Transaction(data)
+        transaction.persona = {'id': 1}
+        event_backend = self.initialize_backend(EventBackend)
+        event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
+            return_value={2: amount})
+        transaction._match_event(rs=self.key, event_backend=event_backend)  # pylint: disable=protected-access
+
+        # Check that reference match is better.
+        self.assertIsNotNone(transaction.event)
+        assert transaction.event is not None
+        self.assertEqual(parse.ConfidenceLevel.Medium, transaction.event_confidence)
+        self.assertEqual("Große Testakademie 2222", transaction.event.title)
+
+        # Check that "match only by amount" warning is not present.
+        self.assertEqual([], transaction.warnings)
+        self.assertEqual([], transaction.errors)
+
     def check_dict(self, adict: CdEDBObject, **kwargs: Any) -> None:
         for k, v in kwargs.items():
             if "_" not in k:
@@ -115,7 +145,7 @@ class TestParseFrontend(FrontendTest):
                 assertion, key = k.split("_", 1)
             if assertion == "In":
                 self.assertIn(v, adict[key])
-            elif assertion == "NotIn":
+            elif assertion == "NotIn":  # pragma: no cover
                 self.assertNotIn(v, adict[key])
             else:
                 self.assertEqual(v, adict[k])
@@ -145,8 +175,6 @@ class TestParseFrontend(FrontendTest):
                             div="transaction5_errors")
         self.assertPresence("event: Veranstaltung Große Testakademie 2222 nur über"
                             " zu zahlenden Betrag zugeordnet.",
-                            div="transaction5_warnings")
-        self.assertPresence("event: Große Testakademie 2222 nicht im Verwendungszweck",
                             div="transaction5_warnings")
         f["event_confirm5"] = True
 
@@ -212,73 +240,91 @@ class TestParseFrontend(FrontendTest):
         # check Testakademie csv.
 
         # Make sure to use the correct submit button.
-        self.csv_submit(f, button="event", value="1")
+        self.csv_submit(f, button="db_import")
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.event_fees,
+                                     fieldnames=parse.ExportFields.db_import,
                                      dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
-            amount="373.99",
+            amount_german="-584,49",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            transaction_date="29.12.2018",
+            category_old="TestAka",
+        )
+        self.check_dict(
+            result[1],
+            amount_german="353,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
             transaction_date="28.12.2018",
+            category_old="TestAka",
         )
         self.check_dict(
-            result[1],
-            amount="534.48",
+            result[2],
+            amount_german="504,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
             transaction_date="27.12.2018",
+            category_old="TestAka",
         )
         self.check_dict(
-            result[2],
-            amount="466.49",
-            cdedbid="DB-5-1",
-            family_name="Eventis",
-            given_names="Emilia E.",
-            transaction_date="20.12.2018",
-        )
-        # self.check_dict(
-        #     result[3],
-        #     amount="-584,49",
-        #     cdedbid="DB-1-9",
-        #     family_name="Administrator",
-        #     given_names="Anton Armin A.",
-        #     transaction_date="18.12.2018",
-        # )
-
-        # check membership_fees.csv
-        self.csv_submit(f, button="membership", value="membership")
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.member_fees,
-                                     dialect=CustomCSVDialect))
-
-        self.check_dict(
-            result[0],
-            amount="10.00",
+            result[3],
+            amount_german="10,00",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
             transaction_date="26.12.2018",
+            category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[1],
-            amount="5.00",
+            result[4],
+            amount_german="5,00",
             cdedbid="DB-2-7",
             family_name="Beispiel",
             given_names="Bertålotta",
             transaction_date="25.12.2018",
+            category_old="Mitgliedsbeitrag",
         )
         self.check_dict(
-            result[2],
-            amount="2.50",
+            result[5],
+            amount_german="2,50",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",
             transaction_date="24.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[6],
+            amount_german="2,50",
+            cdedbid="DB-4-3",
+            family_name="Dino",
+            given_names="Daniel D.",
+            transaction_date="23.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[7],
+            amount_german="10,00",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            transaction_date="21.12.2018",
+            category_old="Mitgliedsbeitrag",
+        )
+        self.check_dict(
+            result[8],
+            amount_german="466,49",
+            cdedbid="DB-5-1",
+            family_name="Eventis",
+            given_names="Emilia E.",
+            transaction_date="20.12.2018",
+            category_old="TestAka",
         )
 
         # check transactions files
@@ -403,18 +449,18 @@ class TestParseFrontend(FrontendTest):
             result[2],
             transaction_date="29.12.2018",
             amount_german="-584,49",
-            cdedbid="",
-            family_name="",
-            given_names="",
+            cdedbid="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
             category_old="TestAka",
             account_nr="8068901",
             account_holder="Anton Administrator",
-            In_reference="KL-Erstattung TestAka, Anton Armin A. Administrator",
+            In_reference="KL-Erstattung TestAka, Anton Armin A. Administrator (DB-1-9)",
         )
         self.check_dict(
             result[3],
             transaction_date="28.12.2018",
-            amount_german="373,99",
+            amount_german="353,99",
             cdedbid="DB-1-9",
             family_name="Administrator",
             given_names="Anton Armin A.",
@@ -424,7 +470,7 @@ class TestParseFrontend(FrontendTest):
         self.check_dict(
             result[4],
             transaction_date="27.12.2018",
-            amount_german="534,48",
+            amount_german="504,48",
             cdedbid="DB-7-8",
             family_name="Generalis",
             given_names="Garcia G.",

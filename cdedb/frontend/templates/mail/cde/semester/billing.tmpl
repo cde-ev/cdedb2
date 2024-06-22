@@ -1,12 +1,21 @@
 Hallo {{ persona['display_name'] }}!
 {% if lastschrift %}
+{% if persona['honorary_member'] %}
 
+== Deine Ehrenmitgliedschaft ==
+
+Als Dank für Deine besonderen Verdienste für unseren Verein bist Du
+von der Zahlung des Mitgliedsbeitrages befreit.
+Wir werden demnächst die von dir eingerichtete Spende in Höhe von {{ persona['donation']|money }}
+von Deinem Konto einziehen.
+{% else %}
 
 == Mitgliedsbeitrag per Lastschrift ==
 
 Danke, dass Du uns erlaubt hast, den jährlichen Mitgliedsbeitrag
 von {{ annual_fee|money }} zusammen mit einer Spende von aktuell {{ persona['donation']|money }}
 von Deinem Konto einzuziehen.
+{% endif %}
 Die Höhe der Spende kannst Du online über die CdE-Datenbank ändern:
 {{ cdedblink("core/change_user") }}
 
@@ -15,24 +24,24 @@ Das Lastschriftmandat mit der Mandatsreferenz
 kannst Du online über die CdE-Datenbank einsehen:
 {{ cdedblink("core/my_lastschrift") }}
 {% if lastschrift['id'] in open_lastschrift %}
-
 In wenigen Tagen werden wir nun den vereinbarten Betrag
 von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
 gesondert mitteilen.
+{% else %}
+Wir informieren Dich in einer gesonderten E-Mail vor jeder Lastschrift.
+{% endif %}
 
 Wenn sich Deine Kontoverbindung inzwischen geändert hat, Du einmalig
 den Lastschriftbetrag lieber von Deinem CdE-'Guthabenkonto' abgezogen
 haben möchtest, oder wenn Du dieses Jahr mit dem Lastschrifteinzug
 pausieren oder ihn vollständig widerrufen möchtest:
 Melde Dich einfach bei uns unter <{{ MANAGEMENT_ADDRESS }}>.
-{% else %}
+{% elif persona['honorary_member'] %}
 
-Wir informieren Dich in einer gesonderten E-Mail vor jeder Lastschrift.
+== Deine Ehrenmitgliedschaft ==
 
-Wenn sich Deine Kontoverbindung inzwischen geändert hat oder Du Deine
-Lastschrift widerrufen möchtest:
-Melde Dich einfach bei uns unter <{{ MANAGEMENT_ADDRESS }}>.
-{% endif %}
+Als Dank für Deine besonderen Verdienste für unseren Verein bist Du
+von der Zahlung des Mitgliedsbeitrages befreit.
 {% elif persona['trial_member'] %}
 
 
@@ -158,7 +167,7 @@ Wenn Du Fragen hast, so erreichst Du uns unter <{{ MANAGEMENT_ADDRESS }}>
 
 
 Viele Grüße
-das Verwaltungsteam
+Die Mitgliederverwaltung des CdE
 
 
 P.S.: Weitere Infos zur Mitgliedschaft findest Du unter

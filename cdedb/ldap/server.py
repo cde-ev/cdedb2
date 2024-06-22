@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
-from asyncio.transports import BaseTransport, Transport
+import sys
+from asyncio import StreamReader, StreamWriter
 from collections.abc import Coroutine
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Protocol
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
@@ -19,12 +20,21 @@ from ldaptor.protocols.pureldap import (
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry
 
-ReplyCallback = Callable[[pureldap.LDAPProtocolResponse], None]
+# see RFC 2696
+PagedResultsControlType = b"1.2.840.113556.1.4.319"
+
+KNOWN_CONTROL_TYPES = [PagedResultsControlType]
 
 logger = logging.getLogger(__name__)
 
 
-class LdapServer(asyncio.Protocol):
+class ReplyCallback(Protocol):
+    def __call__(self, response: pureldap.LDAPProtocolResponse,
+                 controls: Optional[list[Any]] = None) -> None:
+        ...
+
+
+class LdapHandler():
     """Implementation of the ldap protocol via asyncio.
 
     Each time a new client connects to the server, a new instance of this class will
@@ -32,10 +42,15 @@ class LdapServer(asyncio.Protocol):
     client, and this client alone.
     """
 
-    def __init__(self, root: CdEDBBaseLDAPEntry):
-        self.buffer = b""
-        self.transport: Transport = None  # type: ignore[assignment]
+    def __init__(
+        self,
+        root: CdEDBBaseLDAPEntry,
+        reader: StreamReader,
+        writer: StreamWriter
+    ):
         self.root = root
+        self.writer = writer
+        self.reader = reader
         self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
 
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
@@ -49,31 +64,32 @@ class LdapServer(asyncio.Protocol):
         )
     )
 
-    def connection_made(self, transport: BaseTransport) -> None:
-        """Called once this instance of LdapServer was connected to its client."""
-        assert isinstance(transport, Transport)
-        self.transport = transport
-
-    def connection_lost(self, exc: Optional[Exception]) -> None:
-        """Called once this instance of LdapServer lost the connection to its client."""
-        # TODO maybe handle the exception or proper close the connection
-        self.transport.close()
-
-    def data_received(self, data: bytes) -> None:
-        """Called each time the server received binary data from its client.
-
-        Note that this makes no guarantee about receiving semantic messages in one part.
-        So, buffering the received data and decoding it manually is mandatory.
-        """
-        self.buffer += data
-        while 1:
+    async def connection_callback(self) -> None:
+        """Called for each new client connection."""
+        while not self.reader.at_eof():
             try:
-                msg, len_decoded = pureber.berDecodeObject(self.berdecoder, self.buffer)
-            except pureber.BERExceptionInsufficientData:
-                msg, len_decoded = None, 0
-            self.buffer = self.buffer[len_decoded:]
-            if msg is None:
-                break
+                # We need to read two bytes,
+                # the sequence start tag and the length field.
+                buffer = await self.reader.readexactly(2)
+            except asyncio.IncompleteReadError as e:
+                if e.partial:
+                    logger.exception("Client disconnected with unhandled data")
+                return
+
+            length = pureber.ber2int(buffer[1:2], signed=0)
+            if length & 0x80:
+                # We have long-form encoded length.
+                # Therefore this field contains the size of the the length.
+                buffer += await self.reader.readexactly(length & ~0x80)
+                length = pureber.ber2int(buffer[2:], signed=0)
+
+            buffer += await self.reader.readexactly(length)
+
+            # We already did some parsing which this function would also perform
+            # but for the sake of simplicitly we only inlined the code necessary
+            # to parse how many bytes we have to read from the network.
+            msg, _ = pureber.berDecodeObject(self.berdecoder, buffer)
+
             # this is some very obscure code path, related to the construction of the
             # berdecoder object, but always guaranteed ...
             assert isinstance(msg, LDAPMessage)
@@ -103,7 +119,7 @@ class LdapServer(asyncio.Protocol):
             return
 
         for controlType, criticality, controlValue in controls:
-            if criticality:
+            if criticality and controlType not in KNOWN_CONTROL_TYPES:
                 raise ldaperrors.LDAPUnavailableCriticalExtension(
                     b"Unknown control %s" % controlType)
 
@@ -142,11 +158,12 @@ class LdapServer(asyncio.Protocol):
         assert isinstance(msg.value, pureldap.LDAPProtocolRequest)
         logger.debug(f"S<-C {repr(msg)}")
 
-        def reply(response: pureldap.LDAPProtocolResponse) -> None:
+        def reply(response: pureldap.LDAPProtocolResponse,
+                  controls: Optional[list[Any]] = None) -> None:
             """Send a message back to the client."""
-            response_msg = pureldap.LDAPMessage(response, id=msg.id)
+            response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
             logger.debug(f"S->C {repr(response_msg)}")
-            self.transport.write(response_msg.toWire())
+            self.writer.write(response_msg.toWire())
 
         # exactly unsolicited notifications have a message id of 0
         if msg.id == 0:
@@ -226,7 +243,8 @@ class LdapServer(asyncio.Protocol):
         """Notification to close the connection to the client."""
         # explicitly do not check unsupported critical controls -- we
         # have no way to return an error, anyway.
-        self.connection_lost(None)
+        self.writer.close()
+        await self.writer.wait_closed()
 
     fail_LDAPCompareRequest = pureldap.LDAPCompareResponse
 
@@ -266,6 +284,22 @@ class LdapServer(asyncio.Protocol):
 
     fail_LDAPSearchRequest = pureldap.LDAPSearchResultDone
 
+    # see RFC 2696
+    # pagedResultsControl ::= SEQUENCE {
+    #         controlType     1.2.840.113556.1.4.319,
+    #         criticality     BOOLEAN DEFAULT FALSE,
+    #         controlValue    searchControlValue
+    # }
+    #
+    # realSearchControlValue ::= SEQUENCE {
+    #         size            INTEGER (0..maxInt),
+    #                                 -- requested page size from client
+    #                                 -- result set size estimate from server
+    #         cookie          OCTET STRING
+    # }
+    #
+    # We decided to store the offset of the last page (the ordinal of the last entry
+    # which was already returned) in the cookie.
     async def handle_LDAPSearchRequest(
         self,
         request: LDAPSearchRequest,
@@ -276,7 +310,26 @@ class LdapServer(asyncio.Protocol):
         self.check_controls(controls)
         base_dn = DistinguishedName(request.baseObject)
 
+        is_paged = False
+        paged_size = 0
+        paged_cookie = 0
+        for controlType, _, controlValue in (controls or []):
+            if controlType != PagedResultsControlType:
+                continue
+            control_values = pureber.BERSequence.fromBER(
+                pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
+            ).data[0]
+            logger.debug(f"Control values: {control_values.data}")
+            paged_size = control_values[0].value
+            # Signaling we should return the first page.
+            if control_values[1].value != b"":
+                paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
+            is_paged = (paged_size != 0)
+            logger.debug(f"Received Paged size: {paged_size}")
+            logger.debug(f"Received Paged cookie: {paged_cookie}")
+
         # short-circuit if the requested entry is the root entry
+        # ignore the paged_search request, since its only one entry
         if (
             request.baseObject == b""
             and request.scope == pureldap.LDAP_SCOPE_baseObject
@@ -395,12 +448,38 @@ class LdapServer(asyncio.Protocol):
                     (key, attributes.get(key)) for key in request.attributes
                     if key in attributes]
 
-        for result in search_results:
-            filtered_attributes = filter_entry(result)
-            if filtered_attributes is not None:
-                reply(pureldap.LDAPSearchResultEntry(
-                    objectName=result.dn.getText(), attributes=filtered_attributes))
+        results = [(result.dn, filter_entry(result)) for result in search_results
+                   if filter_entry(result) is not None]
 
-        reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode))
+        total_size = 0
+        new_cookie = None
+        enc_new_cookie = b""
+        if is_paged:
+            total_size = len(results)
+            results = results[paged_cookie:][:paged_size]
+            # indicates this is the last page
+            if paged_size + paged_cookie >= total_size:
+                enc_new_cookie = b""
+            else:
+                new_cookie = paged_cookie + paged_size
+                # determine the number of bytes we need to encode the cookie
+                enc_new_cookie = new_cookie.to_bytes(
+                    (new_cookie.bit_length() + 7) // 8, sys.byteorder)
+
+        for result_dn, attributes in results:
+            reply(pureldap.LDAPSearchResultEntry(
+                objectName=result_dn.getText(), attributes=attributes))
+
+        controls = None
+        if is_paged:
+            control_value = pureber.BERSequence([
+                pureber.BERInteger(total_size), pureber.BEROctetString(enc_new_cookie)
+            ])
+            controls = [(PagedResultsControlType, None, control_value)]
+            logger.debug(f"Returned Paged size: {total_size}")
+            logger.debug(f"Retruned Paged cookie: {new_cookie}")
+
+        reply(pureldap.LDAPSearchResultDone(resultCode=ldaperrors.Success.resultCode),
+              controls=controls)
 
         return None

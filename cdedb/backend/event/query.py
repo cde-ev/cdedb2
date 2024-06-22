@@ -108,10 +108,19 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     for t_id, choices_table in course_choices_track_tables.items()
                     if choices_table is not None
                 )
+                personalized_fee_tables = "\n".join(
+                    f"LEFT OUTER JOIN ({personalized_fee_table(fee.id)}) AS fee{fee.id}"
+                    f" ON reg.id = fee{fee.id}.registration_id"
+                    for fee in event.fees.values() if fee.is_personalized()
+                )
                 return f"""
                     (
                         SELECT {', '.join(REGISTRATION_FIELDS)},
-                            amount_owed - amount_paid AS remaining_owed
+                            amount_owed - amount_paid AS remaining_owed,
+                            EXISTS (
+                                SELECT * FROM event.orgas
+                                WHERE persona_id = registrations.persona_id AND event_id = {event_id}
+                            ) AS is_orga
                         FROM event.registrations
                         WHERE event_id = {event_id}
                     ) AS reg
@@ -129,9 +138,12 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}
+                    {personalized_fee_tables}
                 """
 
-            # Step 2: Dynamically construct custom datafield table.
+            # Step 2: Dynamically construct tables for further registration data.
+
+            # Step 2.1: Construct table for custom registration fields.
             def registration_fields_table() -> str:
                 reg_field_columns = _get_field_select_columns(
                     event.fields, const.FieldAssociations.registration)
@@ -139,6 +151,14 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     SELECT {', '.join(reg_field_columns + ('id',))}
                     FROM event.registrations
                     WHERE event_id = {event_id}
+                """
+
+            # Step 2.2: Construct table for personalized fee amounts.
+            def personalized_fee_table(fee_id: int) -> str:
+                return f"""
+                    SELECT amount, registration_id
+                    FROM event.personalized_fees
+                    WHERE fee_id = {fee_id}
                 """
 
             # Step 3: Prepare templates for registration parts.

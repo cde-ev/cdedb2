@@ -20,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 12.4.0
+DEBVERSION = 12.5.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -128,7 +128,7 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	chmod 755 ${WORKDIR}/stage2cd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage2cd/init
 	cp files/stage2/* ${WORKDIR}/stage2cd/
-	cp ../../doc/source/motd.txt ${WORKDIR}/stage2cd/
+	cp ../../doc/source/motd-vm.txt ${WORKDIR}/stage2cd/motd.txt
 ifndef DEPLOYMENT_KEY_PATH
 	$(error Must provide deployment key (i.e. ssh key for user with access to Gitea))
 endif

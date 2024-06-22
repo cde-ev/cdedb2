@@ -1,0 +1,9 @@
+# /etc/systemd/system/cde-ldap.socket
+[Unit]
+Description=Socket for CdE LDAP Server
+
+[Socket]
+ListenStream=636
+
+[Install]
+WantedBy=sockets.target

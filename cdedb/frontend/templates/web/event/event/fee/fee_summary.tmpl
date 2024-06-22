@@ -1,6 +1,7 @@
 {% set sidenav_active='event_fees' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Fees ({{ title }})
@@ -18,49 +19,13 @@
 
 {% block content %}
     <p>
-        {{ util.href(cdedblink('event/configure_fee_form'), gettext("Add Fee"),
+        {{ util.href(cdedblink('event/configure_fee_form', {'personalized': False}), gettext("Add Conditional Fee"),
+                               icon='plus', aclass='btn btn-success btn-sm') }}
+        {{ util.href(cdedblink('event/configure_fee_form', {'personalized': True}), gettext("Add Personalized Fee"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/fee_stats'), gettext("Fee Stats"),
                                icon='chart-bar', aclass='btn btn-info btn-sm') }}
     </p>
-    <table id="event-fee-summary" class="table table-stats table-hover">
-        <thead>
-            <tr>
-                <th>{% trans %}Type{% endtrans %}</th>
-                <th>{% trans %}Title{% endtrans %}</th>
-                <th>{% trans %}Notes{% endtrans %}</th>
-                <th>{% trans %}Amount{% endtrans %}</th>
-                <th>{% trans %}Condition{% endtrans %}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fee in ambience['event']['fees'].values()|sort %}
-                <tr id="eventfee_{{ fee.id }}">
-                    <td>{{ util.make_icon(fee['kind'].get_icon(), title=gettext(fee['kind']|string)) }}</td>
-                    <td>{{ fee['title'] }}</td>
-                    <td>{{ fee['notes'] }}</td>
-                    <td>{{ fee['amount']|money(lang=lang) }}</td>
-                    <td><pre>{{ fee['condition'] }}</pre></td>
-                    <td class="text-nowrap">
-                        {{ util.href(
-                            cdedblink("event/configure_fee_form", {'fee_id': fee.id}),
-                            title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
-                            label=util.make_icon("pen"),
-                            anid="eventfee{}_change".format(fee.id),
-                            aclass="btn btn-sm btn-warning") }}
-                        <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
-                              method="POST" id="deleteeventfeeform{{ fee.id }}"
-                              class="display-inline">
-                            {{ util.anti_csrf_token("event/delete_fee") }}
-                            {{ util.input_submit(
-                                title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
-                                label=util.make_icon("trash-alt"), icon=none,
-                                aclass="btn btn-sm btn-danger") }}
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    {{ generic_event.fee_composition_table() }}
 {% endblock %}

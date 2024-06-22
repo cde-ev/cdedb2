@@ -76,6 +76,9 @@ I18N_STRINGS = (
     n_("CoreLogCodes.realm_change"),
     n_("CoreLogCodes.username_change"),
     n_("CoreLogCodes.quota_violation"),
+    n_("CoreLogCodes.send_anonymous_message"),
+    n_("CoreLogCodes.reply_to_anonymous_message"),
+    n_("CoreLogCodes.rotate_anonymous_message"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
@@ -137,6 +140,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.custom_filter_changed"),
     n_("EventLogCodes.custom_filter_deleted"),
     n_("EventLogCodes.registration_status_changed"),
+    n_("EventLogCodes.personalized_fee_amount_set"),
+    n_("EventLogCodes.personalized_fee_amount_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -158,6 +163,8 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.lastschrift_transaction_skip"),
     n_("FinanceLogCodes.lastschrift_transaction_cancelled"),
     n_("FinanceLogCodes.lastschrift_transaction_revoked"),
+    n_("FinanceLogCodes.honorary_membership_granted"),
+    n_("FinanceLogCodes.honorary_membership_revoked"),
     n_("FinanceLogCodes.other"),
 
     n_("FieldAssociations.registration"),
@@ -337,6 +344,7 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_reduction"),
     n_("EventFeeType.donation"),
     n_("EventFeeType.solidary_increase"),
+    n_("EventFeeType.instructor_refund"),
 
     #
     # Query datatypes

@@ -73,7 +73,7 @@ class SessionBackend:
                 data = dict(cur.fetchone())
         return data['info'].get("lockdown_web")
 
-    def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:
+    def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -151,7 +151,7 @@ class SessionBackend:
                                      'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
-    def lookuptoken(self, apitoken: Optional[str], ip: str) -> User:
+    def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the

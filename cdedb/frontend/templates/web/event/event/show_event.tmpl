@@ -80,9 +80,13 @@
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})
                             {% endtrans %}
-                        {% else %}
+                        {% elif now() > soft_limit %}
                             {% trans %}
                                 (Late registration open)
+                            {% endtrans %}
+                        {% else  %}
+                            {% trans %}
+                                (Afterwards late registration open)
                             {% endtrans %}
                         {% endif %}
                     {% endif %}

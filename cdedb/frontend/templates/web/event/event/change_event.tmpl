@@ -30,7 +30,10 @@
         {{ util.form_input_text(name="website_url", label=gettext("Website Link"),
                                     info=gettext("URL of the corresponding page of this event at the CdE website."
                                                  " This is cross linked on the overview and on the course list,"
-                                                 " if “Visibility of the Courselist” is set.")) }}
+                                                 " if “Visibility of the Courselist” is set.")
+                                         if ambience['event']['tracks'] else
+                                         gettext("URL of the corresponding page of this event at the CdE website."
+                                                 " This is cross linked on the overview.")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
@@ -43,27 +46,31 @@
                                 info=gettext("If this is checked, all event users can see the event and anyone with the link can access it. "
                                 "If this is unchecked, event users can still register within the "
                                 "registration period by accessing the registration link directly.")) }}
-        {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist"),
-                                info=gettext("If this is unchecked, no one can see the courselist. "
-                                "If this is checked, but the event is not visible, anyone with the link can access the "
-                                "courselist.")) }}
-        {{ util.form_input_checkbox(name="is_course_state_visible", label=gettext("Visibility of the cancelled courses"),
-                                info=gettext("If checked, cancelled courses are shown publicly in the course list. "
-                                "Additionally, participants may not chose cancelled courses anymore.")
-                                    + (gettext(" Attention: Activating this before Registration Soft Limit, will force "
-                                               "people to change their course choices for cancelled courses, when "
-                                               "updating their registration.")
-                                       if not (ambience['event']['registration_soft_limit']
-                                               and now() >= ambience['event']['registration_soft_limit'])
-                                       else "")) }}
+        {% if ambience['event']['tracks'] %}
+            {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist"),
+                                    info=gettext("If this is unchecked, no one can see the courselist. "
+                                    "If this is checked, but the event is not visible, anyone with the link can access the "
+                                    "courselist.")) }}
+            {{ util.form_input_checkbox(name="is_course_state_visible", label=gettext("Visibility of the cancelled courses"),
+                                    info=gettext("If checked, cancelled courses are shown publicly in the course list. "
+                                    "Additionally, participants may not chose cancelled courses anymore.")
+                                        + (gettext(" Attention: Activating this before Registration Soft Limit, will force "
+                                                   "people to change their course choices for cancelled courses, when "
+                                                   "updating their registration.")
+                                           if not (ambience['event']['registration_soft_limit']
+                                                   and now() >= ambience['event']['registration_soft_limit'])
+                                           else "")) }}
+        {% endif %}
         {{ util.form_input_checkbox(name="is_participant_list_visible", label=gettext("Visibility of the Participant List"),
                                 info=gettext("If checked, a participant list containg name, email, postal code and city is "
                                 "shown to all participants. Also, if the lodge field is set (see below) and part of the "
                                 "Questionnaire, people will be shown a list of successfully detected lodgement wishes.")) }}
-        {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
-                                info=gettext("If checked, the course assignment is shown to the participants. "
-                                "In particular, it is shown to each participant on the registration status and on the "
-                                "Participant List.")) }}
+        {% if ambience['event']['tracks'] %}
+            {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
+                                    info=gettext("If checked, the course assignment is shown to the participants. "
+                                    "In particular, it is shown to each participant on the registration status and on the "
+                                    "Participant List.")) }}
+        {% endif %}
         {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
                                 info=gettext("If checked, the event is shown as cancelled. This can be undone and "
                                 "allows the event to be archived. There are no further effects. Do not do this without "

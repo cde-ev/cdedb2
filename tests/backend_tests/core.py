@@ -64,6 +64,7 @@ PERSONA_TEMPLATE = {
     'interests': None,
     'free_form': None,
     'trial_member': None,
+    'honorary_member': None,
     'decided_search': None,
     'bub_search': None,
     'foto': None,
@@ -121,8 +122,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
             # Validate cde/total data if applicable
             if not persona['is_cde_realm']:
@@ -134,8 +135,8 @@ class TestCoreBackend(BackendTest):
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)
-                    self.assertIn("A birthday must be in the past. (birthday)",
-                                  cm.exception.args)
+                self.assertIn(
+                    "A birthday must be in the past. (birthday)", cm.exception.args)
 
     @as_users("anton", "berta", "janis")
     def test_set_persona(self) -> None:
@@ -327,6 +328,7 @@ class TestCoreBackend(BackendTest):
             'interests': "Ocarinas",
             'free_form': None,
             'trial_member': True,
+            'honorary_member': False,
             'decided_search': False,
             'bub_search': False,
             'foto': None,
@@ -468,15 +470,14 @@ class TestCoreBackend(BackendTest):
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
-            if key in ('trial_member', 'decided_search', 'bub_search'):
-                if persona[key] is None:
-                    persona[key] = False
-            if key == "paper_expuls":
-                if persona[key] is None:
-                    persona[key] = True
-            if key == "donation":
-                if persona[key] is None:
-                    persona[key] = decimal.Decimal(0)
+            persona.update({
+                'trial_member': False,
+                'honorary_member': False,
+                'decided_search': False,
+                'bub_search': False,
+                'paper_expuls': True,
+                'donation': decimal.Decimal(0),
+            })
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
@@ -510,18 +511,18 @@ class TestCoreBackend(BackendTest):
                 rs, persona_id, ("is_member", "trial_member"))
 
         def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
-            if members == 7:
+            if members == 8:
                 member_total = "113.76"
-            elif members == 8:
+            elif members == 9:
                 member_total = "114.76"
             else:
-                raise RuntimeError("Test needs adjustment.")
+                self.fail("Test needs adjustment.")
             data = {'persona_id': persona_id, 'code': code, 'total': "725.87",
                     'delta': None, 'new_balance': None, 'transaction_date': None,
                     'members': members, 'member_total': member_total}
             if code == const.FinanceLogCodes.lose_membership:
-                data["delta"] = "0.00"
-                data["new_balance"] = "1.00"
+                data["delta"] = None
+                data["new_balance"] = None
                 data["member_total"] = "113.76"
             return data
 
@@ -534,57 +535,57 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(ValueError) as ccm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=persona_id, is_member=False)
-        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+        self.assertEqual(str(ccm.exception), "Trial membership requires membership.")
 
         # Test revoking trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, trial_member=False), 0)
         expectation["trial_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 9))
 
         # Test revoking membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=False), 0)
         expectation["is_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 8))
 
         # Test granting trial membership
         with self.assertRaises(ValueError) as ccm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=persona_id, trial_member=True)
-        self.assertEqual(str(ccm.exception), "Trial membership implies membership.")
+        self.assertEqual(str(ccm.exception), "Trial membership requires membership.")
 
         # Test granting membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=True), 0)
         expectation["is_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 9))
 
         # Test granting trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, trial_member=True), 0)
         expectation["trial_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 9))
 
         # Test revoking membership and trial membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=False, trial_member=False), 0)
         expectation["is_member"] = expectation["trial_member"] = False
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 7))
-        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 7))
+        logs.append(log_entry(const.FinanceLogCodes.lose_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.end_trial_membership, 8))
 
         # Test granting trial membership and membership
         self.assertGreater(self.core.change_membership_easy_mode(
             self.key, persona_id, is_member=True, trial_member=True), 0)
         expectation["is_member"] = expectation["trial_member"] = True
         self.assertDictEqual(expectation, persona_membership(self.key, persona_id))
-        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 8))
-        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 8))
+        logs.append(log_entry(const.FinanceLogCodes.gain_membership, 9))
+        logs.append(log_entry(const.FinanceLogCodes.start_trial_membership, 9))
 
         self.assertLogEqual(logs, realm="finance", offset=3)
 
@@ -951,6 +952,7 @@ class TestCoreBackend(BackendTest):
             'balance': decimal.Decimal("0.00"),
             'donation': decimal.Decimal("0.00"),
             'trial_member': True,
+            'honorary_member': False,
             'decided_search': False,
             'bub_search': False,
             'address2': None,
@@ -1094,6 +1096,7 @@ class TestCoreBackend(BackendTest):
             'telephone': '+495432987654321',
             'timeline': 'Überall',
             'trial_member': False,
+            'honorary_member': False,
             'username': 'berta@example.cde',
             'weblink': '<https://www.bundestag.cde>'})
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
@@ -1107,14 +1110,14 @@ class TestCoreBackend(BackendTest):
             self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
                                   allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertFalse(data['is_archived'])
+        self.assertTrue(data['is_cde_realm'])
         ret = self.core.archive_persona(
             self.key, persona_id, "Archived for testing.")
         self.assertLess(0, ret)
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertTrue(data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(True, data['is_archived'])
+        self.assertTrue(data['is_archived'])
         # The user may have balance if he lost his membership in the ongoing semester
         #  Ensure that the removal of the balance is logged correctly
         log = [{
@@ -1123,7 +1126,7 @@ class TestCoreBackend(BackendTest):
             "persona_id": persona_id,
             "delta": "-5.00",
             "new_balance": "0.00",
-            "members": 7,
+            "members": 8,
             "total": "724.87",
             "member_total": "113.76",
             "transaction_date": None,
@@ -1134,7 +1137,7 @@ class TestCoreBackend(BackendTest):
                                           new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
+        self.assertFalse(data['is_archived'])
 
         # Test correct handling of lastschrift during archival.
         self.login("anton")
@@ -1240,16 +1243,16 @@ class TestCoreBackend(BackendTest):
         self.assertLess(0, case_id)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(False, persona["is_cde_admin"])
-        self.assertEqual(False, persona["is_finance_admin"])
+        self.assertFalse(persona["is_cde_admin"])
+        self.assertFalse(persona["is_finance_admin"])
 
         self.login(admin2)
         self.core.finalize_privilege_change(
             self.key, case_id, const.PrivilegeChangeStati.approved)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(True, persona["is_cde_admin"])
-        self.assertEqual(True, persona["is_finance_admin"])
+        self.assertTrue(persona["is_cde_admin"])
+        self.assertTrue(persona["is_finance_admin"])
 
         self.login(admin1)
         core_log_expectation = (3, (
@@ -1371,15 +1374,21 @@ class TestCoreBackend(BackendTest):
                         self.core.get_persona_latest_session(self.key, u["id"]))
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     def test_automated_archival(self) -> None:
+        self.login("anton")
+        self.event.delete_registration(self.key, 7,
+                                       ("registration_parts", "course_choices",
+                                        "registration_tracks"))
         for u in USER_DICT.values():
             self.login("vera")
             if u["id"] is None:
                 continue
             with self.subTest(u=u["id"]):
                 res = self.core.is_persona_automatically_archivable(self.key, u["id"])
-                if u["id"] == 18:
+                if u["id"] == 4:
                     self.assertTrue(res)
                     key = self.key
                     self.core.set_persona(
@@ -1474,6 +1483,11 @@ class TestCoreBackend(BackendTest):
             },
         ]
 
+        self.assertLogEqual(log_expectation, realm="core")
+        with self.assertRaises(ValueError):
+            self.core.redact_log(self.key, "core.personas", 1002)
+        self.core.redact_log(self.key, "core.log", 1002)
+        log_expectation[1]['change_note'] = None
         self.assertLogEqual(log_expectation, realm="core")
 
     @as_users("vera")

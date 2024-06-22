@@ -2,8 +2,6 @@
 import datetime
 import decimal
 
-import pytz
-
 # noinspection PyUnresolvedReferences
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -28,11 +26,11 @@ class TestEventModels(BackendTest):
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
-                2000, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2000, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
-                2200, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2200, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
-                2221, 10, 30, 0, 0, 0, tzinfo=pytz.utc)),
+                2221, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
@@ -280,7 +278,7 @@ class TestEventModels(BackendTest):
             fees={
                 1: models.EventFee(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag Warmup',
                     amount=decimal.Decimal('10.50'),
@@ -289,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventFee(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 1. Hälfte',
                     amount=decimal.Decimal('123.00'),
@@ -298,7 +296,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventFee(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 2. Hälfte',
                     amount=decimal.Decimal('450.99'),
@@ -307,7 +305,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.EventFee(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
@@ -316,7 +314,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.EventFee(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
@@ -325,7 +323,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.EventFee(
                     id=6,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
@@ -334,7 +332,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventFee(
                     id=7,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.external,
                     title='Externenzusatzbeitrag',
                     amount=decimal.Decimal('5.00'),
@@ -343,7 +341,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventFee(
                     id=8,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.solidary_reduction,
                     title='Mengenrabatt',
                     amount=decimal.Decimal('-0.01'),
@@ -352,12 +350,23 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.EventFee(
                     id=9,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Orgarabatt',
                     amount=decimal.Decimal('-50.00'),
                     condition='part.1.H. and part.2.H. and is_orga',  # type: ignore[arg-type]
                     notes=None,
+                ),
+                10: models.EventFee(
+                    id=10,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    kind=const.EventFeeType.instructor_refund,
+                    title="KL-Erstattung",
+                    notes="Individuelle Höhe",
+                    amount=None,
+                    condition=None,
+                    amount_min=decimal.Decimal('-30.00'),
+                    amount_max=decimal.Decimal('-20.00'),
                 ),
             },
             part_groups={},
@@ -366,18 +375,14 @@ class TestEventModels(BackendTest):
 
         reality = self.event.get_event(self.key, event_id)
 
-        self.assertEqual(
-            expectation.fields,
-            reality.fields,
-        )
-        self.assertEqual(
-            expectation.to_database(),
-            reality.to_database(),
-        )
-        self.assertEqual(
-            vars(expectation),
-            vars(reality),
-        )
+        self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.tracks, reality.tracks)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
+        self.assertEqual(expectation.to_database(), reality.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
+        self.assertEqual(expectation, reality)
 
         event_id = vtypes.ProtoID(4)
 
@@ -494,9 +499,9 @@ class TestEventModels(BackendTest):
             fields={},
             custom_query_filters={},
             fees={
-                16: models.EventFee(
-                    id=16,  # type: ignore[arg-type]
-                    event_id=event_id,
+                17: models.EventFee(
+                    id=17,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -631,8 +636,13 @@ class TestEventModels(BackendTest):
 
         self.assertEqual(expectation.tracks, reality.tracks)
         self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
         self.assertEqual(expectation.track_groups, reality.track_groups)
         self.assertEqual(expectation.part_groups, reality.part_groups)
+        self.assertEqual(expectation.to_database(), expectation.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
     @as_users("anton")

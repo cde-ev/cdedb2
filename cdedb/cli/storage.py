@@ -99,6 +99,7 @@ def populate_storage(conf: Config) -> None:
         "picture.jpg",  # core: profile foto
         "batch_admission.csv",  # cde: sample input for batch admission
         "sepapain.xml",  # cde: example result of sepapain lastschrift file
+        "sepapain_single.xml",  # cde: example result of sepapain lastschrift file
         "statement.csv",  # cde: sample input for parse_statement
         "money_transfers.csv",  # cde: sample input for member fees (money transfers)
         "money_transfers_valid.csv",  # cde: valid sample input for money transfers
@@ -132,9 +133,9 @@ def populate_event_keeper(conf: Config, event_ids: Collection[int]) -> None:
 
     This is needed for instances populated with sample data, and for offline instances.
     """
-    keeper = EntityKeeper(conf, 'event_keeper')
+    keeper = EntityKeeper(conf, 'event_keeper', log_keys=[], log_timestamp_key="")
     for event_id in event_ids:
-        keeper.init(event_id)
+        keeper.init(event_id, exists_ok=True)
         keeper.commit(event_id, "", "Initialer Commit.")
 
 

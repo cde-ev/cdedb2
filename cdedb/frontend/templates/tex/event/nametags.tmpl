@@ -72,6 +72,16 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for part in ambience['event']['parts'].values()|sort -%>>
+        <<< part.title|te >>>
+        \begin{itemize}
+            <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
+                \item <<< gettext(age_class|string) >>>: <<< ((registrations|length - 1) // 8) + 1 >>> <<% trans %>>pages<<% endtrans %>>
+            <<% else %>>
+                \item <<< gettext("No Participants") >>>
+            <<% endfor %>>
+            \clearpage
+        \end{itemize}
+        <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
         <<% for registration_id, registration in registrations.items() -%>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() -%>>
                 <<# jinja does not support list comprehension ... -#>>
@@ -127,6 +137,8 @@
                     }% <<< registration_id|te >>> / <<< mycourses|te >>>
             <<% endif -%>>
         <<% endfor -%>>
+        \clearpage
+        <<% endfor %>>
         \clearpage
     <<% endfor -%>>
 <<% endblock %>>

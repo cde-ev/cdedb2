@@ -17,14 +17,6 @@ from typing import (
 import bleach
 import icu
 import jinja2
-
-try:
-    from jinja2 import pass_environment  # type: ignore[attr-defined]
-except ImportError:
-    # This compatibility shim can be removed once the migration to Debian
-    # bookworm is complete
-    from jinja2 import environmentfilter as pass_environment
-
 import markdown
 import markdown.extensions.toc
 import markupsafe
@@ -149,7 +141,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
+        zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
     else:
@@ -402,7 +394,8 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace('\n', markupsafe.Markup(replacement))
+    return val.replace(  # type: ignore[return-value]
+        '\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -536,7 +529,7 @@ def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
     return Counter(value.values())
 
 
-@pass_environment
+@jinja2.pass_environment
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
                 reverse: bool = False, attribute: Optional[Any] = None) -> list[T]:
     """Sort an iterable using `xsorted`, using correct collation.
@@ -615,6 +608,7 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
 def enum_entries_filter(enum: Iterable[enum.Enum],
                         processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
+                        exempt: Collection[enum. Enum] = frozenset(),
                         ) -> list[tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
@@ -627,6 +621,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     :param raw: If this is True, the enum entries are passed to processing as
         is, otherwise they are converted to str first.
     :param prefix: A prefix to prepend to the string output of every entry.
+    :param exempt: Enum members not to include
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
@@ -636,7 +631,8 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         pre = lambda x: x
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
-    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
+    to_sort = ((entry, prefix + processing(pre(entry)))
+               for entry in enum if entry not in exempt)
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 

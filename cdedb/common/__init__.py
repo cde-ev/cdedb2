@@ -18,14 +18,13 @@ import pathlib
 import re
 import string
 import sys
+import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extras
-import pytz
-import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -137,6 +136,13 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
+    def persona_name(self) -> str:
+        return make_persona_name({
+            'given_names': self.given_names,
+            'display_name': self.display_name,
+            'family_name': self.family_name,
+        })
+
 
 if TYPE_CHECKING:
     from cdedb.frontend.common import AmbienceDict
@@ -154,7 +160,7 @@ class RequestState(ConnectionContainer):
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[dict[str, int]],
+                 requestargs: Optional[Mapping[str, Any]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
@@ -444,8 +450,7 @@ def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
 S = TypeVar("S")
 
 
-def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
-                *dicts: Mapping[T, S]) -> None:
+def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -461,18 +466,17 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     if targetdict is None:
         raise ValueError(n_("No inputs given."))
     for adict in dicts:
-        for key in adict:
+        for key, value in adict.items():
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Collection)
-                        and not isinstance(adict[key], str)
+                if (isinstance(value, collections.abc.Collection)
+                        and not isinstance(value, str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    value = adict[key]
                     if isinstance(value, dict) and "id" in value:
                         targetdict[key] = value["id"]
                     else:
-                        targetdict.setlist(key, adict[key])
+                        targetdict.setlist(key, value)
                 else:
-                    targetdict[key] = adict[key]
+                    targetdict[key] = value
 
 
 BytesLike = Union[bytes, bytearray, memoryview]
@@ -500,7 +504,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(pytz.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -537,10 +541,10 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
+    now = datetime.datetime.now(datetime.timezone.utc)
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
+        minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
 
 
 def make_persona_forename(persona: CdEDBObject,
@@ -1023,11 +1027,17 @@ class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
+    Festgeld = "DE45370205000010042605"
     # Fallback if Account is none of the above
     Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return self.value[-7:]
+        return {
+            Accounts.Account0: "8068900",
+            Accounts.Account1: "8068901",
+            Accounts.Festgeld: "Festgeld",
+            Accounts.Unknown: "Unknown",
+        }[self]
 
 
 @enum.unique
@@ -1425,10 +1435,11 @@ def parse_datetime(
             break
         except ValueError:
             pass
+    # TODO This code seems to be unsed.
     if ret is None and default_date:
+        # Note the difference between formats and time_formats!
         for fmt in time_formats:
             try:
-                # TODO if we get to here this should be unparseable?
                 ret = datetime.datetime.strptime(val, fmt)
                 ret = ret.replace(
                     year=default_date.year, month=default_date.month,
@@ -1439,10 +1450,9 @@ def parse_datetime(
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
-        ret = timezone.localize(ret)
-        assert ret is not None
-    return ret.astimezone(pytz.utc)
+        timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = ret.replace(tzinfo=timezone)
+    return ret.astimezone(datetime.timezone.utc)
 
 
 def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
@@ -1492,10 +1502,10 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-#: If the partial export and import are unaffected the minor version may be
-#: incremented.
+#: If changes to the partial export and import are backwards compatible,
+#: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 1)
+EVENT_SCHEMA_VERSION = (17, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

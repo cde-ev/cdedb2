@@ -1,6 +1,7 @@
 [run]
 omit =
     cdedb/subman/tests/*
+concurrency=greenlet,thread
 
 [report]
 exclude_lines =
@@ -9,3 +10,6 @@ exclude_lines =
     raise NotImplementedError
     return NotImplemented
     if TYPE_CHECKING:
+    raise (self|cls).failureException
+    self.fail
+    @unittest.skip

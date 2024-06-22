@@ -4,8 +4,6 @@
 import datetime
 import decimal
 
-import pytz
-
 import cdedb.database.constants as const
 from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common import now
@@ -14,7 +12,9 @@ from cdedb.common.fields import (
     PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, nearly_now, prepsql
+from tests.common import (
+    USER_DICT, BackendTest, as_users, execsql, get_user, nearly_now, prepsql,
+)
 
 
 class TestCdEBackend(BackendTest):
@@ -137,7 +137,7 @@ class TestCdEBackend(BackendTest):
                 ("birthday", QueryOperators.less, datetime.datetime.now())],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 100},
+        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
                          {e['id'] for e in result})
 
     @as_users("vera")
@@ -175,9 +175,9 @@ class TestCdEBackend(BackendTest):
 
     @as_users("farin")
     def test_lastschrift(self) -> None:
-        expectation = {2: 2}
+        expectation = {2: 2, 4: 42}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
-        expectation = {1: 2, 2: 2, 3: 100}
+        expectation = {1: 2, 2: 2, 3: 100, 4: 42}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=None))
         expectation = {1: 2, 3: 100}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key, active=False))
@@ -186,7 +186,7 @@ class TestCdEBackend(BackendTest):
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae',
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=pytz.utc),
+                                                tzinfo=datetime.timezone.utc),
                 'iban': 'DE12500105170648489890',
                 'id': 2,
                 'notes': 'reicher Onkel',
@@ -199,18 +199,18 @@ class TestCdEBackend(BackendTest):
         update = {
             'id': 2,
             'notes': 'ehem. reicher Onkel',
-            'revoked_at': datetime.datetime.now(pytz.utc),
+            'revoked_at': datetime.datetime.now(datetime.timezone.utc),
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
-        self.assertEqual({}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({4: 42}, self.cde.list_lastschrift(self.key))
         self.assertEqual(
             {1: 2, 2: 2, 3: 100}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -218,7 +218,7 @@ class TestCdEBackend(BackendTest):
         donation = decimal.Decimal(9)
         new_id = self.cde.create_lastschrift(self.key, newdata, donation)
         self.assertLess(0, new_id)
-        self.assertEqual({new_id: 3}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({4: 42, new_id: 3}, self.cde.list_lastschrift(self.key))
         # the donation is tracked in core.personas
         user = self.core.get_cde_user(self.key, persona_id=3)
         self.assertEqual(donation, user["donation"])
@@ -261,7 +261,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -285,12 +285,13 @@ class TestCdEBackend(BackendTest):
             1: {
                 'amount': decimal.Decimal('32.00'),
                 'id': 1,
-                'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
+                'issued_at': datetime.datetime(2000, 3, 21, 22, 0,
+                                               tzinfo=datetime.timezone.utc),
                 'lastschrift_id': 1,
                 'period_id': 41,
                 'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                                  tzinfo=pytz.utc),
+                                                  tzinfo=datetime.timezone.utc),
                 'status': 12,
                 'submitted_by': 1,
                 'tally': decimal.Decimal('0.00'),
@@ -411,7 +412,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(pytz.utc),
+            'granted_at': datetime.datetime.now(datetime.timezone.utc),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -502,9 +503,11 @@ class TestCdEBackend(BackendTest):
         # now check it
         self.assertLogEqual([], 'cde')
 
-    @prepsql("UPDATE core.personas SET balance = 1 WHERE is_cde_realm = True")
+    @prepsql("UPDATE core.personas SET balance = 1, is_member = True"
+             " WHERE is_cde_realm = True AND is_archived = False")
     @as_users("vera")
-    def test_cde_user_aggregate(self) -> None:
+    def test_query_aggregate(self) -> None:
+        other_user = get_user("berta")
         query = Query(
             QueryScope.cde_user, QueryScope.cde_user.get_spec(),
             ['balance'], (), ()
@@ -523,9 +526,9 @@ class TestCdEBackend(BackendTest):
         pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
         self.pastevent.add_participant(
             self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
-        pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
+        pevent_id_duplicate = self.pastevent.create_past_event(self.key, pevent_data)
         self.pastevent.add_participant(
-            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
 
         # Check that the aggregate sums correctly.
         result = self.cde.submit_general_query(self.key, query, aggregate=False)
@@ -534,4 +537,40 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(
             sum((e['balance'] for e in result), start=decimal.Decimal(0)),
             aggregates[0]['sum.balance']
+        )
+
+        # Check duplication in core search:
+        query = Query(
+            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            ['is_member'],
+            [
+                ('personas.id', QueryOperators.equal, self.user['id']),
+            ],
+            [],
+        )
+        aggregates = self.core.submit_general_query(self.key, query, aggregate=True)
+        self.assertEqual(1, aggregates[0]['sum.is_member'])
+
+        # Check that filtering by past event works.
+        self.pastevent.remove_participant(
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.add_participant(
+            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=other_user['id'])
+        query = Query(
+            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            ['personas.id', 'is_member'],
+            [
+                ('pevent_id', QueryOperators.oneof, [pevent_id, pevent_id_duplicate]),
+            ],
+            [],
+        )
+        self.assertEqual(
+            {self.user['id'], other_user['id']},
+            {e['id'] for e in self.cde.submit_general_query(self.key, query)}
+        )
+        self.assertEqual(
+            2,
+            self.cde.submit_general_query(
+                self.key, query, aggregate=True,
+            )[0]['sum.is_member'],
         )

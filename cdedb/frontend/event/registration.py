@@ -64,7 +64,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def _examine_fee(self, rs: RequestState, datum: CdEDBObject,
                      expected_fees: dict[int, decimal.Decimal],
-                     seen_reg_ids: set[int], full_payment: bool = True,
+                     seen_reg_ids: set[int],
                      ) -> CdEDBObject:
         """Check one line specifying a paid fee. Uninlined from `batch_fees`.
 
@@ -72,8 +72,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         :note: This modifies the parameters `expected_fees` and `seen_reg_ids`.
 
-        :param full_payment: If True, only write the payment date if the fee
-            was paid in full.
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
@@ -97,7 +95,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         problems.extend(p)
 
         registration_id = None
-        original_date = date
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -130,24 +127,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                             'expected': money_filter(fee, lang=rs.lang),
                         }
                         if total < fee:
-                            error = (
+                            infos.append((
                                 'amount',
                                 ValueError(
                                     n_("Not enough money. %(total)s < %(expected)s"),
                                     params,
-                                ))
-                            if full_payment:
-                                warnings.append(error)
-                                date = None
-                            else:
-                                infos.append(error)
+                                ),
+                            ))
                         elif total > fee:
-                            warnings.append((
+                            infos.append((
                                 'amount',
                                 ValueError(
                                     n_("Too much money. %(total)s > %(expected)s"),
                                     params,
-                                )))
+                                ),
+                            ))
                         expected_fees[registration_id] -= amount
                 else:
                     problems.append(('persona_id',
@@ -172,7 +166,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             'persona_id': persona_id,
             'registration_id': registration_id,
             'date': date,
-            'original_date': original_date,
             'amount': amount,
             'warnings': warnings,
             'problems': problems,
@@ -191,7 +184,7 @@ class EventRegistrationMixin(EventBaseFrontend):
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error
         """
-        relevant_keys = {'registration_id', 'date', 'original_date', 'amount'}
+        relevant_keys = {'registration_id', 'date', 'amount'}
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "book_fees"):
@@ -215,12 +208,11 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("fee_data_file")
-    @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
+    @REQUESTdata("force", "fee_data", "checksum", "send_notifications")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
                    fee_data_file: Optional[werkzeug.datastructures.FileStorage],
-                   checksum: Optional[str], send_notifications: bool,
-                   full_payment: bool) -> Response:
+                   checksum: Optional[str], send_notifications: bool) -> Response:
         """Allow finance admins to add payment information of participants.
 
         This is the only entry point for those information.
@@ -260,22 +252,21 @@ class EventRegistrationMixin(EventBaseFrontend):
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(self._examine_fee(
-                rs, dataset, expected_fees, full_payment=full_payment,
-                seen_reg_ids=seen_reg_ids))
+                rs, dataset, expected_fees, seen_reg_ids=seen_reg_ids))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.has_validation_errors() or not data or open_issues:
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields, saldo=saldo)
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         current_checksum = get_hash(fee_data.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
-            return self.batch_fees_form(rs, event_id, data=data,
-                                        csvfields=fields, saldo=saldo)
+            return self.batch_fees_form(
+                rs, event_id, data=data, csvfields=fields, saldo=saldo)
 
         # Here validation is finished
         success, num = self.book_fees(rs, data, send_notifications)
@@ -295,7 +286,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if num is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line %(num)s."),
                           {'num': num + 1})
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
@@ -476,15 +467,28 @@ class EventRegistrationMixin(EventBaseFrontend):
                          " (already included in the above figure).")
         nonmember_msg = msg % {
             'additional_fee': money_filter(
-                complex_fee.nonmember_surcharge_amount, lang=rs.lang) or "",
+                complex_fee.nonmember_surcharge, lang=rs.lang) or "",
         }
 
+        fee_breakdown_template = """
+{%- import "web/event/generic.tmpl" as generic_event with context -%}
+{{- generic_event.fee_breakdown_by_kind() -}}
+"""
+        fee_breakdown_html = self.jinja_env.from_string(fee_breakdown_template).render(
+            complex_fee=complex_fee, gettext=rs.gettext, lang=rs.lang,
+        )
+
+        if complex_fee.is_complex():
+            fee_preview = fee_breakdown_html
+        else:
+            fee_preview = money_filter(complex_fee.amount, lang=rs.lang) or ""
+
         ret = {
-            'fee': money_filter(complex_fee.amount, lang=rs.lang) or "",
+            'fee': fee_preview,
             'nonmember': nonmember_msg,
-            'show_nonmember': complex_fee.nonmember_surcharge,
-            'active_fees': complex_fee.fee.active_fees,
-            'visual_debug': complex_fee.fee.visual_debug,
+            'show_nonmember': bool(complex_fee.nonmember_surcharge),
+            'active_fees': complex_fee.active_fees,
+            'visual_debug': complex_fee.visual_debug,
         }
         return Response(json_serialize(ret), mimetype='application/json')
 
@@ -997,6 +1001,55 @@ class EventRegistrationMixin(EventBaseFrontend):
             **payment_data,
             **course_choice_parameters,
         })
+
+    @access("event")
+    @event_guard()
+    def show_registration_fee(self, rs: RequestState, event_id: int,
+                              registration_id: int) -> Response:
+        """Display detailed information about amount owed and individual fees."""
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
+        return self.render(rs, "registration/registration_fee_summary", {
+            **payment_data,
+        })
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("amount")
+    def add_personalized_fee(
+            self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
+            amount: decimal.Decimal,
+    ) -> Response:
+        """Add a personalized fee amount for this registration and this fee."""
+        if not rs.ambience['fee'].is_personalized():
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Cannot set personalized amount for conditional fee."),
+            )
+            return self.redirect(rs, "event/show_registration_fee")
+        if rs.has_validation_errors():
+            return self.show_registration_fee(rs, event_id, registration_id)
+        code = self.eventproxy.set_personalized_fee_amount(
+            rs, registration_id, fee_id, amount,
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_registration_fee")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_personalized_fee(
+            self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
+    ) -> Response:
+        """Remove the personalized fee amount for this registration and this fee."""
+        if not rs.ambience['fee'].is_personalized():
+            rs.notify(
+                "error", n_("Cannot set personalized amount for conditional fee."),
+            )
+            return self.redirect(rs, "event/show_registration_fee")
+        code = self.eventproxy.set_personalized_fee_amount(
+            rs, registration_id, fee_id, amount=None,
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_registration_fee")
 
     @access("event")
     @event_guard(check_offline=True)

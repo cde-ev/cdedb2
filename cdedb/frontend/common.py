@@ -307,9 +307,13 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __eq__ = jinja2.Undefined.__eq__
-    __ne__ = jinja2.Undefined.__ne__
-    __bool__ = jinja2.Undefined.__bool__
+    # The parent class has incompatible type signatures
+    # which strictly speaking would break the substitution principle.
+    # It would be cleaner to subclass jinja2.Undefined instead
+    # but this is more concise.
+    __eq__ = jinja2.Undefined.__eq__  # type: ignore[assignment]
+    __ne__ = jinja2.Undefined.__ne__  # type: ignore[assignment]
+    __bool__ = jinja2.Undefined.__bool__  # type: ignore[assignment]
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -320,18 +324,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        undefined: type[jinja2.Undefined]
         if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
             undefined = CdEDBUndefined
         else:
             undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
-            undefined.__bool__ = jinja2.Undefined.__bool__
+            undefined.__bool__ = jinja2.Undefined.__bool__  # type: ignore[method-assign]
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
             undefined=undefined)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
-        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore[attr-defined]
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -735,7 +740,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def do_mail(self, rs: RequestState, templatename: str,
                 headers: Headers, params: Optional[CdEDBObject] = None,
-                attachments: Optional[Collection[Attachment]] = None) -> Optional[str]:
+                attachments: Optional[Collection[Attachment]] = None,
+                suppress_subject_logging: bool = False,
+                suppress_recipient_logging: bool = False,
+                ) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -756,7 +764,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         msg = self._create_mail(text, headers, attachments)
-        ret = self._send_mail(msg)
+        ret = self._send_mail(
+            msg, suppress_subject_logging=suppress_subject_logging,
+            suppress_recipient_logging=suppress_recipient_logging,
+        )
         if ret:
             # This is mostly intended for the test suite.
             rs.notify("info", n_("Stored email to hard drive at %(path)s"),
@@ -806,7 +817,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if headers[header]:  # type: ignore[literal-required]
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore[literal-required]
+            if header in headers:
+                msg[header] = headers[header]  # type: ignore[literal-required]
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
@@ -874,7 +886,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         spec = scope.get_spec()
         if query:
-            query = check_validation(rs, vtypes.Query, query, "query")
+            query = check_validation(rs, Query, query, "query")
             if query and query.scope != scope:
                 raise ValueError(n_("Scope mismatch."))
         elif is_search:
@@ -945,7 +957,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                            filename=attachment['filename'])
         return ret
 
-    def _send_mail(self, msg: email.message.Message) -> Optional[str]:
+    def _send_mail(self, msg: email.message.Message,
+                   suppress_subject_logging: bool = False,
+                   suppress_recipient_logging: bool = False,
+                   ) -> Optional[str]:
         """Helper for getting an email onto the wire.
 
         :returns: Name of the file the email was saved in -- however this
@@ -967,7 +982,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
+        log_subject = msg['Subject'] if not suppress_subject_logging else "REDACTED"
+        log_recipient = msg['To'] if not suppress_recipient_logging else "REDACTED"
+        self.logger.info(
+            f"Sent email with subject '{log_subject}' to '{log_recipient}'.")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
@@ -1017,6 +1035,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_path.unlink()
             self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
             self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
+            self.logger.debug(e.stderr)
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = f"/tmp/cdedb-latex-error-{tstamp}.tex"
@@ -1336,8 +1355,10 @@ class CdEMailmanClient(mailmanclient.Client):
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
-        If the list is not managed by mailman, this function returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1358,8 +1379,10 @@ class CdEMailmanClient(mailmanclient.Client):
     def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
-        If the list is not managed by mailman, this returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1910,7 +1933,7 @@ def REQUESTdata(
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val = rs.request.values.get(name, "")
+                    val: Optional[str] = rs.request.values.get(name, "")
 
                     # TODO allow encoded collections?
                     if encoded and val:
@@ -1988,7 +2011,7 @@ def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            data = {}
+            data: dict[str, Union[str, tuple[str, ...]]] = {}
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
@@ -2493,7 +2516,7 @@ class CustomCSVDialect(csv.Dialect):
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
                substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
-               tzinfo: Optional[datetime.timezone] = None) -> str:
+               tzinfo: Optional[datetime.tzinfo] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.

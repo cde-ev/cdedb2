@@ -50,7 +50,7 @@ PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
     "show_address", "show_address2", "address_supplement2", "address2", "postal_code2",
     "location2", "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls", "birth_name", "donation"
+    "bub_search", "foto", "paper_expuls", "birth_name", "donation", "honorary_member",
 )
 
 #: Names of columns associated to a ml user.

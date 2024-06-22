@@ -158,16 +158,18 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
+    instructor_refund = 5
     # sorting is not quite nice for historical reasons
     solidary_reduction = 10
-    solidary_increase = 12
     donation = 11
+    solidary_increase = 12
 
     def get_icon(self) -> str:
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
+            EventFeeType.instructor_refund: "book",
             EventFeeType.solidary_reduction: "hand-holding-usd",
             # TODO replace with hand-holding-medical
             EventFeeType.solidary_increase: "hands-helping",
@@ -408,6 +410,9 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    send_anonymous_message = 100  #:
+    reply_to_anonymous_message = 101  #:
+    rotate_anonymous_message = 102  #:
 
 
 @enum.unique
@@ -449,6 +454,8 @@ class FinanceLogCodes(CdEIntEnum):
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
     #: Fallback for strange cases
     other = 99
 
@@ -516,6 +523,8 @@ class EventLogCodes(CdEIntEnum):
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
     registration_status_changed = 300  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
 
 
 @enum.unique

@@ -43,6 +43,39 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
 
 @dataclass
 class CdEDataclass:
+    """
+
+    The behavior of some of the default methods of this parent class can be modified by
+    setting metadata on dataclass fields:
+
+    - 'validation_exclude':
+        If True, alway omit this field from `cls.validation_fields()`.
+        Can be used for fields that are magically inserted elsewhere.
+    - 'creation_exclude':
+        If True, omit this field from `cls.validation_fields(creation=True)`.
+        Can be used to make use of SQL default values.
+    - 'update_exclude':
+        If True, omit this field from `cls.validation_fields(creation=False)`.
+        Can be used to make a field immutable.
+    - 'creation_optional':
+        If True, make this field optional in `cls.validation_fields(creation=True)`.
+        Can be used to make use of SQL default values, while also allowing overrides.
+    - 'request_exclude':
+        If True, exclude the field from `cls.requestdict_fields()`.
+        Can be used for fields that are not submitted via form, but taken from URL.
+    - 'database_exclude':
+        If True, exclude the field from `cls.database_fields()`, which excludes it from
+        being written to or read from the database.
+        Can be used for fields that are specifically calculated or magically inserted
+        elsewhere.
+    - 'database_include':
+        If True, include the field in `cls.database_fields()` even if it would
+        otherwise not be.
+        Can be used to select fields with type list or set from the database.
+    - 'asdict_exclude':
+        If True, exclude the field from `self.asdict()`.
+        Can be used to avoid read-only fields being validated.
+    """
     id: vtypes.ProtoID
 
     database_table: ClassVar[str]
@@ -83,12 +116,12 @@ class CdEDataclass:
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
-                SELECT {','.join(cls.database_fields())}
-                FROM {cls.database_table}
-                WHERE {entity_key or cls.entity_key} = ANY(%s)
-            """
+            SELECT {','.join(cls.database_fields())}
+            FROM {cls.database_table}
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
         params = (entities,)
         return query, params
 
@@ -104,20 +137,32 @@ class CdEDataclass:
         This returns two TypeMapping tuples, for mandatory and optional validation
         fields, respectively. Each TypeMapping maps the name of the field to its type.
         """
-        fields = {field.name: field for field in dataclasses.fields(cls)}
-        # always special case the id, see below
-        del fields["id"]
-        # Fields with init=False are optional, so that objects retrieved from the
-        #  database can pass validation.
-        mandatory = {name: field.type for name, field in fields.items()
-                     if not is_optional_type(field.type) and field.init}
-        optional = {name: field.type for name, field in fields.items()
-                    if is_optional_type(field.type) or not field.init}
-        if creation:
-            mandatory["id"] = vtypes.CreationID
-        else:
-            optional.update(mandatory)
-            mandatory = {"id": vtypes.ID}
+        mandatory: TypeMapping = {}
+        optional: TypeMapping = {}
+        for field in dataclasses.fields(cls):
+            if field.metadata.get('validation_exclude'):
+                continue
+            if creation:
+                if field.metadata.get('creation_exclude'):
+                    continue
+                if field.metadata.get('creation_optional'):
+                    optional[field.name] = field.type
+                    continue
+                if field.name == 'id':
+                    mandatory[field.name] = vtypes.CreationID
+                # Fields with init=False are optional, so that objects retrieved from
+                #  the database can pass validation.
+                elif is_optional_type(field.type) or not field.init:
+                    optional[field.name] = field.type
+                else:
+                    mandatory[field.name] = field.type
+            else:
+                if field.metadata.get('update_exclude'):
+                    continue
+                if field.name == 'id':
+                    mandatory[field.name] = vtypes.ID
+                else:
+                    optional[field.name] = field.type
         return mandatory, optional
 
     @classmethod
@@ -128,8 +173,12 @@ class CdEDataclass:
         """
         field_names = set(cls.database_fields())
         field_names.remove("id")
-        fields = [field for field in dataclasses.fields(cls)
-                  if field.name in field_names and field.init]
+        fields = [
+            field for field in dataclasses.fields(cls)
+            if field.name in field_names
+               and field.init
+               and not field.metadata.get('request_exclude')
+        ]
         return [(field.name, requestdict_field_spec(field)) for field in fields]
 
     @classmethod
@@ -149,7 +198,7 @@ class CdEDataclass:
         field names to field values.
 
         This is an almost 1:1 copy of dataclasses.asdict. However, we need to exclude
-        the backward references to avoid infinit recursion, so we need to dig into
+        the backward references to avoid infinite recursion, so we need to dig into
         the implementation details here...
         """
         return self._asdict_inner(self, dict)
@@ -204,6 +253,9 @@ class CdEDataclass:
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
+        if field.metadata.get('asdict_exclude'):
+            return False
+        # TODO: do not use the repr for this.
         return field.repr
 
     @abc.abstractmethod

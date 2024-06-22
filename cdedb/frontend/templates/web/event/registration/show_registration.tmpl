@@ -22,6 +22,8 @@
     <div class="p">
         {{ util.href(cdedblink("event/change_registration_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-warning btn-sm", icon="pen") }}
+        {{ util.href(cdedblink("event/show_registration_fee"), gettext("Fee Details"),
+                     aclass="btn btn-info btn-sm", icon="coins") }}
         {{ util.href(cdedblink("event/view_event_log",
                                {'event_id': ambience['event']['id'],
                                 'persona_id': ambience['registration']['persona_id']|cdedbid}),
@@ -101,7 +103,7 @@
         <dd>
             {% if ambience['registration']['payment'] %}
                 {% trans date=ambience['registration']['payment']|date(lang=lang) %}
-                	Paid on the {{ date }}
+                    Paid on {{ date }}
                 {% endtrans %}
             {% else %}
                 <em>{% trans %}Pending{% endtrans %}</em>
@@ -109,7 +111,7 @@
         </dd>
         <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
         <dd>
-            {{ ambience['registration']['amount_owed']|money(lang=lang) }}
+            {{ util.href(cdedblink("event/show_registration_fee"), ambience['registration']['amount_owed']|money(lang=lang)) }}
         </dd>
         <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
         <dd>
@@ -147,43 +149,6 @@
     </dl>
     </div>
 
-    <details class="col-md-12">
-        <summary>
-            {% trans %}Composition of the fee{% endtrans %}
-        </summary>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>{% trans %}Title{% endtrans %}</th>
-                    <th>{% trans %}Amount{% endtrans %}</th>
-                    <th>{% trans %}Condition{% endtrans %}</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for fee in ambience['event']['fees'].values()|sort %}
-                <tr id="active-fee" data-fee_id="{{ fee.id }}">
-                    <td class="{% if fee['id'] in complex_fee['fee']['active_fees'] %}alert-success{% else %}alert-danger{% endif %}" id="active-fee-title">
-                        {% if fee['id'] in complex_fee['fee']['active_fees'] %}
-                            {{ util.deko_checkbox(True) }}
-                        {% else %}
-                            {{ util.deko_checkbox(False) }}
-                        {% endif %}
-                        {{ fee['title'] }}
-                    </td>
-                    <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
-                        <strong>
-                            {{ fee['amount']|money(lang=lang) }}
-                        </strong>
-                    </td>
-                    <td id="active-fee-condition">
-                        {{ complex_fee['fee']['visual_debug'][fee['id']]|safe }}
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </details>
-
     {% for batch in ambience['event']['parts'].values()|sort|batch(2) %}
         <div class="row">
         {% for part in batch %}
@@ -191,17 +156,16 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title'] }}</h4>
                 {% endif %}
+                {% set status = enums['RegistrationPartStati'](ambience['registration']['parts'][part.id]['status']) %}
                 <dl class="dl-horizontal">
                     <dt title="{% trans %}Status{% endtrans %}">{% trans %}Status{% endtrans %}</dt>
                     <dd>
-                        {{ gettext(ambience['registration']['parts'][part.id]['status']
-                                |enum(enums['RegistrationPartStati'])) }}
-                        {% if ambience['registration']['parts'][part.id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
+                        {{ gettext(status|enum(enums['RegistrationPartStati'])) }}
+                        {% if status == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
                             ({% trans %}Placement{% endtrans %}&nbsp;{{ waitlist_position[part.id] }})
                         {% endif %}
                     </dd>
-                    {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part.id]['status'])
-                            .is_involved() %}
+                    {% if status != enums['RegistrationPartStati'].not_applied %}
                         {% for track in ambience['event']['tracks'].values()|sort
                                 if track['part_id'] == part.id %}
                             <dt title="{% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
@@ -214,9 +178,11 @@
                             <dd>
                                 {% with course_id = ambience['registration']['tracks'][track.id]['course_id'] %}
                                     {% if course_id %}
+                                        {% if not status.is_involved() %}<s>{% endif -%}
                                         {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                      "{}. {}".format(courses[course_id]['nr'],
                                                                      courses[course_id]['shortname'])) }}
+                                        {%- if not status.is_involved() %}</s>{% endif %}
                                     {% else %}
                                         —
                                     {% endif %}
@@ -224,17 +190,21 @@
                             </dd>
                         {% endfor %}
 
+                        {% if lodgements %}
                         <dt title="{% trans %}Lodgement{% endtrans %}">{% trans %}Lodgement{% endtrans %}</dt>
                         <dd>
                             {% with lodgement_id = ambience['registration']['parts'][part.id]['lodgement_id'] %}
                                 {% if lodgement_id %}
+                                    {% if not status.is_involved() %}<s>{% endif -%}
                                     {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
                                                  lodgements[lodgement_id]['title']) }}
+                                    {%- if not status.is_involved() %}</s>{% endif %}
                                 {% else %}
                                     —
                                 {% endif %}
                             {% endwith %}
                         </dd>
+                        {% endif %}
                         <dt title="">{% trans %}Uses Camping Mat{% endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=ambience['registration']['parts'][part.id]['is_camping_mat']) }}

@@ -94,8 +94,11 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
                  _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
                  _ops.empty, _ops.nonempty),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
+    "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
+                 _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
+VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -205,21 +208,6 @@ class QueryScope(CdEIntEnum):
         multiple columns with the same name, but each join brings in an id column.
         """
         return _QUERY_VIEWS.get(self, "core.personas")
-
-    def get_aggregate_view(self) -> str:
-        """Like self.get_view() but to be used for calculating aggregates.
-
-        Since some views use joins to allow filtering, they break the aggregation
-        by duplicating rows. We workaround this by using a variant of the view
-        without such joins.
-
-        If no aggregate view is defined, use the regular one instead.
-
-        Note that the complex event views override this anyway, since they use
-        joins differently resulting in no duplicated rows.
-        """
-
-        return _AGGREGATE_VIEWS.get(self) or self.get_view()
 
     def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
@@ -381,24 +369,6 @@ _QUERY_VIEWS = {
         """,
 }
 
-# See `QueryScope.get_aggregate_view()`.
-_AGGREGATE_VIEWS = {
-    QueryScope.cde_user: (_CDE_USER_AGGREGATE_VIEW := """core.personas
-        LEFT OUTER JOIN (
-            SELECT
-                id, granted_at, revoked_at,
-                revoked_at IS NULL AS active_lastschrift,
-                persona_id
-            FROM cde.lastschrift
-            WHERE (granted_at, persona_id) IN (
-                SELECT MAX(granted_at) AS granted_at, persona_id
-                FROM cde.lastschrift GROUP BY persona_id
-            )
-        ) AS lastschrift ON personas.id = lastschrift.persona_id
-        """),
-    QueryScope.all_cde_users: _CDE_USER_AGGREGATE_VIEW,
-}
-
 # See QueryScope.get_primary_key().
 # This dict contains the special cases. For everything else use personas.id.
 PRIMARY_KEYS = {
@@ -434,7 +404,7 @@ _QUERY_SPECS = {
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -443,7 +413,7 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
             "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
@@ -473,7 +443,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -482,15 +452,16 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "address2": QuerySpecEntry("str", n_("Address (2)")),
             "address_supplement2": QuerySpecEntry("str", n_("Address Supplement (2)")),
             "postal_code2": QuerySpecEntry("str", n_("ZIP (2)")),
             "location2": QuerySpecEntry("str", n_("City (2)")),
-            "country2": QuerySpecEntry("str", n_("Country (2)")),
+            "country2": QuerySpecEntry("enum_str", n_("Country (2)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "trial_member": QuerySpecEntry("bool", n_("Trial Member")),
+            "honorary_member": QuerySpecEntry("bool", n_("Honorary Member")),
             "paper_expuls": QuerySpecEntry("bool", n_("Printed exPuls")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
@@ -508,8 +479,8 @@ _QUERY_SPECS = {
             "timeline": QuerySpecEntry("str", n_("Year(s) of Graduation")),
             "interests": QuerySpecEntry("str", n_("Interests")),
             "free_form": QuerySpecEntry("str", n_("Miscellaneous")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "lastschrift.granted_at": QuerySpecEntry(
                 "datetime", n_("Lastschrift Granted")),
             "lastschrift.revoked_at": QuerySpecEntry(
@@ -528,7 +499,7 @@ _QUERY_SPECS = {
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -537,7 +508,7 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
@@ -547,8 +518,8 @@ _QUERY_SPECS = {
                 for k in ADMIN_KEYS
             },
             ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Special view of a cde member for the member search.
@@ -566,8 +537,8 @@ _QUERY_SPECS = {
             "telephone,mobile": QuerySpecEntry("str", n_("Phone")),
             "weblink,specialisation,affiliation,timeline,interests,free_form":
                 QuerySpecEntry("str", n_("Interests")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     # Special view on a `event.regisrations` entry for registration quicksearch.
@@ -619,9 +590,11 @@ class QueryResultEntryFormat(enum.Enum):
     username = 2
     event_course = 10
     event_lodgement = 11
+    event_fee = 12
     date = 20
     datetime = 21
     bool = 22
+    enum = 30
 
 
 class Query:
@@ -691,14 +664,15 @@ class Query:
             for entry, ascending in self.order]
         # Fix our fix
         changed_fields = set()
-        for column in self.fields_of_interest:
-            for moniker in column.split(","):
-                if '"' in moniker:
-                    changed_fields.add(moniker)
+        for moniker in self.fields_of_interest:
+            if '"' in moniker:
+                changed_fields.add(moniker)
         for column, _, _ in self.constraints:
             for moniker in column.split(","):
                 if '"' in moniker:
                     changed_fields.add(moniker)
+            if '"' in column:
+                changed_fields.add(column)
         for moniker, _ in self.order:
             if '"' in moniker:
                 changed_fields.add(moniker)
@@ -773,6 +747,14 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
+            if field in (
+                    "reg.amount_paid",
+                    "reg.amount_owed",
+                    "reg.remaining_owed",
+            ):
+                return QueryResultEntryFormat.event_fee
+            if re.match(r"fee\d+\.amount", field):
+                return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):
@@ -888,11 +870,12 @@ def make_registration_query_spec(event: "models.Event",
         "persona.username": QuerySpecEntry("str", n_("E-Mail")),
         "persona.is_member": QuerySpecEntry("bool", n_("CdE-Member")),
         "reg.is_member": QuerySpecEntry("bool", n_("Member at registration")),
+        "reg.is_orga": QuerySpecEntry("bool", n_("Is Orga")),
         "persona.display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
         "persona.title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
-        "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
+        "persona.gender": QuerySpecEntry("enum_int", n_("Gender"), choices=None),  # type: ignore[arg-type]
         "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
         "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
@@ -903,7 +886,7 @@ def make_registration_query_spec(event: "models.Event",
         "persona.postal_code": QuerySpecEntry("str", n_("ZIP")),
         "persona.location": QuerySpecEntry("str", n_("City")),
         # Choices for the country will be manually set when displaying the result.
-        "persona.country": QuerySpecEntry("id", n_("Country"), choices=None),  # type: ignore[arg-type]
+        "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
@@ -917,6 +900,11 @@ def make_registration_query_spec(event: "models.Event",
         "ctime.creation_time": QuerySpecEntry("datetime", n_("Registration Time")),
         "mtime.modification_time":
             QuerySpecEntry("datetime", n_("Last Modification Time")),
+        **{
+            f"fee{fee.id}.amount": QuerySpecEntry(
+                "float", n_("Personalized Amount"), fee.title)
+            for fee in event.fees.values() if fee.is_personalized()
+        },
     }
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
@@ -924,14 +912,15 @@ def make_registration_query_spec(event: "models.Event",
         return {
             # Choices for the status will be manually set.
             f"part{part.id}.status": QuerySpecEntry(
-                "int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
+                "enum_int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
             f"part{part.id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
             f"part{part.id}.lodgement_id": QuerySpecEntry(
-                "id", n_("lodgement"), prefix, choices=lodgement_choices),
+                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices),
             f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
             f"lodgement{part.id}.group_id": QuerySpecEntry(
-                "id", n_("lodgement group"), prefix, choices=lodgement_group_choices),
+                "enum_int", n_("lodgement group"), prefix,
+                choices=lodgement_group_choices),
             f"lodgement{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement title"), prefix),
             f"lodgement{part.id}.notes": QuerySpecEntry(
@@ -955,9 +944,9 @@ def make_registration_query_spec(event: "models.Event",
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
             f"track{track_id}.course_id": QuerySpecEntry(
-                "id", n_("course"), prefix, choices=course_choices),
+                "enum_int", n_("course"), prefix, choices=course_choices),
             f"track{track_id}.course_instructor": QuerySpecEntry(
-                "id", n_("instructed course"), prefix, choices=course_choices),
+                "enum_int", n_("instructed course"), prefix, choices=course_choices),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
             f"course{track_id}.nr_shortname": QuerySpecEntry(
@@ -1001,7 +990,7 @@ def make_registration_query_spec(event: "models.Event",
         reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
             f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
-                "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
+                "enum_int", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
             for i in range(cco.num_choices)
@@ -1013,7 +1002,7 @@ def make_registration_query_spec(event: "models.Event",
             #  This happens if there is exactly one choice.
             if key not in ret:
                 ret[key] = QuerySpecEntry(
-                    "id", n_("Any Choice"), prefix, choices=course_choices)
+                    "enum_int", n_("Any Choice"), prefix, choices=course_choices)
 
         return ret
 
@@ -1115,7 +1104,8 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
     spec = {
         "course.id": QuerySpecEntry("id", n_("course id")),
-        "course.course_id": QuerySpecEntry("id", n_("course"), choices=course_choices),
+        "course.course_id": QuerySpecEntry(
+            "enum_int", n_("course"), choices=course_choices),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
         "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),
@@ -1246,7 +1236,7 @@ def make_lodgement_query_spec(event: "models.Event",
     spec = {
         "lodgement.id": QuerySpecEntry("id", n_("lodgement ID")),
         "lodgement.lodgement_id": QuerySpecEntry(
-            "id", n_("lodgement"), choices=lodgement_choices),
+            "enum_int", n_("lodgement"), choices=lodgement_choices),
         "lodgement.title": QuerySpecEntry("str", n_("Title_[[name of an entity]]")),
         "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
@@ -1254,7 +1244,7 @@ def make_lodgement_query_spec(event: "models.Event",
         "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity")),
         "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes")),
         "lodgement.group_id": QuerySpecEntry(
-            "int", n_("Lodgement Group"), choices=lodgement_group_choices),
+            "enum_int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
         "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.

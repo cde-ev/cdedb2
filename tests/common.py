@@ -226,13 +226,15 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             attr = getattr(backend, name)
             # Special case for the `subman.SubscriptionManager`
             if name == "subman":
+                return attr  # TODO: coverage
+            if name == "_event_keeper":
                 return attr
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(f"Attribute {name} not public")
+                raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
@@ -240,8 +242,9 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
                 try:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
-                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
-                                       " the test?") from e
+                    raise RuntimeError(  # pragma: no cover
+                        "Did you forget to add a `@storage` decorator to the test?"
+                    ) from e
 
             return wrapper
 
@@ -308,17 +311,13 @@ class BasicTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
-        def parse_datetime(s: Optional[str]) -> Optional[datetime.datetime]:
+        def parse_datetime(s: str) -> datetime.datetime:
             # Magic placeholder that is replaced with the current time.
-            if s is None:
-                return None
             if s == "---now---":
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
 
-        def parse_date(s: Optional[str]) -> Optional[datetime.date]:
-            if s is None:
-                return None
+        def parse_date(s: str) -> datetime.date:
             if s == "---now---":
                 return nearly_now().date()
             return datetime.date.fromisoformat(s)
@@ -432,7 +431,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -448,7 +447,7 @@ class BackendTest(CdEDBTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):
+        if self.user_in("anonymous"):  # pragma: no cover
             if not allow_anonymous:
                 raise self.failureException("Already logged out.")
         self.core.logout(self.key)
@@ -499,7 +498,7 @@ class BackendTest(CdEDBTest):
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
-            for k in ('droid_id',):
+            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date'):
                 if k not in exp and k in real:
                     exp[k] = None
             for k in ('total', 'delta', 'new_balance', 'member_total'):
@@ -545,7 +544,7 @@ class BrowserTest(CdEDBTest):
             except socket.timeout:
                 time.sleep(.1)
         else:
-            raise RuntimeError('Test server failed to start.')
+            raise RuntimeError('Test server failed to start.')  # pragma: no cover
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -802,6 +801,16 @@ USER_DICT: Dict[str, UserObject] = {
         'family_name': "Lokus",
         'default_name_format': "Ludwig Lokus",
     },
+    "petra": {
+        'id': 42,
+        'DB-ID': "DB-42-6",
+        'username': "petra@example.cde",
+        'password': "secret",
+        'display_name': "Petra",
+        'given_names': "Petra",
+        'family_name': "Philanthrop",
+        'default_name_format': "Petra Philanthrop",
+    },
     "viktor": {
         'id': 48,
         'DB-ID': "DB-48-5",
@@ -934,7 +943,7 @@ class FrontendTest(BackendTest):
         # set `do_scrap` to True to capture a snapshot of all visited pages
         # TODO move this in the TestConfig?
         cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
-        if cls.do_scrap:
+        if cls.do_scrap:  # pragma: no cover
             # create a parent directory for all dumps
             dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
             dump_root.mkdir(exist_ok=True)
@@ -945,7 +954,7 @@ class FrontendTest(BackendTest):
     @classmethod
     def tearDownClass(cls) -> None:
         super().tearDownClass()
-        if cls.do_scrap:
+        if cls.do_scrap:  # pragma: no cover
             # make scrap_path directory and content publicly readable
             folder = pathlib.Path(cls.scrap_path)
             folder.chmod(0o0755)  # 0755/drwxr-xr-x
@@ -969,7 +978,7 @@ class FrontendTest(BackendTest):
         self._log_generation_time()
 
     def _scrap(self) -> None:
-        if self.do_scrap and self.response.status_int // 100 == 2:
+        if self.do_scrap and self.response.status_int // 100 == 2:  # pragma: no cover
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
@@ -1068,7 +1077,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")
+                "Cannot specify button value without specifying button name.")  # pragma: no cover
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1136,7 +1145,7 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
-        if self.user_in("anonymous"):
+        if self.user_in("anonymous"):  # pragma: no cover
             if not allow_anonymous:
                 raise self.failureException("Already logged out.")
         else:
@@ -1233,7 +1242,7 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
 
     def fetch_orga_token(self) -> Tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
@@ -1261,9 +1270,9 @@ class FrontendTest(BackendTest):
         """Retrieve the content of the (first) element with the given id."""
         if self.response.content_type == "text/plain":
             return self.response.text
-        tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
         if not tmp:
-            raise AssertionError("Div not found.", div)
+            self.fail(f"Div '{div}' not found.")
         content = tmp[0]
         return content.text_content()
 
@@ -1274,8 +1283,8 @@ class FrontendTest(BackendTest):
         """
         if not self.response.content_type == "text/html":
             self.fail("No valid html document.")
-        if self.response.lxml.xpath("//*[@id='{}']".format(div)):
-            self.fail("Element with id {} found".format(div))
+        if self.response.lxml.xpath(f"//*[@id='{div}']"):
+            self.fail(f"Element with id {div} found")
 
     def assertInputHasAttr(self, input_field: webtest.forms.Field, attr: str) -> None:
         """Assert that the form input has a specific HTML DOM attribute.
@@ -1285,14 +1294,21 @@ class FrontendTest(BackendTest):
         """
         self.assertIn(attr, input_field.attrs)
 
+    def assertHasClass(self, div: str, html_class: str) -> None:
+        tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+        if not tmp:
+            self.fail(f"Div '{div}' not found.")
+        classes = tmp[0].classes
+        self.assertIn(html_class, classes, f"{html_class} not in {list(classes)}.")
+
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
         tmp = (self.response.html.find_all(id=anid)
                or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", anid)
+            self.fail(f"ID '{anid}' not found.")
         if len(tmp) != 1:
-            raise AssertionError("More or less then one hit.", anid)
+            self.fail(f"More or less then one hit ({len(tmp)}) for div '{anid}'.")
         checkbox = tmp[0]
         if "data-checked" in checkbox.attrs:
             self.assertEqual(str(status), checkbox['data-checked'])
@@ -1300,7 +1316,7 @@ class FrontendTest(BackendTest):
             self.assertEqual("checkbox", checkbox['type'])
             self.assertEqual(status, checkbox.get('checked') == 'checked')
         else:
-            raise ValueError("Id doesnt belong to a checkbox", anid)
+            self.fail(f"ID '{anid}' doesn't belong to a checkbox: {checkbox!r}")
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False, msg: Optional[str] = None) -> None:
@@ -1332,16 +1348,124 @@ class FrontendTest(BackendTest):
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
-            try:
-                content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
-            except IndexError:
-                if check_div:
-                    raise AssertionError(
-                        f"Specified div {div!r} not found.") from None
-                else:
-                    pass
+            tmp = self.response.lxml.xpath(f"//*[@id='{div}']")
+            if tmp:
+                self.assertNotIn(s.strip(), tmp[0].text_content())
+            elif check_div:
+                self.fail(f"Specified div {div!r} not found.")
+
+    def assertTextContainedInElement(self, search_text: str, element_tag: str,
+                                     div: str = "content") -> None:
+        """
+        Assert that `search_text` is present and is contained in a specific HTML tag.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent. Each occurance of the `search_text` must be contained in a matching tag.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is present but crossed out via an <s> tag
+            self.assertTextContainedInElement("Anton", "s")
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element found, containing the text '{search_text}'")
+        num_searched_elements_with_matching_ancestor = sum(
+            1
+            for element in elements_with_searchtext
+            if len(element.xpath(f'./ancestor-or-self::{element_tag}')) > 0
+        )
+        if num_searched_elements_with_matching_ancestor < len(elements_with_searchtext):
+            if len(elements_with_searchtext) == 1:
+                self.fail(
+                    "Text '{}' found, but not contained in a <{}>".format(
+                        search_text,
+                        element_tag))
             else:
-                self.assertNotIn(s.strip(), content.text_content())
+                self.fail(
+                    "Text '{}' found {} times, but only {} of them are contained in a "
+                    "<{}>".format(
+                        search_text,
+                        len(elements_with_searchtext),
+                        num_searched_elements_with_matching_ancestor,
+                        element_tag))
+
+    def assertTextContainedInNthElement(self, search_text: str, element_tag: str,
+                                        n: int, div: str = "content") -> None:
+        """
+        Assert that `search_text` is contained in an n-th sibling `tag` HTML element
+
+        The element may be the direct container of the `search_text` or any parent.
+        For each occurance of the `search_text`, the closest parent of tag name
+        `element_tag` must be the n-th sibling in its parent (starting at 0). Negative n
+        can be used to specify the n-th-last element.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is in the last <li> list item of a list
+            self.assertTextContainedInElement("Anton", "li", -1)
+
+        :param element_tag: HTML element tag name of one of the ancestors of the text
+            occurance, which is checked for its position among its siblings.
+        :param n: Required position of the matching ancestor among its siblings.
+            Positive numbers count from the beginning of the parent (starting at 0),
+            negative numbers count from the end of the parent element (starting at -1).
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element containing the text '{search_text}' found")
+        for element_with_searchtext in elements_with_searchtext:
+            matching_ancestors = element_with_searchtext.xpath(
+                f'./ancestor-or-self::{element_tag}[1]')
+            if len(matching_ancestors) == 0:
+                self.fail(f"Text '{search_text}' found, but at least one occurance is "
+                          f"not in a <{element_tag}>")
+            closest_matching_ancestor = matching_ancestors[0]
+            if n < 0:
+                following_siblings = len(
+                    closest_matching_ancestor.xpath('./following-sibling::*'))
+                actual_n = -1 - following_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+            else:
+                preceding_siblings = len(
+                    closest_matching_ancestor.xpath('./preceding-sibling::*'))
+                actual_n = preceding_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+
+    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str
+                                     ) -> str:
+        """Returns the plain text content of the element containing `search_text`.
+
+        Fails if the search_text is found in more than one HTML element.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent.
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        matching_elements = self.response.lxml.xpath(
+                f'//*[@id="{div}"]//{element_tag}[contains(.,"{search_text}")]')
+        if len(matching_elements) == 0:
+            self.fail(f"Text '{search_text}' not found")
+        elif len(matching_elements) > 1:
+            self.fail(f"Text '{search_text}' found in {len(matching_elements)} "
+                      "(more than one) elements")
+        return ''.join(matching_elements[0].itertext())
 
     def assertNotification(self, ntext: Optional[str] = None,
                            ntype: Optional[str] = None, *, static: bool = False,
@@ -1441,26 +1565,25 @@ class FrontendTest(BackendTest):
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif not nodes:
-                raise AssertionError(f"No input with name {f!r} found.")
-            else:
-                raise AssertionError(f"More than one input with name {f!r}"
-                                     f" found. Need to specify index.")
+            elif not nodes:  # pragma: no cover
+                self.fail(f"No input with name {f!r} found.")
+            else:  # pragma: no cover
+                self.fail(f"More than one input with name {f!r} found."
+                          f" Need to specify index.")
         else:
             try:
                 node = nodes[index]
-            except IndexError:
-                raise AssertionError(f"Input with name {f!r} and index {index}"
-                                     f" not found. {len(nodes)} inputs with"
-                                     f" name {f!r} found.") from None
+            except IndexError:  # pragma: no cover
+                raise self.failureException(
+                    f"Input with name {f!r} and index {index} not found."
+                    f" {len(nodes)} inputs with name {f!r} found.") from None
 
         # From https://devhints.io/xpath#class-check
         container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             f"' has-{kind} ')]")
         if not container:
-            raise AssertionError(
-                f"Input with name {f!r} is not contained in an .has-{kind} box")
+            self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
         normalized = re.sub(r'\s+', ' ', container[0].text_content())
         errmsg = (f"Expected error message not found near input with name {f!r}:\n"
                   f"{normalized}")
@@ -1483,7 +1606,7 @@ class FrontendTest(BackendTest):
 
         def printlog(s: str) -> None:
             if verbose:
-                print(s)
+                print(s)  # pragma: no cover
 
         for element in self.response.html.find_all(tag):
             el_html = str(element)
@@ -1498,10 +1621,10 @@ class FrontendTest(BackendTest):
             if content_pat and not content_pat(el_content):
                 printlog("  Skipped: doesn't match description")
                 continue
-            printlog("  Link found")
-            raise AssertionError(
-                "{} tag with {} == {} and content \"{}\" has been found."
-                .format(tag, href_attr, element[href_attr], el_content))
+            printlog("  Link found")  # pragma: no cover
+            self.fail(
+                f"Tag '{tag}' with {href_attr} == {element[href_attr]}"
+                f" and content '{el_content}' has been found.")
 
     def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
@@ -1523,7 +1646,7 @@ class FrontendTest(BackendTest):
                 self.get(f"/event/event/{event_id}/log")
             else:
                 self.get("/event/log")
-        elif realm == "assembly":
+        elif realm == "assembly":  # TODO: coverage
             entities = self.assembly.get_assemblies(self.key, entity_ids)
             if assembly_id := kwargs.get('assembly_id'):
                 specific_log = True
@@ -1533,7 +1656,7 @@ class FrontendTest(BackendTest):
         elif realm == "ml":
             entities = {ml_id: ml.to_database() for ml_id, ml
                         in self.ml.get_mailinglists(self.key, entity_ids).items()}
-            if ml_id := kwargs.get('mailinglist_id'):
+            if ml_id := kwargs.get('mailinglist_id'):  # TODO: coverage
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
             else:
@@ -1708,8 +1831,7 @@ class FrontendTest(BackendTest):
         for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')
         if present:
-            raise AssertionError(
-                f"Unexpected sidebar elements '{present}' found.")
+            self.fail(f"Unexpected sidebar elements '{present}' found.")
 
     def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None,
                                   ) -> None:
@@ -1809,7 +1931,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -1883,7 +2005,7 @@ class MultiAppFrontendTest(FrontendTest):
     def get_app(self) -> webtest.TestApp:
         return self.apps[self.current_app]
 
-    def set_app(self, value: webtest.TestApp) -> None:
+    def set_app(self, value: webtest.TestApp) -> None:  # pragma: no cover
         self.apps[self.current_app] = value
 
     app = property(fget=get_app, fset=set_app)
@@ -1896,7 +2018,7 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
         self.current_app = i
 
 
@@ -1954,8 +2076,8 @@ class CronTest(CdEDBTest):
     def tearDownClass(cls) -> None:
         super().tearDownClass()
         if not cls._remaining_tests and cls._remaining_periodics:
-            raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._remaining_periodics}")
+            raise cls.failureException(
+                f"The following cron-periodics never ran: {cls._remaining_periodics}")
 
     def setUp(self) -> None:
         super().setUp()
@@ -1991,7 +2113,7 @@ class CronTest(CdEDBTest):
 
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
-            raise ValueError("Must specify jobs to run.")
+            raise ValueError("Must specify jobs to run.")  # pragma: no cover
         self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:

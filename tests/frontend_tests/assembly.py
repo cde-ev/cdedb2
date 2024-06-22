@@ -10,7 +10,6 @@ import tempfile
 from typing import List, Optional
 
 import freezegun
-import pytz
 import webtest
 
 from cdedb.common import (
@@ -76,7 +75,7 @@ class AssemblyTestHelpers(FrontendTest):
                 'presider_ids': USER_DICT['werner']['DB-ID'],
             }
         else:
-            adata = adata.copy()
+            adata = adata.copy()  # pragma: no cover
         if delta:
             adata.update(delta)
         self.traverse({'description': 'Versammlungen'},
@@ -129,7 +128,7 @@ class AssemblyTestHelpers(FrontendTest):
             f[k] = v
         self.submit(f)
         if atitle:
-            self.assertTitle("{} ({})".format(bdata['title'], atitle))
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
@@ -1887,7 +1886,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("werner")
     def test_start_voting_button(self) -> None:
         if not self.conf['CDEDB_DEV']:
-            self.skipTest("Not in development mode.")
+            self.skipTest("Not in development mode.")  # pragma: no cover
         link = '/assembly/assembly/1/ballot/2/show'
         self.get(link)
         self.submit(self.response.forms['startvotingform'])
@@ -2030,7 +2029,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['configureballotform']
         f['title'] = "Längere Wahl"
         f['vote_extension_end'] = datetime.datetime(2222, 2, 23,
-                                                    tzinfo=pytz.utc)
+                                                    tzinfo=datetime.timezone.utc)
         f['abs_quorum'] = 1
         self.submit(f)
         ballots = self.assembly.get_ballots(self.key, (16, 1001))
