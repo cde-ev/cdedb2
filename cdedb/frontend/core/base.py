@@ -639,9 +639,9 @@ class CoreBaseFrontend(AbstractFrontend):
                 masks.extend(["is_member", "gender", "pronouns_nametag"])
                 # Primary address may be hidden from member search,
                 # but not from orga view.
-                if not data['show_address']:
+                if not data.get('show_address', True):
                     masks.extend(["address", "address_supplement"])
-            if not data['show_address2']:
+            if not data.get('show_address2', True):
                 masks.extend(["address2", "address_supplement2"])
             for key in masks:
                 if key in data:
@@ -1179,12 +1179,13 @@ class CoreBaseFrontend(AbstractFrontend):
                 msg = n_("You are not the owner of the linked bank account. Make sure"
                          " the owner agreed to the change before submitting it here.")
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
+        # Gender and primary address may not be unset
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
-        if data['is_event_realm']:
-            for address_row in ('address', 'postal_code', 'location'):
-                e = ValueError("Specifying an address is mandatory.")
-                if not data.get(address_row):
+        e = ValueError("Specifying an address is mandatory.")
+        for address_row in ('address', 'postal_code', 'location'):
+            if address_row in data.keys():
+                if not data[address_row]:
                     rs.append_validation_error((address_row, e))
         if rs.has_validation_errors():
             return self.change_user_form(rs)

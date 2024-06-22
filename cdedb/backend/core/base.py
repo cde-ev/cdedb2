@@ -154,11 +154,11 @@ class CoreBaseBackend(AbstractBackend):
         :param persona: one persona data set to convert into a string for
           fulltext search
         """
-        attributes = (
+        attributes = [
             "title", "username", "display_name", "given_names", "family_name",
             "birth_name", "name_supplement", "birthday", "telephone", "mobile",
             "postal_code", "location", "postal_code2", "location2", "weblink",
-            "specialisation", "affiliation", "timeline", "interests", "free_form")
+            "specialisation", "affiliation", "timeline", "interests", "free_form"]
         if persona["show_address"]:
             attributes += ("address_supplement", "address")
         if persona["show_address2"]:
