@@ -455,7 +455,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(data, new_data)
 
-    @as_users("vera")
+    @as_users("anton", "vera")
     def test_change_realm(self) -> None:
         persona_id = 5
         data = {
@@ -464,21 +464,26 @@ class TestCoreBackend(BackendTest):
             'is_assembly_realm': True,
         }
         persona = self.core.get_total_persona(self.key, persona_id)
+        expectation = persona.copy()
         reference = {**PERSONA_CDE_CREATION}
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
-            persona.update({
-                'trial_member': False,
-                'honorary_member': False,
-                'decided_search': False,
-                'bub_search': False,
-                'paper_expuls': True,
-                'donation': decimal.Decimal(0),
-            })
+        change = {
+            'is_member': self.user_in("anton"),
+            'trial_member': False,
+            'honorary_member': self.user_in("anton"),
+            'decided_search': False,
+            'bub_search': False,
+            'paper_expuls': True,
+            'donation': decimal.Decimal(0),
+        }
+        expectation.update({**data, **change, 'balance': decimal.Decimal(0)})
+        persona.update(change)
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
+        self.assertEqual(expectation, self.core.get_total_persona(self.key, persona_id))
         log_entry = {
             'id': 1001,
             'ctime': nearly_now(),
