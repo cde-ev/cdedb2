@@ -68,6 +68,16 @@ EventDataclassMap = CdEDataclassMap["Event"]
 class EventDataclass(CdEDataclass, abc.ABC):
     entity_key: ClassVar[str] = "event_id"
 
+    @classmethod
+    def full_export_spec(
+            cls, entity_key: Optional[str] = None,
+    ) -> tuple[str, str, tuple[str, ...]]:
+        return (
+            cls.database_table,
+            entity_key or cls.entity_key,
+            tuple(cls.database_fields()),
+        )
+
 
 #
 # get_event

@@ -100,6 +100,7 @@ from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
+from cdedb.models.event import EventDataclass
 
 
 class APIToken(abc.ABC):
@@ -315,7 +316,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
 
 @dataclass
-class OrgaToken(DynamicAPIToken):
+class OrgaToken(DynamicAPIToken, EventDataclass):
     """
     OrgaToken(
         id: vtypes.ID, title: str, notes: Optional[str], etime: datetime.datetime,

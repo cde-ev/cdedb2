@@ -1108,14 +1108,14 @@ class TestCoreBackend(BackendTest):
             self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
                                   allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertFalse(data['is_archived'])
+        self.assertTrue(data['is_cde_realm'])
         ret = self.core.archive_persona(
             self.key, persona_id, "Archived for testing.")
         self.assertLess(0, ret)
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertTrue(data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(True, data['is_archived'])
+        self.assertTrue(data['is_archived'])
         # The user may have balance if he lost his membership in the ongoing semester
         #  Ensure that the removal of the balance is logged correctly
         log = [{
@@ -1135,7 +1135,7 @@ class TestCoreBackend(BackendTest):
                                           new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
+        self.assertFalse(data['is_archived'])
 
         # Test correct handling of lastschrift during archival.
         self.login("anton")
@@ -1241,16 +1241,16 @@ class TestCoreBackend(BackendTest):
         self.assertLess(0, case_id)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(False, persona["is_cde_admin"])
-        self.assertEqual(False, persona["is_finance_admin"])
+        self.assertFalse(persona["is_cde_admin"])
+        self.assertFalse(persona["is_finance_admin"])
 
         self.login(admin2)
         self.core.finalize_privilege_change(
             self.key, case_id, const.PrivilegeChangeStati.approved)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(True, persona["is_cde_admin"])
-        self.assertEqual(True, persona["is_finance_admin"])
+        self.assertTrue(persona["is_cde_admin"])
+        self.assertTrue(persona["is_finance_admin"])
 
         self.login(admin1)
         core_log_expectation = (3, (
