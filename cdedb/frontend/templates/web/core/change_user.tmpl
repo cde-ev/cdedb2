@@ -100,7 +100,7 @@
             {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address in member search")) }}
+            {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
@@ -116,7 +116,7 @@
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
-            {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address in member search")) }}
+            {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
             {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
