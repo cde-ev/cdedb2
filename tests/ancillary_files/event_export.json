@@ -411,7 +411,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         17,
-        1
+        2
     ],
     "event.registration_parts": {
         "2": {
@@ -1547,6 +1547,20 @@
             "amount": null,
             "condition": null,
             "notes": "Individuelle Höhe"
+        }
+    },
+    "event.personalized_fees": {
+        "1": {
+            "id": 1,
+            "fee_id": 10,
+            "registration_id": 1,
+            "amount": "-20.00"
+        },
+        "2": {
+            "id": 2,
+            "fee_id": 10,
+            "registration_id": 3,
+            "amount": "-30.00"
         }
     },
     "event.event_parts": {
