@@ -1514,13 +1514,18 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_registration_delete(self) -> None:
-        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
-                         self.event.list_registrations(self.key, 1))
-        self.assertLess(0, self.event.delete_registration(
-            self.key, 1, ("registration_parts", "registration_tracks",
-                          "course_choices")))
-        self.assertEqual({2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
-                         self.event.list_registrations(self.key, 1))
+        expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
+        self.assertEqual(expectation, self.event.list_registrations(self.key, 1))
+        with self.assertRaises(ValueError):
+            self.event.delete_registration(
+                self.key, 1, ("registration_parts", "registration_tracks",
+                              "course_choices"))
+        del expectation[1]
+        for reg_id in expectation.keys():
+            self.assertLess(0, self.event.delete_registration(
+                self.key, reg_id, ("registration_parts", "registration_tracks",
+                              "course_choices")))
+        self.assertEqual({1: 1}, self.event.list_registrations(self.key, 1))
 
     @as_users("annika", "garcia")
     def test_course_filtering(self) -> None:
