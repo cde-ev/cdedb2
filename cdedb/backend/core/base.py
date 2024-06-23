@@ -945,7 +945,7 @@ class CoreBaseBackend(AbstractBackend):
         change_note = affirm(str, change_note)
         ret = 1
         with Atomizer(rs):
-            is_member = trial_member = None
+            is_member = trial_member = honorary_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
                 tmp = self.get_total_persona(rs, data['id'])
@@ -958,7 +958,9 @@ class CoreBaseBackend(AbstractBackend):
                 #  we stash the changes here and apply them later on.
                 is_member = data.get('is_member')
                 trial_member = data.get('trial_member')
-                data['is_member'] = data['trial_member'] = False
+                honorary_member = data.get('honorary_member')
+                data['is_member'] = data['trial_member'] = data['honorary_member'] =\
+                    False
             ret *= self.set_persona(
                 rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
@@ -966,9 +968,10 @@ class CoreBaseBackend(AbstractBackend):
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note=change_note)
             # apply the previously stashed changes
-            if is_member or trial_member:
+            if is_member or trial_member or honorary_member:
                 ret *= self.change_membership_easy_mode(
-                    rs, data['id'], is_member=is_member, trial_member=trial_member)
+                    rs, data['id'], is_member=is_member, trial_member=trial_member,
+                    honorary_member=honorary_member)
         return ret
 
     @access("persona")
@@ -1291,6 +1294,7 @@ class CoreBaseBackend(AbstractBackend):
 
         :param is_member: Desired target state of membership or None.
         :param trial_member: Desired target state of trial membership or None.
+        :param honorary_member: Desired target state of honorary membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
@@ -1596,7 +1600,8 @@ class CoreBaseBackend(AbstractBackend):
             #
             if persona['is_member']:
                 code = self.change_membership_easy_mode(
-                    rs, persona_id, is_member=False, trial_member=False)
+                    rs, persona_id, is_member=False, trial_member=False,
+                    honorary_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
