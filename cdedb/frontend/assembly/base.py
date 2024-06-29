@@ -299,7 +299,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             )
             return attendee_ml_data
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata("presider_list")
     def create_assembly_mailinglist(self, rs: RequestState, assembly_id: int,
                                     presider_list: bool) -> Response:

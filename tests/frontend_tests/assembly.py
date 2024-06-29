@@ -537,7 +537,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse("Versammlungen", "Archiv-Sammlung")
         self.assertTitle("Archiv-Sammlung")
 
-        self.assertNotIn('addpresidersform', self.response.forms)
+        self.submit(self.response.forms['createattendeelistform'])
+        self.submit(self.response.forms['createpresiderlistform'])
+
+        self.assertNotIn('concludeassemblyform', self.response.forms)
+        self.assertNotIn('deleteassemblyform', self.response.forms)
+
+        self.traverse("Versammlungen", "Internationaler Kongress")
+        self.assertTitle("Internationaler Kongress")
+        self.assertNotIn('createpresiderlistform', self.response.forms)
         self.assertNotIn('createattendeelistform', self.response.forms)
 
     @as_users("kalif")
@@ -547,7 +555,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self.assertNonPresence("Datei hinzufügen")
         self.assertNotIn('addpresidersform', self.response.forms)
+        self.assertNotIn('createpresiderlistform', self.response.forms)
         self.assertNotIn('createattendeelistform', self.response.forms)
+        self.assertNotIn('concludeassemblyform', self.response.forms)
+        self.assertNotIn('deleteassemblyform', self.response.forms)
 
     @as_users("charly")
     def test_signup(self) -> None:

@@ -139,7 +139,9 @@
         {% endcall %}
     {% endif %}
 
-    {% if "assembly_mgmt" in user.admin_views %}
+    {% if "assembly_mgmt" in user.admin_views or (
+            values['assembly_id'] in user.presider and ambience['assembly']['is_active'] and (
+                not ambience['assembly']['presider_address'] or not attendee_list_exists)) %}
         {% if ambience['assembly']['is_active'] or "ballot_is_locked" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}

@@ -380,6 +380,45 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(PrivilegeError):
             self.ml.add_moderators(self.key, 59, {1})
 
+    @as_users("werner")
+    def test_mailinglist_creation_presider(self) -> None:
+        data = models_ml.AssemblyAssociatedMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart("test"),
+            domain=const.MailinglistDomain.lists,
+            description=None,
+            assembly_id=None,
+            is_active=True,
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
+            maxsize=None,
+            additional_footer=None,
+            moderators={self.user['id'], self.as_id(10)},
+            whitelist=set(),
+            subject_prefix="test",
+            title="TestAka",
+            mod_policy=const.ModerationPolicy.non_subscribers,
+            notes=None,
+        )
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.assembly_id = self.as_id(2)
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.assembly_id = self.as_id(3)
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        data = models_ml.AssemblyPresiderMailinglist(**data.as_dict())
+        data.local_part = vtypes.EmailLocalPart('archiv-preisder')
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        # Orgas may still not generally add or remove moderators for their event
+        with self.switch_user("anton"):
+            self.ml.remove_moderator(self.key, 66, 23)
+        with self.assertRaises(PrivilegeError):
+            self.ml.add_moderators(self.key, 66, {1})
+
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
         new_data = models_ml.MemberModeratedOptInMailinglist(
