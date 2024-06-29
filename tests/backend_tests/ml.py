@@ -341,7 +341,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("garcia")
     def test_mailinglist_creation_orga(self) -> None:
-        data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
+        data: models_ml.EventAssociatedMeta = models_ml.EventAssociatedMailinglist(
             id=self.as_creation_id(-1),
             local_part=vtypes.EmailLocalPart("test"),
             domain=const.MailinglistDomain.aka,
@@ -353,7 +353,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             maxsize=None,
             additional_footer=None,
-            moderators={self.user['id'], 10},
+            moderators={self.user['id'], self.as_id(10)},
             whitelist=set(),
             subject_prefix="test",
             title="TestAka",
@@ -363,10 +363,10 @@ class TestMlBackend(BackendTest):
         )
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.event_id = 2
+        data.event_id = self.as_id(2)
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.event_id = 1
+        data.event_id = self.as_id(1)
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
         data = models_ml.EventOrgaMailinglist(**{k: v for k, v in data.as_dict().items()
