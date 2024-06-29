@@ -672,7 +672,7 @@ class MlBackend(AbstractBackend):
         data = affirm_dataclass(Mailinglist, data, creation=True)
         self.validate_address(rs, data.to_database())
         if not (data.is_relevant_admin(rs.user)
-                or (isinstance(data, EventAssociatedMailinglist)
+                or (isinstance(data, EventAssociatedMetaMailinglist)
                     and data.event_id in rs.user.orga)):
             raise PrivilegeError(n_(
                 "Not privileged to create mailinglist of this type."))

@@ -339,6 +339,47 @@ class TestMlBackend(BackendTest):
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
+    @as_users("garcia")
+    def test_mailinglist_creation_orga(self) -> None:
+        data: models_ml.Mailinglist = models_ml.EventAssociatedMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart("test"),
+            domain=const.MailinglistDomain.aka,
+            description=None,
+            event_id=None,
+            is_active=True,
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
+            maxsize=None,
+            additional_footer=None,
+            moderators={self.user['id'], 10},
+            whitelist=set(),
+            subject_prefix="test",
+            title="TestAka",
+            mod_policy=const.ModerationPolicy.non_subscribers,
+            notes=None,
+            registration_stati=[],
+        )
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.event_id = 2
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.event_id = 1
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        data = models_ml.EventOrgaMailinglist(**{k: v for k, v in data.as_dict().items()
+                                                 if k != 'registration_stati'})
+        data.local_part = vtypes.EmailLocalPart('test-orga')
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        # Orgas may still not generally add or remove moderators for their event
+        with self.switch_user("anton"):
+            self.ml.remove_moderator(self.key, 59, 8)
+        with self.assertRaises(PrivilegeError):
+            self.ml.add_moderators(self.key, 59, {1})
+
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
         new_data = models_ml.MemberModeratedOptInMailinglist(
