@@ -315,8 +315,10 @@ Verwendungszweck:   {{ reference }}
                     <form action="{{ cdedblink('event/delete_registration') }}" method="POST"
                           id="deleteregistrationform" style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_registration') }}
-                        {{ util.input_submit(gettext("Delete"), readonly=is_locked, aclass="btn btn-sm btn-danger",
-                                             icon='trash-alt') }}
+                        {{ util.input_submit(gettext("Delete"), readonly=(is_locked or ambience['registration']['amount_paid']),
+                                             aclass="btn btn-sm btn-danger", icon='trash-alt',
+                                             title=(gettext("Registration has paid non-zero amount.")
+                                                if ambience['registration']['amount_paid'] else "")) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">

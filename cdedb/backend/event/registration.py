@@ -1182,6 +1182,7 @@ class EventRegistrationBackend(EventBaseBackend):
         * registration_parts: The registration's registration parts.
         * registration_tracks: The registration's registration tracks.
         * course_choices: The registrations course choices.
+        * amount_paid: The registration having non-zero amount_paid.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1206,6 +1207,11 @@ class EventRegistrationBackend(EventBaseBackend):
             entity_key="registration_id")
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
+
+        amount_paid = unwrap(self.sql_select_one(
+            rs, "event.registrations", ("amount_paid",), registration_id))
+        if amount_paid:
+            blockers["amount_paid"] = [True]
 
         return blockers
 
@@ -1250,6 +1256,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 if "course_choices" in cascade:
                     ret *= self.sql_delete(rs, "event.course_choices",
                                            blockers["course_choices"])
+                if "amount_paid" in cascade:
+                    data = {
+                        'id': registration_id,
+                        'amount_paid': decimal.Decimal("0.00"),
+                    }
+                    ret *= self.sql_update(rs, "event.registrations", data)
 
                 # check if registration is deletable after cascading
                 blockers = self.delete_registration_blockers(

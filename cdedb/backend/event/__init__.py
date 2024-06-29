@@ -210,7 +210,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             ret *= self.delete_registration(
                                 rs, reg_id,
                                 ("registration_parts", "course_choices",
-                                 "registration_tracks"))
+                                 "registration_tracks", "amount_paid"))
                 if "courses" in cascade:
                     with Silencer(rs):
                         for course_id in blockers["courses"]:

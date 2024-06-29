@@ -3409,10 +3409,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             "Anmeldung von Anton Administrator (Große Testakademie 2222)")
         f = self.response.forms['deleteregistrationform']
         f['ack_delete'].checked = True
+        with self.assertRaises(ValueError):
+            self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        self.assertPresence("Anton")
+        self.assertPresence("Akira")
+        self.traverse({'href': '/event/event/1/registration/5/show'})
+        self.assertTitle(
+            "Anmeldung von Akira Abukara (Große Testakademie 2222)")
+        f = self.response.forms['deleteregistrationform']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'})
-        self.assertNonPresence("Anton")
+        self.assertNonPresence("Akira")
 
     @as_users("garcia")
     def test_profile_link(self) -> None:
