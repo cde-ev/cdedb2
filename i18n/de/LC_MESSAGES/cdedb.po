@@ -11181,15 +11181,15 @@ msgstr "Daten sind für andere Mitglieder sichtbar."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:346
 msgid "(except for precise address and secondary address)"
-msgstr "(außer genaue Adresse und Zweitadresse)"
+msgstr "(Außer genaue Adresse und Zweitadresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:350
 msgid "(except for precise address)"
-msgstr "(außer genaue Adresse)"
+msgstr "(Außer genaue Adresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:354
 msgid "(except for precise secondary address)"
-msgstr "(außer genaue Zweitadresse)"
+msgstr "(Außer genaue Zweitadresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:360
 msgid "Not yet decided. (Data is not visible)"
