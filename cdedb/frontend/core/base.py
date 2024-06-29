@@ -1182,8 +1182,8 @@ class CoreBaseFrontend(AbstractFrontend):
         # Gender and primary address may not be unset
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
-        e = ValueError("Specifying an address is mandatory.")
-        for address_row in ('address', 'postal_code', 'location'):
+        e = ValueError(n_("Specifying an address is mandatory."))
+        for address_row in ('address', 'location'):
             if address_row in data.keys():
                 if not data[address_row]:
                     rs.append_validation_error((address_row, e))

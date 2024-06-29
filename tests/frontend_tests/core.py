@@ -716,13 +716,21 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
-        f['country2'] = "AR"
+        f['country2'] = "HY"
         f['specialisation'] = "Okarinas"
         if self.user_in("daniel"):
             self.submit(f, check_notification=False)
             # Invalid postal code
             f = self.response.forms['changedataform']
             f[IGNORE_WARNINGS_NAME].checked = True
+        if self.user_in("vera"):
+            self.submit(f, check_notification=False)
+            msg = "Specifying an address is mandatory."
+            self.assertValidationError('address', msg)
+            self.assertValidationError('location', msg)
+            f['address'] = "Hinter der Geheimtür 3"
+            f['location'] = "Ganondorfs Versteck"
+            f['country'] = "HY"
         self.submit(f)
         self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         self.assertPresence("Hyrule", div='address2')
@@ -2065,6 +2073,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "11111"
+        f['address'] = "Hinter der Geheimtür 3"
+        f['location'] = "Ganondorfs Versteck"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")

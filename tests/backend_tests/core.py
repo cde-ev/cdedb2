@@ -968,6 +968,8 @@ class TestCoreBackend(BackendTest):
             'specialisation': None,
             'timeline': None,
             'paper_expuls': True,
+            'show_address': True,
+            'show_address2': True,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -1092,6 +1094,8 @@ class TestCoreBackend(BackendTest):
             'location2': 'Foreign City',
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
+            'show_address': True,
+            'show_address2': True,
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+495432987654321',
             'timeline': 'Überall',
