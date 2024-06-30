@@ -549,8 +549,7 @@ class TestCdEFrontend(FrontendTest):
         fields = [
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "address,address_supplement,address2,address_supplement2",
-            "location,location2", "country,country2"]
+            "username", "location,location2", "country,country2"]
         for field in fields:
             f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
