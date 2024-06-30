@@ -5417,6 +5417,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Veranstaltung archiviert")
         # TODO check past event log
 
+        # Check that questionnaire is readonly
+        self.traverse({'href': '/event/event/1/questionnaire/config'})
+        f = self.response.forms['configurequestionnaireform']
+        self.assertTrue(f['readonly_1'].checked)
+        self.assertTrue(f['readonly_4'].checked)
+        self.assertTrue(f['readonly_5'].checked)
+
         # Check visibility but un-modifiability for participants
         self.logout()
         self.login(USER_DICT["emilia"])
