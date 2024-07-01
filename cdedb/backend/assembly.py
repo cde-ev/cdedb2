@@ -623,6 +623,11 @@ class AssemblyBackend(AbstractBackend):
                         rs, const.AssemblyLogCodes.assembly_presider_added,
                         assembly_id, anid)
                 ret *= r
+
+            # Update session presider status
+            if rs.user.persona_id in persona_ids:
+                rs.user.presider.add(assembly_id)
+
         return ret
 
     @access("assembly_admin")
@@ -639,6 +644,11 @@ class AssemblyBackend(AbstractBackend):
             if ret:
                 self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
                                   assembly_id, persona_id)
+
+        # Update session presider status
+        if rs.user.persona_id == persona_id:
+            rs.user.presider.remove(assembly_id)
+
         return ret
 
     @internal

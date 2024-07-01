@@ -260,9 +260,6 @@ class EventEventMixin(EventBaseFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
         rs.notify_return_code(code, error=n_("Action had no effect."))
-        # Update session orga status
-        if rs.user.persona_id == orga_id:
-            rs.user.orga.add(rs.user.persona_id)
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -278,9 +275,6 @@ class EventEventMixin(EventBaseFrontend):
             return self.show_event(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
         rs.notify_return_code(code, error=n_("Action had no effect."))
-        # Update session orga status
-        if rs.user.persona_id == orga_id:
-            rs.user.orga.remove(rs.user.persona_id)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})

@@ -394,6 +394,7 @@
 
     {% if "event_mgmt" in user.admin_views or (
             values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
+        {# This ensures no empty box is shown for orgas. #}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['event']['orga_address'] %}
                 <div class="row" id="create-orga-list">
@@ -481,7 +482,7 @@
                     $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
-            {% endif %}
+                {% endif %}
             <div class="row" id="delete-event">
                 <div class="col-sm-4">
                     <div class="p">

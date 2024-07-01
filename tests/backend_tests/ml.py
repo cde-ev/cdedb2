@@ -375,10 +375,11 @@ class TestMlBackend(BackendTest):
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
         # Orgas may still not generally add or remove moderators for their event
+        # mailinglists unless they are moderators as well.
         with self.switch_user("anton"):
-            self.ml.remove_moderator(self.key, 59, 8)
+            self.ml.remove_moderator(self.key, 59, USER_DICT['garcia']['id'])
         with self.assertRaises(PrivilegeError):
-            self.ml.add_moderators(self.key, 59, {1})
+            self.ml.add_moderators(self.key, 59, {USER_DICT['anton']['id']})
 
     @as_users("werner")
     def test_mailinglist_creation_presider(self) -> None:
@@ -413,11 +414,12 @@ class TestMlBackend(BackendTest):
         data.local_part = vtypes.EmailLocalPart('archiv-preisder')
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
-        # Orgas may still not generally add or remove moderators for their event
+        # Presiders may still not generally add or remove moderators for their assembly
+        # mailinglists unless they are moderators as well.
         with self.switch_user("anton"):
-            self.ml.remove_moderator(self.key, 66, 23)
+            self.ml.remove_moderator(self.key, 66, USER_DICT['werner']['id'])
         with self.assertRaises(PrivilegeError):
-            self.ml.add_moderators(self.key, 66, {1})
+            self.ml.add_moderators(self.key, 66, {USER_DICT['anton']['id']})
 
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
