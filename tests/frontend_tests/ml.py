@@ -1499,6 +1499,9 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['msg2']
         f['reason'] = 'naughty joke'
         self.submit(f, button='action', value='reject')
+        text = self.fetch_mail_content()
+        self.assertIn('naughty joke', text)
+        self.assertIn('Anton', text)
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
@@ -1529,7 +1532,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("kassenwart@example.cde / Finanzbericht / Spam score: —",
                             div="1-1001")
         self.assertPresence("illuminati@example.cde / Verschwurbelung"
-                            " / Spam score: 1.108", div="2-1002")
+                            " / Spam score: 1.108",
+                            div="2-1002")
         self.assertPresence("nigerian_prince@example.cde / unerwartetes Erbe"
                             " / Spam score: 2.725", div="3-1003")
 
