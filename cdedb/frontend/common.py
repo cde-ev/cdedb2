@@ -2626,12 +2626,27 @@ class TransactionObserver:
 
     This should only be used in cases where a failure is deemed sufficiently
     unlikely.
+
+    The recipients always include the troubleshooting address and default to
+    management if no other recipients are given.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str, *,
+                 description: str = "", recipients: Collection[str] = ()):
         self.rs = rs
         self.frontend = frontend
         self.name = name
+        self.description = description
+        if recipients:
+            self.recipients = (
+                *recipients,
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
+        else:
+            self.recipients = (
+                frontend.conf['MANAGEMENT_ADDRESS'],
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
 
     def __enter__(self) -> "TransactionObserver":
         return self
@@ -2643,13 +2658,14 @@ class TransactionObserver:
             self.frontend.do_mail(
                 self.rs, "transaction_error",
                 {
-                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
-                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'To': self.recipients,
                     'Subject': "Transaktionsfehler",
+                    'Reply-To': self.frontend.conf['TROUBLESHOOTING_ADDRESS'],
                 },
                 {
                     'now': now(),
                     'name': self.name,
+                    'description': self.description,
                     'atype': atype,
                     'value': value,
                     'tb': tb,
