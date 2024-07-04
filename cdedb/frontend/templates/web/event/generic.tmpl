@@ -549,7 +549,8 @@
                               method="POST" id="addpersonalizedfeeform{{ fee.id }}">
                             {{ util.anti_csrf_token("event/add_personalized_fee") }}
                             <td class="text-right">
-                                {{ util.input_text("amount", attributes='style="float:right;width:5em"'|safe) }}
+                                {{ util.input_text("amount" + fee.id|string,
+                                                   attributes='style="float:right;width:5em"'|safe) }}
                             </td>
                             <td>
                                 {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
