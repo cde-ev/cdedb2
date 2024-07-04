@@ -1643,10 +1643,11 @@ class EventRegistrationBackend(EventBaseBackend):
             else:
                 code = const.EventLogCodes.personalized_fee_amount_set
                 change_note += f" ({money_filter(amount)})"
-            self.event_log(
-                rs, code=code, event_id=event_id, persona_id=persona_id,
-                change_note=change_note,
-            )
+            if ret:
+                self.event_log(
+                    rs, code=code, event_id=event_id, persona_id=persona_id,
+                    change_note=change_note,
+                )
             return ret
 
     @internal
