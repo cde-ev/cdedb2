@@ -31,8 +31,9 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
-    CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
-    cdedbid_filter, check_validation_optional as check_optional, event_guard,
+    CustomCSVDialect, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    TransactionObserver, access, cdedbid_filter, check_validation as check,
+    check_validation_optional as check_optional, event_guard,
     inspect_validation as inspect, make_event_fee_reference, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
@@ -1011,6 +1012,47 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(rs, "registration/registration_fee_summary", {
             **payment_data,
         })
+
+    @access("event")
+    @event_guard(check_offline=True)
+    def add_new_personalized_fee_form(
+            self, rs: RequestState, event_id: int, registration_id: int,
+    ) -> Response:
+        """Render form for creating a new personalized fee for a specific registration.
+
+        The personalized amount for that registration is created at the same time.
+        """
+        persona = self.coreproxy.get_persona(
+            rs, rs.ambience['registration']['persona_id'])
+        return self.render(rs, "event/fee/configure_fee", {'persona': persona})
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata('amount')
+    @REQUESTdatadict(*models.EventFee.requestdict_fields())
+    def add_new_personalized_fee(
+            self, rs: RequestState, event_id: int, registration_id: int,
+            data: CdEDBObject, amount: decimal.Decimal,
+    ) -> Response:
+        """Create a personalized fee along with an amount for a specific registration.
+        """
+        data['amount'] = None
+        fee_data = check(
+            rs, vtypes.EventFee, data, creation=True, id_=-1,
+            event=rs.ambience['event'].as_dict(), questionnaire={}, personalized=True,
+        )
+        if rs.has_validation_errors() or not fee_data:
+            return self.add_new_personalized_fee_form(rs, event_id, registration_id)
+
+        new_fee_id = self.eventproxy.set_event_fees(rs, event_id, {-1: fee_data})
+        if new_fee_id:
+            code = self.eventproxy.set_personalized_fee_amount(
+                rs, registration_id, new_fee_id, amount)
+            rs.notify_return_code(code)
+        else:
+            rs.notify("error", n_("Fee creation failed."))
+        return self.redirect(rs, "event/show_registration_fee")
+
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

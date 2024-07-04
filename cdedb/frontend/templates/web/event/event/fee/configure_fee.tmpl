@@ -13,9 +13,15 @@
         {% endtrans %}
     {% else %}
         {% if personalized %}
-            {% trans event_title=ambience['event']['title'] %}
-                Add Personalized Fee ({{ event_title }})
-            {% endtrans %}
+            {% if ambience['registration'] %}
+                {% trans event_title=ambience['event'].title, persona_name=util.persona_name(persona) %}
+                    Add Personalized Fee for {{ persona_name }} ({{ event_title }})
+                {% endtrans %}
+            {% else %}
+                {% trans event_title=ambience['event'].title %}
+                    Add Personalized Fee ({{ event_title }})
+                {% endtrans %}
+            {% endif %}
         {% else %}
             {% trans event_title=ambience['event']['title'] %}
                 Add Conditional Fee ({{ event_title }})
@@ -38,27 +44,43 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
-    {% if ambience['fee'] %}
-        {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
-        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
-    {% elif personalized %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Personalized Fee"), active=True) }}
+    {% if ambience['registration'] %}
+        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+        {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
+        {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), icon="coins") }}
+        {{ util.breadcrumb_link(cdedblink("event/add_new_personalized_fee"), gettext("Add Personalized Fee"), active=True) }}
     {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Conditional Fee"), active=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+        {% if ambience['fee'] %}
+            {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
+            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
+        {% elif personalized %}
+            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Personalized Fee"), active=True) }}
+        {% else %}
+            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Conditional Fee"), active=True) }}
+        {% endif %}
     {% endif %}
 {% endblock %}
 
 {% block content %}
 
+    {% if ambience['registration'] %}
+        {% set action = 'event/add_new_personalized_fee' %}
+    {% else %}
+        {% set action = 'event/configure_fee' %}
+    {% endif %}
 
-    <form action="{{ cdedblink('event/configure_fee') }}" method="POST" id="configureeventfeeform" class="form-horizontal">
-        {{ util.anti_csrf_token('event/configure_fee') }}
+    <form action="{{ cdedblink(action) }}" method="POST" id="configureeventfeeform" class="form-horizontal">
+        {{ util.anti_csrf_token(action) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_select(name="kind", label=gettext("Type"), entries=enums['EventFeeType']|enum_entries(processing=gettext)) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
         {{ util.input_hidden(name="personalized", value=personalized) }}
-        {% if not personalized %}
+        {% if ambience['registration'] %}
+            {{ util.form_input_text(
+                    type="number", name="amount", addon="€", attributes='step="0.01"'|s,
+                    label=gettext("Amount for %(persona_name)s")|format(persona_name=util.persona_name(persona))) }}
+        {% elif not personalized %}
             {{ util.form_input_text(type="number", name="amount", label=gettext("Amount"), addon='€', attributes='step="0.01"'|s) }}
             {{ util.form_input_text(name="condition", label=gettext("Condition")) }}
         {% endif %}
