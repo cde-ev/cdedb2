@@ -331,6 +331,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
                 ret *= r
+
+        # Update session orga status
+        if rs.user.persona_id in persona_ids:
+            rs.user.orga.add(event_id)
+
         return ret
 
     @access("event_admin")
@@ -351,6 +356,11 @@ class EventBaseBackend(EventLowLevelBackend):
             if ret:
                 self.event_log(rs, const.EventLogCodes.orga_removed,
                                event_id, persona_id=persona_id)
+
+        # Update session orga status
+        if rs.user.persona_id == persona_id:
+            rs.user.orga.remove(event_id)
+
         return ret
 
     @access("event")

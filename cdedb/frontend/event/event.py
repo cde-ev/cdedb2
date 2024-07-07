@@ -277,7 +277,8 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:

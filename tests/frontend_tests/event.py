@@ -370,8 +370,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
-        if not self.user_in('annika'):  # annika is also admin
-            self.assertNotIn('createparticipantlistform', self.response.forms)
+        self.assertIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
     def test_show_event_noadmin(self) -> None:
@@ -379,9 +378,10 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        self.assertNotIn("createparticipantlistform", self.response.forms)
         self.assertNotIn("addorgaform", self.response.forms)
         self.assertNotIn("removeorgaform7", self.response.forms)
+        self.assertNotIn("archiveeventform", self.response.forms)
+        self.assertNotIn("deleteeventform", self.response.forms)
 
     @as_users("annika")
     def test_show_event_admin(self) -> None:
@@ -403,7 +403,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['createparticipantlistform']
         self.submit(f)
 
-    @as_users("anton")
+    @as_users("annika", "garcia")
     def test_create_participant_list(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
