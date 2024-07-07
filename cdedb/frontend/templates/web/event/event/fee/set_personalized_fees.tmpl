@@ -1,0 +1,118 @@
+{% set sidenav_active='event_fees' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+
+{% block title %}
+    {% trans fee_title=ambience['fee'].title, event_title=ambience['event'].title %}
+        Set Personalized Fees for {{ fee_title }} ({{ event_title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event'].title, icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+    {{ util.breadcrumb_link("", ambience['fee'].title, icon="coins", readonly=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/set_personalized_fees"), gettext("Set Amounts"), icon="edit", active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Set Personalized Fees for %(fee_title)s")|format(fee_title=ambience['fee'].title),
+                            ambience['event'].title, 'chalkboard-teacher') }}
+{% endblock %}
+
+{% block content %}
+
+    <form action="{{ cdedblink('event/set_personalized_fees') }}" method="POST" id="setpersonalizedfeeamountsform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/set_personalized_fees') }}
+        {{ util.input_hidden('registration_ids', registration_ids|join(',')) }}
+        {# Already sorted #}
+        {% for reg in registrations %}
+            {{ util.form_input_text("amount" + reg['id']|string, label=util.persona_name(personas[reg['persona_id']]),
+                                    placeholder="", type="number", aclass="no-number-arrows",
+                                    attributes='style="display: inline; width:6em;" step="0.01"'|s) }}
+        {% endfor %}
+
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/fee_summary")) }}
+    </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $('#setpersonalizedfeeamountsform').cdedbProtectChanges().find('.form-group').each( function() {
+            /* Insert two buttons (delete and restore) after each input */
+            let group = $(this);
+            let input = group.find('input');
+            if (input.length > 0)
+                input
+                    .after(' <button type="button" class="btn btn-sm btn-danger" > {{ util.make_icon("trash-alt") }} </button>')
+                    .after(' <button type="button" class="btn btn-sm btn-success" > {{ util.make_icon("redo") }} </button>');
+            let delete_button = group.find('button.btn-danger');
+            let restore_button = group.find('button.btn-success');
+
+            /* Adjust margin and padding so that the coloring looks better. */
+            group.css("padding", "5px");
+            group.css("margin-bottom", "2px");
+
+            /* Save the original value. This is the new, but not saved, value in case of validation error. */
+            input.data('original_value', input.val());
+
+            /*
+                Clicking delete clears the corresponding input, clicking restore restores the original value.
+                Either way, trigger the "input" event for the input, to adjust coloring and button visibility.
+            */
+            delete_button.on("click", function () {
+                input.val("");
+                input.trigger("input");
+            });
+            restore_button.on("click", function () {
+                input.val(input.data('original_value'));
+                input.trigger("input");
+            });
+
+            /* Optionally color the input too: */
+            let to_color = group;
+            // to_color.add(input);
+
+            /* After any change to the input, adjust the display. */
+            input.on("input", function () {
+                if ($(this).val() === $(this).data('original_value')) {
+                    /* The input has the original value. If this is non-empty show the delete button. Show no coloring. */
+                    to_color.removeClass("alert-danger").removeClass("alert-warning").removeClass("alert-success");
+                    restore_button.hide();
+                    if ($(this).val()) {
+                        delete_button.show();
+                    } else {
+                        delete_button.hide();
+                    }
+                } else if ($(this).val()) {
+                    /*
+                        The input has changed but is non-empty.
+                        Show the restore button.
+                        If the input was originally empty, color green.
+                        Otherwise show the delete button and color yellow.
+                    */
+                    to_color.removeClass("alert-danger").removeClass("alert-warning").removeClass("alert-success");
+                    restore_button.show();
+                    if ($(this).data('original_value')) {
+                        to_color.addClass("alert-warning");
+                        delete_button.show();
+                    }
+                    else {
+                        to_color.addClass("alert-success")
+                        delete_button.hide();
+                    }
+                } else {
+                    /* Input is now empty, but wasn't originally. Color red and show restore button. */
+                    to_color.addClass("alert-danger").removeClass("alert-warning").removeClass("alert-success");
+                    delete_button.hide();
+                    restore_button.show();
+                }
+            });
+
+            input.trigger("input");
+        });
+    </script>
+{% endblock %}

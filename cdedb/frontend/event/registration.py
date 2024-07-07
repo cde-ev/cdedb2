@@ -1095,6 +1095,110 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
+    @REQUESTdata("registration_ids")
+    def set_personalized_fees_form(
+            self, rs: RequestState, event_id: int, fee_id: int,
+            registration_ids: vtypes.IntCSVList,
+    ) -> Response:
+        """Render a form for setting multiple personalized fees at once."""
+        if rs.has_validation_errors():
+            if registration_ids is None:
+                rs.notify("warning", n_("Invalid registrations."))  # type: ignore[unreachable]
+                registration_ids = []
+        if not registration_ids:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)  # type: ignore[assignment]
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        if any(reg['event_id'] != event_id for reg in registrations.values()):
+            rs.notify("error", n_("Invalid registrations."))
+            registrations = {}
+        if not registrations:
+            rs.notify("info", n_("No registrations selected."))
+            return self.redirect(rs, "event/fee_summary")
+        personas = self.coreproxy.get_personas(
+            rs, [reg['persona_id'] for reg in registrations.values()])
+        sorted_registrations = xsorted(
+            registrations.values(),
+            key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+        )
+        values = {
+            f'amount{reg_id}': reg['personalized_fees'].get(fee_id)
+            for reg_id, reg in registrations.items()
+        }
+        merge_dicts(rs.values, values)
+        return self.render(
+            rs, "event/fee/set_personalized_fees",
+            {
+                'registration_ids': xsorted(registration_ids),
+                'registrations': sorted_registrations,
+                'personas': personas,
+            },
+        )
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("registration_ids")
+    def set_personalized_fees(
+            self, rs: RequestState, event_id: int, fee_id: int,
+            registration_ids: vtypes.IntCSVList,
+    ) -> Response:
+        """Set multiple personalized fees at once."""
+        if rs.has_validation_errors():
+            rs.notify("error", str(rs.retrieve_validation_errors()))
+            rs.notify("info", str(rs.request.values))
+            rs.notify("warning", n_("Invalid registrations."))
+            registration_ids = []  # type: ignore[assignment]
+        registrations = {}
+        if registration_ids:
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        if not registrations or any(
+                reg['event_id'] != event_id for reg in registrations.values()
+        ):
+            rs.notify("error", n_("Invalid registrations."))
+            return self.redirect(rs, "event/fee_summary")
+
+        params: vtypes.TypeMapping = {
+            f'amount{reg_id}': Optional[decimal.Decimal]  # type: ignore[misc]
+            for reg_id in registrations
+        }
+        data = request_extractor(rs, params)
+
+        if rs.has_validation_errors():
+            return self.set_personalized_fees_form(
+                rs, event_id, fee_id, registration_ids=registration_ids)
+
+        description = (
+            f"{rs.user.persona_name()} is setting personalized fees"
+            f" for {len(registrations)} registrations"
+            f" for fee {rs.ambience['fee'].title}"
+            f" for event {rs.ambience['event'].title}."
+        )
+        recipients = (
+            rs.ambience['event'].orga_address or self.conf['EVENT_ADMIN_ADDRESS'],
+        )
+
+        count = 0
+        with TransactionObserver(
+                rs, self, "set_personalized_fees", description=description,
+                recipients=recipients,
+        ):
+            # Sort by id for consistency.
+            for reg_id, reg in xsorted(registrations.items()):
+                new_amount = data[f'amount{reg_id}']
+                if new_amount != reg['personalized_fees'].get(fee_id):
+                    count += bool(
+                        self.eventproxy.set_personalized_fee_amount(
+                            rs, reg_id, fee_id, new_amount),
+                    )
+
+        if count:
+            rs.notify("success", n_("Updated %(count)s personalized fees."),
+                      {'count': count})
+        else:
+            rs.notify("info", n_("Nothing changed."))
+        return self.redirect(rs, "event/fee_summary")
+
+    @access("event")
+    @event_guard(check_offline=True)
     @REQUESTdata("skip", "change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],

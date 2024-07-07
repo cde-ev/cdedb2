@@ -506,10 +506,13 @@
                             {{ "alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
                         {% endif %}">
                     {% if js_preview %}
-                        {{ util.deko_checkbox(True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
-                        {{ util.deko_checkbox(False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
+                        {{ util.deko_checkbox(
+                                True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
+                        {{ util.deko_checkbox(
+                                False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
                     {% elif complex_fee %}
-                        {{ util.deko_checkbox(fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
+                        {{ util.deko_checkbox(
+                                fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
                     {% endif %}
                     {% if not js_preview and not complex_fee %}
                         <strong>
@@ -549,7 +552,9 @@
                               method="POST" id="addpersonalizedfeeform{{ fee.id }}">
                             {{ util.anti_csrf_token("event/add_personalized_fee") }}
                             <td class="text-right">
-                                {{ util.input_text("amount", attributes='style="float:right;width:5em"'|safe) }}
+                                {{ util.input_text("amount" + fee.id|string, type="number", placeholder="",
+                                                   aclass="form-control float-right no-number-arrows",
+                                                   attributes='style="width:5em" step="0.01"'|safe) }}
                             </td>
                             <td>
                                 {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
@@ -561,18 +566,29 @@
                 {% endif %}
                 {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id, anid="eventfee_owed_" + fee.id|string) }}
+                        {{ active_fee_registration_query_link(
+                                fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id,
+                                anid="eventfee_owed_" + fee.id|string) }}
                         <br />
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id, anid="eventfee_paid_" + fee.id|string) }}
+                        {{ active_fee_registration_query_link(
+                                fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id,
+                                anid="eventfee_paid_" + fee.id|string) }}
                     </td>
                 {% endif %}
-                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}" id="eventfee_condition_{{ fee.id }}">
+                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}"
+                        id="eventfee_condition_{{ fee.id }}">
                     {% if not fee.condition %}
                         <i>
                             {% trans %}Personalized Fee{% endtrans %}
                         </i>
-                        {% if fee.amount_min is not none and (js_preview or complex_fee) %}
-                            ({{ _print_fee_amount_range(fee) }})
+                        {% if js_preview or complex_fee %}
+                            {% if fee.amount_min is not none %}
+                                ({{ _print_fee_amount_range(fee) }})
+                            {% endif %}
+                        {% else %}
+                            {{ util.href(cdedblink("event/set_personalized_fees", {'fee_id': fee.id}),
+                                         label=None, icon="edit", aclass="btn btn-sm btn-warning float-right",
+                                         title=gettext("Set personalized amount for multiple registrations.")) }}
                         {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}
