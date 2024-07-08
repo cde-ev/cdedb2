@@ -1056,10 +1056,8 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("amount")
     def add_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
-            amount: decimal.Decimal,
     ) -> Response:
         """Add a personalized fee amount for this registration and this fee."""
         if not rs.ambience['fee'].is_personalized():
@@ -1068,6 +1066,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 "error", n_("Cannot set personalized amount for conditional fee."),
             )
             return self.redirect(rs, "event/show_registration_fee")
+        key = f'amount{fee_id}'
+        amount = request_extractor(rs, {key: decimal.Decimal})[key]
         if rs.has_validation_errors():
             return self.show_registration_fee(rs, event_id, registration_id)
         code = self.eventproxy.set_personalized_fee_amount(

@@ -302,7 +302,7 @@
 {% macro output_errors(name, displayerrors=True, wrapper=False) %}
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}
-            <div class="{{ "has-warning" if is_warning(name) else "has-error"}}">
+            <div class="{{ "has-warning" if is_warning(name) else "has-error" }}">
         {% endif %}
         {# TODO sort #}
         {%- if caller %}{{- caller() }}{% endif %}
