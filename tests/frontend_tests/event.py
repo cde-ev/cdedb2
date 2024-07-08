@@ -6926,7 +6926,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("Personalisierter Teilnahmebeitrag", exact=True,
                             div="eventfee_condition_1001")
         f = self.response.forms['addpersonalizedfeeform1001']
-        f['amount'] = "-33.33"
+        f['amount1001'] = "-33.33"
         self.submit(f)
 
         self.assertPresence("Personalisierter Teilnahmebeitrag (-33,33 €)", exact=True,
@@ -6949,7 +6949,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
 
         f = self.response.forms['addpersonalizedfeeform1001']
-        f['amount'] = 0
+        f['amount1001'] = 0
         self.submit(f)
         self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1001")
 
