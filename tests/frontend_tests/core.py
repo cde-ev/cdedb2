@@ -3088,6 +3088,10 @@ class TestCoreFrontend(FrontendTest):
 
     def test_contact(self) -> None:
         with self.switch_user("emilia"):
+            self.get("/core/contact/?to=vorstand@cde-ev.de")
+            f = self.response.forms['contactform']
+            self.assertEqual(f['to'].value, 'vorstand@cde-ev.de')
+
             self.traverse("Kontakt")
             f = self.response.forms['contactform']
             self.submit(f, check_notification=False)

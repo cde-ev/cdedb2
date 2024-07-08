@@ -1329,8 +1329,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("persona")
-    def contact_form(self, rs: RequestState) -> Response:
+    @REQUESTdata("to")
+    def contact_form(self, rs: RequestState, to: Optional[str] = None) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         addresses = self.conf["CONTACT_ADDRESSES"]
         return self.render(rs, "contact", {"addresses": addresses})
 
