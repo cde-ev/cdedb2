@@ -208,14 +208,15 @@
     force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
+                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none,
+                          outerclass='') %}
     {%- set name = name or "fields." + field['field_name'] %}
     {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
                               and not force_label and not field['entries'])
                      else label or field['title']) %}
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
-                                     displayerrors=displayerrors, horizontal=True) %}
+                                     displayerrors=displayerrors, horizontal=True, aclass=outerclass) %}
         {{- field_input(field, name, readonly, defaultvalue, anid, text_rows, bool_label) }}
     {%- endcall %}
 {%- endmacro %}
