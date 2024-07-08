@@ -10,7 +10,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiset.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 
 {% block title %}
@@ -47,8 +50,7 @@
             {% for anid in ordered %}
                 {{ generic_event.form_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
-                    label=labels[anid],
-                    force_label=True) }}
+                    label=labels[anid], force_label=True, outerclass='multiset-input') }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}
             {{ util.input_hidden(name="ids") }}
@@ -71,6 +73,9 @@
         </p>
     {% endif %}
     <script nonce="{{ csp_nonce }}">
-        $('#fieldform').cdedbProtectChanges();
+        $('#fieldform').cdedbProtectChanges().multiset(
+            '{{ util.make_icon("trash-alt") }}', '{{ gettext("Delete") }}',
+            '{{ util.make_icon("redo") }}', '{{ gettext("Restore") }}',
+        );
     </script>
 {% endblock %}

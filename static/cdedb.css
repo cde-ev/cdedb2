@@ -169,6 +169,10 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.form-group.multiset-input {
+    padding: 5px;
+    margin-bottom: 2px;
+}
 .form-control-nosp {
     /* negative help-block margin */
     margin-bottom: -5px;
