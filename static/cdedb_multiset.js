@@ -4,20 +4,25 @@
      */
     $.fn.multiset = function (delete_icon, delete_title, restore_icon, restore_title) {
         $form = $(this);
+        $(this).find('.multiset-explanation').show();
 
         $form.find('.multiset-input').each( function() {
             /* Insert two buttons (delete and restore) after each input */
             let group = $(this);
-            let input = group.find('input, textarea');
+            let input = group.find('input, textarea, select');
             if (input.length > 0) {
                 (input.parent().is('label') ? input.parent() : input)
                     .after(' <button type="button" class="btn btn-danger align-top" title="' + delete_title + '">' + delete_icon + '</button>')
                     .after(' <button type="button" class="btn btn-default align-top" title="' + restore_title + '">' + restore_icon + '</button>')
                     .css('display', 'inline');
-                if (input.is('textarea')) {
+                if (input.css('width') === input.parent().css('width')) {
                     input.css('width', '80%');
                 }
             }
+            $form.find('#changenotes')
+                .css('width', input.css('width'))
+                .parent()
+                .css('margin-left', '-3px');
             let delete_button = group.find('button.btn-danger');
             let restore_button = group.find('button.btn-default');
 

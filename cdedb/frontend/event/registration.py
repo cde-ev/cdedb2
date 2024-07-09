@@ -1053,7 +1053,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Fee creation failed."))
         return self.redirect(rs, "event/show_registration_fee")
 
-
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def add_personalized_fee(
@@ -1097,16 +1096,28 @@ class EventRegistrationMixin(EventBaseFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("registration_ids")
     def set_personalized_fees_form(
-            self, rs: RequestState, event_id: int, fee_id: int,
-            registration_ids: vtypes.IntCSVList,
+            self, rs: RequestState, event_id: int, fee_id: int | None = None,
+            registration_ids: vtypes.IntCSVList | None = None,
     ) -> Response:
         """Render a form for setting multiple personalized fees at once."""
+        if fee_id is None:
+            if len(fees := rs.ambience['event'].personalized_fees) == 1:
+                fee_id = unwrap(fees.keys())
+            else:
+                fee_id = request_extractor(
+                    rs, {'fee_id': Optional[int]},  # type: ignore[dict-item]
+                )['fee_id']
+            if fee_id:
+                return self.redirect(
+                    rs, 'event/set_personalized_fees_form', {'fee_id': fee_id},
+                )
         if rs.has_validation_errors():
             if registration_ids is None:
-                rs.notify("warning", n_("Invalid registrations."))  # type: ignore[unreachable]
-                registration_ids = []
+                rs.notify("warning", n_("Invalid registrations."))
+                registration_ids = vtypes.IntCSVList([])
         if not registration_ids:
-            registration_ids = self.eventproxy.list_registrations(rs, event_id)  # type: ignore[assignment]
+            registration_ids = vtypes.IntCSVList(list(
+                self.eventproxy.list_registrations(rs, event_id)))
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         if any(reg['event_id'] != event_id for reg in registrations.values()):
             rs.notify("error", n_("Invalid registrations."))
@@ -1120,17 +1131,22 @@ class EventRegistrationMixin(EventBaseFrontend):
             registrations.values(),
             key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
         )
-        values = {
-            f'amount{reg_id}': reg['personalized_fees'].get(fee_id)
-            for reg_id, reg in registrations.items()
+        if fee_id:
+            values = {
+                f'amount{reg_id}': reg['personalized_fees'].get(fee_id)
+                for reg_id, reg in registrations.items()
+            }
+            merge_dicts(rs.values, values)
+        fee_titles = {
+            fee.id: fee.title for fee in rs.ambience['event'].personalized_fees.values()
         }
-        merge_dicts(rs.values, values)
         return self.render(
             rs, "event/fee/set_personalized_fees",
             {
                 'registration_ids': xsorted(registration_ids),
                 'registrations': sorted_registrations,
                 'personas': personas,
+                'fee_titles': fee_titles,
             },
         )
 
