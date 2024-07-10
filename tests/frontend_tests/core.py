@@ -3092,6 +3092,10 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['contactform']
             self.assertEqual(f['to'].value, 'vorstand@cde-ev.de')
 
+            self.get("/core/contact/?to=malicious-actor@example.edc")
+            f = self.response.forms['contactform']
+            self.assertEqual(f['to'].value, '')
+
             self.traverse("Kontakt")
             f = self.response.forms['contactform']
             self.submit(f, check_notification=False)
