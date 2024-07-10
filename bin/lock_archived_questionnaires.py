@@ -13,9 +13,9 @@ event = script.make_backend("event")
 # work
 
 with script:
-    event_ids = event.list_events(rs, archived=True)
-    for event_id in event_ids:
-        with Silencer(rs):
+    with Silencer(rs):
+        event_ids = event.list_events(rs, archived=True)
+        for event_id in event_ids:
             aq = const.QuestionnaireUsages.additional
             questionnaire = event.get_questionnaire(rs, event_id, [aq])[aq]
             for entry in questionnaire:
