@@ -67,12 +67,13 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                         change_note = (
                             f'{sender} / {subject} / '
                             f'Spam score: {headers.get("X-Spam-Score", "—")}')
-                        owner = dblist.address.replace("@", "-owner@")
-                        self.do_mail(rs, "reject_message",
-                                     {'To': (owner,),
-                                      'Subject': "E-Mail zurückgewiesen"},
-                                     {'ml': dblist, 'sender': sender,
-                                      'subject': subject, 'reason': reason})
+                        if action == 'reject':
+                            owner = dblist.address.replace("@", "-owner@")
+                            self.do_mail(rs, "reject_message",
+                                         {'To': (owner,),
+                                          'Subject': "E-Mail zurückgewiesen"},
+                                         {'ml': dblist, 'sender': sender,
+                                          'subject': subject, 'reason': reason})
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
                             dblist.id, change_note=change_note)
