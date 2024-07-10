@@ -1332,6 +1332,8 @@ class CoreBaseFrontend(AbstractFrontend):
     @REQUESTdata("to")
     def contact_form(self, rs: RequestState, to: Optional[str] = None) -> Response:
         """Render form."""
+        # The requestparam of "to" is only for prefilling. This automatically only
+        #  works with valid recipients, so no need to test validity here.
         rs.ignore_validation_errors()
         addresses = self.conf["CONTACT_ADDRESSES"]
         return self.render(rs, "contact", {"addresses": addresses})
