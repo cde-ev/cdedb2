@@ -118,6 +118,7 @@ class Event(EventDataclass):
     is_participant_list_visible: bool
     is_course_assignment_visible: bool
     use_additional_questionnaire: bool
+    notify_on_registration: const.NotifyOnRegistration
 
     lodge_field_id: Optional[vtypes.ID]
 

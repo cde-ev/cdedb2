@@ -50,6 +50,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
+            notify_on_registration=const.NotifyOnRegistration.never,
             lodge_field_id=3,  # type: ignore[arg-type]
             parts={
                 1: models.EventPart(
@@ -414,6 +415,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
+            notify_on_registration=const.NotifyOnRegistration.never,
             lodge_field_id=None,
             parts={
                 6: models.EventPart(

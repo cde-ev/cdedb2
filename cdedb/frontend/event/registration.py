@@ -26,14 +26,15 @@ from cdedb.common import (
     diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
     cdedbid_filter, check_validation_optional as check_optional, event_guard,
-    inspect_validation as inspect, make_event_fee_reference, request_extractor,
+    inspect_validation as inspect, make_event_fee_reference, periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
@@ -798,7 +799,103 @@ class EventRegistrationMixin(EventBaseFrontend):
             {'age': age, 'mail_text': rs.ambience['event'].mail_text,
              **payment_data})
         rs.notify_return_code(new_id, success=n_("Registered for event."))
+
+        if rs.ambience['event'].notify_on_registration.send_on_register():
+            self._notify_on_registration(rs, rs.ambience['event'], new_id)
+
         return self.redirect(rs, "event/registration_status")
+
+    def _notify_on_registration_query(
+            self, rs: RequestState, event: models.Event,
+            registration_id: Optional[int] = None,
+    ) -> Optional[Query]:
+
+        if event.notify_on_registration.send_on_register():
+            constraints: list[QueryConstraint] = [
+                (
+                    "reg.id",
+                    QueryOperators.equal,
+                    registration_id,
+                ),
+            ]
+        elif not event.notify_on_registration.value:
+            return None
+        else:
+            ref = now().replace(microsecond=0)
+            td = datetime.timedelta(minutes=15)
+            constraints = [
+                (
+                    "ctime.creation_time",
+                    QueryOperators.between,
+                    (
+                        ref - td * event.notify_on_registration.value,
+                        ref,
+                    ),
+                ),
+            ]
+        return Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            [
+                "persona.given_names",
+                "persona.family_name",
+                "persona.username",
+                "ctime.creation_time",
+            ],
+            constraints,
+            [
+                ("ctime.creation_time", False),
+            ],
+        )
+
+    def _notify_on_registration(self, rs: RequestState, event: models.Event,
+                                registration_id: Optional[int] = None) -> int:
+        if not event.orga_address:
+            return 0
+
+        if query := self._notify_on_registration_query(rs, event, registration_id):
+            result = self.eventproxy.submit_general_query(rs, query, event.id)
+            if not result:
+                return 0
+
+            rs.requestargs['event_id'] = event.id  # type: ignore[index]
+            self.do_mail(
+                rs, "notify_on_registration",
+                {
+                    "Subject": "Neue Anmeldung(en) für eure Veranstaltung",
+                    "To": (event.orga_address,),
+                },
+                {
+                    'event': event,
+                    'result': result,
+                    'query': query,
+                    'NotifyOnRegistration': const.NotifyOnRegistration,
+                    'persona_name':
+                        lambda r:
+                            f"{r['persona.given_names']} {r['persona.family_name']}",
+                },
+            )
+            return len(result)
+
+        return 0
+
+    @periodic("notfy_on_registration")
+    def notify_on_registration(self, rs: RequestState, store: CdEDBObject,
+                               ) -> CdEDBObject:
+        if 'period' not in store:
+            store['period'] = 0
+        else:
+            store['period'] += 1
+        event_ids = self.eventproxy.list_events(rs, archived=False)
+        events = self.eventproxy.get_events(rs, event_ids)
+        for event in events.values():
+            if event.notify_on_registration > 0:
+                if (store['period'] % event.notify_on_registration.value) == 0:
+                    num = self._notify_on_registration(rs, event)
+                    if num:
+                        self.logger.info(
+                            f"Sent notification to orgas of {event.title}"
+                            f" about {num} new registrations.")
+        return store
 
     @access("event")
     def registration_status(self, rs: RequestState, event_id: int) -> Response:

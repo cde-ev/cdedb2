@@ -178,6 +178,20 @@ class EventFeeType(CdEIntEnum):
 
 
 @enum.unique
+class NotifyOnRegistration(CdEIntEnum):
+    """Options for how often orgas want to be notified about new registrations."""
+    # Values > 0 are multiple of the periodic cycle (usually 15 minutes).
+    everytime = -1
+    never = 0
+    hourly = 4
+    daily = 4 * 24
+    weekly = 4 * 24 * 7
+
+    def send_on_register(self) -> bool:
+        return self == NotifyOnRegistration.everytime
+
+
+@enum.unique
 class GenesisStati(CdEIntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
