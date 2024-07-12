@@ -390,9 +390,9 @@ class Transaction:
             ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": Optional[vtypes.CdedbID],
+                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": Optional[vtypes.ID],
+                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
                 f"event_confirm{suffix}": bool,
             })
         return ret
