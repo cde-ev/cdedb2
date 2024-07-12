@@ -883,7 +883,7 @@ class PersonalizedFee(EventDataclass):
                 DO UPDATE SET amount = EXCLUDED.amount
                 RETURNING id
             """
-            params: tuple["DatabaseValue_s", ...] = (
+            params: tuple[DatabaseValue_s, ...] = (
                 self.registration_id, self.fee_id, self.amount,
             )
             return query, params

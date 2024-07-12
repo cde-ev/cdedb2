@@ -1679,7 +1679,7 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False,
+    val: Any, argname: Optional[str] = None, *, ignore_warnings: bool = False,
     **kwargs: Any,
 ) -> Phone:
     raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
@@ -2237,7 +2237,7 @@ def _sepa_meta(
 
     errs = ValidationSummary()
     for attribute, validator in SEPA_META_FIELDS.items():
-        if validator == str:
+        if validator is str:
             val[attribute] = asciificator(val[attribute])
         if attribute in SEPA_META_LIMITS:
             if len(val[attribute]) > SEPA_META_LIMITS[attribute]:

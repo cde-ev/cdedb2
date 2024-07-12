@@ -222,7 +222,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
-        timeout, message = self.decode_parameter(
+        _, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id)
         if not message:
             return None, None, None
