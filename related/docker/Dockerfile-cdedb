@@ -71,7 +71,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-click \
     python3-freezegun \
     python3-coverage \
-    flake8 \
     isort \
     wget \
     unzip \
@@ -185,5 +184,5 @@ ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
 
 USER cdedb
-RUN pip install --break-system-packages ruff==0.1.1
+RUN pip install --break-system-packages ruff==0.5.1
 USER root
