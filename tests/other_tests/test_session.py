@@ -276,7 +276,7 @@ class TestSessionFrontend(FrontendTest):
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
-    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str
+    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str,
                              ) -> List[Optional[str]]:
         user = get_user(user)
         self.assertGreaterEqual(self.n, 3, "This test will only work correctly"

@@ -24,12 +24,12 @@ class TestPastEventBackend(BackendTest):
                                     'title': 'Swish -- und alles ist gut',
                                     'nr': '1a',
                                     'is_instructor': True,
-                                    }
+                                    },
                                 },
                     'title': 'PfingstAkademie 2014',
                     'tempus': datetime.date(2014, 5, 25),
                     },
-                }
+                },
             }
         self.assertEqual(expectation, participation_infos)
         participation_info = self.pastevent.participation_info(self.key, 1)
@@ -346,8 +346,8 @@ class TestPastEventBackend(BackendTest):
                 3: {
                     'part_begin': datetime.date(2003, 11, 11),
                     'part_end': datetime.date(2003, 11, 30),
-                }
-            }
+                },
+            },
         }
         self.event.set_event(self.key, event_id, update)
         new_ids, _ = self.pastevent.archive_event(self.key, event_id)
@@ -364,7 +364,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
             'tempus': datetime.date(2003, 2, 2),
-            'participant_info': None, }
+            'participant_info': None }
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
@@ -373,7 +373,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
             'tempus': datetime.date(2003, 11, 1),
-            'participant_info': None, }
+            'participant_info': None }
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
@@ -382,7 +382,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
             'tempus': datetime.date(2003, 11, 11),
-            'participant_info': None, }
+            'participant_info': None }
         self.assertEqual(expectation, pevent_data[2])
         self.assertEqual(
             set(),

@@ -301,7 +301,7 @@ class TestMlBackend(BackendTest):
         setter = {
             'id': 7,
             'event_id': 1,
-            'assembly_id': 1
+            'assembly_id': 1,
         }
         with self.assertRaises(KeyError):
             self.ml.set_mailinglist(self.key, setter)
@@ -1310,7 +1310,7 @@ class TestMlBackend(BackendTest):
             'ctime': nearly_now(),
             'mailinglist_id': mailinglist_id,
             'persona_id': 5,
-            'submitted_by': self.user['id']
+            'submitted_by': self.user['id'],
         }
         self.assertIn(expected_log, log_entries)
 
@@ -2279,7 +2279,7 @@ class TestMlBackend(BackendTest):
              'ctime': nearly_now(),
              'mailinglist_id': None,
              'persona_id': None,
-             'submitted_by': self.user['id']}
+             'submitted_by': self.user['id']},
         )
         self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(

@@ -29,7 +29,7 @@ class TestCommon(BasicTest):
     def test_extract_roles(self) -> None:
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",
-            "ml", "assembly", "event", },
+            "ml", "assembly", "event" },
             extract_roles({
                 'is_active': True,
                 'is_cde_realm': True,
@@ -129,7 +129,7 @@ class TestCommon(BasicTest):
                 'id': 0,
                 'string': 'Z-String',
                 'neg': -1,
-            }
+            },
         ]
         shuffled_dicts = random.sample(dicts, len(dicts))
         self.assertEqual(
@@ -191,7 +191,7 @@ class TestCommon(BasicTest):
                     ["make", "-B", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                      f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
                     check=True, capture_output=True, text=True,
-                    env={"LC_MESSAGES": "en"}  # makes parsing easier
+                    env={"LC_MESSAGES": "en"},  # makes parsing easier
                 )
             except subprocess.CalledProcessError as e:  # pragma: no cover
                 self.fail(f"Translation check failed:\n{e.stderr}")
@@ -202,7 +202,7 @@ class TestCommon(BasicTest):
                 r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
                 r"(, (?P<untranslated>\d+) untranslated messages?)?"
                 r"\.",
-                result.stderr
+                result.stderr,
             ) for lang in langs
         }
 

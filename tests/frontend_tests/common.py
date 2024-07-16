@@ -89,7 +89,7 @@ class TestFrontendCommon(FrontendTest):
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
         dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=datetime.timezone.utc)
         dt_other = datetime.datetime(
-            2010, 5, 22, 4, 55, tzinfo=zoneinfo.ZoneInfo('America/New_York')
+            2010, 5, 22, 4, 55, tzinfo=zoneinfo.ZoneInfo('America/New_York'),
         )
         self.assertEqual("2010-05-22", date_filter(dt_naive))
         self.assertEqual("2010-05-22", date_filter(dt_aware))
@@ -158,9 +158,9 @@ class TestFrontendCommon(FrontendTest):
         for type_ in ML_TYPE_MAP.values():
             self.assertEqual(
                 [(e, e.display_str()) for e in type_.available_domains],
-                enum_entries_filter(type_.available_domains)
+                enum_entries_filter(type_.available_domains),
             )
         self.assertEqual(
             [(e, e.display_str()) for e in const.MailinglistDomain],
-            enum_entries_filter(const.MailinglistDomain)
+            enum_entries_filter(const.MailinglistDomain),
         )

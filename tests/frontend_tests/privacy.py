@@ -45,7 +45,7 @@ class TestPrivacyFrontend(FrontendTest):
         "Interessen": 'additional',
         "Verschiedenes": 'additional',
         "Verg. Veranstaltungen": 'past-events',
-        "VCard": 'vcard'
+        "VCard": 'vcard',
     }
 
     ALL_FIELDS = set(FIELD_TO_DIV.keys())
@@ -58,7 +58,7 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _profile_relative_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
-            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
+            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -80,7 +80,7 @@ class TestPrivacyFrontend(FrontendTest):
     def _profile_event_context_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geburtsdatum", "Geschlecht", "Pronomen", "Pronomen auf Namensschild",
-            "Telefon", "Mobiltelefon", "Adresse"
+            "Telefon", "Mobiltelefon", "Adresse",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -115,7 +115,7 @@ class TestPrivacyFrontend(FrontendTest):
         expected = {
             "Geschlecht", "Pronomen", "Pronomen auf Namensschild", "Mitgliedschaft",
             "Guthaben", "Sichtbarkeit", "Gedruckter exPuls", "Jährliche Spende",
-            "Zahlungsmethode"
+            "Zahlungsmethode",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -173,7 +173,7 @@ class TestPrivacyFrontend(FrontendTest):
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
             "Geschlecht", "Geburtsdatum", "Pronomen",
-            "Pronomen auf Namensschild", "Zahlungsmethode"
+            "Pronomen auf Namensschild", "Zahlungsmethode",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -532,7 +532,7 @@ class TestPrivacyFrontend(FrontendTest):
                 'access': ("berta", "quintus", "paul"),
                 'no_access': ("annika", "nina", "viktor", "emilia", "kalif", "janis",
                               "rowena"),
-            }
+            },
         }
 
         # now the actual testing
@@ -577,19 +577,19 @@ class TestPrivacyFrontend(FrontendTest):
                  "viktor")
         # users who should have access to the specific user search
         core = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
+            USER_DICT['farin']['id'], USER_DICT['paul']['id'],
         }
         cde = {
-            USER_DICT['farin']['id'], USER_DICT['quintus']['id']
+            USER_DICT['farin']['id'], USER_DICT['quintus']['id'],
         }
         event = {
-            USER_DICT['farin']['id'], USER_DICT['annika']['id']
+            USER_DICT['farin']['id'], USER_DICT['annika']['id'],
         }
         ml = {
-            USER_DICT['farin']['id'], USER_DICT['nina']['id']
+            USER_DICT['farin']['id'], USER_DICT['nina']['id'],
         }
         assembly = {
-            USER_DICT['farin']['id'], USER_DICT['viktor']['id']
+            USER_DICT['farin']['id'], USER_DICT['viktor']['id'],
         }
 
         for user in users:

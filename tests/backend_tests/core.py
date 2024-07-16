@@ -331,7 +331,7 @@ class TestCoreBackend(BackendTest):
             'bub_search': False,
             'foto': None,
             'paper_expuls': True,
-            'donation': decimal.Decimal(0)
+            'donation': decimal.Decimal(0),
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -621,7 +621,7 @@ class TestCoreBackend(BackendTest):
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
-            'Finanzvorstand_Name': 'Zelda'
+            'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
@@ -1523,5 +1523,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    realm=log_realm
+                    realm=log_realm,
                 )

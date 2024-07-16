@@ -124,7 +124,7 @@ def json_keys_to_int(obj: T) -> T:
 
 
 def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                           "sample_data.json"
+                                           "sample_data.json",
                       ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
@@ -169,7 +169,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
     translations = setup_translations(backend.conf)
 
-    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
+    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0",
                            ) -> RequestState:
         """
         Turn a provided sessionkey or apitoken into a RequestState object.
@@ -232,7 +232,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
-                not callable(attr)
+                not callable(attr),
             ]):
                 raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
@@ -243,7 +243,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
                     raise RuntimeError(  # pragma: no cover
-                        "Did you forget to add a `@storage` decorator to the test?"
+                        "Did you forget to add a `@storage` decorator to the test?",
                     ) from e
 
             return wrapper
@@ -511,7 +511,7 @@ class BackendTest(CdEDBTest):
         self.assertEqual(log, tuple(log_expectation))
 
     @classmethod
-    def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
+    def initialize_raw_backend(cls, backendcls: Type[SessionBackend],
                                ) -> SessionBackend:
         return backendcls()
 
@@ -862,7 +862,7 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
-        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any
+        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any,
                     ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
@@ -1185,7 +1185,7 @@ class FrontendTest(BackendTest):
             self.assertTitle(u['default_name_format'])
 
     def realm_admin_view_profile(self, user: str, realm: str,
-                                 check: bool = True, verbose: bool = False
+                                 check: bool = True, verbose: bool = False,
                                  ) -> None:
         """Shortcut to a user profile using realm-based usersearch.
 
@@ -1447,7 +1447,7 @@ class FrontendTest(BackendTest):
                               f"is in {actual_n}th sibling <{element_tag}> "
                               f"(expected {n})")
 
-    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str
+    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str,
                                      ) -> str:
         """Returns the plain text content of the element containing `search_text`.
 
@@ -1694,7 +1694,7 @@ class FrontendTest(BackendTest):
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
+    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...],
                        ) -> None:
         """Helper function to test the logic of the log pagination.
 

@@ -142,21 +142,21 @@ class TestAssemblyBackend(BackendTest):
                 'is_active': True,
                 'signup_end': datetime.datetime(
                     2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
-                'title': 'Internationaler Kongress'
+                'title': 'Internationaler Kongress',
             },
             2: {
                 'id': 2,
                 'is_active': False,
                 'signup_end': datetime.datetime(
                     2020, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
-                'title': 'Kanonische Beispielversammlung'
+                'title': 'Kanonische Beispielversammlung',
             },
             3: {
                 'id': 3,
                 'is_active': True,
                 'signup_end': datetime.datetime(
                     2222, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
-                'title': 'Archiv-Sammlung'
+                'title': 'Archiv-Sammlung',
             },
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
@@ -478,7 +478,7 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_removed,
                 "assembly_id": assembly_id,
                 "change_note": expectation['candidates'][7]['shortname'],
-            }
+            },
         ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
@@ -525,7 +525,7 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_added,
                 "assembly_id": assembly_id,
                 "change_note": data['candidates'][cid]['shortname'],
-            } for cid in (-1, -2))
+            } for cid in (-1, -2)),
         ))
         self.assertLess(0, new_id)
         data.update({
@@ -648,7 +648,7 @@ class TestAssemblyBackend(BackendTest):
                     "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
                     "assembly_id": assembly_id,
                     "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
-                } for n in (0, 2))
+                } for n in (0, 2)),
             ))
 
         for aid in (attachment_id, attachment_id2):
@@ -800,14 +800,14 @@ class TestAssemblyBackend(BackendTest):
             # Initial quorum should be number of members.
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS
+                NUMBER_OF_MEMBERS,
             )
 
             # Adding a non-member attendee increases the quorum.
             self.assembly.external_signup(self.key, assembly_id, 4)
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS + 1
+                NUMBER_OF_MEMBERS + 1,
             )
 
             frozen_time.tick(delta=4*delta)
@@ -816,7 +816,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.external_signup(self.key, assembly_id, 11)
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS + 1
+                NUMBER_OF_MEMBERS + 1,
             )
 
     def test_extension(self) -> None:
@@ -1097,7 +1097,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 2,
             "title": "Verrechnungsbericht",
             "authors": "Farina",
-            "filename": "alles_falsch.pdf"
+            "filename": "alles_falsch.pdf",
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, update))
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
@@ -1365,7 +1365,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'verf.pdf',
                     'title': 'Verfassung des Staates der CdEler',
                     'version_nr': 1,
-                }
+                },
             },
             attachment_ids[2]: {
                 1: {
@@ -1480,7 +1480,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assertEqual(
                     {attachment_id: version_expectation},
                     self.assembly.get_definitive_attachments_version(
-                        self.key, ballot_id)
+                        self.key, ballot_id),
                 )
             attachment_expectation["ballot_ids"] = ballot_ids
             self.assertEqual(
@@ -1521,7 +1521,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assertEqual(
                     {attachment_id: version_expectation},
                     self.assembly.get_definitive_attachments_version(
-                        self.key, ballot_id)
+                        self.key, ballot_id),
                 )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
@@ -1537,8 +1537,8 @@ class TestAssemblyBackend(BackendTest):
             'id': ballot_id,
             'candidates': {
                 6: None,
-                -1: old_candidates[6]
-            }
+                -1: old_candidates[6],
+            },
         }
         self.assertTrue(self.assembly.set_ballot(self.key, bdata))
         candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
@@ -1613,7 +1613,7 @@ class TestAssemblyBackend(BackendTest):
             1001: {'id': 1001, 'is_active': True,
                    'signup_end': datetime.datetime(
                     2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
-                   'title': 'Umfrage'}
+                   'title': 'Umfrage'},
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 

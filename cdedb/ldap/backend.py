@@ -68,7 +68,7 @@ def _to_bytes(data: list[Any]) -> list[Any]: ...
 
 
 def _to_bytes(
-        data: Union[None, str, int, bytes, DN, dict[Any, Any], list[Any]]
+        data: Union[None, str, int, bytes, DN, dict[Any, Any], list[Any]],
 ) -> TO_BYTES_RETURN:
     """This takes a python data structure and convert all of its entries into bytes.
 
@@ -141,7 +141,7 @@ class LDAPsqlBackend:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    async def query_one(self, query: str, params: Sequence["DatabaseValue_s"]
+    async def query_one(self, query: str, params: Sequence["DatabaseValue_s"],
                         ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -152,7 +152,7 @@ class LDAPsqlBackend:
                 await self.execute_db_query(cur, query, params)
                 return from_db_output(await cur.fetchone())
 
-    async def query_all(self, query: str, params: Sequence["DatabaseValue_s"]
+    async def query_all(self, query: str, params: Sequence["DatabaseValue_s"],
                         ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -440,7 +440,7 @@ class LDAPsqlBackend:
         query = "SELECT id FROM core.personas WHERE NOT is_archived"
         return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
 
-    async def get_users_groups(self, persona_ids: Collection[int]
+    async def get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:
         """Collect all groups of each given user.
 
@@ -502,7 +502,7 @@ class LDAPsqlBackend:
                 GROUP BY persona_id
                 """
         states = SubscriptionState.subscribing_states()
-        async for e in self.query_all(query, (states, persona_ids,)):
+        async for e in self.query_all(query, (states, persona_ids)):
             ret[e["persona_id"]].extend(self.subscriber_group_dn(address)
                                         for address in e["addresses"])
 
@@ -709,7 +709,7 @@ class LDAPsqlBackend:
             async for e in self.query_all(query, [])
         ]
 
-    async def get_presiders(self, assembly_ids: Collection[int]
+    async def get_presiders(self, assembly_ids: Collection[int],
                             ) -> dict[int, list[int]]:
         """Helper function to get the presiders of the given assemblies."""
         query = ("SELECT persona_id, assembly_id FROM assembly.presiders"
@@ -898,7 +898,7 @@ class LDAPsqlBackend:
             moderators[e["address"]].append(e["persona_id"])
         return moderators
 
-    async def get_mailinglists(self, ml_ids: Collection[str]
+    async def get_mailinglists(self, ml_ids: Collection[str],
                                ) -> dict[str, "CdEDBObject"]:
         """Helper function to get some information about the given mailinglists."""
         query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
@@ -986,7 +986,7 @@ class LDAPsqlBackend:
                  " AND subscription_state = ANY(%s) AND address = ANY(%s)")
         states = SubscriptionState.subscribing_states()
         subscribers = defaultdict(list)
-        async for e in self.query_all(query, (states, ml_ids,)):
+        async for e in self.query_all(query, (states, ml_ids)):
             subscribers[e["address"]].append(e["persona_id"])
         return subscribers
 

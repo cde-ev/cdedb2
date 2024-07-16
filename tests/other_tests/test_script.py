@@ -250,12 +250,12 @@ Aborting Dry Run! Time taken: 0.000 seconds.
 
         token = event.get_orga_token(offline_script.rs(), 1)
         with self.assertRaisesRegex(
-                APITokenError, "This API is not available in offline mode."
+                APITokenError, "This API is not available in offline mode.",
         ):
             session.lookuptoken(token.get_token_string("abc"), "127.0.0.0")
 
         with self.assertRaisesRegex(
-                ValueError, "May not create new orga token in offline instance."
+                ValueError, "May not create new orga token in offline instance.",
         ):
             token.id = vtypes.ProtoID(-1)
             event.create_orga_token(offline_script.rs(), token)

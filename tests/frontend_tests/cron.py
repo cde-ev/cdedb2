@@ -55,7 +55,7 @@ def genesis_template(**kwargs: Any) -> str:
         'case_status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
         'given_names': "Zaphod",
-        'family_name': "Zappa"
+        'family_name': "Zappa",
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.genesis_cases", data)
@@ -130,7 +130,7 @@ def changelog_template(**kwargs: Any) -> str:
         'title': 'Prof.',
         'trial_member': False,
         'username': 'zelda@example.cde',
-        'weblink': 'https://www.uni.cde'
+        'weblink': 'https://www.uni.cde',
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.changelog", data)
@@ -139,7 +139,7 @@ def changelog_template(**kwargs: Any) -> str:
 def cron_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'title': None,
-        'store': {}
+        'store': {},
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.cron_store", data)
@@ -147,7 +147,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionState.pending
+        'subscription_state': const.SubscriptionState.pending,
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -367,13 +367,13 @@ class TestCron(CronTest):
         self.execute(name)
         # Make sure only the old lastschrift is deleted.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
         self.execute(name)
         # Make sure nothing changes when the cron job runs again.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 

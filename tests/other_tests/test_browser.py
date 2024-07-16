@@ -248,7 +248,7 @@ class TestBrowser(BrowserTest):
         page.get_by_role("link", name="Anmeldungen").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div"
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
                      ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
@@ -264,9 +264,9 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag"
+        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag",
                                                ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit"
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit",
                                                ).nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()

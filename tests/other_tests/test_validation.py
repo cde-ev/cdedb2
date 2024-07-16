@@ -31,7 +31,7 @@ class TestValidation(unittest.TestCase):
         self,
         type_: Type[T],
         spec: Iterable[Tuple[Any, T, Union[Type[Exception], Exception, None]]],
-        extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True
+        extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.
 
@@ -101,7 +101,7 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(
             None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
         self.assertLess(
-            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1])
+            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1]),
         )
 
         self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
@@ -269,7 +269,7 @@ class TestValidation(unittest.TestCase):
             ("True", True, None),
             ("False", False, None),
             (54, True, None),
-            (None, None, TypeError)
+            (None, None, TypeError),
         ))
 
     def test_empty(self) -> None:
@@ -559,7 +559,7 @@ class TestValidation(unittest.TestCase):
                 3: {'shortname': 'C'},
                 4: {'shortname': 'D'},
                 5: {'shortname': 'E'},
-            }
+            },
         }
         classical_ballot = copy.deepcopy(ballot)
         classical_ballot['votes'] = 2
@@ -725,7 +725,7 @@ class TestValidation(unittest.TestCase):
         # With `timezone_aware`, tzinfo is kept.
         self.assertEqual(
             query.serialize(timezone_aware=True)['qval_time'],
-            timestamp.isoformat()
+            timestamp.isoformat(),
         )
 
         # Default is `False`.
@@ -733,24 +733,24 @@ class TestValidation(unittest.TestCase):
         serialized_timestamp = query.serialize_to_url()['qval_time']
         self.assertEqual(
             query.serialize(timezone_aware=False)['qval_time'],
-            serialized_timestamp
+            serialized_timestamp,
         )
         self.assertEqual(
             serialized_timestamp,
-            timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0]
+            timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0],
         )
 
         # `serialize_to_url` is an alias for `timezone_aware=False`
         self.assertEqual(
             query.serialize_to_url(),
-            query.serialize(timezone_aware=False)
+            query.serialize(timezone_aware=False),
         )
 
         # The serialized timestampt gets parsed back to the original one.
         self.assertEqual(
             validate.validate_assert(
                 datetime.datetime, serialized_timestamp, ignore_warnings=False),
-            timestamp
+            timestamp,
         )
 
     def test_validation_summary(self) -> None:
@@ -789,5 +789,5 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(validate.ValidationSummary):
             validate._serialized_event_configuration({
                 'id': -1,
-                'iban': "DE75512108001245126199"
+                'iban': "DE75512108001245126199",
             }, "", creation=True, current=None)
