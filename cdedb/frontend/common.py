@@ -2605,7 +2605,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
+        pre[x]["offset"] = trueoffset - (len(pre) - x) * length
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length

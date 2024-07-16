@@ -78,6 +78,8 @@ disable=
     unnecessary-dunder-call,use-sequence-for-iteration,consider-using-with, # maybe
     consider-using-min-builtin,arguments-renamed,arguments-differ,typevar-name-incorrect-variance,deprecated-module,use-dict-literal,use-list-literal,unnecessary-lambda-assignment, # leave me alone
     fixme,
+    cyclic-import,
+    possibly-used-before-assignment,
 
 
 [REPORTS]
@@ -320,6 +322,7 @@ ext-import-graph=
 # not be disabled)
 int-import-graph=
 
+allow-reexport-from-package=true
 
 [DESIGN]
 
