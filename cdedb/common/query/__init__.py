@@ -779,7 +779,7 @@ class Query:
 def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]",
                        ) -> dict[const.FieldAssociations, list["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: dict[const.FieldAssociations, list[models.EventField]] = {
+    sorted_fields: dict[const.FieldAssociations, list[models.EventField]] = {  # pylint: disable=used-before-assignment
         association: []
         for association in const.FieldAssociations
     }

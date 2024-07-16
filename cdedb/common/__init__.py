@@ -179,7 +179,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user

@@ -29,14 +29,14 @@ select = [
 #    "I",  # isort  # Incompatible with our isort configuration.
 #    "N",  # pep8-naming  # Reports a few things most of which make sense to ignore.
 #    "D",  # pydocstyle  # A whole bunch of complaints. Should be tackled per file if at all.
-    "UP",  # pyupgrade  # Reports many uses of .format, everything autofixable.
-    "YTT",  # flake8-2020
+    "UP",  # pyupgrade  # Upgrades to new syntax. Mostly autofixable.
+    "YTT",  # flake8-2020  # Detects misuse of `sys.version` for python3.10.
 #    "ANN",  # flake8-annotations  # Reports many instances of missing __init__ returns, and a few complicated cases.
 #    "S",  # flake8-bandit  # Reports some interesting things but plenty false positives.
 #    "BLE",  # flake8-blind-except  # Mostly false positives.
 #    "B",  # flake8-bugbear
 #    "A",  # flake8-builtins  # Doesn't report much but seems useful.
-    "COM",  # flake8-commas  # Many reports, all autofixable.
+    "COM",  # flake8-commas  # Enforces consistent trailing commas. Autofixable.
 ]
 ignore = [
     "F405", # * import.
