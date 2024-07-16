@@ -14,12 +14,6 @@ line-length = 88
 preview = true
 output-format = "grouped"
 src = ["cdedb", "tests"]
-include = [
-    "cdedb/**.py",
-]
-exclude = [
-    "cdedb/ldap",
-]
 [tool.ruff.lint]
 select = [
     "F",  # pyflakes
