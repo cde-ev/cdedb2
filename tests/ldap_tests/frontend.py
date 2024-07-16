@@ -2,7 +2,7 @@
 """Module containing all tests for the CdEDB-LDAP interface."""
 
 import ssl
-from typing import Dict, List, Optional, Set, Union
+from typing import Optional, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -59,11 +59,11 @@ class TestLDAP(BasicTest):
             use_ssl=True, tls=tls)
 
     def single_result_search(
-        self, search_filter: str, raw_expectation: Dict[str, List[str]], *,
+        self, search_filter: str, raw_expectation: dict[str, list[str]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES,
-        excluded_attributes: Optional[List[str]] = None,
+        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
+        excluded_attributes: Optional[list[str]] = None,
     ) -> None:
         with ldap3.Connection(
             self.server, user=user, password=password, raise_exceptions=True,
@@ -74,7 +74,7 @@ class TestLDAP(BasicTest):
                 attributes=attributes,
             )
             self.assertEqual(1, len(conn.entries), conn.entries)
-            raw_result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            raw_result: dict[str, list[str]] = conn.entries[0].entry_attributes_as_dict
             # Accordingly to RFC 4511, attributes and values of attributes are unordered
             result = {key: set(values) for key, values in raw_result.items()}
             expectation = {key: set(values) for key, values in raw_expectation.items()}
@@ -86,16 +86,16 @@ class TestLDAP(BasicTest):
     def no_result_search(
         self,
         search_filter: str, *,
-        except_users: Optional[Set[str]] = None,
+        except_users: Optional[set[str]] = None,
         search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES,
+        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
     ) -> None:
         """Test that this search yields no results for all DUAs and all users.
 
         The 'except_users' argument may be used to exclude some users from this check.
         """
-        users: Dict[str, str] = {**self.DUAs, **self.USERS}
-        passwords: Dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
+        users: dict[str, str] = {**self.DUAs, **self.USERS}
+        passwords: dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
         except_users = except_users or set()
         for user in users:
             with self.subTest(user):
@@ -192,7 +192,7 @@ class TestLDAP(BasicTest):
 
         # users may access their own data
         attributes = ["objectClass", "cn"]
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'cn': ['Anton Armin A. Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
@@ -301,7 +301,7 @@ class TestLDAP(BasicTest):
     def test_user_entity(self) -> None:
         """Check if all attributes of an user are correctly present."""
         user_id = 1
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
@@ -448,7 +448,7 @@ class TestLDAP(BasicTest):
     def test_dua_entity(self) -> None:
         """Check if all attributes of DUAs are correctly present."""
         dua_cn = "test"
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'cn': ['test'],
             'ipaUniqueID': ['duas/test'],
             'objectClass': ['person', 'simpleSecurityObject'],
@@ -500,7 +500,7 @@ class TestLDAP(BasicTest):
             'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_presider: Set[str] = set()
+        expectation_presider: set[str] = set()
         expectation_all = {
             *expectation_status, *expectation_subscriber, *expectation_moderator,
             *expectation_orga, *expectation_presider}
@@ -515,7 +515,7 @@ class TestLDAP(BasicTest):
                 self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
         with ldap3.Connection(
                 self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"],
@@ -548,7 +548,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: Set[str] = set()
+        expectation_orga: set[str] = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',

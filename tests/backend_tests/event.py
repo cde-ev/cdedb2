@@ -7,7 +7,7 @@ import datetime
 import decimal
 import json
 import unittest
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 
 import freezegun
 import freezegun.api
@@ -1842,7 +1842,7 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, edata)
-        qdata: Dict[const.QuestionnaireUsages, List[CdEDBObject]] = {
+        qdata: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
             const.QuestionnaireUsages.additional: [
                 {
                     'field_id': None,
@@ -2949,7 +2949,7 @@ class TestEventBackend(BackendTest):
             'registrations': {'parts': {}, 'tracks': {}, 'fields': {}},
         }
 
-        def recursive_update(old: Dict[Any, Any], new: Dict[Any, Any],
+        def recursive_update(old: dict[Any, Any], new: dict[Any, Any],
                              hint: Optional[str] = None) -> None:
             """Helper function to replace some placeholder values inside of a dict."""
             if hint == 'fields':
@@ -3899,7 +3899,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_lodgement(self.key, update)
         self.event.delete_lodgement(self.key, new_id)
-        data: Dict[const.QuestionnaireUsages, List[CdEDBObject]] = {
+        data: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
             const.QuestionnaireUsages.additional:
                 [
                     {'field_id': None,

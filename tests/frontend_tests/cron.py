@@ -7,7 +7,7 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from typing import Any, Dict, Set, Union, cast
+from typing import Any, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now
@@ -19,8 +19,8 @@ INSERT INTO {table} ({columns}) VALUES ({values});
 """
 
 # numbers.Number should include Decimal, int and bool but doesn't.
-SQL_DATA = Dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
-                           decimal.Decimal, int, bool, Dict[str, Any]]]
+SQL_DATA = dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
+                           decimal.Decimal, int, bool, dict[str, Any]]]
 
 RS = cast(RequestState, None)
 
@@ -379,7 +379,7 @@ class TestCron(CronTest):
 
     @storage
     def test_tally_ballots(self) -> None:
-        ballot_ids: Set[int] = set()
+        ballot_ids: set[int] = set()
         for assembly_id in self.assembly.list_assemblies(RS):
             ballot_ids |= self.assembly.list_ballots(RS, assembly_id).keys()
         ballots = self.assembly.get_ballots(RS, ballot_ids)
@@ -450,7 +450,7 @@ class TestCron(CronTest):
         # Prepare
         #
 
-        class SaveDict(Dict[Any, Any]):
+        class SaveDict(dict[Any, Any]):
             def save(self) -> None:
                 pass
 

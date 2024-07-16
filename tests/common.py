@@ -30,8 +30,7 @@ import urllib.request
 from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
 from re import Pattern
 from typing import (
-    Any, Callable, ClassVar, Dict, List, NamedTuple, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, no_type_check,
+    Any, Callable, ClassVar, NamedTuple, Optional, TypeVar, Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -126,11 +125,11 @@ def json_keys_to_int(obj: T) -> T:
 
 def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
                                            "sample_data.json",
-                      ) -> Dict[str, CdEDBObjectMap]:
+                      ) -> dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, encoding="utf8") as f:
-        sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
-    ret: Dict[str, CdEDBObjectMap] = {}
+        sample_data: dict[str, list[CdEDBObject]] = json.load(f)
+    ret: dict[str, CdEDBObjectMap] = {}
     for table, table_data in sample_data.items():
         data: CdEDBObjectMap = {}
         _id = 1
@@ -375,7 +374,7 @@ class CdEDBTest(BasicTest):
         # compile the sample data
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
         with open(json_file, encoding="utf8") as f:
-            data: Dict[str, List[CdEDBObject]] = json.load(f)
+            data: dict[str, list[CdEDBObject]] = json.load(f)
         cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
     def setUp(self) -> None:
@@ -434,7 +433,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover  # noqa: E501
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -475,7 +474,7 @@ class BackendTest(CdEDBTest):
     def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        logs: dict[str, tuple[Callable[..., CdEDBLog], Type[GenericLogFilter]]] = {
+        logs: dict[str, tuple[Callable[..., CdEDBLog], type[GenericLogFilter]]] = {
             'core': (self.core.retrieve_log, CoreLogFilter),
             'changelog': (self.core.retrieve_changelog_meta, ChangelogLogFilter),
             'cde': (self.cde.retrieve_cde_log, CdELogFilter),
@@ -512,12 +511,12 @@ class BackendTest(CdEDBTest):
         self.assertEqual(log, tuple(log_expectation))
 
     @classmethod
-    def initialize_raw_backend(cls, backendcls: Type[SessionBackend],
+    def initialize_raw_backend(cls, backendcls: type[SessionBackend],
                                ) -> SessionBackend:
         return backendcls()
 
     @classmethod
-    def initialize_backend(cls, backendcls: Type[B]) -> B:
+    def initialize_backend(cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True)
 
 
@@ -563,7 +562,7 @@ class BrowserTest(CdEDBTest):
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT: Dict[str, UserObject] = {
+USER_DICT: dict[str, UserObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -1030,7 +1029,7 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+    def post(self, url: str, params: dict[str, Any], *args: Any, verbose: bool = False,
              evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
              csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
@@ -1080,7 +1079,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")  # pragma: no cover
+                "Cannot specify button value without specifying button name.")  # pragma: no cover  # noqa: E501
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1210,7 +1209,7 @@ class FrontendTest(BackendTest):
         if check:
             self.assertTitle(u['default_name_format'])
 
-    def _fetch_mail(self) -> List[email.message.EmailMessage]:
+    def _fetch_mail(self) -> list[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
@@ -1245,9 +1244,9 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover  # noqa: E501
 
-    def fetch_orga_token(self) -> Tuple[int, str]:
+    def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
         droid_name, secret = APIToken.parse_token_string(new_token)
         droid_class, token_id = resolve_droid_name(droid_name)
@@ -1691,7 +1690,7 @@ class FrontendTest(BackendTest):
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...],
+    def log_pagination(self, title: str, logs: tuple[tuple[int, enum.IntEnum], ...],
                        ) -> None:
         """Helper function to test the logic of the log pagination.
 
@@ -1796,7 +1795,7 @@ class FrontendTest(BackendTest):
         self.response = save
 
     def _log_subroutine(self, title: str,
-                        all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
+                        all_logs: tuple[tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
@@ -1811,7 +1810,7 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
+    def check_sidebar(self, ins: set[str], out: set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins or
@@ -1930,7 +1929,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover  # noqa: E501
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -1965,8 +1964,8 @@ class MultiAppFrontendTest(FrontendTest):
     """Subclass for testing multiple frontend instances simultaniously."""
     n: int = 2  # The number of instances that should be created.
     current_app: int  # Which instance is currently active 0 <= x < n
-    apps: List[webtest.TestApp]
-    responses: List[webtest.TestResponse]
+    apps: list[webtest.TestApp]
+    responses: list[webtest.TestResponse]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -2017,7 +2016,7 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover  # noqa: E501
         self.current_app = i
 
 
@@ -2030,7 +2029,7 @@ class MailTrace(NamedTuple):
     realm: str
     template: str
     args: Sequence[Any]
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
 
 
 def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
@@ -2048,10 +2047,10 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
 
 
 class CronTest(CdEDBTest):
-    _remaining_periodics: Set[str]
-    _remaining_tests: Set[str]
-    stores: List[StoreTrace]
-    mails: List[MailTrace]
+    _remaining_periodics: set[str]
+    _remaining_tests: set[str]
+    stores: list[StoreTrace]
+    mails: list[MailTrace]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]

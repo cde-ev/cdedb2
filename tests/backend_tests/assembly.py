@@ -3,7 +3,8 @@
 
 import datetime
 import json
-from typing import Collection, List, NamedTuple, Optional
+from collections.abc import Collection
+from typing import NamedTuple, Optional
 
 import freezegun
 
@@ -282,7 +283,7 @@ class TestAssemblyBackend(BackendTest):
         assembly_id = 1
         log_offset, _ = self.assembly.retrieve_log(
             self.key, AssemblyLogFilter(assembly_id=assembly_id))
-        log: List[CdEDBObject] = []
+        log: list[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',

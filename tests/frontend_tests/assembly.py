@@ -7,7 +7,7 @@ import pathlib
 import re
 import subprocess
 import tempfile
-from typing import List, Optional
+from typing import Optional
 
 import freezegun
 import webtest
@@ -111,7 +111,7 @@ class AssemblyTestHelpers(FrontendTest):
         return self._fetch_secret()
 
     def _create_ballot(self, bdata: CdEDBObject,
-                       candidates: Optional[List[CdEDBObject]] = None,
+                       candidates: Optional[list[CdEDBObject]] = None,
                        atitle: Optional[str] = None) -> None:
         """Helper to create a new ballot.
 
@@ -128,7 +128,7 @@ class AssemblyTestHelpers(FrontendTest):
             f[k] = v
         self.submit(f)
         if atitle:
-            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))  # pragma: no cover  # noqa: E501
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:

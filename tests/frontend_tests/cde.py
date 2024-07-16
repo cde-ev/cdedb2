@@ -7,7 +7,7 @@ import itertools
 import json
 import re
 import types
-from typing import Set, Tuple, cast
+from typing import cast
 
 import webtest
 
@@ -346,7 +346,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> Set[Role]:
+        def _roles(user: UserIdentifier) -> set[Role]:
             user = get_user(user)
             return extract_roles(self.core.get_persona(self.key, user['id']))
 
@@ -1478,7 +1478,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             (r"given_names:\W*Darf nicht leer sein.",
              r"pevent_id:\W*Keine Eingabe vorhanden."),
             tuple(),
@@ -1552,7 +1552,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1574,7 +1574,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1626,7 +1626,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1646,7 +1646,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1732,8 +1732,8 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long  # noqa: E501
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long  # noqa: E501
         )
 
         self.traverse({'description': 'Mitglieder'},
@@ -1918,7 +1918,7 @@ class TestCdEFrontend(FrontendTest):
         content = self.response.lxml.xpath(
             "//ol[@id='transfer-validation']")[0].text_content()
         output = re.split(r" Zeile \d+:", content)[1:]
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             (
                 "category: Darf nicht leer sein.",
                 "date: Kein Datum gefunden.",

@@ -4,7 +4,7 @@
 import csv
 import re
 import unittest.mock
-from typing import Any, List, Set, Tuple
+from typing import Any
 
 import webtest
 
@@ -18,7 +18,7 @@ from cdedb.models.ml import CdeLokalMailinglist
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
-def _get_registration_part_stati(f: webtest.Form) -> Set[const.RegistrationPartStati]:
+def _get_registration_part_stati(f: webtest.Form) -> set[const.RegistrationPartStati]:
     # If an input with multiple checkboxes is readonly, we only have one hidden input
     # containing the string of all set values. So we iterate over the disabled, but
     # user-facing input with the checkboxes.
@@ -1453,8 +1453,8 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
 
     @staticmethod
-    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
-            List[MockHeldMessage], unittest.mock.MagicMock, Any]:
+    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> tuple[
+            list[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()

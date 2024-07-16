@@ -3,7 +3,7 @@
 import random
 import re
 import urllib.parse
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import webtest
 
@@ -1357,8 +1357,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _initialize_privilege_change(self, admin1: UserIdentifier,
                                      admin2: UserIdentifier, new_admin: UserObject,
-                                     new_privileges: Dict[str, bool],
-                                     old_privileges: Optional[Dict[str, bool]] = None,
+                                     new_privileges: dict[str, bool],
+                                     old_privileges: Optional[dict[str, bool]] = None,
                                      note: str = "For testing.") -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
@@ -1381,8 +1381,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _approve_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                   new_admin: UserObject,
-                                  new_privileges: Dict[str, bool],
-                                  old_privileges: Optional[Dict[str, bool]] = None,
+                                  new_privileges: dict[str, bool],
+                                  old_privileges: Optional[dict[str, bool]] = None,
                                   note: str = "For testing.",
                                   new_password: Optional[str] = None) -> UserObject:
         """Helper to make a user an admin."""
@@ -1409,8 +1409,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                  new_admin: UserObject,
-                                 new_privileges: Dict[str, bool],
-                                 old_privileges: Optional[Dict[str, bool]] = None,
+                                 new_privileges: dict[str, bool],
+                                 old_privileges: Optional[dict[str, bool]] = None,
                                  note: str = "For testing.") -> None:
         """Helper to reject a privilege change."""
         self._initialize_privilege_change(
@@ -1820,7 +1820,7 @@ class TestCoreFrontend(FrontendTest):
 
         # Check for proper logging
         with self.switch_user("paul"):
-            changelog_expectation: Tuple[Dict[str, Union[int, str, None]], ...] = (
+            changelog_expectation: tuple[dict[str, Union[int, str, None]], ...] = (
                 {
                     'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,

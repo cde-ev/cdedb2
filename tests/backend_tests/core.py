@@ -4,7 +4,7 @@
 import copy
 import datetime
 import decimal
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -1458,7 +1458,7 @@ class TestCoreBackend(BackendTest):
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        log_expectation: List[CdEDBObject] = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
