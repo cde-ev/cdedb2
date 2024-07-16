@@ -103,7 +103,7 @@ python3 -m pip install --no-cache-dir --break-system-packages \
     mypy==1.10.1 \
     flake8==3.8.4 \
     pylint==2.15.0 \
-    ruff==0.1.1 \
+    ruff==0.5.1 \
     types-python-dateutil \
     types-bleach \
     types-Markdown \
