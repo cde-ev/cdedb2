@@ -62,7 +62,7 @@ class TestScript(unittest.TestCase):
                 with s:
                     print("Writing this to file.")
                     print("This too!", file=sys.stderr)
-                with open(f.name, "r") as fr:
+                with open(f.name) as fr:
                     self.check_buffer(
                         fr, self.assertEqual, "Writing this to file.\nThis too!\n",
                         truncate=False)

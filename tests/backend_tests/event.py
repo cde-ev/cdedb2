@@ -2404,7 +2404,7 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika", "garcia")
     def test_export_event(self) -> None:
-        with open(self.testfile_dir / "event_export.json", "r") as f:
+        with open(self.testfile_dir / "event_export.json") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])

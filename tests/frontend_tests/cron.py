@@ -286,7 +286,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionState.pending))
+             f"{const.SubscriptionState.pending};")
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])

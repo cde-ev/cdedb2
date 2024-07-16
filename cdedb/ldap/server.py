@@ -34,7 +34,7 @@ class ReplyCallback(Protocol):
         ...
 
 
-class LdapHandler():
+class LdapHandler:
     """Implementation of the ldap protocol via asyncio.
 
     Each time a new client connects to the server, a new instance of this class will

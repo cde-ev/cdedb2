@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # pylint: disable=protected-access,missing-module-docstring
 
-from typing import Collection, Optional, cast
+from collections.abc import Collection
+from typing import Optional, cast
 
 from subman.exceptions import SubscriptionError
 

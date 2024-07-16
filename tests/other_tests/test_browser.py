@@ -130,7 +130,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(
-            ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
+            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.")
 
     @event_keeper
     @make_page

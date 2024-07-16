@@ -27,10 +27,11 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
+from re import Pattern
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    Any, Callable, ClassVar, Dict, List, NamedTuple, Optional, Set, Tuple, Type,
+    TypeVar, Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -127,7 +128,7 @@ def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
                                            "sample_data.json",
                       ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
-    with open(filename, "r", encoding="utf8") as f:
+    with open(filename, encoding="utf8") as f:
         sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
     ret: Dict[str, CdEDBObjectMap] = {}
     for table, table_data in sample_data.items():
@@ -373,7 +374,7 @@ class CdEDBTest(BasicTest):
 
         # compile the sample data
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
-        with open(json_file, "r", encoding="utf8") as f:
+        with open(json_file, encoding="utf8") as f:
             data: Dict[str, List[CdEDBObject]] = json.load(f)
         cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
@@ -1116,7 +1117,7 @@ class FrontendTest(BackendTest):
             try:
                 self.response = self.response.click(**link, verbose=verbose)
             except IndexError as e:
-                e.args += ('Error during traversal of {}'.format(link),)
+                e.args += (f'Error during traversal of {link}',)
                 raise
             self.follow()
             self.basic_validate(verbose=verbose)
@@ -1196,8 +1197,8 @@ class FrontendTest(BackendTest):
         :param verbose: If True display additional debug information.
         """
         u = USER_DICT[user]
-        self.traverse({'href': '/{}/$'.format(realm)},
-                      {'href': '/{}/search/user'.format(realm)},
+        self.traverse({'href': f'/{realm}/$'},
+                      {'href': f'/{realm}/search/user'},
                       verbose=verbose)
         id_field = 'personas.id'
         f = self.response.forms['queryform']
@@ -1385,17 +1386,13 @@ class FrontendTest(BackendTest):
         if num_searched_elements_with_matching_ancestor < len(elements_with_searchtext):
             if len(elements_with_searchtext) == 1:
                 self.fail(
-                    "Text '{}' found, but not contained in a <{}>".format(
-                        search_text,
-                        element_tag))
+                    f"Text '{search_text}' found, but not contained in a"
+                    f" <{element_tag}>")
             else:
                 self.fail(
-                    "Text '{}' found {} times, but only {} of them are contained in a "
-                    "<{}>".format(
-                        search_text,
-                        len(elements_with_searchtext),
-                        num_searched_elements_with_matching_ancestor,
-                        element_tag))
+                    f"Text '{search_text}' found {len(elements_with_searchtext)} times,"
+                    f" but only {num_searched_elements_with_matching_ancestor}"
+                    f" of them are contained in a <{element_tag}>")
 
     def assertTextContainedInNthElement(self, search_text: str, element_tag: str,
                                         n: int, div: str = "content") -> None:
@@ -2024,10 +2021,16 @@ class MultiAppFrontendTest(FrontendTest):
         self.current_app = i
 
 
-StoreTrace = NamedTuple("StoreTrace", [('cron', str), ('data', CdEDBObject)])
-MailTrace = NamedTuple("MailTrace", [('realm', str), ('template', str),
-                                     ('args', Sequence[Any]),
-                                     ('kwargs', Dict[str, Any])])
+class StoreTrace(NamedTuple):
+    cron: str
+    data: CdEDBObject
+
+
+class MailTrace(NamedTuple):
+    realm: str
+    template: str
+    args: Sequence[Any]
+    kwargs: Dict[str, Any]
 
 
 def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:

@@ -10,7 +10,8 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence
+from collections.abc import Collection, Sequence
+from typing import Optional
 
 import lxml.etree
 import segno.helpers

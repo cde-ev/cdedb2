@@ -3,7 +3,8 @@
 
 import datetime
 import secrets
-from typing import List, NamedTuple, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import List, NamedTuple, Optional, cast
 
 import cdedb.models.droid as model_droid
 from cdedb.common import RequestState, User, nearly_now, now
@@ -13,10 +14,14 @@ from tests.common import (
     get_user,
 )
 
-SessionEntry = NamedTuple(
-    "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
-                     ("sessionkey", str), ("ctime", Optional[datetime.datetime]),
-                     ("atime", Optional[datetime.datetime])])
+
+class SessionEntry(NamedTuple):
+    persona_id: int
+    is_active: bool
+    ip: str
+    sessionkey: str
+    ctime: Optional[datetime.datetime]
+    atime: Optional[datetime.datetime]
 
 
 def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",

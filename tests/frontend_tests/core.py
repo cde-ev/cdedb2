@@ -2974,7 +2974,7 @@ class TestCoreFrontend(FrontendTest):
         resolve_token = model_droid.ResolveToken.get_token_string(
             self.secrets['API_TOKENS']['resolve'])
         self.get(
-            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
+            f'/core/api/resolve?username=%20bErTa{at}example.CDE%20',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
@@ -2984,7 +2984,7 @@ class TestCoreFrontend(FrontendTest):
             "username": "berta@example.cde",
         })
         self.get(
-            '/core/api/resolve?username=anton{}example.cde'.format(at),
+            f'/core/api/resolve?username=anton{at}example.cde',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": "Anton Armin A.",
