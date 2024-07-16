@@ -3862,7 +3862,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/stats'} )
+                      {'href': '/event/event/1/stats'})
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
         event = self.event.get_event(self.key, event_id)
@@ -4126,7 +4126,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # Single-track event
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/3/show'},
-                      {'href': '/event/event/3/course/choices'} )
+                      {'href': '/event/event/3/course/choices'})
         self.assertTitle("Kurswahlen (CyberTestAkademie)")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [7]
@@ -4209,7 +4209,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_course_choices_problems(self) -> None:
         self.traverse({'href': '/event/$'}, {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/choices'} )
+                      {'href': '/event/event/1/course/choices'})
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
         # Assigning Anton and Emilia to their 3rd choice (which is not present)
         # should not raise an exception but a warning

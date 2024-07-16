@@ -388,7 +388,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_past_assembly(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
-                      {'description': 'Konfiguration'} )
+                      {'description': 'Konfiguration'})
         f = self.response.forms['configureassemblyform']
         f['signup_end'] = '2000-02-22T01:00:00'
         self.submit(f)
@@ -585,7 +585,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("kalif")
     def test_no_signup(self) -> None:
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Internationaler Kongress'} )
+                      {'description': 'Internationaler Kongress'})
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
 
@@ -937,7 +937,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['notes'] = "_Kein_ Aprilscherz!"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'vote_end',  "Darf nicht vor Abstimmungsbeginn liegen.")
+            'vote_end', "Darf nicht vor Abstimmungsbeginn liegen.")
         f['vote_end'] = "2222-5-1 00:00:00"
         self.submit(f)
 

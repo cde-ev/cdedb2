@@ -282,7 +282,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("kalif", "janis")
     def test_assembly_ml_privileges(self) -> None:
-        self.traverse({'href': '/ml/$'} )
+        self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
         self.assertNonPresence("Veranstaltungslisten")
         self.assertNonPresence("CdE-Party")
@@ -901,11 +901,11 @@ class TestMlFrontend(FrontendTest):
         f['maxsize'] = 12
         self.submit(f)
         self.assertTitle("Werbung")
-        self.traverse({'href': '/ml/mailinglist/2/change'} )
+        self.traverse({'href': '/ml/mailinglist/2/change'})
         f['domain'] = const.MailinglistDomain.lists
         self.submit(f)
         self.assertTitle("Werbung")
-        self.traverse({'href': '/ml/mailinglist/2/change'} )
+        self.traverse({'href': '/ml/mailinglist/2/change'})
 
         # Test list deactivation
         f = self.response.forms['changelistform']
@@ -962,7 +962,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Alle Mailinglisten'},
                       {'description': 'Mitgestaltungsforum'},
-                      {'description': 'Konfiguration'} )
+                      {'description': 'Konfiguration'})
         self.assertTitle("Mitgestaltungsforum – Konfiguration")
         self.traverse({'description': 'Typ ändern'})
         self.assertTitle("Mitgestaltungsforum – Typ ändern")
@@ -1162,7 +1162,7 @@ class TestMlFrontend(FrontendTest):
         self.logout()
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'} )
+                      {'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
@@ -1170,7 +1170,7 @@ class TestMlFrontend(FrontendTest):
         self.login(user)
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management'} )
+                      {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
 
         # testing: try to add a subscription request
@@ -1181,7 +1181,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotification(
             "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
         # as mod subscriber
-        self.traverse({'href': '/ml/mailinglist/4/management/advanced'} )
+        self.traverse({'href': '/ml/mailinglist/4/management/advanced'})
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
@@ -1204,7 +1204,7 @@ class TestMlFrontend(FrontendTest):
         f['modunsubscriber_ids'] = USER_DICT["janis"]["DB-ID"]
         self.submit(f, check_notification=True)
         # try to remove mod subscribe with normal subscriber form
-        self.traverse({'href': '/ml/mailinglist/4/management'} )
+        self.traverse({'href': '/ml/mailinglist/4/management'})
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
         self.assertNotification("Der Nutzer ist aktuell fixierter Abonnent.", 'error')

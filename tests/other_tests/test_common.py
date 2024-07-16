@@ -29,7 +29,7 @@ class TestCommon(BasicTest):
     def test_extract_roles(self) -> None:
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",
-            "ml", "assembly", "event" },
+            "ml", "assembly", "event"},
             extract_roles({
                 'is_active': True,
                 'is_cde_realm': True,

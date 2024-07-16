@@ -2096,7 +2096,7 @@ class TestEventBackend(BackendTest):
                 "track3.instructors",
                 "course_fields.xfield_room"],
             constraints=[],
-            order=[("course.max_size", True) ],
+            order=[("course.max_size", True)],
         )
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
