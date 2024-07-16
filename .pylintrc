@@ -372,10 +372,3 @@ valid-metaclass-classmethod-first-arg=mcs
 # List of member names, which should be excluded from the protected access
 # warning.
 exclude-protected=_asdict,_fields,_replace,_source,_make
-
-
-[EXCEPTIONS]
-
-# Exceptions that will emit a warning when being caught. Defaults to
-# "Exception"
-overgeneral-exceptions=Exception

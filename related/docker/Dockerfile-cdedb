@@ -108,7 +108,7 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     subman==0.1.1 \
     segno==1.5.2 \
     mypy==1.10.1 \
-    pylint==2.15.0 \
+    pylint==3.2.5 \
     types-python-dateutil \
     types-bleach \
     types-Markdown \
