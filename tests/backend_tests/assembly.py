@@ -4,7 +4,7 @@
 import datetime
 import json
 from collections.abc import Collection
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import freezegun
 
@@ -861,22 +861,24 @@ class TestAssemblyBackend(BackendTest):
         self.assertTrue(self.assembly.does_attend(self.key, assembly_id=1))
 
     def test_get_vote(self) -> None:
-        testcase = NamedTuple(
-            "testcase", [
-                ("user", UserIdentifier), ("ballot_id", int),
-                ("secret", Optional[str]), ("vote", Optional[str])])
-        tests: Collection[testcase] = (
-            testcase('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
-            testcase('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
-            testcase('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
-            testcase('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
-            testcase('anton', 1, None, '2>3>_bar_>1=4'),
-            testcase('berta', 1, None, '3>2=4>_bar_>1'),
-            testcase('inga', 1, None, '_bar_>4>3>2>1'),
-            testcase('kalif', 1, None, '1>2=3=4>_bar_'),
-            testcase('berta', 2, None, None),
-            testcase('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
-            testcase('berta', 4, None, None),
+        class VoteTest(NamedTuple):
+            user: UserIdentifier
+            ballot_id: int
+            secret: str | None
+            vote: str | None
+
+        tests: Collection[VoteTest] = (
+            VoteTest('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
+            VoteTest('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
+            VoteTest('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
+            VoteTest('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
+            VoteTest('anton', 1, None, '2>3>_bar_>1=4'),
+            VoteTest('berta', 1, None, '3>2=4>_bar_>1'),
+            VoteTest('inga', 1, None, '_bar_>4>3>2>1'),
+            VoteTest('kalif', 1, None, '1>2=3=4>_bar_'),
+            VoteTest('berta', 2, None, None),
+            VoteTest('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
+            VoteTest('berta', 4, None, None),
         )
         for case in tests:
             user, ballot_id, secret, vote = case

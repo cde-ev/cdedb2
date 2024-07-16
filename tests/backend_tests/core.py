@@ -1005,9 +1005,9 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
         assert case_id is not None
         self.assertLess(0, case_id)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(

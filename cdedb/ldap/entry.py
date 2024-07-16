@@ -177,7 +177,7 @@ class CdEDBBaseLDAPEntry(
         elif scope == pureldap.LDAP_SCOPE_baseObject:
             entries = [self]
         else:
-            raise LDAPProtocolError("unknown search scope: %r" % scope)
+            raise LDAPProtocolError(f"unknown search scope: {scope!r}")
 
         matched = [entry for entry in entries if entry.match(filterObject)]
         return matched

@@ -32,8 +32,8 @@ class TestFrontendCommon(FrontendTest):
             param = rand_str(200, exclude='-')
             persona_id = random.randint(1, 10000)
             encoded = encode_parameter(salt, target, name, param, persona_id)
-            timeout, decoded = decode_parameter(salt, target, name, encoded,
-                                                persona_id)
+            _timeout, decoded = decode_parameter(
+                salt, target, name, encoded, persona_id)
             self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"

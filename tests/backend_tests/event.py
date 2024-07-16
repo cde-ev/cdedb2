@@ -657,12 +657,6 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
         self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
-        count, log = self.event.retrieve_log(
-            self.key, EventLogFilter(
-                codes=[const.EventLogCodes.minor_form_updated,
-                       const.EventLogCodes.minor_form_removed],
-                event_id=event_id),
-        )
         expectation = [
             {
                 'code': const.EventLogCodes.minor_form_updated,
@@ -681,10 +675,14 @@ class TestEventBackend(BackendTest):
                 'change_note': None,
             },
         ]
-        self.assertEqual(len(expectation), len(log))
-        for e, l in zip(expectation, log):
-            for k in e:
-                self.assertEqual(e[k], l[k])
+        self.assertLogEqual(
+            expectation, "event",
+            event_id=event_id,
+            codes=[
+                const.EventLogCodes.minor_form_updated,
+                const.EventLogCodes.minor_form_removed,
+            ],
+        )
 
     @as_users("annika")
     def test_aposteriori_track_creation(self) -> None:

@@ -1249,7 +1249,7 @@ class FrontendTest(BackendTest):
     def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
         droid_name, secret = APIToken.parse_token_string(new_token)
-        droid_class, token_id = resolve_droid_name(droid_name)
+        _droid_class, token_id = resolve_droid_name(droid_name)
         return cast(int, token_id), secret
 
     def assertTitle(self, title: str, exact: bool = True) -> None:
@@ -1609,9 +1609,9 @@ class FrontendTest(BackendTest):
         for element in self.response.html.find_all(tag):
             el_html = str(element)
             el_content = element.decode_contents()
-            printlog('Element: %r' % el_html)
+            printlog(f"Element: {el_html!r}")
             if not element.get(href_attr):
-                printlog('  Skipped: no %s attribute' % href_attr)
+                printlog(f"  Skipped: no {href_attr!r} attribute")
                 continue
             if href_pat and not href_pat(element[href_attr]):
                 printlog("  Skipped: doesn't match href")
