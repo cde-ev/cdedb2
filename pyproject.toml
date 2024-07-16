@@ -54,3 +54,93 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.pylint.main]
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use, and will cap the count on Windows to
+# avoid hangs.
+jobs = 4
+
+# List of plugins (as comma separated values of python module names) to load,
+# usually to register additional checkers.
+load-plugins = ["pylint.extensions.bad_builtin"]
+
+[tool.pylint.deprecated_builtins]
+# List of builtins function names that should not be used, separated by a comma
+bad-functions = ["sorted", "breakpoint"]
+
+[tool.pylint.format]
+# Regexp for a line that is allowed to be longer than the limit.
+ignore-long-lines = "^.{0,88}(\\s+# (type: ignore\\[([a-z-](, )?)+\\]|pragma: no cover|noqa(: \\S*)?|TODO: coverage))+.*$"
+
+# Maximum number of characters on a single line.
+max-line-length = 88
+
+[tool.pylint.imports]
+# Allow explicit reexports by alias from a package __init__.
+allow-reexport-from-package = true
+
+[tool.pylint."messages control"]
+disable = [
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-implicit-booleaness-not-comparison-to-string",
+    "use-implicit-booleaness-not-comparison-to-zero",
+    "use-symbolic-message-instead",
+    "no-member",
+    "no-name-in-module",
+    "unsubscriptable-object",
+    "no-value-for-parameter",
+    "no-else-return",
+    "no-else-raise",
+    "no-else-break",
+    "no-else-continue",
+    "unused-argument",
+    "unused-variable",
+    "broad-exception-caught",
+    "redefined-outer-name",
+    "useless-parent-delegation",
+    "too-many-ancestors",
+    "too-many-instance-attributes",
+    "too-few-public-methods",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-branches",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-statements",
+    "too-many-boolean-expressions",
+    "too-many-positional",
+    "too-many-nested-blocks",
+    "too-many-lines",
+    "logging-fstring-interpolation",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "invalid-name",
+    "duplicate-code",
+    "consider-iterating-dictionary",
+    "unnecessary-dict-index-lookup",
+    "useless-option-value",
+    "consider-using-from-import",
+    "consider-using-f-string",
+    "unspecified-encoding",
+    "unnecessary-dunder-call",
+    "use-sequence-for-iteration",
+    "consider-using-with",
+    "consider-using-min-builtin",
+    "arguments-renamed",
+    "arguments-differ",
+    "typevar-name-incorrect-variance",
+    "deprecated-module",
+    "use-dict-literal",
+    "use-list-literal",
+    "unnecessary-lambda-assignment",
+    "fixme",
+    "cyclic-import",
+    "possibly-used-before-assignment",
+]

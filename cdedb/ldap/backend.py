@@ -901,7 +901,7 @@ class LDAPsqlBackend:
     async def get_mailinglists(self, ml_ids: Collection[str]
                                ) -> dict[str, "CdEDBObject"]:
         """Helper function to get some information about the given mailinglists."""
-        query = ("SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)")
+        query = "SELECT address, title FROM ml.mailinglists WHERE address = ANY(%s)"
         return {
             e["address"]: e
             async for e in self.query_all(query, (ml_ids,))

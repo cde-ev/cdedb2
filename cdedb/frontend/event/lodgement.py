@@ -686,7 +686,7 @@ class EventLodgementMixin(EventBaseFrontend):
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
             for part_id in rs.ambience['event'].parts:
-                new_inhabitant = (reg_id in data[f"new_{part_id}"])
+                new_inhabitant = reg_id in data[f"new_{part_id}"]
                 deleted_inhabitant = data.get(
                     f"delete_{part_id}_{reg_id}", False)
                 is_camping_mat = reg['parts'][part_id]['is_camping_mat']

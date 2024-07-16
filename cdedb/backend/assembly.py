@@ -766,7 +766,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete assembly with locked ballots."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(rs.gettext("Assembly"), remaining_blockers)  # TODO: coverage
 
         ret = 1
@@ -1199,7 +1199,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete ballot that has votes."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(rs.gettext("Ballot"), remaining_blockers)  # TODO: coverage
 
         ret = 1
@@ -1769,7 +1769,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete attachment once any linked ballot has been locked."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
                 rs.gettext("Assembly Attachment"), remaining_blockers)  # TODO: coverage
 
