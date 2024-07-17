@@ -133,7 +133,12 @@ class ComplexRegistrationFee:
 
     @property
     def donation(self) -> decimal.Decimal:
-        return self.by_kind[const.EventFeeType.donation]
+        return sum(
+            (
+                self.by_kind[kind] for kind in const.EventFeeType if kind.is_donation()
+            ),
+            start=decimal.Decimal(0),
+        )
 
     @property
     def nonmember_surcharge(self) -> decimal.Decimal:

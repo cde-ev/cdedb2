@@ -17031,8 +17031,8 @@ msgid "EventFeeType.solidary_reduction"
 msgstr "Solidary Reduction"
 
 #: cdedb/i18n_additional.py:345
-msgid "EventFeeType.donation"
-msgstr "Donation"
+msgid "EventFeeType.solidary_donation"
+msgstr "Solidary Donation"
 
 #: cdedb/i18n_additional.py:346
 msgid "EventFeeType.solidary_increase"
@@ -17041,6 +17041,14 @@ msgstr "Solidary Increase"
 #: cdedb/i18n_additional.py:347
 msgid "EventFeeType.instructor_refund"
 msgstr "Instructor Refund"
+
+#: cdedb/i18n_additional.py:347
+msgid "EventFeeType.instructor_donation"
+msgstr "Instructor Donation"
+
+#: cdedb/i18n_additional.py:347
+msgid "EventFeeType.other_donation"
+msgstr "Other Donation"
 
 #: cdedb/i18n_additional.py:352
 msgid "str"

@@ -342,9 +342,11 @@ I18N_STRINGS = (
     n_("EventFeeType.storno"),
     n_("EventFeeType.external"),
     n_("EventFeeType.solidary_reduction"),
-    n_("EventFeeType.donation"),
+    n_("EventFeeType.solidary_donation"),
     n_("EventFeeType.solidary_increase"),
     n_("EventFeeType.instructor_refund"),
+    n_("EventFeeType.instructor_donation"),
+    n_("EventFeeType.other_donation"),
 
     #
     # Query datatypes
