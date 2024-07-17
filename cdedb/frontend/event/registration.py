@@ -328,18 +328,15 @@ class EventRegistrationMixin(EventBaseFrontend):
             track_id: None for track_id in tracks}
         sync_track_groups = {
             tg_id: tg for tg_id, tg in track_groups.items()
-            if tg.constraint_type.is_sync() and isinstance(tg, models.SyncTrackGroup)
+            if isinstance(tg, models.SyncTrackGroup)
         }
         ccos_per_part: dict[int, list[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
-            if not track_group.constraint_type == ccs:
-                continue  # type: ignore[unreachable]
             simple_tracks.difference_update(track_group.tracks)
             track_group_map.update(
                 {track_id: track_group_id for track_id in track_group.tracks})
             for track in track_group.tracks.values():
-                ccos_per_part[track.part_id].append(
-                    f"group-{track_group_id}")
+                ccos_per_part[track.part_id].append(f"group-{track_group_id}")
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
