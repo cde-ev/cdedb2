@@ -43,8 +43,10 @@
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the course_query -->
 
-        <div class="p pull-right">
-            {{ generic.query_button_field_set(enums['FieldAssociations'].lodgement) }}
+        <div class="p pull-right query-result-dynamic-actions" style="display: none;">
+            {{ generic.query_result_dynamic_action(
+                    label=gettext("Set Field"), icon="edit", target="event/field_set_select",
+                    params={"kind": enums['FieldAssociations'].course}, magic_placeholders=["ids"]) }}
         </div>
 
         {{ generic.display_query_result(result, aggregates, query) }}
