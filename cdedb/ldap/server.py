@@ -324,7 +324,7 @@ class LdapHandler():
             # Signaling we should return the first page.
             if control_values[1].value != b"":
                 paged_cookie = int.from_bytes(control_values[1].value, sys.byteorder)
-            is_paged = (paged_size != 0)
+            is_paged = paged_size != 0
             logger.debug(f"Received Paged size: {paged_size}")
             logger.debug(f"Received Paged cookie: {paged_cookie}")
 

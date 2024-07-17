@@ -915,7 +915,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
+            _, event_id = self._get_registration_info(rs, reg_id=data['id'])
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)

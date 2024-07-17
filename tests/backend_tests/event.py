@@ -2942,7 +2942,7 @@ class TestEventBackend(BackendTest):
             ('lodgements', -2): 1004,
             ('registrations', -1): 1002,
         }
-        tmap = {
+        tmap: dict[str, dict[str, dict[Any, Any]]] = {
             'courses': {'segments': {}, 'fields': {}},
             'lodgement_groups': {},
             'lodgements': {'fields': {}},

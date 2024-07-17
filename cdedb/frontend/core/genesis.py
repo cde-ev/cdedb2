@@ -164,7 +164,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        code, realm = self.coreproxy.genesis_verify(rs, genesis_case_id)
+        code, _ = self.coreproxy.genesis_verify(rs, genesis_case_id)
         rs.notify_return_code(
             code,
             error=n_("Verification failed. Please contact the administrators."),
@@ -461,7 +461,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            success, cookie = self.coreproxy.make_reset_cookie(
+            _, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", persona['username'],

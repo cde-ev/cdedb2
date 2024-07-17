@@ -416,7 +416,7 @@ class SubschemaEntry(CdEDBStaticEntry):
             b"matchingRules": self.backend.schema.matching_rules,
             b"matchingRuleUse": [],
         }
-        return {k: attrs[k] for k in attributes} if attributes else attrs  # type: ignore[misc, return-value]
+        return {k: attrs[k] for k in attributes} if attributes else attrs
 
     async def children(self, bound_dn: Optional[BoundDn] = None) -> LDAPEntries:
         return []

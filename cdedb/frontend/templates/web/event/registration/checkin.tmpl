@@ -55,7 +55,7 @@
             <div class="row">
                 <div class="col-sm-9">
                 <div class="row">
-                    <div{% if lodgements %} class="col-sm-6"{% endif %}>
+                    <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
                             {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>

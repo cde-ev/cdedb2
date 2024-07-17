@@ -380,8 +380,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         # we are only interested in concluded ballots
         ballot_list: list[int] = xsorted(
             grouped.concluded.keys(),
-            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_]),  # type: ignore[union-attr]
-            # Seems like a mypy bug.
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_]),
         )
 
         i = ballot_list.index(ballot_id)

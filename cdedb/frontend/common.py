@@ -116,7 +116,7 @@ Headers = typing.TypedDict(
     "Headers", {
         "From": str,
         "Prefix": str,
-        "Reply-To": str,
+        "Reply-To": str | None,
         "Return-Path": str,
         "domain": str,
         "Subject": str,
@@ -222,7 +222,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
-        timeout, message = self.decode_parameter(
+        _, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id)
         if not message:
             return None, None, None
@@ -789,7 +789,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     }
         merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
-            del headers["Reply-To"]
+            headers["Reply-To"] = None
         msg: email.mime.base.MIMEBase = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
@@ -798,7 +798,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()
+        payload = cast(str, msg.get_payload())
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -809,16 +809,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container  #
+            msg = container
         for header in ("To", "Cc", "Bcc"):
-            nonempty = {x for x in headers[header] if x}  # type: ignore[literal-required]
-            if nonempty != set(headers[header]):  # type: ignore[literal-required]
+            value = headers[header]  # type: ignore[literal-required]
+            nonempty = {x for x in value if x}
+            if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
-            if headers[header]:  # type: ignore[literal-required]
+            if nonempty:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            if header in headers:
-                msg[header] = headers[header]  # type: ignore[literal-required]
+            if value := headers.get(header):
+                msg[header] = value
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
@@ -2604,7 +2605,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
+        pre[x]["offset"] = trueoffset - (len(pre) - x) * length
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length
