@@ -255,6 +255,11 @@ summary {
     display: list-item;
 }
 
+summary.btn {
+    display: list-item;
+    width: fit-content;
+}
+
 /* List group responsive tear down */
 @media (max-width: 991px) {
     .list-group.tear-down {
@@ -302,6 +307,9 @@ h4.mosp,h5.mosp {
 dl.mosp {
     margin-top: 30px;
     margin-bottom: 30px;
+}
+div.mosp {
+    margin-top: 5px;
 }
 ul.nosp, ol.nosp {
     margin-bottom: 0;

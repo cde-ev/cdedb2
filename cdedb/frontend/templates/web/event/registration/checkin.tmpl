@@ -118,6 +118,19 @@
                         {% endfor %}
                     </div>
                 {% endif %}
+                {% if registration['orga_notes'] %}
+                    <hr class="nosp" />
+                    <details>
+                        <summary class="btn btn-sm btn-default">
+                            <b class="text-muted">
+                                {% trans %}Orga-Notes{% endtrans %}
+                            </b>
+                        </summary>
+                        <div class="mosp">
+                            {{ registration['orga_notes']|md }}
+                        </div>
+                    </details>
+                {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">
                         {{ util.href(cdedblink('event/change_registration',
