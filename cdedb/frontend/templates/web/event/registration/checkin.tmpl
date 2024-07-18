@@ -119,9 +119,16 @@
                     </div>
                 {% endif %}
                 {% if registration['orga_notes'] %}
+                    <hr class="nosp" />
                     <details>
-                        <summary>{% trans %}Orga-Notes{% endtrans %}:</summary>
-                        {{ registration['orga_notes']|md }}
+                        <summary class="btn btn-sm btn-default">
+                            <b class="text-muted">
+                                {% trans %}Orga-Notes{% endtrans %}
+                            </b>
+                        </summary>
+                        <div class="mosp">
+                            {{ registration['orga_notes']|md }}
+                        </div>
                     </details>
                 {% endif %}
                 </div>
