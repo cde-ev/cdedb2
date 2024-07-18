@@ -10,7 +10,7 @@ if [ -f .git/MERGE_MSG ]; then
     if [ -n "$( git diff --cached --name-only --diff-filter=ACM | grep "LC_MESSAGES/cdedb.po" )" ]; then
 
         # ...recompile the catalogue.
-        echo "Detected change in translations after merge commit. Recompiling translation catalogues..." 
+        echo "Detected change in translations after merge commit. Recompiling translation catalogues..."
         make i18n-refresh 1&> /dev/null
         git add i18n/*/LC_MESSAGES/cdedb.po
         echo "... done"
@@ -18,3 +18,5 @@ if [ -f .git/MERGE_MSG ]; then
     fi
 
 fi
+
+python3 -c "import sys; from isort.hooks import git_hook; sys.exit(git_hook(strict=False, modify=True, lazy=True))"
