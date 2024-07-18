@@ -346,6 +346,11 @@ I18N_STRINGS = (
     n_("EventFeeType.solidary_increase"),
     n_("EventFeeType.instructor_refund"),
 
+    n_("NotifyOnRegistration.everytime"),
+    n_("NotifyOnRegistration.never"),
+    n_("NotifyOnRegistration.hourly"),
+    n_("NotifyOnRegistration.daily"),
+    n_("NotifyOnRegistration.weekly"),
     #
     # Query datatypes
     #

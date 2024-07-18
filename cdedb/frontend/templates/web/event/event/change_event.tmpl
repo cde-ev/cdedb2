@@ -43,7 +43,7 @@
         {{ util.form_input_select(name="notify_on_registration",
                                   entries=enums['NotifyOnRegistration']|enum_entries(processing=gettext),
                                   label=gettext("Receive Notifications about New Registrations"),
-                                  info=gettext("Notifications will be sent to the orga address configured above")) }}
+                                  info=gettext("Notifications will be sent to the orga address configured above.")) }}
 
         <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
