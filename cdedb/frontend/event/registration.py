@@ -807,7 +807,9 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def _notify_on_registration_query(
             self, rs: RequestState, event: models.Event,
-            registration_id: Optional[int] = None,
+            registration_id: Optional[int],
+            prev_timestamp: Optional[datetime.datetime],
+            ref_timestamp: datetime.datetime,
     ) -> Optional[Query]:
 
         if event.notify_on_registration.send_on_register():
@@ -821,15 +823,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         elif not event.notify_on_registration.value:
             return None
         else:
-            ref = now().replace(microsecond=0)
-            td = datetime.timedelta(minutes=15)
             constraints = [
                 (
                     "ctime.creation_time",
                     QueryOperators.between,
                     (
-                        ref - td * event.notify_on_registration.value,
-                        ref,
+                        prev_timestamp,
+                        ref_timestamp,
                     ),
                 ),
             ]
@@ -848,16 +848,25 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     def _notify_on_registration(self, rs: RequestState, event: models.Event,
-                                registration_id: Optional[int] = None) -> int:
-        if not event.orga_address:
-            return 0
+                                registration_id: Optional[int] = None,
+                                prev_timestamp: datetime.datetime = None,
+                                ) -> tuple[int, datetime.datetime]:
+        """Retrieve recent registrations and if any, send notification."""
+        ref_timestamp = now().replace(microsecond=0)
+        td = datetime.timedelta(minutes=15)
+        prev_timestamp = \
+            prev_timestamp or ref_timestamp - td * event.notify_on_registration.value
 
-        if query := self._notify_on_registration_query(rs, event, registration_id):
+        if not event.orga_address:
+            return 0, ref_timestamp
+
+        if query := self._notify_on_registration_query(
+                rs, event, registration_id, prev_timestamp, ref_timestamp,
+        ):
             result = self.eventproxy.submit_general_query(rs, query, event.id)
             if not result:
-                return 0
+                return 0, ref_timestamp
 
-            rs.requestargs['event_id'] = event.id  # type: ignore[index]
             self.do_mail(
                 rs, "notify_on_registration",
                 {
@@ -868,33 +877,50 @@ class EventRegistrationMixin(EventBaseFrontend):
                     'event': event,
                     'result': result,
                     'query': query,
+                    'serialized_query': {
+                        **query.serialize_to_url(),
+                        'event_id': event.id,
+                    },
                     'NotifyOnRegistration': const.NotifyOnRegistration,
                     'persona_name':
                         lambda r:
                             f"{r['persona.given_names']} {r['persona.family_name']}",
                 },
             )
-            return len(result)
+            return len(result), ref_timestamp
 
         return 0
 
-    @periodic("notfy_on_registration")
+    @periodic("notify_on_registration")
     def notify_on_registration(self, rs: RequestState, store: CdEDBObject,
                                ) -> CdEDBObject:
-        if 'period' not in store:
-            store['period'] = 0
-        else:
-            store['period'] += 1
+        """Periodic for notifying orgas about recent new registrations."""
+        store['period'] = store.get('period', -1) + 1
         event_ids = self.eventproxy.list_events(rs, archived=False)
         events = self.eventproxy.get_events(rs, event_ids)
+
         for event in events.values():
+            timestamps = store.setdefault('timestamps', {})
+
             if event.notify_on_registration > 0:
                 if (store['period'] % event.notify_on_registration.value) == 0:
-                    num = self._notify_on_registration(rs, event)
+                    # Key needs to be string, because we store this as JSON:
+                    prev_timestamp = (
+                        datetime.datetime.fromisoformat(prev_str)
+                        if (prev_str := timestamps.get(str(event.id)))
+                        else None
+                    )
+
+                    num, new_timestamp = self._notify_on_registration(
+                        rs, event, prev_timestamp=prev_timestamp,
+                    )
+
+                    store['timestamps'][event.id] = new_timestamp
                     if num:
                         self.logger.info(
                             f"Sent notification to orgas of {event.title}"
                             f" about {num} new registrations.")
+
         return store
 
     @access("event")

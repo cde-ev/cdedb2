@@ -4,13 +4,13 @@ Liebe Orgas,
 {{ persona_name(result[0]) }} hat sich gerade für eure Veranstaltung angemeldet.
 
 Hier könnt ihr die Anmeldung ansehen:
-{{ cdedblink("event/show_registration", {'registration_id': result[0]['id']}) }}
+{{ cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': result[0]['id']}) }}
 
 {% else -%}
 {% set timespan = {
         NotifyOnRegistration.hourly: "In der letzten Stunde",
         NotifyOnRegistration.daily: "In den letzten 24 Stunden",
-        NotifyOnRegistration.hourly: "In der letzten sieben Tagen",
+        NotifyOnRegistration.hourly: "In den letzten sieben Tagen",
     }[event.notify_on_registration]
 -%}
 {{ timespan }} {% if result|length > 1 -%}
@@ -24,7 +24,7 @@ hat sich folgende Person
 {% endfor %}
 
 Hier könnt ihr diese Anmeldungen ansehen:
-{{ cdedblink(query.scope.get_target(), query.serialize_to_url()) }}
+{{ cdedblink(query.scope.get_target(), serialized_query) }}
 
 {%- endif %}
 
