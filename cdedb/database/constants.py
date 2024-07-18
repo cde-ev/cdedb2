@@ -190,6 +190,9 @@ class NotifyOnRegistration(CdEIntEnum):
     def send_on_register(self) -> bool:
         return self == NotifyOnRegistration.everytime
 
+    def send_periodically(self) -> bool:
+        return self.value > 0
+
 
 @enum.unique
 class GenesisStati(CdEIntEnum):

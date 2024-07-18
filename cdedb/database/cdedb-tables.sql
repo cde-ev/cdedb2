@@ -745,7 +745,7 @@ CREATE TABLE event.events (
         is_course_assignment_visible boolean NOT NULL DEFAULT False,
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
-        -- `const.NotifyOnRegistrationConfig`:
+        -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
         lodge_field_id               integer DEFAULT NULL -- REFERENCES event.field_definitions(id)

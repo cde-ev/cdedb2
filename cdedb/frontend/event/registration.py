@@ -820,9 +820,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     registration_id,
                 ),
             ]
-        elif not event.notify_on_registration.value:
-            return None
-        else:
+        elif event.notify_on_registration.send_periodically():
             constraints = [
                 (
                     "ctime.creation_time",
@@ -833,6 +831,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                     ),
                 ),
             ]
+        else:
+            return None
         return Query(
             QueryScope.registration, QueryScope.registration.get_spec(event=event),
             [
@@ -849,7 +849,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def _notify_on_registration(self, rs: RequestState, event: models.Event,
                                 registration_id: Optional[int] = None,
-                                prev_timestamp: datetime.datetime = None,
+                                prev_timestamp: Optional[datetime.datetime] = None,
                                 ) -> tuple[int, datetime.datetime]:
         """Retrieve recent registrations and if any, send notification."""
         ref_timestamp = now().replace(microsecond=0)
@@ -863,8 +863,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         if query := self._notify_on_registration_query(
                 rs, event, registration_id, prev_timestamp, ref_timestamp,
         ):
-            result = self.eventproxy.submit_general_query(rs, query, event.id)
-            if not result:
+            registrations = self.eventproxy.submit_general_query(rs, query, event.id)
+            if not registrations:
                 return 0, ref_timestamp
 
             self.do_mail(
@@ -875,7 +875,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 },
                 {
                     'event': event,
-                    'result': result,
+                    'registrations': registrations,
                     'query': query,
                     'serialized_query': {
                         **query.serialize_to_url(),
@@ -887,9 +887,9 @@ class EventRegistrationMixin(EventBaseFrontend):
                             f"{r['persona.given_names']} {r['persona.family_name']}",
                 },
             )
-            return len(result), ref_timestamp
+            return len(registrations), ref_timestamp
 
-        return 0
+        return 0, ref_timestamp
 
     @periodic("notify_on_registration")
     def notify_on_registration(self, rs: RequestState, store: CdEDBObject,
@@ -902,7 +902,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         for event in events.values():
             timestamps = store.setdefault('timestamps', {})
 
-            if event.notify_on_registration > 0:
+            if event.notify_on_registration.send_periodically():
                 if (store['period'] % event.notify_on_registration.value) == 0:
                     # Key needs to be string, because we store this as JSON:
                     prev_timestamp = (
