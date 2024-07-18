@@ -18,14 +18,14 @@
 {% endblock %}
 
 {% block content %}
-    <p>
+    <div class="p button-par">
         {{ util.href(cdedblink('event/configure_fee_form', {'personalized': False}), gettext("Add Conditional Fee"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/configure_fee_form', {'personalized': True}), gettext("Add Personalized Fee"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
         {{ util.href(cdedblink('event/fee_stats'), gettext("Fee Stats"),
                                icon='chart-bar', aclass='btn btn-info btn-sm') }}
-    </p>
+    </div>
 
     {{ generic_event.fee_composition_table() }}
 {% endblock %}

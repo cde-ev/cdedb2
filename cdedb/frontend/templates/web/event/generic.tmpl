@@ -426,7 +426,7 @@
 
 {% macro active_fee_registration_query_link(registration_ids, label=None, anid="", query=None, fee_id=None) %}
     {% with query = query or get_query(registration_ids, fee_id) %}
-        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()),
+        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
                      title=gettext("View Registrations"), anid=anid) }}
     {% endwith %}
