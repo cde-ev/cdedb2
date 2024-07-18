@@ -390,9 +390,9 @@ class Transaction:
             ret = dict(**ret, **{
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": Optional[vtypes.CdedbID],
+                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": Optional[vtypes.ID],
+                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
                 f"event_confirm{suffix}": bool,
             })
         return ret
@@ -872,12 +872,14 @@ class Transaction:
             "event_id": self.event.id if self.event else None,
             "event_confidence": self.event_confidence,
             "event_name": self.event.shortname if self.event else None,
-            "errors_str": ", ".join("{}: {}".format(
-                key, e.args[0].format(**e.args[1]) if len(e.args) == 2 else e)
-                                    for key, e in self.errors),
-            "warnings_str": ", ".join("{}: {}".format(
-                key, w.args[0].format(**w.args[1]) if len(w.args) == 2 else w)
-                                      for key, w in self.warnings),
+            "errors_str": ", ".join(
+                f"{key}: {e.args[0].format(**e.args[1]) if len(e.args) == 2 else e}"
+                for key, e in self.errors
+            ),
+            "warnings_str": ", ".join(
+                f"{key}: {w.args[0].format(**w.args[1]) if len(w.args) == 2 else w}"
+                for key, w in self.warnings
+            ),
             "iban": self.iban,
             "bic": self.bic,
             "t_id": self.t_id,

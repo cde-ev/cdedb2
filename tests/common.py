@@ -527,7 +527,7 @@ class BrowserTest(CdEDBTest):
     We instantiate a real (development) server for this usecase as a bare WSGI
     application won't do the trick.
     """
-    serverProcess = None
+    serverProcess: subprocess.Popen[bytes] | None = None
 
     @classmethod
     def setUpClass(cls) -> None:

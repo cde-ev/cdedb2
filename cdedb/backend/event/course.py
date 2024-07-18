@@ -364,11 +364,12 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     # Construct list of inserts.
                     choices: list[CdEDBObject] = []
                     for track_id, reg_ids in data_by_tracks.items():
-                        query = (
-                            "SELECT id, course_id, track_id, registration_id"
-                            " FROM event.course_choices"
-                            " WHERE track_id = {} AND registration_id = ANY(%s)"
-                            " ORDER BY registration_id, rank").format(track_id)
+                        query = f"""
+                            SELECT id, course_id, track_id, registration_id
+                            FROM event.course_choices
+                            WHERE track_id = {track_id} AND registration_id = ANY(%s)
+                            ORDER BY registration_id, rank
+                        """
                         choices.extend(self.query_all(rs, query, (reg_ids,)))
 
                     deletion_ids = {e['id'] for e in choices}
