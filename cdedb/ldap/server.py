@@ -34,7 +34,7 @@ class ReplyCallback(Protocol):
         ...
 
 
-class LdapHandler():
+class LdapHandler:
     """Implementation of the ldap protocol via asyncio.
 
     Each time a new client connects to the server, a new instance of this class will
@@ -46,7 +46,7 @@ class LdapHandler():
         self,
         root: CdEDBBaseLDAPEntry,
         reader: StreamReader,
-        writer: StreamWriter
+        writer: StreamWriter,
     ):
         self.root = root
         self.writer = writer
@@ -56,12 +56,12 @@ class LdapHandler():
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
         inherit=pureldap.LDAPBERDecoderContext_LDAPMessage(
             fallback=pureldap.LDAPBERDecoderContext(
-                fallback=pureber.BERDecoderContext()
+                fallback=pureber.BERDecoderContext(),
             ),
             inherit=pureldap.LDAPBERDecoderContext(
-                fallback=pureber.BERDecoderContext()
+                fallback=pureber.BERDecoderContext(),
             ),
-        )
+        ),
     )
 
     async def connection_callback(self) -> None:
@@ -140,7 +140,7 @@ class LdapHandler():
 
     @staticmethod
     def fail_default(
-        resultCode: int, errorMessage: str
+        resultCode: int, errorMessage: str,
     ) -> pureldap.LDAPProtocolResponse:
         """Fallback error handler."""
         return pureldap.LDAPExtendedResponse(
@@ -207,7 +207,7 @@ class LdapHandler():
         """
         if request.version != 3:
             raise ldaperrors.LDAPProtocolError(
-                "Version %u not supported" % request.version
+                "Version %u not supported" % request.version,
             )
 
         self.check_controls(controls)
@@ -230,7 +230,7 @@ class LdapHandler():
         self.bound_user = entry.bind(request.auth)
 
         msg = pureldap.LDAPBindResponse(
-            resultCode=ldaperrors.Success.resultCode, matchedDN=entry.dn.getText()
+            resultCode=ldaperrors.Success.resultCode, matchedDN=entry.dn.getText(),
         )
         reply(msg)
 
@@ -317,7 +317,7 @@ class LdapHandler():
             if controlType != PagedResultsControlType:
                 continue
             control_values = pureber.BERSequence.fromBER(
-                pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext()
+                pureber.CLASS_CONTEXT, controlValue, pureber.BERDecoderContext(),
             ).data[0]
             logger.debug(f"Control values: {control_values.data}")
             paged_size = control_values[0].value
@@ -336,11 +336,11 @@ class LdapHandler():
             and request.filter == pureldap.LDAPFilter_present("objectClass")
         ):
             msg = pureldap.LDAPSearchResultEntry(
-                objectName=self.root.dn.getText(), attributes=list(self.root.items())
+                objectName=self.root.dn.getText(), attributes=list(self.root.items()),
             )
             reply(msg)
             msg = pureldap.LDAPSearchResultDone(
-                resultCode=ldaperrors.Success.resultCode
+                resultCode=ldaperrors.Success.resultCode,
             )
             reply(msg)
             return None
@@ -473,7 +473,7 @@ class LdapHandler():
         controls = None
         if is_paged:
             control_value = pureber.BERSequence([
-                pureber.BERInteger(total_size), pureber.BEROctetString(enc_new_cookie)
+                pureber.BERInteger(total_size), pureber.BEROctetString(enc_new_cookie),
             ])
             controls = [(PagedResultsControlType, None, control_value)]
             logger.debug(f"Returned Paged size: {total_size}")
