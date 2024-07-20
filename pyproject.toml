@@ -45,6 +45,11 @@ ignore = [
     "A003",  # Class attributes shadowing builtin.
     "TRY003",  # Exception message not defined in exception class.
 ]
+[tool.ruff.lint.per-file-ignores]
+"tests/frontend_tests/__init__.py" = ["F401"]
+"tests/backend_tests/__init__.py" = ["F401"]
+"tests/ldap_tests/__init__.py" = ["F401"]
+"tests/other_tests/__init__.py" = ["F401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
