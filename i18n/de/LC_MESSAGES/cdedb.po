@@ -18000,8 +18000,8 @@ msgid "EventFeeType.solidary_reduction"
 msgstr "Solidarische Reduktion"
 
 #: cdedb/i18n_additional.py:345
-msgid "EventFeeType.donation"
-msgstr "Spende"
+msgid "EventFeeType.solidary_donation"
+msgstr "Solidarische Spende"
 
 #: cdedb/i18n_additional.py:346
 msgid "EventFeeType.solidary_increase"
@@ -18010,6 +18010,14 @@ msgstr "Solidarische Erhöhung"
 #: cdedb/i18n_additional.py:347
 msgid "EventFeeType.instructor_refund"
 msgstr "KL-Erstattung"
+
+#: cdedb/i18n_additional.py:347
+msgid "EventFeeType.instructor_donation"
+msgstr "KL-Spende"
+
+#: cdedb/i18n_additional.py:347
+msgid "EventFeeType.other_donation"
+msgstr "Sonstige Spende"
 
 #: cdedb/i18n_additional.py:352
 msgid "str"
