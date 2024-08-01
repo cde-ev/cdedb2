@@ -74,7 +74,7 @@
             {% endif %}
             {% if ambience['event'].personalized_fees %}
                 {{ generic.query_result_dynamic_action(
-                        label=gettext("Set Personalized Fee Amount"), icon="edit",
+                        label=gettext("Set Personalized Fee Amount"), icon="calculator",
                         target="event/set_personalized_fees_form", magic_placeholders=["registration_ids"]) }}
             {% endif %}
             {{ generic.query_result_dynamic_action(

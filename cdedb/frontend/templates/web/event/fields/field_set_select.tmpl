@@ -37,10 +37,10 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
-            <p class="text-info">
-                {{ util.make_icon("info-circle") }}
-                Select a custom data field to set individual values for that field for the following entities:
-            </p>
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            Select a custom data field to set individual values for that field for the following entities:
+        </p>
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
         {{ util.input_hidden(name="ids") }}
         {{ util.input_hidden(name="kind") }}

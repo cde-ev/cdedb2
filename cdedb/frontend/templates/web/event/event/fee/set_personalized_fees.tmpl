@@ -61,6 +61,8 @@
                 {% endtrans %}
             </p>
 
+            <hr />
+
             {{ util.anti_csrf_token('event/set_personalized_fees') }}
             {{ util.input_hidden('registration_ids', registration_ids|join(',')) }}
             {# Already sorted #}

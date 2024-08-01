@@ -44,8 +44,23 @@
 {% endblock %}
 
 {% block content %}
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}
+        This form can be used to set the individual value of the chosen custom data field for multiple registrations at once.
+    </p>
     {% if ordered %}
         <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
+            <p class="multiset-explanation text-info" style="display: none;">
+                {{ util.make_icon("info-circle") }}
+                {% trans %}
+                    Changed entries are highlighted in red.
+                    Newly added entries are shown in green.
+                    Deleted entries are shown in red.
+                    You can use the "Restore"-button to restore a changed or deleted entry to its original value.
+                    You can use the "Delete"-button to set an entry to empty, which will delete it.
+                {% endtrans %}
+            </p>
+            <hr />
             {{ util.anti_csrf_token('event/field_set') }}
             {% for anid in ordered %}
                 {{ generic_event.form_field_input(
@@ -66,21 +81,6 @@
             {% endif %}
 
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink(cancellink)) }}
-
-            <p class="text-info">
-                {{ util.make_icon("info-circle") }}
-                This form can be used to set the individual value of the chosen custom data field for multiple registrations at once.
-            </p>
-            <p class="multiset-explanation text-info" style="display: none;">
-                {{ util.make_icon("info-circle") }}
-                {% trans %}
-                    Changed entries are highlighted in red.
-                    Newly added entries are shown in green.
-                    Deleted entries are shown in red.
-                    You can use the "Restore"-button to restore a changed or deleted entry to its original value.
-                    You can use the "Delete"-button to set an entry to empty, which will delete it.
-                {% endtrans %}
-            </p>
         </form>
     {% else %}
         <p>
