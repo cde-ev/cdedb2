@@ -13,15 +13,9 @@
         {% endtrans %}
     {% else %}
         {% if personalized %}
-            {% if ambience['registration'] %}
-                {% trans event_title=ambience['event'].title, persona_name=util.persona_name(persona) %}
-                    Add Personalized Fee for {{ persona_name }} ({{ event_title }})
-                {% endtrans %}
-            {% else %}
-                {% trans event_title=ambience['event'].title %}
-                    Add Personalized Fee ({{ event_title }})
-                {% endtrans %}
-            {% endif %}
+            {% trans event_title=ambience['event'].title %}
+                Add Personalized Fee ({{ event_title }})
+            {% endtrans %}
         {% else %}
             {% trans event_title=ambience['event']['title'] %}
                 Add Conditional Fee ({{ event_title }})
@@ -44,21 +38,14 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {% if ambience['registration'] %}
-        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-        {{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
-        {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), icon="coins") }}
-        {{ util.breadcrumb_link(cdedblink("event/add_new_personalized_fee"), gettext("Add Personalized Fee"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+    {% if ambience['fee'] %}
+        {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
+    {% elif personalized %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Personalized Fee"), active=True) }}
     {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
-        {% if ambience['fee'] %}
-            {{ util.breadcrumb_link("", ambience['fee']['title'], icon="coins", readonly=True) }}
-            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Change"), active=True) }}
-        {% elif personalized %}
-            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Personalized Fee"), active=True) }}
-        {% else %}
-            {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Conditional Fee"), active=True) }}
-        {% endif %}
+        {{ util.breadcrumb_link(cdedblink("event/configure_fee"), gettext("Add Conditional Fee"), active=True) }}
     {% endif %}
 {% endblock %}
 
