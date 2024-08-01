@@ -66,7 +66,7 @@
         {% if ambience['registration'] %}
             <hr />
             {{ util.form_input_static(gettext("Initially affected Registrations"), value=util.href('event/show_registration', util.persona_name(persona))) }}
-            {{ util.form_input_static(value=gettext("Set initial personalized amount to:")) }}
+            {{ util.form_input_static(value=gettext("Set initial personalized amount to") + ":") }}
             {{ util.form_input_text(
                     type="number", name="amount", addon="€", attributes='step="0.01"'|s, label=gettext("Amount")) }}
         {% elif not personalized %}
