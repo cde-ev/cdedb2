@@ -1109,8 +1109,14 @@ class EventRegistrationMixin(EventBaseFrontend):
                     rs, {'fee_id': Optional[int]},  # type: ignore[dict-item]
                 )['fee_id']
             if fee_id:
+                # Defer validation to after the redirect.
+                rs.ignore_validation_errors()
                 return self.redirect(
-                    rs, 'event/set_personalized_fees_form', {'fee_id': fee_id},
+                    rs, 'event/set_personalized_fees_form',
+                    {
+                        'fee_id': fee_id,
+                        'registration_ids': rs.request.values['registration_ids'],
+                    },
                 )
         if rs.has_validation_errors():
             if registration_ids is None:
