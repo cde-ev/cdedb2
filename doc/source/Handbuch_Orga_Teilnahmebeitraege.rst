@@ -32,9 +32,11 @@ Alle Teilnahmebeiträge haben einen der folgenden Typen:
 - Stornokosten
 - Externenzusatzbeitrag
 - KL-Erstattung
+- KL-Spende
 - Solidarische Reduktion
 - Solidarische Erhöhung
-- Spende
+- Solidarische Spende
+- Sonstige Spende
 
 Die Typen dienen der Übersichtlichkeit, sowie der Statistik und haben fast keine
 direkte Auswirkung in ihrer Funktionalität.
@@ -221,7 +223,7 @@ auf einen Teil der Erstattung und spenden diesen.
 
 * *Personalisierter Teilnahmebeitrag* "Zusatzübernachtungen" (Regulärer Beitrag)
 * ``field.kl_erstattung`` => 50 Euro (KL-Erstattung)
-* *Personalisierter Teilnahmebeitrag* "KL-Spende" (Spende)
+* *Personalisierter Teilnahmebeitrag* "KL-Spende" (KL-Spende)
 
 Die entsprechenden :doc:`eigenen Datenfelder <Handbuch_Orga_Datenfelder>` vom Typ ``Anmeldungsfeld``
 müssen zuvor angelegt werden:
