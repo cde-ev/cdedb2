@@ -100,7 +100,7 @@
                 Their payment can not be split by type and has been excluded from the "{{ paid }}" column above.
             {% endtrans %}
             <br />
-            {{ util.href(cdedblink(incomplete_paid.scope.get_target(redirect=True), incomplete_paid.serialize_to_url()),
+            {{ util.href(cdedblink(incomplete_paid.scope.get_target(redirect=True), incomplete_paid.serialize_to_url()) + '#query-results',
                          gettext("View Registrations"), icon='list', anid="incomplete_paid_query") }}
         </p>
         {% endif %}
@@ -111,7 +111,7 @@
                 {{ not_paid_count }} people have not paid anything of their fee yet.
             {% endtrans %}
             <br />
-            {{ util.href(cdedblink(not_paid.scope.get_target(redirect=True), not_paid.serialize_to_url()),
+            {{ util.href(cdedblink(not_paid.scope.get_target(redirect=True), not_paid.serialize_to_url()) + '#query-results',
                              gettext("View Registrations"), icon='list', anid="not_paid_query") }}
         </p>
         {% endif %}
