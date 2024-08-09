@@ -10,7 +10,7 @@ from schulze_condorcet.types import Candidate
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, RequestState, get_hash, merge_dicts, \
+from cdedb.common import CdEDBObject, RequestState, merge_dicts, \
     ValidationWarning
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted

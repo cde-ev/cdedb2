@@ -69,7 +69,7 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.attachment import AttachmentStore
+from cdedb.common.attachment import AttachmentStore
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend

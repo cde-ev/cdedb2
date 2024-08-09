@@ -24,6 +24,14 @@ from tests.common import (
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
+    def _add_attachment_version(self, data: CdEDBObject, attachment: bytes) -> int:
+        data['file_hash'] = self.assembly.attachment_store.set(attachment)
+        return self.assembly.add_attachment_version(self.key, data)
+
+    def _add_attachment(self, data: CdEDBObject, attachment: bytes) -> int:
+        data['file_hash'] = self.assembly.attachment_store.set(attachment)
+        return self.assembly.add_attachment(self.key, data)
+
     def _get_sample_quorum(self, assembly_id: int) -> int:
         attendees = {
             e['persona_id'] for e in self.get_sample_data('assembly.attendees').values()
@@ -237,7 +245,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
-        self.assertTrue(self.assembly.add_attachment(self.key, attachment_data, b'123'))
+        self.assertTrue(self._add_attachment(attachment_data, b'123'))
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "submitted_by": self.user['id'],
@@ -572,8 +580,7 @@ class TestAssemblyBackend(BackendTest):
         }
 
         # simply add one attachment and link it
-        attachment_id = self.assembly.add_attachment(
-            self.key, attachment_data[0], b'123')
+        attachment_id = self._add_attachment(attachment_data[0], b'123')
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -597,10 +604,8 @@ class TestAssemblyBackend(BackendTest):
                 self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link two more attachments
-        attachment_id1 = self.assembly.add_attachment(
-            self.key, attachment_data[1], b'123')
-        attachment_id2 = self.assembly.add_attachment(
-            self.key, attachment_data[2], b'123')
+        attachment_id1 = self._add_attachment(attachment_data[1], b'123')
+        attachment_id2 = self._add_attachment(attachment_data[2], b'123')
         log.extend({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -627,8 +632,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link another attachment, unlink two attachments
-        attachment_id3 = self.assembly.add_attachment(
-            self.key, attachment_data[3], b'123')
+        attachment_id3 = self._add_attachment(attachment_data[3], b'123')
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -1016,7 +1020,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
-        new_id = self.assembly.add_attachment(self.key, data, b'123')
+        new_id = self._add_attachment(data, b'123')
         attachment_ids = [new_id]
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1094,7 +1098,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
         }
-        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'1234'))
+        self.assertTrue(self._add_attachment_version(data, b'1234'))
         update = {
             "attachment_id": new_id,
             "version_nr": 2,
@@ -1103,7 +1107,7 @@ class TestAssemblyBackend(BackendTest):
             "filename": "alles_falsch.pdf",
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, update))
-        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
+        self.assertTrue(self._add_attachment_version(data, b'12345'))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
             "assembly_id": assembly_id,
@@ -1177,7 +1181,7 @@ class TestAssemblyBackend(BackendTest):
                 self.key, attachment_id=new_id))
 
         # Check that adding a new version is still possible
-        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'123456'))
+        self.assertTrue(self._add_attachment_version(data, b'123456'))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
             "assembly_id": assembly_id,
@@ -1233,7 +1237,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Anton",
             "filename": "verf.pdf",
         }
-        new_id = self.assembly.add_attachment(self.key, data, b'abc')
+        new_id = self._add_attachment(data, b'abc')
         attachment_ids.append(new_id)
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1256,7 +1260,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Berta",
             "filename": "beschluss.pdf",
         }
-        new_id = self.assembly.add_attachment(self.key, data, b'super secret')
+        new_id = self._add_attachment(data, b'super secret')
         attachment_ids.append(new_id)
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1419,7 +1423,7 @@ class TestAssemblyBackend(BackendTest):
                 "authors": "AbCdE",
                 "filename": "Freiheit.pdf",
             }
-            attachment_id = self.assembly.add_attachment(self.key, attachment_data, b'')
+            attachment_id = self._add_attachment(attachment_data, b'')
             log.append({
                 "code": const.AssemblyLogCodes.attachment_added,
                 "assembly_id": assembly_id,
@@ -1499,9 +1503,7 @@ class TestAssemblyBackend(BackendTest):
                     "authors": attachment_data["authors"],
                     "filename": attachment_data["filename"],
                 }
-                self.assertTrue(
-                    self.assembly.add_attachment_version(
-                        self.key, version_data, bytes(i+1)))
+                self.assertTrue(self._add_attachment_version(version_data, bytes(i+1)))
                 log.append({
                     "code": const.AssemblyLogCodes.attachment_version_added,
                     "assembly_id": assembly_id,
@@ -1748,8 +1750,8 @@ class TestAssemblyBackend(BackendTest):
                         ),
                     )
 
-                    new_attachment_id = self.assembly.add_attachment(
-                        self.key, {'assembly_id': assembly_id, **new_attachment_data},
+                    new_attachment_id = self._add_attachment(
+                        {'assembly_id': assembly_id, **new_attachment_data},
                         b"123",
                     )
                     self.assertTrue(
@@ -1825,8 +1827,8 @@ class TestAssemblyBackend(BackendTest):
                         self.key, assembly_id, self.user['id'])
 
                 with self.assertRaises(PrivilegeError):
-                    self.assembly.add_attachment(
-                        self.key, {'assembly_id': assembly_id, **new_attachment_data},
+                    self._add_attachment(
+                        {'assembly_id': assembly_id, **new_attachment_data},
                         b"123",
                     )
 

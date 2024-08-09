@@ -20,7 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.attachment import GenesisAttachmentStore, ProfileFotoStore
+from cdedb.common.attachment import GenesisAttachmentStore, ProfileFotoStore
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,

@@ -40,7 +40,7 @@ from schulze_condorcet import schulze_evaluate
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.attachment import AssemblyAttachmentStore
+from cdedb.common.attachment import AssemblyAttachmentStore
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -48,7 +48,7 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, get_hash, glue, json_serialize, now, unwrap,
+    DeletionBlockers, RequestState, glue, json_serialize, now, unwrap,
 )
 from cdedb.common.exceptions import (
     DeletionBlockedError, DeletionImpossibleError, PrivilegeError,
@@ -1695,7 +1695,6 @@ class AssemblyBackend(AbstractBackend):
                    if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
         version['version_nr'] = 1
         version['ctime'] = now()
-        version['file_hash'] = get_hash(content)
         with Atomizer(rs):
             if self.is_assembly_locked(rs, assembly_id):
                 raise ValueError(n_(
@@ -2064,7 +2063,7 @@ class AssemblyBackend(AbstractBackend):
             return {}
 
     @access("assembly")
-    def add_attachment_version(self, rs: RequestState, data: CdEDBObject
+    def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                ) -> DefaultReturnCode:
         """Add a new version of an attachment."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
