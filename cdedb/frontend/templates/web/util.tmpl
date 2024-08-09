@@ -469,6 +469,19 @@
     {%- endcall %}
 {%- endmacro %}
 
+{% macro form_input_persistent_file(name, hash, label0='',  label1='', info='', displayerrors=True, readonly=False, accept=none, anid=none,
+        aclass=none, small=False, horizontal=True) %}
+    {% set label = label0 %}
+    {% if hash %}
+        {{ util.input_hidden(name=name + "_hash") }}
+        {{ util.input_hidden(name=name + "_filename") }}
+        {{ util.form_input_static(label=label0, value=values[name + '_filename'], small=small,
+                                  info="We already saved your uploaded file, but you can provide a different file below.") }}
+    {% endif %}
+    {{ form_input_file(name, label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal) }}
+{%- endmacro %}
+
+
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
                         arialabel=none, attributes='', actualreadonly=False) %}
     <textarea{{ dict(

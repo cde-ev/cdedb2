@@ -234,10 +234,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         }
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
         file_hash = get_hash(attachment)
-        if any(v["file_hash"] == file_hash for v in versions.values()):
-            # TODO maybe display some kind of warning here?
-            # Currently this would mean that you need to reupload the file.
-            pass
+        if self.assemblyproxy.attachment_store.usage(rs, self.assemblyproxy, file_hash):
+            if any(v["file_hash"] == file_hash for v in versions.values()):
+                rs.append_validation_error(("attachment", ValidationWarning(
+                    n_("File already known for earlier version of this attachment."))))
+            else:
+                rs.append_validation_error(("attachment", ValidationWarning(
+                    n_("File already in use for other attachment."))))
 
         data['attachment_id'] = attachment_id
         code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
