@@ -1,3 +1,4 @@
+import abc
 import pathlib
 from typing import Any, Optional
 
@@ -11,13 +12,9 @@ class AttachmentStore:
     """Generic facility for file storage within the cdedb, with instances for each
     class of files to be considered."""
 
-    def __init__(self, dir: pathlib.Path, table: str, col: str = 'attachment_hash',
-                 type: type[Any] = vtypes.PDFFile):
+    def __init__(self, dir: pathlib.Path, type: type[Any] = vtypes.PDFFile):
         self.dir = dir
         self.type = type
-        self.table = table
-        self.col = col
-
 
     def set(self, attachment: bytes) -> str:
         """Store a file. Returns the file hash."""
@@ -48,11 +45,9 @@ class AttachmentStore:
                 return f.read()
         return None
 
+    @abc.abstractmethod
     def _usage(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
         """Check whether an attachment is still referenced."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = f"SELECT COUNT(*) FROM {self.table} WHERE {self.col} = %s"
-        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
 
     def forget_one(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
         "Delete a single attachment if no longer in use"
@@ -68,3 +63,37 @@ class AttachmentStore:
         for f in self.dir.iterdir():
             ret += self.forget_one(rs, backend, f.name)
         return ret
+
+
+class GenesisAttachmentStore(AttachmentStore):
+    type = vtypes.PDFFile
+
+    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
+               attachment_hash: str) -> bool:
+        """Check whether an attachment is still referenced."""
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
+        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
+
+class ProfileFotoStore(AttachmentStore):
+    type = vtypes.ProfilePicture
+
+    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
+               attachment_hash: str) -> bool:
+        """Check whether an attachment is still referenced."""
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        query = "SELECT COUNT(*) FROM core.personas WHERE attachment_hash = %s"
+        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
+
+class AssemblyAttachmentStore(AttachmentStore):
+    type = vtypes.PDFFile
+
+    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
+               attachment_hash: str) -> bool:
+        """Check whether an attachment is still referenced."""
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        query = ("SELECT COUNT(*) FROM assembly.attachment_versions "
+                 "WHERE attachment_hash = %s AND dtime IS NOT NULL")
+        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
+
+    usage = _usage

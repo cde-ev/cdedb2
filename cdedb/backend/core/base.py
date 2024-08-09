@@ -20,7 +20,7 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.backend.attachment import AttachmentStore
+from cdedb.backend.attachment import GenesisAttachmentStore, ProfileFotoStore
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
@@ -72,10 +72,9 @@ class CoreBaseBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
-        self.foto_store = AttachmentStore(
-            self.conf['STORAGE_DIR'] / 'foto', 'core.personas', 'foto')
-        self.genesis_attachment_store = AttachmentStore(
-            self.conf['STORAGE_DIR'] / 'genesis_attachment', 'core.genesis_cases')
+        self.foto_store = ProfileFotoStore(self.conf['STORAGE_DIR'] / 'foto')
+        self.genesis_attachment_store = GenesisAttachmentStore(
+            self.conf['STORAGE_DIR'] / 'genesis_attachment')
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:

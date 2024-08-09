@@ -573,7 +573,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                           attachment_hash: Optional[str],
                           attachment_filename: Optional[str] = None,
                           ) -> tuple[Optional[str], Optional[str]]:
-        """Localize an attachment by hash and upload it, if necessary"""
+        """Locate an attachment by hash and upload it, if necessary"""
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
