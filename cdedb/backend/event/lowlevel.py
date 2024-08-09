@@ -8,8 +8,9 @@ import abc
 import collections
 import copy
 import dataclasses
+from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
+from typing import Any, Callable, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -41,8 +42,8 @@ class EventFeesPerEntity:
 
     Each member is a map of entities to a set of fees that reference that entity.
     """
-    fields: Dict[int, Set[int]]
-    parts: Dict[int, Set[int]]
+    fields: dict[int, set[int]]
+    parts: dict[int, set[int]]
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -56,8 +57,9 @@ class EventLowLevelBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_orga(self, rs: RequestState, *, event_id: int = None,
-                course_id: int = None, registration_id: int = None) -> bool:
+    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None,
+                course_id: Optional[int] = None, registration_id: Optional[int] = None,
+                ) -> bool:
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -80,8 +82,9 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
-                  event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
+                  event_id: Optional[int], persona_id: Optional[int] = None,
+                  change_note: Optional[str] = None, atomized: bool = True,
+                  ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -109,7 +112,7 @@ class EventLowLevelBackend(AbstractBackend):
     @internal
     def _get_events_fields(self, rs: RequestState, event_ids: Collection[int],
                            field_ids: Optional[Collection[int]] = None,
-                           ) -> Dict[int, CdEDBObjectMap]:
+                           ) -> dict[int, CdEDBObjectMap]:
         """Helper function to retrieve the custom field definitions for some events.
 
         This is used by multiple backend functions.
@@ -120,7 +123,7 @@ class EventLowLevelBackend(AbstractBackend):
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
             event_ids, entity_key="event_id")
-        ret: Dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
+        ret: dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
         for field in data:
             field['association'] = const.FieldAssociations(field['association'])
             field['kind'] = const.FieldDatatypes(field['kind'])
@@ -181,7 +184,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_course_track(self, rs: RequestState, track_id: int,
-                             cascade: Collection[str] = None
+                             cascade: Optional[Collection[str]] = None,
                              ) -> DefaultReturnCode:
         """Helper to remove a course track.
 
@@ -226,7 +229,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         if not blockers:
             track = unwrap(self.sql_select(rs, "event.course_tracks",
-                                           ("part_id", "title",),
+                                           ("part_id", "title"),
                                            (track_id,)))
             part = unwrap(self.sql_select(rs, "event.event_parts",
                                           ("event_id",),
@@ -268,7 +271,7 @@ class EventLowLevelBackend(AbstractBackend):
         deleted = {x for x in data if x > 0 and data[x] is None}
 
         # Do some additional validation for any given course room field.
-        course_room_fields: Set[int] = set(
+        course_room_fields: set[int] = set(
             filter(None, (t.get('camping_mat_field_id') for t in data.values() if t)))
         course_room_field_data = self._get_event_fields(rs, event_id,
                                                         course_room_fields)
@@ -366,7 +369,7 @@ class EventLowLevelBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("This should not happen."))
 
-        casters: Dict[const.FieldDatatypes, Callable[[Any], Any]] = {
+        casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.str: str,
             const.FieldDatatypes.float: float,
@@ -376,7 +379,7 @@ class EventLowLevelBackend(AbstractBackend):
         }
 
         self.affirm_atomized_context(rs)
-        data = self.sql_select(rs, table, ("id", "fields",),
+        data = self.sql_select(rs, table, ("id", "fields"),
                                (field_data['event_id'],), entity_key='event_id')
         for entry in data:
             fdata = entry['fields']
@@ -394,18 +397,20 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
-    def _get_event_fee_references(self, rs: RequestState, event_id: int
-                                  ) -> Dict[int, ReferencedNames]:
+    def _get_event_fee_references(self, rs: RequestState, event_id: int,
+                                  ) -> dict[int, ReferencedNames]:
         """Retrieve a map of event fee id to collection of names referenced by it."""
         return {
-            fd['id']: get_referenced_names(fcp_parsing.parse(fd['condition']))
+            fd['id']: get_referenced_names(
+                fcp_parsing.parse(fd['condition']) if fd['condition'] else None,
+            )
             for fd in self.sql_select(
-                rs, "event.event_fees", ("id", "condition",), (event_id,),
+                rs, "event.event_fees", ("id", "condition"), (event_id,),
                 entity_key="event_id")
         }
 
     @access("event")
-    def get_event_fees_per_entity(self, rs: RequestState, event_id: int
+    def get_event_fees_per_entity(self, rs: RequestState, event_id: int,
                                   ) -> EventFeesPerEntity:
         """Retrieve maps of entites to all event fees, referencing that entity."""
         field_names_to_id = {
@@ -420,9 +425,9 @@ class EventLowLevelBackend(AbstractBackend):
         }
 
         event_fee_references = self._get_event_fee_references(rs, event_id)
-        fields: Dict[int, Set[int]] = {
+        fields: dict[int, set[int]] = {
             field_id: set() for field_id in field_names_to_id.values()}
-        parts: Dict[int, Set[int]] = {
+        parts: dict[int, set[int]] = {
             part_id: set() for part_id in part_names_to_id.values()}
         for fee_id, rn in event_fee_references.items():
             for fn in rn.field_names:
@@ -431,11 +436,11 @@ class EventLowLevelBackend(AbstractBackend):
                 parts[part_names_to_id[pn]].add(fee_id)
 
         return EventFeesPerEntity(
-            fields=fields, parts=parts
+            fields=fields, parts=parts,
         )
 
     @abc.abstractmethod
-    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap,
                        ) -> DefaultReturnCode: ...
 
     @internal
@@ -486,7 +491,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_event_part(self, rs: RequestState, part_id: int,
-                           cascade: Collection[str] = None
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Helper to remove one event part.
 
@@ -573,7 +578,7 @@ class EventLowLevelBackend(AbstractBackend):
             raise ValueError(n_("At least one event part required."))
 
         # Do some additional validation for any given waitlist and camping mat fields.
-        waitlist_fields: Set[int] = set(
+        waitlist_fields: set[int] = set(
             filter(None, (p.get('waitlist_field_id') for p in parts.values() if p)))
         waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
         if len(waitlist_fields) != len(waitlist_field_data):
@@ -581,7 +586,7 @@ class EventLowLevelBackend(AbstractBackend):
         for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
-        camping_mat_fields: Set[int] = set(
+        camping_mat_fields: set[int] = set(
             filter(None, (p.get('camping_mat_field_id') for p in parts.values() if p)))
         camping_mat_field_data = self._get_event_fields(rs, event_id,
                                                         camping_mat_fields)
@@ -636,8 +641,11 @@ class EventLowLevelBackend(AbstractBackend):
             if changed_shortnames:
                 # Substitute changed shortnames in existing fee conditions.
                 q = """SELECT id, condition FROM event.event_fees WHERE event_id = %s"""
-                fee_conditions: Dict[int, str] = {
-                    e['id']: e['condition'] for e in self.query_all(rs, q, (event_id,))}
+                fee_conditions: dict[int, str] = {
+                    e['id']: e['condition']
+                    for e in self.query_all(rs, q, (event_id,))
+                    if e['condition']
+                }
 
                 # Update any fee conditions that changed
                 #  (i.e. those referencing a part which got a new shortname).
@@ -688,7 +696,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_part_group(self, rs: RequestState, part_group_id: int,
-                           cascade: Collection[str] = None) -> DefaultReturnCode:
+                           cascade: Optional[Collection[str]] = None,
+                           ) -> DefaultReturnCode:
         """Helper to delete one part group.
 
         :note: This has to be called inside an atomized context.
@@ -733,7 +742,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _set_part_group_parts(self, rs: RequestState, event_id: int, part_group_id: int,
-                              part_group_title: str, part_ids: Set[int],
+                              part_group_title: str, part_ids: set[int],
                               parts: CdEDBObjectMap) -> DefaultReturnCode:
         """Helper to link the given event parts to the given part group."""
         ret = 1
@@ -787,7 +796,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_track_group(self, rs: RequestState, track_group_id: int,
-                            cascade: Collection[str] = None) -> DefaultReturnCode:
+                            cascade: Optional[Collection[str]] = None,
+                            ) -> DefaultReturnCode:
         """Helper to delete one track group.
 
         :note: This has to be called inside an atomized context.
@@ -833,7 +843,7 @@ class EventLowLevelBackend(AbstractBackend):
     @internal
     def _set_track_group_tracks(self, rs: RequestState, event_id: int,
                                 track_group_id: int, track_group_title: str,
-                                track_ids: Set[int], tracks: CdEDBObjectMap,
+                                track_ids: set[int], tracks: CdEDBObjectMap,
                                 constraint_type: const.CourseTrackGroupType,
                                 ) -> DefaultReturnCode:
         """Helper to link the given course traks to the given track group."""
@@ -927,7 +937,7 @@ class EventLowLevelBackend(AbstractBackend):
             raise ValueError(n_("Incompatible course choices present."))
 
     @access("event")
-    def may_create_ccs_group(self, rs: RequestState, track_ids: Collection[int]
+    def may_create_ccs_group(self, rs: RequestState, track_ids: Collection[int],
                              ) -> bool:
         """Determine whether a CCS group with the given tracks may be created."""
         track_ids = affirm_set(vtypes.ID, track_ids)
@@ -990,7 +1000,7 @@ class EventLowLevelBackend(AbstractBackend):
         return True
 
     @access("event")
-    def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int]
+    def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int],
                                 ) -> bool:
         """Determine whether any course choices exist for the given tracks."""
         track_ids = affirm_set(vtypes.ID, track_ids)
@@ -1083,7 +1093,7 @@ class EventLowLevelBackend(AbstractBackend):
         return blockers
 
     def _delete_event_field(self, rs: RequestState, field_id: int,
-                            cascade: Collection[str] = None
+                            cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
         """Helper to remove an event field.
 
@@ -1269,7 +1279,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _get_registration_data(self, rs: RequestState, event_id: int,
-                               registration_ids: Collection[int] = None
+                               registration_ids: Optional[Collection[int]] = None,
                                ) -> CdEDBObjectMap:
         """Retrieve basic registration data."""
         query = f"""
@@ -1300,8 +1310,8 @@ class EventLowLevelBackend(AbstractBackend):
 
     @classmethod
     def _translate(cls, data: CdEDBObject,
-                   translations: Dict[str, Dict[int, int]],
-                   extra_translations: Dict[str, str] = None
+                   translations: dict[str, dict[int, int]],
+                   extra_translations: Optional[dict[str, str]] = None,
                    ) -> CdEDBObject:
         """Helper to do the actual translation of IDs which got out of sync.
 
@@ -1329,9 +1339,9 @@ class EventLowLevelBackend(AbstractBackend):
 
     def _synchronize_table(self, rs: RequestState, table: str,
                            data: CdEDBObjectMap, current: CdEDBObjectMap,
-                           translations: Dict[str, Dict[int, int]],
-                           entity: str = None,
-                           extra_translations: Dict[str, str] = None
+                           translations: dict[str, dict[int, int]],
+                           entity: Optional[str] = None,
+                           extra_translations: Optional[dict[str, str]] = None,
                            ) -> DefaultReturnCode:
         """Replace one data set in a table with another.
 

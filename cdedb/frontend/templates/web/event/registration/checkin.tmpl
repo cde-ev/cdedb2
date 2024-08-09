@@ -55,7 +55,7 @@
             <div class="row">
                 <div class="col-sm-9">
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
                             {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>
@@ -79,15 +79,15 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
+                    {% if lodgements %}
                     <div class="col-sm-6">
-                        <small class="text-info">
+                        <small>
                             {% trans %}Lodgement{% endtrans %}:
                             {% for part in ambience['event']['parts'].values()|sort
                                    if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %}
                                 {% if registration['parts'][part.id]['lodgement_id'] %}
-                                    {{ lodgements[registration['parts'][part.id]['lodgement_id']]['title'] }}
-                                    {# This is somewhat redundant regarding camping mat consent for now, but we want
-                                       to change this to be by part either way. #}
+                                    {% set lodgement = lodgements[registration['parts'][part.id]['lodgement_id']] %}
+                                    {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement['id']}), lodgement['title'])  }}
                                     {{ generic_event.camping_mat_icon(
                                             registration['parts'][part.id]['is_camping_mat'],
                                             registration['fields'].get(camping_mat_field_names[part.id])) }}
@@ -98,6 +98,7 @@
                             {% endfor %}
                         </small>
                     </div>
+                    {% endif %}
                 </div>
                 {% if checkin_fields %}
                     <hr class="nosp" />
@@ -116,6 +117,19 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% endif %}
+                {% if registration['orga_notes'] %}
+                    <hr class="nosp" />
+                    <details>
+                        <summary class="btn btn-sm btn-default">
+                            <b class="text-muted">
+                                {% trans %}Orga-Notes{% endtrans %}
+                            </b>
+                        </summary>
+                        <div class="mosp">
+                            {{ registration['orga_notes']|md }}
+                        </div>
+                    </details>
                 {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">
@@ -142,17 +156,35 @@
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">
+        let re;
+        let timer;
+        // save names and registration divs in JS datastructures for faster access on searching
+        let names = [];
+        let registrationBlocks = {};
+        let counter = 0;  // appended to names to deal with duplicate names, still being efficient in matching
+        $(".searchname").each(function() {
+            let name = removeDiacritics($(this).text()).trim() + counter++;
+            names.push(name);
+            registrationBlocks[name] = $(this).closest(".selectee");
+        })
+
+        function filterCheckin() {
+            names.forEach(name => {
+                // adding/removing classes ist 100 times faster than using .show()/.hide()
+                if (name.match(re))
+                    registrationBlocks[name].removeClass("softhide");
+                else
+                    registrationBlocks[name].addClass("softhide");
+            });
+        }
+
         $("#namesearch").show();
         $("#selector").focus()
-            .on('keydown paste input', function(){
+            .on('paste input', function(){
+                clearTimeout(timer);
                 /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
-                var re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-                $(".selectee").each(function(){
-                    if (removeDiacritics($(this).text()).match(re))
-                        $(this).show();
-                    else
-                        $(this).hide();
-                });
+                re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+                timer = setTimeout(filterCheckin, 0);  // asynchronous call for better performance
             })
             .trigger('input');
         $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");

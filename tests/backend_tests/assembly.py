@@ -3,17 +3,21 @@
 
 import datetime
 import json
-from typing import Collection, List, NamedTuple, Optional
+from collections.abc import Collection
+from typing import NamedTuple
 
 import freezegun
-import pytz
 
 import cdedb.database.constants as const
 from cdedb.backend.assembly import BallotConfiguration
-from cdedb.common import CdEDBObject, CdEDBObjectMap, get_hash, nearly_now, now
+from cdedb.common import (
+    CdEDBObject, CdEDBObjectMap, PrivilegeError, get_hash, nearly_now, now,
+)
+from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from tests.common import (
-    USER_DICT, BackendTest, UserIdentifier, as_users, prepsql, storage,
+    USER_DICT, BackendTest, UserIdentifier, as_users, execsql, get_user, prepsql,
+    storage,
 )
 
 
@@ -38,6 +42,70 @@ class TestAssemblyBackend(BackendTest):
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_assembly_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
+
+        with self.assertRaises(ValueError):
+            self.assembly.get_assembly_id(self.key)
+
+        with self.assertRaises(ValueError):
+            self.assembly.check_attendance(self.key)
+        with self.assertRaises(ValueError):
+            self.assembly.check_attendance(self.key, assembly_id=1, ballot_id=1)
+        with self.switch_user("emilia"):
+            with self.assertRaises(PrivilegeError):
+                self.assembly.check_attendance(self.key, assembly_id=1, persona_id=1)
+
+        query = Query(
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
+            [],
+            [],
+            [],
+        )
+        with self.assertRaises(RuntimeError):
+            self.assembly.submit_general_query(self.key, query)
+
+    @as_users("viktor")
+    def test_archived_user_search(self) -> None:
+        # Search for pure assembly users.
+        query = Query(
+            QueryScope.assembly_user,
+            QueryScope.assembly_user.get_spec(),
+            ["given_names"],
+            [],
+            [("given_names", True)],
+        )
+        self.assertFalse(query.scope.includes_archived)
+
+        # Check that all users are found.
+        self.assertEqual(
+            ["Kalif ibn al-Ḥasan", "Rowena"],
+            [
+                e["given_names"]
+                for e in self.assembly.submit_general_query(self.key, query)
+            ],
+        )
+
+        # Archive one user.
+        self.core.archive_persona(self.key, get_user("rowena")['id'], "For testing.")
+
+        # Check that they are no longer found.
+        self.assertEqual(
+            ["Kalif ibn al-Ḥasan"],
+            [
+                e["given_names"]
+                for e in self.assembly.submit_general_query(self.key, query)
+            ],
+        )
+
+        # Check that the more inclusive search still finds them.
+        query.scope = QueryScope.all_assembly_users
+        self.assertEqual(
+            ["Kalif ibn al-Ḥasan", "Rowena"],
+            [
+                e["given_names"]
+                for e in self.assembly.submit_general_query(self.key, query)
+            ],
+        )
 
     @as_users("anton", "berta", "charly", "kalif")
     def test_does_attend(self) -> None:
@@ -73,20 +141,23 @@ class TestAssemblyBackend(BackendTest):
             1: {
                 'id': 1,
                 'is_active': True,
-                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-                'title': 'Internationaler Kongress'
+                'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
+                'title': 'Internationaler Kongress',
             },
             2: {
                 'id': 2,
                 'is_active': False,
-                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
-                'title': 'Kanonische Beispielversammlung'
+                'signup_end': datetime.datetime(
+                    2020, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
+                'title': 'Kanonische Beispielversammlung',
             },
             3: {
                 'id': 3,
                 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
-                'title': 'Archiv-Sammlung'
+                'signup_end': datetime.datetime(
+                    2222, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
+                'title': 'Archiv-Sammlung',
             },
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
@@ -97,7 +168,8 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'id': assembly_id,
             'notes': "More fun for everybody",
-            'signup_end': datetime.datetime(2111, 11, 11, 23, 0, tzinfo=pytz.utc),
+            'signup_end': datetime.datetime(
+                2111, 11, 11, 23, 0, tzinfo=datetime.timezone.utc),
             'title': "Allumfassendes Konklave",
             'shortname': 'konklave',
         }
@@ -211,7 +283,7 @@ class TestAssemblyBackend(BackendTest):
         assembly_id = 1
         log_offset, _ = self.assembly.retrieve_log(
             self.key, AssemblyLogFilter(assembly_id=assembly_id))
-        log: List[CdEDBObject] = []
+        log: list[CdEDBObject] = []
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
@@ -267,9 +339,9 @@ class TestAssemblyBackend(BackendTest):
                 'quorum': 2,
                 'title': 'Antwort auf die letzte aller Fragen',
                 'vote_begin': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=pytz.utc),
+                                                tzinfo=datetime.timezone.utc),
                 'vote_end': datetime.datetime(2002, 2, 23, 20, 22, 22, 222222,
-                                              tzinfo=pytz.utc),
+                                              tzinfo=datetime.timezone.utc),
                 'vote_extension_end': nearly_now(),
                 'votes': None,
             },
@@ -322,7 +394,7 @@ class TestAssemblyBackend(BackendTest):
                 'title': 'Akademie-Nachtisch',
                 'vote_begin': nearly_now(),
                 'vote_end': datetime.datetime(2222, 1, 1, 20, 22, 22, 222222,
-                                              tzinfo=pytz.utc),
+                                              tzinfo=datetime.timezone.utc),
                 'vote_extension_end': None,
                 'votes': 2,
             },
@@ -365,14 +437,14 @@ class TestAssemblyBackend(BackendTest):
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
             'abs_quorum': 0,
             'rel_quorum': 83,
-            'quorum': 9,
+            'quorum': 10,
             'title': 'Farbe des Logos',
             'vote_begin': datetime.datetime(2222, 2, 2, 20, 22, 22,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 3, 20, 22, 22,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': datetime.datetime(2222, 2, 4, 20, 22, 22,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'votes': None}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
         data: CdEDBObject = {
@@ -385,7 +457,7 @@ class TestAssemblyBackend(BackendTest):
             },
             'notes': "foo",
             'vote_extension_end': datetime.datetime(2222, 2, 20, 20, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'rel_quorum': 100,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
@@ -407,7 +479,7 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_removed,
                 "assembly_id": assembly_id,
                 "change_note": expectation['candidates'][7]['shortname'],
-            }
+            },
         ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
@@ -436,11 +508,11 @@ class TestAssemblyBackend(BackendTest):
             'rel_quorum': 0,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
+                                                    tzinfo=datetime.timezone.utc),
             'votes': None,
         }
         new_id = self.assembly.create_ballot(self.key, data)
@@ -454,7 +526,7 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_added,
                 "assembly_id": assembly_id,
                 "change_note": data['candidates'][cid]['shortname'],
-            } for cid in (-1, -2))
+            } for cid in (-1, -2)),
         ))
         self.assertLess(0, new_id)
         data.update({
@@ -577,7 +649,7 @@ class TestAssemblyBackend(BackendTest):
                     "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
                     "assembly_id": assembly_id,
                     "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
-                } for n in (0, 2))
+                } for n in (0, 2)),
             ))
 
         for aid in (attachment_id, attachment_id2):
@@ -640,9 +712,9 @@ class TestAssemblyBackend(BackendTest):
             'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
-                                            tzinfo=pytz.utc),
+                                            tzinfo=datetime.timezone.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                          tzinfo=pytz.utc),
+                                          tzinfo=datetime.timezone.utc),
             'vote_extension_end': None,
             'votes': None}
         with self.assertRaises(ValueError):
@@ -650,7 +722,7 @@ class TestAssemblyBackend(BackendTest):
 
         data['abs_quorum'] = 0
         data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
-                                                       tzinfo=pytz.utc)
+                                                       tzinfo=datetime.timezone.utc)
         with self.assertRaises(ValueError):
             self.assembly.create_ballot(self.key, data)
 
@@ -729,14 +801,14 @@ class TestAssemblyBackend(BackendTest):
             # Initial quorum should be number of members.
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS
+                NUMBER_OF_MEMBERS,
             )
 
             # Adding a non-member attendee increases the quorum.
             self.assembly.external_signup(self.key, assembly_id, 4)
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS + 1
+                NUMBER_OF_MEMBERS + 1,
             )
 
             frozen_time.tick(delta=4*delta)
@@ -745,7 +817,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.external_signup(self.key, assembly_id, 11)
             self.assertEqual(
                 self.assembly.get_ballot(self.key, ballot_id)["quorum"],
-                NUMBER_OF_MEMBERS + 1
+                NUMBER_OF_MEMBERS + 1,
             )
 
     def test_extension(self) -> None:
@@ -782,31 +854,31 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("charly")
     def test_signup(self) -> None:
-        self.assertEqual(False, self.assembly.does_attend(
-            self.key, assembly_id=1))
+        self.assertFalse(self.assembly.does_attend(self.key, assembly_id=1))
         secret = self.assembly.signup(self.key, 1)
         assert secret is not None
         self.assertLess(0, len(secret))
-        self.assertEqual(True, self.assembly.does_attend(
-            self.key, assembly_id=1))
+        self.assertTrue(self.assembly.does_attend(self.key, assembly_id=1))
 
     def test_get_vote(self) -> None:
-        testcase = NamedTuple(
-            "testcase", [
-                ("user", UserIdentifier), ("ballot_id", int),
-                ("secret", Optional[str]), ("vote", Optional[str])])
-        tests: Collection[testcase] = (
-            testcase('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
-            testcase('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
-            testcase('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
-            testcase('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
-            testcase('anton', 1, None, '2>3>_bar_>1=4'),
-            testcase('berta', 1, None, '3>2=4>_bar_>1'),
-            testcase('inga', 1, None, '_bar_>4>3>2>1'),
-            testcase('kalif', 1, None, '1>2=3=4>_bar_'),
-            testcase('berta', 2, None, None),
-            testcase('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
-            testcase('berta', 4, None, None),
+        class VoteTest(NamedTuple):
+            user: UserIdentifier
+            ballot_id: int
+            secret: str | None
+            vote: str | None
+
+        tests: Collection[VoteTest] = (
+            VoteTest('anton', 1, 'aoeuidhtns', '2>3>_bar_>1=4'),
+            VoteTest('berta', 1, 'snthdiueoa', '3>2=4>_bar_>1'),
+            VoteTest('inga', 1, 'asonetuhid', '_bar_>4>3>2>1'),
+            VoteTest('kalif', 1, 'bxronkxeud', '1>2=3=4>_bar_'),
+            VoteTest('anton', 1, None, '2>3>_bar_>1=4'),
+            VoteTest('berta', 1, None, '3>2=4>_bar_>1'),
+            VoteTest('inga', 1, None, '_bar_>4>3>2>1'),
+            VoteTest('kalif', 1, None, '1>2=3=4>_bar_'),
+            VoteTest('berta', 2, None, None),
+            VoteTest('berta', 3, None, 'Lo>Li=St=Fi=Bu=Go=_bar_'),
+            VoteTest('berta', 4, None, None),
         )
         for case in tests:
             user, ballot_id, secret, vote = case
@@ -833,7 +905,7 @@ class TestAssemblyBackend(BackendTest):
     @storage
     @as_users("kalif")
     def test_tally(self) -> None:
-        self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
+        self.assertFalse(self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
         with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
             with open(self.conf['STORAGE_DIR'] / "ballot_result/1", 'rb') as g:
@@ -1028,7 +1100,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 2,
             "title": "Verrechnungsbericht",
             "authors": "Farina",
-            "filename": "alles_falsch.pdf"
+            "filename": "alles_falsch.pdf",
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, update))
         self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'12345'))
@@ -1296,7 +1368,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'verf.pdf',
                     'title': 'Verfassung des Staates der CdEler',
                     'version_nr': 1,
-                }
+                },
             },
             attachment_ids[2]: {
                 1: {
@@ -1411,7 +1483,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assertEqual(
                     {attachment_id: version_expectation},
                     self.assembly.get_definitive_attachments_version(
-                        self.key, ballot_id)
+                        self.key, ballot_id),
                 )
             attachment_expectation["ballot_ids"] = ballot_ids
             self.assertEqual(
@@ -1452,7 +1524,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assertEqual(
                     {attachment_id: version_expectation},
                     self.assembly.get_definitive_attachments_version(
-                        self.key, ballot_id)
+                        self.key, ballot_id),
                 )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
@@ -1468,8 +1540,8 @@ class TestAssemblyBackend(BackendTest):
             'id': ballot_id,
             'candidates': {
                 6: None,
-                -1: old_candidates[6]
-            }
+                -1: old_candidates[6],
+            },
         }
         self.assertTrue(self.assembly.set_ballot(self.key, bdata))
         candidates = self.assembly.get_ballot(self.key, ballot_id)['candidates']
@@ -1530,16 +1602,390 @@ class TestAssemblyBackend(BackendTest):
     def test_prepsql(self) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
-                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Internationaler Kongress'},
             2: {'id': 2, 'is_active': False,
-                'signup_end': datetime.datetime(2020, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2020, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Kanonische Beispielversammlung'},
             3: {'id': 3, 'is_active': True,
-                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'signup_end': datetime.datetime(
+                    2222, 2, 22, 0, 0, tzinfo=datetime.timezone.utc),
                 'title': 'Archiv-Sammlung'},
             1001: {'id': 1001, 'is_active': True,
-                   'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-                   'title': 'Umfrage'}
+                   'signup_end': datetime.datetime(
+                    2111, 11, 11, 0, 0, tzinfo=datetime.timezone.utc),
+                   'title': 'Umfrage'},
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
+
+    @storage
+    @as_users("viktor")
+    def test_privilege_checks(self) -> None:
+        assembly_ids = self.assembly.list_assemblies(self.key)
+
+        presider = get_user("berta")
+
+        for assembly_id in assembly_ids:
+            execsql(f"""
+                INSERT into assembly.presiders (persona_id, assembly_id)
+                VALUES ({presider['id']}, {assembly_id}) ON CONFLICT DO NOTHING
+            """)
+        self.assertEqual(
+            set(assembly_ids), self.assembly.presider_info(self.key, presider['id']))
+
+        other_presider = get_user("werner")
+        presided_assembly_id = 3
+        non_presided_assembly_id = 2
+        presided_assembly_ids = self.assembly.presider_info(
+            self.key, other_presider['id'])
+        non_presided_assemblies = assembly_ids.keys() - presided_assembly_ids
+        self.assertTrue(presided_assembly_ids)
+        self.assertIn(presided_assembly_id, presided_assembly_ids)
+        self.assertNotIn(non_presided_assembly_id, presided_assembly_ids)
+        self.assertNotIn(
+            "member", self.core.get_roles_single(self.key, other_presider['id']))
+
+        attendee = get_user("rowena")
+        attended_assembly_id = non_presided_assembly_id
+        non_attended_assembly_id = presided_assembly_id
+        self.assertTrue(self.assembly.check_attendance(
+            self.key, assembly_id=attended_assembly_id, persona_id=attendee['id']))
+        self.assertFalse(self.assembly.check_attendance(
+            self.key, assembly_id=non_attended_assembly_id, persona_id=attendee['id']))
+        self.assertFalse(self.assembly.presider_info(self.key, attendee['id']))
+        self.assertNotIn(
+            "member", self.core.get_roles_single(self.key, attendee['id']))
+
+        member = get_user("ferdinand")
+        for assembly_id in assembly_ids:
+            self.assertFalse(self.assembly.check_attendance(
+                self.key, assembly_id=assembly_id, persona_id=member['id']))
+        self.assertFalse(self.assembly.presider_info(self.key, member['id']))
+        self.assertIn(
+            "member", self.core.get_roles_single(self.key, member['id']))
+        execsql(f"""
+            UPDATE core.personas SET is_assembly_admin = False
+            WHERE id = {member['id']}
+        """)
+        self.assertNotIn(
+            "assembly_admin", self.core.get_roles_single(self.key, member['id']))
+
+        unprivileged = get_user("daniel")
+        self.assertFalse(self.assembly.presider_info(self.key, unprivileged['id']))
+        for assembly_id in assembly_ids:
+            self.assertFalse(self.assembly.check_attendance(
+                self.key, assembly_id=assembly_id, persona_id=unprivileged['id']))
+        self.assertNotIn(
+            "member", self.core.get_roles_single(self.key, unprivileged['id']))
+
+        some_assemblies_filter = AssemblyLogFilter(
+            _assembly_ids=list(presided_assembly_ids))
+        other_assemblies_filter = AssemblyLogFilter(
+            _assembly_ids=list(assembly_ids.keys() - presided_assembly_ids))
+        all_assemblies_filter = AssemblyLogFilter(_assembly_ids=list(assembly_ids))
+        global_filter = AssemblyLogFilter()
+
+        all_ballot_ids = {
+            assembly_id: self.assembly.list_ballots(self.key, assembly_id)
+            for assembly_id in assembly_ids
+        }
+        all_attachment_ids = {
+            assembly_id: self.assembly.list_attachments(
+                self.key, assembly_id=assembly_id, ballot_id=None)
+            for assembly_id in assembly_ids
+        }
+
+        new_ballot_data = {
+            'title': "New Ballot",
+            'description': None,
+            'notes': None,
+            'vote_begin': now() + datetime.timedelta(days=1),
+            'vote_end': now() + datetime.timedelta(days=2),
+            'use_bar': False,
+        }
+        new_attachment_data = {
+            'title': "New Attachment",
+            'filename': "attachment.pdf",
+            'authors': None,
+        }
+
+        with self.switch_user(presider):
+            assemblies = self.assembly.get_assemblies(self.key, assembly_ids)
+
+            for assembly_id, assembly in assemblies.items():
+                ballot_ids = self.assembly.list_ballots(self.key, assembly_id)
+                ballots = self.assembly.get_ballots(self.key, ballot_ids)
+                for ballot_id, ballot in ballots.items():
+                    if not ballot['is_locked']:
+                        self.assembly.set_ballot(self.key, {'id': ballot_id})
+                    else:
+                        with self.assertRaises(ValueError):
+                            self.assembly.set_ballot(
+                                self.key, {'id': ballot_id})
+
+                    if ballot['is_locked'] and not ballot['is_voting']:
+                        self.assembly.comment_concluded_ballot(self.key, ballot_id, "!")
+
+                    self.assembly.get_ballot_result(self.key, ballot_id)
+
+                if assemblies[assembly_id]['is_active']:
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+                else:
+                    with self.assertRaises(ValueError):
+                        self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+                if assembly['is_active']:
+                    new_ballot_id = self.assembly.create_ballot(
+                        self.key, {'assembly_id': assembly_id, **new_ballot_data})
+                    self.assertTrue(
+                        self.assembly.delete_ballot(
+                            self.key, new_ballot_id,
+                            self.assembly.delete_ballot_blockers(
+                                self.key, new_ballot_id,
+                            ),
+                        ),
+                    )
+
+                    new_attachment_id = self.assembly.add_attachment(
+                        self.key, {'assembly_id': assembly_id, **new_attachment_data},
+                        b"123",
+                    )
+                    self.assertTrue(
+                        self.assembly.delete_attachment(
+                            self.key, new_attachment_id,
+                            self.assembly.delete_attachment_blockers(
+                                self.key, new_attachment_id,
+                            ),
+                        ),
+                    )
+
+            self.assembly.retrieve_log(self.key, some_assemblies_filter)
+            self.assembly.retrieve_log(self.key, other_assemblies_filter)
+            self.assembly.retrieve_log(self.key, all_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, global_filter)
+
+            self.assembly.get_attendees(self.key, presided_assembly_id, now())
+            self.assembly.get_attendees(self.key, non_presided_assembly_id, now())
+
+        with self.switch_user(other_presider):
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_assemblies(self.key, assembly_ids)
+            self.assembly.get_assemblies(self.key, presided_assembly_ids)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_assemblies(self.key, (non_presided_assembly_id,))
+
+            for assembly_id in presided_assembly_ids:
+                ballot_ids = self.assembly.list_ballots(self.key, assembly_id)
+                ballots = self.assembly.get_ballots(self.key, ballot_ids)
+                for ballot_id, ballot in ballots.items():
+                    if not ballot['is_locked']:
+                        self.assembly.set_ballot(self.key, {'id': ballot_id})
+                    else:
+                        with self.assertRaises(ValueError):
+                            self.assembly.set_ballot(
+                                self.key, {'id': ballot_id})
+
+                    if ballot['is_locked'] and not ballot['is_voting']:
+                        self.assembly.comment_concluded_ballot(self.key, ballot_id, "!")
+
+                    self.assembly.get_ballot_result(self.key, ballot_id)
+
+                if assemblies[assembly_id]['is_active']:
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+                else:
+                    # No inactive assembly exists in sample data.
+                    # with self.assertRaises(ValueError):
+                    #     self.assembly.set_assembly(self.key, {'id': assembly_id})
+                    self.fail(
+                        f"Sample data changed to include inactive assembly for"
+                        f" presider '{self.user['display_name']}'.")
+
+            for assembly_id in non_presided_assemblies:
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.list_ballots(self.key, assembly_id)
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.create_ballot(
+                        self.key, {'assembly_id': assembly_id, **new_ballot_data})
+
+                for ballot_id in all_ballot_ids[assembly_id]:
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.delete_ballot_blockers(self.key, ballot_id)
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.delete_ballot(self.key, ballot_id)
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.external_signup(
+                        self.key, assembly_id, self.user['id'])
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.add_attachment(
+                        self.key, {'assembly_id': assembly_id, **new_attachment_data},
+                        b"123",
+                    )
+
+            self.assembly.retrieve_log(self.key, some_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, other_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, all_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, global_filter)
+
+            self.assembly.get_attendees(self.key, presided_assembly_id, now())
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_attendees(self.key, non_presided_assembly_id, now())
+
+        with self.switch_user(attendee):
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_assemblies(self.key, assembly_ids)
+            self.assembly.get_assemblies(self.key, (attended_assembly_id,))
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_assemblies(self.key, (non_attended_assembly_id,))
+
+            for assembly_id in assembly_ids:
+                if self.assembly.check_attendance(self.key, assembly_id=assembly_id):
+                    ballot_ids = self.assembly.list_ballots(self.key, assembly_id)
+                    for ballot_id in ballot_ids:
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.set_ballot(self.key, {'id': ballot_id})
+
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.comment_concluded_ballot(
+                                self.key, ballot_id, "Test!")
+
+                        self.assembly.has_voted(self.key, ballot_id)
+                        self.assembly.get_vote(self.key, ballot_id, None)
+
+                        self.assembly.get_ballot_result(self.key, ballot_id)
+                else:
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.list_ballots(self.key, assembly_id)
+
+                    # A bit hacky, since we can't actually get these ids.
+                    for ballot_id in all_ballot_ids[assembly_id]:
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.get_ballot_result(self.key, ballot_id)
+
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.tally_ballot(self.key, ballot_id)
+
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.list_attachments(
+                            self.key, assembly_id=assembly_id, ballot_id=None)
+
+                    attachment_ids = all_attachment_ids[assembly_id]
+                    if not attachment_ids:
+                        continue
+
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.get_attachments_versions(self.key, attachment_ids)
+
+                    for attachment_id in attachment_ids:
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.get_attachment_version(
+                                self.key, attachment_id, 1)
+
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.get_attachment_content(
+                                self.key, attachment_id)
+
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.get_latest_attachments_version(
+                            self.key, attachment_ids)
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+                for attachment_id in all_attachment_ids[assembly_id]:
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.delete_attachment(
+                            self.key, attachment_id,
+                            self.assembly.delete_attachment_blockers(
+                                self.key, attachment_id,
+                            ),
+                        )
+
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(
+                    self.key, AssemblyLogFilter(assembly_id=attended_assembly_id))
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(
+                    self.key, AssemblyLogFilter(assembly_id=non_attended_assembly_id))
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, all_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, global_filter)
+
+            self.assembly.get_attendees(self.key, attended_assembly_id, now())
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_attendees(self.key, non_attended_assembly_id, now())
+
+        with self.switch_user(member):
+            self.assembly.get_assemblies(self.key, assembly_ids)
+
+            for assembly_id in assembly_ids:
+                self.assembly.list_ballots(self.key, assembly_id)
+                ballot_ids = self.assembly.list_ballots(self.key, assembly_id)
+                for ballot_id in ballot_ids:
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.set_ballot(self.key, {'id': ballot_id})
+
+                    with self.assertRaises(PrivilegeError):
+                        self.assembly.comment_concluded_ballot(self.key, ballot_id, "!")
+
+                    if self.assembly.check_attendance(
+                            self.key, assembly_id=assembly_id):
+                        # No attended assembly exists.
+                        # self.assembly.has_voted(self.key, ballot_id)
+                        # self.assembly.get_vote(self.key, ballot_id)
+                        self.fail(
+                            f"Sample data changed to include attended assembly for"
+                            f" member '{self.user['display_name']}'.")
+                    else:
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.has_voted(self.key, ballot_id)
+
+                        with self.assertRaises(PrivilegeError):
+                            self.assembly.get_vote(self.key, ballot_id, None)
+
+                    self.assembly.get_ballot_result(self.key, ballot_id)
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+                with self. assertRaises(PrivilegeError):
+                    self.assembly.retrieve_log(
+                        self.key, AssemblyLogFilter(assembly_id=assembly_id))
+
+        with self.switch_user(unprivileged):
+            for assembly_id in assembly_ids:
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.get_assembly(self.key, assembly_id)
+
+            for assembly_id in assembly_ids:
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.list_ballots(self.key, assembly_id)
+
+                with self.assertRaises(PrivilegeError):
+                    self.assembly.set_assembly(self.key, {'id': assembly_id})
+
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, some_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, other_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, all_assemblies_filter)
+            with self.assertRaises(PrivilegeError):
+                self.assembly.retrieve_log(self.key, global_filter)
+
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_attendees(self.key, presided_assembly_id, now())
+            with self.assertRaises(PrivilegeError):
+                self.assembly.get_attendees(self.key, non_presided_assembly_id, now())

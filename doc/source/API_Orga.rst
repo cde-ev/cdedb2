@@ -6,7 +6,14 @@ In the future it may also allow directly creating, changing and deleting entitie
 like courses and registrations.
 
 In order to use this API a secret Token must be created and provided in the
-HTTP-Header of every request.
+HTTP-Header of every request under the key ``X-CdEDB-API-token``.
+
+Example::
+
+    requests.get(
+        f"https://db.cde-ev.de/db/event/event/{event_id}/droid/partial",
+        headers={"X-CdEDB-API-Token": secret},
+    )
 
 .. warning:: The Orga API is currently in beta. Specifics may still change and
     only read-access is currently available.

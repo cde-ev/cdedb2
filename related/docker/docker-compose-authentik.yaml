@@ -1,5 +1,3 @@
-version: '3.4'
-
 x-authentik-default-envs: &authentik-envs-anchor
   AUTHENTIK_SECRET_KEY: authentiksecretkey
   AUTHENTIK_BOOTSTRAP_PASSWORD: akadminpass

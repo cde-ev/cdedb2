@@ -6,8 +6,11 @@ endpoints related to managing an events courses, participants' course choices
 and courses' attendees.
 """
 
+import collections
 from collections import OrderedDict
-from typing import Collection, Optional, cast
+from collections.abc import Collection
+from dataclasses import dataclass
+from typing import Optional, cast
 
 from werkzeug import Response
 
@@ -69,7 +72,7 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def show_course(self, rs: RequestState, event_id: int, course_id: int
+    def show_course(self, rs: RequestState, event_id: int, course_id: int,
                     ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
@@ -87,14 +90,30 @@ class EventCourseMixin(EventBaseFrontend):
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
-                key="course_id", personas=personas, instructors=True)
+                key="course_id", personas=personas, instructors=True,
+                only_present=False, only_involved=False)
+            # Sort not-involved attendees to the bottom of the list
+            for (_cid, track_id), attendee_group in attendees.items():
+                part_id = rs.ambience['event'].tracks[track_id].part.id
+                attendee_group.sort(key=lambda anid:
+                not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
+            involved_attendees = self.calculate_groups(
+                (course_id,), rs.ambience['event'], registrations,
+                key="course_id", personas=personas, instructors=True,
+                only_involved=True, only_present=False)
             learners = self.calculate_groups(
                 (course_id,), rs.ambience['event'], registrations,
-                key="course_id", personas=personas, instructors=False)
+                key="course_id", personas=personas, instructors=False,
+                only_involved=True, only_present=False)
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
-            params['learners'] = learners
+            params['num_attendees'] = {
+                track_id: len(involved_attendees.get((course_id, track_id), ()))
+                for track_id in rs.ambience['event'].tracks}
+            params['num_learners'] = {
+                track_id: len(learners.get((course_id, track_id), ()))
+                for track_id in rs.ambience['event'].tracks}
             params['blockers'] = self.eventproxy.delete_course_blockers(
                 rs, course_id).keys() - {"instructors", "course_choices",
                                          "course_segments"}
@@ -107,12 +126,14 @@ class EventCourseMixin(EventBaseFrontend):
                                            for p in instructors.values()]
 
             def make_attendees_query(track_id: int) -> Query:
+                part_id = rs.ambience['event'].tracks[track_id].part_id
                 return Query(
                     QueryScope.registration,
                     QueryScope.registration.get_spec(event=rs.ambience['event']),
                     fields_of_interest=[
                         'persona.given_names', 'persona.family_name',
                         f'track{track_id}.course_id',
+                        f'part{part_id}.status',
                     ],
                     constraints=[
                         (f'track{track_id}.course_id', QueryOperators.equal, course_id),
@@ -120,7 +141,7 @@ class EventCourseMixin(EventBaseFrontend):
                     order=[
                         ('persona.family_name', True),
                         ('persona.given_names', True),
-                    ]
+                    ],
                 )
             params['make_attendees_query'] = make_attendees_query
 
@@ -145,7 +166,7 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def change_course_form(self, rs: RequestState, event_id: int, course_id: int
+    def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
         if 'segments' not in rs.values:
@@ -154,7 +175,7 @@ class EventCourseMixin(EventBaseFrontend):
             rs.values.setlist('active_segments',
                               rs.ambience['course']['active_segments'])
         field_values = {
-            "fields.{}".format(key): value
+            f"fields.{key}": value
             for key, value in rs.ambience['course']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['course'], field_values)
         return self.render(rs, "course/change_course")
@@ -165,7 +186,7 @@ class EventCourseMixin(EventBaseFrontend):
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
-                      active_segments: Collection[int], data: CdEDBObject
+                      active_segments: Collection[int], data: CdEDBObject,
                       ) -> Response:
         """Modify a course associated to an event organized via DB."""
         data['id'] = course_id
@@ -258,7 +279,7 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def course_assignment_checks(self, rs: RequestState, event_id: int
+    def course_assignment_checks(self, rs: RequestState, event_id: int,
                                  ) -> Response:
         """Provide some consistency checks for course assignment."""
         event = rs.ambience['event']
@@ -277,15 +298,14 @@ class EventCourseMixin(EventBaseFrontend):
                 track_id: [
                     reg for reg in registrations.values()
                     if (reg['tracks'][track_id]['course_id'] == course_id
-                        and (reg['parts'][track.part_id]['status']
-                             == stati.participant))]
+                        and (reg['parts'][track.part_id]['status'].is_involved()))]
                 for track_id, track in tracks.items()
             }
             for course_id in course_ids
         }
         # Get number of attendees per course
         # assign_counts has the structure:
-        # {course_id: {track_id: (num_participants, num_instructors)}}
+        # {course_id: {track_id: (num_learners, num_instructors)}}
         assign_counts = {
             course_id: {
                 track_id: (
@@ -294,7 +314,7 @@ class EventCourseMixin(EventBaseFrontend):
                             != course_id)),
                     sum(1 for reg in course_track_p_data
                         if (reg['tracks'][track_id]['course_instructor']
-                            == course_id))
+                            == course_id)),
                 )
                 for track_id, course_track_p_data in course_p_data.items()
             }
@@ -329,8 +349,8 @@ class EventCourseMixin(EventBaseFrontend):
             problems = []
             for course_id, course in courses.items():
                 problem_tracks = [
-                    track_id
-                    for track_id in event.tracks
+                    track
+                    for track_id, track in event.tracks.items()
                     if test(course, track_id)]
                 if problem_tracks:
                     problems.append((course_id, problem_tracks))
@@ -344,13 +364,13 @@ class EventCourseMixin(EventBaseFrontend):
                 p['status'] == stati.participant
                 and not t['course_id']),
             'instructor_wrong_course': lambda r, p, t: (
-                p['status'] == stati.participant
+                p['status'].is_involved()
                 and t['course_instructor']
                 and t['track_id'] in
                     courses[t['course_instructor']]['active_segments']
                 and t['course_id'] != t['course_instructor']),
             'unchosen': lambda r, p, t: (
-                p['status'] == stati.participant
+                p['status'].is_involved()
                 and t['course_id']
                 and t['course_id'] != t['course_instructor']
                 and (t['course_id'] not in
@@ -365,9 +385,9 @@ class EventCourseMixin(EventBaseFrontend):
             problems = []
             for reg_id, reg in registrations.items():
                 problem_tracks = [
-                    track_id
+                    track
                     for part_id, part in event.parts.items()
-                    for track_id in part.tracks
+                    for track_id, track in part.tracks.items()
                     if test(reg, reg['parts'][part_id],
                             reg['tracks'][track_id])]
                 if problem_tracks:
@@ -395,7 +415,7 @@ class EventCourseMixin(EventBaseFrontend):
             self, rs: RequestState, event_id: int, course_id: Optional[vtypes.ID],
             track_id: Optional[vtypes.ID],
             position: Optional[InfiniteEnum[CourseFilterPositions]],
-            ids: Optional[vtypes.IntCSVList], include_active: Optional[bool]
+            ids: Optional[vtypes.IntCSVList], include_active: Optional[bool],
             ) -> Response:
         """Provide an overview of course choices.
 
@@ -410,7 +430,6 @@ class EventCourseMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
         all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
-        stati = const.RegistrationPartStati
 
         if rs.has_validation_errors():
             registration_ids = all_reg_ids
@@ -439,23 +458,18 @@ class EventCourseMixin(EventBaseFrontend):
             for track in tracks.values():  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
-                    if reg_part(reg, track.id)['status'] == stati.participant
+                    if reg_part(reg, track.id)['status'].is_involved()
                     and reg['tracks'][track.id]['course_id'] == course_id
                     and reg['tracks'][track.id]['course_instructor'] != course_id
                 )
-                all_instructors = sum(
-                    1 for reg in all_regs.values()
-                    if reg['tracks'][track.id]['course_instructor'] == course_id
-                )
                 assigned_instructors = sum(
                     1 for reg in all_regs.values()
-                    if reg_part(reg, track.id)['status'] == stati.participant
+                    if reg_part(reg, track.id)['status'].is_involved()
                     and reg['tracks'][track.id]['course_id'] == course_id
                     and reg['tracks'][track.id]['course_instructor'] == course_id
                 )
                 course_infos[(course_id, track.id)] = {
                     'assigned': assigned,
-                    'all_instructors': all_instructors,
                     'assigned_instructors': assigned_instructors,
                     'is_happening': track.id in course['segments'],
                 }
@@ -464,10 +478,10 @@ class EventCourseMixin(EventBaseFrontend):
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"] + [
-                "course{0}.id".format(track_id)
+                f"course{track_id}.id"
                 for track_id in tracks],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
-            (("persona.family_name", True), ("persona.given_names", True),)
+            (("persona.family_name", True), ("persona.given_names", True)),
         )
         filter_entries = [
             (CourseFilterPositions.anywhere.value,
@@ -477,7 +491,7 @@ class EventCourseMixin(EventBaseFrontend):
             (CourseFilterPositions.instructor.value,
              rs.gettext("offer")),
             (CourseFilterPositions.any_choice.value,
-             rs.gettext("chose"))
+             rs.gettext("chose")),
         ]
         filter_entries.extend(
             (i, rs.gettext("have as {}. choice").format(i + 1))
@@ -559,7 +573,7 @@ class EventCourseMixin(EventBaseFrontend):
             persona = personas[registrations[registration_id]['persona_id']]
             tmp: CdEDBObject = {
                 'id': registration_id,
-                'tracks': {}
+                'tracks': {},
             }
             for atrack_id in assign_track_ids:
                 reg_part = registrations[registration_id]['parts'][
@@ -636,7 +650,7 @@ class EventCourseMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata("include_active")
-    def course_stats(self, rs: RequestState, event_id: int, include_active: bool
+    def course_stats(self, rs: RequestState, event_id: int, include_active: bool,
                      ) -> Response:
         """List courses.
 
@@ -646,9 +660,7 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/show_event')
         if include_active:
-            include_states = tuple(
-                status for status in const.RegistrationPartStati
-                if status.is_involved())
+            include_states = const.RegistrationPartStati.involved_states()
         else:
             include_states = (const.RegistrationPartStati.participant,)
 
@@ -658,47 +670,49 @@ class EventCourseMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        choice_counts = {
-            course_id: {
-                (track_id, i): sum(
-                    1 for reg in registrations.values()
-                    if (len(reg['tracks'][track_id]['choices']) > i
-                        and reg['tracks'][track_id]['choices'][i] == course_id
-                        and (reg['parts'][tracks[track_id].part_id]['status']
-                             in include_states)))
-                for track_id, track in tracks.items()
-                for i in range(track.num_choices)
-            }
-            for course_id in course_ids
-        }
-        # Helper for calculation of assign_counts
-        course_participant_lists = {
-            course_id: {
-                track_id: [
-                    reg for reg in registrations.values()
-                    if (reg['tracks'][track_id]['course_id'] == course_id
-                        and (reg['parts'][track.part_id]['status']
-                             in include_states))]
-                for track_id, track in tracks.items()
-            }
-            for course_id in course_ids
-        }
-        # Tuple of (number of assigned participants, number of instructors) for
-        # each course in each track
+        # Generate choice counts and helper lists for attendee counts
+        choice_counts = {(course_id, track_id): [0] * track.num_choices
+                         for track_id, track in tracks.items()
+                         for course_id in course_ids}
+        involved_attendees_lists = collections.defaultdict(list)
+        for reg in registrations.values():
+            for track_id, track in tracks.items():
+                if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
+                    for i, choice in enumerate(reg['tracks'][track_id]['choices']):
+                        if i >= track.num_choices:
+                            break
+                        choice_counts[(choice, track_id)][i] += 1
+                course_id = reg['tracks'][track_id]['course_id']
+                if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
+                        and course_id is not None):
+                    involved_attendees_lists[(course_id, track_id)].append(reg)
+
+        @dataclass(frozen=True)
+        class CourseTrackAssignCounts:
+            num_involved_learners: int
+            num_involved_instructors: int
+            num_learners_filtered: int
+            num_instructors_filtered: int
+
         assign_counts = {
-            course_id: {
-                track_id: (
-                    sum(1 for reg in course_track_p_data
-                        if (reg['tracks'][track_id]['course_instructor']
-                                 != course_id)),
-                    sum(1 for reg in course_track_p_data
-                        if (reg['tracks'][track_id]['course_instructor']
-                            == course_id))
-                )
-                for track_id, course_track_p_data in course_p_data.items()
-            }
-            for course_id, course_p_data in course_participant_lists.items()
+            (course_id, track_id): CourseTrackAssignCounts(
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] != course_id),
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] == course_id),
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] != course_id
+                    and (reg['parts'][tracks[track_id].part_id]['status']
+                            in include_states)),
+                sum(1 for reg in involved_attendees_lists[(course_id, track_id)]
+                    if reg['tracks'][track_id]['course_instructor'] == course_id
+                    and (reg['parts'][tracks[track_id].part_id]['status']
+                        in include_states)),
+            )
+            for track_id in tracks
+            for course_id in course_ids
         }
+
         return self.render(rs, "course/course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
             'assign_counts': assign_counts, 'include_active': include_active})
@@ -715,7 +729,12 @@ class EventCourseMixin(EventBaseFrontend):
             reg['persona_id'] for reg in registrations.values()))
         attendees = self.calculate_groups(
             (course_id,), rs.ambience['event'], registrations, key="course_id",
-            personas=personas)
+            personas=personas, only_involved=False, only_present=False)
+        # Sort not-involved attendees to the bottom of the list
+        for (_cid, track_id), attendee_group in attendees.items():
+            part_id = rs.ambience['event'].tracks[track_id].part.id
+            attendee_group.sort(key=lambda anid:
+            not registrations[anid]['parts'][part_id]['status'].is_involved())  # pylint: disable=cell-var-from-loop
 
         # Generate options for the multi select boxes
         def _check_without_course(registration_id: int, track_id: int) -> bool:
@@ -735,7 +754,7 @@ class EventCourseMixin(EventBaseFrontend):
                     if _check_without_course(registration_id, track_id)
                 ),
                 key=lambda tpl: EntitySorter.persona(
-                    personas[registrations[tpl[0]]['persona_id']])
+                    personas[registrations[tpl[0]]['persona_id']]),
             )
             for track_id in tracks
         }
@@ -760,7 +779,7 @@ class EventCourseMixin(EventBaseFrontend):
                 key=lambda x: (
                     x['group_id'] is not None,
                     EntitySorter.persona(
-                        personas[registrations[x['id']]['persona_id']]))
+                        personas[registrations[x['id']]['persona_id']])),
             )
             for track_id in tracks
         }
@@ -779,7 +798,7 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def manage_attendees(self, rs: RequestState, event_id: int, course_id: int
+    def manage_attendees(self, rs: RequestState, event_id: int, course_id: int,
                          ) -> Response:
         """Alter who is assigned to this course."""
         # Get all registrations and especially current attendees of this course
@@ -801,7 +820,7 @@ class EventCourseMixin(EventBaseFrontend):
                 f"delete_{track_id}_{reg_id}": bool
                 for track_id in rs.ambience['course']['segments']
                 for reg_id in current_attendees[track_id]
-            }
+            },
         }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
@@ -825,7 +844,7 @@ class EventCourseMixin(EventBaseFrontend):
                 deleted_attendee = data.get(f"delete_{track_id}_{reg_id}", False)
                 if new_attendee or deleted_attendee:
                     new_reg['tracks'][track_id] = {
-                        'course_id': (course_id if new_attendee else None)
+                        'course_id': (course_id if new_attendee else None),
                     }
             if new_reg['tracks']:
                 reg_data.append(new_reg)

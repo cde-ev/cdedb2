@@ -10,7 +10,7 @@
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js') %}
+        {%- if script in ('cdedb_queryform.js', 'cdedb_searchpersona.js', 'cdedb_multiselect.js', 'cdedb_searchregistration.js', 'cdedb_search_event.js') %}
             {{- cdedb_script('selectize/selectize.min.js') }}
         {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
@@ -302,7 +302,7 @@
 {% macro output_errors(name, displayerrors=True, wrapper=False) %}
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}
-            <div class="{{ "has-warning" if is_warning(name) else "has-error"}}">
+            <div class="{{ "has-warning" if is_warning(name) else "has-error" }}">
         {% endif %}
         {# TODO sort #}
         {%- if caller %}{{- caller() }}{% endif %}
@@ -411,10 +411,14 @@
         readonly="readonly" if actualreadonly,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
-        {%- if type == 'tel' %}
+        {%- if type == 'number' %}
+            placeholder="0"
+        {%- elif type == 'tel' %}
             placeholder="+49 1234 5678910"
             pattern="\+?[0-9 ()]+"
             title="{{ gettext("Phone number in the format +49 1234 5678910") }}"
+        {%- elif type == 'date' %}
+            placeholder="YYYY-MM-DD"
         {%- elif type == 'datetime-local' %}
             placeholder="YYYY-MM-DD HH:MM"
             pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}( |T)[0-9]{2}:[0-9]{2}(:[0-9]{2})?"
@@ -436,10 +440,10 @@
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
-        aclass="", attributes='', addon='', markdown=False, errorname=none) %}
+        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
-                                markdown=markdown, errorname=errorname) %}
+                                markdown=markdown, errorname=errorname, wide=wide) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
@@ -483,9 +487,10 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False) %}
+        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
+        wide=False) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                            actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
@@ -612,9 +617,10 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False) %}
+        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
+        wide=False) %}
     {%- set anid = anid or "input-select-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
@@ -699,7 +705,7 @@
 
 {% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
-        small=False, horizontal=True, title=none) %}
+        small=False, horizontal=True, title=none, info=none, wide=False) %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
                                readonly=readonly, horizontal=horizontal, small=small) }}
@@ -708,6 +714,12 @@
         <div{% if horizontal %} class="
             {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
         "{% endif %}>
+            {%- if info -%}
+                <p class="text-info">
+                    {{- make_icon('info-circle') }}{{ nbsp  }}
+                    {{- info -}}
+                </p>
+            {%- endif %}
             {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}

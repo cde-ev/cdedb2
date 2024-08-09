@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import zipapp
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
@@ -217,7 +217,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
-                        presider_address: Optional[str], data: Dict[str, Any]
+                        presider_address: Optional[str], data: dict[str, Any],
                         ) -> Response:
         """Modify an assembly."""
         if not rs.ambience['assembly']['is_active']:
@@ -292,7 +292,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             )
             return attendee_ml_data
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdata("presider_list")
     def create_assembly_mailinglist(self, rs: RequestState, assembly_id: int,
                                     presider_list: bool) -> Response:
@@ -324,7 +325,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
                         create_attendee_list: bool, create_presider_list: bool,
-                        presider_address: Optional[Email], data: Dict[str, Any]
+                        presider_address: Optional[Email], data: dict[str, Any],
                         ) -> Response:
         """Make a new assembly."""
         if presider_ids is not None:
@@ -409,7 +410,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/index")
 
     def process_signup(self, rs: RequestState, assembly_id: int,
-                       persona_id: int = None) -> None:
+                       persona_id: Optional[int] = None) -> None:
         """Helper to actually perform signup."""
         if persona_id:
             secret = self.assemblyproxy.external_signup(
@@ -421,14 +422,16 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         if secret:
             rs.notify("success", n_("Signed up."))
             subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
-            reply_to = (rs.ambience['assembly']['presider_address'] or
-                        self.conf["ASSEMBLY_ADMIN_ADDRESS"])
+            # This is no actual Reply-To to avoid people leaking their secret.
+            contact_address = (rs.ambience['assembly']['presider_address'] or
+                               self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
                 rs, "signup",
-                {'To': (persona['username'],),
-                 'Subject': subject,
-                 'Reply-To': reply_to},
-                {'secret': secret, 'persona': persona})
+                {'From': self.conf["NOREPLY_ADDRESS"],
+                 'To': (persona['username'],),
+                 'Subject': subject},
+                {'secret': secret, 'persona': persona,
+                 'contact_address': contact_address})
         else:
             rs.notify("info", n_("Already signed up."))
 

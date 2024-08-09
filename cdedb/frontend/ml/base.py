@@ -3,7 +3,8 @@
 """Base class providing fundamental ml services."""
 
 import collections
-from typing import Any, Collection, Dict, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
@@ -39,7 +40,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: Optional[CdEDBObject] = None) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
@@ -65,13 +66,13 @@ class MlBaseFrontend(AbstractUserFrontend):
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending})
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
             group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
             grouped[group_id][mailinglist_id] = {
                 'title': title,
-                'id': mailinglist_id
+                'id': mailinglist_id,
             }
         return self.render(rs, "index", {
             'groups': MailinglistGroup,
@@ -110,7 +111,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['ml']))
-    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
+    def create_user(self, rs: RequestState, data: dict[str, Any]) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -159,7 +160,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending})
-        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
@@ -177,7 +178,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         additional_infos = {
             ml_id: {
                 "num_subscribers": len(subs[ml_id]),
-                "held_mails": mailman.get_held_message_count(ml)
+                "held_mails": mailman.get_held_message_count(ml),
             } for ml_id, ml in mailinglist_infos.items()
         }
 
@@ -231,7 +232,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
-    def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
+    def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
                            ml_type: const.MailinglistTypes,
                            moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""
@@ -481,7 +482,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("ml_type", "domain")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
-        domain: const.MailinglistDomain, data: CdEDBObject
+        domain: const.MailinglistDomain, data: CdEDBObject,
     ) -> Response:
         update = {"id": mailinglist_id, "domain": domain}
         new_type = get_ml_type(ml_type)
@@ -803,7 +804,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         action_map = {
             'accept': SubscriptionAction.approve_request,
             'reject': SubscriptionAction.deny_request,
-            'block': SubscriptionAction.block_request
+            'block': SubscriptionAction.block_request,
         }
         if rs.has_validation_errors() or action not in action_map:
             return self.management(rs, mailinglist_id)
@@ -935,7 +936,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modunsubscriber_ids")
     def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                     modunsubscriber_ids: vtypes.CdedbIDList
+                                     modunsubscriber_ids: vtypes.CdedbIDList,
                                      ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
@@ -1016,8 +1017,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
-        if not self._check_address_change_requirements(rs, mailinglist_id,
-                                                       bool(email)):
+        if not self._check_address_change_requirements(rs, mailinglist_id, email):
             return self.redirect(rs, "ml/show_mailinglist")
 
         known_addresses = self.mlproxy.get_persona_addresses(rs)
@@ -1053,8 +1053,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
-        if not self._check_address_change_requirements(rs, mailinglist_id,
-                                                       False):
+        if not self._check_address_change_requirements(rs, mailinglist_id, email):
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.set_subscription_address(
@@ -1063,19 +1062,21 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/show_mailinglist")
 
-    def _check_address_change_requirements(self, rs: RequestState,
-                                           mailinglist_id: int,
-                                           setting: bool) -> bool:
-        """Check if all conditions required to change a subscription adress
-        are fulfilled.
-        """
-        is_subscribed = self.mlproxy.is_subscribed(
-            rs, rs.user.persona_id, mailinglist_id)
-        if not is_subscribed:
+    def _check_address_change_requirements(
+        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email],
+    ) -> bool:
+        """Check if all conditions required to change a subscription address
+        are fulfilled."""
+        persona_id = rs.user.persona_id
+        assert persona_id
+        if not self.mlproxy.is_subscribed(rs, persona_id, mailinglist_id):
             rs.notify("error", n_("Not subscribed."))
             return False
-        if setting and not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
+        if not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
             rs.notify("error", n_("Disallowed to change address."))
+            return False
+        if email and self.mlproxy.is_subscription_address_taken(rs, email, persona_id):
+            rs.notify("error", n_("Address already taken by another user."))
             return False
         return True
 
@@ -1094,7 +1095,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             if ml_store is None:
                 ml_store = {
                     'persona_ids': requests,
-                    'tstamp': 0
+                    'tstamp': 0,
                 }
 
             if requests:

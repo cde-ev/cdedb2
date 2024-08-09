@@ -101,13 +101,6 @@
             {% endtrans %}
         </p>
 
-        {% call form_input_optional('reg.payment', label=gettext("Fee paid"), anid="input_reg_payment") %}
-            {{ util.input_text(name="reg.payment", type="date", placeholder="YYYY-MM-DD", anid="input_reg_payment") }}
-        {% endcall %}
-        {% call form_input_optional('reg.amount_paid', label=gettext("Amount Paid"), anid="input_reg_amount_paid") %}
-            {{ util.input_text(name="reg.amount_paid", type="number", attributes='step="0.01"'|s,
-                               anid="input_reg_amount_paid") }}
-        {% endcall %}
         {% call form_input_optional('reg.parental_agreement', anid="input_reg_parental_agreement") %}
             <div class="checkbox">
                 {{ util.input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent"),
@@ -130,12 +123,14 @@
                                      anid="part{}_status".format(part.id)) }}
             {% endcall %}
 
-            {% call form_input_optional("part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
-                                        anid="part{}_lodgement_id".format(part.id)) %}
-                {{ util.input_select(name="part{}.lodgement_id".format(part.id),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp,
-                                     anid="part{}_lodgement_id".format(part.id)) }}
-            {% endcall %}
+            {% if lodgements %}
+                {% call form_input_optional("part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                            anid="part{}_lodgement_id".format(part.id)) %}
+                    {{ util.input_select(name="part{}.lodgement_id".format(part.id),
+                                         entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp,
+                                         anid="part{}_lodgement_id".format(part.id)) }}
+                {% endcall %}
+            {% endif %}
             {% call form_input_optional("part{}.is_camping_mat".format(part.id),
                                         anid="part{}_is_camping_mat".format(part.id)) %}
                 <div class="checkbox">

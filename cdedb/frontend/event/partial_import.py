@@ -7,7 +7,8 @@ both the partial import and the questionnaire import.
 
 import collections.abc
 import json
-from typing import Any, Mapping, Optional, Set, Tuple
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -83,7 +84,7 @@ class EventImportMixin(EventBaseFrontend):
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
                        json_file: Optional[werkzeug.datastructures.FileStorage],
-                       partial_import_data: Optional[str], token: Optional[str]
+                       partial_import_data: Optional[str], token: Optional[str],
                        ) -> Response:
         """Further steps of partial import process
 
@@ -222,17 +223,17 @@ class EventImportMixin(EventBaseFrontend):
                 if val is None and lodgement_groups.get(anid))),
         }
 
-        changed_registration_fields: Set[str] = set()
+        changed_registration_fields: set[str] = set()
         for reg in summary['changed_registrations'].values():
             changed_registration_fields |= reg.keys()
         summary['changed_registration_fields'] = tuple(xsorted(
             changed_registration_fields))
-        changed_course_fields: Set[str] = set()
+        changed_course_fields: set[str] = set()
         for course in summary['changed_courses'].values():
             changed_course_fields |= course.keys()
         summary['changed_course_fields'] = tuple(xsorted(
             changed_course_fields))
-        changed_lodgement_fields: Set[str] = set()
+        changed_lodgement_fields: set[str] = set()
         for lodgement in summary['changed_lodgements'].values():
             changed_lodgement_fields |= lodgement.keys()
         summary['changed_lodgement_fields'] = tuple(xsorted(
@@ -293,8 +294,8 @@ class EventImportMixin(EventBaseFrontend):
     @staticmethod
     def _make_partial_import_diff_aux(
             rs: RequestState, event: models.Event, courses: CdEDBObjectMap,
-            lodgements: CdEDBObjectMap
-    ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
+            lodgements: CdEDBObjectMap,
+    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """ Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation
         of partial_import().
@@ -326,7 +327,7 @@ class EventImportMixin(EventBaseFrontend):
         # Titles and choices for track-specific fields
         for track_id, track in event.tracks.items():
             if len(event.tracks) > 1:
-                prefix = "{title}: ".format(title=track.shortname)
+                prefix = f"{track.shortname}: "
             else:
                 prefix = ""
             reg_titles[f"tracks.{track_id}.course_id"] = (

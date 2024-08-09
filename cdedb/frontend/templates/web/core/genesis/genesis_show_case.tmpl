@@ -207,8 +207,13 @@
                     {# This acutally becomes the persona_id to be saved into the genesis request! #}
                     {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}
                 </div>
-
             {% endif %}
+
+            <div class="text-muted" style="margin-bottom: 8px">
+                {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"), gettext("welcome email")) %}
+                    The CdEDB will automatically send a %(welcome_mail)s to the new user.
+                {% endtrans %}
+            </div>
 
             <div class="button-par">
                 {{ util.input_submit(

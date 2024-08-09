@@ -108,7 +108,7 @@
             </div>
         {% endif %}
 
-        {% if dashboard['orga'] %}
+        {% if dashboard.get('orga') %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
@@ -172,16 +172,23 @@
             </div>
         {% endif %}
 
-        {% if 'moderator' in dashboard %}
+        {% if dashboard.get('moderator') %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
                 <ul class="slim spaced">
-                    {% for mailinglist_id, mailinglist in dashboard['moderator']|keydictsort(EntitySorter.mailinglist) %}
+                    {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
-                            {% if mailinglist['held_mails'] %}
+                            {% if mailinglist['held_mails'] is none %}
+                                <br />
+                                <span class="text-warning">{{ util.make_icon('exclamation-triangle') }}
+                                {% trans %}
+                                    Mailman mailinglist unreachable.
+                                {% endtrans %}
+                                </span>
+                            {% elif mailinglist['held_mails'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/message_moderation', {'mailinglist_id' : mailinglist_id}),
                                              ngettext("%(count)s email awaiting moderation", "%(count)s emails awaiting moderation",

@@ -1,0 +1,134 @@
+{% if scope is none %}
+    {% set sidenav_active='event_field_summary' %}
+{% elif scope.name == "registration" %}
+    {% set sidenav_active='event_registration' %}
+{% elif scope.name == "event_course" %}
+    {% set sidenav_active='event_course_stats' %}
+{% elif scope.name == "lodgement" %}
+    {% set sidenav_active='event_lodgements' %}
+{% endif %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% block title %}
+    {% if scope is none %}
+        {% trans title=ambience['event']['title'] %}
+            Custom Filters ({{ title }})
+        {% endtrans %}
+    {% elif scope.name == "registration" %}
+        {% trans title=ambience['event']['title'] %}
+            Custom Registration Filters ({{ title }})
+        {% endtrans %}
+    {% elif scope.name == "event_course" %}
+        {% trans title=ambience['event']['title'] %}
+            Custom Course Filters ({{ title }})
+        {% endtrans %}
+    {% elif scope.name == "lodgement" %}
+        {% trans title=ambience['event']['title'] %}
+            Custom Lodgement Filters ({{ title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+{% block heading %}
+    {% if scope is none %}
+        {{ util.context_heading(gettext("Custom Filters"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "registration" %}
+        {{ util.context_heading(gettext("Custom Registration Filters"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "event_course" %}
+        {{ util.context_heading(gettext("Custom Course Filters"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% elif scope.name == "lodgement" %}
+        {{ util.context_heading(gettext("Custom Lodgement Filters"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {% if scope is none %}
+        {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), active=True) }}
+    {% elif scope.name == "registration" %}
+        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters"), active=True) }}
+    {% elif scope.name == "event_course" %}
+        {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+        {{ util.breadcrumb_link(cdedblink("event/course_query"), gettext("Course Query")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters"), active=True) }}
+    {% elif scope.name == "lodgement" %}
+        {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+        {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
+        {{ util.breadcrumb_link(cdedblink("event/custom_filter_summary", {'scope': scope}), gettext("Custom Filters"), active=True) }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <p>
+        {% if scope is none %}
+            {{ util.href(cdedblink("event/create_registration_filter"), gettext("Add Custom Registration Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/create_course_filter"), gettext("Add Custom Course Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/create_lodgement_filter"), gettext("Add Custom Lodgement Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+        {% elif scope.name == "registration" %}
+            {{ util.href(cdedblink("event/create_registration_filter"), gettext("Add Custom Registration Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
+        {% elif scope.name == "event_course" %}
+            {{ util.href(cdedblink("event/create_course_filter"), gettext("Add Custom Course Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
+        {% elif scope.name == "lodgement" %}
+            {{ util.href(cdedblink("event/create_lodgement_filter"), gettext("Add Custom Lodgement Filter"), icon="plus", aclass="btn btn-small btn-success") }}
+            {{ util.href(cdedblink("event/custom_filter_summary", {'scope': None}), gettext("All Filters"), icon="filter", aclass="btn btn-small btn-info") }}
+        {% endif %}
+    </p>
+    <table id="custom-filter-summary" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th>{% trans %}Notes{% endtrans %}</th>
+                <th>{% trans %}Custom Field{% endtrans %}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for custom_filter in ambience['event']['custom_query_filters'].values()|sort if scope is none or custom_filter.scope == scope %}
+                <tr {% if not custom_filter.is_valid(query_specs[custom_filter.scope]) %}
+                        style="background-color: #ffdddd" title="{{ gettext("Incompatible field types.") }}"
+                    {% endif %}>
+                    <td>
+                        {{ util.make_icon(custom_filter.scope.get_icon(), title=gettext(custom_filter.scope|string))}}
+                        {{ custom_filter.title }}
+                    </td>
+                    <td>
+                        {{ custom_filter.notes }}
+                    </td>
+                    <td>
+                        {% with valid, invalid = custom_filter.get_field_titles(query_specs[custom_filter.scope], gettext) %}
+                            {% for title in valid -%}
+                                {{ title }}
+                                {%- if not loop.last or invalid %}, {% endif -%}
+                            {% endfor -%}
+                            {% for field in invalid -%}
+                                <code><del class="text-danger">{{ field }}</del></code>
+                                {%- if not loop.last %}, {% endif -%}
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
+                    <td class="text-right text-nowrap">
+                        {{ util.href(cdedblink("event/change_custom_filter", {'custom_filter_id': custom_filter.id}), label="", icon="pen", aclass="btn btn-sm btn-warning", title="") }}
+                        <form action="{{ cdedblink('event/delete_custom_filter', {'custom_filter_id': custom_filter.id}) }}"
+                              method="POST" class="display-inline" id="deletecustomfilterform{{ custom_filter.id }}">
+                            {{ util.anti_csrf_token('event/delete_custom_filter') }}
+                            {{ util.input_submit(label="", aclass='btn btn-sm btn-danger', icon="trash-alt", title=gettext('Delete custom filter')) }}
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr />
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}
+        {% trans %}
+            Custom Filters can be used to realize some OR-queries. If you use a custom filter within a query,
+            it will be checked whether the condition given will apply to at least <strong>one</strong> of the fields
+            specified for the Custom Filter.
+        {% endtrans %}
+    </p>
+{% endblock %}

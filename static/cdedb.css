@@ -255,6 +255,11 @@ summary {
     display: list-item;
 }
 
+summary.btn {
+    display: list-item;
+    width: fit-content;
+}
+
 /* List group responsive tear down */
 @media (max-width: 991px) {
     .list-group.tear-down {
@@ -302,6 +307,9 @@ h4.mosp,h5.mosp {
 dl.mosp {
     margin-top: 30px;
     margin-bottom: 30px;
+}
+div.mosp {
+    margin-top: 5px;
 }
 ul.nosp, ol.nosp {
     margin-bottom: 0;
@@ -569,8 +577,7 @@ p.textbox {
     background: #eee;
     font-weight: bold;
 }
-.table>tbody>tr.summary>td, .table>tbody>tr.summary>th,
-.table>tfoot>tr.summary>td, .table>tfoot>tr.summary>th {
+tr.summary>td, tr.summary>th {
     border-top: 3px double #888;
     font-weight: bold;
 }
@@ -660,7 +667,7 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td {
+tr.ls-selected td, tr:target td{
     background: #d9edf7;
 }
 .ls-item {
@@ -789,7 +796,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
     padding: 0 15px 0 30px;
     position: relative;
-    min-height: 130px; /* So .indicator fits into box */
+    min-height: 140px; /* So .indicator fits into box */
     /* Disable text selection: */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -832,22 +839,21 @@ tr.drow-delete>td, tr.drow-delete1>td {
     border-color: #245782;
 }
 .prefvote_stage.positive {
-    background: #e9ede9;
-    background: -webkit-linear-gradient(top, #eef8ee, #e5efe5);
-    background: -moz-linear-gradient(top, #eef8ee, #e5efe5);
-    background: -o-linear-gradient(top, #eef8ee, #e5efe5);
-    background: linear-gradient(top, #eef8ee, #e5efe5);
+    background: #e9ffe9;
+    background: -webkit-linear-gradient(top, #eeffee, #e5f8e5);
+    background: -moz-linear-gradient(top, #eeffee, #e5f8e5);
+    background: -o-linear-gradient(top, #eeffee, #e5f8e5);
+    background: linear-gradient(top, #eeffee, #e5f8e5);
 }
 .prefvote_stage.negative {
-    background: #ede9e9;
-    background: -webkit-linear-gradient(top, #f8eeee, #efe5e5);
-    background: -moz-linear-gradient(top, #f8eeee, #efe5e5);
-    background: -o-linear-gradient(top, #f8eeee, #efe5e5);
-    background: linear-gradient(top, #f8eeee, #efe5e5);
+    background: #ffe9e9;
+    background: -webkit-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: -moz-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: -o-linear-gradient(top, #ffeeee, #f8e5e5);
+    background: linear-gradient(top, #ffeeee, #f8e5e5);
 }
-.prefvote_stage.neutral .label {
+.prefvote_stage .label {
     margin-right: 10px;
-    margin-top: -5px;
     float: right;
     font-size: 0.9em;
     color: #888;
@@ -1087,6 +1093,24 @@ span.color-legend {
     margin-bottom: 2px;
 }
 
+/* Finance log style */
+tr.money-positive>td {
+    background-color: #e9ffe9;
+}
+tr.money-negative>td {
+    background-color: #ffe9e9;
+}
+
+/* Event Fees */
+tr.eventfee .money-negative {
+    /*color: #3c763d;*/
+    /*background-color: #dff0d8;*/
+    color: #449d44;
+}
+tr.eventfee .money-positive {
+    /*color: #31708f;*/
+    /*background-color: #d9edf7;*/
+}
 
 /* ************** *
  * Helper classes *

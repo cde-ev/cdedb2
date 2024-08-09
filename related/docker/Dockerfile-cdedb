@@ -1,4 +1,4 @@
-FROM debian:bullseye-20210816
+FROM debian:bookworm-20240130
 
 # TODO this should be obsolete, since we generate the certificates with a first run script.
 #  however, this does not work for the ci (which becomes visible for the offline vm test)
@@ -25,7 +25,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     openssl \
     apache2 \
     python3 \
-    libapache2-mod-wsgi-py3 \
+    gunicorn \
+    tzdata \
     \
     postgresql-client \
     \
@@ -36,13 +37,13 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # mostly python packages and some dev tools
+# * the large lib* block is mostly for the web driver
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-psycopg2 \
     python3-dateutil \
     python3-babel \
     python3-icu \
     python3-jinja2 \
-    python3-tz \
     python3-sphinx \
     python3-lxml \
     python3-pil \
@@ -61,16 +62,19 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-graphviz \
     python3-phonenumbers \
     python3-tabulate \
+    python3-mailmanclient \
+    python3-pyparsing \
+    python3-psycopg \
+    python3-psycopg-pool \
     \
     python3-pip \
     python3-click \
     python3-freezegun \
-    flake8 \
+    python3-coverage \
     isort \
     wget \
     unzip \
     \
-    && apt-get install --yes --no-install-recommends \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -96,59 +100,53 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     libxkbcommon0 \
     libxrandr2 \
     \
-    && apt-get install --yes python3-coverage \
-    \
-    && rm -rf /var/lib/apt/lists/* \
-    \
-    && python3 -m pip --no-cache-dir install \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip --no-cache-dir install --break-system-packages \
     ldaptor==21.2.0 \
-    mailmanclient==3.3.3 \
-    psycopg[binary]==3.0.15 \
-    psycopg_pool==3.1.1 \
-    pyparsing==3.0.9 \
-    schulze_condorcet==2.0.0 \
-    subman==0.1.0 \
+    schulze_condorcet==2.0.1 \
+    subman==0.1.1 \
     segno==1.5.2 \
-    \
-    && python3 -m pip --no-cache-dir install \
-    pylint==2.7.2 \
-    mypy==1.4.0 \
-    types-werkzeug \
-    types-pytz \
-    types-jinja2 \
+    mypy==1.10.1 \
+    pylint==3.2.5 \
     types-python-dateutil \
-    types-freezegun \
     types-bleach \
     types-Markdown \
-    types-click \
     types-tabulate \
-    playwright
+    'playwright>=1.37.0'
 
+# add startup scripts
+COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
+COPY ./related/docker/run-all.sh /run-all.sh
+COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
 # get the configuration files from the autobuild
-COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
+COPY ./related/auto-build/files/stage3 /tmp/autobuild/
 
 # This does the following:
 # - pacify newer git versions concerned about unsafe directory permissions
 # - configure apache,
+# - add www-cde user for gunicorn,
+# - configure gunicorn server,
 # - add the mailman basic-auth password,
 # - put the localconfig at the default config path and
 #   create an empty secrets config (there has to exist one but the fallbacks are fine),
 # - add symlink to /cdedb2/cdedb directory so python can find it,
 # - create the cdedb user and enable passwordless sudo,
 # - create the magic file to signal that we are inside a container.
-RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     \
-    && cp /tmp/autobuild/gitconfig /etc/gitconfig \
-    \
-    && a2enmod ssl wsgi headers authnz_ldap \
+    && a2enmod proxy_http ssl headers authnz_ldap \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
     && a2ensite cdedb-site \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
+    && groupadd --system www-cde \
+    && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
+    \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
-    && chown www-data:www-data /etc/cdedb-mailman-htpasswd \
+    && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
     && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
@@ -183,4 +181,8 @@ WORKDIR /cdedb2
 
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]
-CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]
+CMD ["/run-all.sh"]
+
+USER cdedb
+RUN pip install --break-system-packages ruff==0.5.1
+USER root

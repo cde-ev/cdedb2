@@ -38,10 +38,6 @@
 
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
-        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
-                            placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number",
-                                attributes='step="0.01"'|s, defaultvalue="0.00") }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
         {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local") }}
 
@@ -51,8 +47,10 @@
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part.id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {% if lodgements %}
+                {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                          entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {% endif %}
             {% for track in part['tracks'].values()|sort %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track.id]) %}

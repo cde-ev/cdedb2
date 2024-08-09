@@ -7,23 +7,16 @@ import logging
 import re
 import threading
 from collections import Counter
+from collections.abc import (
+    Collection, Container, ItemsView, Iterable, Mapping, Sequence,
+)
 from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, ItemsView, Iterable,
-    List, Literal, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
-    overload,
+    TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload,
 )
 
 import bleach
 import icu
 import jinja2
-
-try:
-    from jinja2 import pass_environment  # type: ignore[attr-defined]
-except ImportError:
-    # This compatibility shim can be removed once the migration to Debian
-    # bookworm is complete
-    from jinja2 import environmentfilter as pass_environment
-
 import markdown
 import markdown.extensions.toc
 import markupsafe
@@ -80,7 +73,7 @@ def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
 
 
 def date_filter(val: Union[datetime.date, str, None],
-                formatstr: str = "%Y-%m-%d", lang: str = None,
+                formatstr: str = "%Y-%m-%d", lang: Optional[str] = None,
                 verbosity: str = "medium",
                 passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.date`` objects.
@@ -108,7 +101,7 @@ def date_filter(val: Union[datetime.date, str, None],
         }
         locale = icu.Locale(lang)
         date_formatter = icu.DateFormat.createDateInstance(
-            verbosity_mapping[verbosity], locale
+            verbosity_mapping[verbosity], locale,
         )
         effective = datetime.datetime.combine(val, datetime.time())
         if not hasattr(effective, '_date_to_freeze'):
@@ -126,7 +119,7 @@ def date_filter(val: Union[datetime.date, str, None],
 
 
 def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
+                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: Optional[str] = None,
                     passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
@@ -148,7 +141,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
-        zone = _CONFIG["DEFAULT_TIMEZONE"].zone
+        zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
     else:
@@ -156,12 +149,12 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
 
 
 @overload
-def money_filter(val: None, currency: str = "EUR", lang: str = "de"
+def money_filter(val: None, currency: str = "EUR", lang: str = "de",
                  ) -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de",
                  ) -> str: ...
 
 
@@ -213,7 +206,7 @@ def cdedbid_filter(val: Optional[int]) -> Optional[str]:
     """
     if val is None:
         return None
-    return "DB-{}-{}".format(val, compute_checkdigit(val))
+    return f"DB-{val}-{compute_checkdigit(val)}"
 
 
 @overload
@@ -327,14 +320,14 @@ def tex_escape_filter(val: Optional[str]) -> Optional[str]:
 
 
 @overload
-def enum_filter(val: None, enum_: Type[enum.Enum]) -> None: ...
+def enum_filter(val: None, enum_: type[enum.Enum]) -> None: ...
 
 
 @overload
-def enum_filter(val: int, enum_: Type[enum.Enum]) -> str: ...
+def enum_filter(val: int, enum_: type[enum.Enum]) -> str: ...
 
 
-def enum_filter(val: Optional[int], enum_: Type[enum.Enum]) -> Optional[str]:
+def enum_filter(val: Optional[int], enum_: type[enum.Enum]) -> Optional[str]:
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
@@ -345,7 +338,7 @@ def enum_filter(val: Optional[int], enum_: Type[enum.Enum]) -> Optional[str]:
 
 
 @overload
-def genus_filter(val: None, female: str, male: str, unknown: Optional[str]
+def genus_filter(val: None, female: str, male: str, unknown: Optional[str],
                  ) -> None: ...
 
 
@@ -355,7 +348,7 @@ def genus_filter(val: int, female: str, male: str,
 
 
 def genus_filter(val: Optional[int], female: str, male: str,
-                 unknown: str = None) -> Optional[str]:
+                 unknown: Optional[str] = None) -> Optional[str]:
     """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
@@ -401,7 +394,8 @@ def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
     # escape the input. This function consumes an unescaped string or a
     # markupsafe.Markup safe html object and returns an escaped string.
     val = markupsafe.escape(val)
-    return val.replace('\n', markupsafe.Markup(replacement))
+    return val.replace(  # type: ignore[return-value]
+        '\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -535,9 +529,9 @@ def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
     return Counter(value.values())
 
 
-@pass_environment
+@jinja2.pass_environment
 def sort_filter(env: jinja2.Environment, value: Iterable[T],
-                reverse: bool = False, attribute: Any = None) -> List[T]:
+                reverse: bool = False, attribute: Optional[Any] = None) -> list[T]:
     """Sort an iterable using `xsorted`, using correct collation.
 
     TODO: With Jinja 2.11, make_multi_attrgetter should be used
@@ -553,7 +547,7 @@ def sort_filter(env: jinja2.Environment, value: Iterable[T],
 
 
 def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
-                    reverse: bool = False) -> List[Tuple[T, S]]:
+                    reverse: bool = False) -> list[tuple[T, S]]:
     """Sort a dict and yield (key, value) pairs.
 
     Because python dicts are unsorted you may want to use this function to
@@ -571,7 +565,7 @@ def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
     return xsorted(value.items(), key=sortfunc, reverse=reverse)
 
 
-def set_filter(value: Iterable[T]) -> Set[T]:
+def set_filter(value: Iterable[T]) -> set[T]:
     """
     A simple filter to construct a Python set from an iterable object. Just
     like Jinja's builtin "list" filter, but for sets.
@@ -580,7 +574,7 @@ def set_filter(value: Iterable[T]) -> Set[T]:
 
 
 def xdictsort_filter(value: Mapping[T, S], attribute: str,
-                     reverse: bool = False) -> List[Tuple[T, S]]:
+                     reverse: bool = False) -> list[tuple[T, S]]:
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -595,12 +589,12 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
 
 
 def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
-                       reverse: bool = False) -> List[Tuple[T, S]]:
+                       reverse: bool = False) -> list[tuple[T, S]]:
     """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
+def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
                     ) -> ItemsView[str, str]:
     """
     Processes the values of some string using processing function
@@ -612,9 +606,10 @@ def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
 
 
 def enum_entries_filter(enum: Iterable[enum.Enum],
-                        processing: Callable[[Any], str] = None,
+                        processing: Optional[Callable[[Any], str]] = None,
                         raw: bool = False, prefix: str = "",
-                        ) -> List[Tuple[enum.Enum, str]]:
+                        exempt: Collection[enum. Enum] = frozenset(),
+                        ) -> list[tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -626,6 +621,7 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     :param raw: If this is True, the enum entries are passed to processing as
         is, otherwise they are converted to str first.
     :param prefix: A prefix to prepend to the string output of every entry.
+    :param exempt: Enum members not to include
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
@@ -635,12 +631,13 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
         pre = lambda x: x
     else:
         pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
-    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
+    to_sort = ((entry, prefix + processing(pre(entry)))
+               for entry in enum if entry not in exempt)
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 
-def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
-                        *args: str) -> List[Tuple[S, ...]]:
+def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
+                        *args: str) -> list[tuple[S, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of
     tuples of specified fields of the value dict.
@@ -667,7 +664,7 @@ def dict_entries_filter(items: List[Tuple[Any, Union[Mapping[str, S], "CdEDatacl
     return [tuple(value[k] for k in args) for value in values]
 
 
-def entries_filter(items: List["CdEDataclass"], *args: str) -> List[Tuple[Any, ...]]:
+def entries_filter(items: list["CdEDataclass"], *args: str) -> list[tuple[Any, ...]]:
     """Transform a list of dataclasses into a list of tuples of specified fields.
 
     Example::
@@ -686,9 +683,9 @@ def entries_filter(items: List["CdEDataclass"], *args: str) -> List[Tuple[Any, .
     return [tuple(v.to_database()[k] for k in args) for v in items]
 
 
-def xdict_entries_filter(items: Sequence[Tuple[Any, CdEDBObject]], *args: str,
-                         include: Container[str] = None
-                         ) -> List[Tuple[str, ...]]:
+def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
+                         include: Optional[Container[str]] = None,
+                         ) -> list[tuple[str, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of
     tuples of strings with specified format. Each entry of the resulting

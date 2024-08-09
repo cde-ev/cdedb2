@@ -4,8 +4,7 @@
 import datetime
 import random
 import string
-
-import pytz
+import zoneinfo
 
 import cdedb.database.constants as const
 import cdedb.enums
@@ -33,8 +32,8 @@ class TestFrontendCommon(FrontendTest):
             param = rand_str(200, exclude='-')
             persona_id = random.randint(1, 10000)
             encoded = encode_parameter(salt, target, name, param, persona_id)
-            timeout, decoded = decode_parameter(salt, target, name, encoded,
-                                                persona_id)
+            _timeout, decoded = decode_parameter(
+                salt, target, name, encoded, persona_id)
             self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"
@@ -88,8 +87,10 @@ class TestFrontendCommon(FrontendTest):
 
     def test_date_filters(self) -> None:
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
-        dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=pytz.utc)
-        dt_other = pytz.timezone('America/New_York').localize(dt_naive)
+        dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=datetime.timezone.utc)
+        dt_other = datetime.datetime(
+            2010, 5, 22, 4, 55, tzinfo=zoneinfo.ZoneInfo('America/New_York'),
+        )
         self.assertEqual("2010-05-22", date_filter(dt_naive))
         self.assertEqual("2010-05-22", date_filter(dt_aware))
         self.assertEqual("2010-05-22 04:55 ()", datetime_filter(dt_naive))
@@ -157,9 +158,9 @@ class TestFrontendCommon(FrontendTest):
         for type_ in ML_TYPE_MAP.values():
             self.assertEqual(
                 [(e, e.display_str()) for e in type_.available_domains],
-                enum_entries_filter(type_.available_domains)
+                enum_entries_filter(type_.available_domains),
             )
         self.assertEqual(
             [(e, e.display_str()) for e in const.MailinglistDomain],
-            enum_entries_filter(const.MailinglistDomain)
+            enum_entries_filter(const.MailinglistDomain),
         )

@@ -8,13 +8,12 @@ registrations at once for the mailinglist realm.
 """
 import copy
 import dataclasses
+import datetime
 import decimal
-import typing
 from collections import defaultdict
-from typing import (
-    Any, Collection, Dict, List, Mapping, NamedTuple, Optional, Protocol, Sequence, Set,
-    Tuple, TypeVar,
-)
+from collections.abc import Collection, Iterator, Mapping, Sequence
+from functools import cached_property
+from typing import Any, NamedTuple, Optional, Protocol, TypeVar
 
 import psycopg2.extensions
 
@@ -31,69 +30,124 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
-    DeletionBlockers, InfiniteEnum, PsycoJson, RequestState, cast_fields, glue, unwrap,
+    PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
+    DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
+    cast_fields, glue, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.filter import date_filter, money_filter
+from cdedb.filter import money_filter
 
 T = TypeVar("T")
 
-CourseChoiceValidationAux = NamedTuple(
-    "CourseChoiceValidationAux", [
-        ("course_segments", Mapping[int, Set[int]]),
-        ("synced_tracks", Mapping[int, Set[int]]),
-        ("involved_tracks", Set[int]),
-        ("orga_input", bool),
-    ])
 
-FeeStats = Dict[str, Dict[const.EventFeeType, decimal.Decimal]]
+class CourseChoiceValidationAux(NamedTuple):
+    course_segments: Mapping[int, set[int]]
+    synced_tracks: Mapping[int, set[int]]
+    involved_tracks: set[int]
+    orga_input: bool
 
 
 @dataclasses.dataclass
-class RegistrationFee:
+class FeeStatsOneFee:
+    total_owed: decimal.Decimal = decimal.Decimal(0)
+    total_paid: decimal.Decimal = decimal.Decimal(0)
+    registrations_owed: set[int] = dataclasses.field(default_factory=set)
+    registrations_paid: set[int] = dataclasses.field(default_factory=set)
+
+
+@dataclasses.dataclass
+class FeeStatsOneKind:
+    by_fee: dict[vtypes.ProtoID, FeeStatsOneFee] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneFee))
+
+    def __getitem__(self, item: vtypes.ProtoID) -> FeeStatsOneFee:
+        return self.by_fee[item]
+
+    @cached_property
+    def total_owed(self) -> decimal.Decimal:
+        return sum(s.total_owed for s in self.by_fee.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def total_paid(self) -> decimal.Decimal:
+        return sum(s.total_paid for s in self.by_fee.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def registrations_owed(self) -> set[int]:
+        return set().union(*(stat.registrations_owed for stat in self.by_fee.values()))
+
+    @cached_property
+    def registrations_paid(self) -> set[int]:
+        return set().union(*(stat.registrations_paid for stat in self.by_fee.values()))
+
+
+@dataclasses.dataclass
+class FeeStatsTotal:
+    by_kind: dict[const.EventFeeType, FeeStatsOneKind] = \
+        dataclasses.field(default_factory=lambda: defaultdict(FeeStatsOneKind))
+
+    surplus_total: decimal.Decimal = decimal.Decimal(0)
+    surplus_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    insufficient_total: decimal.Decimal = decimal.Decimal(0)
+    insufficient_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    unpaid_registrations: set[int] = dataclasses.field(default_factory=set)
+
+    def __getitem__(self, item: const.EventFeeType) -> FeeStatsOneKind:
+        return self.by_kind[item]
+
+    def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsOneKind]]:
+        return iter(xsorted(self.by_kind.items()))
+
+    @cached_property
+    def total_owed(self) -> decimal.Decimal:
+        return sum(s.total_owed for s in self.by_kind.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def total_paid(self) -> decimal.Decimal:
+        return sum(s.total_paid for s in self.by_kind.values()) or decimal.Decimal(0)
+
+
+@dataclasses.dataclass
+class ComplexRegistrationFee:
+    """Contaings all information relevant to the total fee of one registration."""
     amount: decimal.Decimal
     active_fees: set[vtypes.ProtoID]
     visual_debug: dict[int, str]
     by_kind: dict[const.EventFeeType, decimal.Decimal]
 
+    def __iter__(self) -> Iterator[tuple[const.EventFeeType, decimal.Decimal]]:
+        return iter(xsorted(self.by_kind.items()))
 
-@dataclasses.dataclass
-class RegistrationFeeData:
-    member_fee: RegistrationFee
-    nonmember_fee: RegistrationFee
-    is_member: bool
-
-    @property
-    def fee(self) -> RegistrationFee:
-        return self.member_fee if self.is_member else self.nonmember_fee
-
-    @property
-    def amount(self) -> decimal.Decimal:
-        return self.fee.amount
+    def is_complex(self) -> bool:
+        return any(
+            amount for kind, amount in self.by_kind.items()
+            if kind != const.EventFeeType.common
+        )
 
     @property
     def donation(self) -> decimal.Decimal:
-        return self.fee.by_kind[const.EventFeeType.donation]
+        return sum(
+            (
+                self.by_kind[kind] for kind in const.EventFeeType if kind.is_donation()
+            ),
+            start=decimal.Decimal(0),
+        )
 
     @property
-    def nonmember_surcharge_amount(self) -> decimal.Decimal:
-        return self.nonmember_fee.amount - self.member_fee.amount
-
-    @property
-    def nonmember_surcharge(self) -> bool:
-        return not self.is_member and self.nonmember_surcharge_amount > 0
+    def nonmember_surcharge(self) -> decimal.Decimal:
+        return self.by_kind[const.EventFeeType.external]
 
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(self, rs: RequestState,
-                                        event_id: int) -> Dict[int, Set[int]]:
+                                        event_id: int) -> dict[int, set[int]]:
         """
         Helper function to get course segments of all courses of an event.
 
@@ -117,8 +171,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return {row['id']: set(row['segments'])
                 for row in self.query_all(rs, query, (event_id,))}
 
-    def _get_involved_tracks(self, rs: RequestState, registration_id: int
-                             ) -> Set[int]:
+    def _get_involved_tracks(self, rs: RequestState, registration_id: int,
+                             ) -> set[int]:
         """Return the track ids of all tracks the registration is involved with."""
         q = """
             SELECT course_tracks.id
@@ -132,8 +186,8 @@ class EventRegistrationBackend(EventBaseBackend):
              [x for x in const.RegistrationPartStati if x.is_involved()])
         return {e['id'] for e in self.query_all(rs, q, p)}
 
-    def _get_synced_tracks(self, rs: RequestState, event_id: int
-                           ) -> Dict[int, Set[int]]:
+    def _get_synced_tracks(self, rs: RequestState, event_id: int,
+                           ) -> dict[int, set[int]]:
         """Return a mapping of track id to ids of tracks synced to that track.
 
         The value will be an empty set for unsynced tracks.
@@ -198,7 +252,7 @@ class EventRegistrationBackend(EventBaseBackend):
             self._get_course_segments_per_course(rs, event_id),
             self._get_synced_tracks(rs, event_id),
             involved_tracks=involved_tracks,
-            orga_input=orga_input
+            orga_input=orga_input,
         )
 
     @access("event")
@@ -229,7 +283,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_course_segments_per_track(self, rs: RequestState, event_id: int,
                                       active_only: bool = False,
-                                      ) -> Dict[int, Set[int]]:
+                                      ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -258,10 +312,10 @@ class EventRegistrationBackend(EventBaseBackend):
         }
 
     @access("event")
-    def get_course_segments_per_track_group(self, rs: RequestState, event_id: int,
-                                            active_only: bool = False,
-                                            involved_parts: Collection[int] = None,
-                                            ) -> Dict[int, Set[int]]:
+    def get_course_segments_per_track_group(
+            self, rs: RequestState, event_id: int, active_only: bool = False,
+            involved_parts: Optional[Collection[int]] = None,
+    ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track group.
 
         :param active_only: If True, restrict to active course segments, i.e. courses
@@ -282,7 +336,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
 
-        params: List[Any] = []
+        params: list[Any] = []
 
         if involved_parts is not None:
             involved_parts = affirm_set(vtypes.ID, involved_parts)
@@ -303,7 +357,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def _set_course_choices(self, rs: RequestState, registration_id: int,
                             track_id: int, choices: Optional[Sequence[int]],
                             aux: CourseChoiceValidationAux,
-                            new_registration: bool = False
+                            new_registration: bool = False,
                             ) -> DefaultReturnCode:
         """Helper for handling of course choices.
 
@@ -337,16 +391,18 @@ class EventRegistrationBackend(EventBaseBackend):
             ret *= self.sql_insert(rs, "event.course_choices", new_choice)
         return ret
 
-    def _get_registration_info(self, rs: RequestState,
-                               reg_id: int) -> Optional[CdEDBObject]:
+    def _get_registration_info(self, rs: RequestState, reg_id: int) -> tuple[int, int]:
         """Helper to retrieve basic registration information."""
-        return self.sql_select_one(
+        reg_info = self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
+        if not reg_info:
+            raise KeyError(n_("Registration does not exist."))
+        return reg_info['persona_id'], reg_info['event_id']
 
     @access("event")
     def list_persona_registrations(
-        self, rs: RequestState, persona_id: int
-    ) -> Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]]:
+        self, rs: RequestState, persona_id: int,
+    ) -> dict[int, dict[int, dict[int, const.RegistrationPartStati]]]:
         """List all events a given user has a registration for.
 
         :returns: Mapping of event ids to
@@ -363,19 +419,19 @@ class EventRegistrationBackend(EventBaseBackend):
                  " ON registrations.id = registration_parts.registration_id"
                  " WHERE persona_id = %s")
         data = self.query_all(rs, query, (persona_id,))
-        ret: Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]] = {}
+        ret: dict[int, dict[int, dict[int, const.RegistrationPartStati]]] = {}
         for e in data:
             ret.setdefault(
-                e['event_id'], {}
+                e['event_id'], {},
             ).setdefault(
-                e['registration_id'], {}
+                e['registration_id'], {},
             )[e['part_id']] = const.RegistrationPartStati(e['status'])
         return ret
 
     @access("event", "ml_admin")
     def list_registrations_personas(self, rs: RequestState, event_id: int,
-                                    persona_ids: Collection[int] = None
-                                    ) -> Dict[int, int]:
+                                    persona_ids: Optional[Collection[int]] = None,
+                                    ) -> dict[int, int]:
         """List all registrations of an event.
 
         :param persona_ids: If passed restrict to registrations by these personas.
@@ -388,15 +444,16 @@ class EventRegistrationBackend(EventBaseBackend):
 
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
+        # finance_admins are allowed here to book event fees.
         if (persona_ids != {rs.user.persona_id}
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)
-                and "ml_admin" not in rs.user.roles):
+                and {"ml_admin", "finance_admin"}.isdisjoint(rs.user.roles)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
-        params: List[Any] = [event_id]
+        params: list[Any] = [event_id]
         if persona_ids:
             conditions.append("persona_id = ANY(%s)")
             params.append(persona_ids)
@@ -405,8 +462,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event", "ml_admin")
-    def list_registrations(self, rs: RequestState, event_id: int, persona_id: int = None
-                           ) -> Dict[int, int]:
+    def list_registrations(self, rs: RequestState, event_id: int,
+                           persona_id: Optional[int] = None) -> dict[int, int]:
         """Manual singularization of list_registrations_personas
 
         Handles default values properly.
@@ -417,7 +474,7 @@ class EventRegistrationBackend(EventBaseBackend):
             return self.list_registrations_personas(rs, event_id)
 
     @access("event")
-    def list_participants(self, rs: RequestState, event_id: int) -> Dict[int, int]:
+    def list_participants(self, rs: RequestState, event_id: int) -> dict[int, int]:
         """List all participants of an event.
 
         Just participants of this event are returned and the requester himself must
@@ -451,7 +508,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("persona")
     def check_registrations_status(
             self, rs: RequestState, persona_ids: Collection[int], event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> Dict[int, bool]:
+            stati: Collection[const.RegistrationPartStati]) -> dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -496,8 +553,8 @@ class EventRegistrationBackend(EventBaseBackend):
         check_registrations_status, "persona_ids", "persona_id")
 
     @access("event")
-    def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
-                             ) -> Dict[Tuple[int, int], int]:
+    def get_registration_map(self, rs: RequestState, event_ids: Collection[int],
+                             ) -> dict[tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set(vtypes.ID, event_ids)
         if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
@@ -514,11 +571,14 @@ class EventRegistrationBackend(EventBaseBackend):
     @internal
     @access("event")
     def _get_waitlist(self, rs: RequestState, event_id: int,
-                      part_ids: Collection[int] = None
-                      ) -> Dict[int, Optional[List[int]]]:
+                      part_ids: Optional[Collection[int]] = None,
+                      ) -> dict[int, Optional[list[int]]]:
         """Compute the waitlist in order for the given parts.
 
-        :returns: Part id maping to None, if no waitlist ordering is defined
+        Registrations with an empty waitlist field wil be placed at the end of the
+        waitlist. The registration id is used as a tie breaker.
+
+        :returns: Part id mapping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
         event_id = affirm(vtypes.ID, event_id)
@@ -529,34 +589,33 @@ class EventRegistrationBackend(EventBaseBackend):
                 part_ids = set(event.parts.keys())
             elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
-            ret: Dict[int, Optional[List[int]]] = {}
+            ret: dict[int, Optional[list[int]]] = {}
             waitlist = const.RegistrationPartStati.waitlist
             query = ("SELECT id, fields FROM event.registrations"
                      " WHERE event_id = %s")
-            fields_by_id = {
-                reg['id']: cast_fields(reg['fields'], event.fields)
-                for reg in self.query_all(rs, query, (event_id,))}
             for part_id in part_ids:
                 part = event.parts[part_id]
                 if not part.waitlist_field:
                     ret[part_id] = None
                     continue
                 field_name = part.waitlist_field.field_name
-                query = ("SELECT reg.id, rparts.status"
-                         " FROM event.registrations AS reg"
-                         " LEFT OUTER JOIN event.registration_parts AS rparts"
-                         " ON reg.id = rparts.registration_id"
-                         " WHERE rparts.part_id = %s AND rparts.status = %s")
+                query = f"""
+                    SELECT reg.id
+                    FROM event.registrations AS reg
+                        LEFT JOIN event.registration_parts AS rparts
+                            ON reg.id = rparts.registration_id
+                    WHERE rparts.part_id = %s AND rparts.status = %s
+                    ORDER BY
+                        COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
+                """
                 data = self.query_all(rs, query, (part_id, waitlist))
-                ret[part_id] = xsorted(
-                    (reg['id'] for reg in data),
-                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
+                ret[part_id] = [e['id'] for e in data]
             return ret
 
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
-                     part_ids: Collection[int] = None
-                     ) -> Dict[int, Optional[List[int]]]:
+                     part_ids: Optional[Collection[int]] = None,
+                     ) -> dict[int, Optional[list[int]]]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
         if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
@@ -564,9 +623,9 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_waitlist_position(self, rs: RequestState, event_id: int,
-                              part_ids: Collection[int] = None,
-                              persona_id: int = None
-                              ) -> Dict[int, Optional[int]]:
+                              part_ids: Optional[Collection[int]] = None,
+                              persona_id: Optional[int] = None,
+                              ) -> dict[int, Optional[int]]:
         """Compute the waitlist position of a user for the given parts.
 
         :returns: Mapping of part id to position on waitlist or None if user is
@@ -583,7 +642,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not reg_ids:
             raise ValueError(n_("Not registered for this event."))
         reg_id = unwrap(reg_ids.keys())
-        ret: Dict[int, Optional[int]] = {}
+        ret: dict[int, Optional[int]] = {}
         for part_id, waitlist in full_waitlist.items():
             try:
                 # If `reg_id` is not in the list, a ValueError will be raised.
@@ -595,11 +654,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def registrations_by_course(
-            self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
-            reg_ids: Collection[int] = None,
+            self, rs: RequestState, event_id: int, course_id: Optional[int] = None,
+            track_id: Optional[int] = None,
+            position: Optional[InfiniteEnum[CourseFilterPositions]] = None,
+            reg_ids: Optional[Collection[int]] = None,
             reg_states: Collection[const.RegistrationPartStati] =
-            (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
+            (const.RegistrationPartStati.participant,),
+    ) -> dict[int, int]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -636,7 +697,7 @@ class EventRegistrationBackend(EventBaseBackend):
             AS choices ON choices.registration_id = regs.id
                 AND choices.track_id = course_tracks.id"""
         conditions = ["regs.event_id = %s", "rparts.status = ANY(%s)"]
-        params: List[Any] = [event_id, reg_states]
+        params: list[Any] = [event_id, reg_states]
         if track_id:
             conditions.append("course_tracks.id = %s")
             params.append(track_id)
@@ -688,8 +749,8 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_num_registrations_by_part(self, rs: RequestState, event_id: int,
                                       stati: Collection[const.RegistrationPartStati],
-                                      include_total: bool = False
-                                      ) -> Dict[Optional[int], int]:
+                                      include_total: bool = False,
+                                      ) -> dict[Optional[int], int]:
         """Count registrations per part.
 
         If selected, count total registration count (returned with part_id `None`).
@@ -720,8 +781,8 @@ class EventRegistrationBackend(EventBaseBackend):
         return res
 
     @access("event")
-    def get_registration_payment_info(self, rs: RequestState, event_id: int
-                                      ) -> Tuple[Optional[bool], bool]:
+    def get_registration_payment_info(self, rs: RequestState, event_id: int,
+                                      ) -> tuple[Optional[bool], bool]:
         """Small helper to get information for the dashboard pages.
 
         The first returned flag is None iff there is no registration for the user.
@@ -737,15 +798,13 @@ class EventRegistrationBackend(EventBaseBackend):
                        for part in registration['parts'].values()):
                 return any(part['status'].is_involved()
                            for part in registration['parts'].values()), False
-            payment_pending = bool(
-                not registration['payment']
-                and self.calculate_fee(rs, unwrap(registration_ids)))
-            return True, payment_pending
+            # TODO: Use Registration.remaining_owed here.
+            return True, registration['amount_owed'] > registration['amount_paid']
         else:
             return None, False
 
     @access("event", "ml_admin")
-    def get_registrations(self, rs: RequestState, registration_ids: Collection[int]
+    def get_registrations(self, rs: RequestState, registration_ids: Collection[int],
                           ) -> CdEDBObjectMap:
         """Retrieve data for some registrations.
 
@@ -780,9 +839,10 @@ class EventRegistrationBackend(EventBaseBackend):
             # orgas and admins have full access to all data
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
-            is_privileged = (self.is_orga(rs, event_id=event_id)
-                             or self.is_admin(rs)
-                             or "ml_admin" in rs.user.roles)
+            # finance_admins are allowed here to book event fees.
+            is_privileged = (
+                self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
+                or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
             if not is_privileged:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
@@ -815,21 +875,32 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
-            event_fields = self._get_event_fields(rs, event_id)
-            for anid in ret:
-                if 'tracks' in ret[anid]:
-                    raise RuntimeError()
-                tracks = {e['track_id']: e for e in tdata
-                          if e['registration_id'] == anid}
-                for track_id in tracks:
-                    tmp = {e['course_id']: e['rank'] for e in choices
-                           if (e['registration_id'] == anid
-                               and e['track_id'] == track_id)}
-                    tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
-                ret[anid]['tracks'] = tracks
-                ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            personalized_fees = models.PersonalizedFee.many_from_database(
+                self.query_all(
+                    rs, *models.PersonalizedFee.get_select_query(registration_ids),
+                ),
+            )
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
+            for reg in ret.values():
+                reg['tracks'] = {}
+                reg['personalized_fees'] = {}
+                reg['fields'] = cast_fields(reg['fields'], event_fields)
+            for reg_track in tdata:
+                reg = ret[reg_track['registration_id']]
+                reg['tracks'][reg_track['track_id']] = reg_track
+                reg_track['choices'] = {}
+            for choice in choices:
+                reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
+                reg_track['choices'][choice['course_id']] = choice['rank']
+            for personalized_fee in personalized_fees.values():
+                reg = ret[personalized_fee.registration_id]
+                reg['personalized_fees'][personalized_fee.fee_id] = \
+                    personalized_fee.amount
+            for reg in ret.values():
+                for reg_track in reg['tracks'].values():
+                    tmp = reg_track['choices']
+                    reg_track['choices'] = xsorted(tmp.keys(), key=tmp.get)
 
         return ret
 
@@ -840,7 +911,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def set_registration(self, rs: RequestState, data: CdEDBObject,
-                         change_note: str = None, orga_input: bool = True,
+                         change_note: Optional[str] = None, orga_input: bool = True,
                          ) -> DefaultReturnCode:
         """Public entry point for setting a registration. Perform sanity checks after.
         """
@@ -849,21 +920,19 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
+            _, event_id = self._get_registration_info(rs, reg_id=data['id'])
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)
 
             # Perform sanity checks.
-            self._track_groups_sanity_check(rs, current['event_id'])
+            self._track_groups_sanity_check(rs, event_id)
 
         return ret
 
     @access("event")
     def set_registrations(self, rs: RequestState, data: Collection[CdEDBObject],
-                          change_note: str = None) -> DefaultReturnCode:
+                          change_note: Optional[str] = None) -> DefaultReturnCode:
         """Helper for setting multiple registrations at once.
 
         All registrations must belong to the same event.
@@ -894,8 +963,24 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return ret
 
+    @staticmethod
+    def _get_status_change_log_message(
+            rs: RequestState, old_state: CdEDBObject, update: CdEDBObject,
+            event_part: models.EventPart,
+    ) -> Optional[str]:
+        """Uninlined code from _set_registration for better readability."""
+        old_status = const.RegistrationPartStati(old_state['status'])
+        g = rs.log_gettext
+
+        if 'status' in update and update['status'] != old_status:
+            change_note = f"{g(str(old_status))} -> {g(str(update['status']))}"
+            if len(event_part.event.parts) > 1:
+                change_note = f"{event_part.shortname}: {change_note}"
+            return change_note
+        return None
+
     def _set_registration(self, rs: RequestState, data: CdEDBObject,
-                          change_note: str = None, orga_input: bool = True,
+                          change_note: Optional[str] = None, orga_input: bool = True,
                           ) -> DefaultReturnCode:
         """Update some keys of a registration.
 
@@ -917,10 +1002,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            current = self._get_registration_info(rs, reg_id=data['id'])
-            if current is None:
-                raise ValueError(n_("Registration does not exist."))
-            persona_id, event_id = current['persona_id'], current['event_id']
+            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
@@ -953,9 +1035,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 parts = data['parts']
                 if not event.parts.keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
-                existing = {e['part_id']: e['id'] for e in self.sql_select(
-                    rs, "event.registration_parts", ("id", "part_id"),
+                existing_data = {e['part_id']: e for e in self.sql_select(
+                    rs, "event.registration_parts",
+                    ("id", "part_id", "status"),
                     (data['id'],), entity_key="registration_id")}
+                existing = {e['part_id']: e['id'] for e in existing_data.values()}
                 new = {x for x in parts if x not in existing}
                 updated = {x for x in parts
                            if x in existing and parts[x] is not None}
@@ -970,8 +1054,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 for x in updated:
                     update = copy.deepcopy(parts[x])
                     update['id'] = existing[x]
-                    ret *= self.sql_update(rs, "event.registration_parts",
-                                           update)
+                    if status_change_note := self._get_status_change_log_message(
+                            rs, existing_data[x], update, event.parts[x]):
+                        self.event_log(
+                            rs, const.EventLogCodes.registration_status_changed,
+                            event_id, persona_id, status_change_note)
+                    ret *= self.sql_update(rs, "event.registration_parts", update)
                 if deleted:
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
@@ -1009,13 +1097,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise NotImplementedError(n_("This is not useful."))
 
             # Recalculate the amount owed after all changes have been applied.
-            current = self.get_registration(rs, data['id'])
-            update = {
-                'id': data['id'],
-                'amount_owed': self._calculate_single_fee(
-                    rs, current, event=event)
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+            self._update_registration_amount_owed(rs, data['id'])
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
                 persona_id=persona_id, change_note=change_note)
@@ -1051,7 +1133,10 @@ class EventRegistrationBackend(EventBaseBackend):
             if self.list_registrations(rs, data['event_id'], data['persona_id']):
                 raise ValueError(n_("Already registered."))
             self.assert_offline_lock(rs, event_id=data['event_id'])
+            persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
+            data['is_member'] = persona['is_member']
+            data['personalized_fees'] = {}
             data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
             part_ids = {e['id'] for e in self.sql_select(
@@ -1102,6 +1187,7 @@ class EventRegistrationBackend(EventBaseBackend):
         * registration_parts: The registration's registration parts.
         * registration_tracks: The registration's registration tracks.
         * course_choices: The registrations course choices.
+        * amount_paid: The registration having non-zero amount_paid.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1127,11 +1213,16 @@ class EventRegistrationBackend(EventBaseBackend):
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
 
+        amount_paid = unwrap(self.sql_select_one(
+            rs, "event.registrations", ("amount_paid",), registration_id))
+        if amount_paid:
+            blockers["amount_paid"] = [True]
+
         return blockers
 
     @access("event")
     def delete_registration(self, rs: RequestState, registration_id: int,
-                            cascade: Collection[str] = None
+                            cascade: Optional[Collection[str]] = None,
                             ) -> DefaultReturnCode:
         """Remove a registration.
 
@@ -1140,9 +1231,9 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         registration_id = affirm(vtypes.ID, registration_id)
         reg = self.get_registration(rs, registration_id)
-        if (not self.is_orga(rs, event_id=reg['event_id'])
-                and not self.is_admin(rs)):
+        if not self.is_orga(rs, event_id=reg['event_id']):
             raise PrivilegeError(n_("Not privileged."))
+        event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
 
         blockers = self.delete_registration_blockers(rs, registration_id)
@@ -1170,14 +1261,34 @@ class EventRegistrationBackend(EventBaseBackend):
                 if "course_choices" in cascade:
                     ret *= self.sql_delete(rs, "event.course_choices",
                                            blockers["course_choices"])
+                if "amount_paid" in cascade:
+                    data = {
+                        'id': registration_id,
+                        'amount_paid': decimal.Decimal("0.00"),
+                    }
+                    ret *= self.sql_update(rs, "event.registrations", data)
 
                 # check if registration is deletable after cascading
                 blockers = self.delete_registration_blockers(
                     rs, registration_id)
 
             if not blockers:
+                personalized_fee_ids = [
+                    e['fee_id'] for e in self.sql_select(
+                        rs, models.PersonalizedFee.database_table, ("fee_id",),
+                        (registration_id,), entity_key="registration_id",
+                    )
+                ]
+
                 ret *= self.sql_delete_one(
                     rs, "event.registrations", registration_id)
+
+                for fee_id in mixed_existence_sorter(personalized_fee_ids):
+                    self.event_log(
+                        rs, const.EventLogCodes.personalized_fee_amount_deleted,
+                        event_id=reg['event_id'], persona_id=reg['persona_id'],
+                        change_note=event.fees[fee_id].title,
+                    )
                 self.event_log(rs, const.EventLogCodes.registration_deleted,
                                reg['event_id'], persona_id=reg['persona_id'])
             else:
@@ -1186,44 +1297,96 @@ class EventRegistrationBackend(EventBaseBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
-    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+    def _update_registration_amount_owed(
+            self, rs: RequestState, registration_id: int,
+    ) -> DefaultReturnCode:
+        """
+        Update the amount owed for one registration.
+
+        If not given, the amount will be calculated beforehand.
+        """
+        self.affirm_atomized_context(rs)
+        amount = self.calculate_fee(rs, registration_id)
+
+        update = {
+            'id': registration_id,
+            'amount_owed': amount,
+        }
+        return self.sql_update(rs, models.Registration.database_table, update)
+
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
                                           ) -> DefaultReturnCode:
+        """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
-        fees = self.calculate_fees(rs, registration_ids)
-
-        # TODO: make this more efficient by cahing parse results and evaluators somehow.
 
         ret = 1
-        for reg_id, amount_owed in fees.items():
-            update = {
-                'id': reg_id,
-                'amount_owed': amount_owed,
-            }
-            ret *= self.sql_update(rs, "event.registrations", update)
+        for reg_id in registration_ids:
+            ret *= self._update_registration_amount_owed(rs, reg_id)
 
         return ret
 
+    @access("finance_admin")
+    def list_amounts_owed(self, rs: RequestState, persona_id: int,
+                          ) -> dict[int, decimal.Decimal]:
+        """List the remaining amount owed for every registration of the given user."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = f"""
+            SELECT event_id, amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s
+        """
+        params = [persona_id]
+
+        return {
+            e['event_id']: e['amount'] for e in self.query_all(rs, query, params)
+        }
+
+    @access("finance_admin")
+    def get_amount_owed(self, rs: RequestState, persona_id: int, event_id: int,
+                        ) -> Optional[decimal.Decimal]:
+        """Retrieve the remaining amount owed for a single persona for one event."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        query = f"""
+            SELECT amount_owed - amount_paid AS amount
+            FROM {models.Registration.database_table}
+            WHERE persona_id = %s AND event_id = %s
+        """
+        params = [persona_id, event_id]
+
+        return unwrap(self.query_one(rs, query, params))
+
+    @access("finance_admin")
+    def get_registration_id(self, rs: RequestState, persona_id: int, event_id: int,
+                            ) -> Optional[int]:
+        """Retrieve the registration id of the given persona for the event if any."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        registration_ids = self.list_registrations(rs, event_id, persona_id)
+        if not registration_ids:
+            return None
+        return unwrap(registration_ids.keys())
+
     @access("event")
-    def calculate_complex_fee(self, rs: RequestState, registration_id: int
-                              ) -> RegistrationFeeData:
+    def calculate_complex_fee(self, rs: RequestState, registration_id: int,
+                              visual_debug: bool = False) -> ComplexRegistrationFee:
         """Public access point for retrieving complex fee data."""
         registration_id = affirm(vtypes.ID, registration_id)
         registration = self.get_registration(rs, registration_id)
         event = self.get_event(rs, registration['event_id'])
-        return self._calculate_complex_fee(rs, registration, event=event)
+        return self._calculate_complex_fee(
+            rs, registration, event=event, visual_debug=visual_debug)
 
     def _calculate_single_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                              event: models.Event, is_member: bool = None
-                              ) -> decimal.Decimal:
+                              event: models.Event) -> decimal.Decimal:
         """Helper to only calculate return the fee amount for a single registration."""
-        return self._calculate_complex_fee(
-            rs, reg, event=event, is_member=is_member).amount
+        return self._calculate_complex_fee(rs, reg, event=event).amount
 
-    def _calculate_complex_fee(self, rs: RequestState, reg: CdEDBObject, *,
-                               event: models.Event, is_member: bool = None,
-                               is_orga: bool = None, visual_debug: bool = False,
-                               ) -> RegistrationFeeData:
+    @staticmethod
+    def _calculate_complex_fee(rs: RequestState, reg: CdEDBObject, *,
+                               event: models.Event, visual_debug: bool = False,
+                               ) -> ComplexRegistrationFee:
         """Helper function to calculate the fee for one registration.
 
         This is used inside `create_registration` and `set_registration`,
@@ -1234,13 +1397,9 @@ class EventRegistrationBackend(EventBaseBackend):
         If the subset does not violate any MEP constraints, the total of all it's parts'
         fees is calculated. The final fee will be the maximum of all such totals.
 
-        :param is_member: If this is None, retrieve membership status here.
-        :param is_orga: If this is None, determine orga status regularly.
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
-        ret = {}
-
         reg_part_involvement = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
@@ -1251,21 +1410,21 @@ class EventRegistrationBackend(EventBaseBackend):
             if f.association == const.FieldAssociations.registration
                and f.kind == const.FieldDatatypes.bool
         }
-        for tmp_is_member in (True, False):
-            # Other bools can be added here, but also require adjustment to the parser.
-            other_bools = {
-                'is_orga':
-                    reg['persona_id'] in event.orgas if is_orga is None else is_orga,
-                'is_member': tmp_is_member,
-                'any_part': any(reg_part_involvement.values()),
-                'all_parts': all(reg_part_involvement.values()),
-            }
-            amount = decimal.Decimal(0)
-            active_fees = set()
-            fees_by_kind: Dict[const.EventFeeType, decimal.Decimal] = defaultdict(
-                decimal.Decimal)
-            visual_debug_data: Dict[int, str] = {}
-            for fee in event.fees.values():
+        # Other bools can be added here, but also require adjustment to the parser.
+        other_bools = {
+            'is_orga': reg.get('is_orga', reg['persona_id'] in event.orgas),
+            'is_member': reg['is_member'],
+            'any_part': any(reg_part_involvement.values()),
+            'all_parts': all(reg_part_involvement.values()),
+        }
+        amount = decimal.Decimal(0)
+        active_fees = set()
+        fees_by_kind: dict[const.EventFeeType, decimal.Decimal] = defaultdict(
+            decimal.Decimal)
+        visual_debug_data: dict[int, str] = {}
+        for fee in event.fees.values():
+            if fee.is_conditional():
+                assert fee.amount is not None
                 parse_result = fcp_parsing.parse(fee.condition)
                 if fcp_evaluation.evaluate(
                         parse_result, reg_bool_fields, reg_part_involvement,
@@ -1276,24 +1435,25 @@ class EventRegistrationBackend(EventBaseBackend):
                 if visual_debug:
                     visual_debug_data[fee.id] = fcp_roundtrip.visual_debug(
                         parse_result, reg_bool_fields, reg_part_involvement,
-                        other_bools
+                        other_bools,
                     )[1]
-            ret[tmp_is_member] = RegistrationFee(
-                amount, active_fees, visual_debug_data, fees_by_kind)
+            else:
+                personalized_amount = reg['personalized_fees'].get(fee.id)
+                if personalized_amount is not None:
+                    amount += personalized_amount
+                    active_fees.add(fee.id)
+                    fees_by_kind[fee.kind] += personalized_amount
 
-        if is_member is None:
-            is_member = self.core.get_persona(rs, reg['persona_id'])['is_member']
-            assert is_member is not None
-
-        return RegistrationFeeData(
-            member_fee=ret[True], nonmember_fee=ret[False], is_member=is_member,
+        return ComplexRegistrationFee(
+            amount=amount, active_fees=active_fees,
+            visual_debug=visual_debug_data, by_kind=fees_by_kind,
         )
 
     @access("event")
     def precompute_fee(self, rs: RequestState, event_id: int, persona_id: Optional[int],
                        part_ids: Collection[int], is_member: Optional[bool],
-                       is_orga: Optional[bool], field_values: dict[str, bool]
-                       ) -> RegistrationFeeData:
+                       is_orga: Optional[bool], field_values: dict[str, bool],
+                       ) -> ComplexRegistrationFee:
         """Alternate access point to calculate a single fee, that does not need
         an existing registration.
 
@@ -1307,7 +1467,7 @@ class EventRegistrationBackend(EventBaseBackend):
         part_ids = affirm_set(vtypes.ID, part_ids)
         is_member = affirm_optional(bool, is_member)
         is_orga = affirm_optional(bool, is_orga)
-        field_values = affirm(typing.Mapping, field_values)  # type: ignore[type-abstract]
+        field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
         event = self.get_event(rs, event_id)
 
@@ -1332,10 +1492,8 @@ class EventRegistrationBackend(EventBaseBackend):
         for field_id, field in event.fields.items():
             fn = field.field_name
             fields[fn] = field_values.get(f"field.{field_id}")
-            if fields[fn] is None and reg:
-                fields[fn] = bool(reg['fields'].get(fn, False))
-            else:
-                fields[fn] = False
+            if fields[fn] is None:
+                fields[fn] = bool(reg['fields'].get(fn, False)) if reg else False
 
         fake_registration = {
             'persona_id': persona_id,
@@ -1344,19 +1502,21 @@ class EventRegistrationBackend(EventBaseBackend):
                     'status':
                         const.RegistrationPartStati.applied
                         if part_id in part_ids
-                        else const.RegistrationPartStati.not_applied
+                        else const.RegistrationPartStati.not_applied,
                 }
                 for part_id in event.parts
             },
+            'personalized_fees': reg['personalized_fees'] if reg else {},
             'fields': fields,
+            'is_member': is_member,
+            'is_orga': is_orga,
         }
         return self._calculate_complex_fee(
-            rs, fake_registration, event=event, is_member=is_member, is_orga=is_orga,
-            visual_debug=True)
+            rs, fake_registration, event=event, visual_debug=True)
 
     @access("event")
-    def calculate_fees(self, rs: RequestState, registration_ids: Collection[int]
-                       ) -> Dict[int, decimal.Decimal]:
+    def calculate_fees(self, rs: RequestState, registration_ids: Collection[int],
+                       ) -> dict[int, decimal.Decimal]:
         """Calculate the total fees for some registrations.
 
         This should be called once for multiple registrations, as it would be
@@ -1381,63 +1541,188 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
+            # finance_admins are allowed here to book event fees.
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
+                    and "finance_admin" not in rs.user.roles
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
 
-            ret: Dict[int, decimal.Decimal] = {}
+            ret: dict[int, decimal.Decimal] = {}
             for reg_id, reg in regs.items():
-                is_member = personas[reg['persona_id']]['is_member']
-                ret[reg_id] = self._calculate_single_fee(
-                    rs, reg, event=event, is_member=is_member)
+                ret[reg_id] = self._calculate_single_fee(rs, reg, event=event)
         return ret
 
     class _CalculateFeeProtocol(Protocol):
-        def __call__(self, rs: RequestState, registration_id: int
+        def __call__(self, rs: RequestState, registration_id: int,
                      ) -> decimal.Decimal: ...
     calculate_fee: _CalculateFeeProtocol = singularize(
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
-    def get_fee_stats(self, rs: RequestState, event_id: int
-                      ) -> FeeStats:
+    def get_fee_stats(self, rs: RequestState, event_id: int,
+                      ) -> FeeStatsTotal:
         """Group and sum the paid fees by type.
 
-        This calculates the sum over both owed and paid fees, for each kind of event
-        fees individually. If people have paid more or less than the owed amount,
-        special treatment is needed:
+        This aggregates all registrations that owe a certain event fee as well as the
+        total amount owed. The same thing is done separately for registrations that have
+        actually paid that fee.
 
-        * The share of the paid amount excessive the owed amount can not be assigned to
-          a specific fee type, and is therefore not included.
-        * If the paid amount is less than the owed amount, it can not be split into the
-          respective kinds of owed fees at all. Therefore, these payments are not
-          included at all.
+        The share of payments exceeding the respective amount owed cannot be attributed
+        to a specific fee type and is tracked seperately.
+
+        Insufficient payments cannot be split into the respective kinds of owed fee.
+        They are excluded from the paid totals, but tracked separately.
         """
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
-        ret: FeeStats = {
-            'owed': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
-            'paid': dict.fromkeys(const.EventFeeType, decimal.Decimal(0)),
-        }
+        stats = FeeStatsTotal()
+        for fee in event.fees.values():
+            # Create an entry in the defaultdict.
+            kind_stats = stats[fee.kind]  # noqa: F841
 
         for reg in self.get_registrations(rs, reg_ids).values():
-            reg_fee = self._calculate_complex_fee(rs, reg, event=event).fee
-            paid = reg['amount_paid'] >= reg['amount_owed']
-            for kind, amount in reg_fee.by_kind.items():
-                ret['owed'][kind] += amount
-                if paid:
-                    ret['paid'][kind] += amount
+            complex_fee = self._calculate_complex_fee(rs, reg, event=event)
 
-        return ret
+            if reg['amount_owed'] > reg['amount_paid']:
+                if reg['amount_paid']:
+                    stats.insufficient_total += reg['amount_paid']
+                    stats.insufficient_registrations.add(reg['id'])
+                else:
+                    stats.unpaid_registrations.add(reg['id'])
+            elif reg['amount_paid'] > reg['amount_owed']:
+                stats.surplus_total += reg['amount_paid'] - reg['amount_owed']
+                stats.surplus_registrations.add(reg['id'])
+
+            for fee_id in complex_fee.active_fees:
+                fee = event.fees[fee_id]
+                fee_stat = stats[fee.kind][fee.id]
+
+                if fee.is_conditional():
+                    assert fee.amount is not None
+                    amount = fee.amount
+                else:
+                    amount = reg['personalized_fees'][fee.id]
+
+                fee_stat.total_owed += amount
+                fee_stat.registrations_owed.add(reg['id'])
+                if reg['amount_paid'] >= reg['amount_owed']:
+                    fee_stat.total_paid += amount
+                    fee_stat.registrations_paid.add(reg['id'])
+
+        return stats
 
     @access("event")
+    def set_personalized_fee_amount(
+            self, rs: RequestState, registration_id: int, fee_id: int,
+            amount: Optional[decimal.Decimal],
+    ) -> DefaultReturnCode:
+        """
+        Either set or remove the personalized amount for one combination of reg and fee.
+        """
+        registration_id = affirm(vtypes.ID, registration_id)
+        fee_id = affirm(vtypes.ID, fee_id)
+        amount = affirm_optional(decimal.Decimal, amount)
+
+        with Atomizer(rs):
+            persona_id, event_id = self._get_registration_info(rs, registration_id)
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError
+            event = self.get_event(rs, event_id)
+            if fee_id not in event.fees:
+                raise KeyError
+            if not event.fees[fee_id].is_personalized():
+                raise ValueError
+            personalized_fee = models.PersonalizedFee(
+                id=vtypes.ProtoID(-1),  # Placeholder id.
+                registration_id=registration_id, fee_id=fee_id, amount=amount,
+            )
+            ret = self.query_exec(rs, *personalized_fee.get_query())
+            self._update_registration_amount_owed(rs, registration_id)
+            change_note = event.fees[fee_id].title
+            if amount is None:
+                code = const.EventLogCodes.personalized_fee_amount_deleted
+            else:
+                code = const.EventLogCodes.personalized_fee_amount_set
+                change_note += f" ({money_filter(amount)})"
+            self.event_log(
+                rs, code=code, event_id=event_id, persona_id=persona_id,
+                change_note=change_note,
+            )
+            return ret
+
+    @internal
+    @access("finance_admin")
+    def book_registration_payment(
+            self, rs: RequestState, registration_id: int,
+            amount: decimal.Decimal, date: datetime.date,
+    ) -> CdEDBObject:
+        """
+        Add the given amount to the amount that was paid for this registration.
+
+        The amount may be negative but not zero.
+
+        The caller is responsible for validating the input, due to this being internal.
+
+        Returns the new state of the registration for convenienve.
+        """
+
+        event_log_transfer_template = "{amount} am {date} gezahlt."
+        event_log_reimbursement_template = "{amount} am {date} zurückerstattet."
+
+        registration = self.get_registration(rs, registration_id)
+        event_id = registration['event_id']
+
+        if amount > 0:
+            update = {
+                'id': registration['id'],
+                'amount_paid': registration['amount_paid'] + amount,
+            }
+            if not registration['payment']:
+                update['payment'] = date
+            change_note = event_log_transfer_template.format(
+                amount=money_filter(amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_received,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        elif amount < 0:
+            update = {
+                'id': registration['id'],
+                'amount_paid': registration['amount_paid'] + amount,
+                # Do not update payment date for reimbursements.
+            }
+            change_note = event_log_reimbursement_template.format(
+                amount=money_filter(-amount),
+                date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+            )
+            self.sql_update(
+                rs, models.Registration.database_table, update,
+            )
+            self.event_log(
+                rs, const.EventLogCodes.registration_payment_reimbursed,
+                event_id=event_id, change_note=change_note,
+                persona_id=registration['persona_id'],
+            )
+            registration.update(update)
+        else:
+            raise ValueError(n_("Cannot book fee with amount of zero."))
+
+        return registration
+
+    @access("finance_admin")
     def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
-                  ) -> Tuple[bool, Optional[int]]:
+                  ) -> tuple[bool, Optional[int]]:
         """Book all paid fees.
 
         :returns: Success information and
@@ -1448,38 +1733,27 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         data = affirm_array(vtypes.FeeBookingEntry, data)
 
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 
         index = 0
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
                 all_reg_ids = {datum['registration_id'] for datum in data}
-                all_regs = self.get_registrations(rs, all_reg_ids)
-                regs_done = set()
-                if any(reg['event_id'] != event_id for reg in all_regs.values()):
-                    raise ValueError(n_("Mismatched registrations,"
-                                        " not associated with the event."))
+                if not all_reg_ids:
+                    return True, 0
+                query = f"""
+                    SELECT DISTINCT event_id
+                    FROM {models.Registration.database_table}
+                    WHERE id = ANY(%s)
+                """
+                event_ids = set(map(unwrap, self.query_all(rs, query, [all_reg_ids])))
+                if not len(event_ids) == 1:
+                    raise ValueError(n_(
+                        "Only registrations from exactly one event allowed."))
                 for index, datum in enumerate(data):
-                    reg_id = datum['registration_id']
-                    if reg_id in regs_done:
-                        all_regs[reg_id] = self.get_registration(rs, reg_id)
-                    else:
-                        regs_done.add(reg_id)
-                    update = {
-                        'id': reg_id,
-                        'payment': datum['date'],
-                        'amount_paid': all_regs[reg_id]['amount_paid']
-                                       + datum['amount'],
-                    }
-                    change_note = "{} am {} gezahlt.".format(
-                        money_filter(datum['amount']),
-                        date_filter(datum['original_date'], lang="de"))
-                    count += self.set_registration(rs, update, change_note)
+                    self.book_registration_payment(
+                        rs, datum['registration_id'], datum['amount'], datum['date'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -1497,4 +1771,4 @@ class EventRegistrationBackend(EventBaseBackend):
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
             return False, index
-        return True, count
+        return True, len(data)

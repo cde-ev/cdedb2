@@ -16,10 +16,8 @@ import datetime
 import enum
 import itertools
 import re
-from typing import (
-    TYPE_CHECKING, Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional,
-    Sequence, Tuple, cast,
-)
+from collections.abc import Collection, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, cast
 
 from typing_extensions import TypeAlias
 
@@ -75,31 +73,32 @@ class QueryOperators(CdEIntEnum):
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
-VALID_QUERY_OPERATORS: Dict[str, Tuple[QueryOperators, ...]] = {
+VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
     "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
             _ops.equalornull, _ops.unequalornull, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
             _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
             _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
             _ops.between, _ops.outside),
-    "id": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
-           _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
     "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-            _ops.nonempty),
-    "float": (_ops.less, _ops.between, _ops.outside, _ops.greater, _ops.empty,
-              _ops.nonempty),
+            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
+    "float": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
+              _ops.less, _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
+              _ops.greater, _ops.empty, _ops.nonempty),
     "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
              _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
-             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
-             _ops.nonempty),
+             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
                  _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
                  _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
                  _ops.empty, _ops.nonempty),
     "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
+    "enum_int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
+                 _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
 }
+VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
+VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -119,12 +118,18 @@ NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 # A query constraint translates to (part of) a WHERE clause. All constraints are
 # conjugated.
-QueryConstraint = Tuple[str, QueryOperators, Any]
-QueryConstraintType = NamedTuple(
-    "QueryConstraintType", [("field", str), ("op", QueryOperators), ("value", Any)])
+QueryConstraint = tuple[str, QueryOperators, Any]
+
+
+class QueryConstraintType(NamedTuple):
+    field: str
+    op: QueryOperators
+    value: Any
+
+
 # A query order translate to an ORDER BY clause. The bool decides whether the sorting
 # is ASC (i.e. True -> ASC, False -> DESC).
-QueryOrder = Tuple[str, bool]
+QueryOrder = tuple[str, bool]
 
 QueryChoices = Mapping[Any, str]
 
@@ -136,7 +141,7 @@ class QuerySpecEntry:
     type: str
     title_base: str
     title_prefix: str = ""
-    title_params: Dict[str, str] = dataclasses.field(default_factory=dict)
+    title_params: dict[str, str] = dataclasses.field(default_factory=dict)
     choices: QueryChoices = dataclasses.field(default_factory=dict)
     translate_prefix: bool = True
 
@@ -151,7 +156,7 @@ class QuerySpecEntry:
         return ret
 
 
-QuerySpec = Dict[str, QuerySpecEntry]
+QuerySpec = dict[str, QuerySpecEntry]
 
 
 class QueryScope(CdEIntEnum):
@@ -163,7 +168,7 @@ class QueryScope(CdEIntEnum):
     realm: str
     includes_archived: bool
 
-    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False
+    def __new__(cls, value: int, realm: str = "core", includes_archived: bool = False,
                 ) -> "QueryScope":
         """Custom creation method for this enum.
 
@@ -214,9 +219,10 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: "models.Event" = None, courses: CourseMap = None,
-                 lodgements: LodgementMap = None,
-                 lodgement_groups: LodgementGroupMap = None,
+    def get_spec(self, *, event: Optional["models.Event"] = None,
+                 courses: Optional[CourseMap] = None,
+                 lodgements: Optional[LodgementMap] = None,
+                 lodgement_groups: Optional[LodgementGroupMap] = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -276,8 +282,8 @@ class QueryScope(CdEIntEnum):
             return f"{prefix}/{target}"
         return target
 
-    def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
-                           ) -> Dict[str, str]:
+    def mangle_query_input(self, rs: RequestState,
+                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -315,8 +321,15 @@ class QueryScope(CdEIntEnum):
                 params[key] = rs.values[key] = value
         return params
 
+    def get_icon(self) -> str:
+        return {
+            QueryScope.registration: "user",
+            QueryScope.lodgement: "home",
+            QueryScope.event_course: "book",
+        }.get(self, "")
 
-# See `QueryScope.get_view().
+
+# See `QueryScope.get_view()`.
 _QUERY_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
@@ -391,7 +404,7 @@ _QUERY_SPECS = {
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -400,7 +413,7 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_ml_realm": QuerySpecEntry("bool", n_("Mailinglists"), n_("Realm")),
             "is_event_realm": QuerySpecEntry("bool", n_("Events"), n_("Realm")),
@@ -430,7 +443,7 @@ _QUERY_SPECS = {
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
             "birth_name": QuerySpecEntry("str", n_("Birth Name")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -439,15 +452,16 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "address2": QuerySpecEntry("str", n_("Address (2)")),
             "address_supplement2": QuerySpecEntry("str", n_("Address Supplement (2)")),
             "postal_code2": QuerySpecEntry("str", n_("ZIP (2)")),
             "location2": QuerySpecEntry("str", n_("City (2)")),
-            "country2": QuerySpecEntry("str", n_("Country (2)")),
+            "country2": QuerySpecEntry("enum_str", n_("Country (2)")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
             "trial_member": QuerySpecEntry("bool", n_("Trial Member")),
+            "honorary_member": QuerySpecEntry("bool", n_("Honorary Member")),
             "paper_expuls": QuerySpecEntry("bool", n_("Printed exPuls")),
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             "decided_search": QuerySpecEntry("bool", n_("Searchability Decided")),
@@ -465,8 +479,8 @@ _QUERY_SPECS = {
             "timeline": QuerySpecEntry("str", n_("Year(s) of Graduation")),
             "interests": QuerySpecEntry("str", n_("Interests")),
             "free_form": QuerySpecEntry("str", n_("Miscellaneous")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "lastschrift.granted_at": QuerySpecEntry(
                 "datetime", n_("Lastschrift Granted")),
             "lastschrift.revoked_at": QuerySpecEntry(
@@ -485,7 +499,7 @@ _QUERY_SPECS = {
             "display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
             "title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
             "name_supplement": QuerySpecEntry("str", n_("Name Affix")),
-            "gender": QuerySpecEntry("int", n_("Gender")),
+            "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
             "telephone": QuerySpecEntry("str", n_("Phone")),
@@ -494,7 +508,7 @@ _QUERY_SPECS = {
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
-            "country": QuerySpecEntry("str", n_("Country")),
+            "country": QuerySpecEntry("enum_str", n_("Country")),
             "is_active": QuerySpecEntry("bool", n_("Active Account")),
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             "is_member": QuerySpecEntry("bool", n_("CdE-Member")),
@@ -504,8 +518,8 @@ _QUERY_SPECS = {
                 for k in ADMIN_KEYS
             },
             ",".join(ADMIN_KEYS): QuerySpecEntry("bool", n_("Any"), n_("Admin")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "notes": QuerySpecEntry("str", n_("Admin Notes")),
         },
     # Special view of a cde member for the member search.
@@ -523,8 +537,8 @@ _QUERY_SPECS = {
             "telephone,mobile": QuerySpecEntry("str", n_("Phone")),
             "weblink,specialisation,affiliation,timeline,interests,free_form":
                 QuerySpecEntry("str", n_("Interests")),
-            "pevent_id": QuerySpecEntry("id", n_("Past Event")),
-            "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
+            "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
+            "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
             "fulltext": QuerySpecEntry("str", n_("Fulltext")),
         },
     # Special view on a `event.regisrations` entry for registration quicksearch.
@@ -576,9 +590,11 @@ class QueryResultEntryFormat(enum.Enum):
     username = 2
     event_course = 10
     event_lodgement = 11
+    event_fee = 12
     date = 20
     datetime = 21
     bool = 22
+    enum = 30
 
 
 class Query:
@@ -595,7 +611,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Sequence[QueryOrder],
-                 name: str = None, query_id: int = None,
+                 name: Optional[str] = None, query_id: Optional[int] = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -629,33 +645,34 @@ class Query:
         """Custom columns may contain upper case, this wraps them in qoutes."""
         self.fields_of_interest = [
             ",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(","))
             for column in self.fields_of_interest]
         self.constraints = [
             (",".join(
-                ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                ".".join(atom if atom.islower() else f'"{atom}"'
                          for atom in moniker.split("."))
                 for moniker in column.split(",")),
              operator, value)
             for column, operator, value in self.constraints
         ]
         self.order = [
-            (".".join(atom if atom.islower() else '"{}"'.format(atom)
+            (".".join(atom if atom.islower() else f'"{atom}"'
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
         # Fix our fix
         changed_fields = set()
-        for column in self.fields_of_interest:
-            for moniker in column.split(","):
-                if '"' in moniker:
-                    changed_fields.add(moniker)
+        for moniker in self.fields_of_interest:
+            if '"' in moniker:
+                changed_fields.add(moniker)
         for column, _, _ in self.constraints:
             for moniker in column.split(","):
                 if '"' in moniker:
                     changed_fields.add(moniker)
+            if '"' in column:
+                changed_fields.add(column)
         for moniker, _ in self.order:
             if '"' in moniker:
                 changed_fields.add(moniker)
@@ -730,6 +747,14 @@ class Query:
                 return QueryResultEntryFormat.persona
             if field == "persona.username":
                 return QueryResultEntryFormat.username
+            if field in (
+                    "reg.amount_paid",
+                    "reg.amount_owed",
+                    "reg.remaining_owed",
+            ):
+                return QueryResultEntryFormat.event_fee
+            if re.match(r"fee\d+\.amount", field):
+                return QueryResultEntryFormat.event_fee
             if re.match(r"track\d+\.course_(id|instructor)", field):
                 return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):
@@ -751,10 +776,10 @@ class Query:
         return QueryResultEntryFormat.other
 
 
-def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
-                       ) -> Dict[const.FieldAssociations, List["models.EventField"]]:
+def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]",
+                       ) -> dict[const.FieldAssociations, list["models.EventField"]]:
     """Helper to sort event fields and group them by association."""
-    sorted_fields: Dict[const.FieldAssociations, List["models.EventField"]] = {
+    sorted_fields: dict[const.FieldAssociations, list[models.EventField]] = {  # pylint: disable=used-before-assignment
         association: []
         for association in const.FieldAssociations
     }
@@ -763,7 +788,7 @@ def _sort_event_fields(fields: "models.CdEDataclassMap[models.EventField]"
     return sorted_fields
 
 
-def _combine_specs(spec_map: Dict[int, QuerySpec], entity_ids: Collection[int],
+def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
                    prefix: str, translate_prefix: bool = False) -> QuerySpec:
     """Helper to create combined spec entries for specified entities.
 
@@ -811,16 +836,17 @@ def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap]
+def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
     return dict((g.id, g.title) for g in xsorted(lodgement_groups.values()))
 
 
-def make_registration_query_spec(event: "models.Event", courses: CourseMap = None,
-                                 lodgements: LodgementMap = None,
-                                 lodgement_groups: LodgementGroupMap = None,
+def make_registration_query_spec(event: "models.Event",
+                                 courses: Optional[CourseMap] = None,
+                                 lodgements: Optional[LodgementMap] = None,
+                                 lodgement_groups: Optional[LodgementGroupMap] = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -843,11 +869,13 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         "persona.family_name": QuerySpecEntry("str", n_("Family Name")),
         "persona.username": QuerySpecEntry("str", n_("E-Mail")),
         "persona.is_member": QuerySpecEntry("bool", n_("CdE-Member")),
+        "reg.is_member": QuerySpecEntry("bool", n_("Member at registration")),
+        "reg.is_orga": QuerySpecEntry("bool", n_("Is Orga")),
         "persona.display_name": QuerySpecEntry("str", n_("Known as (Forename)")),
         "persona.title": QuerySpecEntry("str", n_("Title_[[of a persona]]")),
         "persona.name_supplement": QuerySpecEntry("str", n_("Name Affix")),
         # Choices for the gender will be manually set when displaying the result.
-        "persona.gender": QuerySpecEntry("int", n_("Gender"), choices=None),  # type: ignore[arg-type]
+        "persona.gender": QuerySpecEntry("enum_int", n_("Gender"), choices=None),  # type: ignore[arg-type]
         "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
         "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
@@ -858,7 +886,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         "persona.postal_code": QuerySpecEntry("str", n_("ZIP")),
         "persona.location": QuerySpecEntry("str", n_("City")),
         # Choices for the country will be manually set when displaying the result.
-        "persona.country": QuerySpecEntry("id", n_("Country"), choices=None),  # type: ignore[arg-type]
+        "persona.country": QuerySpecEntry("enum_str", n_("Country"), choices=None),  # type: ignore[arg-type]
         "reg.payment": QuerySpecEntry("date", n_("Payment")),
         "reg.amount_paid": QuerySpecEntry("float", n_("Amount Paid")),
         "reg.amount_owed": QuerySpecEntry("float", n_("Amount Owed")),
@@ -872,6 +900,11 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         "ctime.creation_time": QuerySpecEntry("datetime", n_("Registration Time")),
         "mtime.modification_time":
             QuerySpecEntry("datetime", n_("Last Modification Time")),
+        **{
+            f"fee{fee.id}.amount": QuerySpecEntry(
+                "float", n_("Personalized Amount"), fee.title)
+            for fee in event.fees.values() if fee.is_personalized()
+        },
     }
 
     def get_part_spec(part: "models.EventPart") -> QuerySpec:
@@ -879,14 +912,15 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
         return {
             # Choices for the status will be manually set.
             f"part{part.id}.status": QuerySpecEntry(
-                "int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
+                "enum_int", n_("registration status"), prefix, choices=None),  # type: ignore[arg-type]
             f"part{part.id}.is_camping_mat": QuerySpecEntry(
                 "bool", n_("camping mat user"), prefix),
             f"part{part.id}.lodgement_id": QuerySpecEntry(
-                "id", n_("lodgement"), prefix, choices=lodgement_choices),
+                "enum_int", n_("lodgement"), prefix, choices=lodgement_choices),
             f"lodgement{part.id}.id": QuerySpecEntry("id", n_("lodgement ID"), prefix),
             f"lodgement{part.id}.group_id": QuerySpecEntry(
-                "id", n_("lodgement group"), prefix, choices=lodgement_group_choices),
+                "enum_int", n_("lodgement group"), prefix,
+                choices=lodgement_group_choices),
             f"lodgement{part.id}.title": QuerySpecEntry(
                 "str", n_("lodgement title"), prefix),
             f"lodgement{part.id}.notes": QuerySpecEntry(
@@ -910,11 +944,13 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
             f"track{track_id}.is_course_instructor": QuerySpecEntry(
                 "bool", n_("instructs their course"), prefix),
             f"track{track_id}.course_id": QuerySpecEntry(
-                "id", n_("course"), prefix, choices=course_choices),
+                "enum_int", n_("course"), prefix, choices=course_choices),
             f"track{track_id}.course_instructor": QuerySpecEntry(
-                "id", n_("instructed course"), prefix, choices=course_choices),
+                "enum_int", n_("instructed course"), prefix, choices=course_choices),
             f"course{track_id}.id": QuerySpecEntry("id", n_("course ID"), prefix),
             f"course{track_id}.nr": QuerySpecEntry("str", n_("course nr"), prefix),
+            f"course{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("course nr+shortname"), prefix),
             f"course{track_id}.title": QuerySpecEntry(
                 "str", n_("course title"), prefix),
             f"course{track_id}.shortname": QuerySpecEntry(
@@ -932,6 +968,8 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
                 "id", n_("instructed course ID"), prefix),
             f"course_instructor{track_id}.nr": QuerySpecEntry(
                 "str", n_("instructed course nr"), prefix),
+            f"course_instructor{track_id}.nr_shortname": QuerySpecEntry(
+                "str", n_("instructed course nr+shortname"), prefix),
             f"course_instructor{track_id}.title": QuerySpecEntry(
                 "str", n_("instructed course title"), prefix),
             f"course_instructor{track_id}.shortname": QuerySpecEntry(
@@ -949,9 +987,10 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
 
     def get_course_choice_spec(cco: "models.CourseChoiceObject") -> QuerySpec:
         prefix = "" if len(event.tracks) <= 1 else cco.shortname
+        reference_track = cco.reference_track if cco.is_complex() else cco
         ret = {
-            f"course_choices{cco.reference_track.id}.rank{i}": QuerySpecEntry(
-                "id", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
+            f"course_choices{reference_track.id}.rank{i}": QuerySpecEntry(
+                "enum_int", n_("{rank}. Choice"), prefix, {'rank': str(i + 1)},
                 choices=course_choices,
             )
             for i in range(cco.num_choices)
@@ -963,7 +1002,7 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
             #  This happens if there is exactly one choice.
             if key not in ret:
                 ret[key] = QuerySpecEntry(
-                    "id", n_("Any Choice"), prefix, choices=course_choices)
+                    "enum_int", n_("Any Choice"), prefix, choices=course_choices)
 
         return ret
 
@@ -1037,12 +1076,16 @@ def make_registration_query_spec(event: "models.Event", courses: CourseMap = Non
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.registration)
+
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
-                           lodgements: LodgementMap = None,
-                           lodgement_groups: LodgementGroupMap = None,
+def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
+                           lodgements: Optional[LodgementMap] = None,
+                           lodgement_groups: Optional[LodgementGroupMap] = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1061,8 +1104,10 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
 
     spec = {
         "course.id": QuerySpecEntry("id", n_("course id")),
-        "course.course_id": QuerySpecEntry("id", n_("course"), choices=course_choices),
+        "course.course_id": QuerySpecEntry(
+            "enum_int", n_("course"), choices=course_choices),
         "course.nr": QuerySpecEntry("str", n_("course nr")),
+        "course.nr_shortname": QuerySpecEntry("str", n_("course nr+shortname")),
         "course.title": QuerySpecEntry("str", n_("course title")),
         "course.description": QuerySpecEntry("str", n_("course description")),
         "course.shortname": QuerySpecEntry("str", n_("course shortname")),
@@ -1122,7 +1167,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
             if key not in course_choice_spec:
                 prefix = ("" if len(event.tracks) <= 1
                           else event.tracks[track_id].shortname)
-                spec[key] = QuerySpecEntry("id", n_("Any Choice"), prefix)
+                spec[key] = QuerySpecEntry("int", n_("total choices"), prefix)
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
@@ -1143,7 +1188,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
                 'shortname': part_group.shortname,
             }
             for part_group in sorted_part_groups
-        )
+        ),
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']
@@ -1162,12 +1207,16 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap = None,
         for field in sorted_course_fields
     })
 
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.event_course)
+
     return spec
 
 
-def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
-                              lodgements: LodgementMap = None,
-                              lodgement_groups: LodgementGroupMap = None,
+def make_lodgement_query_spec(event: "models.Event",
+                              courses: Optional[CourseMap] = None,
+                              lodgements: Optional[LodgementMap] = None,
+                              lodgement_groups: Optional[LodgementGroupMap] = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
@@ -1187,14 +1236,15 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
     spec = {
         "lodgement.id": QuerySpecEntry("id", n_("lodgement ID")),
         "lodgement.lodgement_id": QuerySpecEntry(
-            "id", n_("lodgement"), choices=lodgement_choices),
+            "enum_int", n_("lodgement"), choices=lodgement_choices),
         "lodgement.title": QuerySpecEntry("str", n_("Title_[[name of an entity]]")),
         "lodgement.regular_capacity": QuerySpecEntry("int", n_("Regular Capacity")),
         "lodgement.camping_mat_capacity": QuerySpecEntry(
             "int", n_("Camping Mat Capacity")),
+        "lodgement.total_capacity": QuerySpecEntry("int", n_("Total Capacity")),
         "lodgement.notes": QuerySpecEntry("str", n_("Lodgement Notes")),
         "lodgement.group_id": QuerySpecEntry(
-            "int", n_("Lodgement Group"), choices=lodgement_group_choices),
+            "enum_int", n_("Lodgement Group"), choices=lodgement_group_choices),
         "lodgement_group.id": QuerySpecEntry("int", n_("Lodgement Group ID")),
         "lodgement_group.title": QuerySpecEntry("str", n_("Lodgement Group Title")),
         # This will be augmented with additional fields in the fly.
@@ -1209,6 +1259,12 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
                 "int", n_("Camping Mat Inhabitants"), prefix),
             f"part{part.id}.total_inhabitants": QuerySpecEntry(
                 "int", n_("Total Inhabitants"), prefix),
+            f"part{part.id}.regular_remaining": QuerySpecEntry(
+                "int", n_("Regular Remaining"), prefix),
+            f"part{part.id}.camping_mat_remaining": QuerySpecEntry(
+                "int", n_("Camping Mat Remaining"), prefix),
+            f"part{part.id}.total_remaining": QuerySpecEntry(
+                "int", n_("Total Remaining"), prefix),
             f"part{part.id}.group_regular_inhabitants": QuerySpecEntry(
                 "int", n_("Group Regular Inhabitants"), prefix),
             f"part{part.id}.group_camping_mat_inhabitants": QuerySpecEntry(
@@ -1239,5 +1295,8 @@ def make_lodgement_query_spec(event: "models.Event", courses: CourseMap = None,
             f.kind.name, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
+
+    for custom_filter in event.custom_query_filters.values():
+        custom_filter.add_to_spec(spec, QueryScope.lodgement)
 
     return spec

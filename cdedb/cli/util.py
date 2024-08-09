@@ -2,12 +2,14 @@
 import contextlib
 import functools
 import getpass
+import grp
 import io
 import os
 import pathlib
 import pwd
+from collections.abc import Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Generator, Iterator, Union
+from typing import Any, Callable, Optional, Union
 
 import click
 import psycopg2.extensions
@@ -66,18 +68,21 @@ def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @contextlib.contextmanager
-def switch_user(user: str) -> Generator[None, None, None]:
+def switch_user(user: str, group: Optional[str] = None) -> Generator[None, None, None]:
     """Use as context manager to temporary switch the running user's effective uid."""
     original_uid = os.geteuid()
     original_gid = os.getegid()
     wanted_user = pwd.getpwnam(user)
+    wanted_group = grp.getgrnam(group) if group else None
+    new_uid = wanted_user.pw_uid
+    new_gid = wanted_group.gr_gid if wanted_group else wanted_user.pw_gid
     try:
-        os.setegid(wanted_user.pw_gid)
-        os.seteuid(wanted_user.pw_uid)
+        os.setegid(new_gid)
+        os.seteuid(new_uid)
         yield
     except PermissionError as e:
         raise PermissionError(
-            f"Insufficient permissions to switch to user {user}."
+            f"Insufficient permissions to switch to user {user}.",
         ) from e
     finally:
         os.setegid(original_gid)
@@ -145,7 +150,7 @@ def connect(
 
 
 def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0,
-            urls: werkzeug.routing.MapAdapter = None) -> RequestState:
+            urls: Optional[werkzeug.routing.MapAdapter] = None) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
     This is needed when we want to interact with the CdEDB on a higher level of
@@ -218,12 +223,16 @@ def execute_sql_script(
 
                 try:
                     cur.execute(statement)
-                except psycopg2.ProgrammingError:
+                except psycopg2.ProgrammingError as e:
+                    click.echo(e)
                     continue
 
                 if verbose > 0:
                     try:
                         for x in cur:
                             click.echo(x)
-                    except psycopg2.ProgrammingError:
-                        pass
+                    except psycopg2.ProgrammingError as e:
+                        if str(e) == "no results to fetch":
+                            pass
+                        else:
+                            click.echo(e)

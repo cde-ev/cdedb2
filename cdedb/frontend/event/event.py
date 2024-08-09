@@ -8,11 +8,11 @@ This also includes all functionality directly avalable on the `show_event` page.
 """
 
 import copy
-import dataclasses
 import datetime
-import decimal
+import re
 from collections import OrderedDict
-from typing import Collection, Optional, Set
+from collections.abc import Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -30,9 +30,10 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_GROUP_COMMON_FIELDS,
-    EVENT_TRACK_COMMON_FIELDS, EVENT_TRACK_GROUP_COMMON_FIELDS,
+    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
+    EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
+    EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
     Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
@@ -43,13 +44,6 @@ from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.models.ml import (
     EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
 )
-
-
-@dataclasses.dataclass
-class RemainingOwedQuery:
-    query: Query
-    count: int
-    amount: Optional[decimal.Decimal]
 
 
 class EventEventMixin(EventBaseFrontend):
@@ -131,6 +125,45 @@ class EventEventMixin(EventBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
+    @access("finance_admin")
+    @REQUESTdata("phrase")
+    def select_event(self, rs: RequestState, phrase: str) -> Response:
+        """API for intelligent input field.
+
+        This allows the user to choose an event by entering (parts of) the title
+        or the shortname.
+
+        Meant for use during parse_statement.
+
+        Since this only returns basic event information it has little privacy
+        implications.
+        """
+        if rs.has_validation_errors():
+            return self.send_json(rs, {})
+        atoms = [re.compile(re.escape(atom), flags=re.I) for atom in phrase.split()]
+        if not atoms:
+            return self.send_json(rs, {})
+
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+
+        def _match(event: models.Event) -> bool:
+            return all(
+                atom_pattern.search(event.shortname) or atom_pattern.search(event.title)
+                for atom_pattern in atoms
+            )
+
+        return self.send_json(rs, {
+            'events': [
+                {
+                    'title': event.title,
+                    'shortname': event.shortname,
+                    'id': event.id,
+                }
+                for event in xsorted(events.values())
+                if _match(event)
+            ],
+        })
+
     @access("event")
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
@@ -150,7 +183,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
-    def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
+    def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
         """Modify an event organized via DB."""
         data = check(rs, vtypes.Event, data, current=rs.ambience['event'])
@@ -159,8 +192,8 @@ class EventEventMixin(EventBaseFrontend):
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
-                    n_("Shortname already in use for another event.")
-                ))
+                    n_("Shortname already in use for another event."),
+                )),
             )
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
@@ -187,7 +220,7 @@ class EventEventMixin(EventBaseFrontend):
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
-                          minor_form: werkzeug.datastructures.FileStorage, delete: bool
+                          minor_form: werkzeug.datastructures.FileStorage, delete: bool,
                           ) -> Response:
         """Replace the form for parental agreement for minors.
 
@@ -210,7 +243,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("orga_id")
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID
+    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
                  ) -> Response:
         """Make an additional persona become orga."""
         if rs.has_validation_errors():
@@ -232,7 +265,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("orga_id")
-    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID
+    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ) -> Response:
         """Remove a persona as orga of an event.
 
@@ -244,7 +277,8 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:
@@ -271,7 +305,7 @@ class EventEventMixin(EventBaseFrontend):
                       {'address': ml_data.address})
         return self.redirect(rs, "event/show_event")
 
-    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
+    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> set[int]:
         """Returns all part_ids from parts of a given event which must not be deleted.
 
         Extracts all parts of the given event from the database and checks if there are
@@ -279,7 +313,7 @@ class EventEventMixin(EventBaseFrontend):
 
         :returns: All part_ids whose deletion is blocked.
         """
-        blocked_parts: Set[int] = set()
+        blocked_parts: set[int] = set()
         if len(rs.ambience['event'].parts) == 1:
             blocked_parts.add(unwrap(rs.ambience['event'].parts.keys()))
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -294,7 +328,7 @@ class EventEventMixin(EventBaseFrontend):
                 blocked_parts.add(part_id)
         return blocked_parts
 
-    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
+    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> set[int]:
         """Returns all track_ids from tracks of a given event which must not be deleted.
 
         Extracts all tracks of the given event from the database and checks if there are
@@ -302,7 +336,7 @@ class EventEventMixin(EventBaseFrontend):
 
         :returns: All track_ids whose deletion is blocked.
         """
-        blocked_tracks: Set[int] = set()
+        blocked_tracks: set[int] = set()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
@@ -347,7 +381,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @staticmethod
     def _valid_event_part_fields(
-            fields: models.CdEDataclassMap[models.EventField]
+            fields: models.CdEDataclassMap[models.EventField],
     ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
@@ -373,7 +407,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdata("fee")
-    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
+    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
+                     *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject,
                  fee: vtypes.NonNegativeDecimal) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
@@ -386,7 +421,7 @@ class EventEventMixin(EventBaseFrontend):
 
         # check non-static dependencies
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id',):
+        for key in ('waitlist_field_id', 'camping_mat_field_id'):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -410,7 +445,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard()
-    def change_part_form(self, rs: RequestState, event_id: int, part_id: int
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int,
                          ) -> Response:
         part = rs.ambience['event'].parts[part_id]
 
@@ -469,7 +504,7 @@ class EventEventMixin(EventBaseFrontend):
         # Check part specific stuff which can not be checked statically
         #
         fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id',):
+        for key in ('waitlist_field_id', 'camping_mat_field_id'):
             field_ids = [field[0] for field in fields[key]]
             if data[key] and data[key] not in field_ids:
                 rs.append_validation_error((key, ValueError(
@@ -529,11 +564,59 @@ class EventEventMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/part_summary")
 
+    @staticmethod
+    def _get_payment_query_base(
+            event: models.Event, constraints: Collection[QueryConstraint],
+            fee: Optional[models.EventFee] = None,
+    ) -> Query:
+        return Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=[
+                "persona.id", "persona.given_names", "persona.family_name",
+                "persona.username",
+                "reg.payment", "reg.remaining_owed", "reg.amount_owed",
+                "reg.amount_paid",
+            ] + ([f"fee{fee.id}.amount"] if fee else []),
+            constraints=constraints,
+            order=[
+                ("persona.family_name", True),
+                ("persona.given_names", True),
+            ],
+        )
+
+    def _get_payment_query(
+            self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
+    ) -> Query:
+        fee = event.fees.get(fee_id or 0)
+        if fee and fee.is_personalized():
+            constraints: list[QueryConstraint] = [
+                (f"fee{fee.id}.amount", QueryOperators.nonempty, None),
+            ]
+        elif ids:
+            constraints = [
+                ("reg.id", QueryOperators.oneof, ids),
+            ]
+        else:
+            # Avoid selecting all registrations.
+            constraints = [
+                ("reg.id", QueryOperators.empty, None),
+            ]
+        return self._get_payment_query_base(event, constraints, fee)
+
     @access("event")
     @event_guard()
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
-        return self.render(rs, "event/fee/fee_summary")
+        fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+
+        return self.render(rs, "event/fee/fee_summary", {
+            'fee_stats': fee_stats,
+            'get_query':
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
+        })
 
     @access("event")
     @event_guard()
@@ -541,71 +624,61 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        def _paid_query(constraints: Collection[QueryConstraint], sum_col: str = None
-                        ) -> RemainingOwedQuery:
-            query = Query(
-                QueryScope.registration,
-                QueryScope.registration.get_spec(event=rs.ambience['event']),
-                ["reg.id", "persona.given_names", "persona.family_name",
-                 "persona.username", "reg.remaining_owed", "reg.amount_owed",
-                 "reg.amount_paid"],
-                constraints,
-                (("persona.family_name", True), ("persona.given_names", True),)
-            )
-            count = len(self.eventproxy.submit_general_query(
-                rs, query, event_id=event_id))
-            amount = None
-            if sum_col:
-                aggregates = unwrap(self.eventproxy.submit_general_query(
-                    rs, query, event_id=event_id, aggregate=True))
-                amount = aggregates[f"sum.{sum_col}"] or decimal.Decimal(0)
-
-            return RemainingOwedQuery(query, count, amount)
-
-        incomplete_paid = _paid_query(
-            (("reg.remaining_owed", QueryOperators.greater, 0.00),
-             ("reg.amount_paid", QueryOperators.greater, 0.00)),
-            "reg.amount_paid"
-        )
-        not_paid = _paid_query(
-            (("reg.remaining_owed", QueryOperators.greater, 0.00),
-             ("reg.amount_paid", QueryOperators.less, 0.01))
-        )
-        surplus = _paid_query(
-            (("reg.remaining_owed", QueryOperators.less, 0.00),),
-            "reg.remaining_owed")
-        # Remaining owed is negative in this case
-        assert surplus.amount is not None
-        surplus.amount = -surplus.amount
+        incomplete_paid = self._get_payment_query_base(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.greater, 0.00),
+            ("reg.amount_paid", QueryOperators.unequal, 0),
+        ])
+        not_paid = self._get_payment_query_base(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.greater, 0.00),
+            ("reg.amount_paid", QueryOperators.equal, 0),
+        ])
+        surplus = self._get_payment_query_base(rs.ambience['event'], [
+            ("reg.remaining_owed", QueryOperators.less, 0.00),
+        ])
 
         return self.render(rs, "event/fee/fee_stats", {
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
+            'get_query':
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
         })
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState, event_id: int, fee_id: int = None
-                           ) -> Response:
+    @REQUESTdata("personalized")
+    def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
+                           fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
+        rs.ignore_validation_errors()
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'].as_dict())
-        return self.render(rs, "event/fee/configure_fee")
+                personalized = rs.ambience['fee'].is_personalized()
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {
+                'personalized': personalized,
+            },
+        )
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
+    @REQUESTdata("personalized")
+    @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                      fee_id: Optional[int] = None) -> Response:
+                      personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
-                         event=rs.ambience['event'].as_dict(),
-                         questionnaire=questionnaire)
+        fee_data = check(
+            rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
+            event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
+            personalized=personalized,
+        )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
@@ -751,14 +824,14 @@ class EventEventMixin(EventBaseFrontend):
                 rs.append_validation_error((
                     "track_ids",
                     ValueError(n_("Cannot have more than one course choice sync"
-                                  " track group per track."))
+                                  " track group per track.")),
                 ))
             if not len(set(
                     (tracks[track_id].num_choices, tracks[track_id].min_choices)
-                    for track_id in track_ids)
+                    for track_id in track_ids),
             ) == 1:
                 rs.append_validation_error((
-                    "track_ids", ValueError(n_("Incompatible tracks."))
+                    "track_ids", ValueError(n_("Incompatible tracks.")),
                 ))
             if not self.eventproxy.may_create_ccs_group(rs, track_ids):
                 rs.append_validation_error((
@@ -821,7 +894,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/group_summary")
 
     @periodic("mail_orgateam_reminders", period=4*24)  # once per day
-    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject
+    def mail_orgateam_reminders(self, rs: RequestState, store: CdEDBObject,
                                 ) -> CdEDBObject:
         """Send halftime and past event mails to orgateams."""
         event_ids = self.eventproxy.list_events(rs)
@@ -850,7 +923,7 @@ class EventEventMixin(EventBaseFrontend):
 
             headers: Headers = {
                 "To": (event.orga_address,),
-                "Reply-To": "akademien@lists.cde-ev.de"
+                "Reply-To": "akademien@lists.cde-ev.de",
             }
             # send halftime mail (up to one per part)
             if any(is_halftime(part) for part in event.parts.values()):
@@ -875,7 +948,7 @@ class EventEventMixin(EventBaseFrontend):
             orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
                 title=f"{event['title']} Orgateam",
-                local_part=vtypes.EmailLocalPart(event['shortname'].lower()),
+                local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
                 description=descr,
                 mod_policy=const.ModerationPolicy.unmoderated,
@@ -937,7 +1010,7 @@ class EventEventMixin(EventBaseFrontend):
                      fee: vtypes.NonNegativeDecimal,
                      nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
-                     create_participant_list: bool, data: CdEDBObject
+                     create_participant_list: bool, data: CdEDBObject,
                      ) -> Response:
         """Create a new event, organized via DB."""
         # multi part events will have to edit this later on
@@ -979,37 +1052,37 @@ class EventEventMixin(EventBaseFrontend):
                     'notes': "Automatisch erstellt",
                     'amount': nonmember_surcharge,
                     'condition': "any_part and not is_member",
-                }
+                },
             },
         })
         if (data and data['shortname']
                 and self.eventproxy.verify_shortname_existence(rs, data['shortname'])):
             rs.append_validation_error(
                 ('shortname', ValueError(
-                    n_("Shortname already in use for another event.")
-                ))
+                    n_("Shortname already in use for another event."),
+                )),
             )
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
             if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
                 rs.append_validation_error(
                     ('orga_ids', ValueError(
-                        n_("Some of these users do not exist or are archived.")
-                    ))
+                        n_("Some of these users do not exist or are archived."),
+                    )),
                 )
             if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
                 rs.append_validation_error(
                     ('orga_ids', ValueError(
-                        n_("Some of these users are not event users.")
-                    ))
+                        n_("Some of these users are not event users."),
+                    )),
                 )
         else:
             if create_orga_list or create_participant_list:
                 # mailinglists require moderators
                 rs.append_validation_error(
                     ("orga_ids", ValueError(
-                        n_("Must not be empty in order to create a mailinglist.")
-                    ))
+                        n_("Must not be empty in order to create a mailinglist."),
+                    )),
                 )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
@@ -1107,12 +1180,12 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        if not any(rpart['status'] == const.RegistrationPartStati.participant
-                   for reg in registrations.values()
-                   for rpart in reg['parts'].values()):
-            if create_past_event:
+        if create_past_event:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            if not any(rpart['status'] == const.RegistrationPartStati.participant
+                       for reg in registrations.values()
+                       for rpart in reg['parts'].values()):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
@@ -1123,9 +1196,18 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", message)
             return self.redirect(rs, "event/show_event")
 
+        # Lock all questionnaire entries
+        aq = const.QuestionnaireUsages.additional
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        for entry in questionnaire:
+            entry['readonly'] = True
+        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
+
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully
-        self.eventproxy.event_keeper_drop(rs, event_id)
+
+        # Deleting event keeper here is too early for now.
+        # self.eventproxy.event_keeper_drop(rs, event_id)
 
         rs.notify("success", n_("Event archived."))
         if new_ids is None:
@@ -1141,7 +1223,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("ack_delete")
-    def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool
+    def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool,
                      ) -> Response:
         """Remove an event."""
         if not ack_delete:
@@ -1159,7 +1241,7 @@ class EventEventMixin(EventBaseFrontend):
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
             "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups", "orga_tokens",
+            "part_groups", "orga_tokens", "custom_query_filters",
         }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
@@ -1234,7 +1316,7 @@ class EventEventMixin(EventBaseFrontend):
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
-            (("persona.family_name", True), ("persona.given_names", True))
+            (("persona.family_name", True), ("persona.given_names", True)),
         )
         regex = "({})".format("|".join(terms))
         given_names_constraint = (

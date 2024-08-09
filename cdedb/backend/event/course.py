@@ -5,7 +5,8 @@ The `EventCourseBackend` subclasses the `EventBaseBackend` and provides function
 for managing courses belonging to an event.
 """
 
-from typing import Collection, Dict, List, Protocol
+from collections.abc import Collection
+from typing import Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -28,7 +29,7 @@ from cdedb.database.connection import Atomizer
 class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("anonymous")
     def list_courses(self, rs: RequestState,
-                        event_id: int) -> Dict[int, str]:
+                        event_id: int) -> dict[int, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
@@ -39,7 +40,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_courses(self, rs: RequestState, course_ids: Collection[int]
+    def get_courses(self, rs: RequestState, course_ids: Collection[int],
                     ) -> CdEDBObjectMap:
         """Retrieve data for some courses organized via DB.
 
@@ -55,23 +56,20 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             events = {e['event_id'] for e in data}
             if len(events) > 1:
                 raise ValueError(n_("Only courses from one event allowed."))
-            event_fields = self._get_event_fields(rs, unwrap(events))
-            data = self.sql_select(
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, unwrap(events)).values())
+            segment_data = self.sql_select(
                 rs, "event.course_segments", COURSE_SEGMENT_FIELDS, course_ids,
                 entity_key="course_id")
-            for anid in course_ids:
-                segments = {p['track_id'] for p in data if p['course_id'] == anid}
-                if 'segments' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['segments'] = segments
-                active_segments = {p['track_id'] for p in data
-                                   if p['course_id'] == anid and p['is_active']}
-                if 'active_segments' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['active_segments'] = active_segments
-                ret[anid]['fields'] = cast_fields(
-                    ret[anid]['fields'], models.EventField.many_from_database(
-                        event_fields.values()))
+            for course in ret.values():
+                course['segments'] = set()
+                course['active_segments'] = set()
+                course['fields'] = cast_fields(course['fields'], event_fields)
+            for segment in segment_data:
+                course = ret[segment['course_id']]
+                course['segments'].add(segment['track_id'])
+                if segment['is_active']:
+                    course['active_segments'].add(segment['track_id'])
         return ret
 
     class _GetCourseProtocol(Protocol):
@@ -79,7 +77,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def new_get_courses(self, rs: RequestState, course_ids: Collection[int]
+    def new_get_courses(self, rs: RequestState, course_ids: Collection[int],
                         ) -> models.CdEDataclassMap[models.Course]:
         course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):
@@ -302,7 +300,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
 
     @access("event")
     def delete_course(self, rs: RequestState, course_id: int,
-                      cascade: Collection[str] = None) -> DefaultReturnCode:
+                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 
         :param cascade: Specify which deletion blockers to cascadingly remove
@@ -364,13 +362,14 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                         rs, "event.course_choices", blockers["course_choices"])
 
                     # Construct list of inserts.
-                    choices: List[CdEDBObject] = []
+                    choices: list[CdEDBObject] = []
                     for track_id, reg_ids in data_by_tracks.items():
-                        query = (
-                            "SELECT id, course_id, track_id, registration_id"
-                            " FROM event.course_choices"
-                            " WHERE track_id = {} AND registration_id = ANY(%s)"
-                            " ORDER BY registration_id, rank").format(track_id)
+                        query = f"""
+                            SELECT id, course_id, track_id, registration_id
+                            FROM event.course_choices
+                            WHERE track_id = {track_id} AND registration_id = ANY(%s)
+                            ORDER BY registration_id, rank
+                        """
                         choices.extend(self.query_all(rs, query, (reg_ids,)))
 
                     deletion_ids = {e['id'] for e in choices}

@@ -3,7 +3,8 @@
 
 import datetime
 import secrets
-from typing import List, NamedTuple, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, cast
 
 import cdedb.models.droid as model_droid
 from cdedb.common import RequestState, User, nearly_now, now
@@ -13,15 +14,20 @@ from tests.common import (
     get_user,
 )
 
-SessionEntry = NamedTuple(
-    "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
-                     ("sessionkey", str), ("ctime", Optional[datetime.datetime]),
-                     ("atime", Optional[datetime.datetime])])
+
+class SessionEntry(NamedTuple):
+    persona_id: int
+    is_active: bool
+    ip: str
+    sessionkey: str
+    ctime: Optional[datetime.datetime]
+    atime: Optional[datetime.datetime]
 
 
 def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
-                       sessionkey: str = None, ctime: datetime.datetime = None,
-                       atime: datetime.datetime = None) -> SessionEntry:
+                       sessionkey: Optional[str] = None,
+                       ctime: Optional[datetime.datetime] = None,
+                       atime: Optional[datetime.datetime] = None) -> SessionEntry:
     if sessionkey is None:
         sessionkey = secrets.token_hex()
     return SessionEntry(persona_id, is_active, ip, sessionkey, ctime, atime)
@@ -93,7 +99,7 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken(invalid_qpe_token, "127.0.1.3")
 
         # event specific orga droid.
-        orga_token_secret = "0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210"  # pylint: disable=line-too-long
+        orga_token_secret = "0123456789abcdeffedcba9876543210" * 2
         orgatoken = model_droid.OrgaToken._get_token_string(
             model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
 
@@ -267,7 +273,7 @@ class TestSessionFrontend(FrontendTest):
         self.app.reset()
         try:
             self.submit(f, check_notification=False)
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             self.fail("Input validation not checked when submitting csrf-protected"
                       " form withput sessionkey.")
 
@@ -275,8 +281,8 @@ class TestSessionFrontend(FrontendTest):
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
-    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str
-                             ) -> List[Optional[str]]:
+    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str,
+                             ) -> list[Optional[str]]:
         user = get_user(user)
         self.assertGreaterEqual(self.n, 3, "This test will only work correctly"
                                            " with 3 or more apps.")

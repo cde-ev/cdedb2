@@ -56,7 +56,7 @@ class CdEDBTestLock:
     thread: Optional[str]
     lockfile: TextIO
 
-    def __init__(self, thread: str = None):
+    def __init__(self, thread: Optional[str] = None):
         if not ((thread is None) or (thread in self.ALL_THREADS)):
             raise RuntimeError("Invalid thread name.")
         self.thread = thread
@@ -105,7 +105,7 @@ class CdEDBTestLock:
 
 
 def _load_tests(testpatterns: Optional[List[str]],
-                test_modules: List[ModuleType] = None) -> TestSuite:
+                test_modules: Optional[List[ModuleType]] = None) -> TestSuite:
     """Load all tests from test_modules matching one of testpatterns."""
     test_modules = test_modules or list()
 
@@ -124,7 +124,7 @@ def _load_tests(testpatterns: Optional[List[str]],
     return test_suite
 
 
-def run_application_tests(testpatterns: List[str] = None, *,
+def run_application_tests(testpatterns: Optional[List[str]] = None, *,
                           verbose: bool = False) -> int:
     conf = TestConfig()
     secrets = SecretsConfig()
@@ -167,7 +167,7 @@ def run_xss_tests(*, verbose: bool = False) -> int:
     return ret
 
 
-def run_ldap_tests(testpatterns: List[str] = None, *, verbose: bool = False) -> int:
+def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = False) -> int:
     conf = TestConfig()
     secrets = SecretsConfig()
     # prepare the translations

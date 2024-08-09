@@ -166,41 +166,37 @@
     bool_label  Special label for the field_input (not the form*!) if the field is of type bool
 #}
 {% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, text_rows=3, bool_label=none) %}
-    {%- set name = name or "fields.{}".format(field['field_name']) %}
+    {%- set name = name or "fields." + field['field_name'] %}
     {%- set bool_label = bool_label or field['title'] %}
+    {# Wrapping is necessary to identify the data field for the fee preview. #}
+    <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
         {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp,
                               readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
+        {% set to_input_type = {
+            datatypes.str: 'text',
+            datatypes.int: 'number',
+            datatypes.float: 'number',
+            datatypes.date: 'date',
+            datatypes.datetime: 'datetime-local',
+        } %}
         {%- if field['kind'] == datatypes.bool %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
-        {%- elif field['kind'] == datatypes.str %}
-            {% if text_rows %}
-                {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
-                                        anid=anid, rows=text_rows) }}
-            {% else %}
-                {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid)  }}
-            {% endif %}
-        {%- elif field['kind'] == datatypes.int %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="number", placeholder="0") }}
-        {%- elif field['kind'] == datatypes.float %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                placeholder="0.0") }}
-        {%- elif field['kind'] == datatypes.date %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="date", placeholder="YYYY-MM-DD") }}
-        {%- elif field['kind'] == datatypes.datetime %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                type="datetime-local") }}
+        {%- elif field['kind'] == datatypes.str and text_rows %}
+            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                    anid=anid, rows=text_rows) }}
         {%- else %}
-            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            {% set type = to_input_type.get(field['kind'], 'text') %}
+            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
+                attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
     {%- endif %}
+    </div>
 {%- endmacro %}
 
 
@@ -213,7 +209,7 @@
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
                           defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
-    {%- set name = name or "fields.{}".format(field['field_name']) %}
+    {%- set name = name or "fields." + field['field_name'] %}
     {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
                               and not force_label and not field['entries'])
                      else label or field['title']) %}
@@ -249,13 +245,11 @@
     {# Field entry #}
     {% if entry['field_id'] %}
         {% with FIELD = ambience['event']['fields'][entry['field_id']],
-                readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
-            <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}" data-field_id="{{ entry['field_id'] }}">
-                {{ form_field_input(
-                        FIELD, name="fields." + FIELD['field_name'], label=entry['title'], info=entry['info'],
-                        readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                        text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
-            </div>
+                readonly = entry['readonly'] or is_locked %}
+            {{ form_field_input(
+                    FIELD, label=entry['title'], info=entry['info'],
+                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
+                    text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
         {% endwith %}
     {# Text-only entry #}
     {% else %}
@@ -286,7 +280,7 @@
                         {{ util.input_textarea(name="info_{}".format(part_id), anid=textarea_id,
                                                attributes=('data-basename="info_"'|s if newrow else ''),
                                                aclass='form-control input-info drow-input') }}
-                        {{ util.markdown_preview(textarea_id, "Supports Markdown for “Text-Only” fields.") }}
+                        {{ util.markdown_preview(textarea_id, gettext("Supports Markdown for “Only Text” fields.")) }}
                     {%- endcall %}
                 </div>
                 <div class="col-md-6">
@@ -415,17 +409,269 @@
 {% endmacro %}
 
 {% macro camping_mat_icon(is_camping_mat, may_camping_mat) %}
-    {% if is_camping_mat and may_camping_mat  %}
+    {%- if is_camping_mat and may_camping_mat  %}
         <span title="{{ gettext("Assigned to sleep on a camping mat.") }}">
             {{- util.make_icon('campground') -}}
             {{- util.make_icon('arrow-left') -}}
         </span>
-    {% elif may_camping_mat %}
+    {%- elif may_camping_mat %}
         {{ util.make_icon('campground', aclass='fag', title=gettext("May sleep on a camping mat.")) }}
-    {% elif is_camping_mat %}
+    {%- elif is_camping_mat %}
         <span title="{{ gettext("Assigned to, but may not sleep on a camping mat.") }}">
             {{- util.make_icon('campground', aclass='text-warning') -}}
             {{- util.make_icon('exclamation', aclass='text-warning') -}}
         </span>
-    {% endif %}
+    {%- endif %}
+{%- endmacro %}
+
+{% macro active_fee_registration_query_link(registration_ids, label=None, anid="", query=None, fee_id=None) %}
+    {% with query = query or get_query(registration_ids, fee_id) %}
+        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
+                     registration_ids|length|string + (" " + label if label else ""), icon='list',
+                     title=gettext("View Registrations"), anid=anid) }}
+    {% endwith %}
 {% endmacro %}
+
+{% macro _fee_amount_td(amount, fee_id) %}
+    <td class="text-right" id="eventfee_amount_{{ fee_id }}">
+        {{ _print_fee_amount(amount) }}
+    </td>
+{% endmacro %}
+
+{% macro _print_fee_amount(amount) -%}
+    <strong class="{{ "money-negative" if (amount or 0) < 0 else "money-positive" }}">
+        {%- if amount is not none -%}
+            {{- amount|money(lang=lang) -}}
+        {%- else -%}
+            –
+        {%- endif -%}
+    </strong>
+{%- endmacro %}
+
+{% macro _fee_amount_range_td(fee) %}
+    <td class="text-right" id="eventfee_amount_{{ fee.id }}">
+        <strong>
+            {{ _print_fee_amount_range(fee) }}
+        </strong>
+    </td>
+{% endmacro %}
+
+{% macro _print_fee_amount_range(fee) -%}
+    {%- if fee.amount_min is none or fee.amount_max is none -%}
+        –
+    {%- elif fee.amount_min == fee.amount_max -%}
+        {{ _print_fee_amount(fee.amount_min) }}
+    {%- else -%}
+        {{ _print_fee_amount(fee.amount_min) }}
+        –
+        {{ _print_fee_amount(fee.amount_max) }}
+    {%- endif -%}
+{%- endmacro %}
+
+{#  Print a summary of all relevant fees.
+    Has esssentially three different usage modes:
+
+    js_preview = True:
+        Used on the `registration_preview` page. Uses js and the `precompute_fee`
+        endpoint to display the correct checkboxes and add css classes to active fees.
+    js_preview = False and complex_fee is None:
+        Used on the global fee summary. Display the fee notes on this page, but don't
+        show checkboxes or add classes to active fees (since there is no registration
+        to decide whether they are active).
+    js_preview = False and complex_fee is not None:
+        Used on the registration fee summary. Do not display notes, but mark active
+        fees statically without js.
+#}
+{% macro fee_composition_table(js_preview=False) %}
+    <table id="fee-summary" class="table" {% if js_preview %}style="display: none"{% endif %}>
+        <thead>
+            <tr>
+                <th>{% trans %}Type{% endtrans %}</th>
+                <th>{% trans %}Title{% endtrans %}</th>
+                <th class="text-right">{% trans %}Amount{% endtrans %}</th>
+                {% if not js_preview and complex_fee %}<th></th>{% endif %}
+                {% if not js_preview and not complex_fee %}<th>{% trans %}Registrations{% endtrans %}</th>{% endif %}
+                <th>{% trans %}Condition{% endtrans %}</th>
+                {% if not js_preview %}<th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for fee in ambience['event'].fees.values()|sort %}
+            <tr id="eventfee_{{ fee.id }}" data-fee_id="{{ fee.id }}" class="eventfee">
+                <td>
+                    {{ util.make_icon(fee.kind.get_icon(), title=gettext(fee.kind|string)) }}
+                </td>
+                <td id="eventfee-title-{{ fee.id }}" {% if fee.notes %}title="{{ fee.notes }}"{% endif %}
+                        class="active-fee-title {% if not js_preview and complex_fee %}
+                            {{ "alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
+                        {% endif %}">
+                    {% if js_preview %}
+                        {{ util.deko_checkbox(True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
+                        {{ util.deko_checkbox(False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
+                    {% elif complex_fee %}
+                        {{ util.deko_checkbox(fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
+                    {% endif %}
+                    {% if not js_preview and not complex_fee %}
+                        <strong>
+                            {{ fee.title }}
+                        </strong>
+                        {%- if fee.notes %}
+                            <br />
+                            {{ fee.notes }}
+                        {% endif %}
+                    {% else %}
+                        {{ fee.title }}
+                    {% endif %}
+                </td>
+                {% if fee.amount is not none %}
+                    {{ _fee_amount_td(fee.amount, fee.id) }}
+                    {% if complex_fee %}
+                        <td></td>
+                    {% endif %}
+                {% elif js_preview %}
+                    {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
+                    {% else %}
+                        {{ _fee_amount_td(None, fee.id) }}
+                    {% endif %}
+                {% elif complex_fee %}
+                    {% if fee.id in ambience['registration']['personalized_fees'] %}
+                        {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
+                        <td>
+                            <form action="{{ cdedblink("event/delete_personalized_fee", {'fee_id': fee.id}) }}"
+                                  method="POST" id="deletepersonalizedfeeform{{ fee.id }}">
+                                {{ util.anti_csrf_token("event/delete_personalized_fee") }}
+                                {{ util.input_submit(icon='minus', label=None, aclass="btn btn-xs btn-danger") }}
+                            </form>
+                        </td>
+                    {% else %}
+                        <form action="{{ cdedblink("event/add_personalized_fee", {'fee_id': fee.id}) }}"
+                              method="POST" id="addpersonalizedfeeform{{ fee.id }}">
+                            {{ util.anti_csrf_token("event/add_personalized_fee") }}
+                            <td class="text-right">
+                                {% call util.output_errors("amount" + fee.id|string, wrapper=True) %}
+                                    {{ util.input_text("amount" + fee.id|string,
+                                                       attributes='style="float:right;width:5em"'|safe) }}
+                                {% endcall %}
+                            </td>
+                            <td>
+                                {{ util.input_submit(icon='plus', label=None, aclass="btn btn-xs btn-success") }}
+                            </td>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    {{ _fee_amount_range_td(fee) }}
+                {% endif %}
+                {% if not js_preview and not complex_fee %}
+                    <td class="nowrap">
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id, anid="eventfee_owed_" + fee.id|string) }}
+                        <br />
+                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id, anid="eventfee_paid_" + fee.id|string) }}
+                    </td>
+                {% endif %}
+                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}" id="eventfee_condition_{{ fee.id }}">
+                    {% if not fee.condition %}
+                        <i>
+                            {% trans %}Personalized Fee{% endtrans %}
+                        </i>
+                        {% if fee.amount_min is not none and (js_preview or complex_fee) %}
+                            ({{ _print_fee_amount_range(fee) }})
+                        {% endif %}
+                    {% elif complex_fee %}
+                        {{ complex_fee.visual_debug[fee.id]|safe }}
+                    {% else %}
+                        {{ fee.visual_debug|safe }}
+                    {% endif %}
+                </td>
+                {% if not js_preview %}
+                    <td class="nowrap b-left">
+                        {% if complex_fee %}
+                            {{ util.href(cdedblink("event/fee_summary") + "#eventfee_{}".format(fee.id), label=None,
+                                         title=gettext("Go to event fee summary"), icon="chevron-right",
+                                         aclass="btn btn-xs btn-info") }}
+                        {% else %}
+                            {{ util.href(
+                                cdedblink("event/configure_fee_form", {'fee_id': fee.id}), label=util.make_icon("pen"),
+                                title=gettext("Change fee %(fee_title)s")|format(fee_title=fee['title']),
+                                anid="eventfee{}_change".format(fee.id), aclass="btn btn-sm btn-warning") }}
+                            <form action="{{ cdedblink("event/delete_fee", {'fee_id': fee.id}) }}"
+                                  method="POST" id="deleteeventfeeform{{ fee.id }}" class="display-inline">
+                                {{ util.anti_csrf_token("event/delete_fee") }}
+                                {{ util.input_submit(
+                                    title=gettext("Delete fee %(fee_title)s")|format(fee_title=fee['title']),
+                                    icon='trash-alt' if fee.amount else 'dumpster-fire',
+                                    label=None, aclass="btn btn-sm btn-danger") }}
+                            </form>
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% macro fee_preview_panel(show_composition=False, hideable=False) %}
+    <div class="panel panel-primary">
+        <div class="panel-body">
+            <noscript>
+                {% trans %}
+                    Activate JavaScript for automatic fee preview.
+                {% endtrans %}
+            </noscript>
+            {% if hideable %}
+                <details>
+                    <summary>
+                        <strong>
+                            {% trans %}Fee Preview{% endtrans %}
+                        </strong>
+                    </summary>
+            {% endif %}
+            <div id="fee-preview" style="display: none">
+                {% if caller %}
+                    {{ caller() }}
+                {% endif %}
+                {{ util.form_input_static(label=gettext("Fee"), anid="fee-amount", value="…") }}
+            </div>
+            {% if show_composition %}
+                {{ fee_composition_table(js_preview=True) }}
+            {% endif %}
+            {% if hideable %}
+                </details>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+
+{#  Print a breakdown of the fee composition for registration status and preview during registration.
+
+    Skip fee kinds that sum to zero, unless `show_all=True`.
+#}
+{% macro fee_breakdown_by_kind(show_all=False) -%}
+    <table class="table-slim table-condensed bg-info" style="color: #333">
+        <tbody>
+            {# Already sorted automatically. #}
+            {% for kind, amount in complex_fee if amount or show_all %}
+                <tr>
+                    <td style="padding-right: 1em">
+                        {{ gettext(kind|string) }}
+                    </td>
+                    <td class="text-right">
+                        {{ amount|money(lang=lang) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="summary">
+                <td>
+                    {% trans %}Total{% endtrans %}
+                </td>
+                <td class="text-right">
+                    {{ complex_fee.amount|money(lang=lang) }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+{%- endmacro %}

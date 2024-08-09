@@ -40,8 +40,7 @@
         <div>
             {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
-            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
-                                    aclass="genesis-realm-specific") }}
+            {# No birth name to avoid mistakes #}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
                                     attributes='autocomplete="email"'|s) }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
@@ -60,8 +59,8 @@
             </noscript>
             {{ util.form_input_select(name="gender", entries=allowed_genders|enum_entries(processing=gettext),
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
-                                    type="date", small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", small=True,
+                                    aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,

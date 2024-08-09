@@ -4,7 +4,7 @@
 
 import collections
 import decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Set
+from typing import TYPE_CHECKING, Any
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
@@ -13,7 +13,7 @@ from cdedb.config import LazyConfig
 _CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = Dict[str, Any]
+CdEDBObject = dict[str, Any]
 
 # A set of roles a user may have.
 Role = str
@@ -25,8 +25,8 @@ Realm = str
 AdminView = str
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False
-                  ) -> Set[Role]:
+def extract_roles(session: CdEDBObject, introspection_only: bool = False,
+                  ) -> set[Role]:
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -47,10 +47,10 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
         return ret
     realms = {"cde", "event", "ml", "assembly"}
     for realm in realms:
-        if session["is_{}_realm".format(realm)]:
+        if session[f"is_{realm}_realm"]:
             ret.add(realm)
-            if session.get("is_{}_admin".format(realm)):
-                ret.add("{}_admin".format(realm))
+            if session.get(f"is_{realm}_admin"):
+                ret.add(f"{realm}_admin")
     if "cde" in ret:
         if session.get("is_core_admin"):
             ret.add("core_admin")
@@ -71,7 +71,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
     return ret
 
 
-def droid_roles(identity: str) -> Set[Role]:
+def droid_roles(identity: str) -> set[Role]:
     """Resolve droid identity to a complete set of roles.
 
     Currently this is rather trivial, but could be more involved in the
@@ -101,7 +101,7 @@ def droid_roles(identity: str) -> Set[Role]:
 #
 # This dict is not evaluated recursively, so recursively implied realms must
 # be added manually to make the implication transitive.
-REALM_INHERITANCE: Dict[Realm, Set[Role]] = {
+REALM_INHERITANCE: dict[Realm, set[Role]] = {
     'cde': {'event', 'assembly', 'ml'},
     'event': {'ml'},
     'assembly': {'ml'},
@@ -109,7 +109,7 @@ REALM_INHERITANCE: Dict[Realm, Set[Role]] = {
 }
 
 
-def extract_realms(roles: Set[Role]) -> Set[Realm]:
+def extract_realms(roles: set[Role]) -> set[Realm]:
     """Get the set of realms from a set of user roles.
 
     When checking admin privileges, we must often check, if the user's realms
@@ -123,7 +123,7 @@ def extract_realms(roles: Set[Role]) -> Set[Realm]:
     return roles & REALM_INHERITANCE.keys()
 
 
-def implied_realms(realm: Realm) -> Set[Realm]:
+def implied_realms(realm: Realm) -> set[Realm]:
     """Get additional realms implied by membership in one realm
 
     :param realm: The name of the realm to check
@@ -132,7 +132,7 @@ def implied_realms(realm: Realm) -> Set[Realm]:
     return REALM_INHERITANCE.get(realm, set())
 
 
-def implying_realms(realm: Realm) -> Set[Realm]:
+def implying_realms(realm: Realm) -> set[Realm]:
     """Get all realms where membership implies the given realm.
 
     This can be used to determine the realms in which a user must *not* be to be
@@ -145,8 +145,8 @@ def implying_realms(realm: Realm) -> Set[Realm]:
                if realm in implied)
 
 
-def privilege_tier(roles: Set[Role], conjunctive: bool = False
-                   ) -> List[Set[Role]]:
+def privilege_tier(roles: set[Role], conjunctive: bool = False,
+                   ) -> list[set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
     Basically this answers the question: If a user has access to the passed
@@ -221,6 +221,7 @@ PERSONA_DEFAULTS = {
     'interests': None,
     'free_form': None,
     'trial_member': None,
+    'honorary_member': None,
     'decided_search': None,
     'bub_search': None,
     'foto': None,
@@ -283,10 +284,10 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
 
 # All roles available to non-driod users. Can be used to create dummy users
 # with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
-ALL_ROLES: Set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
+ALL_ROLES: set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
 
 
-def roles_to_db_role(roles: Set[Role]) -> str:
+def roles_to_db_role(roles: set[Role]) -> str:
     """Convert a set of application level roles into a database level role."""
     for role in DB_ROLE_MAPPING:
         if role in roles:
@@ -298,7 +299,7 @@ def roles_to_db_role(roles: Set[Role]) -> str:
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
 #: every admin view with one admin role per row (except of genesis)
-ALL_ADMIN_VIEWS: Set[AdminView] = {
+ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
     "core_user", "core",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
@@ -312,18 +313,18 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "genesis",
 }
 
-ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
+ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
     "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
     "ml_mod_assembly"}
 
-ALL_MGMT_ADMIN_VIEWS: Set[AdminView] = {
+ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
     "ml_mgmt", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
     "ml_mgmt_assembly"}
 
 
-def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
+def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     """ Get the set of available admin views for a user with given roles."""
-    result: Set[Role] = set()
+    result: set[Role] = set()
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
@@ -346,7 +347,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "auditor" in roles:
         result |= {"auditor"}
     if roles & ({'core_admin'} | set(
-            "{}_admin".format(realm)
+            f"{realm}_admin"
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
         result |= {"genesis"}
     return result
@@ -354,7 +355,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
 # defaults for genesis account creation.
-GENESIS_REALM_OVERRIDE: Dict[str, Dict[str, Any]] = {
+GENESIS_REALM_OVERRIDE: dict[str, dict[str, Any]] = {
     'event': {
         'is_cde_realm': False,
         'is_event_realm': True,
@@ -379,9 +380,10 @@ GENESIS_REALM_OVERRIDE: Dict[str, Dict[str, Any]] = {
         'is_member': True,
         'is_searchable': False,
         'trial_member': True,
+        'honorary_member': False,
         'decided_search': False,
         'bub_search': False,
         'paper_expuls': True,
         'donation': decimal.Decimal(0),
-    }
+    },
 }

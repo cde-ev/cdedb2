@@ -1,27 +1,86 @@
-Hallo {{ persona['display_name'] }},
+Hallo {{ persona['display_name'] }}!
+{% if lastschrift %}
+{% if persona['honorary_member'] %}
+
+== Deine Ehrenmitgliedschaft ==
+
+Als Dank für Deine besonderen Verdienste für unseren Verein bist Du
+von der Zahlung des Mitgliedsbeitrages befreit.
+Wir werden demnächst die von dir eingerichtete Spende in Höhe von {{ persona['donation']|money }}
+von Deinem Konto einziehen.
+{% else %}
+
+== Mitgliedsbeitrag per Lastschrift ==
+
+Danke, dass Du uns erlaubt hast, den jährlichen Mitgliedsbeitrag
+von {{ annual_fee|money }} zusammen mit einer Spende von aktuell {{ persona['donation']|money }}
+von Deinem Konto einzuziehen.
+{% endif %}
+Die Höhe der Spende kannst Du online über die CdE-Datenbank ändern:
+{{ cdedblink("core/change_user") }}
+
+Das Lastschriftmandat mit der Mandatsreferenz
+{{ lastschrift['reference'] }}
+kannst Du online über die CdE-Datenbank einsehen:
+{{ cdedblink("core/my_lastschrift") }}
+{% if lastschrift['id'] in open_lastschrift %}
+In wenigen Tagen werden wir nun den vereinbarten Betrag
+von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
+gesondert mitteilen.
+{% else %}
+Wir informieren Dich in einer gesonderten E-Mail vor jeder Lastschrift.
+{% endif %}
+
+Wenn sich Deine Kontoverbindung inzwischen geändert hat, Du einmalig
+den Lastschriftbetrag lieber von Deinem CdE-'Guthabenkonto' abgezogen
+haben möchtest, oder wenn Du dieses Jahr mit dem Lastschrifteinzug
+pausieren oder ihn vollständig widerrufen möchtest:
+Melde Dich einfach bei uns unter <{{ MANAGEMENT_ADDRESS }}>.
+{% elif persona['honorary_member'] %}
+
+== Deine Ehrenmitgliedschaft ==
+
+Als Dank für Deine besonderen Verdienste für unseren Verein bist Du
+von der Zahlung des Mitgliedsbeitrages befreit.
+{% elif persona['trial_member'] %}
 
 
-== Mitgliedsbeitrag per Lastschrift: Jetzt neu ab 10 Euro ==
+== Deine Probemitgliedschaft ==
 
-Wie angekündigt wurden vor einigen Monaten erweiterte Möglichkeiten eingeführt, seinen Mitgliedsbeitrag per Lastschrift zu zahlen.
-Nun kann ein beliebiger Betrag ab {{ 10|money }} angegeben werden, der jährlich eingezogen wird.
-Der den Mitgliedsbeitrag übersteigende Anteil kommt dem CdE dabei als Spende zugute.
-Weitere Informationen findet ihr unter
+Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
+dieser Zeit mit der Mitgliedschaft auch den exPuls (die Vereinszeitschrift).
+
+Die Probemitgliedschaft ist für Dich kostenlos und verlängert sich
+nicht automatisch. Falls Du nach Ende der Probemitgliedschaft weiter
+im CdE bleiben möchtest, musst Du danach den Mitgliedsbeitrag in Höhe
+von {{ annual_fee|money }} pro Jahr an uns überweisen.
+
+Dies kannst Du auch jetzt schon tun!
+Überweise dazu einfach den Mitgliedsbeitrag, gerne auch ein beliebiges
+Vielfaches davon, an das folgende Konto:
+
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck: {{ transaction_subject }}
+
+Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
+Erlaubnis erteilst, jährlich *per Lastschrift* von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
+{% elif persona['balance'] < fee %}
 
-{% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 
+== Zu geringes Guthaben ==
 
-== Mitgliedsbeitrag bezahlen ==
+Leider reicht dein aktuelles Guthaben beim CdE nicht mehr aus, um deine
+Mitgliedschaft für ein weiteres halbes Jahr zu verlängern.
 
-Schön, dass Du bis jetzt dem CdE treu geblieben bist. Leider reicht
-Dein Guthaben beim CdE jedoch nicht mehr aus, um für ein weiteres halbes
-Jahr den Mitgliedsbeitrag von {{ fee|money }} zu bezahlen.
-
-Deshalb bitten wir Dich, auf das CdE-Konto ein beliebiges Vielfaches
-des halbjährlichen Mitgliedsbeitrag von {{ fee|money }} zu überweisen.
-Dabei sparen wir Zeit und Geld, wenn Du den Mitgliedsbeitrag für
-mehrere Jahre im Voraus überweist.
+Wenn du (wie wir hoffen) weiterhin Mitglied im CdE bleiben möchtest,
+überweise bitte den jährlichen Mitgliedsbeitrag von {{ annual_fee|money }},
+gerne auch ein beliebiges Vielfaches davon, an das folgende Konto:
 
 Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
@@ -32,113 +91,26 @@ Verwendungszweck: {{ transaction_subject }}
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
 
-Es würde uns freuen, wenn Du die Überweisung in den nächsten zwei
-Wochen tätigen könntest, damit Du weiterhin Mitglied im CdE bleibst
-und die nächste Ausgabe unserer Mitglieder-Zeitschrift exPuls
-erhalten kannst.
+Bitte tätige die Überweisung innerhalb der nächsten zwei Wochen.
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
-Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
-Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative). Um
-Dich hieran zu beteiligen, rufe bitte
+Erlaubnis erteilst, jährlich *per Lastschrift* von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
-auf und folge den dort angegebenen Hinweisen.
 
 Falls du kein CdE-Mitglied mehr sein möchtest, überweise bitte nichts.
 Deine Mitgliedschaft endet dann in wenigen Wochen automatisch. Solltest
 du später wieder Interesse am CdE haben, kannst du jederzeit wieder
-Mitglied werden.
-{% endif %}
-{% if lastschrift %}
+Mitglied werden, indem du erneut den Mitgliedsbeitrag überweist.
+{% elif persona['balance'] >= fee %}
 
 
-== Mitgliedsbeitrag per Lastschrift ==
-
-Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
-von Deinem Konto den jährlichen Mitgliedsbeitrag von {{ (2*fee)|money }}
-und eine Spende einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
-{{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("core/my_lastschrift") }}
-einsehen. Sollte sich Deine Kontoverbindung inzwischen
-geändert haben, informiere uns bitte unter <{{ MANAGEMENT_ADDRESS }}>.
-{% if lastschrift['id'] in open_lastschrift %}
-
-In wenigen Tagen werden wir nun den vereinbarten Betrag
-von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
-gesondert mitteilen.
-
-Bitte melde Dich bei uns, wenn Du diesen Betrag lieber von Deinem
-CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
-Jahr mit dem Lastschrifteinzug pausieren oder ihn vollständig
-widerrufen möchtest.
-{% else %}
-
-Wir informieren Dich in einer gesonderten E-Mail vor jeder
-Lastschrift. Wenn Du Deine Lastschrift widerrufen möchtest, melde
-Dich bitte bei uns.
-{% endif %}
-{% endif %}
-{% if addresscheck or not address %}
-
-
-== Adresskontrolle ==
-
-Unter anderem für den Versand des exPuls ist es wichtig, dass wir
-Deine aktuelle Adresse kennen.
-
-{% if address %}
-Deine in der Datenbank eingetragene Adresse ist:
-
-{{ "\n".join(address) }}
-
-Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
-CdE-Datenbank unter der Adresse
-{{ cdedblink('core/change_user') }}
-einloggen und Deine Adresse korrigieren.
-{% else %}
-Aktuell ist keine Adresse von Dir in der Datenbank hinterlegt,
-entsprechend können wir Dir auch keine gedruckte exPuls-Ausgabe
-zusenden!
-
-Logge Dich bitte umgehend in der Datenbank unter der Adresse
-{{ cdedblink('core/change_user') }}
-ein und trag dort Deine aktuelle Adresse ein!
-{% endif %}
-Benutzername ist Deine Mail-Adresse. Falls Du Dein Passwort
-vergessen hast, kannst Du Dir unter
-{{ cdedblink("core/reset_password_form") }}
-ein neues zusenden lassen.
-
-Der exPuls erscheint sowohl gedruckt als auch online.
-Die gedruckte Ausgabe kannst Du in der Datenbank unter
-{{ cdedblink('core/change_user') }}
-abbestellen.
-Alle Online-Ausgaben findest Du im exPuls-Archiv, den Link
-zum Archiv findest du in der Datenbank unter
-{{ cdedblink('cde/view_misc') }}
-Über die CdE-Info Mailingliste wirst Du über das Erscheinen einer
-neuen Online-Ausgabe benachrichtigt.
-{% endif %}
-{% if (persona['balance'] >= fee or persona['trial_member']) and not lastschrift %}
-
-
-== Guthabenstatus ==
-{% if persona['balance'] %}
+== Genügend Guthaben vorhanden ==
 
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
-{% else %}
-
-Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
-dieser Zeit mit der Mitgliedschaft auch den exPuls (die
-Vereinszeitschrift).
-
-Die Probemitgliedschaft ist für Dich kostenlos und verlängert sich
-nicht automatisch. Falls Du nach Ende der Probemitgliedschaft weiter
-im CdE bleiben möchtest, musst Du danach den Mitgliedsbeitrag in Höhe
-von {{ fee|money }} pro Halbjahr an uns überweisen.
-{% endif %}
 
 Du kannst Dein Guthaben jederzeit durch eine Überweisung auf das
 CdE-Konto auffüllen. Gerne auch in Vielfachen des Mitgliedsbeitrags,
@@ -154,11 +126,38 @@ Verwendungszweck: {{ transaction_subject }}
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
-Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
-Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative). Um
-Dich hieran zu beteiligen, rufe bitte
+Erlaubnis erteilst, jährlich *per Lastschrift* von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Lastschriftinitiative).
+Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
-auf und folge den dort angegebenen Hinweisen.
+{% endif %}
+{% if addresscheck or not address %}
+
+
+== Adresskontrolle ==
+
+Damit unsere Mitgliedsdatenbank immer aktuell bleibt, ist es wichtig,
+dass wir Deine aktuelle Adresse kennen.
+
+{% if address %}
+Deine aktuell in der CdE-Datenbank hinterlegte Adresse ist:
+
+{{ "\n".join(address) }}
+
+Falls diese nicht mehr aktuell ist, kannst Du sie unter dem
+folgenden Link korrigieren:
+{{ cdedblink('core/change_user') }}
+{% else %}
+Aktuell ist keine Adresse von Dir in der CdE-Datenbank hinterlegt!
+
+Logge Dich bitte umgehend in der CdE-Datenbank ein und ergänze
+Deine Adresse unter dem Link:
+{{ cdedblink('core/change_user') }}
+{% endif %}
+
+Benutzername ist Deine Mail-Adresse. Falls Du Dein Passwort
+vergessen hast, kannst Du Dir hier ein neues zusenden lassen:
+{{ cdedblink("core/reset_password_form") }}
 {% endif %}
 
 
@@ -168,7 +167,8 @@ Wenn Du Fragen hast, so erreichst Du uns unter <{{ MANAGEMENT_ADDRESS }}>
 
 
 Viele Grüße
-das Verwaltungsteam
+Die Mitgliederverwaltung des CdE
+
 
 P.S.: Weitere Infos zur Mitgliedschaft findest Du unter
     https://www.cde-ev.de/faq/mitglied/

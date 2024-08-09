@@ -32,12 +32,14 @@ doc/source/Handbuch_Email_Templates.rst
 related/auto-build/distfiles/**
 related/auto-build/images/**
 related/auto-build/work/**
+related/auto-build/runtime/share/**
 
 # i18n working and compiled data
 i18n/cdedb.pot
 i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
+i18n-output/
 
 # virtual environment
 .venv

@@ -20,6 +20,10 @@
     border: 1px red dashed;
     border-top: 0;
 }
+.block.neutral::before, .atom.neutral::before {
+    border: 2px black solid;
+    border-top: 0;
+}
 .above .below {
     position: absolute;
     width: 100%;

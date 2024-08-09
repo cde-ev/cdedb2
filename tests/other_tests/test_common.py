@@ -29,7 +29,7 @@ class TestCommon(BasicTest):
     def test_extract_roles(self) -> None:
         self.assertEqual({
             "anonymous", "persona", "cde", "member", "searchable",
-            "ml", "assembly", "event", },
+            "ml", "assembly", "event"},
             extract_roles({
                 'is_active': True,
                 'is_cde_realm': True,
@@ -87,9 +87,9 @@ class TestCommon(BasicTest):
             76577: "sechsundsiebzigtausendfünfhundertsiebenundsiebzig",
             835199: "achthundertfünfunddreißigtausendeinhundertneunundneunzig",
         }
-        for case in cases:
-            with self.subTest(case=case):
-                self.assertEqual(cases[case], int_to_words(case, "de"))
+        for int_, str_ in cases.items():
+            with self.subTest(int=int_):
+                self.assertEqual(str_, int_to_words(int_, "de"))
 
     def test_collation(self) -> None:
         # Test correct plain string sorting
@@ -129,7 +129,7 @@ class TestCommon(BasicTest):
                 'id': 0,
                 'string': 'Z-String',
                 'neg': -1,
-            }
+            },
         ]
         shuffled_dicts = random.sample(dicts, len(dicts))
         self.assertEqual(
@@ -181,17 +181,19 @@ class TestCommon(BasicTest):
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, "i18n")
             shutil.copytree(i18n_path, tmppath)
-            subprocess.run(["make", f"I18NDIR={tmppath}",
+            outpath = pathlib.Path(tempdir, "i18n-output")
+            outpath.mkdir()
+            subprocess.run(["make", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                             f"I18N_LANGUAGES={' '.join(langs)}", "i18n-extract"],
                            check=True, capture_output=True)
             try:
                 result = subprocess.run(
-                    ["make", "-B", f"I18NDIR={tmppath}",
+                    ["make", "-B", f"I18NDIR={tmppath}", f"I18NOUTDIR={outpath}",
                      f"I18N_LANGUAGES={' '.join(langs)}", "i18n-compile"],
                     check=True, capture_output=True, text=True,
-                    env={"LC_MESSAGES": "en"}  # makes parsing easier
+                    env={"LC_MESSAGES": "en"},  # makes parsing easier
                 )
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError as e:  # pragma: no cover
                 self.fail(f"Translation check failed:\n{e.stderr}")
 
         matches = {
@@ -200,7 +202,7 @@ class TestCommon(BasicTest):
                 r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
                 r"(, (?P<untranslated>\d+) untranslated messages?)?"
                 r"\.",
-                result.stderr
+                result.stderr,
             ) for lang in langs
         }
 

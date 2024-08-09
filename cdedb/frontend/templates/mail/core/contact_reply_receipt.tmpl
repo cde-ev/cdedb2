@@ -1,0 +1,11 @@
+Hallo {{ user.display_name }},
+
+Deine Antwort auf eine anonyme Nachricht ist angekommen:
+
+Urprünglicher Betreff: {{ original_subject }}
+Empfänger der ursprünglichen Nachricht: <{{ anonymous_message.recipient }}>
+Zeitpunkt der ursprünglichen Nachricht: {{ anonymous_message.ctime|datetime(lang="de") }}
+
+---
+
+{{ reply_message }}

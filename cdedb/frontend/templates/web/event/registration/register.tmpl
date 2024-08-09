@@ -110,12 +110,7 @@
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
                                           entries=part_options) }}
-            <div class="panel panel-primary">
-                <div class="panel-body">
-                    {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview",
-                                              value=gettext("Activate JavaScript for automatic fee preview.")) }}
-                </div>
-            </div>
+            {{ generic_event.fee_preview_panel() }}
 
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
@@ -128,14 +123,6 @@
                     Because you are not a CdE-Member, you might have to pay an additional fee.
                 {% endtrans %}
                 </p>
-                {% if persona["is_cde_realm"] %}
-                    <p>
-                    {% trans semester_fee=semester_fee|money(lang=lang) %}
-                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
-                        If you choose to do so, please do so with two separate payments.
-                    {% endtrans %}
-                    </p>
-                {% endif %}
             </div>
         {% endif %}
 
@@ -165,42 +152,14 @@
                 </p>
             {% endif %}
         {% endcall %}
-        <div class="panel panel-primary">
-            <div class="panel-body">
-                {% if preview %}
-                    {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
-                    {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
-                                                defaultvalue="True") }}
-                {% endif %}
-                {{ util.form_input_static(label=gettext("Fee"), anid="fee-preview", aclass="font-bold",
-                                          value=gettext("Activate JavaScript for automatic fee preview.")) }}
 
-                {% if preview %}
-                    <table class="table" style="display: none">
-                        <thead>
-                            <tr>
-                                <th>{% trans %}Title{% endtrans %}</th>
-                                <th>{% trans %}Amount{% endtrans %}</th>
-                                <th>{% trans %}Condition{% endtrans %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for fee in ambience['event']['fees'].values()|sort %}
-                            <tr id="active-fee" data-fee_id="{{ fee.id }}">
-                                <td class="alert" id="active-fee-title" data-orig-title="{{ fee['title'] }}">{{ fee['title'] }}</td>
-                                <td class="text-right {{ 'text-success' if fee['amount'] < 0 }}">
-                                    <strong>
-                                        {{ fee['amount']|money(lang=lang) }}
-                                    </strong>
-                                </td>
-                                <td id="active-fee-condition"><pre>{{ fee['condition'] }}</pre></td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
-        </div>
+        {% call generic_event.fee_preview_panel(show_composition=preview) %}
+            {% if preview %}
+                {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
+                {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
+                                            defaultvalue="True") }}
+            {% endif %}
+        {% endcall %}
 
         {% if not preview %}
             {% if age.with_guardian() %}
@@ -222,10 +181,6 @@
             'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
-            'deko_true': '{{ util.deko_checkbox(True).strip() + nbsp }}',
-            'deko_false': '{{ util.deko_checkbox(False).strip() + nbsp }}',
-            'title_active': '{{ gettext("Active") }}',
-            'title_inactive': '{{ gettext("Inactive") }}',
         }
 
         $form.cdedbProtectChanges().dynamicCourseChoices(ccos_per_part, part_map)

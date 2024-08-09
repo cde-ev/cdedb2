@@ -9,7 +9,8 @@ import datetime
 import decimal
 import enum
 import logging
-from typing import Collection, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Collection, Sequence
+from typing import Optional, Union, cast
 
 import psycopg2.extensions
 import psycopg2.extras
@@ -17,6 +18,7 @@ import psycopg2.extras
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
 from cdedb.database.conversions import from_db_output, to_db_input
+from cdedb.models.common import CdEDataclass
 
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
@@ -82,7 +84,7 @@ class SqlQueryBackend:
                 return from_db_output(cur.fetchone())
 
     def query_all(self, container: ConnectionContainer, query: str,
-                  params: Sequence[DatabaseValue_s]) -> Tuple[CdEDBObject, ...]:
+                  params: Sequence[DatabaseValue_s]) -> tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -124,7 +126,7 @@ class SqlQueryBackend:
             return 0
         keys = tuple(data[0].keys())
         key_set = set(keys)
-        params: List[DatabaseValue] = []
+        params: list[DatabaseValue] = []
         for entry in data:
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
@@ -135,9 +137,13 @@ class SqlQueryBackend:
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(container, query, params)
 
+    def sql_insert_dataclass(self, container: ConnectionContainer, datum: CdEDataclass,
+                             ) -> int:
+        return self.sql_insert(container, datum.database_table, datum.to_database())
+
     def sql_select(self, container: ConnectionContainer, table: str,
                    columns: Sequence[str], entities: EntityKeys, *,
-                   entity_key: str = "id") -> Tuple[CdEDBObject, ...]:
+                   entity_key: str = "id") -> tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
         This is one of a set of functions which provides formatting and
@@ -153,8 +159,8 @@ class SqlQueryBackend:
         return self.query_all(container, query, (entities,))
 
     def sql_select_one(self, container: ConnectionContainer, table: str,
-                       columns: Sequence[str], entity: EntityKey, entity_key: str = "id"
-                       ) -> Optional[CdEDBObject]:
+                       columns: Sequence[str], entity: EntityKey,
+                       entity_key: str = "id") -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -182,7 +188,7 @@ class SqlQueryBackend:
         return self.query_exec(container, query, params)
 
     def sql_json_inplace_update(self, container: ConnectionContainer, table: str,
-                                data: CdEDBObject, entity_key: str = "id"
+                                data: CdEDBObject, entity_key: str = "id",
                                 ) -> int:
         """Generic SQL update query for JSON fields storing a dict.
 
@@ -196,7 +202,7 @@ class SqlQueryBackend:
         if not keys:
             # no input is an automatic success
             return 1
-        commands = ", ".join("{key} = {key} || %s".format(key=key)
+        commands = ", ".join(f"{key} = {key} || %s"
                              for key in keys)
         query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
         params = tuple(PsycoJson(data[key]) for key in keys)
@@ -225,7 +231,7 @@ class SqlQueryBackend:
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(container, query, (entity,))
 
-    def sql_defer_constraints(self, container: ConnectionContainer, *constraints: str
+    def sql_defer_constraints(self, container: ConnectionContainer, *constraints: str,
                               ) -> DefaultReturnCode:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"

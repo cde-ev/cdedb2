@@ -49,8 +49,10 @@
             {%- endif %}
         </div>
         <div class="col-sm-1 small" style="text-align:right;">
-            {% if ml_additional['held_mails'] is none %}
+            {% if not ml['is_active'] %}
                 —
+            {% elif ml_additional['held_mails'] is none %}
+                <span class="text-warning">{{ util.make_icon('exclamation-triangle', title=gettext("Mailman mailinglist unreachable.")) }}</span>
             {% else %}
                 <a href="{{ cdedblink('ml/message_moderation_form', {'mailinglist_id': ml['id']}) }}"
                    title="{{ gettext("Mails awaiting moderation") }}">

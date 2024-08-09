@@ -34,11 +34,10 @@
         {% if mailinglists[group] %}
             {{ util.h(group|string) }}
             <div class="row">
-                {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
-                    |slice(2 if mailinglists[group]|length > 5 else 1) %}
+                {% for list in mailinglists[group]|xdictsort('title')|slice(2 if mailinglists[group]|length > 5 else 1) %}
                 <ul class="styleless col-md-6">
-                    {% for mailinglist_id, ml in list %}
-                        {{ format_entry(mailinglist_id, ml['title']) }}
+                    {% for ml_id, ml in list %}
+                        {{ format_entry(ml_id, ml['title']) }}
                     {% endfor %}
                 </ul>
                 {% endfor %}

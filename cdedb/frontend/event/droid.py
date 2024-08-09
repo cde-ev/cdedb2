@@ -42,7 +42,7 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard()
     @REQUESTdatadict(*OrgaToken.requestdict_fields())
-    def create_orga_token(self, rs: RequestState, event_id: int, data: CdEDBObject
+    def create_orga_token(self, rs: RequestState, event_id: int, data: CdEDBObject,
                           ) -> Response:
         """Create a new orga token. The new token will be displayed after a redirect."""
         data['id'] = -1
@@ -87,7 +87,7 @@ class EventDroidMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    def delete_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int
+    def delete_orga_token(self, rs: RequestState, event_id: int, orga_token_id: int,
                           ) -> Response:
         """Delete an existing orga token.
 

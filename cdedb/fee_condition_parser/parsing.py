@@ -38,7 +38,7 @@ def create_parser() -> pp.ParserElement:
     operator_not = pp.Forward()
     operator_not << (
         pp.Group(
-            pp.CaselessKeyword("not").suppress() - operator_not
+            pp.CaselessKeyword("not").suppress() - operator_not,
         ).set_results_name("not")
         | operator_parenthesis
     ).set_name("expression")
@@ -46,7 +46,7 @@ def create_parser() -> pp.ParserElement:
     operator_and = pp.Forward()
     operator_and << (
         pp.Group(
-            operator_not + pp.CaselessKeyword("and").suppress() - operator_and
+            operator_not + pp.CaselessKeyword("and").suppress() - operator_and,
         ).set_results_name("and")
         # Comment in to allow implicit 'and' for two consecutive expressions
         # | pp.Group(
@@ -58,14 +58,14 @@ def create_parser() -> pp.ParserElement:
     operator_xor = pp.Forward()
     operator_xor << (
         pp.Group(
-            operator_and + pp.CaselessKeyword("xor").suppress() - operator_xor
+            operator_and + pp.CaselessKeyword("xor").suppress() - operator_xor,
         ).set_results_name("xor")
         | operator_and
     ).set_name("expression")
 
     operator_or << (  # type: ignore[operator]
         pp.Group(
-            operator_xor + pp.CaselessKeyword("or").suppress() - operator_or
+            operator_xor + pp.CaselessKeyword("or").suppress() - operator_or,
         ).set_results_name("or")
         | operator_xor
     ).set_name("expression")
