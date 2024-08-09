@@ -79,7 +79,7 @@
 
             {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
             {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
-            {{ util.form_input_file(name="attachment", label0=gettext("Attachment"), label1=gettext("New Attachment"),
+            {{ util.form_input_file(name="attachment",
                                     small=True, accept="text/*,application/pdf", aclass="genesis-realm-specific",
                                     info=attachment_info + attachment_restrictions) }}
             {% endif %}

@@ -105,10 +105,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename")
+    @REQUESTdata("title", "authors", "filename", "attachment_hash",
+                 "attachment_filename")
     @REQUESTfile("attachment")
     def add_attachment(self, rs: RequestState, assembly_id: int,
                        attachment: werkzeug.datastructures.FileStorage,
+                       attachment_hash: Optional[str],
+                       attachment_filename: Optional[str],
                        title: str, filename: Optional[vtypes.Identifier],
                        authors: Optional[str]) -> Response:
         """Create a new attachment."""
@@ -121,17 +124,21 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
-        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
+        rs.values['attachment_hash'], rs.values['attachment_filename'] = \
+            self.locate_attachment(
+                rs, self.assemblyproxy.attachment_store, attachment,
+                attachment_hash, attachment_filename or filename)
+
         if rs.has_validation_errors():
             return self.add_attachment_form(rs, assembly_id=assembly_id)
-        assert attachment is not None
         data: CdEDBObject = {
-            "title": title,
-            "assembly_id": assembly_id,
-            "filename": filename,
-            "authors": authors,
+            'title': title,
+            'assembly_id': assembly_id,
+            'filename': filename,
+            'authors': authors,
+            'file_hash': rs.values['attachment_hash'],
         }
-        code = self.assemblyproxy.add_attachment(rs, data, attachment)
+        code = self.assemblyproxy.add_attachment(rs, data)
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
@@ -193,11 +200,14 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename", "ack_creation")
+    @REQUESTdata("title", "authors", "filename", "ack_creation",
+                 "attachment_hash", "attachment_filename")
     @REQUESTfile("attachment")
     def add_attachment_version(self, rs: RequestState, assembly_id: int,
                                attachment_id: int,
                                attachment: werkzeug.datastructures.FileStorage,
+                               attachment_hash: Optional[str],
+                               attachment_filename: Optional[str],
                                title: str, filename: Optional[vtypes.Identifier],
                                authors: Optional[str],
                                ack_creation: Optional[bool] = None) -> Response:
@@ -217,7 +227,10 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
-        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
+        rs.values['attachment_hash'], rs.values['attachment_filename'] =\
+            self.locate_attachment(
+                rs, self.assemblyproxy.attachment_store, attachment,
+                attachment_hash, attachment_filename or filename)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
                                                                           attachment_id)
         if not is_deletable and not ack_creation:
@@ -226,16 +239,17 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         if rs.has_validation_errors():
             return self.add_attachment_version_form(
                 rs, assembly_id=assembly_id, attachment_id=attachment_id)
-        assert attachment is not None
         data: CdEDBObject = {
             'title': title,
             'filename': filename,
             'authors': authors,
+            'file_hash': rs.values['attachment_hash'],
         }
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        file_hash = get_hash(attachment)
-        if self.assemblyproxy.attachment_store.usage(rs, self.assemblyproxy, file_hash):
-            if any(v["file_hash"] == file_hash for v in versions.values()):
+        if self.assemblyproxy.attachment_store.usage(rs, self.assemblyproxy,
+                                                     rs.values['attachment_hash']):
+            if any(v["file_hash"] == rs.values['attachment_hash']
+                   for v in versions.values()):
                 rs.append_validation_error(("attachment", ValidationWarning(
                     n_("File already known for earlier version of this attachment."))))
             else:
@@ -243,7 +257,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                     n_("File already in use for other attachment."))))
 
         data['attachment_id'] = attachment_id
-        code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
+        code = self.assemblyproxy.add_attachment_version(rs, data)
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 

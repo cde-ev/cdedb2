@@ -1677,8 +1677,7 @@ class AssemblyBackend(AbstractBackend):
         return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
-    def add_attachment(self, rs: RequestState, data: CdEDBObject,
-                       content: bytes) -> DefaultReturnCode:
+    def add_attachment(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Add a new attachment.
 
         Note that it is not allowed to add an attachment to an assembly that has been
@@ -1706,7 +1705,8 @@ class AssemblyBackend(AbstractBackend):
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))  # pragma: no cover
-            self.attachment_store.set(content)
+            if not self.attachment_store.check(data['file_hash']):
+                raise RuntimeError(n_("File has been lost."))
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id, change_note=version['title'])
         return new_id
@@ -2064,11 +2064,10 @@ class AssemblyBackend(AbstractBackend):
             return {}
 
     @access("assembly")
-    def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
-                               content: bytes) -> DefaultReturnCode:
+    def add_attachment_version(self, rs: RequestState, data: CdEDBObject
+                               ) -> DefaultReturnCode:
         """Add a new version of an attachment."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
-        content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
@@ -2087,9 +2086,9 @@ class AssemblyBackend(AbstractBackend):
             version_nr = max_version["max_version_nr"] + 1
             data['version_nr'] = version_nr
             data['ctime'] = now()
-            data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            self.attachment_store.set(content)
+            if not self.attachment_store.check(data['file_hash']):
+                raise RuntimeError(n_("File has been lost."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
                 assembly_id, change_note=f"{data['title']}: Version {version_nr}")
