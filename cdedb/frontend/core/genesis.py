@@ -230,7 +230,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        attachment_count = self.coreproxy.genesis_attachment_store.forget(rs, self)
+        attachment_count = self.coreproxy.genesis_attachment_store.forget(
+            rs, self.coreproxy)
 
         if count or attachment_count:
             self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"

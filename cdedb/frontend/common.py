@@ -571,14 +571,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def locate_attachment(self, rs: RequestState, store: AttachmentStore,
                           attachment: Optional[werkzeug.datastructures.FileStorage],
                           attachment_hash: Optional[str],
-                          attachment_filename: Optional[str] = None
-                          ) -> Tuple[Optional[str], Optional[str]]:
+                          attachment_filename: Optional[str] = None,
+                          ) -> tuple[Optional[str], Optional[str]]:
         """Localize an attachment by hash and upload it, if necessary"""
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = check_validation(rs, vtypes.PDFFile, attachment,
-                                         'attachment')
+            attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
             attachment_hash = store.set(attachment_data)
         elif attachment_hash:

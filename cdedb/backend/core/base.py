@@ -15,7 +15,6 @@ import copy
 import datetime
 import decimal
 from collections.abc import Collection
-from pathlib import Path
 from secrets import token_hex
 from typing import Any, Optional, Protocol, Union, overload
 
@@ -73,7 +72,8 @@ class CoreBaseBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
-        self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
+        self.foto_store = AttachmentStore(
+            self.conf['STORAGE_DIR'] / 'foto', 'core.personas', 'foto')
         self.genesis_attachment_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / 'genesis_attachment', 'core.genesis_cases')
 
@@ -983,44 +983,24 @@ class CoreBaseBackend(AbstractBackend):
         Return 1 on successful change, -1 on successful removal, 0 otherwise.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        foto = affirm_optional(vtypes.ProfilePicture, foto, file_storage=False)
         data: CdEDBObject
-        if foto is None:
-            with Atomizer(rs):
-                old_hash = unwrap(self.sql_select_one(
-                    rs, "core.personas", ("foto",), persona_id))
-                data = {
-                    'id': persona_id,
-                    'foto': None,
-                }
-                ret = self.set_persona(
-                    rs, data, may_wait=False,
-                    change_note="Profilbild entfernt.",
-                    allow_specials=("foto",))
-                # Return a negative value to signify deletion.
-                if ret < 0:
-                    raise RuntimeError("Special persona change should not"
-                                       " be pending.")
-                ret = -1 * ret
-                if ret and old_hash and not self.foto_usage(rs, old_hash):
-                    path = self.foto_dir / old_hash
-                    if path.exists():
-                        path.unlink()
-        else:
-            my_hash = get_hash(foto)
-            data = {
-                'id': persona_id,
-                'foto': my_hash,
-            }
-            ret = self.set_persona(
-                rs, data, may_wait=False, change_note="Profilbild geändert.",
-                allow_specials=("foto",))
-            if ret:
-                path = self.foto_dir / my_hash
-                if not path.exists():
-                    with open(path, 'wb') as f:
-                        f.write(foto)
-        return ret
+        old_hash: str = unwrap(self.sql_select_one(
+            rs, "core.personas", ("foto",), persona_id))  # type: ignore[assignment]
+
+        new_hash = self.foto_store.set(foto) if foto else None
+        change_note = "Profilbild geändert." if foto else "Profilbild entfernt."
+        indicator = -1 ** (bool(foto) + 1)
+        data = {
+            'id': persona_id,
+            'foto': new_hash,
+        }
+        ret = self.set_persona(rs, data, may_wait=False, change_note=change_note,
+                               allow_specials=("foto",))
+        if ret < 0:
+            raise RuntimeError("Special persona change should not"
+                               " be pending.")
+        self.foto_store.forget_one(rs, self, old_hash)
+        return ret * indicator
 
     @access("persona")
     def get_foto(self, rs: RequestState, foto: str) -> Optional[bytes]:
@@ -1028,13 +1008,7 @@ class CoreBaseBackend(AbstractBackend):
 
         The foto is identified by its hash rather than the persona id it
          belongs to, to prevent scraping."""
-        foto = affirm(str, foto)
-        path = self.foto_dir / foto
-        ret = None
-        if path.exists():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
+        return self.foto_store.get(foto)
 
     @access("meta_admin")
     def initialize_privilege_change(self, rs: RequestState,
