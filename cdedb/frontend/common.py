@@ -555,11 +555,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
-    def localize_attachment(self, rs: RequestState, store: AttachmentStore,
-                            attachment: Optional[werkzeug.datastructures.FileStorage],
-                            attachment_hash: Optional[str],
-                            attachment_filename: Optional[str] = None
-                            ) -> Tuple[Optional[str], Optional[str]]:
+    def locate_attachment(self, rs: RequestState, store: AttachmentStore,
+                          attachment: Optional[werkzeug.datastructures.FileStorage],
+                          attachment_hash: Optional[str],
+                          attachment_filename: Optional[str] = None
+                          ) -> Tuple[Optional[str], Optional[str]]:
         """Localize an attachment by hash and upload it, if necessary"""
         attachment_data = None
         if attachment:

@@ -8,14 +8,17 @@ from cdedb.database.query import SqlQueryBackend
 
 
 class AttachmentStore:
+    """Generic facility for file storage within the cdedb, with instances for each
+    class of files to be considered."""
 
-    def __init__(self, dir: pathlib.Path, table: str):
-        self.table = table
+    def __init__(self, dir: pathlib.Path, table: str, col: str = 'attachment_hash'):
         self.dir = dir
+        self.table = table
+        self.col = col
 
 
     def set(self, attachment: bytes) -> str:
-        """Store a file for genesis usage. Returns the file hash."""
+        """Store a file. Returns the file hash."""
         attachment = affirm(vtypes.PDFFile, attachment, file_storage=False)
         myhash = get_hash(attachment)
         path = self.dir / myhash
@@ -25,9 +28,9 @@ class AttachmentStore:
         return myhash
 
     def check(self, attachment_hash: str) -> bool:
-        """Check whether a genesis attachment with the given hash is available.
+        """Check whether an attachment with the given hash is available.
 
-        Contrary to `genesis_get_attachment` this does not retrieve it's
+        Contrary to `get` this does not retrieve it's
         content.
         """
         attachment_hash = affirm(str, attachment_hash)
@@ -35,7 +38,7 @@ class AttachmentStore:
         return path.is_file()
 
     def get(self, attachment_hash: str) -> Optional[bytes]:
-        """Retrieve a stored genesis attachment."""
+        """Retrieve a stored attachment."""
         attachment_hash = affirm(str, attachment_hash)
         path = self.dir / attachment_hash
         if path.is_file():
@@ -44,13 +47,13 @@ class AttachmentStore:
         return None
 
     def _usage(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
-        """Check whether a genesis attachment is still referenced in a case."""
+        """Check whether an attachment is still referenced."""
         attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = f"SELECT COUNT(*) FROM {self.table} WHERE attachment_hash = %s"
+        query = f"SELECT COUNT(*) FROM {self.table} WHERE {self.col} = %s"
         return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
 
     def forget(self, rs: RequestState, backend: SqlQueryBackend) -> int:
-        """Delete genesis attachments that are no longer in use."""
+        """Delete attachments that are no longer in use."""
         ret = 0
         for f in self.dir.iterdir():
             if f.is_file() and not self._usage(rs, backend, f.name):

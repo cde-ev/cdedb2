@@ -67,7 +67,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This initiates the genesis process.
         """
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
-            self.localize_attachment(
+            self.locate_attachment(
                 rs, self.coreproxy.genesis_attachment_store, attachment,
                 data['attachment_hash'], attachment_filename)
         if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
