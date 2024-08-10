@@ -1,4 +1,5 @@
 import abc
+import builtins
 import pathlib
 from typing import Any, Optional
 
@@ -12,15 +13,16 @@ class AttachmentStore:
     """Generic facility for file storage within the cdedb, with instances for each
     class of files to be considered."""
 
-    def __init__(self, dir: pathlib.Path, type: type[Any] = vtypes.PDFFile):
-        self.dir = dir
-        self.type = type
+    type: builtins.type[Any] = vtypes.PDFFile
+
+    def __init__(self, dir: pathlib.Path):
+        self._dir = dir
 
     def store(self, attachment: bytes) -> str:
         """Store a file. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
         myhash = get_hash(attachment)
-        path = self.dir / myhash
+        path = self.get_path(myhash)
         if not path.exists():
             with open(path, 'wb') as f:
                 f.write(attachment)
@@ -33,17 +35,20 @@ class AttachmentStore:
         content.
         """
         attachment_hash = affirm(str, attachment_hash)
-        path = self.dir / attachment_hash
-        return path.is_file()
+        return self.get_path(attachment_hash).is_file()
 
     def get(self, attachment_hash: str) -> Optional[bytes]:
         """Retrieve a stored attachment."""
         attachment_hash = affirm(str, attachment_hash)
-        path = self.dir / attachment_hash
+        path = self.get_path(attachment_hash)
         if path.is_file():
             with open(path, 'rb') as f:
                 return f.read()
         return None
+
+    def get_path(self, attachment_hash: str) -> pathlib.Path:
+        """Get path for attachment."""
+        return self._dir / attachment_hash
 
     @abc.abstractmethod
     def _usage(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
@@ -51,7 +56,7 @@ class AttachmentStore:
 
     def forget_one(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
         "Delete a single attachment if no longer in use"
-        path = self.dir / attachment_hash
+        path = self.get_path(attachment_hash)
         if path.is_file() and not self._usage(rs, backend, attachment_hash):
             path.unlink()
             return True
@@ -60,7 +65,7 @@ class AttachmentStore:
     def forget(self, rs: RequestState, backend: SqlQueryBackend) -> int:
         """Delete all attachments that are no longer in use."""
         ret = 0
-        for f in self.dir.iterdir():
+        for f in self._dir.iterdir():
             ret += self.forget_one(rs, backend, f.name)
         return ret
 

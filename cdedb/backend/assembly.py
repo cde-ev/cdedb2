@@ -40,7 +40,6 @@ from schulze_condorcet import schulze_evaluate
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common.attachment import AssemblyAttachmentStore
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_dataclass,
     affirm_set_validation as affirm_set, affirm_validation as affirm,
@@ -50,6 +49,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     DeletionBlockers, RequestState, glue, json_serialize, now, unwrap,
 )
+from cdedb.common.attachment import AssemblyAttachmentStore
 from cdedb.common.exceptions import (
     DeletionBlockedError, DeletionImpossibleError, PrivilegeError,
 )

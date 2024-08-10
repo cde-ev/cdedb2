@@ -10,8 +10,7 @@ from schulze_condorcet.types import Candidate
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, RequestState, merge_dicts, \
-    ValidationWarning
+from cdedb.common import CdEDBObject, RequestState, ValidationWarning, merge_dicts
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
@@ -85,13 +84,12 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        content = self.assemblyproxy.get_attachment_content(
-            rs, attachment_id, version_nr)
-        if not content:
+        path = self.assemblyproxy.attachment_store.get_path(
+            versions[version_nr]['file_hash'])
+        if not path.is_file():
             rs.notify("error", n_("File not found."))
             return self.redirect(rs, "assembly/list_attachments")
-        # TODO Streamline this
-        return self.send_file(rs, data=content, mimetype="application/pdf",
+        return self.send_file(rs, path=path, mimetype="application/pdf",
                               filename=versions[version_nr]['filename'])
 
     @access("assembly")

@@ -69,7 +69,6 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.common.attachment import AttachmentStore
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
@@ -83,6 +82,7 @@ from cdedb.common import (
     decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
     make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes

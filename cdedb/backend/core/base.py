@@ -20,7 +20,6 @@ from typing import Any, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common.attachment import GenesisAttachmentStore, ProfileFotoStore
 import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
@@ -33,6 +32,7 @@ from cdedb.common import (
     RequestState, Role, User, decode_parameter, encode_parameter, get_hash, glue, now,
     unwrap,
 )
+from cdedb.common.attachment import GenesisAttachmentStore, ProfileFotoStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,

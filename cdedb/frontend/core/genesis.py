@@ -6,7 +6,6 @@ import collections
 import datetime
 from typing import Optional
 
-import magic
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -246,12 +245,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        data = self.coreproxy.genesis_attachment_store.get(attachment_hash)
-        mimetype = None
-        if data:
-            mimetype = magic.from_buffer(data, mime=True)
-        # TODO Streamline this
-        return self.send_file(rs, data=data, mimetype=mimetype)
+        path = self.coreproxy.genesis_attachment_store.get_path(attachment_hash)
+        return self.send_file(rs, path=path, mimetype='application/pdf')
 
     @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
