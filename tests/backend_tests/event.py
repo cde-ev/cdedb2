@@ -653,9 +653,11 @@ class TestEventBackend(BackendTest):
         event_id = 1
         with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
-        self.assertIsNone(self.event.get_minor_form(self.key, event_id))
+        self.assertFalse(self.event.has_minor_form(event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
-        self.assertEqual(minor_form, self.event.get_minor_form(self.key, event_id))
+        with open(self.event.minor_form_dir / str(event_id)):
+            new_minor_form = f.read()
+        self.assertEqual(minor_form, new_minor_form)
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))
         expectation = [
             {

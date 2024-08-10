@@ -378,7 +378,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(persona['birthday'], event.begin)
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
         rs.ignore_validation_errors()
         if not preview:
             if rs.user.persona_id in registrations.values():
@@ -393,7 +392,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_archived:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
-            if not minor_form and age.is_minor():
+            if not self.eventproxy.has_minor_form(event_id) and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
@@ -773,8 +772,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event'].begin)
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
-        if not minor_form and age.is_minor():
+        if not self.eventproxy.has_minor_form(event_id) and age.is_minor():
             rs.notify("error", n_("No minors may register. "
                                   "Please contact the Orgateam."))
             return self.redirect(rs, "event/show_event")

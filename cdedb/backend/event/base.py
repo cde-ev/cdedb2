@@ -238,6 +238,9 @@ class EventBaseBackend(EventLowLevelBackend):
         return bool(self.query_all(
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
+    def has_minor_form(self, event_id: int) -> bool:
+        return (self.minor_form_dir / str(event_id)).is_file()
+
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: Optional[bytes]) -> DefaultReturnCode:
@@ -252,7 +255,7 @@ class EventBaseBackend(EventLowLevelBackend):
                                     " minor form."))
         path = self.minor_form_dir / str(event_id)
         if minor_form is None:
-            if path.exists():
+            if path.is_file():
                 path.unlink()
                 # Since this is not acting on our database, do not demand an atomized
                 # context.
@@ -269,21 +272,6 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
                            atomized=False)
             return 1
-
-    @access("event")
-    def get_minor_form(self, rs: RequestState,
-                       event_id: int) -> Optional[bytes]:
-        """Retrieve the minor form for an event.
-
-        Returns None if no minor form exists for the given event."""
-        event_id = affirm(vtypes.ID, event_id)
-        # TODO accesscheck?
-        path = self.minor_form_dir / str(event_id)
-        ret = None
-        if path.exists():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
 
     @internal
     @access("event")
