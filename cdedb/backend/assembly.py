@@ -1465,8 +1465,7 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def get_ballot_result(self, rs: RequestState,
-                          ballot_id: int) -> Optional[bytes]:
+    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
         """Retrieve the content of a result file for a ballot.
 
         Returns None if the ballot is not tallied yet or if the file is missing.
@@ -1480,7 +1479,7 @@ class AssemblyBackend(AbstractBackend):
             return None
         else:
             path = self.get_ballot_file_path(ballot_id)
-            if not path.exists():  # pragma: no cover
+            if not path.is_file():  # pragma: no cover
                 # TODO raise an error here?
                 self.logger.warning(
                     f"Result file for ballot {ballot_id} not found.")
