@@ -985,7 +985,7 @@ class TestCoreBackend(BackendTest):
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
         self.assertEqual(
-            pdfhash, self.core.genesis_attachment_store.set(pdfdata))
+            pdfhash, self.core.genesis_attachment_store.store(pdfdata))
         with self.assertRaises(PrivilegeError):
             self.core.genesis_attachment_store._usage(self.key, self.core, pdfhash)
         self.login(USER_DICT["anton"])

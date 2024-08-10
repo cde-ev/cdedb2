@@ -90,6 +90,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         if not content:
             rs.notify("error", n_("File not found."))
             return self.redirect(rs, "assembly/list_attachments")
+        # TODO Streamline this
         return self.send_file(rs, data=content, mimetype="application/pdf",
                               filename=versions[version_nr]['filename'])
 

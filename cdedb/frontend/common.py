@@ -579,9 +579,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             attachment_filename = attachment.filename
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
-            attachment_hash = store.set(attachment_data)
+            attachment_hash = store.store(attachment_data)
         elif attachment_hash:
-            attachment_stored = store.check(attachment_hash)
+            attachment_stored = store.is_available(attachment_hash)
             if not attachment_stored:
                 attachment_hash = None
                 e = ("attachment", ValueError(n_(

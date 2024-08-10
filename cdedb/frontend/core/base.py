@@ -1953,6 +1953,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if ret is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         mimetype = magic.from_buffer(ret, mime=True)
+        # TODO Streamline this
         return self.send_file(rs, data=ret, mimetype=mimetype)
 
     @access("cde")

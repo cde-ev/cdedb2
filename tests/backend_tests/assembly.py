@@ -25,11 +25,11 @@ class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
     def _add_attachment_version(self, data: CdEDBObject, attachment: bytes) -> int:
-        data['file_hash'] = self.assembly.attachment_store.set(attachment)
+        data['file_hash'] = self.assembly.attachment_store.store(attachment)
         return self.assembly.add_attachment_version(self.key, data)
 
     def _add_attachment(self, data: CdEDBObject, attachment: bytes) -> int:
-        data['file_hash'] = self.assembly.attachment_store.set(attachment)
+        data['file_hash'] = self.assembly.attachment_store.store(attachment)
         return self.assembly.add_attachment(self.key, data)
 
     def _get_sample_quorum(self, assembly_id: int) -> int:

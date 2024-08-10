@@ -16,7 +16,7 @@ class AttachmentStore:
         self.dir = dir
         self.type = type
 
-    def set(self, attachment: bytes) -> str:
+    def store(self, attachment: bytes) -> str:
         """Store a file. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
         myhash = get_hash(attachment)
@@ -26,7 +26,7 @@ class AttachmentStore:
                 f.write(attachment)
         return myhash
 
-    def check(self, attachment_hash: str) -> bool:
+    def is_available(self, attachment_hash: str) -> bool:
         """Check whether an attachment with the given hash is available.
 
         Contrary to `get` this does not retrieve it's

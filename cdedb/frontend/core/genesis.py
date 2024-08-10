@@ -250,6 +250,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         mimetype = None
         if data:
             mimetype = magic.from_buffer(data, mime=True)
+        # TODO Streamline this
         return self.send_file(rs, data=data, mimetype=mimetype)
 
     @access("core_admin", *(f"{realm}_admin"

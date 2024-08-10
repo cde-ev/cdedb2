@@ -986,7 +986,7 @@ class CoreBaseBackend(AbstractBackend):
         old_hash: str = unwrap(self.sql_select_one(
             rs, "core.personas", ("foto",), persona_id))  # type: ignore[assignment]
 
-        new_hash = self.foto_store.set(foto) if foto else None
+        new_hash = self.foto_store.store(foto) if foto else None
         change_note = "Profilbild geändert." if foto else "Profilbild entfernt."
         indicator = -1 ** (bool(foto) + 1)
         data = {

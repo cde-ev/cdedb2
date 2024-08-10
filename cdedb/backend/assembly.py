@@ -1704,7 +1704,7 @@ class AssemblyBackend(AbstractBackend):
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))  # pragma: no cover
-            if not self.attachment_store.check(data['file_hash']):
+            if not self.attachment_store.is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id, change_note=version['title'])
@@ -2086,7 +2086,7 @@ class AssemblyBackend(AbstractBackend):
             data['version_nr'] = version_nr
             data['ctime'] = now()
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            if not self.attachment_store.check(data['file_hash']):
+            if not self.attachment_store.is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
