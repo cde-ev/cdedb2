@@ -238,7 +238,8 @@ class EventBaseBackend(EventLowLevelBackend):
         return bool(self.query_all(
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
-    def has_minor_form(self, event_id: int) -> bool:
+    @access("anonymous")
+    def has_minor_form(self, rs: RequestState, event_id: int) -> bool:
         return (self.minor_form_dir / str(event_id)).is_file()
 
     @access("event")

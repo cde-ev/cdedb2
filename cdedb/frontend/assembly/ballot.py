@@ -878,7 +878,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        path = self.assemblyproxy.get_ballot_file_path(ballot_id)
+        path = self.assemblyproxy.get_ballot_file_path(rs, ballot_id)
         if not path.is_file():
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)

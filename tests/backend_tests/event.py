@@ -653,7 +653,7 @@ class TestEventBackend(BackendTest):
         event_id = 1
         with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
-        self.assertFalse(self.event.has_minor_form(event_id))
+        self.assertFalse(self.event.has_minor_form(self.key, event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
         with open(self.event.minor_form_dir / str(event_id)):
             new_minor_form = f.read()
