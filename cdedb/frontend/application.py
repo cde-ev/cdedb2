@@ -300,11 +300,6 @@ class Application(BaseApp):
                 user.init_admin_views_from_cookie(
                     request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
 
-            if rs.user.persona_id and (
-                    defect_addresses := self.coreproxy.get_defect_addresses(
-                        rs, [rs.user.persona_id])):
-                self.notify_defect_adresses(rs, defect_addresses)
-
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
@@ -367,29 +362,6 @@ class Application(BaseApp):
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
             return self.make_error_page(e, request, user)
-
-    def notify_defect_adresses(self, rs: RequestState,
-                               defect_addresses: dict[str, EmailAddressReport]
-                               ) -> None:
-        if rs.user.username in defect_addresses:
-            msg = n_(
-                "Your login email address is marked as defect, you"
-                " will no longer receive any mails for it. (%(link)s)")
-            link = util.href(docurl("Handbuch_Emailprobleme"),
-                             gettext("What does this mean?"))
-            rs.notify("error", msg, {'link': link})
-        for defect in defect_addresses.values():
-            if defect.subscriber_id == rs.user.persona_id:
-                mls = self.mlproxy.get_mailinglists(rs, e.ml_ids)
-                msg = n_(
-                    "The email address %(email)s is marked as defect, you will no"
-                    " longer receive any mails for it. It is currently subscibed"
-                    " to the following mailing lists: %(lists)s. (%(link)s)")
-                link = util.href(docurl("Handbuch_Emailprobleme"),
-                                 gettext("What does this mean?"))
-                lists = ", ".join(ml.title for ml in mls.values())
-                rs.notify("error", msg,
-                          {'email': defect.address, 'lists': lists, 'link': link})
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
         """
