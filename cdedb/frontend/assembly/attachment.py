@@ -16,6 +16,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTfile, access, assembly_guard, check_validation as check,
+    periodic,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
@@ -245,8 +246,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             'file_hash': rs.values['attachment_hash'],
         }
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        if self.assemblyproxy.get_attachment_store(rs).usage(
-                rs, self.assemblyproxy, rs.values['attachment_hash']):
+        if self.assemblyproxy.get_attachment_usage(rs, rs.values['attachment_hash']):
             if any(v["file_hash"] == rs.values['attachment_hash']
                    for v in versions.values()):
                 rs.append_validation_error(("attachment", ValidationWarning(
@@ -345,3 +345,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, attachment_id, version_nr)
         rs.notify_return_code(code, error=n_("Unknown version."))
         return self.redirect(rs, "assembly/list_attachments")
+
+    @periodic("forget_assembly_attachments", period=96)
+    def forget_attachments(self, rs: RequestState, store: CdEDBObject,
+                           ) -> CdEDBObject:
+        """Daily delete all assembly attachments no longer referenced."""
+        self.assemblyproxy.get_attachment_store(rs).forget(
+            rs, self.assemblyproxy.get_attachment_usage)
+        return store

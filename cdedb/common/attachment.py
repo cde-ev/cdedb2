@@ -1,22 +1,20 @@
-import abc
 import builtins
 import pathlib
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import RequestState, get_hash, unwrap
-from cdedb.database.query import SqlQueryBackend
+from cdedb.common import RequestState, get_hash
 
+UsageFunction = Callable[[RequestState, str], bool]
 
 class AttachmentStore:
     """Generic facility for file storage within the cdedb, with instances for each
     class of files to be considered."""
 
-    type: builtins.type[Any] = vtypes.PDFFile
-
-    def __init__(self, dir: pathlib.Path):
-        self._dir = dir
+    def __init__(self, dir_: pathlib.Path, type_: builtins.type[Any] = vtypes.PDFFile):
+        self._dir = dir_
+        self.type = type_
 
     def store(self, attachment: bytes) -> str:
         """Store a file. Returns the file hash."""
@@ -51,55 +49,18 @@ class AttachmentStore:
         """Get path for attachment."""
         return self._dir / attachment_hash
 
-    @abc.abstractmethod
-    def _usage(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
-        """Check whether an attachment is still referenced."""
-
-    def forget_one(self, rs: RequestState, backend: SqlQueryBackend, attachment_hash: str) -> bool:
+    def forget_one(self, rs: RequestState, usage: UsageFunction, attachment_hash: str
+                   ) -> bool:
         "Delete a single attachment if no longer in use"
         path = self.get_path(attachment_hash)
-        if path.is_file() and not self._usage(rs, backend, attachment_hash):
+        if path.is_file() and not usage(rs, attachment_hash):
             path.unlink()
             return True
         return False
 
-    def forget(self, rs: RequestState, backend: SqlQueryBackend) -> int:
+    def forget(self, rs: RequestState, usage: UsageFunction) -> int:
         """Delete all attachments that are no longer in use."""
         ret = 0
         for f in self._dir.iterdir():
-            ret += self.forget_one(rs, backend, f.name)
+            ret += self.forget_one(rs, usage, f.name)
         return ret
-
-
-class GenesisAttachmentStore(AttachmentStore):
-    type = vtypes.PDFFile
-
-    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
-               attachment_hash: str) -> bool:
-        """Check whether an attachment is still referenced."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
-        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
-
-class ProfileFotoStore(AttachmentStore):
-    type = vtypes.ProfilePicture
-
-    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
-               attachment_hash: str) -> bool:
-        """Check whether an attachment is still referenced."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = "SELECT COUNT(*) FROM core.personas WHERE attachment_hash = %s"
-        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
-
-class AssemblyAttachmentStore(AttachmentStore):
-    type = vtypes.PDFFile
-
-    def _usage(self, rs: RequestState, backend: SqlQueryBackend,
-               attachment_hash: str) -> bool:
-        """Check whether an attachment is still referenced."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = ("SELECT COUNT(*) FROM assembly.attachment_versions "
-                 "WHERE attachment_hash = %s AND dtime IS NOT NULL")
-        return bool(unwrap(backend.query_one(rs, query, (attachment_hash,))))
-
-    usage = _usage

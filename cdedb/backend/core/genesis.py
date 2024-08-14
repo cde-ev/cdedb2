@@ -132,6 +132,14 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret
 
     @access("anonymous")
+    def get_genesis_attachment_usage(self, rs: RequestState, attachment_hash: str,
+                                     ) -> bool:
+        """Check whether an attachment is still referenced."""
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
+        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
+
+    @access("anonymous")
     def genesis_case_by_email(self, rs: RequestState,
                               email: str) -> Optional[int]:
         """Get the id of an unconfirmed or unreviewed genesis case for a given email.

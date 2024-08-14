@@ -82,8 +82,6 @@
             {{ util.form_input_file(name="attachment",
                                     small=True, accept="text/*,application/pdf", aclass="genesis-realm-specific",
                                     info=attachment_info + attachment_restrictions) }}
-            {% endif %}
-
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');

@@ -894,13 +894,13 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        self.assertFalse(self.core.get_genesis_attachment_store(self.key)._usage(
-            self.key, self.core, attachment_hash))
+        self.assertFalse(self.core.get_genesis_attachment_usage(self.key,
+                                                                attachment_hash))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertTrue(self.core.get_genesis_attachment_store(self.key)._usage(
-            self.key, self.core, attachment_hash))
+        self.assertTrue(self.core.get_genesis_attachment_usage(self.key,
+                                                               attachment_hash))
         assert case_id is not None
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
@@ -976,8 +976,8 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.get_genesis_attachment_store(self.key)._usage(
-            self.key, self.core, attachment_hash))
+        self.assertFalse(self.core.get_genesis_attachment_usage(self.key,
+                                                                attachment_hash))
 
     @storage
     def test_genesis_attachments(self) -> None:
@@ -988,13 +988,11 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(
             pdfhash, self.core.get_genesis_attachment_store(self.key).store(pdfdata))
         with self.assertRaises(PrivilegeError):
-            self.core.get_genesis_attachment_store(self.key)._usage(
-                self.key, self.core, pdfhash)
+            self.core.get_genesis_attachment_usage(self.key, pdfhash)
         self.login(USER_DICT["anton"])
-        self.assertEqual(0, self.core.get_genesis_attachment_store(self.key)._usage(
-            self.key, self.core, pdfhash))
+        self.assertEqual(0, self.core.get_genesis_attachment_usage(self.key, pdfhash))
         self.assertEqual(1, self.core.get_genesis_attachment_store(self.key).forget(
-            self.key, self.core))
+            self.key, self.core.get_genesis_attachment_usage))
 
     def test_genesis_verify_multiple(self) -> None:
         self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))

@@ -49,7 +49,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     DeletionBlockers, RequestState, glue, json_serialize, now, unwrap,
 )
-from cdedb.common.attachment import AssemblyAttachmentStore
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import (
     DeletionBlockedError, DeletionImpossibleError, PrivilegeError,
 )
@@ -107,18 +107,18 @@ class AssemblyBackend(AbstractBackend):
 
     def __init__(self) -> None:
         super().__init__()
-        self._attachment_store = AssemblyAttachmentStore(
+        self._attachment_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / "assembly_attachment")
         self.ballot_result_base_path: Path = (
-                self.conf['STORAGE_DIR'] / 'ballot_result')
-
-    @access("assembly")
-    def get_attachment_store(self, rs: RequestState) -> AssemblyAttachmentStore:
-        return self._attachment_store
+            self.conf['STORAGE_DIR'] / 'ballot_result')
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    @access("assembly")
+    def get_attachment_store(self, rs: RequestState) -> AttachmentStore:
+        return self._attachment_store
 
     def get_ballot_file_path(self, ballot_id: int) -> Path:
         return self.ballot_result_base_path / str(ballot_id)
@@ -1784,7 +1784,7 @@ class AssemblyBackend(AbstractBackend):
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
                     # Maybe be less lazy here
-                    self.get_attachment_store(rs).forget(rs, self)
+                    self.get_attachment_store(rs).forget(rs, self.get_attachment_usage)
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -2067,6 +2067,14 @@ class AssemblyBackend(AbstractBackend):
             return {}
 
     @access("assembly")
+    def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
+        """Is an attachment file still referenced by some version?"""
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        query = ("SELECT COUNT(*) FROM assembly.attachment_versions"
+                 " WHERE file_hash = %s AND dtime IS NOT NULL")
+        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
+
+    @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                ) -> DefaultReturnCode:
         """Add a new version of an attachment."""
@@ -2174,7 +2182,7 @@ class AssemblyBackend(AbstractBackend):
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=change_note)
-        self.get_attachment_store(rs).forget_one(rs, self,
+        self.get_attachment_store(rs).forget_one(rs, self.get_attachment_usage,
                                                  versions[version_nr]['file_hash'])
         return ret
 

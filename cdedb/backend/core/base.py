@@ -32,7 +32,7 @@ from cdedb.common import (
     RequestState, Role, User, decode_parameter, encode_parameter, get_hash, glue, now,
     unwrap,
 )
-from cdedb.common.attachment import GenesisAttachmentStore, ProfileFotoStore
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
@@ -72,16 +72,17 @@ class CoreBaseBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
-        self._foto_store = ProfileFotoStore(self.conf['STORAGE_DIR'] / 'foto')
-        self._genesis_attachment_store = GenesisAttachmentStore(
+        self._foto_store = AttachmentStore(self.conf['STORAGE_DIR'] / 'foto',
+                                           vtypes.ProfilePicture)
+        self._genesis_attachment_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / 'genesis_attachment')
 
     @access("cde")
-    def get_foto_store(self, rs: RequestState) -> ProfileFotoStore:
+    def get_foto_store(self, rs: RequestState) -> AttachmentStore:
         return self._foto_store
 
     @access("anonymous")
-    def get_genesis_attachment_store(self, rs: RequestState) -> GenesisAttachmentStore:
+    def get_genesis_attachment_store(self, rs: RequestState) -> AttachmentStore:
         return self._genesis_attachment_store
 
     @classmethod
@@ -982,7 +983,13 @@ class CoreBaseBackend(AbstractBackend):
                     honorary_member=honorary_member)
         return ret
 
-    @access("persona")
+    @access("cde")
+    def get_foto_usage(self, rs: RequestState, file_hash: str) -> bool:
+        file_hash = affirm(vtypes.RestrictiveIdentifier, file_hash)
+        query = "SELECT COUNT(*) FROM core.personas WHERE foto = %s"
+        return bool(unwrap(self.query_one(rs, query, (file_hash,))))
+
+    @access("cde")
     def change_foto(self, rs: RequestState, persona_id: int,
                     foto: Optional[bytes]) -> DefaultReturnCode:
         """Special modification function for foto changes.
@@ -1006,7 +1013,8 @@ class CoreBaseBackend(AbstractBackend):
         if ret < 0:
             raise RuntimeError("Special persona change should not"
                                " be pending.")
-        self.get_foto_store(rs).forget_one(rs, self, old_hash)
+        if old_hash:
+            self.get_foto_store(rs).forget_one(rs, self.get_foto_usage, old_hash)
         return ret * indicator
 
     @access("meta_admin")
