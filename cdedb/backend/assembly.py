@@ -120,6 +120,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_ballot_file_path(self, rs: RequestState, ballot_id: int) -> Path:
+        ballot_id = affirm(vtypes.ID, ballot_id)
         return self.ballot_result_base_path / str(ballot_id)
 
     @access("assembly")

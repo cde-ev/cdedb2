@@ -655,7 +655,7 @@ class TestEventBackend(BackendTest):
             minor_form = f.read()
         self.assertFalse(self.event.has_minor_form(self.key, event_id))
         self.assertLess(0, self.event.change_minor_form(self.key, event_id, minor_form))
-        with open(self.event.minor_form_dir / str(event_id)):
+        with open(self.event.get_minor_form_path(self.key, event_id)) as f:
             new_minor_form = f.read()
         self.assertEqual(minor_form, new_minor_form)
         self.assertGreater(0, self.event.change_minor_form(self.key, event_id, None))

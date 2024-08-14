@@ -19,6 +19,7 @@ import copy
 import datetime
 import decimal
 from collections.abc import Collection, Iterable
+from pathlib import Path
 from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
@@ -239,8 +240,14 @@ class EventBaseBackend(EventLowLevelBackend):
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
     @access("anonymous")
+    def get_minor_form_path(self, rs: RequestState, event_id: int) -> Path:
+        event_id = affirm(vtypes.ID, event_id)
+        return self.minor_form_dir / str(event_id)
+
+    @access("anonymous")
     def has_minor_form(self, rs: RequestState, event_id: int) -> bool:
-        return (self.minor_form_dir / str(event_id)).is_file()
+        event_id = affirm(vtypes.ID, event_id)
+        return self.get_minor_form_path(rs, event_id).is_file()
 
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
@@ -254,7 +261,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
-        path = self.minor_form_dir / str(event_id)
+        path = self.get_minor_form_path(rs, event_id)
         if minor_form is None:
             if path.is_file():
                 path.unlink()
