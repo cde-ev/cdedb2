@@ -25,14 +25,21 @@ from tests.common import (
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
-    def _add_attachment_version(self, data: CdEDBObject, attachment: bytes) -> int:
+    def _file(self, filename: str) -> bytes:
+        with open("/cdedb2/tests/ancillary_files/" + filename, "rb") as f:
+            return f.read()
+
+    def _get_hash(self, filename: str) -> str:
+        return get_hash(self._file(filename))
+
+    def _add_attachment_version(self, data: CdEDBObject, filename: str) -> int:
         data['file_hash'] = self.assembly.get_attachment_store(self.key).store(
-            attachment)
+            self._file(filename))
         return self.assembly.add_attachment_version(self.key, data)
 
-    def _add_attachment(self, data: CdEDBObject, attachment: bytes) -> int:
+    def _add_attachment(self, data: CdEDBObject, filename: str) -> int:
         data['file_hash'] = self.assembly.get_attachment_store(self.key).store(
-            attachment)
+            self._file(filename))
         return self.assembly.add_attachment(self.key, data)
 
     def _get_attachment_content(self, rs: RequestState, attachment_id: int,
@@ -257,7 +264,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
-        self.assertTrue(self._add_attachment(attachment_data, b'123'))
+        self.assertTrue(self._add_attachment(attachment_data, "picture.pdf"))
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "submitted_by": self.user['id'],
@@ -592,7 +599,7 @@ class TestAssemblyBackend(BackendTest):
         }
 
         # simply add one attachment and link it
-        attachment_id = self._add_attachment(attachment_data[0], b'123')
+        attachment_id = self._add_attachment(attachment_data[0], "picture.pdf")
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -616,8 +623,8 @@ class TestAssemblyBackend(BackendTest):
                 self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link two more attachments
-        attachment_id1 = self._add_attachment(attachment_data[1], b'123')
-        attachment_id2 = self._add_attachment(attachment_data[2], b'123')
+        attachment_id1 = self._add_attachment(attachment_data[1], "picture.pdf")
+        attachment_id2 = self._add_attachment(attachment_data[2], "picture.pdf")
         log.extend({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -644,7 +651,7 @@ class TestAssemblyBackend(BackendTest):
                 self.assembly.list_attachments(self.key, ballot_id=bid))
 
         # add and link another attachment, unlink two attachments
-        attachment_id3 = self._add_attachment(attachment_data[3], b'123')
+        attachment_id3 = self._add_attachment(attachment_data[3], "picture.pdf")
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
             "assembly_id": assembly_id,
@@ -1031,7 +1038,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
-        new_id = self._add_attachment(data, b'123')
+        new_id = self._add_attachment(data, "picture.pdf")
         attachment_ids = [new_id]
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1041,7 +1048,8 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that everything can be retrieved correctly.
         self.assertEqual(
-            b'123', self._get_attachment_content(self.key, new_id, 1))
+            self._file("picture.pdf"),
+            self._get_attachment_content(self.key, new_id, 1))
         expectation: CdEDBObject = {
             "id": new_id,
             "assembly_id": assembly_id,
@@ -1092,7 +1100,7 @@ class TestAssemblyBackend(BackendTest):
                 "filename": "rechen.pdf",
                 "ctime": nearly_now(),
                 "dtime": None,
-                "file_hash": get_hash(b'123'),
+                "file_hash": self._get_hash("picture.pdf"),
             },
         }
         self.assertEqual(
@@ -1109,7 +1117,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
         }
-        self.assertTrue(self._add_attachment_version(data, b'1234'))
+        self.assertTrue(self._add_attachment_version(data, "kassen.pdf"))
         update = {
             "attachment_id": new_id,
             "version_nr": 2,
@@ -1118,7 +1126,7 @@ class TestAssemblyBackend(BackendTest):
             "filename": "alles_falsch.pdf",
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, update))
-        self.assertTrue(self._add_attachment_version(data, b'12345'))
+        self.assertTrue(self._add_attachment_version(data, "kassen2.pdf"))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
             "assembly_id": assembly_id,
@@ -1135,16 +1143,16 @@ class TestAssemblyBackend(BackendTest):
             "change_note": f"{data['title']}: Version 3",
         })
         self.assertEqual(
-            b'123', self._get_attachment_content(
+            self._file("picture.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=1))
         self.assertEqual(
-            b'1234', self._get_attachment_content(
+            self._file("kassen.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'12345', self._get_attachment_content(
+            self._file("kassen2.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
-            b'12345', self._get_attachment_content(
+            self._file("kassen2.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Remove the some versions and check the resulting returns.
@@ -1185,24 +1193,24 @@ class TestAssemblyBackend(BackendTest):
             self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
-            b'1234', self._get_attachment_content(
+            self._file("kassen.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'1234', self._get_attachment_content(
+            self._file("kassen.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Check that adding a new version is still possible
-        self.assertTrue(self._add_attachment_version(data, b'123456'))
+        self.assertTrue(self._add_attachment_version(data, "kandidaten.pdf"))
         log.append({
             "code": const.AssemblyLogCodes.attachment_version_added,
             "assembly_id": assembly_id,
             "change_note": f"{data['title']}: Version 4",
         })
         self.assertEqual(
-            b'123456', self._get_attachment_content(
+            self._file("kandidaten.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=4))
         self.assertEqual(
-            b'123456', self._get_attachment_content(
+            self._file("kandidaten.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Check the attachments history.
@@ -1210,7 +1218,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 2,
             "ctime": nearly_now(),
             "dtime": None,
-            "file_hash": get_hash(b'1234'),
+            "file_hash": self._get_hash("kassen.pdf"),
         })
         updated_data = data.copy()
         updated_data.update(update)
@@ -1222,7 +1230,7 @@ class TestAssemblyBackend(BackendTest):
             "filename": None,
             "ctime": nearly_now(),
             "dtime": nearly_now(),
-            "file_hash": get_hash(b'123'),
+            "file_hash": self._get_hash("picture.pdf"),
         }
         history_expectation: CdEDBObjectMap = {
             1: deleted_version,
@@ -1231,9 +1239,9 @@ class TestAssemblyBackend(BackendTest):
             4: data,
         }
         history_expectation[3]['version_nr'] = 3
-        history_expectation[3]['file_hash'] = get_hash(b'12345')
+        history_expectation[3]['file_hash'] = self._get_hash("kassen2.pdf")
         history_expectation[4]['version_nr'] = 4
-        history_expectation[4]['file_hash'] = get_hash(b'123456')
+        history_expectation[4]['file_hash'] = self._get_hash("kandidaten.pdf")
         self.assertEqual(
             history_expectation,
             self.assembly.get_attachment_versions(self.key, new_id))
@@ -1248,7 +1256,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Anton",
             "filename": "verf.pdf",
         }
-        new_id = self._add_attachment(data, b'abc')
+        new_id = self._add_attachment(data, "form.pdf")
         attachment_ids.append(new_id)
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1261,7 +1269,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
-            "file_hash": get_hash(b'abc'),
+            "file_hash": self._get_hash("form.pdf"),
         })
         history_expectation[new_id] = {1: data}
 
@@ -1271,7 +1279,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Berta",
             "filename": "beschluss.pdf",
         }
-        new_id = self._add_attachment(data, b'super secret')
+        new_id = self._add_attachment(data, "dsa.pdf")
         attachment_ids.append(new_id)
         log.append({
             "code": const.AssemblyLogCodes.attachment_added,
@@ -1291,7 +1299,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
-            "file_hash": get_hash(b'super secret'),
+            "file_hash": self._get_hash("dsa.pdf"),
         })
         history_expectation[new_id] = {1: data}
 
@@ -1337,7 +1345,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': None,
                     'ctime': nearly_now(),
                     'dtime': nearly_now(),
-                    'file_hash': get_hash(b'123'),
+                    'file_hash': self._get_hash("picture.pdf"),
                     'filename': None,
                     'title': None,
                     'version_nr': 1,
@@ -1347,7 +1355,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': 'Farina',
                     'ctime': nearly_now(),
                     'dtime': None,
-                    'file_hash': get_hash(b'1234'),
+                    'file_hash': self._get_hash("kassen.pdf"),
                     'filename': 'alles_falsch.pdf',
                     'title': 'Verrechnungsbericht',
                     'version_nr': 2,
@@ -1357,7 +1365,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': None,
                     'ctime': nearly_now(),
                     'dtime': nearly_now(),
-                    'file_hash': get_hash(b'12345'),
+                    'file_hash': self._get_hash("kassen2.pdf"),
                     'filename': None,
                     'title': None,
                     'version_nr': 3,
@@ -1367,7 +1375,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': 'Farin',
                     'ctime': nearly_now(),
                     'dtime': None,
-                    'file_hash': get_hash(b'123456'),
+                    'file_hash': self._get_hash("kandidaten.pdf"),
                     'filename': 'rechen_v2.pdf',
                     'title': 'Rechenschaftsbericht',
                     'version_nr': 4,
@@ -1379,7 +1387,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': 'Anton',
                     'ctime': nearly_now(),
                     'dtime': None,
-                    'file_hash': get_hash(b'abc'),
+                    'file_hash': self._get_hash("form.pdf"),
                     'filename': 'verf.pdf',
                     'title': 'Verfassung des Staates der CdEler',
                     'version_nr': 1,
@@ -1391,7 +1399,7 @@ class TestAssemblyBackend(BackendTest):
                     'authors': 'Berta',
                     'ctime': nearly_now(),
                     'dtime': None,
-                    'file_hash': get_hash(b'super secret'),
+                    'file_hash': self._get_hash("dsa.pdf"),
                     'filename': 'beschluss.pdf',
                     'title': 'Beschlussvorlage',
                     'version_nr': 1,
@@ -1434,7 +1442,7 @@ class TestAssemblyBackend(BackendTest):
                 "authors": "AbCdE",
                 "filename": "Freiheit.pdf",
             }
-            attachment_id = self._add_attachment(attachment_data, b'')
+            attachment_id = self._add_attachment(attachment_data, "empty.pdf")
             log.append({
                 "code": const.AssemblyLogCodes.attachment_added,
                 "assembly_id": assembly_id,
@@ -1457,7 +1465,7 @@ class TestAssemblyBackend(BackendTest):
                 "filename": attachment_data["filename"],
                 "ctime": base_time,
                 "dtime": None,
-                "file_hash": get_hash(b''),
+                "file_hash": self._get_hash("empty.pdf"),
                 "version_nr": 1,
             }
             self.assertEqual(
@@ -1763,7 +1771,7 @@ class TestAssemblyBackend(BackendTest):
 
                     new_attachment_id = self._add_attachment(
                         {'assembly_id': assembly_id, **new_attachment_data},
-                        b"123",
+                        "picture.pdf",
                     )
                     self.assertTrue(
                         self.assembly.delete_attachment(
@@ -1840,7 +1848,7 @@ class TestAssemblyBackend(BackendTest):
                 with self.assertRaises(PrivilegeError):
                     self._add_attachment(
                         {'assembly_id': assembly_id, **new_attachment_data},
-                        b"123",
+                        "picture.pdf",
                     )
 
             self.assembly.retrieve_log(self.key, some_assemblies_filter)

@@ -469,10 +469,10 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro form_input_attachment(hash, info='', displayerrors=True, readonly=False, accept=none, anid=none,
-        aclass=none, small=False, horizontal=True) %}
+{% macro form_input_attachment(info='', displayerrors=True, readonly=False, accept=none, anid=none, aclass=none,
+        small=False, horizontal=True) %}
     {% set label = gettext("Attachment") %}
-    {% if hash %}
+    {% if 'attachment_hash' in values %}
         {% set label = gettext("New Attachment") %}
         {{ util.input_hidden(name="attachment_hash") }}
         {{ util.input_hidden(name="attachment_filename") }}

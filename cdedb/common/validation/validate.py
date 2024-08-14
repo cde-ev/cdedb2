@@ -1760,6 +1760,7 @@ GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'persona_id': Optional[ID],
     'pevent_id': Optional[ID],
     'pcourse_id': Optional[ID],
+    'attachment_hash': str,
 }
 
 GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
@@ -1773,7 +1774,6 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
     'location': str,
     'country': Optional[Country],
     'birth_name': Optional[str],
-    'attachment_hash': str,
 }
 
 GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,

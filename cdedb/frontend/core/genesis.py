@@ -68,7 +68,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
             self.locate_or_store_attachment(
                 rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
-                data['attachment_hash'], attachment_filename)
+                data.get('attachment_hash'), attachment_filename)
         if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
                 and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))

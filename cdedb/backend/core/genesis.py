@@ -131,7 +131,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         return ret
 
-    @access("anonymous")
+    @access("core_admin", "cde_admin")
     def get_genesis_attachment_usage(self, rs: RequestState, attachment_hash: str,
                                      ) -> bool:
         """Check whether an attachment is still referenced."""
