@@ -107,10 +107,14 @@ class AssemblyBackend(AbstractBackend):
 
     def __init__(self) -> None:
         super().__init__()
-        self.attachment_store = AssemblyAttachmentStore(
+        self._attachment_store = AssemblyAttachmentStore(
             self.conf['STORAGE_DIR'] / "assembly_attachment")
         self.ballot_result_base_path: Path = (
                 self.conf['STORAGE_DIR'] / 'ballot_result')
+
+    @access("assembly")
+    def get_attachment_store(self, rs: RequestState) -> AssemblyAttachmentStore:
+        return self._attachment_store
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -1704,7 +1708,7 @@ class AssemblyBackend(AbstractBackend):
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))  # pragma: no cover
-            if not self.attachment_store.is_available(data['file_hash']):
+            if not self.get_attachment_store(rs).is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id, change_note=version['title'])
@@ -1780,7 +1784,7 @@ class AssemblyBackend(AbstractBackend):
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
                     # Maybe be less lazy here
-                    self.attachment_store.forget(rs, self)
+                    self.get_attachment_store(rs).forget(rs, self)
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -2086,7 +2090,7 @@ class AssemblyBackend(AbstractBackend):
             data['version_nr'] = version_nr
             data['ctime'] = now()
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            if not self.attachment_store.is_available(data['file_hash']):
+            if not self.get_attachment_store(rs).is_available(data['file_hash']):
                 raise RuntimeError(n_("File has been lost."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
@@ -2170,22 +2174,9 @@ class AssemblyBackend(AbstractBackend):
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=change_note)
-        self.attachment_store.forget_one(rs, self, versions[version_nr]['file_hash'])
+        self.get_attachment_store(rs).forget_one(rs, self,
+                                                 versions[version_nr]['file_hash'])
         return ret
-
-    @access("assembly")
-    def get_attachment_content(self, rs: RequestState, attachment_id: int,
-                               version_nr: Optional[int] = None) -> Union[bytes, None]:
-        """Get the content of an attachment. Defaults to most recent version."""
-        attachment_id = affirm(vtypes.ID, attachment_id)
-        if not self.may_access_attachments(rs, (attachment_id,)):
-            raise PrivilegeError()
-        version_nr = affirm_optional(vtypes.ID, version_nr)
-        if version_nr is None:
-            version = self.get_latest_attachment_version(rs, attachment_id)
-        else:
-            version = self.get_attachment_version(rs, attachment_id, version_nr)
-        return self.attachment_store.get(version['file_hash'])
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, *, assembly_id: Optional[int] = None,

@@ -1949,9 +1949,11 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("cde")
     def get_foto(self, rs: RequestState, foto: str) -> Response:
         """Retrieve profile picture."""
-        ret = self.coreproxy.get_foto(rs, foto)
+        ret = self.coreproxy.get_foto_store(rs).get(foto)
         if ret is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        # TODO Can we somehow avoid requiring the buffer here?
+        # Mime by filename is not possible due to hash atm
         mimetype = magic.from_buffer(ret, mime=True)
         # TODO Streamline this
         return self.send_file(rs, data=ret, mimetype=mimetype)

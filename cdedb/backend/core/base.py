@@ -72,9 +72,17 @@ class CoreBaseBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
-        self.foto_store = ProfileFotoStore(self.conf['STORAGE_DIR'] / 'foto')
-        self.genesis_attachment_store = GenesisAttachmentStore(
+        self._foto_store = ProfileFotoStore(self.conf['STORAGE_DIR'] / 'foto')
+        self._genesis_attachment_store = GenesisAttachmentStore(
             self.conf['STORAGE_DIR'] / 'genesis_attachment')
+
+    @access("cde")
+    def get_foto_store(self, rs: RequestState) -> ProfileFotoStore:
+        return self._foto_store
+
+    @access("anonymous")
+    def get_genesis_attachment_store(self, rs: RequestState) -> GenesisAttachmentStore:
+        return self._genesis_attachment_store
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -986,7 +994,7 @@ class CoreBaseBackend(AbstractBackend):
         old_hash: str = unwrap(self.sql_select_one(
             rs, "core.personas", ("foto",), persona_id))  # type: ignore[assignment]
 
-        new_hash = self.foto_store.store(foto) if foto else None
+        new_hash = self.get_foto_store(rs).store(foto) if foto else None
         change_note = "Profilbild geändert." if foto else "Profilbild entfernt."
         indicator = -1 ** (bool(foto) + 1)
         data = {
@@ -998,16 +1006,8 @@ class CoreBaseBackend(AbstractBackend):
         if ret < 0:
             raise RuntimeError("Special persona change should not"
                                " be pending.")
-        self.foto_store.forget_one(rs, self, old_hash)
+        self.get_foto_store(rs).forget_one(rs, self, old_hash)
         return ret * indicator
-
-    @access("persona")
-    def get_foto(self, rs: RequestState, foto: str) -> Optional[bytes]:
-        """Retrieve a stored foto.
-
-        The foto is identified by its hash rather than the persona id it
-         belongs to, to prevent scraping."""
-        return self.foto_store.get(foto)
 
     @access("meta_admin")
     def initialize_privilege_change(self, rs: RequestState,

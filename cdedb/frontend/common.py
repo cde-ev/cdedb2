@@ -568,12 +568,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
-    def locate_attachment(self, rs: RequestState, store: AttachmentStore,
-                          attachment: Optional[werkzeug.datastructures.FileStorage],
-                          attachment_hash: Optional[str],
-                          attachment_filename: Optional[str] = None,
-                          ) -> tuple[Optional[str], Optional[str]]:
-        """Locate an attachment by hash and upload it, if necessary"""
+    def locate_or_store_attachment(
+        self, rs: RequestState, store: AttachmentStore,
+        attachment: Optional[werkzeug.datastructures.FileStorage],
+        attachment_hash: Optional[str], attachment_filename: Optional[str] = None,
+    ) -> tuple[Optional[str], Optional[str]]:
+        """Locate an attachment by hash and upload it, if necessary
+
+        :param attachment: A new file uploaded within this request. Supersedes remaining
+            (cached) data, if present.
+        :param attachment_hash: Hash to locate file uploaded within earlier request
+        :param attachment_filename: Filename of file uploaded in earlier request
+        """
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename

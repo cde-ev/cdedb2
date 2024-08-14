@@ -84,7 +84,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        path = self.assemblyproxy.attachment_store.get_path(
+        path = self.assemblyproxy.get_attachment_store(rs).get_path(
             versions[version_nr]['file_hash'])
         if not path.is_file():
             rs.notify("error", n_("File not found."))
@@ -124,8 +124,8 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         rs.values['attachment_hash'], rs.values['attachment_filename'] = \
-            self.locate_attachment(
-                rs, self.assemblyproxy.attachment_store, attachment,
+            self.locate_or_store_attachment(
+                rs, self.assemblyproxy.get_attachment_store(rs), attachment,
                 attachment_hash, attachment_filename or filename)
 
         if rs.has_validation_errors():
@@ -227,8 +227,8 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
-            self.locate_attachment(
-                rs, self.assemblyproxy.attachment_store, attachment,
+            self.locate_or_store_attachment(
+                rs, self.assemblyproxy.get_attachment_store(rs), attachment,
                 attachment_hash, attachment_filename or filename)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
                                                                           attachment_id)
@@ -245,8 +245,8 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             'file_hash': rs.values['attachment_hash'],
         }
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        if self.assemblyproxy.attachment_store.usage(rs, self.assemblyproxy,
-                                                     rs.values['attachment_hash']):
+        if self.assemblyproxy.get_attachment_store(rs).usage(
+                rs, self.assemblyproxy, rs.values['attachment_hash']):
             if any(v["file_hash"] == rs.values['attachment_hash']
                    for v in versions.values()):
                 rs.append_validation_error(("attachment", ValidationWarning(

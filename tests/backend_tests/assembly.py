@@ -4,14 +4,15 @@
 import datetime
 import json
 from collections.abc import Collection
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Union
 
 import freezegun
 
 import cdedb.database.constants as const
 from cdedb.backend.assembly import BallotConfiguration
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, PrivilegeError, get_hash, nearly_now, now,
+    CdEDBObject, CdEDBObjectMap, PrivilegeError, RequestState, get_hash, nearly_now,
+    now,
 )
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
@@ -25,12 +26,23 @@ class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
     def _add_attachment_version(self, data: CdEDBObject, attachment: bytes) -> int:
-        data['file_hash'] = self.assembly.attachment_store.store(attachment)
+        data['file_hash'] = self.assembly.get_attachment_store(self.key).store(
+            attachment)
         return self.assembly.add_attachment_version(self.key, data)
 
     def _add_attachment(self, data: CdEDBObject, attachment: bytes) -> int:
-        data['file_hash'] = self.assembly.attachment_store.store(attachment)
+        data['file_hash'] = self.assembly.get_attachment_store(self.key).store(
+            attachment)
         return self.assembly.add_attachment(self.key, data)
+
+    def _get_attachment_content(self, rs: RequestState, attachment_id: int,
+                               version_nr: Optional[int] = None) -> Union[bytes, None]:
+        """Get the content of an attachment. Defaults to most recent version."""
+        if version_nr is None:
+            version = self.assembly.get_latest_attachment_version(rs, attachment_id)
+        else:
+            version = self.assembly.get_attachment_version(rs, attachment_id, version_nr)
+        return self.assembly.get_attachment_store(self.key).get(version['file_hash'])
 
     def _get_sample_quorum(self, assembly_id: int) -> int:
         attendees = {
@@ -1006,8 +1018,7 @@ class TestAssemblyBackend(BackendTest):
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(
                 f.read(),
-                self.assembly.get_attachment_content(
-                    self.key, attachment_id=attachment_id))
+                self._get_attachment_content(self.key, attachment_id=attachment_id))
         self.assertEqual(
             set(), self.assembly.list_attachments(self.key, assembly_id=assembly_id))
         self.assertEqual(
@@ -1030,7 +1041,7 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that everything can be retrieved correctly.
         self.assertEqual(
-            b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
+            b'123', self._get_attachment_content(self.key, new_id, 1))
         expectation: CdEDBObject = {
             "id": new_id,
             "assembly_id": assembly_id,
@@ -1124,16 +1135,16 @@ class TestAssemblyBackend(BackendTest):
             "change_note": f"{data['title']}: Version 3",
         })
         self.assertEqual(
-            b'123', self.assembly.get_attachment_content(
+            b'123', self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=1))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(
+            b'1234', self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'12345', self.assembly.get_attachment_content(
+            b'12345', self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
-            b'12345', self.assembly.get_attachment_content(
+            b'12345', self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Remove the some versions and check the resulting returns.
@@ -1168,16 +1179,16 @@ class TestAssemblyBackend(BackendTest):
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
 
         self.assertIsNone(
-            self.assembly.get_attachment_content(
+            self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=1))
         self.assertIsNone(
-            self.assembly.get_attachment_content(
+            self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(
+            b'1234', self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(
+            b'1234', self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Check that adding a new version is still possible
@@ -1188,10 +1199,10 @@ class TestAssemblyBackend(BackendTest):
             "change_note": f"{data['title']}: Version 4",
         })
         self.assertEqual(
-            b'123456', self.assembly.get_attachment_content(
+            b'123456', self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=4))
         self.assertEqual(
-            b'123456', self.assembly.get_attachment_content(
+            b'123456', self._get_attachment_content(
                 self.key, attachment_id=new_id))
 
         # Check the attachments history.
@@ -1895,8 +1906,7 @@ class TestAssemblyBackend(BackendTest):
                                 self.key, attachment_id, 1)
 
                         with self.assertRaises(PrivilegeError):
-                            self.assembly.get_attachment_content(
-                                self.key, attachment_id)
+                            self._get_attachment_content(self.key, attachment_id)
 
                     with self.assertRaises(PrivilegeError):
                         self.assembly.get_latest_attachments_version(

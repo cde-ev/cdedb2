@@ -39,6 +39,7 @@ class AttachmentStore:
 
     def get(self, attachment_hash: str) -> Optional[bytes]:
         """Retrieve a stored attachment."""
+        # TODO Drop this, if not needed.
         attachment_hash = affirm(str, attachment_hash)
         path = self.get_path(attachment_hash)
         if path.is_file():

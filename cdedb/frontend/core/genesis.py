@@ -66,8 +66,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This initiates the genesis process.
         """
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
-            self.locate_attachment(
-                rs, self.coreproxy.genesis_attachment_store, attachment,
+            self.locate_or_store_attachment(
+                rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
                 data['attachment_hash'], attachment_filename)
         if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
                 and not rs.values['attachment_hash']):
@@ -229,7 +229,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        attachment_count = self.coreproxy.genesis_attachment_store.forget(
+        attachment_count = self.coreproxy.get_genesis_attachment_store(rs).forget(
             rs, self.coreproxy)
 
         if count or attachment_count:
@@ -245,7 +245,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.coreproxy.genesis_attachment_store.get_path(attachment_hash)
+        path = self.coreproxy.get_genesis_attachment_store(rs).get_path(attachment_hash)
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
     @access("core_admin", *(f"{realm}_admin"
