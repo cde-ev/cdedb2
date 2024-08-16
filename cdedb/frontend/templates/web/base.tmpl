@@ -128,7 +128,7 @@
                                     <p class="navbar-text">
                                         <span class="sr-only">{% trans %}Logged-In as{% endtrans %}</span>
                                         <span id="displayname">
-                                            {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                            {{ util.href(cdedblink("core/mydata"), user.given_names, icon="user") }}
                                         </span>
                                     </p>
                                     <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"

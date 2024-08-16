@@ -108,7 +108,7 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Optional[set[Role]] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None,
                  given_names: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
@@ -120,7 +120,6 @@ class User:
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
         self.username = username
-        self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
@@ -139,7 +138,6 @@ class User:
     def persona_name(self) -> str:
         return make_persona_name({
             'given_names': self.given_names,
-            'display_name': self.display_name,
             'family_name': self.family_name,
         })
 

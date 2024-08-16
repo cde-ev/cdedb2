@@ -2281,8 +2281,7 @@ class CoreBaseBackend(AbstractBackend):
                                    PERSONA_CORE_FIELDS, data["id"])
         if data is None:
             raise RuntimeError(n_("Impossible."))
-        vals = {k: data[k] for k in (
-            'username', 'given_names', 'display_name', 'family_name')}
+        vals = {k: data[k] for k in ('username', 'given_names', 'family_name')}
         vals['persona_id'] = data['id']
         rs.user = User(roles=extract_roles(data), **vals)
 
