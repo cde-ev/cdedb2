@@ -393,8 +393,8 @@ class CdEBaseBackend(AbstractBackend):
         self.affirm_atomized_context(rs)
 
         batch_fields = (
-            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
-            'birth_name', 'gender', 'address_supplement', 'address',
+            'family_name', 'given_names', 'legal_given_names', 'title',
+            'name_supplement', 'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:

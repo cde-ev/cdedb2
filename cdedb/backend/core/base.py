@@ -2699,8 +2699,10 @@ class CoreBaseBackend(AbstractBackend):
             persona['birthday'] = None
         scores: dict[int, int] = collections.defaultdict(lambda: 0)
         queries: list[tuple[int, str, tuple[Any, ...]]] = [
-            (10, "given_names = %s OR display_name = %s",
+            (10, "given_names = %s OR legal_given_names = %s",
              (persona['given_names'], persona['given_names'])),
+            (10, "given_names = %s OR legal_given_names = %s",
+             (persona['legal_given_names'], persona['legal_given_names'])),
             (10, "family_name = %s OR birth_name = %s",
              (persona['family_name'], persona['family_name'])),
             (10, "family_name = %s OR birth_name = %s",
@@ -2708,8 +2710,11 @@ class CoreBaseBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
              (persona['given_names'], persona['given_names'], persona['family_name'])),
+            (20, "(given_names = %s OR legal_given_names = %s) AND family_name = %s",
+             (persona['legal_given_names'], persona['legal_given_names'],
+              persona['family_name'])),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

@@ -87,7 +87,7 @@
                     </span>:
                     {# We don't use util.person_name() here, b/c dataset['raw'] is no full persona object, esp. it
                        misses a 'display_name' entry #}
-                    {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
+                    {{ dataset['raw']['legal_given_names'] }} {{ dataset['raw']['family_name'] }}
                     {% if dataset['raw']['username'] %}
                         &lt;{{ dataset['raw']['username'] }}&gt;
                     {% endif %}

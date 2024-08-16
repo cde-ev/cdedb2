@@ -409,7 +409,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_ml_realm': True,
             'is_assembly_realm': True,
             'is_member': True,
-            'display_name': persona['display_name'] or persona['given_names'],
+            'display_name': persona['given_names'],
+            'given_names': persona['given_names'] or persona['legal_given_names'],
+            'nickname': None,
             'trial_member': False,
             'honorary_member': False,
             'paper_expuls': True,
@@ -619,8 +621,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs)
 
         fields = (
-            'event', 'course', 'family_name', 'given_names', 'display_name', 'title',
-            'name_supplement', 'birth_name', 'gender', 'address_supplement',
+            'event', 'course', 'family_name', 'legal_given_names', 'given_names',
+            'title', 'name_supplement', 'birth_name', 'gender', 'address_supplement',
             'address', 'postal_code', 'location', 'country', 'telephone',
             'mobile', 'username', 'birthday',
         )
