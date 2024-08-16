@@ -878,11 +878,11 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not (result := self.assemblyproxy.get_ballot_result(rs, ballot_id)):
+        path = self.assemblyproxy.get_ballot_file_path(rs, ballot_id)
+        if not path.is_file():
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        # TODO Streamline this
-        return self.send_file(rs, data=result, inline=False,
+        return self.send_file(rs, path=path, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
     @access("assembly", modi={"POST"})
