@@ -97,7 +97,7 @@
                         <<% if persona['display_name'] in persona['given_names'] -%>>
                            <<< persona['family_name']|te ->>>
                         <<% else -%>>
-                           <<< persona|persona_name(only_given_names=True)|te ->>>
+                           <<< persona|persona_name()|te ->>>
                         <<% endif -%>>
                     }{
                         <<%- if mycourses -%>>

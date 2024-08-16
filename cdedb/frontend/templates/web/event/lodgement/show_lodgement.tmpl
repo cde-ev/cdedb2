@@ -89,7 +89,7 @@
                                 {% if affected_regs %}
                                     (
                                         {%- for reg_id in p.affected_regs -%}
-                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']], include_nickname=True) }}
                                             {%- if not loop.last %}, {% endif %}
                                         {%- endfor -%}
                                     )
@@ -104,8 +104,7 @@
                                     {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                         {{ util.href(cdedblink('event/show_registration',
                                                             {'registration_id': registration_id}),
-                                                    util.persona_name(personas[registrations[registration_id]
-                                                            ['persona_id']])) }}
+                                                    util.persona_name(personas[registrations[registration_id]['persona_id']], include_nickname=True)) }}
                                     {%- if not registration_part_status.is_involved() %}</s>{% endif %}
                                     {{- generic_event.camping_mat_icon(
                                         registrations[registration_id]['parts'][part.id]['is_camping_mat'],

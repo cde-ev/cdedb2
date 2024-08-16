@@ -219,12 +219,12 @@
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
-                                    arialabel=gettext("Select %s")|format(util.persona_name(persona))|s)
+                                    arialabel=gettext("Select %s")|format(util.persona_name(persona, include_nickname=True))|s)
                                     }}
                         </td>
                         <td>
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                         util.persona_name(persona)) }}
+                                         util.persona_name(persona, include_nickname=True)) }}
                         </td>
                         {% for track in ambience['event']['tracks'].values()|sort %}
                             {% set track_is_filtered = (values['track_id'] in ('', track.id)) %}

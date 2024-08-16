@@ -393,9 +393,7 @@ class LDAPsqlBackend:
 
     @staticmethod
     def make_persona_name(persona: "CdEDBObject",
-                          only_given_names: bool = False,
-                          only_display_name: bool = False,
-                          given_and_display_names: bool = False,
+                          include_nickname: bool = False,
                           with_family_name: bool = True,
                           with_titles: bool = False) -> str:
         """Mimic the implementation of common.make_persona_name.
@@ -404,22 +402,16 @@ class LDAPsqlBackend:
         base, we need this small logic duplication.
         """
         # TODO move into common and use it here
-        display_name: str = persona.get('display_name', "")
+        nickname: str = persona.get('nickname', "")
         given_names: str = persona['given_names']
         ret = []
         if with_titles and persona.get('title'):
             ret.append(persona['title'])
-        if only_given_names:
-            ret.append(given_names)
-        elif only_display_name:
-            ret.append(display_name)
-        elif given_and_display_names:
-            if not display_name or display_name == given_names:
+        if include_nickname:
+            if not nickname:
                 ret.append(given_names)
             else:
-                ret.append(f"{given_names} ({display_name})")
-        elif display_name and display_name in given_names:
-            ret.append(display_name)
+                ret.append(f"{given_names} ({nickname})")
         else:
             ret.append(given_names)
         if with_family_name:

@@ -10,13 +10,13 @@
         New Direct Debit Authorization
     {% endtrans %}
     {% if ambience['persona'] %}
-        ({{ util.persona_name(ambience['persona'], only_given_names=True) }})
+        ({{ util.persona_name(ambience['persona']) }})
     {% endif %}
 {%- endblock %}
 {% block heading -%}
     {% if ambience['persona'] %}
         {{ util.context_heading(gettext("New Direct Debit Authorization"),
-                                util.persona_name(ambience['persona'], only_given_names=True),
+                                util.persona_name(ambience['persona']),
                                 'user', gettext("User")) }}
     {% else %}
         {{ util.context_heading(gettext("New Direct Debit Authorization")) }}
@@ -30,7 +30,7 @@
                             readonly="finance" not in user.admin_views) }}
     {% if ambience['persona'] %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-                                util.persona_name(ambience['persona'], only_given_names=True),
+                                util.persona_name(ambience['persona']),
                                 icon="euro-sign",
                                 readonly="finance" not in user.admin_views) }}
     {% endif %}

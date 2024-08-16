@@ -48,7 +48,7 @@
             <ul id="result">
                 {% for dataset in result %}
                     <li>
-                        {{ util.persona_anchor(dataset, given_and_display_names=True, quote_me=True) }}
+                        {{ util.persona_anchor(dataset, include_nickname=True, quote_me=True) }}
                     </li>
                 {% endfor %}
                 {% if count > cutoff %}

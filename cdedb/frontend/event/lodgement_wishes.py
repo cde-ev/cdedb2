@@ -508,7 +508,7 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     if raw_wishes := registration['fields'].get(lodge_field_name):
         wishes = f"\n\n{raw_wishes}"
     return "{name}\n{email}{parts}{wishes}".format(
-        name=make_persona_name(persona, given_and_display_names=True),
+        name=make_persona_name(persona, include_nickname=True),
         email=persona['username'],
         parts=parts,
         wishes=wishes,

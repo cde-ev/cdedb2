@@ -155,7 +155,7 @@
         {% call history_field(gettext("Name")) %}
             {% call(entry) print_multifield_history(
                     ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
-                {{ util.persona_name(entry, given_and_display_names=True, with_titles=True) }}
+                {{ util.persona_name(entry, include_nickname=True, with_titles=True) }}
             {% endcall %}
         {% endcall %}
 

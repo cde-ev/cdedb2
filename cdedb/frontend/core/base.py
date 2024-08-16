@@ -409,7 +409,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona['title'], persona['name_supplement']]
         data = ['BEGIN:VCARD', 'VERSION:3.0',
                 f'N:{";".join(escape(e or "") for e in name)}',
-                f'FN:{escape(make_persona_name(persona, only_given_names=True))}',
+                f'FN:{escape(make_persona_name(persona))}',
                 f'EMAIL:{escape(persona["username"])}']
         if persona["mobile"]:
             data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
