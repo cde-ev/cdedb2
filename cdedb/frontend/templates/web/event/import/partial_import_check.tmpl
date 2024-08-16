@@ -412,7 +412,7 @@
             for(const button of detailsPanel.querySelectorAll('.details-toggles button')) {
                 button.addEventListener('click', () =>
                     detailsPanel.querySelectorAll('.details-list details').forEach(detail =>
-                        detail.open = button.value == "expand"
+                        detail.open = button.value === "expand"
                     )
                 )
             }
