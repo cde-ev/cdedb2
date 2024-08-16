@@ -8,6 +8,8 @@ import unittest
 from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
+import psycopg2.extras
+
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
@@ -229,19 +231,21 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
+                    assert isinstance(cur, psycopg2.extras.RealDictCursor)
                     cur.execute(insertion_query)
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
+                    assert isinstance(cur, psycopg2.extras.RealDictCursor)
                     cur.execute(selection_query)
                     self.assertIsNone(cur.fetchone())
                     cur.execute(insertion_query)
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
 
     def test_offline_orgatoken(self) -> None:
         offline_script = self.get_script(CDEDB_OFFLINE_DEPLOYMENT=True)

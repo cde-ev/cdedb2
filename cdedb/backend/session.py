@@ -13,6 +13,7 @@ import logging
 from typing import Optional
 
 import psycopg2.extensions
+import psycopg2.extras
 from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
@@ -69,8 +70,9 @@ class SessionBackend:
         # we do not have the core backend, so we have to query meta info by hand
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
+                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
-                data = dict(cur.fetchone())
+                data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
     def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
@@ -90,6 +92,7 @@ class SessionBackend:
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:
                 with conn.cursor() as cur:
+                    assert isinstance(cur, psycopg2.extras.RealDictCursor)
                     cur.execute(query, (sessionkey,))
                     if cur.rowcount == 1:
                         data = cur.fetchone()
@@ -136,9 +139,11 @@ class SessionBackend:
                   f" FROM core.personas WHERE id = %s")
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
+                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
+                assert data is not None
         if self._is_locked_down() and not (data['is_meta_admin']
                                            or data['is_core_admin']):
             # Short circuit in case of lockdown

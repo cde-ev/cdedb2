@@ -2543,7 +2543,7 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return ret, new_password
+        return bool(ret), new_password
 
     @access("persona")
     def change_password(self, rs: RequestState, old_password: str,

@@ -19,6 +19,7 @@ import werkzeug.routing
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.database.connection import IrradiatedConnection
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
@@ -104,7 +105,7 @@ def get_user() -> str:
 def connect(
     config: Config, secrets: SecretsConfig, as_nobody: bool = False,
     as_postgres: bool = False,
-) -> psycopg2.extensions.connection:
+) -> IrradiatedConnection:
     """Create a very basic database connection.
 
     This allows to connect to the database specified as CDB_DATABASE_NAME in the given
@@ -114,7 +115,7 @@ def connect(
     which is used for very low-level setups (like generation of sample data).
     """
 
-    conn_factory = psycopg2.extensions.connection
+    conn_factory = IrradiatedConnection
     curser_factory = psycopg2.extras.RealDictCursor
 
     if as_postgres:
@@ -149,7 +150,7 @@ def connect(
     return conn
 
 
-def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0,
+def fake_rs(conn: IrradiatedConnection, persona_id: int = 0,
             urls: Optional[werkzeug.routing.MapAdapter] = None) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 

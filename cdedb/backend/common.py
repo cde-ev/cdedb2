@@ -18,6 +18,7 @@ from typing import (
     Any, Callable, ClassVar, Literal, Optional, TypeVar, Union, cast, overload,
 )
 
+import psycopg2
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
@@ -549,7 +550,7 @@ class DatabaseLock:
     available.
 
     """
-    xid: Optional[str]
+    xid: Optional[psycopg2.extensions.Xid]
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs

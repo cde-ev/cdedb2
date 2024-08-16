@@ -24,7 +24,7 @@ from cdedb.models.common import CdEDataclass
 # DatabaseValue is for any singular value that should be written into the database or
 # compared to something already stored.
 DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime,
-                      decimal.Decimal, None]
+                      decimal.Decimal, None, PsycoJson]
 # DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
 # used with an "ANY(%s)" like comparison.
 DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
@@ -61,7 +61,7 @@ class SqlQueryBackend:
         """
         sanitized_params = tuple(to_db_input(p) for p in params)
         self.logger.debug(f"Execute PostgreSQL query"
-                          f" {cur.mogrify(query, sanitized_params)}.")
+                          f" {cur.mogrify(query, sanitized_params).decode()}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, container: ConnectionContainer, query: str,
@@ -69,6 +69,7 @@ class SqlQueryBackend:
         """Execute a query in a safe way (inside a transaction)."""
         with container.conn as conn:
             with conn.cursor() as cur:
+                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
@@ -80,6 +81,7 @@ class SqlQueryBackend:
         """
         with container.conn as conn:
             with conn.cursor() as cur:
+                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return from_db_output(cur.fetchone())
 
@@ -91,6 +93,7 @@ class SqlQueryBackend:
         """
         with container.conn as conn:
             with conn.cursor() as cur:
+                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return tuple(
                     cast(CdEDBObject, from_db_output(x))
