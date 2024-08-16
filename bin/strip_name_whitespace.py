@@ -20,7 +20,7 @@ with s:
         persona = core.get_persona(rs, persona_id)
 
         update: CdEDBObject = {}
-        for k in ('given_names', 'family_name', 'display_name'):
+        for k in ('given_names', 'family_name', 'legal_given_names', 'nickname'):
             old = persona[k]
             if persona[k] != (new := " ".join(persona[k].split()).strip()):
                 update[k] = persona[k] = new

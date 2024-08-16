@@ -103,7 +103,6 @@ CREATE TABLE core.personas (
         CONSTRAINT personas_archived_purged
             CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
-        display_name            varchar NOT NULL,
         nickname                varchar DEFAULT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
@@ -204,10 +203,10 @@ CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
-GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
+GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
-GRANT UPDATE (display_name, nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
 GRANT UPDATE (birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
 -- includes notes in addition to cdb_member
 GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
@@ -400,7 +399,6 @@ CREATE TABLE core.changelog (
         is_searchable           boolean,
         is_archived             boolean,
         is_purged               boolean,
-        display_name            varchar,
         nickname                varchar,
         given_names             varchar,
         legal_given_names       varchar,

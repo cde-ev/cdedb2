@@ -339,7 +339,6 @@ class TestValidation(unittest.TestCase):
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "given_names": "Blübb",
             "family_name": "the First",
             "is_active": True,
@@ -450,7 +449,6 @@ class TestValidation(unittest.TestCase):
         base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "is_active": True,
             "is_cde_realm": True,
             "family_name": "Thør",
@@ -505,7 +503,6 @@ class TestValidation(unittest.TestCase):
         base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
-            "display_name": "Blübb the First",
             "is_active": True,
             "is_event_realm": True,
             "is_cde_realm": False,

@@ -130,19 +130,19 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("emilia")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertTitle(self.user['default_name_format'])
 
     @as_users("annika")
     def test_changeuser(self) -> None:
         with self.switch_user("emilia"):
-            self.traverse({'description': self.user['display_name']},
+            self.traverse({'description': self.user['given_names']},
                           {'description': 'Bearbeiten'})
             f = self.response.forms['changedataform']
             self.submit(f, check_notification=False)
             self.assertValidationWarning("mobile", "Telefonnummer scheint ungültig zu")
             f = self.response.forms['changedataform']
-            f['display_name'] = "Zelda"
+            f['given_names'] = "Zelda"
             f['location'] = "Hyrule"
             f[IGNORE_WARNINGS_NAME].checked = True
             self.submit(f, check_notification=False)
@@ -174,7 +174,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationWarning("mobile", "Telefonnummer scheint ungültig zu")
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.assertNotIn('free_form', f.fields)
         f[IGNORE_WARNINGS_NAME].checked = True
@@ -5270,8 +5270,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
-            'registrations': [{'display_name': 'Emmy',
-                               'email': 'emilia@example.cde',
+            'registrations': [{'email': 'emilia@example.cde',
                                'id': 2,
                                'name': 'Emilia E. Eventis'}]}
         if not self.user_in("annika"):

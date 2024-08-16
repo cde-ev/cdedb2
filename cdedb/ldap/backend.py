@@ -515,7 +515,7 @@ class LDAPsqlBackend:
     async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = (
-            "SELECT id, username, display_name, given_names, family_name, password_hash"
+            "SELECT id, username, given_names, family_name, password_hash"
             " FROM core.personas WHERE id = ANY(%s) AND NOT is_archived")
         return {
             e["id"]: e async for e in self.query_all(query, (user_ids,))

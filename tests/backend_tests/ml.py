@@ -31,10 +31,10 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_basics(self) -> None:
         data = self.core.get_ml_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['given_names'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'display_name', 'given_names', 'family_name'}}
+                  {'id', 'legal_given_names', 'given_names', 'family_name'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_ml_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)

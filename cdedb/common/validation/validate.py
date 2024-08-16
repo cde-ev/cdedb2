@@ -1347,7 +1347,6 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
 PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
-    'display_name': str,
     'nickname': NoneType,
     'given_names': str,
     'legal_given_names': str,
@@ -1469,7 +1468,6 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'is_archived': bool,
     'is_purged': bool,
     'is_active': bool,
-    'display_name': str,
     'nickname': Optional[str],
     'given_names': str,
     'legal_given_names': str,

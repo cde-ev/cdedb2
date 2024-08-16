@@ -33,11 +33,6 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)"), info=gettext(
-               "The name you want others and the CdE Datenbank to call you by. "
-               "It will, for example, be used for directly addressing you and on nametags at CdE events. "
-               "If it is part of your official given name(s), it will also be used instead of your full given names in "
-               "most other places in the CdE Datenbank.")) }}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
 
         {% if 'gender' in shown_fields %}

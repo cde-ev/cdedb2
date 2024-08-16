@@ -15,7 +15,6 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}

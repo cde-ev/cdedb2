@@ -35,7 +35,7 @@ PERSONA_STATUS_FIELDS = (
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id", "username", "display_name", "family_name", "given_names",
+    "id", "username", "family_name", "given_names",
     "nickname", "legal_given_names", "title", "name_supplement")
 
 #: Names of columns associated to an event user.

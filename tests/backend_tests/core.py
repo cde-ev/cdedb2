@@ -32,7 +32,6 @@ PERSONA_TEMPLATE = {
     'is_member': False,
     'is_searchable': False,
     'is_active': True,
-    'display_name': "Zelda",
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
     'title': None,
@@ -140,9 +139,9 @@ class TestCoreBackend(BackendTest):
     def test_set_persona(self) -> None:
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'],
-                                         'display_name': new_name})
+                                         'given_names': new_name})
         self.assertEqual(new_name, self.core.retrieve_persona(
-            self.key, self.user['id'])['display_name'])
+            self.key, self.user['id'])['given_names'])
 
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
@@ -774,7 +773,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -858,7 +856,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
             'is_cde_realm': False,
@@ -940,7 +937,6 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
             'is_auditor': False,
             'id': new_id,
-            'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': True,
             'is_cde_realm': True,
@@ -1033,7 +1029,6 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_user_getters(self) -> None:
         expectation = {
-            'display_name': 'Bertå',
             'family_name': 'Beispiel',
             'given_names': 'Bertålotta',
             'name_supplement': 'MdB',

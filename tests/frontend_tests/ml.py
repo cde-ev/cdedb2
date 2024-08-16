@@ -114,7 +114,7 @@ class TestMlFrontend(FrontendTest):
     def test_changeuser(self) -> None:
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         self.submit(f)
         self.assertEqual(
             "Zelda",
@@ -125,7 +125,7 @@ class TestMlFrontend(FrontendTest):
         self.realm_admin_view_profile('janis', 'ml')
         self.traverse({'href': '/core/persona/10/adminchange'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)

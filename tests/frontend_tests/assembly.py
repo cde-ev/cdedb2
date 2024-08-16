@@ -196,16 +196,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @as_users("kalif")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertPresence("Versammlungen", div="has-realm")
         self.assertTitle(self.user['default_name_format'])
 
     @as_users("kalif")
     def test_changeuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         self.submit(f)
         self.assertEqual(
             "Zelda",
@@ -217,7 +217,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.realm_admin_view_profile('kalif', 'assembly')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.assertNotIn('birthday', f.fields)
         self.submit(f)

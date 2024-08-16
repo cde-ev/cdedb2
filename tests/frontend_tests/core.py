@@ -36,7 +36,7 @@ class TestCoreFrontend(FrontendTest):
                 f['username'] = user['username']
                 f['password'] = user['password']
                 self.submit(f, check_notification=False)
-                self.assertPresence(user['display_name'], div='displayname',
+                self.assertPresence(user['given_names'], div='displayname',
                                     exact=True)
 
     def test_login_redirect(self) -> None:
@@ -46,15 +46,15 @@ class TestCoreFrontend(FrontendTest):
         f["username"] = user["username"]
         f["password"] = user["password"]
         self.submit(f, check_notification=False)
-        self.assertLogin(user["display_name"])
+        self.assertLogin(user["given_names"])
         self.assertTitle("Administratorenübersicht")
 
     @as_users("vera", "berta", "emilia")
     def test_logout(self) -> None:
-        self.assertPresence(self.user['display_name'], div='displayname', exact=True)
+        self.assertPresence(self.user['given_names'], div='displayname', exact=True)
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
-        self.assertNonPresence(self.user['display_name'])
+        self.assertNonPresence(self.user['given_names'])
         self.assertIn('loginform', self.response.forms)
 
     @as_users("vera")
@@ -174,7 +174,7 @@ class TestCoreFrontend(FrontendTest):
               "garcia", "inga", "janis", "kalif", "martin", "nina",
               "vera", "werner", "annika", "farin", "akira")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertTitle(self.user['default_name_format'])
         self.assertPresence(self.user['family_name'], div='title')
 
@@ -262,7 +262,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/self/mailinglists')
         self.assertTitle(f"{name} – Mailinglisten-Daten")
         # Check there are no links
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertNonPresence("Veranstaltungs-Daten")
         self.assertNonPresence("Mailinglisten-Daten")
         self.assertNonPresence("vCard")
@@ -274,7 +274,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,display_name'] = "Berta"
+        f['qval_given_names'] = "Berta"
         self.submit(f)
 
         self.assertTitle(USER_DICT['berta']['default_name_format'])
@@ -374,10 +374,10 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_member_profile_past_events(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': "PfingstAkademie 2014"})
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': "Swish -- und alles ist gut"})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
 
@@ -711,10 +711,10 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta", "garcia", "daniel")
     def test_changedata(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['location2'] = "Hyrule"
         f['country2'] = "AR"
         f['specialisation'] = "Okarinas"
@@ -770,7 +770,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
@@ -779,11 +779,11 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_adminchangedata_self(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'href': '/core/persona/22/adminchange'})
         self.assertTitle("Vera Verwaltung bearbeiten")
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
@@ -792,7 +792,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta", "emilia")
     def test_change_password_zxcvbn(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Passwort ändern'})
         # Password one: Common English words
         new_password = 'dragonSecret'
@@ -880,7 +880,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "ferdinand")
     def test_change_password_zxcvbn_admin(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Passwort ändern'})
         # Strong enough for normal users, but not for admins
         new_password = 'phonebookbread'
@@ -896,7 +896,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta", "emilia")
     def test_change_password_zxcvbn_noadmin(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Passwort ändern'})
         # Strong enough for normal users, but not for admins
         new_password = 'phonebookbread'
@@ -911,7 +911,7 @@ class TestCoreFrontend(FrontendTest):
     def test_change_password(self) -> None:
         user = self.user
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Passwort ändern'})
 
         # non-matching password
@@ -942,14 +942,14 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
 
         self.logout()
-        self.assertNonPresence(self.user['display_name'])
+        self.assertNonPresence(self.user['given_names'])
         self.login(self.user)
         self.assertIn('loginform', self.response.forms)
         new_user = dict(user)
         new_user['password'] = new_password
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(self.user['display_name'])
+        self.assertLogin(self.user['given_names'])
 
     def test_reset_password(self) -> None:
         new_passwords = {
@@ -987,7 +987,7 @@ class TestCoreFrontend(FrontendTest):
                         new_user['password'] = val
                         self.login(new_user)
                         self.assertNotIn('loginform', self.response.forms)
-                        self.assertLogin(user['display_name'])
+                        self.assertLogin(user['given_names'])
                     elif key == 'bad':
                         self.submit(f, check_notification=False)
                         self.assertNonPresence('Passwort zurückgesetzt.')
@@ -1075,7 +1075,7 @@ class TestCoreFrontend(FrontendTest):
         new_other['password'] = new_password
         self.login(new_other)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(other['display_name'])
+        self.assertLogin(other['given_names'])
 
     @as_users("vera", "ferdinand")
     def test_cde_admin_reset_password(self) -> None:
@@ -1100,7 +1100,7 @@ class TestCoreFrontend(FrontendTest):
         # First test with current username
         user = self.user
         current_username = self.user['username']
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'href': '/core/self/username/change'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
@@ -1130,7 +1130,7 @@ class TestCoreFrontend(FrontendTest):
         new_user['username'] = new_username
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(self.user['display_name'])
+        self.assertLogin(self.user['given_names'])
 
     def test_admin_username_change(self) -> None:
         new_username = "bertalotta@example.cde"
@@ -1150,7 +1150,7 @@ class TestCoreFrontend(FrontendTest):
         new_berta['username'] = new_username
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(new_berta['display_name'])
+        self.assertLogin(new_berta['given_names'])
 
     def test_any_admin_query(self) -> None:
         admin1 = USER_DICT["anton"]
@@ -1230,7 +1230,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
         self.login(new_admin_copy)
         self.assertNonPresence("Login fehlgeschlagen.", div="notifications")
-        self.assertLogin(new_admin['display_name'])
+        self.assertLogin(new_admin['given_names'])
 
     @as_users("anton")
     def test_change_privileges_dependency_error(self) -> None:
@@ -1459,7 +1459,7 @@ class TestCoreFrontend(FrontendTest):
     @storage
     @as_users("vera", "berta")
     def test_set_foto(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Profilbild ändern'})
         f = self.response.forms['setfotoform']
         self.submit(f, check_notification=False)
@@ -1476,7 +1476,7 @@ class TestCoreFrontend(FrontendTest):
     @storage
     @as_users("vera", "berta")
     def test_set_foto_jpg(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Profilbild ändern'})
         f = self.response.forms['setfotoform']
         with open(self.testfile_dir / "picture.jpg", 'rb') as datafile:
@@ -1490,7 +1490,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_reset_foto(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         foto_hash = self.get_sample_datum('core.personas', self.user['id'])['foto']
         self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
@@ -1732,7 +1732,7 @@ class TestCoreFrontend(FrontendTest):
             self.submit(f)
             self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
             self.assertPresence("Bertå Ganondorf")
-        self.traverse(self.user['display_name'])
+        self.traverse(self.user['given_names'])
         self.assertNonPresence(self.user['family_name'])
         self.assertNonPresence("Gemeinser")
         self.assertPresence('Ganondorf', div='personal-information')
@@ -1873,7 +1873,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/persona/2/adminchange'})
         self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
@@ -2026,7 +2026,7 @@ class TestCoreFrontend(FrontendTest):
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
-        self.assertIn(USER_DICT['nina']['display_name'], mail)
+        self.assertIn(USER_DICT['nina']['given_names'], mail)
         self.assertIn("Ein herzliches Willkommen", mail)
         self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)
         self.assertIn("kostenlos", mail)  # check trial membership
@@ -2210,7 +2210,7 @@ class TestCoreFrontend(FrontendTest):
             'id': 9,
             'username': "zorro@example.cde",
             'password': new_password,
-            'display_name': "Zelda",
+            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }
@@ -2254,7 +2254,7 @@ class TestCoreFrontend(FrontendTest):
         new_user = {
             'username': "zelda@example.cde",
             'password': new_password,
-            'display_name': "Zelda",
+            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }
@@ -2431,7 +2431,7 @@ class TestCoreFrontend(FrontendTest):
         new_user = {
             'username': "zorro@example.cde",
             'password': new_password,
-            'display_name': "Zelda",
+            'legalgiven_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }

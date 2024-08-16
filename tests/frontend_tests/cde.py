@@ -31,7 +31,6 @@ PERSONA_TEMPLATE = {
         "given_names": "Zelda",
         "family_name": "Zeruda-Hime",
         "name_supplement": 'von und zu',
-        "display_name": 'Zelda',
         "birthday": "1987-06-05",
         "specialisation": "oehm",
         "affiliation": "Hogwarts",
@@ -198,7 +197,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera", "berta")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertTitle(self.user['default_name_format'])
         # TODO extend
         if self.user_in("berta"):
@@ -206,12 +205,12 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_changedata(self) -> None:
-        self.traverse({'description': self.user['display_name']},
+        self.traverse({'description': self.user['given_names']},
                       {'description': 'Bearbeiten'})
         # Make sure all country codes are translated
         self.assertNonPresence("CountryCode")
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['location2'] = "Hyrule"
         f['specialisation'] = "Okarinas"
         self.submit(f)
@@ -227,7 +226,7 @@ class TestCdEFrontend(FrontendTest):
         self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "3.4.1933"
         f['free_form'] = "Jabberwocky for the win."
         self.submit(f)
@@ -255,7 +254,7 @@ class TestCdEFrontend(FrontendTest):
         self.realm_admin_view_profile('olaf', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Link"
+        f['given_names'] = "Link"
         f['birthday'] = "21.11.1998"
         f['free_form'] = "Spiele gerne Okarina."
         self.submit(f)
@@ -321,25 +320,25 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('berta')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
-        f['display_name'] = "Zelda"
+        f['given_names'] = "Zelda"
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
         self.assertTitle("Bertålotta Beispiel bearbeiten")
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         f = self.response.forms['changedataform']
-        self.assertEqual("Zelda", f['display_name'].value)
+        self.assertEqual("Zelda", f['given_names'].value)
 
     @as_users("garcia")
     def test_consent(self) -> None:
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Index'})
         self.assertTitle("CdE-Datenbank")
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertPresence("Noch nicht entschieden", div='searchability')
         self.traverse({'description': 'Entscheiden'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.traverse({'description': self.user['display_name']})
+        self.traverse({'description': self.user['given_names']})
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability', exact=True)
 
@@ -462,11 +461,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
 
-        # by given_names and display_name
+        # by given_names and TODO nickname
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names,display_name'] = "Berta"
+        f['qval_given_names'] = "Berta"
         self.submit(f)
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
@@ -547,7 +546,7 @@ class TestCdEFrontend(FrontendTest):
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
         fields = [
-            "fulltext", "given_names,display_name", "family_name,birth_name",
+            "fulltext", "given_names", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
             "username", "address,address_supplement,address2,address_supplement2",
             "location,location2", "country,country2"]
@@ -573,13 +572,13 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'CdE-Mitglied suchen'})
         # len(entry) <= 3 must equal the column entry in the database
         f = self.response.forms['membersearchform']
-        f['qval_given_names,display_name'] = "Ant"
+        f['qval_given_names'] = "Ant"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(entry) > 3 performs a wildcard search
-        f['qval_given_names,display_name'] = "Anton"
+        f['qval_given_names'] = "Anton"
         self.submit(f)
         self.assertTitle("Anton Administrator")
 
@@ -1027,7 +1026,7 @@ class TestCdEFrontend(FrontendTest):
                                div="notifications")
         data['password'] = new_password
         self.login(data)
-        self.assertLogin(data['display_name'])
+        self.assertLogin(data['given_names'])
 
     @as_users("paul", "quintus")
     def test_create_archive_user(self) -> None:
@@ -1359,7 +1358,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_lastschrift_change_donation(self) -> None:
-        self.traverse(self.user['display_name'], "Bearbeiten")
+        self.traverse(self.user['given_names'], "Bearbeiten")
         # invalid/uncommon input for donation
         f = self.response.forms['changedataform']
         f['donation'] = ""
@@ -1723,10 +1722,10 @@ class TestCdEFrontend(FrontendTest):
         persona_id = 2
         generation = self.core.changelog_get_generation(self.key, persona_id)
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
-        # Check that both given_names and display_name have changed.
+        # Check that both legal_given_names and given_names have changed.
         persona = self.core.get_persona(self.key, persona_id)
-        self.assertEqual("Berta B.", persona["given_names"])
-        self.assertEqual("Bertie", persona["display_name"])
+        self.assertEqual("Berta B.", persona["legal_given_names"])
+        self.assertEqual("Bertie", persona["given_names"])
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:

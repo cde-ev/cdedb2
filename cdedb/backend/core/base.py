@@ -641,7 +641,7 @@ class CoreBaseBackend(AbstractBackend):
                 for higher_realm in higher_realms:
                     clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
                 clearances.append(clearance)
-        query = ("SELECT persona_id, given_names, display_name, family_name,"
+        query = ("SELECT persona_id, given_names, family_name,"
                  " generation, ctime FROM core.changelog WHERE code = %s")
         if clearances:
             query = query + " AND (" + " OR ".join(clearances) + ")"
