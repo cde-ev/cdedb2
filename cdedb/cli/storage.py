@@ -9,6 +9,7 @@ from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.cli.util import (
     SAMPLE_DATA_JSON, sanity_check, sanity_check_production, switch_user,
 )
+from cdedb.common import get_hash
 from cdedb.config import Config, SecretsConfig, get_configpath
 
 
@@ -118,11 +119,13 @@ def populate_storage(conf: Config) -> None:
     genesis_dir = storage_dir / "genesis_attachment"
 
     shutil.copy(testfile_dir / foto, storage_dir / "foto")
-    shutil.copy(testfile_dir / "rechen.pdf", attachment_dir / "1_v1")
-    shutil.copy(testfile_dir / "kassen.pdf", attachment_dir / "2_v1")
-    shutil.copy(testfile_dir / "kassen2.pdf", attachment_dir / "2_v3")
-    shutil.copy(testfile_dir / "kandidaten.pdf", attachment_dir / "3_v1")
     shutil.copy(testfile_dir / "picture.pdf", genesis_dir / genesis)
+
+    for filename in ("rechen.pdf", "kassen.pdf", "kassen2.pdf", "kandidaten.pdf"):
+        with open(testfile_dir / filename, "rb") as f:
+            shutil.copy(testfile_dir / filename,
+                        attachment_dir / get_hash(f.read()))
+
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")
 
