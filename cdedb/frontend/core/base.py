@@ -415,8 +415,8 @@ class CoreBaseFrontend(AbstractFrontend):
             data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
         if persona["telephone"]:
             data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
-        if persona['display_name']:
-            data.append(f'NICKNAME:{escape(persona["display_name"])}')
+        if persona['nickname']:
+            data.append(f'NICKNAME:{escape(persona["nickname"])}')
         for sub in ["", "2"]:
             address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
                        persona[f'location{sub}'], "", persona[f'postal_code{sub}'],

@@ -143,7 +143,7 @@
 {# Create a link to a persona's profile page, labeled with some variant of their name
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+                            'id', 'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
    include_nickname:        see 'persona_name' macro
    with_family_name:        see 'persona_name' macro
    with_titles:             see 'persona_name' macro
@@ -162,15 +162,14 @@
 
 {# Display the name of a given persona
 
-   Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
-   this macro includes some logic to display a person's name correctly, depending on the context and the person's
-   display name. For a full specification, which name variant should be used in which context, see the documentation
+   This macro includes some logic to display a person's name correctly, depending on the context.
+   For a full specification, which name variant should be used in which context, see the documentation
    page about "User Experience Conventions".
 
    For usage in Python code, the `cdedb.common.make_persona_name()` function implements the same logic.
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
-                            'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+                            'title', 'given_names', 'nickname', 'family_name', 'name_supplement'.
    include_nickname:        If True, the display of all given_names and the nickname (if not equal) is enforced.
                             Should only be used for orga-facing pages.
    with_family_name:        If True (default), the family name is included in the macro output
@@ -848,14 +847,11 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
-    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
-    {% set forename = display_name if display_name and display_name in given_names else given_names %}
     {{ href(
         mailto(
             address=email or persona.get("username", persona.get("persona.username", "")),
             name="{} {}".format(
-                forename,
+                persona.get("given_names", persona.get("persona.given_names", "")),
                 persona.get("family_name", persona.get("persona.family_name", ""))
             )
         ),

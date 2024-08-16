@@ -1505,8 +1505,7 @@ class EventBaseBackend(EventLowLevelBackend):
         del export['timestamp']
         author_name = author_email = ""
         if rs.user.persona_id:
-            persona = {"display_name": rs.user.display_name,
-                       "given_names": rs.user.given_names,
+            persona = {"given_names": rs.user.given_names,
                        "family_name": rs.user.family_name}
             author_name = make_persona_name(persona)
             author_email = rs.user.username

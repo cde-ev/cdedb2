@@ -91,13 +91,13 @@
                     <<% do mycourses.append((track_id, track['course_id']))|te -%>>
                 <<% endfor -%>>
                 <<% set persona = personas[registration['persona_id']] -%>>
-                \nametag{<<< persona['display_name']|te ->>>
+                \nametag{<<< (persona['nickname'] or persona['given_names'])|te ->>>
                     }{
-                        <<#- prepend the legal given_names to the family name, in case display_name is not part of them -#>>
-                        <<% if persona['display_name'] in persona['given_names'] -%>>
-                           <<< persona['family_name']|te ->>>
-                        <<% else -%>>
+                        <<#- prepend the legal given_names to the family name, in case there is a nickname -#>>
+                        <<% if persona['nickname'] -%>>
                            <<< persona|persona_name()|te ->>>
+                        <<% else -%>>
+                           <<< persona['family_name']|te ->>>
                         <<% endif -%>>
                     }{
                         <<%- if mycourses -%>>

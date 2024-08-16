@@ -155,7 +155,7 @@ class CoreBaseBackend(AbstractBackend):
           fulltext search
         """
         attributes = (
-            "title", "username", "display_name", "given_names",
+            "title", "username", "given_names", "nickname",
             "family_name", "birth_name", "name_supplement", "birthday",
             "telephone", "mobile", "address_supplement", "address",
             "postal_code", "location", "address_supplement2",
@@ -1643,8 +1643,9 @@ class CoreBaseBackend(AbstractBackend):
                 'is_searchable': False,
                 'is_archived': True,
                 # 'is_purged' not relevant here
-                # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
+                # 'legal_given_names' kept for later recognition
+                # 'nickname' kept for later recognition
                 # 'family_name' kept for later recognition
                 'title': None,
                 'name_supplement': None,
@@ -1819,8 +1820,9 @@ class CoreBaseBackend(AbstractBackend):
             #
             update = {
                 'id': persona_id,
-                'display_name': "N.",
                 'given_names': "N.",
+                'legal_given_names': "N.",
+                'nickname': "N.",
                 'family_name': "N.",
                 'birthday': datetime.date.min,
                 'birth_name': None,
@@ -2586,8 +2588,8 @@ class CoreBaseBackend(AbstractBackend):
         assert persona_id is not None
 
         columns_of_interest = [
-            *ADMIN_KEYS, "username", "given_names", "family_name", "display_name",
-            "title", "name_supplement", "birthday",
+            *ADMIN_KEYS, "username", "given_names", "family_name", "nickname",
+            "title", "name_supplement", "birthday", "legal_given_names",
         ]
 
         # escalate db privilege role in case of resetting passwords
@@ -2611,10 +2613,12 @@ class CoreBaseBackend(AbstractBackend):
         admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
-                  persona['family_name'].replace('-', ' ').split() +
-                  persona['display_name'].replace('-', ' ').split())
+                  persona['legal_given_names'].replace('-', ' ').split() +
+                  persona['family_name'].replace('-', ' ').split())
         if persona['title']:
             inputs.extend(persona['title'].replace('-', ' ').split())
+        if persona['nickname']:
+            inputs.extend(persona['nickname'].replace('-', ' ').split())
         if persona['name_supplement']:
             inputs.extend(persona['name_supplement'].replace('-', ' ').split())
         if persona['birthday']:
