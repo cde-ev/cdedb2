@@ -1684,6 +1684,7 @@ class AssemblyBackend(AbstractBackend):
     def add_attachment(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Add a new attachment.
 
+        The actual file has already been stored by the frontend.
         Note that it is not allowed to add an attachment to an assembly that has been
         concluded.
 
@@ -1783,8 +1784,6 @@ class AssemblyBackend(AbstractBackend):
                 if "versions" in cascade:
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
-                    # Maybe be less lazy here
-                    self.get_attachment_store(rs).forget(rs, self.get_attachment_usage)
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -2069,7 +2068,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
         """Is an attachment file still referenced by some version?"""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         query = ("SELECT COUNT(*) FROM assembly.attachment_versions"
                  " WHERE file_hash = %s AND dtime IS NOT NULL")
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
@@ -2077,7 +2076,9 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                ) -> DefaultReturnCode:
-        """Add a new version of an attachment."""
+        """Add a new version of an attachment.
+
+        The actual file has already been stored by the frontend."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
         attachment_id = data['attachment_id']
         with Atomizer(rs):

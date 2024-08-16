@@ -1003,6 +1003,7 @@ class CoreBaseBackend(AbstractBackend):
 
         new_hash = self.get_foto_store(rs).store(foto) if foto else None
         change_note = "Profilbild geändert." if foto else "Profilbild entfernt."
+        # Evaluates to 1 if a new foto was provided, and to -1 otherwise.
         indicator = (-1) ** (bool(foto) + 1)
         data = {
             'id': persona_id,

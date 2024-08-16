@@ -32,13 +32,11 @@ class AttachmentStore:
         Contrary to `get` this does not retrieve it's
         content.
         """
-        attachment_hash = affirm(str, attachment_hash)
         return self.get_path(attachment_hash).is_file()
 
     def get(self, attachment_hash: str) -> Optional[bytes]:
         """Retrieve a stored attachment."""
         # TODO Drop this, if not needed.
-        attachment_hash = affirm(str, attachment_hash)
         path = self.get_path(attachment_hash)
         if path.is_file():
             with open(path, 'rb') as f:
@@ -46,12 +44,15 @@ class AttachmentStore:
         return None
 
     def get_path(self, attachment_hash: str) -> pathlib.Path:
-        """Get path for attachment."""
+        """Get path for attachment.
+
+        Takes care of all the path validation."""
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         return self._dir / attachment_hash
 
-    def forget_one(self, rs: RequestState, usage: UsageFunction, attachment_hash: str
+    def forget_one(self, rs: RequestState, usage: UsageFunction, attachment_hash: str,
                    ) -> bool:
-        "Delete a single attachment if no longer in use"
+        "Delete a single attachment, if it is no longer in use."
         path = self.get_path(attachment_hash)
         if path.is_file() and not usage(rs, attachment_hash):
             path.unlink()

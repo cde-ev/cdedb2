@@ -1779,7 +1779,8 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
 GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
                                **GENESIS_CASE_ADDITIONAL_FIELDS,
                                'pevent_id': Optional[ID],
-                               'pcourse_id': Optional[ID]}
+                               'pcourse_id': Optional[ID],
+                               'attachment_hash': str}
 
 
 @_add_typed_validator

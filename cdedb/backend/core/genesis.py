@@ -135,7 +135,7 @@ class CoreGenesisBackend(CoreBaseBackend):
     def get_genesis_attachment_usage(self, rs: RequestState, attachment_hash: str,
                                      ) -> bool:
         """Check whether an attachment is still referenced."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 

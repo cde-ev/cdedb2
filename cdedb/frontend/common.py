@@ -573,7 +573,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         attachment: Optional[werkzeug.datastructures.FileStorage],
         attachment_hash: Optional[str], attachment_filename: Optional[str] = None,
     ) -> tuple[Optional[str], Optional[str]]:
-        """Locate an attachment by hash and upload it, if necessary
+        """Locate an attachment by hash and store it, if necessary
 
         :param attachment: A new file uploaded within this request. Supersedes remaining
             (cached) data, if present.

@@ -1186,12 +1186,13 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
 
-        self.assertIsNone(
-            self._get_attachment_content(
-                self.key, attachment_id=new_id, version_nr=1))
-        self.assertIsNone(
-            self._get_attachment_content(
-                self.key, attachment_id=new_id, version_nr=3))
+        # The actual file is deleted only by cron now
+        # self.assertIsNone(
+        #    self._get_attachment_content(
+        #        self.key, attachment_id=new_id, version_nr=1))
+        # self.assertIsNone(
+        #    self._get_attachment_content(
+        #         self.key, attachment_id=new_id, version_nr=3))
         self.assertEqual(
             self._file("kassen.pdf"), self._get_attachment_content(
                 self.key, attachment_id=new_id, version_nr=2))
@@ -1434,6 +1435,7 @@ class TestAssemblyBackend(BackendTest):
         log = []
         base_time = now()
         delta = datetime.timedelta(seconds=10)
+        hashes = {}
         with freezegun.freeze_time(base_time) as frozen_time:
             # Create new attachment.
             attachment_data = {
@@ -1443,6 +1445,7 @@ class TestAssemblyBackend(BackendTest):
                 "filename": "Freiheit.pdf",
             }
             attachment_id = self._add_attachment(attachment_data, "empty.pdf")
+            hashes[0] = self._get_hash("empty.pdf")
             log.append({
                 "code": const.AssemblyLogCodes.attachment_added,
                 "assembly_id": assembly_id,
@@ -1513,16 +1516,22 @@ class TestAssemblyBackend(BackendTest):
                 attachment_expectation,
                 self.assembly.get_attachment(self.key, attachment_id))
 
-            # Advanve time and add new versions.
+            # Advance time and add new versions.
             for i in range(n):
                 frozen_time.tick(delta=2*delta)
+                # pylint: disable=line-too-long
+                pdf_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
+                pdf = (pdf_content + "\r\n" * i).encode('ascii')
+                hashes[i+1] = self.assembly.get_attachment_store(self.key).store(pdf)
                 version_data = {
                     "attachment_id": attachment_id,
                     "title": attachment_data["title"],
                     "authors": attachment_data["authors"],
                     "filename": attachment_data["filename"],
+                    "file_hash": hashes[i+1],
                 }
-                self.assertTrue(self._add_attachment_version(version_data, bytes(i+1)))
+                self.assertTrue(self.assembly.add_attachment_version(self.key,
+                                                                     version_data))
                 log.append({
                     "code": const.AssemblyLogCodes.attachment_version_added,
                     "assembly_id": assembly_id,
@@ -1539,7 +1548,7 @@ class TestAssemblyBackend(BackendTest):
             for i, ballot_id in enumerate(ballot_ids):
                 version_expectation.update({
                     "version_nr": i + 1,
-                    "file_hash": get_hash(bytes(i)),
+                    "file_hash": hashes[i],
                     "ctime": base_time + (2 * i) * delta,
                 })
                 self.assertEqual(

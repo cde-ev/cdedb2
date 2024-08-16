@@ -871,6 +871,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(expectation, value)
 
+    @storage
     @as_users("vera")
     def test_genesis_cde(self) -> None:
         attachment_hash = "really_cool_filename"
@@ -894,13 +895,9 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        self.assertFalse(self.core.get_genesis_attachment_usage(self.key,
-                                                                attachment_hash))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertTrue(self.core.get_genesis_attachment_usage(self.key,
-                                                               attachment_hash))
         assert case_id is not None
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
@@ -976,8 +973,6 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.get_genesis_attachment_usage(self.key,
-                                                                attachment_hash))
 
     @storage
     def test_genesis_attachments(self) -> None:
