@@ -104,8 +104,10 @@ CREATE TABLE core.personas (
             CHECK (NOT is_purged OR is_archived),
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
+        nickname                varchar DEFAULT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
+        legal_given_names       varchar NOT NULL,
         -- "Nachname"
         family_name             varchar NOT NULL,
 
@@ -205,7 +207,7 @@ GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_adm
 GRANT SELECT (display_name, given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
-GRANT UPDATE (display_name, given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (display_name, nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
 GRANT UPDATE (birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
 -- includes notes in addition to cdb_member
 GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
@@ -399,7 +401,9 @@ CREATE TABLE core.changelog (
         is_archived             boolean,
         is_purged               boolean,
         display_name            varchar,
+        nickname                varchar,
         given_names             varchar,
+        legal_given_names       varchar,
         family_name             varchar,
         title                   varchar,
         name_supplement         varchar,

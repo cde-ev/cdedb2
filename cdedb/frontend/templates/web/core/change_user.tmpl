@@ -27,6 +27,7 @@
         {{ util.h(n_("Personal Information"), level=4, underline=True) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
+        {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
@@ -37,6 +38,7 @@
                "It will, for example, be used for directly addressing you and on nametags at CdE events. "
                "If it is part of your official given name(s), it will also be used instead of your full given names in "
                "most other places in the CdE Datenbank.")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
 
         {% if 'gender' in shown_fields %}
             {{ util.form_input_select(

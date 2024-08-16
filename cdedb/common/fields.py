@@ -36,7 +36,7 @@ PERSONA_STATUS_FIELDS = (
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
-    "title", "name_supplement")
+    "nickname", "legal_given_names", "title", "name_supplement")
 
 #: Names of columns associated to an event user.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
