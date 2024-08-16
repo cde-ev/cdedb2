@@ -4361,6 +4361,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_lodgement_wishes_graph(self) -> None:
+        # pylint: disable=protected-access
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/'},

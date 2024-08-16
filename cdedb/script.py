@@ -202,16 +202,15 @@ class Script:
         if self._conn:
             return  # pragma: no cover
 
-        connection_parameters = {
-            "dbname": self.config["CDB_DATABASE_NAME"],
-            "user": dbuser,
-            "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            "host": self.config["DB_HOST"],
-            "port": self.config["DIRECT_DB_PORT"],
-            "connection_factory": IrradiatedConnection,
-            "cursor_factory": cursor,
-        }
-        self._conn = psycopg2.connect(**connection_parameters)
+        self._conn = psycopg2.connect(
+            dbname=self.config["CDB_DATABASE_NAME"],
+            user=dbuser,
+            password=self._secrets["CDB_DATABASE_ROLES"][dbuser],
+            host=self.config["DB_HOST"],
+            port=self.config["DIRECT_DB_PORT"],
+            connection_factory=IrradiatedConnection,
+            cursor_factory=cursor,
+        )
         self._conn.set_client_encoding("UTF8")
 
     def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
