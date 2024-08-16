@@ -181,6 +181,12 @@
                     </small>
                 {% endif %}
             </dd>
+            {% if data['legal_given_names'] %}
+                <dt title="{% trans %}Legal Given Names{% endtrans %}">
+                    {% trans %}Legal Given Names{% endtrans %}
+                </dt>
+                <dd>{{ data['legal_given_names'] }}</dd>
+            {% endif %}
             {% if data['birth_name'] %}
                 <dt title="{% trans %}Birth Name{% endtrans %}">
                     {% trans %}Birth Name{% endtrans %}

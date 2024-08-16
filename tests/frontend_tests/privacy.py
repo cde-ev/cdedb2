@@ -14,6 +14,7 @@ from tests.common import (
 
 class TestPrivacyFrontend(FrontendTest):
 
+    # TODO add test for legal_given_names
     FIELD_TO_DIV = {
         "Name": 'personal-information',
         "Geburtsname": 'personal-information',
