@@ -44,8 +44,8 @@ direkte Auswirkung in ihrer Funktionalität.
 Die einzige Ausnahme hiervon ist, dass im vorgeschlagenen Verwendungszweck der Anteil
 vom Typ Spende gesondert ausgewiesen wird.
 
-Teilnehmende deren zu zahlender Beitrag sich aus mehr als einem Beitragstypen
-zusammensetzt erhalten bei und nach ihrer Anmeldung eine Übersicht über die
+Teilnehmende, deren zu zahlender Beitrag sich aus mehr als einem Beitragstypen
+zusammensetzt, erhalten bei und nach ihrer Anmeldung eine Übersicht über die
 Zusammensetzung ihres Beitrags, aufgeschlüsselt nach Beitragstyp.
 
 Bedingte Teilnahmebeiträge
@@ -121,8 +121,8 @@ Die Verwendung solcher Formeln sei im Folgenden anhand von Beispielen erläutert
 Personalisierte Teilnahmebeiträge
 ---------------------------------
 
-Personalisierte Beiträge verfügen genau wie bedingte Teilnahme über einen Titel, einen
-Typen und optional über Notizen, haben jedoch keinen Betrag und keine Bedingung.
+Personalisierte Beiträge verfügen genau wie bedingte Teilnahmebeiträge über einen Titel,
+einen Typen und optional über Notizen, haben jedoch keinen Betrag und keine Bedingung.
 
 Stattdessen kann, nachdem der Personalisierte Beitrag angelegt wurde, für einzelne
 Anmeldungen (über die jeweilige "Teilnahmebeitragsdetails"-Seite) ein jeweils

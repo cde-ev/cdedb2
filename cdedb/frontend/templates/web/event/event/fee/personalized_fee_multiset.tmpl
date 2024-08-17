@@ -1,4 +1,4 @@
-{% set sidenav_active='event_fees' %}
+{% set sidenav_active='event_fees' if ambience['fee'] else 'event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
@@ -32,6 +32,7 @@
 {% endblock %}
 
 {% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
     {% if ambience['fee'] %}
         {{ util.context_heading(gettext("Set Personalized Fees for %(fee_title)s")|format(fee_title=ambience['fee'].title),
                                 ambience['event'].title, 'chalkboard-teacher') }}
@@ -39,7 +40,6 @@
         {{ util.context_heading(gettext("Select Personalized Fee"), ambience['event'].title,
                                 'chalkboard-teacher') }}
     {% endif %}
-    {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
 {% endblock %}
 
 {% block content %}

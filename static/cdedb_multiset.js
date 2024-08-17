@@ -19,19 +19,19 @@
                     input.css('width', '80%');
                 }
             }
-            $form.find('#changenotes')
-                .css('width', input.css('width'))
-                .parent()
-                .css('margin-left', '-3px');
             let delete_button = group.find('button.btn-danger');
             let restore_button = group.find('button.btn-default');
 
             /* Save the original value. This is the new, but not saved, value in case of validation error. */
+            /* Adjust the changenotes width to fit the input width, if it is not a checkbox. */
+            let changenotes = $form.find('#changenotes');
             if (input.is(':checkbox')) {
                 input.data('original_value', input.is(':checked') ? "true" : "");
             } else {
                 input.data('original_value', input.val());
+                changenotes.css('width', input.css('width'));
             }
+            changenotes.parent().css('margin-left', '-3px');
 
             /*
                 Clicking delete clears the corresponding input, clicking restore restores the original value.

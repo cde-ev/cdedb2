@@ -1095,6 +1095,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         Render a form for setting an individual personalized fee for multiple
         registrations at once.
+
+        This endpoint is used both with a fee id in the URL and without.
+        In case of no fee id, we try to retrieve it from the request, and if that fails,
+        we render a form to select a fee.
+        Once a fee is thusly selected, we redirect to the URL with that fee id.
+
+        The registration ids will default to **all registrations** if empty.
         """
         if fee_id is None:
             if len(fees := rs.ambience['event'].personalized_fees) == 1:
@@ -1161,8 +1168,6 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         """Set multiple personalized fees at once."""
         if rs.has_validation_errors():
-            rs.notify("error", str(rs.retrieve_validation_errors()))
-            rs.notify("info", str(rs.request.values))
             rs.notify("warning", n_("Invalid registrations."))
             registration_ids = []  # type: ignore[assignment]
         registrations = {}
