@@ -4087,11 +4087,15 @@
     ],
     "core.email_states": [
         {
-            "address": "new-anton@example.cde",
+            "address": "anton@example.cde",
+            "status": 1
+        },
+        {
+            "address": "new-berta@example.cde",
             "status": 10
         },
         {
-            "address": "anton@example.cde",
+            "address": "berta@example.cde",
             "status": 10,
             "notes": "Einfach kaputt gegangen..."
         }
@@ -10097,6 +10101,11 @@
             "mailinglist_id": 3,
             "persona_id": 1,
             "address": "new-anton@example.cde"
+        },
+        {
+            "mailinglist_id": 3,
+            "persona_id": 2,
+            "address": "new-berta@example.cde"
         },
         {
             "mailinglist_id": 4,
