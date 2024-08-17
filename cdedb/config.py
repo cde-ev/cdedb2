@@ -255,6 +255,8 @@ _DEFAULTS = {
         "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
+        "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
+        "sk-schulung24-orga@aka.cde-ev.de": ["schuko24-orga@aka.cde-ev.de"],
     },
 
     #################

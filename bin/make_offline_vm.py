@@ -17,6 +17,7 @@ from typing import Collection
 
 from psycopg2.extras import DictCursor, Json
 
+import cdedb.models.event as models
 from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
@@ -161,7 +162,7 @@ def work(
     with open(data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [17, 1]:
+    if data.get("EVENT_SCHEMA_VERSION") != [17, 2]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -261,6 +262,7 @@ def work(
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        models.PersonalizedFee.database_table,
         OrgaToken.database_table,
     )
 

@@ -32,9 +32,15 @@
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part.id)] %}
+                                {% set registration_part_status = registrations[registration_id]['parts'][part.id]['status'] %}
                                 <tr id="inhabitant-{{ part.id }}-{{ registration_id }}">
                                     <td>
+                                        {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                         {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
+                                        {%- if not registration_part_status.is_involved() %}</s>{% endif %}
+                                        {% if registration_part_status != enums['RegistrationPartStati'].participant %}
+                                            <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
+                                        {% endif -%}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('is_camping_mat_%s_%s'|format(part.id, registration_id), gettext("Camping Mat")) }}

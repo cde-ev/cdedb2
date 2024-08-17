@@ -185,7 +185,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         # it doesn't leak
         def update_exmember_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one exmembers balance and advance state."""
-            proceed, persona = self.cdeproxy.process_for_exmember_balance(
+            proceed, _ = self.cdeproxy.process_for_exmember_balance(
                 rrs, period_id)
             return proceed
 
@@ -255,7 +255,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         # it doesn't leak
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
-            proceed, persona = self.cdeproxy.process_for_semester_balance(
+            proceed, _ = self.cdeproxy.process_for_semester_balance(
                 rrs, period_id)
             return proceed
 

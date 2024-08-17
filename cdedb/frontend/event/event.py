@@ -30,7 +30,7 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_EXPOSED_FIELDS, EVENT_FEE_COMMON_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
     EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
@@ -113,8 +113,7 @@ class EventEventMixin(EventBaseFrontend):
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
-            params['minor_form_present'] = (
-                    self.eventproxy.get_minor_form(rs, event_id) is not None)
+            params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
             constraint_violations = self.get_constraint_violations(
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
@@ -210,10 +209,10 @@ class EventEventMixin(EventBaseFrontend):
                 or event_id in rs.user.orga
                 or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
+        path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(
-            rs, data=minor_form, mimetype="application/pdf",
-            filename="Elternbrief CdE {}.pdf".format(rs.ambience['event'].shortname))
+            rs, path=path, mimetype="application/pdf",
+            filename=f"Elternbrief CdE {rs.ambience['event'].shortname}.pdf")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -277,7 +276,8 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:
@@ -564,8 +564,9 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/part_summary")
 
     @staticmethod
-    def _get_payment_query(
+    def _get_payment_query_base(
             event: models.Event, constraints: Collection[QueryConstraint],
+            fee: Optional[models.EventFee] = None,
     ) -> Query:
         return Query(
             QueryScope.registration,
@@ -575,7 +576,7 @@ class EventEventMixin(EventBaseFrontend):
                 "persona.username",
                 "reg.payment", "reg.remaining_owed", "reg.amount_owed",
                 "reg.amount_paid",
-            ],
+            ] + ([f"fee{fee.id}.amount"] if fee else []),
             constraints=constraints,
             order=[
                 ("persona.family_name", True),
@@ -583,10 +584,16 @@ class EventEventMixin(EventBaseFrontend):
             ],
         )
 
-    def _get_payment_query_by_ids(self, event: models.Event, ids: Collection[int],
-                                  ) -> Query:
-        if ids:
+    def _get_payment_query(
+            self, event: models.Event, ids: Collection[int], fee_id: Optional[int],
+    ) -> Query:
+        fee = event.fees.get(fee_id or 0)
+        if fee and fee.is_personalized():
             constraints: list[QueryConstraint] = [
+                (f"fee{fee.id}.amount", QueryOperators.nonempty, None),
+            ]
+        elif ids:
+            constraints = [
                 ("reg.id", QueryOperators.oneof, ids),
             ]
         else:
@@ -594,7 +601,7 @@ class EventEventMixin(EventBaseFrontend):
             constraints = [
                 ("reg.id", QueryOperators.empty, None),
             ]
-        return self._get_payment_query(event, constraints)
+        return self._get_payment_query_base(event, constraints, fee)
 
     @access("event")
     @event_guard()
@@ -605,7 +612,9 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/fee/fee_summary", {
             'fee_stats': fee_stats,
             'get_query':
-                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
         })
 
     @access("event")
@@ -614,15 +623,15 @@ class EventEventMixin(EventBaseFrontend):
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
-        incomplete_paid = self._get_payment_query(rs.ambience['event'], [
+        incomplete_paid = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
             ("reg.amount_paid", QueryOperators.unequal, 0),
         ])
-        not_paid = self._get_payment_query(rs.ambience['event'], [
+        not_paid = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.greater, 0.00),
             ("reg.amount_paid", QueryOperators.equal, 0),
         ])
-        surplus = self._get_payment_query(rs.ambience['event'], [
+        surplus = self._get_payment_query_base(rs.ambience['event'], [
             ("reg.remaining_owed", QueryOperators.less, 0.00),
         ])
 
@@ -630,32 +639,45 @@ class EventEventMixin(EventBaseFrontend):
             'fee_stats': fee_stats, 'incomplete_paid': incomplete_paid,
             'not_paid': not_paid, 'surplus': surplus,
             'get_query':
-                lambda ids: self._get_payment_query_by_ids(rs.ambience['event'], ids),
+                lambda ids, fee_id: self._get_payment_query(
+                    rs.ambience['event'], ids, fee_id,
+                ),
         })
 
     @access("event")
     @event_guard()
-    def configure_fee_form(self, rs: RequestState,
-                           event_id: int, fee_id: Optional[int] = None) -> Response:
+    @REQUESTdata("personalized")
+    def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
+                           fee_id: Optional[int] = None) -> Response:
         """Render form to change or create one event fee."""
+        rs.ignore_validation_errors()
         if fee_id:
             if fee_id not in rs.ambience['event'].fees:
                 rs.notify("error", n_("Unknown fee."))
                 return self.redirect(rs, "event/fee_summary")
             else:
                 merge_dicts(rs.values, rs.ambience['fee'].as_dict())
-        return self.render(rs, "event/fee/configure_fee")
+                personalized = rs.ambience['fee'].is_personalized()
+        return self.render(
+            rs, "event/fee/configure_fee",
+            {
+                'personalized': personalized,
+            },
+        )
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*EVENT_FEE_COMMON_FIELDS.keys())
+    @REQUESTdata("personalized")
+    @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
-                      fee_id: Optional[int] = None) -> Response:
+                      personalized: bool, fee_id: Optional[int] = None) -> Response:
         """Submit changes to or creation of one event fee."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        fee_data = check(rs, vtypes.EventFee, data, creation=fee_id is None,
-                         event=rs.ambience['event'].as_dict(),
-                         questionnaire=questionnaire)
+        fee_data = check(
+            rs, vtypes.EventFee, data, creation=fee_id is None, id_=fee_id or -1,
+            event=rs.ambience['event'].as_dict(), questionnaire=questionnaire,
+            personalized=personalized,
+        )
         if rs.has_validation_errors() or not fee_data:
             return self.render(rs, "event/fee/configure_fee")
         code = self.eventproxy.set_event_fees(rs, event_id, {fee_id or -1: fee_data})
@@ -1157,12 +1179,12 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        if not any(rpart['status'] == const.RegistrationPartStati.participant
-                   for reg in registrations.values()
-                   for rpart in reg['parts'].values()):
-            if create_past_event:
+        if create_past_event:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            if not any(rpart['status'] == const.RegistrationPartStati.participant
+                       for reg in registrations.values()
+                       for rpart in reg['parts'].values()):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
@@ -1172,6 +1194,13 @@ class EventEventMixin(EventBaseFrontend):
         if message:
             rs.notify("error", message)
             return self.redirect(rs, "event/show_event")
+
+        # Lock all questionnaire entries
+        aq = const.QuestionnaireUsages.additional
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        for entry in questionnaire:
+            entry['readonly'] = True
+        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully

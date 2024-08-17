@@ -4,7 +4,7 @@
 import copy
 import datetime
 import decimal
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -331,7 +331,7 @@ class TestCoreBackend(BackendTest):
             'bub_search': False,
             'foto': None,
             'paper_expuls': True,
-            'donation': decimal.Decimal(0)
+            'donation': decimal.Decimal(0),
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -455,7 +455,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(data, new_data)
 
-    @as_users("vera")
+    @as_users("anton", "vera")
     def test_change_realm(self) -> None:
         persona_id = 5
         data = {
@@ -464,21 +464,26 @@ class TestCoreBackend(BackendTest):
             'is_assembly_realm': True,
         }
         persona = self.core.get_total_persona(self.key, persona_id)
+        expectation = persona.copy()
         reference = {**PERSONA_CDE_CREATION}
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
-            persona.update({
-                'trial_member': False,
-                'honorary_member': False,
-                'decided_search': False,
-                'bub_search': False,
-                'paper_expuls': True,
-                'donation': decimal.Decimal(0),
-            })
+        change = {
+            'is_member': self.user_in("anton"),
+            'trial_member': False,
+            'honorary_member': self.user_in("anton"),
+            'decided_search': False,
+            'bub_search': False,
+            'paper_expuls': True,
+            'donation': decimal.Decimal(0),
+        }
+        expectation.update({**data, **change, 'balance': decimal.Decimal(0)})
+        persona.update(change)
         merge_dicts(data, persona)
         change_note = "Bereichsänderung"
         self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
+        self.assertEqual(expectation, self.core.get_total_persona(self.key, persona_id))
         log_entry = {
             'id': 1001,
             'ctime': nearly_now(),
@@ -616,7 +621,7 @@ class TestCoreBackend(BackendTest):
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
-            'Finanzvorstand_Name': 'Zelda'
+            'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
@@ -1000,9 +1005,9 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
         assert case_id is not None
         self.assertLess(0, case_id)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(
@@ -1105,17 +1110,19 @@ class TestCoreBackend(BackendTest):
     def test_archive(self) -> None:
         persona_id = 3
         with self.switch_user("anton"):
+            self.core.change_membership_easy_mode(self.key, persona_id,
+                                                  honorary_member=True)
             self.core.set_persona(self.key, {'id': persona_id, "balance": 5},
                                   allow_specials=('finance', ))
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertFalse(data['is_archived'])
+        self.assertTrue(data['is_cde_realm'])
         ret = self.core.archive_persona(
             self.key, persona_id, "Archived for testing.")
         self.assertLess(0, ret)
-        self.assertEqual(True, data['is_cde_realm'])
+        self.assertTrue(data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(True, data['is_archived'])
+        self.assertTrue(data['is_archived'])
         # The user may have balance if he lost his membership in the ongoing semester
         #  Ensure that the removal of the balance is logged correctly
         log = [{
@@ -1135,7 +1142,7 @@ class TestCoreBackend(BackendTest):
                                           new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
-        self.assertEqual(False, data['is_archived'])
+        self.assertFalse(data['is_archived'])
 
         # Test correct handling of lastschrift during archival.
         self.login("anton")
@@ -1241,16 +1248,16 @@ class TestCoreBackend(BackendTest):
         self.assertLess(0, case_id)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(False, persona["is_cde_admin"])
-        self.assertEqual(False, persona["is_finance_admin"])
+        self.assertFalse(persona["is_cde_admin"])
+        self.assertFalse(persona["is_finance_admin"])
 
         self.login(admin2)
         self.core.finalize_privilege_change(
             self.key, case_id, const.PrivilegeChangeStati.approved)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertEqual(True, persona["is_cde_admin"])
-        self.assertEqual(True, persona["is_finance_admin"])
+        self.assertTrue(persona["is_cde_admin"])
+        self.assertTrue(persona["is_finance_admin"])
 
         self.login(admin1)
         core_log_expectation = (3, (
@@ -1451,7 +1458,7 @@ class TestCoreBackend(BackendTest):
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        log_expectation: List[CdEDBObject] = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
@@ -1516,5 +1523,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    realm=log_realm
+                    realm=log_realm,
                 )

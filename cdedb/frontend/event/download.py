@@ -35,7 +35,9 @@ class EventDownloadMixin(EventBaseFrontend):
     @event_guard()
     def downloads(self, rs: RequestState, event_id: int) -> Response:
         """Offer documents like nametags for download."""
-        return self.render(rs, "downloads")
+        lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
+        return self.render(rs, "downloads",
+                           {'lodgements_exist': lodgements_exist})
 
     @access("event")
     @event_guard()

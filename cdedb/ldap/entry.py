@@ -34,7 +34,7 @@ class CdEDBBaseLDAPEntry(
     # ldaptor.entryhelpers.SubtreeFromChildrenMixin,
     ldaptor.entryhelpers.MatchMixin,
     # ldaptor.entryhelpers.SearchByTreeWalkingMixin,
-    metaclass=abc.ABCMeta
+    metaclass=abc.ABCMeta,
 ):
     """Implement a custom LDAPEntry class for the CdEDB.
 
@@ -177,7 +177,7 @@ class CdEDBBaseLDAPEntry(
         elif scope == pureldap.LDAP_SCOPE_baseObject:
             entries = [self]
         else:
-            raise LDAPProtocolError("unknown search scope: %r" % scope)
+            raise LDAPProtocolError(f"unknown search scope: {scope!r}")
 
         matched = [entry for entry in entries if entry.match(filterObject)]
         return matched
@@ -286,7 +286,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def children_lister(
-            self, bound_dn: Optional[BoundDn] = None
+            self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         """List all children of this entry.
 
@@ -416,7 +416,7 @@ class SubschemaEntry(CdEDBStaticEntry):
             b"matchingRules": self.backend.schema.matching_rules,
             b"matchingRuleUse": [],
         }
-        return {k: attrs[k] for k in attributes} if attributes else attrs  # type: ignore[misc, return-value]
+        return {k: attrs[k] for k in attributes} if attributes else attrs
 
     async def children(self, bound_dn: Optional[BoundDn] = None) -> LDAPEntries:
         return []
@@ -508,7 +508,7 @@ class DuasEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Directory User Agents"]
+            b"o": [b"Directory User Agents"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -516,7 +516,7 @@ class DuasEntry(CdEPreLeafEntry):
         return CdeEvEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access duas
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -544,7 +544,7 @@ class UsersEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Users"]
+            b"o": [b"Users"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -552,7 +552,7 @@ class UsersEntry(CdEPreLeafEntry):
         return CdeEvEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests may access no user
         if bound_dn is None:
@@ -578,7 +578,7 @@ class GroupsEntry(CdEDBStaticEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Groups"]
+            b"o": [b"Groups"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -629,7 +629,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Status"]
+            b"o": [b"Status"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -637,7 +637,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -665,7 +665,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Assembly Presiders"]
+            b"o": [b"Assembly Presiders"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -673,7 +673,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -701,7 +701,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Event Orgas"]
+            b"o": [b"Event Orgas"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -709,7 +709,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -737,7 +737,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Mailinglists Moderators"]
+            b"o": [b"Mailinglists Moderators"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -745,7 +745,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -773,7 +773,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
     def fetch(self, *attributes: bytes) -> LDAPObject:
         attrs = {
             b"objectClass": [b"organizationalUnit"],
-            b"o": [b"Mailinglists Subscribers"]
+            b"o": [b"Mailinglists Subscribers"],
         }
         return {k: attrs[k] for k in attributes} if attributes else attrs
 
@@ -781,7 +781,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None
+        self, bound_dn: Optional[BoundDn] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):

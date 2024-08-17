@@ -80,7 +80,7 @@ class TestCdEBackend(BackendTest):
         self.logout()
         self.login("vera")
         self.core.changelog_resolve_change(self.key, newuser['id'], 4, ack=True)
-        data = self.core.get_cde_user(self.key, newuser['id'],)
+        data = self.core.get_cde_user(self.key, newuser['id'])
         self.assertEqual("Link", data['family_name'])
 
     @as_users("berta")
@@ -121,7 +121,7 @@ class TestCdEBackend(BackendTest):
             constraints=[
                 ("given_names,display_name", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
-            order=(("family_name,birth_name", True),),)
+            order=(("family_name,birth_name", True),))
         result = self.cde.submit_general_query(self.key, query)
         expectation = {6, 9, 15, 100}
         self.assertEqual({e['id'] for e in result}, expectation)
@@ -135,7 +135,7 @@ class TestCdEBackend(BackendTest):
             constraints=[
                 ("given_names", QueryOperators.regex, '[ae]'),
                 ("birthday", QueryOperators.less, datetime.datetime.now())],
-            order=(("family_name", True),),)
+            order=(("family_name", True),))
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
                          {e['id'] for e in result})
@@ -153,7 +153,7 @@ class TestCdEBackend(BackendTest):
                 ("weblink", QueryOperators.containsall, ("/", ":", "http")),
                 ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),
                                                       datetime.datetime.now()))],
-            order=(("family_name", True),),)
+            order=(("family_name", True),))
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
 
@@ -165,7 +165,7 @@ class TestCdEBackend(BackendTest):
             fields_of_interest=("personas.id", "family_name",
                                 "address", "location"),
             constraints=[("location", QueryOperators.match, 'Musterstadt')],
-            order=(("address", True),),)
+            order=(("address", True),))
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual([1, 27], [e['id'] for e in result])
 
@@ -280,7 +280,7 @@ class TestCdEBackend(BackendTest):
             expectation, self.cde.list_lastschrift_transactions(
                 self.key, lastschrift_ids=(1, 2), periods=(41,),
                 stati=(const.LastschriftTransactionStati.success,
-                       const.LastschriftTransactionStati.cancelled,)))
+                       const.LastschriftTransactionStati.cancelled)))
         expectation = {
             1: {
                 'amount': decimal.Decimal('32.00'),
@@ -510,7 +510,7 @@ class TestCdEBackend(BackendTest):
         other_user = get_user("berta")
         query = Query(
             QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-            ['balance'], (), ()
+            ['balance'], (), (),
         )
 
         pevent_data = {
@@ -536,7 +536,7 @@ class TestCdEBackend(BackendTest):
 
         self.assertEqual(
             sum((e['balance'] for e in result), start=decimal.Decimal(0)),
-            aggregates[0]['sum.balance']
+            aggregates[0]['sum.balance'],
         )
 
         # Check duplication in core search:
@@ -566,7 +566,7 @@ class TestCdEBackend(BackendTest):
         )
         self.assertEqual(
             {self.user['id'], other_user['id']},
-            {e['id'] for e in self.cde.submit_general_query(self.key, query)}
+            {e['id'] for e in self.cde.submit_general_query(self.key, query)},
         )
         self.assertEqual(
             2,

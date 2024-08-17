@@ -216,7 +216,7 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     sortkey=0,
                     entries=None,
-                )
+                ),
             },
             custom_query_filters={
                 1: models.CustomQueryFilter(
@@ -228,7 +228,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_brings_balls",
                         "reg_fields.xfield_is_child",
-                    }
+                    },
                 ),
                 2: models.CustomQueryFilter(
                     id=2,  # type: ignore[arg-type]
@@ -239,7 +239,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_is_child",
                         "reg_fields.xfield_brings_balls",
-                    }
+                    },
                 ),
                 3: models.CustomQueryFilter(
                     id=3,  # type: ignore[arg-type]
@@ -250,7 +250,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg.notes",
                         "reg.orga_notes",
-                    }
+                    },
                 ),
                 4: models.CustomQueryFilter(
                     id=4,  # type: ignore[arg-type]
@@ -261,7 +261,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg.amount_paid",
                         "persona.birthday",
-                    }
+                    },
                 ),
                 5: models.CustomQueryFilter(
                     id=5,  # type: ignore[arg-type]
@@ -272,13 +272,13 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_anzahl_GROSSBUCHSTABEN",
                         "reg_fields.xfield_deleted_field",
-                    }
+                    },
                 ),
             },
             fees={
                 1: models.EventFee(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag Warmup',
                     amount=decimal.Decimal('10.50'),
@@ -287,7 +287,7 @@ class TestEventModels(BackendTest):
                 ),
                 2: models.EventFee(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 1. Hälfte',
                     amount=decimal.Decimal('123.00'),
@@ -296,7 +296,7 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventFee(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Teilnahmebeitrag 2. Hälfte',
                     amount=decimal.Decimal('450.99'),
@@ -305,7 +305,7 @@ class TestEventModels(BackendTest):
                 ),
                 4: models.EventFee(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis Warmup',
                     amount=decimal.Decimal('-5.00'),
@@ -314,7 +314,7 @@ class TestEventModels(BackendTest):
                 ),
                 5: models.EventFee(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 1. Hälfte',
                     amount=decimal.Decimal('-12.00'),
@@ -323,7 +323,7 @@ class TestEventModels(BackendTest):
                 ),
                 6: models.EventFee(
                     id=6,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Kinderpreis 2. Hälfte',
                     amount=decimal.Decimal('-19.00'),
@@ -332,7 +332,7 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventFee(
                     id=7,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.external,
                     title='Externenzusatzbeitrag',
                     amount=decimal.Decimal('5.00'),
@@ -341,7 +341,7 @@ class TestEventModels(BackendTest):
                 ),
                 8: models.EventFee(
                     id=8,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.solidary_reduction,
                     title='Mengenrabatt',
                     amount=decimal.Decimal('-0.01'),
@@ -350,12 +350,23 @@ class TestEventModels(BackendTest):
                 ),
                 9: models.EventFee(
                     id=9,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title='Orgarabatt',
                     amount=decimal.Decimal('-50.00'),
                     condition='part.1.H. and part.2.H. and is_orga',  # type: ignore[arg-type]
                     notes=None,
+                ),
+                10: models.EventFee(
+                    id=10,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    kind=const.EventFeeType.instructor_refund,
+                    title="KL-Erstattung",
+                    notes="Individuelle Höhe",
+                    amount=None,
+                    condition=None,
+                    amount_min=decimal.Decimal('-30.00'),
+                    amount_max=decimal.Decimal('-20.00'),
                 ),
             },
             part_groups={},
@@ -364,18 +375,14 @@ class TestEventModels(BackendTest):
 
         reality = self.event.get_event(self.key, event_id)
 
-        self.assertEqual(
-            expectation.fields,
-            reality.fields,
-        )
-        self.assertEqual(
-            expectation.to_database(),
-            reality.to_database(),
-        )
-        self.assertEqual(
-            vars(expectation),
-            vars(reality),
-        )
+        self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.tracks, reality.tracks)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
+        self.assertEqual(expectation.to_database(), reality.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
+        self.assertEqual(expectation, reality)
 
         event_id = vtypes.ProtoID(4)
 
@@ -485,16 +492,16 @@ class TestEventModels(BackendTest):
                     waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(),  # type: ignore[arg-type]
-                )
+                ),
             },
             # parts=self.event.get_event(self.key, event_id).parts,
             tracks=self.event.get_event(self.key, event_id).tracks,
             fields={},
             custom_query_filters={},
             fees={
-                16: models.EventFee(
-                    id=16,  # type: ignore[arg-type]
-                    event_id=event_id,
+                17: models.EventFee(
+                    id=17,  # type: ignore[arg-type]
+                    event_id=event_id,  # type: ignore[arg-type]
                     kind=const.EventFeeType.common,
                     title="Unkostenbeitrag Silvesterfeier",
                     amount=decimal.Decimal("4.20"),
@@ -616,7 +623,7 @@ class TestEventModels(BackendTest):
                     sortkey=3,
                     tracks=(9, 11, 13),  # type: ignore[arg-type]
                 ),
-            }
+            },
         )
 
         reality = self.event.get_event(self.key, event_id)
@@ -629,8 +636,13 @@ class TestEventModels(BackendTest):
 
         self.assertEqual(expectation.tracks, reality.tracks)
         self.assertEqual(expectation.parts, reality.parts)
+        self.assertEqual(expectation.fields, reality.fields)
+        self.assertEqual(expectation.custom_query_filters, reality.custom_query_filters)
+        self.assertEqual(expectation.fees, reality.fees)
         self.assertEqual(expectation.track_groups, reality.track_groups)
         self.assertEqual(expectation.part_groups, reality.part_groups)
+        self.assertEqual(expectation.to_database(), expectation.to_database())
+        self.assertEqual(vars(expectation), vars(reality))
         self.assertEqual(expectation, reality)
 
     @as_users("anton")
@@ -651,7 +663,7 @@ class TestEventModels(BackendTest):
             min_size=2,
             max_size=10,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'}
+            fields={'room': 'Wald'},
         )
         reality = self.event.new_get_course(self.key, course_id)
 
@@ -678,8 +690,8 @@ class TestEventModels(BackendTest):
                 min_size=10,
                 max_size=20,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'}
-            )
+                fields={'room': 'Theater'},
+            ),
         }
         reality = self.event.new_get_courses(self.key, course_ids)
 

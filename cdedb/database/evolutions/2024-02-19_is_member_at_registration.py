@@ -17,7 +17,7 @@ with s:
 
     q = """SELECT id FROM event.registrations"""
     for registration_id in map(unwrap, event.query_all(s.rs(), q, ())):
-        registration = event.get_registration(s.rs(), registration_id)  # type: ignore[arg-type]
+        registration = event.get_registration(s.rs(), registration_id)
 
         persona_id = registration['persona_id']
         ctime = registration['ctime']

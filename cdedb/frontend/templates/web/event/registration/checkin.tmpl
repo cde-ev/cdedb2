@@ -55,7 +55,7 @@
             <div class="row">
                 <div class="col-sm-9">
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
                             {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>
@@ -79,6 +79,7 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
+                    {% if lodgements %}
                     <div class="col-sm-6">
                         <small>
                             {% trans %}Lodgement{% endtrans %}:
@@ -97,6 +98,7 @@
                             {% endfor %}
                         </small>
                     </div>
+                    {% endif %}
                 </div>
                 {% if checkin_fields %}
                     <hr class="nosp" />
@@ -115,6 +117,19 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% endif %}
+                {% if registration['orga_notes'] %}
+                    <hr class="nosp" />
+                    <details>
+                        <summary class="btn btn-sm btn-default">
+                            <b class="text-muted">
+                                {% trans %}Orga-Notes{% endtrans %}
+                            </b>
+                        </summary>
+                        <div class="mosp">
+                            {{ registration['orga_notes']|md }}
+                        </div>
+                    </details>
                 {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">

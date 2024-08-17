@@ -17,7 +17,9 @@ import abc
 import collections
 import copy
 import datetime
+import decimal
 from collections.abc import Collection, Iterable
+from pathlib import Path
 from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
@@ -38,11 +40,10 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
-    TRACK_GROUP_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
+    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import EventLogFilter
@@ -238,6 +239,16 @@ class EventBaseBackend(EventLowLevelBackend):
         return bool(self.query_all(
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
 
+    @access("anonymous")
+    def get_minor_form_path(self, rs: RequestState, event_id: int) -> Path:
+        event_id = affirm(vtypes.ID, event_id)
+        return self.minor_form_dir / str(event_id)
+
+    @access("anonymous")
+    def has_minor_form(self, rs: RequestState, event_id: int) -> bool:
+        event_id = affirm(vtypes.ID, event_id)
+        return self.get_minor_form_path(rs, event_id).is_file()
+
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: Optional[bytes]) -> DefaultReturnCode:
@@ -250,9 +261,9 @@ class EventBaseBackend(EventLowLevelBackend):
         if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
-        path = self.minor_form_dir / str(event_id)
+        path = self.get_minor_form_path(rs, event_id)
         if minor_form is None:
-            if path.exists():
+            if path.is_file():
                 path.unlink()
                 # Since this is not acting on our database, do not demand an atomized
                 # context.
@@ -269,21 +280,6 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
                            atomized=False)
             return 1
-
-    @access("event")
-    def get_minor_form(self, rs: RequestState,
-                       event_id: int) -> Optional[bytes]:
-        """Retrieve the minor form for an event.
-
-        Returns None if no minor form exists for the given event."""
-        event_id = affirm(vtypes.ID, event_id)
-        # TODO accesscheck?
-        path = self.minor_form_dir / str(event_id)
-        ret = None
-        if path.exists():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
 
     @internal
     @access("event")
@@ -331,6 +327,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
                 ret *= r
+
+        # Update session orga status
+        if rs.user.persona_id in persona_ids:
+            rs.user.orga.add(event_id)
+
         return ret
 
     @access("event_admin")
@@ -351,6 +352,11 @@ class EventBaseBackend(EventLowLevelBackend):
             if ret:
                 self.event_log(rs, const.EventLogCodes.orga_removed,
                                event_id, persona_id=persona_id)
+
+        # Update session orga status
+        if rs.user.persona_id == persona_id:
+            rs.user.orga.remove(event_id)
+
         return ret
 
     @access("event")
@@ -375,19 +381,18 @@ class EventBaseBackend(EventLowLevelBackend):
             return {}
 
         with Atomizer(rs):
-            data = self.sql_select(
-                rs, OrgaToken.database_table, OrgaToken.database_fields(),
-                orga_token_ids)
+            ret = OrgaToken.many_from_database(
+                self.query_all(
+                    rs, *OrgaToken.get_select_query(orga_token_ids, "id"),
+                ),
+            )
 
-            event_ids = {e['event_id'] for e in data}
+            event_ids = {token.event_id for token in ret.values()}
             if not len(event_ids) == 1:
                 raise ValueError(n_("Only orga tokens from one event allowed."))
             if not self.is_orga(rs, event_id=unwrap(event_ids)):
                 raise PrivilegeError
 
-            ret: dict[int, OrgaToken] = {}
-            for e in data:
-                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):
@@ -903,8 +908,10 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event.as_dict(),
-                          questionnaire=questionnaire)
+            fees = affirm(
+                vtypes.EventFeeSetter, fees, event=event.as_dict(),
+                questionnaire=questionnaire,
+            )
 
             existing_fees = {unwrap(e) for e in self.sql_select(
                 rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
@@ -920,11 +927,37 @@ class EventBaseBackend(EventLowLevelBackend):
                     updated_fees | deleted_fees)}
 
                 if deleted_fees:
+                    personalized_fees = models.PersonalizedFee.many_from_database(
+                        self.query_all(
+                            rs, *models.PersonalizedFee.get_select_query(
+                                deleted_fees, 'fee_id',
+                            ),
+                        ),
+                    )
+                    regs_by_fee = collections.defaultdict(list)
+                    all_regs = set()
+                    for p_fee in personalized_fees.values():
+                        regs_by_fee[int(p_fee.fee_id)].append(p_fee.registration_id)
+                        all_regs.add(p_fee.registration_id)
+                    reg_persona_map = {
+                        e['id']: e['persona_id'] for e in self.sql_select(
+                            rs, models.Registration.database_table,
+                            ('id', 'persona_id'), all_regs,
+                        )
+                    }
                     ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
                     for x in mixed_existence_sorter(deleted_fees):
                         current = current_fee_data[x]
-                        self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                       event_id, change_note=current['title'])
+                        for reg_id in mixed_existence_sorter(regs_by_fee[x]):
+                            self.event_log(
+                                rs, const.EventLogCodes.personalized_fee_amount_deleted,
+                                event_id, reg_persona_map[reg_id],
+                                change_note=current['title'],
+                            )
+                        self.event_log(
+                            rs, const.EventLogCodes.fee_modifier_deleted,
+                            event_id, change_note=current['title'],
+                        )
 
                 for x in mixed_existence_sorter(updated_fees):
                     updated_fee = copy.deepcopy(fees[x])
@@ -939,6 +972,7 @@ class EventBaseBackend(EventLowLevelBackend):
             for x in mixed_existence_sorter(new_fees):
                 new_fee = copy.deepcopy(fees[x])
                 assert new_fee is not None
+                new_fee.pop('id', None)
                 new_fee['event_id'] = event_id
                 ret *= self.sql_insert(rs, "event.event_fees", new_fee)
                 self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
@@ -1101,32 +1135,41 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             # Table name; column to scan; fields to extract
             tables: list[tuple[str, str, tuple[str, ...]]] = [
-                ('event.event_parts', "event_id", EVENT_PART_FIELDS),
-                ('event.part_groups', "event_id", PART_GROUP_FIELDS),
+                models.EventPart.full_export_spec(),
+                models.PartGroup.full_export_spec(),
+                models.CourseTrack.full_export_spec(),
+                models.TrackGroup.full_export_spec(),
+                models.Course.full_export_spec("event_id"),
+                models.EventField.full_export_spec(),
+                models.EventFee.full_export_spec(),
+                models.LodgementGroup.full_export_spec(),
+                models.Lodgement.full_export_spec("event_id"),
+                OrgaToken.full_export_spec("event_id"),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
-                ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
-                ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
-                ('event.track_group_tracks', "track_id", (
-                    "track_group_id", "track_id")),
-                ('event.courses', "event_id", COURSE_FIELDS),
+                (
+                    'event.track_group_tracks',
+                     "track_id",
+                     ("track_group_id", "track_id"),
+                ),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
-                ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
-                ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
-                ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
-                ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
-                ('event.course_choices', "track_id", (
-                    'id', 'registration_id', 'track_id', 'course_id', 'rank')),
-                (OrgaToken.database_table, "event_id", tuple(
-                    OrgaToken.database_fields())),
+                (
+                    'event.course_choices',
+                    "track_id",
+                    ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
+                ),
+                models.PersonalizedFee.full_export_spec(),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
-                ('event.log', "event_id", (
-                    'id', 'ctime', 'code', 'submitted_by', 'event_id',
-                    'persona_id', 'change_note')),
+                (
+                    'event.log',
+                    "event_id",
+                    ('id', 'ctime', 'code', 'submitted_by', 'event_id',
+                     'persona_id', 'change_note'),
+                ),
             ]
             personas = set()
             for table, id_name, columns in tables:
@@ -1136,6 +1179,8 @@ class EventBaseBackend(EventLowLevelBackend):
                     id_range = set(ret['event.event_parts'])
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
+                elif id_name == "registration_id":
+                    id_range = set(ret['event.registrations'])
                 else:
                     raise RuntimeError(n_("Impossible."))
                 if 'id' not in columns:
@@ -1201,6 +1246,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            personalized_fees = models.PersonalizedFee.many_from_database(
+                self.query_all(
+                    rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
+                ),
+            )
             tokens = list_to_dict(self.sql_select(
                 rs, OrgaToken.database_table, OrgaToken.database_fields(),
                 (event_id,), entity_key="event_id"))
@@ -1249,6 +1299,12 @@ class EventBaseBackend(EventLowLevelBackend):
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
+        personalized_fee_lookup: dict[int, dict[int, decimal.Decimal]]
+        personalized_fee_lookup = collections.defaultdict(dict)
+        for personalized_fee in personalized_fees.values():
+            if personalized_fee.amount is not None:
+                personalized_fee_lookup[personalized_fee.registration_id][
+                    personalized_fee.fee_id] = personalized_fee.amount
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
@@ -1272,6 +1328,9 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['tracks'] = tracks
             registration['fields'] = cast_fields(
                 registration['fields'], event.fields)
+            registration['personalized_fees'] = {}
+            for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
+                registration['personalized_fees'][fee_id] = fee_amount
         ret['registrations'] = registrations
 
         ret['event'] = event.as_dict()
@@ -1296,6 +1355,8 @@ class EventBaseBackend(EventLowLevelBackend):
             del fee['id']
             del fee['event_id']
             del fee['title']
+            del fee['amount_min']
+            del fee['amount_max']
         for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']

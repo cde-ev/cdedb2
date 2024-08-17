@@ -303,7 +303,7 @@
 {% macro output_errors(name, displayerrors=True, wrapper=False) %}
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}
-            <div class="{{ "has-warning" if is_warning(name) else "has-error"}}">
+            <div class="{{ "has-warning" if is_warning(name) else "has-error" }}">
         {% endif %}
         {# TODO sort #}
         {%- if caller %}{{- caller() }}{% endif %}
@@ -672,10 +672,11 @@
     <div class="form-control-static"{% if anid %} id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
 
-{% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none) %}
+{% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
+        name=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(none, label, anid, small, info, False, horizontal) %}
-        <div class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
+    {%- call form_input_general(name, label, anid, small, info, False, horizontal) %}
+        <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}
         </div>

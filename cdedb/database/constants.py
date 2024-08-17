@@ -174,21 +174,33 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
-    # sorting is not quite nice for historical reasons
+    instructor_refund = 5
+    instructor_donation = 6
     solidary_reduction = 10
+    solidary_donation = 11
     solidary_increase = 12
-    donation = 11
+    other_donation = 20
 
     def get_icon(self) -> str:
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
-            EventFeeType.solidary_reduction: "hand-holding-usd",
-            # TODO replace with hand-holding-medical
+            EventFeeType.instructor_refund: "book",
+            EventFeeType.instructor_donation: "book-medical",
+            EventFeeType.solidary_reduction: "hand-holding-medical",
+            EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
-            EventFeeType.donation: "donate",
+            EventFeeType.other_donation: "donate",
+
         }[self]
+
+    def is_donation(self) -> bool:
+        return self in {
+            EventFeeType.solidary_donation,
+            EventFeeType.instructor_donation,
+            EventFeeType.other_donation,
+        }
 
 
 @enum.unique
@@ -537,6 +549,8 @@ class EventLogCodes(CdEIntEnum):
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
     registration_status_changed = 300  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
 
 
 @enum.unique

@@ -156,17 +156,16 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title'] }}</h4>
                 {% endif %}
+                {% set status = enums['RegistrationPartStati'](ambience['registration']['parts'][part.id]['status']) %}
                 <dl class="dl-horizontal">
                     <dt title="{% trans %}Status{% endtrans %}">{% trans %}Status{% endtrans %}</dt>
                     <dd>
-                        {{ gettext(ambience['registration']['parts'][part.id]['status']
-                                |enum(enums['RegistrationPartStati'])) }}
-                        {% if ambience['registration']['parts'][part.id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
+                        {{ gettext(status|enum(enums['RegistrationPartStati'])) }}
+                        {% if status == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
                             ({% trans %}Placement{% endtrans %}&nbsp;{{ waitlist_position[part.id] }})
                         {% endif %}
                     </dd>
-                    {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part.id]['status'])
-                            .is_involved() %}
+                    {% if status != enums['RegistrationPartStati'].not_applied %}
                         {% for track in ambience['event']['tracks'].values()|sort
                                 if track['part_id'] == part.id %}
                             <dt title="{% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
@@ -179,9 +178,11 @@
                             <dd>
                                 {% with course_id = ambience['registration']['tracks'][track.id]['course_id'] %}
                                     {% if course_id %}
+                                        {% if not status.is_involved() %}<s>{% endif -%}
                                         {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                                      "{}. {}".format(courses[course_id]['nr'],
                                                                      courses[course_id]['shortname'])) }}
+                                        {%- if not status.is_involved() %}</s>{% endif %}
                                     {% else %}
                                         —
                                     {% endif %}
@@ -189,17 +190,21 @@
                             </dd>
                         {% endfor %}
 
+                        {% if lodgements %}
                         <dt title="{% trans %}Lodgement{% endtrans %}">{% trans %}Lodgement{% endtrans %}</dt>
                         <dd>
                             {% with lodgement_id = ambience['registration']['parts'][part.id]['lodgement_id'] %}
                                 {% if lodgement_id %}
+                                    {% if not status.is_involved() %}<s>{% endif -%}
                                     {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
                                                  lodgements[lodgement_id]['title']) }}
+                                    {%- if not status.is_involved() %}</s>{% endif %}
                                 {% else %}
                                     —
                                 {% endif %}
                             {% endwith %}
                         </dd>
+                        {% endif %}
                         <dt title="">{% trans %}Uses Camping Mat{% endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=ambience['registration']['parts'][part.id]['is_camping_mat']) }}
@@ -310,8 +315,10 @@ Verwendungszweck:   {{ reference }}
                     <form action="{{ cdedblink('event/delete_registration') }}" method="POST"
                           id="deleteregistrationform" style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_registration') }}
-                        {{ util.input_submit(gettext("Delete"), readonly=is_locked, aclass="btn btn-sm btn-danger",
-                                             icon='trash-alt') }}
+                        {{ util.input_submit(gettext("Delete"), readonly=(is_locked or ambience['registration']['amount_paid']),
+                                             aclass="btn btn-sm btn-danger", icon='trash-alt',
+                                             title=(gettext("Registration has paid non-zero amount.")
+                                                if ambience['registration']['amount_paid'] else "")) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">

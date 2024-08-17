@@ -237,6 +237,8 @@ def validate_assert_dataclass(type_: type[DC], value: Any, ignore_warnings: bool
     subtype, validator = _validate_dataclass_preprocess(type_, value)
     if hasattr(value, 'to_validation'):
         val = value.to_validation()
+    elif hasattr(value, 'as_dict'):
+        val = value.as_dict()
     else:
         val = dataclasses.asdict(value)
     validated = validate_assert(
@@ -1677,7 +1679,7 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False,
+    val: Any, argname: Optional[str] = None, *, ignore_warnings: bool = False,
     **kwargs: Any,
 ) -> Phone:
     raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
@@ -2235,7 +2237,7 @@ def _sepa_meta(
 
     errs = ValidationSummary()
     for attribute, validator in SEPA_META_FIELDS.items():
-        if validator == str:
+        if validator is str:
             val[attribute] = asciificator(val[attribute])
         if attribute in SEPA_META_LIMITS:
             if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
@@ -2405,15 +2407,16 @@ def _optional_object_mapping_helper(
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
-            creation = (anid < 0)
+            creation = anid < 0
             if creation_only and not creation:
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
             if creation:
-                val = _ALL_TYPED[atype](val, argname, creation=creation, **kwargs)
+                val = _ALL_TYPED[atype](
+                    val, argname, creation=creation, id_=anid, **kwargs)
             else:
                 val = _ALL_TYPED[Optional[atype]](  # type: ignore[index]
-                    val, argname, creation=creation, **kwargs)
+                    val, argname, creation=creation, id_=anid, **kwargs)
             ret[anid] = val
 
     if errs:
@@ -2546,7 +2549,7 @@ def _event_part(
             except ValidationSummary as e:
                 errs.extend(e)
             else:
-                creation = (anid < 0)
+                creation = anid < 0
                 try:
                     if creation:
                         track = _ALL_TYPED[EventTrack](
@@ -2765,47 +2768,46 @@ def _event_field(
     return EventField(val)
 
 
-@_add_typed_validator
-def _event_fee_setter(
-    val: Any, argname: str = "fees",
-    **kwargs: Any,
-) -> EventFeeSetter:
-    """Validate a `CdEDBOptionalMap` of event fees."""
-    val = _mapping(val, argname)
-
-    new_fees = _optional_object_mapping_helper(
-        val, EventFee, argname, creation_only=False, **kwargs)
-
-    return EventFeeSetter(dict(new_fees))
+_create_optional_mapping_validator(EventFee, EventFeeSetter)
 
 
-EVENT_FEE_COMMON_FIELDS: TypeMapping = {
-    "title": str,
-    "notes": Optional[str],  # type: ignore[dict-item]
-    "amount": decimal.Decimal,
-    "condition": EventFeeCondition,
-    "kind": const.EventFeeType,
-}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.EventFee, EventFee)
 def _event_fee(
-    val: Any, argname: str = "event_fee", *,
-    creation: bool = False, **kwargs: Any,
+        val: Any, argname: str, *,
+        id_: ProtoID,
+        event: CdEDBObject,
+        personalized: Optional[bool] = None,
+        **kwargs: Any,
 ) -> EventFee:
+    errs = ValidationSummary()
+    current = event['fees'].get(id_)
+    if current is not None and personalized is None:
+        personalized = (current['amount'] is None or current['condition'] is None)
 
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = EVENT_FEE_COMMON_FIELDS
-        optional_fields: TypeMapping = {}
+    if personalized is not None:
+        if personalized:
+            if val.get('amount') is not None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot set amount for personalized fee.")))
+            if val.get('condition') is not None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot set condition for personalized fee.")))
+        else:
+            if 'amount' in val and val['amount'] is None:
+                errs.append(ValueError(
+                    'amount', n_("Cannot unset amount for conditional fee.")))
+            if 'condition' in val and val['condition'] is None:
+                errs.append(ValueError(
+                    'condition', n_("Cannot unset condition for conditional fee.")))
     else:
-        mandatory_fields = {}
-        optional_fields = EVENT_FEE_COMMON_FIELDS
+        if (val['amount'] is None) != (val['condition'] is None):
+            for k in ('amount', 'condition'):
+                errs.append(ValueError(
+                    k, n_("Cannot have amount without condition or vice versa.")))
+    if errs:
+        raise errs
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
-    return EventFee(val)
+    return cast(EventFee, val)
 
 
 @_add_typed_validator
@@ -2824,10 +2826,10 @@ def _event_fee_condition(
         if row['field_id']
     }
     field_names = {
-        f['field_name'] for field_id, f in event.get('fields', {}).items()
+        f['field_name'] for f in event.get('fields', {}).values()
         if f['association'] == const.FieldAssociations.registration
            and f['kind'] == const.FieldDatatypes.bool
-           and field_id not in additional_questionnaire_fields
+           and f.get('id') not in additional_questionnaire_fields
     }
     part_names = {p['shortname'] for p in event['parts'].values()}
 
@@ -3464,6 +3466,7 @@ def _serialized_event(
         'event.course_choices': Mapping,
         'event.questionnaire_rows': Mapping,
         'event.event_fees': Mapping,
+        'event.personalized_fees': Mapping,
         'event.stored_queries': Mapping,
     }
     optional_tables: TypeMapping = {
@@ -3541,7 +3544,12 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID,
                           'kind': const.EventFeeType, 'title': str,
                           'notes': Optional[str],  # type: ignore[dict-item]
-                          'condition': str, 'amount': decimal.Decimal}),
+                          'condition': Optional[str],  # type: ignore[dict-item]
+                          'amount': Optional[decimal.Decimal],  # type: ignore[dict-item]
+                          }),
+        'event.personalized_fees': _augment_dict_validator(
+            _empty_dict, {'id': ID, 'fee_id': ID, 'registration_id': ID,
+                          'amount': decimal.Decimal}),
         'event.stored_queries': _augment_dict_validator(
             _empty_dict, {'id': ID, 'event_id': ID, 'query_name': str,
                           'scope': QueryScope, 'serialized_query': Mapping}),
@@ -3673,7 +3681,7 @@ def _serialized_partial_event(
                 errs.extend(e)
                 continue
 
-            creation = (new_key < 0)
+            creation = new_key < 0
             try:
                 new_entry = _ALL_TYPED[type_](
                     entry, domain, creation=creation, **kwargs)
@@ -3827,6 +3835,7 @@ PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_notes': Optional[str],
     'checkin': Optional[datetime.datetime],
     'fields': Mapping,
+    'personalized_fees': Mapping,
 }
 
 # TODO Can we auto generate all these partial validators?
@@ -3882,6 +3891,18 @@ def _partial_registration(
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
+    if 'personalized_fees' in val:
+        newfees = {}
+        for fee_id, amount in val['personalized_fees'].items():
+            try:
+                fee_id = _id(fee_id, 'personalized_fees', **kwargs)
+                amount = _ALL_TYPED[Optional[decimal.Decimal]](  # type: ignore[index]
+                    amount, 'personalized_fees', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                newfees[fee_id] = amount
+        val['personalized_fees'] = newfees
 
     if errs:
         raise errs
@@ -4337,7 +4358,7 @@ def _ballot(
             except ValidationSummary as e:
                 errs.extend(e)
             else:
-                creation = (anid < 0)
+                creation = anid < 0
                 try:
                     candidate = _ALL_TYPED[Optional[BallotCandidate]](  # type: ignore[index]
                         candidate, 'candidates', creation=creation, **kwargs)

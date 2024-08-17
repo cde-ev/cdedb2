@@ -27,10 +27,10 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
+from re import Pattern
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
-    no_type_check,
+    Any, Callable, ClassVar, NamedTuple, Optional, TypeVar, Union, cast, no_type_check,
 )
 
 import PIL.Image
@@ -124,12 +124,12 @@ def json_keys_to_int(obj: T) -> T:
 
 
 def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                           "sample_data.json"
-                      ) -> Dict[str, CdEDBObjectMap]:
+                                           "sample_data.json",
+                      ) -> dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
-    with open(filename, "r", encoding="utf8") as f:
-        sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
-    ret: Dict[str, CdEDBObjectMap] = {}
+    with open(filename, encoding="utf8") as f:
+        sample_data: dict[str, list[CdEDBObject]] = json.load(f)
+    ret: dict[str, CdEDBObjectMap] = {}
     for table, table_data in sample_data.items():
         data: CdEDBObjectMap = {}
         _id = 1
@@ -169,7 +169,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
     translations = setup_translations(backend.conf)
 
-    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
+    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0",
                            ) -> RequestState:
         """
         Turn a provided sessionkey or apitoken into a RequestState object.
@@ -232,7 +232,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
-                not callable(attr)
+                not callable(attr),
             ]):
                 raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
@@ -243,7 +243,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
                     raise RuntimeError(  # pragma: no cover
-                        "Did you forget to add a `@storage` decorator to the test?"
+                        "Did you forget to add a `@storage` decorator to the test?",
                     ) from e
 
             return wrapper
@@ -373,8 +373,8 @@ class CdEDBTest(BasicTest):
 
         # compile the sample data
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
-        with open(json_file, "r", encoding="utf8") as f:
-            data: Dict[str, List[CdEDBObject]] = json.load(f)
+        with open(json_file, encoding="utf8") as f:
+            data: dict[str, list[CdEDBObject]] = json.load(f)
         cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
     def setUp(self) -> None:
@@ -417,8 +417,10 @@ class BackendTest(CdEDBTest):
         cls.pastevent = cls.initialize_backend(PastEventBackend)
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
-        # Workaround to make orga info available for calls into the MLBackend.
+        # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
+            rs.sessionkey, persona_id)
+        cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -431,7 +433,7 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
+            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover  # noqa: E501
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
@@ -472,7 +474,7 @@ class BackendTest(CdEDBTest):
     def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        logs: dict[str, tuple[Callable[..., CdEDBLog], Type[GenericLogFilter]]] = {
+        logs: dict[str, tuple[Callable[..., CdEDBLog], type[GenericLogFilter]]] = {
             'core': (self.core.retrieve_log, CoreLogFilter),
             'changelog': (self.core.retrieve_changelog_meta, ChangelogLogFilter),
             'cde': (self.cde.retrieve_cde_log, CdELogFilter),
@@ -509,12 +511,12 @@ class BackendTest(CdEDBTest):
         self.assertEqual(log, tuple(log_expectation))
 
     @classmethod
-    def initialize_raw_backend(cls, backendcls: Type[SessionBackend]
+    def initialize_raw_backend(cls, backendcls: type[SessionBackend],
                                ) -> SessionBackend:
         return backendcls()
 
     @classmethod
-    def initialize_backend(cls, backendcls: Type[B]) -> B:
+    def initialize_backend(cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True)
 
 
@@ -525,7 +527,7 @@ class BrowserTest(CdEDBTest):
     We instantiate a real (development) server for this usecase as a bare WSGI
     application won't do the trick.
     """
-    serverProcess = None
+    serverProcess: subprocess.Popen[bytes] | None = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -560,7 +562,7 @@ class BrowserTest(CdEDBTest):
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT: Dict[str, UserObject] = {
+USER_DICT: dict[str, UserObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -860,7 +862,7 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
-        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any
+        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any,
                     ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
@@ -1027,7 +1029,7 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, params: Dict[str, Any], *args: Any, verbose: bool = False,
+    def post(self, url: str, params: dict[str, Any], *args: Any, verbose: bool = False,
              evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
              csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
         """Directly send a POST-request.
@@ -1077,7 +1079,7 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")  # pragma: no cover
+                "Cannot specify button value without specifying button name.")  # pragma: no cover  # noqa: E501
         self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
@@ -1114,7 +1116,7 @@ class FrontendTest(BackendTest):
             try:
                 self.response = self.response.click(**link, verbose=verbose)
             except IndexError as e:
-                e.args += ('Error during traversal of {}'.format(link),)
+                e.args += (f'Error during traversal of {link}',)
                 raise
             self.follow()
             self.basic_validate(verbose=verbose)
@@ -1183,7 +1185,7 @@ class FrontendTest(BackendTest):
             self.assertTitle(u['default_name_format'])
 
     def realm_admin_view_profile(self, user: str, realm: str,
-                                 check: bool = True, verbose: bool = False
+                                 check: bool = True, verbose: bool = False,
                                  ) -> None:
         """Shortcut to a user profile using realm-based usersearch.
 
@@ -1194,8 +1196,8 @@ class FrontendTest(BackendTest):
         :param verbose: If True display additional debug information.
         """
         u = USER_DICT[user]
-        self.traverse({'href': '/{}/$'.format(realm)},
-                      {'href': '/{}/search/user'.format(realm)},
+        self.traverse({'href': f'/{realm}/$'},
+                      {'href': f'/{realm}/search/user'},
                       verbose=verbose)
         id_field = 'personas.id'
         f = self.response.forms['queryform']
@@ -1207,7 +1209,7 @@ class FrontendTest(BackendTest):
         if check:
             self.assertTitle(u['default_name_format'])
 
-    def _fetch_mail(self) -> List[email.message.EmailMessage]:
+    def _fetch_mail(self) -> list[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
@@ -1242,12 +1244,12 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover  # noqa: E501
 
-    def fetch_orga_token(self) -> Tuple[int, str]:
+    def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
         droid_name, secret = APIToken.parse_token_string(new_token)
-        droid_class, token_id = resolve_droid_name(droid_name)
+        _droid_class, token_id = resolve_droid_name(droid_name)
         return cast(int, token_id), secret
 
     def assertTitle(self, title: str, exact: bool = True) -> None:
@@ -1353,6 +1355,115 @@ class FrontendTest(BackendTest):
                 self.assertNotIn(s.strip(), tmp[0].text_content())
             elif check_div:
                 self.fail(f"Specified div {div!r} not found.")
+
+    def assertTextContainedInElement(self, search_text: str, element_tag: str,
+                                     div: str = "content") -> None:
+        """
+        Assert that `search_text` is present and is contained in a specific HTML tag.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent. Each occurance of the `search_text` must be contained in a matching tag.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is present but crossed out via an <s> tag
+            self.assertTextContainedInElement("Anton", "s")
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element found, containing the text '{search_text}'")
+        num_searched_elements_with_matching_ancestor = sum(
+            1
+            for element in elements_with_searchtext
+            if len(element.xpath(f'./ancestor-or-self::{element_tag}')) > 0
+        )
+        if num_searched_elements_with_matching_ancestor < len(elements_with_searchtext):
+            if len(elements_with_searchtext) == 1:
+                self.fail(
+                    f"Text '{search_text}' found, but not contained in a"
+                    f" <{element_tag}>")
+            else:
+                self.fail(
+                    f"Text '{search_text}' found {len(elements_with_searchtext)} times,"
+                    f" but only {num_searched_elements_with_matching_ancestor}"
+                    f" of them are contained in a <{element_tag}>")
+
+    def assertTextContainedInNthElement(self, search_text: str, element_tag: str,
+                                        n: int, div: str = "content") -> None:
+        """
+        Assert that `search_text` is contained in an n-th sibling `tag` HTML element
+
+        The element may be the direct container of the `search_text` or any parent.
+        For each occurance of the `search_text`, the closest parent of tag name
+        `element_tag` must be the n-th sibling in its parent (starting at 0). Negative n
+        can be used to specify the n-th-last element.
+
+        Usage Example::
+
+            # Check if the Name "Anton" is in the last <li> list item of a list
+            self.assertTextContainedInElement("Anton", "li", -1)
+
+        :param element_tag: HTML element tag name of one of the ancestors of the text
+            occurance, which is checked for its position among its siblings.
+        :param n: Required position of the matching ancestor among its siblings.
+            Positive numbers count from the beginning of the parent (starting at 0),
+            negative numbers count from the end of the parent element (starting at -1).
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        elements_with_searchtext = self.response.lxml.xpath(
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+        if len(elements_with_searchtext) == 0:
+            self.fail(f"No HTML element containing the text '{search_text}' found")
+        for element_with_searchtext in elements_with_searchtext:
+            matching_ancestors = element_with_searchtext.xpath(
+                f'./ancestor-or-self::{element_tag}[1]')
+            if len(matching_ancestors) == 0:
+                self.fail(f"Text '{search_text}' found, but at least one occurance is "
+                          f"not in a <{element_tag}>")
+            closest_matching_ancestor = matching_ancestors[0]
+            if n < 0:
+                following_siblings = len(
+                    closest_matching_ancestor.xpath('./following-sibling::*'))
+                actual_n = -1 - following_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+            else:
+                preceding_siblings = len(
+                    closest_matching_ancestor.xpath('./preceding-sibling::*'))
+                actual_n = preceding_siblings
+                if actual_n != n:
+                    self.fail(f"Text '{search_text}' found, but at least one occurance "
+                              f"is in {actual_n}th sibling <{element_tag}> "
+                              f"(expected {n})")
+
+    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str,
+                                     ) -> str:
+        """Returns the plain text content of the element containing `search_text`.
+
+        Fails if the search_text is found in more than one HTML element.
+
+        The requested tag may be the direct container of the `search_text` or any
+        parent.
+
+        :param element_tag: Expected HTML element tag name of one of the ancestors of
+            the text occurance.
+        :param div: HTML id of the outer container element to search for `search_text`
+        """
+        matching_elements = self.response.lxml.xpath(
+                f'//*[@id="{div}"]//{element_tag}[contains(.,"{search_text}")]')
+        if len(matching_elements) == 0:
+            self.fail(f"Text '{search_text}' not found")
+        elif len(matching_elements) > 1:
+            self.fail(f"Text '{search_text}' found in {len(matching_elements)} "
+                      "(more than one) elements")
+        return ''.join(matching_elements[0].itertext())
 
     def assertNotification(self, ntext: Optional[str] = None,
                            ntype: Optional[str] = None, *, static: bool = False,
@@ -1498,9 +1609,9 @@ class FrontendTest(BackendTest):
         for element in self.response.html.find_all(tag):
             el_html = str(element)
             el_content = element.decode_contents()
-            printlog('Element: %r' % el_html)
+            printlog(f"Element: {el_html!r}")
             if not element.get(href_attr):
-                printlog('  Skipped: no %s attribute' % href_attr)
+                printlog(f"  Skipped: no {href_attr!r} attribute")
                 continue
             if href_pat and not href_pat(element[href_attr]):
                 printlog("  Skipped: doesn't match href")
@@ -1579,7 +1690,7 @@ class FrontendTest(BackendTest):
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
+    def log_pagination(self, title: str, logs: tuple[tuple[int, enum.IntEnum], ...],
                        ) -> None:
         """Helper function to test the logic of the log pagination.
 
@@ -1684,7 +1795,7 @@ class FrontendTest(BackendTest):
         self.response = save
 
     def _log_subroutine(self, title: str,
-                        all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
+                        all_logs: tuple[tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
@@ -1699,7 +1810,7 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
+    def check_sidebar(self, ins: set[str], out: set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins or
@@ -1818,7 +1929,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
+            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover  # noqa: E501
         button = button.parent
         if current_state is not None:
             if current_state:
@@ -1853,8 +1964,8 @@ class MultiAppFrontendTest(FrontendTest):
     """Subclass for testing multiple frontend instances simultaniously."""
     n: int = 2  # The number of instances that should be created.
     current_app: int  # Which instance is currently active 0 <= x < n
-    apps: List[webtest.TestApp]
-    responses: List[webtest.TestResponse]
+    apps: list[webtest.TestApp]
+    responses: list[webtest.TestResponse]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -1905,14 +2016,20 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
+            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover  # noqa: E501
         self.current_app = i
 
 
-StoreTrace = NamedTuple("StoreTrace", [('cron', str), ('data', CdEDBObject)])
-MailTrace = NamedTuple("MailTrace", [('realm', str), ('template', str),
-                                     ('args', Sequence[Any]),
-                                     ('kwargs', Dict[str, Any])])
+class StoreTrace(NamedTuple):
+    cron: str
+    data: CdEDBObject
+
+
+class MailTrace(NamedTuple):
+    realm: str
+    template: str
+    args: Sequence[Any]
+    kwargs: dict[str, Any]
 
 
 def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
@@ -1930,10 +2047,10 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
 
 
 class CronTest(CdEDBTest):
-    _remaining_periodics: Set[str]
-    _remaining_tests: Set[str]
-    stores: List[StoreTrace]
-    mails: List[MailTrace]
+    _remaining_periodics: set[str]
+    _remaining_tests: set[str]
+    stores: list[StoreTrace]
+    mails: list[MailTrace]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]

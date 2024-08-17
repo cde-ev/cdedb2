@@ -118,7 +118,9 @@ class AssemblyBackend(AbstractBackend):
     def get_attachment_file_path(self, attachment_id: int, version_nr: int) -> Path:
         return self.attachment_base_path / f"{attachment_id}_v{version_nr}"
 
-    def get_ballot_file_path(self, ballot_id: int) -> Path:
+    @access("assembly")
+    def get_ballot_file_path(self, rs: RequestState, ballot_id: int) -> Path:
+        ballot_id = affirm(vtypes.ID, ballot_id)
         return self.ballot_result_base_path / str(ballot_id)
 
     @access("assembly")
@@ -623,6 +625,11 @@ class AssemblyBackend(AbstractBackend):
                         rs, const.AssemblyLogCodes.assembly_presider_added,
                         assembly_id, anid)
                 ret *= r
+
+            # Update session presider status
+            if rs.user.persona_id in persona_ids:
+                rs.user.presider.add(assembly_id)
+
         return ret
 
     @access("assembly_admin")
@@ -639,6 +646,11 @@ class AssemblyBackend(AbstractBackend):
             if ret:
                 self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
                                   assembly_id, persona_id)
+
+        # Update session presider status
+        if rs.user.persona_id == persona_id:
+            rs.user.presider.remove(assembly_id)
+
         return ret
 
     @internal
@@ -756,7 +768,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete assembly with locked ballots."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(rs.gettext("Assembly"), remaining_blockers)  # TODO: coverage
 
         ret = 1
@@ -1189,7 +1201,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete ballot that has votes."))  # TODO: coverage
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(rs.gettext("Ballot"), remaining_blockers)  # TODO: coverage
 
         ret = 1
@@ -1455,8 +1467,7 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def get_ballot_result(self, rs: RequestState,
-                          ballot_id: int) -> Optional[bytes]:
+    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
         """Retrieve the content of a result file for a ballot.
 
         Returns None if the ballot is not tallied yet or if the file is missing.
@@ -1469,8 +1480,8 @@ class AssemblyBackend(AbstractBackend):
         if not ballot['is_tallied']:
             return None
         else:
-            path = self.get_ballot_file_path(ballot_id)
-            if not path.exists():  # pragma: no cover
+            path = self.get_ballot_file_path(rs, ballot_id)
+            if not path.is_file():  # pragma: no cover
                 # TODO raise an error here?
                 self.logger.warning(
                     f"Result file for ballot {ballot_id} not found.")
@@ -1557,7 +1568,7 @@ class AssemblyBackend(AbstractBackend):
                 "voters": voter_names,
                 "votes": vote_list,
             }
-            path = self.get_ballot_file_path(ballot_id)
+            path = self.get_ballot_file_path(rs, ballot_id)
             data = json_serialize(result)
             with open(path, 'w', encoding='UTF-8') as f:
                 f.write(data)
@@ -1759,7 +1770,7 @@ class AssemblyBackend(AbstractBackend):
                 "Cannot delete attachment once any linked ballot has been locked."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
-        if remaining_blockers := (blockers.keys() - cascade):
+        if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
                 rs.gettext("Assembly Attachment"), remaining_blockers)  # TODO: coverage
 

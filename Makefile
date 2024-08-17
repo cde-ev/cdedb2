@@ -15,7 +15,7 @@ help:
 	@echo ""
 	@echo "Code formatting:"
 	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint                -- run linters (isort, flake8 and pylint)"
+	@echo "lint                -- run linters (ruff, isort and pylint)"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -36,9 +36,8 @@ help:
 
 PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
-FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -136,14 +135,6 @@ isort:
 	$(ISORT) --check-only bin/*.py cdedb tests
 	@echo ""
 
-.PHONY: flake8
-flake8:
-	@echo $(BANNERLINE)
-	@echo "All of flake8"
-	@echo $(BANNERLINE)
-	$(FLAKE8) cdedb tests
-	@echo ""
-
 .PHONY: pylint
 pylint:
 	@echo $(BANNERLINE)
@@ -171,7 +162,7 @@ template-line-length:
 	@echo ""
 
 .PHONY: lint
-lint: ruff isort flake8 pylint
+lint: ruff isort pylint
 
 
 ################

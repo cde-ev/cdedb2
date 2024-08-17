@@ -80,7 +80,7 @@
                                               nulloption=nbsp, label=gettext("Course"), aclass="genesis-realm-specific",
                                               defaultvalue='', sort=True) }}
                 {% else %}
-                    {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
+                    {{ util.form_input_static(name="pcourse_id", aclass='text-info genesis-realm-specific', icon='info-circle', small=True, label=gettext("Course"),
                                               value=gettext("Course can be specified if past event is given.")) }}
                 {% endif %}
             {% endif %}

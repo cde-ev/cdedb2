@@ -688,13 +688,9 @@
          */
         this.queryFromURL = function(url) {
             // First get the parameters in an indexed object
-            var parts = url.split('?');
-            parts = parts[parts.length-1].split('#');
-            parts = parts[0].split('&');
             var parameters = {};
-            for (var i = 0; i < parts.length; i++) {
-                var s = parts[i].split('=');
-                parameters[decodeURIComponent(s[0])] = decodeURIComponent(s[1]);
+            for (const entry of (new URLSearchParams(url.split('#')[0])).entries()) {
+                parameters[entry[0]] = decodeURIComponent(entry[1]);
             }
 
             // Now clear formular
@@ -739,6 +735,13 @@
             }
             this.updateSortInputs();
             this.refreshSortFieldSelect();
+
+            // Reset query name input.
+            query_name_input = $element.find('#query_name_input');
+            query_name_input.val('');
+            if (parameters['query_name']) {
+                query_name_input.val(decodeURIComponent(parameters['query_name']));
+            }
         }
     };
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # pylint: disable=protected-access,missing-module-docstring
 
-from typing import Collection, Optional, cast
+from collections.abc import Collection
+from typing import Optional, cast
 
 from subman.exceptions import SubscriptionError
 
@@ -301,7 +302,7 @@ class TestMlBackend(BackendTest):
         setter = {
             'id': 7,
             'event_id': 1,
-            'assembly_id': 1
+            'assembly_id': 1,
         }
         with self.assertRaises(KeyError):
             self.ml.set_mailinglist(self.key, setter)
@@ -338,6 +339,88 @@ class TestMlBackend(BackendTest):
             self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
+
+    @as_users("garcia")
+    def test_mailinglist_creation_orga(self) -> None:
+        data: models_ml.EventAssociatedMeta = models_ml.EventAssociatedMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart("test"),
+            domain=const.MailinglistDomain.aka,
+            description=None,
+            event_id=None,
+            is_active=True,
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
+            maxsize=None,
+            additional_footer=None,
+            moderators={self.user['id'], self.as_id(10)},
+            whitelist=set(),
+            subject_prefix="test",
+            title="TestAka",
+            mod_policy=const.ModerationPolicy.non_subscribers,
+            notes=None,
+            registration_stati=[],
+        )
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.event_id = self.as_id(2)
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.event_id = self.as_id(1)
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        data = models_ml.EventOrgaMailinglist(**{k: v for k, v in data.as_dict().items()
+                                                 if k != 'registration_stati'})
+        data.local_part = vtypes.EmailLocalPart('test-orga')
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        # Orgas may still not generally add or remove moderators for their event
+        # mailinglists unless they are moderators as well.
+        with self.switch_user("anton"):
+            self.ml.remove_moderator(self.key, 59, USER_DICT['garcia']['id'])
+        with self.assertRaises(PrivilegeError):
+            self.ml.add_moderators(self.key, 59, {USER_DICT['anton']['id']})
+
+    @as_users("werner")
+    def test_mailinglist_creation_presider(self) -> None:
+        data = models_ml.AssemblyAssociatedMailinglist(
+            id=self.as_creation_id(-1),
+            local_part=vtypes.EmailLocalPart("test"),
+            domain=const.MailinglistDomain.lists,
+            description=None,
+            assembly_id=None,
+            is_active=True,
+            attachment_policy=const.AttachmentPolicy.forbid,
+            convert_html=True,
+            roster_visibility=const.MailinglistRosterVisibility.none,
+            maxsize=None,
+            additional_footer=None,
+            moderators={self.user['id'], self.as_id(10)},
+            whitelist=set(),
+            subject_prefix="test",
+            title="TestAka",
+            mod_policy=const.ModerationPolicy.non_subscribers,
+            notes=None,
+        )
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.assembly_id = self.as_id(2)
+        with self.assertRaises(PrivilegeError):
+            self.ml.create_mailinglist(self.key, data)
+        data.assembly_id = self.as_id(3)
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        data = models_ml.AssemblyPresiderMailinglist(**data.as_dict())
+        data.local_part = vtypes.EmailLocalPart('archiv-preisder')
+        self.assertLess(0, self.ml.create_mailinglist(self.key, data))
+
+        # Presiders may still not generally add or remove moderators for their assembly
+        # mailinglists unless they are moderators as well.
+        with self.switch_user("anton"):
+            self.ml.remove_moderator(self.key, 66, USER_DICT['werner']['id'])
+        with self.assertRaises(PrivilegeError):
+            self.ml.add_moderators(self.key, 66, {USER_DICT['anton']['id']})
 
     @as_users("nina")
     def test_mailinglist_creation_optional_fields(self) -> None:
@@ -1228,7 +1311,7 @@ class TestMlBackend(BackendTest):
             'ctime': nearly_now(),
             'mailinglist_id': mailinglist_id,
             'persona_id': 5,
-            'submitted_by': self.user['id']
+            'submitted_by': self.user['id'],
         }
         self.assertIn(expected_log, log_entries)
 
@@ -2197,7 +2280,7 @@ class TestMlBackend(BackendTest):
              'ctime': nearly_now(),
              'mailinglist_id': None,
              'persona_id': None,
-             'submitted_by': self.user['id']}
+             'submitted_by': self.user['id']},
         )
         self.assertLogEqual(expectation, realm="ml")
         self.assertEqual(

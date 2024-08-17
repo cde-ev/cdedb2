@@ -179,7 +179,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: "AmbienceDict" = {}  # type: ignore[typeddict-item]
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -622,9 +622,10 @@ def lastschrift_reference(persona_id: int, lastschrift_id: int) -> str:
 
     This is the so called 'Mandatsreferenz'.
     """
-    return "CDE-I25-{}-{}-{}-{}".format(
-        persona_id, compute_checkdigit(persona_id), lastschrift_id,
-        compute_checkdigit(lastschrift_id))
+    return (
+        f"CDE-I25-{persona_id}-{compute_checkdigit(persona_id)}"
+        f"-{lastschrift_id}-{compute_checkdigit(lastschrift_id)}"
+    )
 
 
 def _small_int_to_words(num: int, lang: str) -> str:
@@ -1502,10 +1503,10 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-#: If the partial export and import are unaffected the minor version may be
-#: incremented.
+#: If changes to the partial export and import are backwards compatible,
+#: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 1)
+EVENT_SCHEMA_VERSION = (17, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

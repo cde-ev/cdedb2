@@ -326,19 +326,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         simple_tracks = set(tracks)
         track_group_map: dict[int, Optional[int]] = {
             track_id: None for track_id in tracks}
-        sync_track_groups: dict[int, models.SyncTrackGroup] = {
-            tg_id: tg for tg_id, tg in track_groups.items()  # type: ignore[misc]
-            if tg.constraint_type.is_sync()}
+        sync_track_groups = {
+            tg_id: tg for tg_id, tg in track_groups.items()
+            if isinstance(tg, models.SyncTrackGroup)
+        }
         ccos_per_part: dict[int, list[str]] = {part_id: [] for part_id in event.parts}
         for track_group_id, track_group in sync_track_groups.items():
-            if not track_group.constraint_type == ccs:
-                continue  # type: ignore[unreachable]
             simple_tracks.difference_update(track_group.tracks)
             track_group_map.update(
                 {track_id: track_group_id for track_id in track_group.tracks})
             for track in track_group.tracks.values():
-                ccos_per_part[track.part_id].append(
-                    f"group-{track_group_id}")
+                ccos_per_part[track.part_id].append(f"group-{track_group_id}")
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
         choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
@@ -380,7 +378,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, persona_id=rs.user.persona_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(persona['birthday'], event.begin)
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
         rs.ignore_validation_errors()
         if not preview:
             if rs.user.persona_id in registrations.values():
@@ -395,7 +392,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if rs.ambience['event'].is_archived:
                 rs.notify("error", n_("Event is already archived."))
                 return self.redirect(rs, "event/show_event")
-            if not minor_form and age.is_minor():
+            if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
                 rs.notify("info", n_("No minors may register. "
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
@@ -440,9 +437,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         :returns: A dict with localized text to be used in the preview.
         """
-
-        if len(all_part_ids := rs.ambience['event'].parts) == 1:
-            part_ids = vtypes.IntCSVList(list(all_part_ids))
 
         if self.is_orga(rs, event_id):
             pass
@@ -775,8 +769,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event'].begin)
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
-        if not minor_form and age.is_minor():
+        if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
             rs.notify("error", n_("No minors may register. "
                                   "Please contact the Orgateam."))
             return self.redirect(rs, "event/show_event")
@@ -1011,6 +1004,45 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(rs, "registration/registration_fee_summary", {
             **payment_data,
         })
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def add_personalized_fee(
+            self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
+    ) -> Response:
+        """Add a personalized fee amount for this registration and this fee."""
+        if not rs.ambience['fee'].is_personalized():
+            rs.ignore_validation_errors()
+            rs.notify(
+                "error", n_("Cannot set personalized amount for conditional fee."),
+            )
+            return self.redirect(rs, "event/show_registration_fee")
+        key = f'amount{fee_id}'
+        amount = request_extractor(rs, {key: decimal.Decimal})[key]
+        if rs.has_validation_errors():
+            return self.show_registration_fee(rs, event_id, registration_id)
+        code = self.eventproxy.set_personalized_fee_amount(
+            rs, registration_id, fee_id, amount,
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_registration_fee")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_personalized_fee(
+            self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
+    ) -> Response:
+        """Remove the personalized fee amount for this registration and this fee."""
+        if not rs.ambience['fee'].is_personalized():
+            rs.notify(
+                "error", n_("Cannot set personalized amount for conditional fee."),
+            )
+            return self.redirect(rs, "event/show_registration_fee")
+        code = self.eventproxy.set_personalized_fee_amount(
+            rs, registration_id, fee_id, amount=None,
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_registration_fee")
 
     @access("event")
     @event_guard(check_offline=True)

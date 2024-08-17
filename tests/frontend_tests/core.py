@@ -3,7 +3,7 @@
 import random
 import re
 import urllib.parse
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Union
 
 import webtest
 
@@ -652,7 +652,7 @@ class TestCoreFrontend(FrontendTest):
                               ("Bertålotta Beispiel", USER_DICT['berta']),
                               ("berta@example.cde", USER_DICT['berta']),
                               ("anton@example.cde", USER_DICT['anton']),
-                              ("Spielmanns", USER_DICT['berta']),):
+                              ("Spielmanns", USER_DICT['berta'])):
             self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase
@@ -954,7 +954,7 @@ class TestCoreFrontend(FrontendTest):
     def test_reset_password(self) -> None:
         new_passwords = {
             "good": "krce63koLe#$e",
-            "bad": "dragonSecret"
+            "bad": "dragonSecret",
         }
         for key, val in new_passwords.items():
             for i, u in enumerate(("anton", "berta", "emilia", "ferdinand")):
@@ -1209,7 +1209,7 @@ class TestCoreFrontend(FrontendTest):
             'is_event_admin': False,
             'is_assembly_admin': False,
             'is_ml_admin': False,
-            'is_cdelokal_admin': False
+            'is_cdelokal_admin': False,
         }
         new_password = "ihsokdmfsod"
         new_admin_copy = self._approve_privilege_change(
@@ -1357,8 +1357,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _initialize_privilege_change(self, admin1: UserIdentifier,
                                      admin2: UserIdentifier, new_admin: UserObject,
-                                     new_privileges: Dict[str, bool],
-                                     old_privileges: Optional[Dict[str, bool]] = None,
+                                     new_privileges: dict[str, bool],
+                                     old_privileges: Optional[dict[str, bool]] = None,
                                      note: str = "For testing.") -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
@@ -1381,8 +1381,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _approve_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                   new_admin: UserObject,
-                                  new_privileges: Dict[str, bool],
-                                  old_privileges: Optional[Dict[str, bool]] = None,
+                                  new_privileges: dict[str, bool],
+                                  old_privileges: Optional[dict[str, bool]] = None,
                                   note: str = "For testing.",
                                   new_password: Optional[str] = None) -> UserObject:
         """Helper to make a user an admin."""
@@ -1409,8 +1409,8 @@ class TestCoreFrontend(FrontendTest):
 
     def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
                                  new_admin: UserObject,
-                                 new_privileges: Dict[str, bool],
-                                 old_privileges: Optional[Dict[str, bool]] = None,
+                                 new_privileges: dict[str, bool],
+                                 old_privileges: Optional[dict[str, bool]] = None,
                                  note: str = "For testing.") -> None:
         """Helper to reject a privilege change."""
         self._initialize_privilege_change(
@@ -1490,7 +1490,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_reset_foto(self) -> None:
-        self.traverse({'description': self.user['display_name']},)
+        self.traverse({'description': self.user['display_name']})
         foto_hash = self.get_sample_datum('core.personas', self.user['id'])['foto']
         self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
@@ -1820,7 +1820,7 @@ class TestCoreFrontend(FrontendTest):
 
         # Check for proper logging
         with self.switch_user("paul"):
-            changelog_expectation: Tuple[Dict[str, Union[int, str, None]], ...] = (
+            changelog_expectation: tuple[dict[str, Union[int, str, None]], ...] = (
                 {
                     'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
@@ -2150,12 +2150,12 @@ class TestCoreFrontend(FrontendTest):
     EVENT_GENESIS_DATA.update({
         'realm': "event", 'gender': const.Genders.other,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
-        'location': "Marcuria", 'country': "AQ"
+        'location': "Marcuria", 'country': "AQ",
     })
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
     CDE_GENESIS_DATA.update({
-        'realm': "cde"
+        'realm': "cde",
     })
 
     def test_genesis_event(self) -> None:
@@ -2649,7 +2649,7 @@ class TestCoreFrontend(FrontendTest):
                     check_notification=False)
 
     def _create_genesis_doppelganger(self, user: Optional[UserIdentifier] = None,
-                                     realm: str = "ml", unique_username: bool = False
+                                     realm: str = "ml", unique_username: bool = False,
                                      ) -> UserObject:
         # Create a new request almost identical to the current or given user.
         user = get_user(user or self.user)
@@ -2760,7 +2760,7 @@ class TestCoreFrontend(FrontendTest):
             {
                 'code': const.CoreLogCodes.password_reset_cookie,
                 'persona_id': new_persona_id,
-            }
+            },
         ])
 
         # Check that the first username exists and the alternate one does not.
@@ -2843,7 +2843,7 @@ class TestCoreFrontend(FrontendTest):
             {
                 'code': const.CoreLogCodes.password_reset_cookie,
                 'persona_id': new_persona_id,
-            }
+            },
         ])
 
         self.assertLogEqual(
@@ -2974,7 +2974,7 @@ class TestCoreFrontend(FrontendTest):
         resolve_token = model_droid.ResolveToken.get_token_string(
             self.secrets['API_TOKENS']['resolve'])
         self.get(
-            '/core/api/resolve?username=%20bErTa{}example.CDE%20'.format(at),
+            f'/core/api/resolve?username=%20bErTa{at}example.CDE%20',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": USER_DICT["berta"]["given_names"],
@@ -2984,7 +2984,7 @@ class TestCoreFrontend(FrontendTest):
             "username": "berta@example.cde",
         })
         self.get(
-            '/core/api/resolve?username=anton{}example.cde'.format(at),
+            f'/core/api/resolve?username=anton{at}example.cde',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
             "given_names": "Anton Armin A.",
@@ -2997,7 +2997,7 @@ class TestCoreFrontend(FrontendTest):
             '/core/api/resolve?username=antonatexample.cde',
             headers={token_key: resolve_token})
         self.assertEqual(self.response.json, {
-            'error':  ["('username', ValueError('Must be a valid email address.'))"]
+            'error':  ["('username', ValueError('Must be a valid email address.'))"],
         })
         self.get('/core/api/resolve', status=403)
 
@@ -3073,8 +3073,8 @@ class TestCoreFrontend(FrontendTest):
     @as_users("katarina")
     def test_auditor(self) -> None:
         realm_logs = {
-            "Index": ("Account-Log", "Nutzerdaten-Log",),
-            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log",),
+            "Index": ("Account-Log", "Nutzerdaten-Log"),
+            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
             "Veranstaltungen": ("Log",),
             "Mailinglisten": ("Log",),
             "Versammlungen": ("Log",),
@@ -3088,6 +3088,14 @@ class TestCoreFrontend(FrontendTest):
 
     def test_contact(self) -> None:
         with self.switch_user("emilia"):
+            self.get("/core/contact/?to=vorstand@cde-ev.de")
+            f = self.response.forms['contactform']
+            self.assertEqual(f['to'].value, 'vorstand@cde-ev.de')
+
+            self.get("/core/contact/?to=malicious-actor@example.edc")
+            f = self.response.forms['contactform']
+            self.assertEqual(f['to'].value, '')
+
             self.traverse("Kontakt")
             f = self.response.forms['contactform']
             self.submit(f, check_notification=False)
