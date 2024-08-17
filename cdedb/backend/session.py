@@ -70,7 +70,6 @@ class SessionBackend:
         # we do not have the core backend, so we have to query meta info by hand
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
                 data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
@@ -92,7 +91,6 @@ class SessionBackend:
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:
                 with conn.cursor() as cur:
-                    assert isinstance(cur, psycopg2.extras.RealDictCursor)
                     cur.execute(query, (sessionkey,))
                     if cur.rowcount == 1:
                         data = cur.fetchone()
@@ -139,7 +137,6 @@ class SessionBackend:
                   f" FROM core.personas WHERE id = %s")
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()

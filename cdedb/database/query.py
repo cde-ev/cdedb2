@@ -69,7 +69,6 @@ class SqlQueryBackend:
         """Execute a query in a safe way (inside a transaction)."""
         with container.conn as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
@@ -81,7 +80,6 @@ class SqlQueryBackend:
         """
         with container.conn as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return from_db_output(cur.fetchone())
 
@@ -93,7 +91,6 @@ class SqlQueryBackend:
         """
         with container.conn as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 self.execute_db_query(cur, query, params)
                 return tuple(
                     cast(CdEDBObject, from_db_output(x))

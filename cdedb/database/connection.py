@@ -17,6 +17,7 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
+from psycopg2.extras import RealDictCursor
 
 from cdedb.common.n_ import n_
 
@@ -227,6 +228,10 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 # second we raise an exception to complain
                 raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
+
+    # Override this to annotate, that we always use a RealDictCursor.
+    def cursor(self, *args: Any, **kwargs: Any) -> RealDictCursor:  # type: ignore[override]
+        return super().cursor(*args, **kwargs)
 
     def contaminate(self) -> None:
         """Increase recursion by one."""

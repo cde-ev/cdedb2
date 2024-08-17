@@ -99,7 +99,6 @@ def shift_existing_ids(tables: list[str], shift_amount: int) -> None:
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
     with connection:
         with connection.cursor() as cur:
-            assert isinstance(cur, RealDictCursor)
             query = """
                 SELECT
                     conname,
@@ -268,7 +267,6 @@ def work(
     print("Connect to database")
     with connection as conn:
         with conn.cursor() as cur:
-            assert isinstance(cur, RealDictCursor)
             make_meta_info(cur)
             for table in tables:
                 print("Populating table {}".format(table))
@@ -315,7 +313,6 @@ def work(
         fails = []
         with conn as con:
             with con.cursor() as cur:
-                assert isinstance(cur, RealDictCursor)
                 for table in tables:
                     target_count = len(data[table])
                     query = "SELECT COUNT(*) AS count FROM {}".format(table)

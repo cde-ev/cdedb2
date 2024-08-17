@@ -111,7 +111,6 @@ class TestDatabase(unittest.TestCase):
                     pass
         with rs.conn as conn:
             with conn.cursor() as cur:
-                assert isinstance(cur, psycopg2.extras.RealDictCursor)
                 cur.execute("SELECT display_name FROM core.personas")
                 result = cur.fetchall()
                 self.assertFalse(any(
