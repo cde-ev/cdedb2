@@ -113,8 +113,7 @@ class EventEventMixin(EventBaseFrontend):
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
-            params['minor_form_present'] = (
-                    self.eventproxy.get_minor_form(rs, event_id) is not None)
+            params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
             constraint_violations = self.get_constraint_violations(
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
@@ -210,10 +209,10 @@ class EventEventMixin(EventBaseFrontend):
                 or event_id in rs.user.orga
                 or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
+        path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(
-            rs, data=minor_form, mimetype="application/pdf",
-            filename="Elternbrief CdE {}.pdf".format(rs.ambience['event'].shortname))
+            rs, path=path, mimetype="application/pdf",
+            filename=f"Elternbrief CdE {rs.ambience['event'].shortname}.pdf")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

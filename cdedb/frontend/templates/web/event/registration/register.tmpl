@@ -181,6 +181,7 @@
             'persona_id': {{ user.persona_id if not preview else "null" }},
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'part_ids': {{ (ambience['event'].parts|list if ambience['event'].parts|length <= 1 else None)|tojson }},
         }
 
         $form.cdedbProtectChanges().dynamicCourseChoices(ccos_per_part, part_map)

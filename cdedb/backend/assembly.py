@@ -118,7 +118,9 @@ class AssemblyBackend(AbstractBackend):
     def get_attachment_file_path(self, attachment_id: int, version_nr: int) -> Path:
         return self.attachment_base_path / f"{attachment_id}_v{version_nr}"
 
-    def get_ballot_file_path(self, ballot_id: int) -> Path:
+    @access("assembly")
+    def get_ballot_file_path(self, rs: RequestState, ballot_id: int) -> Path:
+        ballot_id = affirm(vtypes.ID, ballot_id)
         return self.ballot_result_base_path / str(ballot_id)
 
     @access("assembly")
@@ -1465,8 +1467,7 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def get_ballot_result(self, rs: RequestState,
-                          ballot_id: int) -> Optional[bytes]:
+    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
         """Retrieve the content of a result file for a ballot.
 
         Returns None if the ballot is not tallied yet or if the file is missing.
@@ -1479,8 +1480,8 @@ class AssemblyBackend(AbstractBackend):
         if not ballot['is_tallied']:
             return None
         else:
-            path = self.get_ballot_file_path(ballot_id)
-            if not path.exists():  # pragma: no cover
+            path = self.get_ballot_file_path(rs, ballot_id)
+            if not path.is_file():  # pragma: no cover
                 # TODO raise an error here?
                 self.logger.warning(
                     f"Result file for ballot {ballot_id} not found.")
@@ -1567,7 +1568,7 @@ class AssemblyBackend(AbstractBackend):
                 "voters": voter_names,
                 "votes": vote_list,
             }
-            path = self.get_ballot_file_path(ballot_id)
+            path = self.get_ballot_file_path(rs, ballot_id)
             data = json_serialize(result)
             with open(path, 'w', encoding='UTF-8') as f:
                 f.write(data)

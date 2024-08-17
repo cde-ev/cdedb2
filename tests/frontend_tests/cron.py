@@ -7,7 +7,7 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from typing import Any, Dict, Set, Union, cast
+from typing import Any, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now
@@ -19,8 +19,8 @@ INSERT INTO {table} ({columns}) VALUES ({values});
 """
 
 # numbers.Number should include Decimal, int and bool but doesn't.
-SQL_DATA = Dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
-                           decimal.Decimal, int, bool, Dict[str, Any]]]
+SQL_DATA = dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
+                           decimal.Decimal, int, bool, dict[str, Any]]]
 
 RS = cast(RequestState, None)
 
@@ -55,7 +55,7 @@ def genesis_template(**kwargs: Any) -> str:
         'case_status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
         'given_names': "Zaphod",
-        'family_name': "Zappa"
+        'family_name': "Zappa",
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.genesis_cases", data)
@@ -130,7 +130,7 @@ def changelog_template(**kwargs: Any) -> str:
         'title': 'Prof.',
         'trial_member': False,
         'username': 'zelda@example.cde',
-        'weblink': 'https://www.uni.cde'
+        'weblink': 'https://www.uni.cde',
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.changelog", data)
@@ -139,7 +139,7 @@ def changelog_template(**kwargs: Any) -> str:
 def cron_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'title': None,
-        'store': {}
+        'store': {},
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.cron_store", data)
@@ -147,7 +147,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionState.pending
+        'subscription_state': const.SubscriptionState.pending,
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -286,7 +286,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionState.pending))
+             f"{const.SubscriptionState.pending};")
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -367,19 +367,19 @@ class TestCron(CronTest):
         self.execute(name)
         # Make sure only the old lastschrift is deleted.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
         self.execute(name)
         # Make sure nothing changes when the cron job runs again.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 
     @storage
     def test_tally_ballots(self) -> None:
-        ballot_ids: Set[int] = set()
+        ballot_ids: set[int] = set()
         for assembly_id in self.assembly.list_assemblies(RS):
             ballot_ids |= self.assembly.list_ballots(RS, assembly_id).keys()
         ballots = self.assembly.get_ballots(RS, ballot_ids)
@@ -450,7 +450,7 @@ class TestCron(CronTest):
         # Prepare
         #
 
-        class SaveDict(Dict[Any, Any]):
+        class SaveDict(dict[Any, Any]):
             def save(self) -> None:
                 pass
 

@@ -240,14 +240,14 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         dua_dns = await self.ldap.list_duas()
         for dua in dua_dns:
             self.assertIsInstance(dua, DN)
-        duas = await self.ldap.get_duas(dua_dns)
+        _duas = await self.ldap.get_duas(dua_dns)
 
     async def test_users(self) -> None:
         persona_ids = {1, 3, 10}
         user_dns = await self.ldap.list_users()
         for user in user_dns:
             self.assertIsInstance(user, DN)
-        users = await self.ldap.get_users(user_dns)
+        _users = await self.ldap.get_users(user_dns)
         users_data = await self.ldap.get_users_data(persona_ids)
         self.assertIn(1, users_data)
         user_groups = await self.ldap.get_users_groups(persona_ids)
@@ -257,14 +257,14 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         status_group_dns = await self.ldap.list_status_groups()
         for status_group in status_group_dns:
             self.assertIsInstance(status_group, DN)
-        status_groups = await self.ldap.get_status_groups(status_group_dns)
+        _status_groups = await self.ldap.get_status_groups(status_group_dns)
 
     async def test_assembly_presiders(self) -> None:
         assembly_ids = {1, 2}
         presider_group_dns = await self.ldap.list_assembly_presider_groups()
         for presider in presider_group_dns:
             self.assertIsInstance(presider, DN)
-        presider_groups = await self.ldap.get_assembly_presider_groups(
+        _presider_groups = await self.ldap.get_assembly_presider_groups(
             presider_group_dns)
         presiders = await self.ldap.get_presiders(assembly_ids)
         self.assertIn(1, presiders)
@@ -276,7 +276,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         orga_group_dns = await self.ldap.list_event_orga_groups()
         for orga in orga_group_dns:
             self.assertIsInstance(orga, DN)
-        orga_groups = await self.ldap.get_event_orga_groups(orga_group_dns)
+        _orga_groups = await self.ldap.get_event_orga_groups(orga_group_dns)
         orgas = await self.ldap.get_orgas(event_ids)
         self.assertIn(1, orgas)
         events = await self.ldap.get_events(event_ids)
@@ -287,7 +287,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         moderator_group_dns = await self.ldap.list_ml_moderator_groups()
         for moderator in moderator_group_dns:
             self.assertIsInstance(moderator, DN)
-        moderator_groups = await self.ldap.get_ml_moderator_groups(moderator_group_dns)
+        _moderator_groups = await self.ldap.get_ml_moderator_groups(moderator_group_dns)
         moderators = await self.ldap.get_moderators(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", moderators)
         mls = await self.ldap.get_mailinglists(ml_addresses)
@@ -298,7 +298,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         subscriber_group_dns = await self.ldap.list_ml_subscriber_groups()
         for subscriber in subscriber_group_dns:
             self.assertIsInstance(subscriber, DN)
-        subscriber_groups = await self.ldap.get_ml_moderator_groups(
+        _subscriber_groups = await self.ldap.get_ml_moderator_groups(
             subscriber_group_dns)
         subscribers = await self.ldap.get_moderators(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", subscribers)
