@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-08-17 14:24+0200\n"
+"POT-Creation-Date: 2024-08-17 15:32+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -626,7 +626,7 @@ msgid "Persona and Changelog are inconsistent."
 msgstr ""
 
 #: cdedb/backend/core/base.py:461 cdedb/backend/core/base.py:1337
-#: cdedb/frontend/core/base.py:1938 cdedb/frontend/event/registration.py:1212
+#: cdedb/frontend/core/base.py:1938 cdedb/frontend/event/registration.py:1220
 msgid "Nothing changed."
 msgstr ""
 
@@ -1227,19 +1227,19 @@ msgid "This is not useful."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1130 cdedb/frontend/assembly/base.py:464
-#: cdedb/frontend/event/event.py:254 cdedb/frontend/event/registration.py:1309
+#: cdedb/frontend/event/event.py:254 cdedb/frontend/event/registration.py:1317
 msgid "This user does not exist or is archived."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1132 cdedb/frontend/event/event.py:257
-#: cdedb/frontend/event/registration.py:1313
+#: cdedb/frontend/event/registration.py:1321
 msgid "This user is not an event user."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1134
 #: cdedb/frontend/event/registration.py:385
 #: cdedb/frontend/event/registration.py:761
-#: cdedb/frontend/event/registration.py:1318
+#: cdedb/frontend/event/registration.py:1326
 msgid "Already registered."
 msgstr ""
 
@@ -3457,7 +3457,7 @@ msgstr ""
 #: cdedb/frontend/event/event.py:366 cdedb/frontend/event/event.py:888
 #: cdedb/frontend/event/event.py:1173 cdedb/frontend/event/event.py:1230
 #: cdedb/frontend/event/lodgement.py:548
-#: cdedb/frontend/event/registration.py:1342 cdedb/frontend/ml/base.py:511
+#: cdedb/frontend/event/registration.py:1350 cdedb/frontend/ml/base.py:511
 msgid "Must be checked."
 msgstr ""
 
@@ -4755,7 +4755,7 @@ msgstr ""
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:184 cdedb/frontend/event/registration.py:1550
+#: cdedb/frontend/event/fields.py:184 cdedb/frontend/event/registration.py:1558
 msgid "Wrong associated event."
 msgstr ""
 
@@ -4763,7 +4763,7 @@ msgstr ""
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:278
+#: cdedb/frontend/event/fields.py:281
 msgid "change_note only supported for registrations."
 msgstr ""
 
@@ -5251,33 +5251,33 @@ msgstr "epistula electronica ad verificandum mitte"
 msgid "Cannot set personalized amount for conditional fee."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1115
-#: cdedb/frontend/event/registration.py:1122
-#: cdedb/frontend/event/registration.py:1163
+#: cdedb/frontend/event/registration.py:1125
+#: cdedb/frontend/event/registration.py:1132
 #: cdedb/frontend/event/registration.py:1171
+#: cdedb/frontend/event/registration.py:1179
 #, fuzzy
 msgid "Invalid registrations."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/event/registration.py:1125
+#: cdedb/frontend/event/registration.py:1135
 #, fuzzy
 msgid "No registrations selected."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/event/registration.py:1209
+#: cdedb/frontend/event/registration.py:1217
 #, python-format
 msgid "Updated %(count)s personalized fees."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1323
+#: cdedb/frontend/event/registration.py:1331
 msgid "Rate-limit reached."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1378
+#: cdedb/frontend/event/registration.py:1386
 msgid "No participants found to edit."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1552
+#: cdedb/frontend/event/registration.py:1560
 msgid "Already checked in."
 msgstr ""
 
@@ -5601,8 +5601,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:66
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:64
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:77
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:76
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:82
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:78
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:84
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:178
 #: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:76
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:39
@@ -5654,9 +5654,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:232
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:189
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:128
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:81
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:83
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:492
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:91
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:93
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:143
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:318
@@ -6202,8 +6202,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/ballot_template.tmpl:29
 #: cdedb/frontend/templates/web/core/create_user.tmpl:25
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:51
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:95
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:47
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:99
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:49
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
 msgid "Continue"
 msgstr "Porro"
@@ -8442,12 +8442,12 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:31
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:34
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:11
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:16
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:15
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:27
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:20
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:27
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:20
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:19
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:17
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:15
@@ -8635,8 +8635,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:14
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:17
 #: cdedb/frontend/templates/web/event/event/index.tmpl:135
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:36
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:29
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:36
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:61
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:13
@@ -9299,7 +9299,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:125
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:31
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:119
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:76
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:93
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:218
 msgid "Changenotes"
@@ -10030,11 +10030,11 @@ msgstr "(ab %(date)s annuntiari potest)"
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:43
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:51
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:68
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:29
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:100
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:29
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:104
 #: cdedb/frontend/templates/web/event/event/index.tmpl:128
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:34
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:27
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:34
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:27
 #: cdedb/frontend/templates/web/event/generic.tmpl:494
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:96
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:57
@@ -11150,8 +11150,8 @@ msgid "Course Assignment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:55
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:39
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:32
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:39
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:15
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:15
@@ -11211,7 +11211,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:17
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:26
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:26
 msgid "Fees"
 msgstr ""
 
@@ -11738,8 +11738,8 @@ msgid "Manage Courses"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:37
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:30
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:30
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:19
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:54
@@ -12713,7 +12713,7 @@ msgstr ""
 msgid "Fee Stats (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:11
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:18
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:26
 #, fuzzy
@@ -12747,32 +12747,38 @@ msgstr ""
 msgid "Fees (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:12
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:12
 #, fuzzy, python-format
 msgid "Set Personalized Fees for %(fee_title)s (%(event_title)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:16
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:16
 #, fuzzy, python-format
 msgid "Select Personalized Fee (%(event_title)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:31
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:31
 #, fuzzy
 msgid "Set Personalized Amounts"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:36
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:37
 #, fuzzy, python-format
 msgid "Set Personalized Fees for %(fee_title)s"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:39
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:40
 msgid "Select Personalized Fee"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:56
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:55
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:52
+msgid ""
+"This form can be used to set the individual amounts of the chosen "
+"personalized fee for multiple registrations at once."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:58
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:57
 msgid ""
 "Changed entries are highlighted in yellow. Newly added entries are shown in "
 "green and deleted entries in red. You can use the \"Restore\"-button to "
@@ -12780,12 +12786,18 @@ msgid ""
 "\"Delete\"-button to set an entry to empty, which will delete it."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:82
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:92
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:84
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:94
 msgid "Restore"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/set_personalized_fees.tmpl:92
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:92
+msgid ""
+"Select a personalized fee to set individual amounts for that fee for the "
+"following registrations:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:96
 #: cdedb/frontend/templates/web/event/generic.tmpl:585
 msgid "Personalized Fee"
 msgstr ""
@@ -13228,18 +13240,18 @@ msgid ""
 "concluded."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:20
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:20
 #, python-format
 msgid "Set Field %(field)s (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:26
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:26
 #, python-format
 msgid "Set %(field)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:40
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:33
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:33
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:40
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:58
@@ -13247,8 +13259,8 @@ msgstr ""
 msgid "Lodgement Query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:42
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:35
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:42
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:35
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:28
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:47
 #: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:29
@@ -13258,39 +13270,51 @@ msgstr ""
 msgid "Set Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:77
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:49
+msgid ""
+"This form can be used to set the individual value of the chosen custom data "
+"field for multiple registrations at once."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:79
 #, python-format
 msgid ""
 "Summary to be added to the log entries. This is prefixed with \"%s gesetzt: "
 "\""
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:86
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:88
 msgid "No registrations found."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:13
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:13
 #, python-format
 msgid "Select Field (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:19
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:19
 msgid "Select Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:44
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:42
+msgid ""
+"Select a custom data field to set individual values for that field for the "
+"following entities:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:46
 msgid "Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:53
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:55
 msgid "Participants/Registrations to be changed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:55
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:57
 msgid "Courses to be changed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:57
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:59
 msgid "Lodgements to be changed"
 msgstr ""
 
