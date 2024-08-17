@@ -28,7 +28,7 @@
     {% else %}
         {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("event/set_personalized_fees"), gettext("Set Personalized Amounts"), icon="edit", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/personalized_fee_multiset_form"), gettext("Set Personalized Amounts"), icon="edit", active=True) }}
 {% endblock %}
 
 {% block heading %}
@@ -46,10 +46,12 @@
 
     {% if ambience['fee'] %}
 
-        <form action="{{ cdedblink('event/set_personalized_fees') }}" method="POST" id="setpersonalizedfeeamountsform" class="form-horizontal">
+        <form action="{{ cdedblink('event/personalized_fee_multiset') }}" method="POST" id="setpersonalizedfeeamountsform" class="form-horizontal">
             <p class="text-info">
                 {{ util.make_icon("info-circle") }}
-                This form can be used to set the individual amounts of the chosen personalized fee for multiple registrations at once.
+                {% trans %}
+                    This form can be used to set the individual amounts of the chosen personalized fee for multiple registrations at once.
+                {% endtrans %}
             </p>
             <p class="multiset-explanation text-info" style="display: none;">
                 {{ util.make_icon("info-circle") }}
@@ -63,7 +65,7 @@
 
             <hr />
 
-            {{ util.anti_csrf_token('event/set_personalized_fees') }}
+            {{ util.anti_csrf_token('event/personalized_fee_multiset') }}
             {{ util.input_hidden('registration_ids', registration_ids|join(',')) }}
             {# Already sorted #}
             {% for reg in registrations %}
@@ -83,11 +85,13 @@
             );
         </script>
     {% else %}
-        <form action="{{ cdedblink('event/set_personalized_fees_form') }}" method="GET"
+        <form action="{{ cdedblink('event/personalized_fee_multiset_form') }}" method="GET"
               id="selectpersonalizedfeeform" class="form-horizontal">
             <p class="text-info">
                 {{ util.make_icon("info-circle") }}
-                Select a personalized fee to set individual amounts for that fee for the following registrations:
+                {% trans %}
+                    Select a personalized fee to set individual amounts for that fee for the following registrations:
+                {% endtrans %}
             </p>
             {{ util.form_input_select("fee_id", label=gettext("Personalized Fee"), nulloption="",
                                       entries=fee_titles.items(), small=True) }}
@@ -99,11 +103,18 @@
             <h4 class="mosp">
                 {% trans %}Registrations{% endtrans %}
             </h4>
-            <ul id="registrations-list">
-                {% for reg in registrations %}
-                    <li>{{ util.persona_name(personas[reg['persona_id']]) }}</li>
+            <div class="row" id="registrations-list">
+                {% set slices = 1 if registrations|length <= 5 else (2 if registrations|length <= 10 else 3) %}
+                {% for list in registrations|slice(slices) %}
+                    <div class="col-sm-{{ 12 // slices }}">
+                        <ul>
+                            {% for reg in list %}
+                                <li>{{ util.persona_name(personas[reg['persona_id']]) }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% endif %}
     {% endif %}
 {% endblock %}

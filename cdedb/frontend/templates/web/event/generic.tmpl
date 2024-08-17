@@ -589,7 +589,7 @@
                                 ({{ _print_fee_amount_range(fee) }})
                             {% endif %}
                         {% else %}
-                            {{ util.href(cdedblink("event/set_personalized_fees", {'fee_id': fee.id}),
+                            {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
                                          label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
                                          title=gettext("Set personalized amount for multiple registrations.")) }}
                         {% endif %}

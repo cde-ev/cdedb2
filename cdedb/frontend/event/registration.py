@@ -1088,11 +1088,14 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata("registration_ids")
-    def set_personalized_fees_form(
+    def personalized_fee_multiset_form(
             self, rs: RequestState, event_id: int, fee_id: int | None = None,
             registration_ids: vtypes.IntCSVList | None = None,
     ) -> Response:
-        """Render a form for setting multiple personalized fees at once."""
+        """
+        Render a form for setting an individual personalized fee for multiple
+        registrations at once.
+        """
         if fee_id is None:
             if len(fees := rs.ambience['event'].personalized_fees) == 1:
                 fee_id = unwrap(fees.keys())
@@ -1104,7 +1107,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 # Defer validation to after the redirect.
                 rs.ignore_validation_errors()
                 return self.redirect(
-                    rs, 'event/set_personalized_fees_form',
+                    rs, 'event/personalized_fee_multiset_form',
                     {
                         'fee_id': fee_id,
                         'registration_ids': rs.request.values['registration_ids'],
@@ -1140,7 +1143,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             fee.id: fee.title for fee in rs.ambience['event'].personalized_fees.values()
         }
         return self.render(
-            rs, "event/fee/set_personalized_fees",
+            rs, "event/fee/personalized_fee_multiset",
             {
                 'registration_ids': xsorted(registration_ids),
                 'registrations': sorted_registrations,
@@ -1152,7 +1155,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("registration_ids")
-    def set_personalized_fees(
+    def personalized_fee_multiset(
             self, rs: RequestState, event_id: int, fee_id: int,
             registration_ids: vtypes.IntCSVList,
     ) -> Response:
@@ -1178,7 +1181,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         data = request_extractor(rs, params)
 
         if rs.has_validation_errors():
-            return self.set_personalized_fees_form(
+            return self.personalized_fee_multiset_form(
                 rs, event_id, fee_id, registration_ids=registration_ids)
 
         description = (
@@ -1193,7 +1196,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         count = 0
         with TransactionObserver(
-                rs, self, "set_personalized_fees", description=description,
+                rs, self, "personalized_fee_multiset", description=description,
                 recipients=recipients,
         ):
             # Sort by id for consistency.

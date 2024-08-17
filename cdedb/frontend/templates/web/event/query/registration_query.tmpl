@@ -25,7 +25,7 @@
                 {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
-                    {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
+                    {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
                                   readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
                 {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
@@ -75,10 +75,10 @@
             {% if ambience['event'].personalized_fees %}
                 {{ generic.query_result_dynamic_action(
                         label=gettext("Set Personalized Fee Amount"), icon="calculator",
-                        target="event/set_personalized_fees_form", magic_placeholders=["registration_ids"]) }}
+                        target="event/personalized_fee_multiset_form", magic_placeholders=["registration_ids"]) }}
             {% endif %}
             {{ generic.query_result_dynamic_action(
-                    label=gettext("Set Field"), icon="edit", target="event/field_set_select",
+                    label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
                     params={"kind": enums['FieldAssociations'].registration}, magic_placeholders=["ids"]) }}
             {{ generic.query_result_dynamic_action(
                     label=gettext("Edit"), icon="pen", target="event/change_registrations_form",

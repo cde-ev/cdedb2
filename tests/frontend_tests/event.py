@@ -3721,7 +3721,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @event_keeper
     @as_users("garcia")
-    def test_field_set(self) -> None:
+    def test_field_multiset(self) -> None:
         # first for registration-associated fields
         self.get('/event/event/1/field/setselect?kind=1&ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")

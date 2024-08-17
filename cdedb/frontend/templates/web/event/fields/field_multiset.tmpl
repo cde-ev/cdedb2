@@ -39,17 +39,19 @@
         {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
         {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("event/field_set_select", {'kind': kind}), gettext("Set Field")) }}
-    {{ util.breadcrumb_link(cdedblink("event/field_set_form", {'kind': kind}), field_name, active=True, icon="tag") }}
+    {{ util.breadcrumb_link(cdedblink("event/field_multiset_select", {'kind': kind}), gettext("Set Field")) }}
+    {{ util.breadcrumb_link(cdedblink("event/field_multiset_form", {'kind': kind}), field_name, active=True, icon="tag") }}
 {% endblock %}
 
 {% block content %}
     <p class="text-info">
         {{ util.make_icon("info-circle") }}
-        This form can be used to set the individual value of the chosen custom data field for multiple registrations at once.
+        {% trans %}
+            This form can be used to set the individual value of the chosen custom data field for multiple registrations at once.
+        {% endtrans %}
     </p>
     {% if ordered %}
-        <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
+        <form action="{{ cdedblink('event/field_multiset') }}" method="POST" id="fieldform" class="form-horizontal">
             <p class="multiset-explanation text-info" style="display: none;">
                 {{ util.make_icon("info-circle") }}
                 {% trans %}
@@ -60,7 +62,7 @@
                 {% endtrans %}
             </p>
             <hr />
-            {{ util.anti_csrf_token('event/field_set') }}
+            {{ util.anti_csrf_token('event/field_multiset') }}
             {% for anid in ordered %}
                 {{ generic_event.form_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
