@@ -438,9 +438,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         :returns: A dict with localized text to be used in the preview.
         """
 
-        if len(all_part_ids := rs.ambience['event'].parts) == 1:
-            part_ids = vtypes.IntCSVList(list(all_part_ids))
-
         if self.is_orga(rs, event_id):
             pass
         elif persona_id == rs.user.persona_id and (
