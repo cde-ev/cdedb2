@@ -65,6 +65,7 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
+import cdedb.models.core as EmailAddressReport
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
@@ -720,6 +721,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs.notify("info", n_("The CdE database is currently under"
                                      " maintenance and is unavailable."))
 
+        params['defect_addresses'] = defect_addresses = {}
+        if rs.user.persona_id:
+            defect_addresses = self.coreproxy.get_defect_addresses(
+                rs, [rs.user.persona_id])
+        self.update_defect_addresses(rs, params, defect_addresses)
+
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -738,6 +745,23 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
+
+    def update_defect_addresses(self, rs: RequestState, params: dict[str, Any],
+                                defect_addresses: dict[str, EmailAddressReport]):
+        defect_username = None
+        mls_with_defect_explicits = None
+        if rs.user.username in defect_addresses:
+            defect_username = rs.user.username
+        mls_with_defect_explicit_ids = {
+            e.address: e.ml_ids for e in defect_addresses.values()
+            if e.subscriber_id == rs.user.persona_id}
+        mls = self.mlproxy.get_mailinglists(
+            rs, set().union(*mls_with_defect_explicit_ids.values()))
+        mls_with_defect_explicits = {
+            address: [mls[ml_id] for ml_id in ml_ids]
+            for address, ml_ids in mls_with_defect_explicit_ids.items()}
+        params['defect_username'] = defect_username
+        params['mls_with_defect_explicits'] = mls_with_defect_explicits
 
     def do_mail(self, rs: RequestState, templatename: str,
                 headers: Headers, params: Optional[CdEDBObject] = None,

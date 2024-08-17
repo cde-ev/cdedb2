@@ -40,7 +40,7 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.models.core import EmailAddressStatus
+from cdedb.models.core import EmailAddressReport
 from cdedb.models.droid import APIToken
 
 if TYPE_CHECKING:
@@ -369,7 +369,7 @@ class Application(BaseApp):
             return self.make_error_page(e, request, user)
 
     def notify_defect_adresses(self, rs: RequestState,
-                               defect_addresses: dict[str, EmailAddressStatus]
+                               defect_addresses: dict[str, EmailAddressReport]
                                ) -> None:
         if rs.user.username in defect_addresses:
             msg = n_(

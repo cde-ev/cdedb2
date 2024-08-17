@@ -51,7 +51,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.models.core import DefectAddress
+from cdedb.models.core import EmailAddressReport
 
 
 class CoreBaseBackend(AbstractBackend):
@@ -2902,8 +2902,8 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin", "ml_admin")
     def list_email_states(
             self, rs: RequestState,
-            states: Optional[Collection[vtypes.EmailStatus]] = None
-    ) -> dict[str: vtypes.EmailStatus]:
+            states: Optional[Collection[const.EmailStatus]] = None
+    ) -> dict[str: const.EmailStatus]:
         """List all explicit email states known to the CdEDB.
 
         This is mainly used for handling defect addresses.
@@ -2921,7 +2921,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def get_defect_addresses(
             self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None
-    ) -> dict[str, DefectAddress]:
+    ) -> dict[str, EmailAddressReport]:
         """Get defect mail addresses and map them to users and mls, if possible.
 
         :param persona_ids: Retrieve only defect addresses of those users.
@@ -2935,11 +2935,11 @@ class CoreBaseBackend(AbstractBackend):
         # first, query core.personas
         query = """
             SELECT
-                def.id, def.address, def.status, def.notes,
+                estat.id, estat.address, estat.status, estat.notes,
                 core.personas.id AS user_id
-            FROM core.defect_addresses AS def
-                LEFT JOIN core.personas ON def.address = core.personas.username
-            WHERE def.status = ANY(%s)
+            FROM core.email_states AS estat
+                LEFT JOIN core.personas ON estat.address = core.personas.username
+            WHERE estat.status = ANY(%s)
         """
         params: tuple[set[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
         if persona_ids:
@@ -2952,22 +2952,22 @@ class CoreBaseBackend(AbstractBackend):
         # second, query ml.subscription_addresses
         query = """
             SELECT
-                def.id, def.address, def.status, def.notes,
+                estat.id, estat.address, estat.status, estat.notes,
                 array_remove(array_agg(sa.mailinglist_id), NULL) AS ml_ids,
                 sa.persona_id AS subscriber_id
-            FROM core.defect_addresses AS def
-                LEFT JOIN ml.subscription_addresses AS sa ON def.address = sa.address
-            WHERE def.status = ANY(%s)
+            FROM core.email_states AS estat
+                LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
+            WHERE estat.status = ANY(%s)
         """
         params: tuple[list[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
         if persona_ids:
             query += " AND sa.persona_id = ANY(%s)"
             params += (persona_ids,)
-        query += " GROUP BY def.id, def.address, def.status, def.notes, subscriber_id"
+        query += " GROUP BY estat.id, estat.address, estat.status, estat.notes, subscriber_id"
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
 
-        ret = DefectAddress.many_from_database(data.values())
+        ret = EmailAddressReport.many_from_database(data.values())
         return {val.address: val for val in ret.values()}
 
     @access("core_admin", "ml_admin")
@@ -2980,7 +2980,7 @@ class CoreBaseBackend(AbstractBackend):
         notes = affirm_optional(str, notes)
 
         code = self.sql_insert(
-            rs, DefectAddress.database_table,
+            rs, EmailAddressReport.database_table,
             {"address": address, "status": status, "notes": notes},
             update_on_conflict=True)
         return code
@@ -2990,4 +2990,5 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, address: str
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
-        return self.sql_delete_one(rs, DefectAddress.database_table, address, "address")
+        return self.sql_delete_one(rs, EmailAddressReport.database_table, address,
+                                   "address")

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass
-class EmailAddressStatus(CdEDataclass):
+class EmailAddressReport(CdEDataclass):
     address: vtypes.Email
     status: EmailStatus
     notes: Optional[str] = None
@@ -37,7 +37,7 @@ class EmailAddressStatus(CdEDataclass):
     database_table = "core.email_states"
 
     @classmethod
-    def from_database(cls, data: CdEDBObject) -> "EmailAddressStatus":
+    def from_database(cls, data: CdEDBObject) -> "EmailAddressReport":
         if "ml_ids" in data:
             data["ml_ids"] = set(data["ml_ids"])
         return super().from_database(data)
