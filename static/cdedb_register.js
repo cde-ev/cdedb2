@@ -80,6 +80,8 @@
 
         // Find input elements.
         part_checkboxes = form.find('[type="checkbox"][name="parts"]');
+        // either this or the former is present, depending on the page
+        part_selects = form.find('select[id^="input-select-part"][id$=".status"]')
         field_checkboxes = form.find('[type="checkbox"][id^="event-input-fields"]');
         field_selects = form.find('select[id^="event-input-fields"]');
 
@@ -90,7 +92,7 @@
         // Find the elements that will be replaced by this function.
         fee_preview = form.find('[id="fee-preview"]');
         nonmember_surcharge = form.find('[id="nonmember-surcharge"]');
-        fee_summary = form.find('[id="active-fee"]');
+        eventfee_rows = form.find('[class="eventfee"]');
 
         updateFeePreview = function() {
             /**
@@ -100,11 +102,25 @@
             if (constants['part_ids']) {
                 part_ids = constants['part_ids']
             } else {
-                part_checkboxes.each(function () {
-                    if ($(this).prop('checked')) {
-                        part_ids.push($(this).val());
-                    }
-                });
+                if (part_checkboxes.length) {
+                    part_checkboxes.each(function () {
+                        if ($(this).prop('checked')) {
+                            part_ids.push($(this).val());
+                        }
+                    });
+                }
+                if (part_selects.length) {
+                    part_selects.each(function () {
+                        value = $(this).get()[0].value;
+                        if (
+                            value === "RegistrationPartStati.participant"
+                            || value === "RegistrationPartStati.applied"
+                            || value === "RegistrationPartStati.waitlist"
+                        ) {
+                            part_ids.push($(this).data("part_id"))
+                        }
+                    });
+                }
             }
 
             /**
@@ -127,11 +143,11 @@
              */
 
             field_checkboxes.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).prop('checked');
             });
             field_selects.each(function() {
-                field_id = $(this).parents('[id^="questionnaire_field_entry"]').data('field_id');
+                field_id = $(this).parents('[id^="field"]').data('field_id');
                 params[`field.${field_id}`] = $(this).val() == 'True';
             });
 
@@ -147,7 +163,7 @@
                     /**
                      * Replace the content of the fee information with the returned string.
                      */
-                    fee_preview.html(result["fee"]);
+                    fee_preview.show().find("#fee-amount").html(result["fee"]);
                     /**
                      * If the nonmember info should be shown replace the text and show its parent, otherwise hide it.
                      */
@@ -163,17 +179,20 @@
                      *
                      * Color the lines and display a deko checkbox depending on whether each fee is active or not.
                      */
-                    if (fee_summary) {
-                        fee_summary.each(function() {
-                            $(this).find('#active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
-                            title = $(this).find('#active-fee-title');
-                            orig_title = title.data('orig-title');
+                    if (eventfee_rows) {
+                        eventfee_rows.each(function() {
+                            $(this).find('.active-fee-condition').html(result["visual_debug"][$(this).data("fee_id")]);
+                            title = $(this).find('.active-fee-title');
+                            active_checkbox = $(this).find('#checkbox-active');
+                            inactive_checkbox = $(this).find('#checkbox-inactive');
                             if ($.inArray($(this).data('fee_id'), result["active_fees"]) >= 0) {
-                                title.html(constants['deko_true'] + orig_title);
-                                title.attr('title', constants['title_active']).removeClass('alert-danger').addClass('alert-success');
+                                active_checkbox.show();
+                                inactive_checkbox.hide();
+                                title.removeClass('alert-danger').addClass('alert-success');
                             } else {
-                                title.html(constants['deko_false'] + orig_title);
-                                title.attr('title', constants['title_inactive']).removeClass('alert-success').addClass('alert-danger');
+                                active_checkbox.hide();
+                                inactive_checkbox.show();
+                                title.removeClass('alert-success').addClass('alert-danger');
                             }
                         });
                     }
@@ -183,6 +202,9 @@
 
         if (part_checkboxes.length) {
             part_checkboxes.change(updateFeePreview);
+        }
+        if (part_selects.length) {
+            part_selects.change(updateFeePreview);
         }
         if (field_checkboxes.length) {
             field_checkboxes.change(updateFeePreview);
@@ -196,8 +218,8 @@
         if (is_member_checkbox.length) {
             is_member_checkbox.change(updateFeePreview);
         }
-        if (fee_summary.length) {
-            fee_summary.parents('table').show();
+        if (eventfee_rows.length) {
+            form.find("#fee-summary").show();
         }
 
         updateFeePreview();

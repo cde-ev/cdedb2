@@ -8,7 +8,7 @@ import collections
 import copy
 import decimal
 from collections.abc import Collection, Mapping
-from typing import Any
+from typing import Any, Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -34,6 +34,7 @@ from cdedb.database.connection import Atomizer
 __all__ = ['EventBackend']
 
 from cdedb.models.droid import OrgaToken
+from cdedb.models.event import CustomQueryFilter
 
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
@@ -47,6 +48,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         * orga_tokens: An orga token granting API access to the event.
         * field_definitions: A custom datafield associated with the event.
+        * custom_query_filters: A custom filter for queries associated with the event.
         * courses: A course associated with the event. This can have it's own
                    blockers.
         * event_fees: A fee of the event.
@@ -85,6 +87,12 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
         if field_definitions:
             blockers["field_definitions"] = [e["id"] for e in field_definitions]
+
+        custom_query_filters = self.sql_select(
+            rs, CustomQueryFilter.database_table, ("id",), (event_id,),
+            entity_key="event_id")
+        if custom_query_filters:
+            blockers["custom_query_filters"] = [e["id"] for e in custom_query_filters]
 
         courses = self.sql_select(
             rs, "event.courses", ("id",), (event_id,), entity_key="event_id")
@@ -173,7 +181,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event_admin")
     def delete_event(self, rs: RequestState, event_id: int,
-                     cascade: Collection[str] = None) -> DefaultReturnCode:
+                     cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
         """Remove event.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -202,7 +210,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             ret *= self.delete_registration(
                                 rs, reg_id,
                                 ("registration_parts", "course_choices",
-                                 "registration_tracks"))
+                                 "registration_tracks", "amount_paid"))
                 if "courses" in cascade:
                     with Silencer(rs):
                         for course_id in blockers["courses"]:
@@ -247,6 +255,10 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
                             ret *= self._delete_event_field(rs, anid)
+                if "custom_query_filters" in cascade:
+                    with Silencer(rs):
+                        for anid in blockers["custom_query_filters"]:
+                            ret *= self.delete_custom_query_filter(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
                 if "orga_tokens" in cascade:
@@ -388,7 +400,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
-                             dryrun: bool, token: str = None,
+                             dryrun: bool, token: Optional[str] = None,
                              ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
@@ -716,8 +728,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if part['lodgement_id'] in lmap:
                                 tmp_id = part['lodgement_id']
                                 part['lodgement_id'] = lmap[tmp_id]
+                        personalized_fees = new.pop('personalized_fees', {})
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
+                        for fee_id, amount in personalized_fees.items():
+                            self.set_personalized_fee_amount(rs, new_id, fee_id, amount)
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
@@ -751,7 +766,11 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             if data.get('summary'):
                                 change_note = ("Partieller Import: "
                                                + data['summary'])
+                            personalized_fees = changed_reg.pop('personalized_fees', {})
                             self.set_registration(rs, changed_reg, change_note)
+                            for fee_id, amount in personalized_fees.items():
+                                self.set_personalized_fee_amount(
+                                    rs, registration_id, fee_id, amount)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious

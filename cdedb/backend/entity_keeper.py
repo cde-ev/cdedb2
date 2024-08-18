@@ -24,7 +24,7 @@ import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import CdEDBObject, PathLike, setup_logger
+from cdedb.common import CdEDBObject, PathLike, now, setup_logger
 from cdedb.config import Config
 from cdedb.filter import datetime_filter
 
@@ -34,7 +34,7 @@ tabulate.PRESERVE_WHITESPACE = True
 
 class EntityKeeper:
     def __init__(self, conf: Config, directory: PathLike,
-                 log_keys: Sequence[str] = None, log_timestamp_key: str = None):
+                 log_keys: Sequence[str], log_timestamp_key: str):
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
@@ -74,7 +74,7 @@ class EntityKeeper:
             completed.check_returncode()
         return completed
 
-    def init(self, entity_id: int) -> "EntityKeeper":
+    def init(self, entity_id: int, exists_ok: bool = False) -> "EntityKeeper":
         """Actually initialize the repository.
 
         This takes care of all the dirty work regarding git configuration and
@@ -84,7 +84,7 @@ class EntityKeeper:
         entity_id = affirm(int, entity_id)
         full_dir = self._dir / str(entity_id)
 
-        full_dir.mkdir()
+        full_dir.mkdir(exist_ok=exists_ok)
         # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
         self._run(["git", "init", "-b", "master"], cwd=full_dir)
         self._run(["git", "config", "user.name", "CdE-Datenbank"], cwd=full_dir)
@@ -111,9 +111,16 @@ class EntityKeeper:
             # For example, this is the case for deleting an archived event.
             pass
 
+    @staticmethod
+    def format_datetime(dt: datetime.datetime) -> bytes:
+        formatstr = "%Y-%m-%dT%H:%M:%S%z"
+        formatted = datetime_filter(dt, formatstr=formatstr)
+        assert formatted is not None
+        return formatted.encode("utf-8")
+
     def commit(self, entity_id: int, file_text: str, commit_msg: str,
                author_name: str = "", author_email: str = "", *,
-               may_drop: bool = True, logs: Sequence[CdEDBObject] = None,
+               may_drop: bool = True, logs: Optional[Sequence[CdEDBObject]] = None,
                ) -> Optional[subprocess.CompletedProcess[bytes]]:
         """Commit a single file representing an entity to a git repository.
 
@@ -145,16 +152,14 @@ class EntityKeeper:
                 commit.append("-m")
                 commit.append(formated_logs)
                 # set the date of the commit to the ctime of the latest log entry
-                commit.append("--date")
-                # formatted logs only exist if log_timestamp_key is not None
-                assert self.log_timestamp_key is not None
-                timestamp: datetime.datetime = logs[-1][self.log_timestamp_key]
-                formatstr = "%Y-%m-%dT%H:%M:%S+%z"
-                formated_timestamp = datetime_filter(timestamp, formatstr=formatstr)
-                # the formated timestamp is not None, since we passed in a valid
-                # datetime object
-                assert formated_timestamp is not None
-                commit.append(formated_timestamp.encode("utf-8"))
+                commit.extend([
+                    "--date", self.format_datetime(logs[-1][self.log_timestamp_key]),
+                ])
+            else:
+                # explicitly set commit date. Allows mocking time for testing.
+                commit.extend([
+                    "--date", self.format_datetime(now()),
+                ])
             if author_name or author_email:
                 commit.append("--author")
                 commit.append(f"{author_name} <{author_email}>".encode())
@@ -190,18 +195,16 @@ class EntityKeeper:
                      check=False, cwd=full_dir).returncode:
             return None
         # get the timestamp of the last commit in ISO 8601 format
-        # sadly, git show does not return proper iso format, so this does not work:
-        # self._run(["git", "show", "-s", "--format=%ci", "HEAD"], cwd=full_dir)
-        # so, we use git log instead, where -1 restrict the results to the latest commit
-        # and iso-strict-local format shows the correct iso 8601 format...
-        response = self._run(["git", "log", "--date=iso-strict-local", "-1",
-                              "--pretty=%cd"], cwd=full_dir)
+        # Important: Use "%ad" instead of "%cd" to use the date excplicitly set when
+        #  committing, rather than the time of the commit.
+        response = self._run(["git", "show", "-s", "--format=%ad",
+                              "--date=iso-strict-local", "HEAD"], cwd=full_dir)
         # the response contains a \n
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)
 
     def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
-        if self.log_keys is None or self.log_timestamp_key is None:
+        if not self.log_keys:
             return None
 
         summary = f"Es gab {len(logs)} neue Logeinträge seit dem letzten Commit."

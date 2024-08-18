@@ -308,7 +308,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly")
     def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                           secret: str = None) -> Response:
+                           secret: Optional[str] = None) -> Response:
         """This shows a more detailed result of a tallied ballot.
 
         All information provided on this side is constructable from the downloadable
@@ -380,8 +380,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         # we are only interested in concluded ballots
         ballot_list: list[int] = xsorted(
             grouped.concluded.keys(),
-            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_]),  # type: ignore[union-attr]
-            # Seems like a mypy bug.
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_]),
         )
 
         i = ballot_list.index(ballot_id)
@@ -418,7 +417,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return collections.Counter(as_vote_strings(votes))
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
-                           secret: str = None) -> CdEDBObject:
+                           secret: Optional[str] = None) -> CdEDBObject:
         """Helper function to present the own vote
 
         This handles the personalised information of the current viewer interacting with
@@ -879,10 +878,11 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not (result := self.assemblyproxy.get_ballot_result(rs, ballot_id)):
+        path = self.assemblyproxy.get_ballot_file_path(rs, ballot_id)
+        if not path.is_file():
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        return self.send_file(rs, data=result, inline=False,
+        return self.send_file(rs, path=path, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
     @access("assembly", modi={"POST"})

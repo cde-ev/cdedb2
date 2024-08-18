@@ -16,10 +16,12 @@ from cdedb.database.constants import LockType
 from cdedb.frontend.common import setup_translations
 
 
+# TODO: coverage seems to not pick this up correctly,
+#  even with concurrency set to multiprocessing and/or thread.
 def database_lock_job(
         first: threading.Semaphore, second: threading.Semaphore,
         control: threading.Semaphore,
-        signal: "multiprocessing.Queue[int]") -> bool:
+        signal: "multiprocessing.Queue[int]") -> bool:  # pragma: no cover
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.

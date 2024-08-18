@@ -6,7 +6,7 @@ help:
 	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
 	@echo "General:"
-	@echo "cron                -- trigger cronjob execution (as user www-data)"
+	@echo "cron                -- trigger cronjob execution (as user www-cde)"
 	@echo "doc                 -- build documentation"
 	@echo "reload              -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo ""
@@ -15,7 +15,7 @@ help:
 	@echo ""
 	@echo "Code formatting:"
 	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint                -- run linters (isort, flake8 and pylint)"
+	@echo "lint                -- run linters (ruff, isort and pylint)"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -36,9 +36,8 @@ help:
 
 PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
-FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
-RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff --config /cdedb2/pyproject.toml
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -63,7 +62,7 @@ I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*
 
 .PHONY: cron
 cron:
-	sudo -u www-data /cdedb2/bin/cron_execute.py
+	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -75,8 +74,10 @@ reload: i18n-compile
 	python3 -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
+	kill $$(pidof -x gunicorn) || true
+	/run-gunicorn.sh
 else
-	sudo systemctl restart apache2
+	sudo systemctl restart apache2.service cdedb-app.service
 endif
 
 
@@ -134,14 +135,6 @@ isort:
 	$(ISORT) --check-only bin/*.py cdedb tests
 	@echo ""
 
-.PHONY: flake8
-flake8:
-	@echo $(BANNERLINE)
-	@echo "All of flake8"
-	@echo $(BANNERLINE)
-	$(FLAKE8) cdedb tests
-	@echo ""
-
 .PHONY: pylint
 pylint:
 	@echo $(BANNERLINE)
@@ -169,7 +162,7 @@ template-line-length:
 	@echo ""
 
 .PHONY: lint
-lint: ruff isort flake8 pylint
+lint: ruff isort pylint
 
 
 ################
@@ -236,4 +229,4 @@ sample-data-dump:
 
 .PHONY: sample-data
 sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-data
+	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data

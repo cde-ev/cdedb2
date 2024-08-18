@@ -48,13 +48,13 @@
         {% endfor %}
         {% if not preview %}
             {{ util.form_input_submit(label=gettext("Submit"), cancellink=cdedblink("event/registration_status"),
-                                      readonly=is_locked or ambience['event']['is_archived']) }}
+                                      readonly=is_locked) }}
         {% endif %}
         {% if lodgement_wishes %}
             <hr />
             {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}
                 <div class="p">
-                    {% trans link=util.href("#questionnaire_field_entry_{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
+                    {% trans link=util.href("#field.{}".format(lodgement_wishes['field']['field_name']), label=gettext("questionnaire field")) %}
                         You can enter lodgement wishes in the respective {{ link }} in the following formats:
                     {% endtrans %}
                     {% trans %}

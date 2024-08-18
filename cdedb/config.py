@@ -19,10 +19,9 @@ import logging
 import os
 import pathlib
 import subprocess
+import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
 from typing import Any, Union
-
-import pytz
 
 PathLike = Union[pathlib.Path, str]
 
@@ -47,11 +46,11 @@ def get_configpath(fallback: bool = False) -> pathlib.Path:
     """
     if path := os.environ.get("CDEDB_CONFIGPATH"):
         return pathlib.Path(path)
-    if fallback:
+    if fallback:  # TODO: coverage?
         _LOGGER.debug("CDEDB_CONFIGPATH not set, using the fallback.")
         set_configpath(DEFAULT_CONFIGPATH)
         return DEFAULT_CONFIGPATH
-    raise RuntimeError("No config path set!")
+    raise RuntimeError("No config path set!")  # TODO: coverage
 
 
 # TODO where exactly does this log?
@@ -63,15 +62,28 @@ if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: n
 _repopath = _currentdir.parent
 
 try:
-    _git_commit = subprocess.check_output(
-        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+    _git_commit = (
+        subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
+        .decode()
+        .strip()
+    )
 except FileNotFoundError:  # pragma: no cover, only catch git executable not found
-    with pathlib.Path(_repopath, '.git/HEAD').open() as head:
-        _git_commit = head.read().strip()
+    _git_commit = (_repopath / ".git/HEAD").read_text().strip()
 
-    if _git_commit.startswith('ref'):
-        with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
-            _git_commit = ref.read().strip()
+    if _git_commit.startswith("ref: "):
+        _git_commit = (
+            (_repopath / ".git" / _git_commit.removeprefix("ref: ")).read_text().strip()
+        )
+except subprocess.CalledProcessError as e:  # pragma: no cover
+    # It can happen that we use a git worktree where the primary repository
+    # is outside of the sandbox/VM in which we are running. Testing this is infeasible.
+    _git_reference = (_repopath / ".git").read_text().strip()
+    if not _git_reference.startswith("gitdir: "):
+        raise RuntimeError("Unable to determine git commit") from e
+
+    # The commit is primarily used for cache busting
+    # so there is not harm to set it to the empty string during development.
+    _git_commit = ""
 
 
 #: defaults for :py:class:`Config`
@@ -140,7 +152,7 @@ _DEFAULTS = {
     "GIT_COMMIT": _git_commit,
 
     # default timezone for input and output
-    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
+    "DEFAULT_TIMEZONE": zoneinfo.ZoneInfo("Europe/Berlin"),
 
     # droids which are allowed access during lockdown.
     "INFRASTRUCTURE_DROIDS": {"resolve"},
@@ -193,6 +205,8 @@ _DEFAULTS = {
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     # default sender address for mails
     "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
+    # noreply sender for sensitive mails
+    "NOREPLY_ADDRESS": '"CdE-Datenbank" <no-reply@cde-ev.de>',
     # default subject prefix
     "DEFAULT_PREFIX": "[CdE]",
     # domain for emails (determines message id)
@@ -221,6 +235,14 @@ _DEFAULTS = {
     # mailinglist for ballot tallies
     "BALLOT_TALLY_MAILINGLIST_URL": "https://db.cde-ev.de/db/ml/mailinglist/91/show",
 
+    # email addresses for the global contact form
+    "CONTACT_ADDRESSES": {
+        "vorstand@cde-ev.de": "Vorstand",
+        "probleme-mit-dem-vorstand@lists.cde-ev.de":
+            "Ansprechpartner für Probleme mit dem Vorstand",
+        "feedback@lists.cde-ev.de": "Feedback-Team",
+    },
+
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",
     # mailman REST API user
@@ -233,6 +255,8 @@ _DEFAULTS = {
         "vorstand@lists.cde-ev.de": ["info@cde-ev.de"],
         "doku@lists.cde-ev.de": ["team@dokuforge.de"],
         "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
+        "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
+        "sk-schulung24-orga@aka.cde-ev.de": ["schuko24-orga@aka.cde-ev.de"],
     },
 
     #################
@@ -370,7 +394,7 @@ def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     spec = importlib.util.spec_from_file_location("override", str(path))
     if not spec or not spec.loader:
-        raise ImportError
+        raise ImportError  # pragma: no cover
     override = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(override)
     return {key: getattr(override, key) for key in dir(override)}
@@ -392,10 +416,10 @@ class Config(Mapping[str, Any]):
         _LOGGER.debug(f"Initialize {name} object with path {configpath}.")
 
         if not configpath:
-            raise RuntimeError(f"No configpath for {name} provided!")
+            raise RuntimeError(f"No configpath for {name} provided!")  # pragma: no cover
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of {name}, config file"
-                               f" {configpath} not found!")
+            raise RuntimeError(  # pragma: no cover
+                f"During initialization of {name}, config file {configpath} not found!")
 
         override = self._process_config_overwrite()
         self._configchain = collections.ChainMap(override, _DEFAULTS)
@@ -411,13 +435,16 @@ class Config(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         return self._configchain.__len__()
 
-    def __repr__(self) -> str:
+    # The repr is only relevant for debugging.
+    def __repr__(self) -> str:  # pragma: no cover
         name = self.__class__.__name__
         return f"{name}(configpath={self._configpath}, configchain={self._configchain})"
 
@@ -455,15 +482,18 @@ class LazyConfig(Config):
         self.__init()
         return super().__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         self.__init()
         return super().__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         self.__init()
         return super().__len__()
 
-    def __repr__(self) -> str:
+    # The repr is only relevant for debugging.
+    def __repr__(self) -> str:  # pragma: no cover
         self.__init()
         return super().__repr__()
 
@@ -499,10 +529,11 @@ class SecretsConfig(Mapping[str, Any]):
         _LOGGER.debug(f"Initialising SecretsConfig with path {configpath}")
 
         if not configpath:
-            raise RuntimeError("No configpath for SecretsConfig provided!")
+            raise RuntimeError("No configpath for SecretsConfig provided!")  # pragma: no cover
         if not pathlib.Path(configpath).is_file():
-            raise RuntimeError(f"During initialization of SecretsConfig, config file"
-                               f" {configpath} not found!")
+            raise RuntimeError(  # pragma: no cover
+                f"During initialization of SecretsConfig,"
+                f" config file {configpath} not found!")
 
         override = _import_from_file(configpath)
         override = {
@@ -517,8 +548,10 @@ class SecretsConfig(Mapping[str, Any]):
     def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self) -> Iterator[str]:
+    # The following dunder methods are required to to inheriting from `Mapping`,
+    #  even though we never actually use them.
+    def __iter__(self) -> Iterator[str]:  # pragma: no cover
         return self._configchain.__iter__()
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # pragma: no cover
         return self._configchain.__len__()

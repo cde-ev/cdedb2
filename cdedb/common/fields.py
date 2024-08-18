@@ -50,7 +50,7 @@ PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search", "foto", "paper_expuls", "birth_name", "donation",
+    "bub_search", "foto", "paper_expuls", "birth_name", "donation", "honorary_member",
 )
 
 #: Names of columns associated to a ml user.
@@ -152,7 +152,7 @@ COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
     "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
-    "real_persona_id", "amount_paid", "amount_owed")
+    "real_persona_id", "amount_paid", "amount_owed", "is_member")
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
@@ -201,7 +201,7 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
-    "exmember_balance", "exmember_count",
+    "exmember_balance", "exmember_count", "exmember_state", "exmember_done",
     "archival_notification_state", "archival_notification_count",
     "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")

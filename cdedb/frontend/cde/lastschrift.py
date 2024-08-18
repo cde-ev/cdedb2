@@ -8,11 +8,8 @@ Everything else here requires the "finance_admin" role.
 """
 
 import datetime
-import pathlib
 import random
-import shutil
 import string
-import tempfile
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional
@@ -24,8 +21,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
-    int_to_words, lastschrift_reference, merge_dicts, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class,
+    lastschrift_reference, merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
@@ -35,7 +32,7 @@ from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
-    make_postal_address, periodic,
+    periodic,
 )
 
 
@@ -46,30 +43,44 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         This presents open items as well as all permits.
         """
-        lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids.keys())
+        active_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=True)
         all_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=None)
         all_lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, all_lastschrift_ids.keys())
+        active_lastschrifts = {anid: x for anid, x in all_lastschrifts.items()
+                               if not x['revoked_at']}
+        active_personas = {x['persona_id'] for x in active_lastschrifts.values()}
+        # an inactive lastschrift of a user with active lastschrift is displayed in the
+        #  same way as viewing the active lastschrift directly.
+        inactive_lastschrifts = {
+            anid: x for anid, x in all_lastschrifts.items()
+            if x['revoked_at'] and x['persona_id'] not in active_personas}
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
         transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids.keys())
-        persona_ids = set(all_lastschrift_ids.values()).union({
-            x['submitted_by'] for x in lastschrifts.values()})
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        open_permits = self.determine_open_permits(rs, lastschrift_ids)
-        for lastschrift in lastschrifts.values():
+        persona_ids = set(x['persona_id'] for x in all_lastschrifts.values()).union(
+            x['submitted_by'] for x in all_lastschrifts.values())
+        personas = self.coreproxy.get_cde_users(rs, persona_ids)
+        active_lastschrift_donations = sum(
+            personas[p_id]['donation'] for p_id in active_personas)
+        open_permits = self.determine_open_permits(rs, active_lastschrift_ids)
+        for lastschrift in active_lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
-        last_order = xsorted(
-            lastschrifts.keys(),
+        active_last_order = xsorted(
+            active_lastschrifts.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[lastschrifts[anid]['persona_id']]))
-        lastschrifts = OrderedDict(
-            (last_id, lastschrifts[last_id]) for last_id in last_order)
+                personas[active_lastschrifts[anid]['persona_id']]))
+        active_lastschrifts = OrderedDict(
+            (anid, active_lastschrifts[anid]) for anid in active_last_order)
+        inactive_last_order = xsorted(
+            inactive_lastschrifts.keys(),
+            key=lambda anid: EntitySorter.persona(
+                personas[inactive_lastschrifts[anid]['persona_id']]))
+        inactive_lastschrifts = OrderedDict(
+            (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order)
 
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]
@@ -79,11 +90,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
         sorted_transactions = keydictsort_filter(
             transactions, sortkey=transaction_sortkey)
         payment_date = self._calculate_payment_date()
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
 
         return self.render(rs, "lastschrift/lastschrift_index", {
-            'lastschrifts': lastschrifts, 'personas': personas,
+            'active_lastschrifts': active_lastschrifts, 'personas': personas,
             'transactions': sorted_transactions, 'all_lastschrifts': all_lastschrifts,
-            'payment_date': payment_date})
+            'inactive_lastschrifts': inactive_lastschrifts,
+            'payment_date': payment_date, 'annual_fee': annual_fee,
+            'active_lastschrift_donations': active_lastschrift_donations,
+        })
 
     @access("member", "finance_admin")
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
@@ -112,6 +127,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
         for lastschrift in lastschrifts.values():
             if not lastschrift['revoked_at']:
                 active_permit = lastschrift['id']
+        inactive_permits = [lastschrift for lastschrift in lastschrifts.values()
+                            if lastschrift['revoked_at']]
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
         payment_date = self._calculate_payment_date()
@@ -119,7 +136,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             'lastschrifts': lastschrifts, 'main_persona': main_persona,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
-            'payment_date': payment_date,
+            'payment_date': payment_date, 'inactive_permits': inactive_permits,
         })
 
     @access("finance_admin")
@@ -147,8 +164,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("finance_admin")
-    def lastschrift_create_form(self, rs: RequestState, persona_id: int = None,
-                                ) -> Response:
+    def lastschrift_create_form(self, rs: RequestState,
+                                persona_id: Optional[int] = None) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         current_donation = None
@@ -219,8 +236,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids)
             transaction = unwrap(transactions)
-            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
-                           "widerrufen.")
+            subject = "Einzugsermächtigung zu ausstehender Lastschrift widerrufen."
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
@@ -367,12 +383,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
-            transaction['subject'] = asciificator(glue(
-                "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
-                "z. Foerderung der Volks- u. Berufsbildung u.",
-                "Studentenhilfe").format(
-                cdedbid_filter(persona['id']), persona['family_name'],
-                persona['given_names']))[:140]  # cut off bc of limit
+            # cut off bc of limit
+            transaction['subject'] = asciificator(
+                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
+                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe")[:140]
 
             new_transactions.append(transaction)
         sepapain_file = self.create_sepapain(rs, new_transactions)
@@ -537,8 +552,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids)
             transaction = unwrap(transactions)
-            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
-                           "widerrufen.")
+            subject = "Einzugsermächtigung zu ausstehender Lastschrift widerrufen."
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
@@ -549,54 +563,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
                                  {'persona_id': persona_id})
         else:
             return self.redirect(rs, "cde/lastschrift_index")
-
-    @access("finance_admin")
-    def lastschrift_receipt(self, rs: RequestState, lastschrift_id: int,
-                            transaction_id: int) -> Response:
-        """Generate a donation certificate.
-
-        This allows tax deductions.
-        """
-        transaction = rs.ambience['transaction']
-        persona = self.coreproxy.get_cde_user(
-            rs, rs.ambience['lastschrift']['persona_id'])
-        addressee = make_postal_address(rs, persona)
-        # TODO add proper handling of missing address
-        if addressee is None:
-            addressee = []
-        if rs.ambience['lastschrift']['account_owner']:
-            addressee[0] = rs.ambience['lastschrift']['account_owner']
-        if rs.ambience['lastschrift']['account_address']:
-            addressee = addressee[:1]
-            addressee.extend(
-                rs.ambience['lastschrift']['account_address'].split('\n'))
-        # We do not support receipts or number conversion in other locales.
-        lang = "de"
-        words = (
-            int_to_words(int(transaction['amount']), lang),
-            int_to_words(int(transaction['amount'] * 100) % 100, lang))
-        transaction['amount_words'] = words
-        meta_info = self.coreproxy.get_meta_info(rs)
-        tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
-            'meta_info': meta_info, 'persona': persona, 'addressee': addressee})
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = pathlib.Path(tmp_dir) / 'workdir'
-            work_dir.mkdir()
-            with open(work_dir / "lastschrift_receipt.tex", 'w', encoding='UTF-8') as f:
-                f.write(tex)
-            logo_src = self.conf["REPOSITORY_PATH"] / "misc/cde-logo.jpg"
-            shutil.copy(logo_src, work_dir / "cde-logo.jpg")
-            errormsg = n_("LaTeX compiliation failed. "
-                          "This might be due to special characters.")
-            pdf = self.serve_complex_latex_document(
-                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex",
-                errormsg=errormsg)
-            if pdf:
-                return pdf
-            else:
-                return self.redirect(
-                    rs, "cde/lastschrift_show",
-                    {"persona_id": rs.ambience['lastschrift']['persona_id']})
 
     @access("anonymous")
     def lastschrift_subscription_form_fill(self, rs: RequestState) -> Response:
@@ -697,7 +663,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Lastschriftinitiative' (former 'Initiative 25+')."""
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
+        has_lastschrift = False
+        if "member" in rs.user.roles:
+            assert rs.user.persona_id is not None
+            has_lastschrift = bool(self.cdeproxy.list_lastschrift(
+                rs, persona_ids=(rs.user.persona_id,), active=True))
         return self.render(rs, "lastschrift/i25p_index", {
-            "annual_fee": annual_fee,
+            "annual_fee": annual_fee, "has_lastschrift": has_lastschrift,
             "min_donation": self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
             "typical_donation": self.conf["TYPICAL_LASTSCHRIFT_DONATION"]})

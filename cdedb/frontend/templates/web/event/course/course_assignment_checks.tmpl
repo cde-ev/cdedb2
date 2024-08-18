@@ -58,9 +58,9 @@
                                 {{ util.href(cdedblink("event/show_course", {'course_id': course_id}),
                                              "{}. {}".format(course['nr'], course['shortname'])) }}
                                 {% if ambience['event']['tracks']|length > 1 %}
-                                    ({% for track_id in tracks -%}
+                                    ({% for track in tracks|sort -%}
                                         {% if not loop.first %}, {% endif -%}
-                                        {{ ambience['event']['tracks'][track_id]['shortname'] }}
+                                        {{ track['shortname'] }}
                                     {%- endfor %})
                                 {% endif %}
                             </li>
@@ -92,11 +92,11 @@
                                 {{ util.href(cdedblink('event/show_registration', {'registration_id': reg_id}),
                                              util.persona_name(persona)) }}
                                 {% if ambience['event']['tracks']|length > 1 %}
-                                    ({% for track_id in tracks -%}
+                                    ({% for track in tracks|sort -%}
                                         {% if not loop.first %}, {% endif -%}
-                                        {{ ambience['event']['tracks'][track_id]['shortname'] }}
+                                        {{ track['shortname'] }}
                                         {%- if key == 'instructor_wrong_course' -%}
-                                            : {{ wrong_course_block(reg_id, track_id) }}
+                                            : {{ wrong_course_block(reg_id, track.id) }}
                                         {%- endif -%}
                                     {%- endfor %})
                                 {%- elif key == 'instructor_wrong_course' -%}

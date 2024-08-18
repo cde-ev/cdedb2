@@ -7,20 +7,20 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from typing import Any, Dict, Set, Union, cast
+from typing import Any, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now
 from cdedb.common.sorting import xsorted
-from tests.common import CronTest, event_keeper, prepsql, storage
+from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});
 """
 
 # numbers.Number should include Decimal, int and bool but doesn't.
-SQL_DATA = Dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
-                           decimal.Decimal, int, bool, Dict[str, Any]]]
+SQL_DATA = dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
+                           decimal.Decimal, int, bool, dict[str, Any]]]
 
 RS = cast(RequestState, None)
 
@@ -31,17 +31,17 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
         if value is None:
             tmp[key] = "NULL"
         elif isinstance(value, datetime.datetime):
-            tmp[key] = "timestamptz '{}'".format(value.isoformat())
+            tmp[key] = f"timestamptz '{value.isoformat()}'"
         elif isinstance(value, datetime.date):
-            tmp[key] = "date '{}'".format(value.isoformat())
+            tmp[key] = f"date '{value.isoformat()}'"
         elif isinstance(value, str):
-            tmp[key] = "'{}'".format(value)
+            tmp[key] = f"'{value}'"
         elif isinstance(value, numbers.Number):
-            tmp[key] = "{}".format(value)
+            tmp[key] = f"{value}"
         elif isinstance(value, collections.abc.Mapping):
-            tmp[key] = "'{}'::jsonb".format(json.dumps(value))
+            tmp[key] = f"'{json.dumps(value)}'::jsonb"
         else:
-            raise ValueError("Unknown datum {} -> {}".format(key, value))
+            raise ValueError(f"Unknown datum {key} -> {value}")  # pragma: no cover
     keys = tuple(tmp)
     return INSERT_TEMPLATE.format(table=table, columns=", ".join(keys),
                                   values=", ".join(tmp[key] for key in keys))
@@ -55,7 +55,7 @@ def genesis_template(**kwargs: Any) -> str:
         'case_status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
         'given_names': "Zaphod",
-        'family_name': "Zappa"
+        'family_name': "Zappa",
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.genesis_cases", data)
@@ -130,7 +130,7 @@ def changelog_template(**kwargs: Any) -> str:
         'title': 'Prof.',
         'trial_member': False,
         'username': 'zelda@example.cde',
-        'weblink': 'https://www.uni.cde'
+        'weblink': 'https://www.uni.cde',
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.changelog", data)
@@ -139,7 +139,7 @@ def changelog_template(**kwargs: Any) -> str:
 def cron_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'title': None,
-        'store': {}
+        'store': {},
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.cron_store", data)
@@ -147,7 +147,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionState.pending
+        'subscription_state': const.SubscriptionState.pending,
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -286,7 +286,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionState.pending))
+             f"{const.SubscriptionState.pending};")
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -359,27 +359,27 @@ class TestCron(CronTest):
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
 
-    @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 2")
+    @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 3")
     def test_forget_old_lastschrifts(self) -> None:
         name = "forget_old_lastschrifts"
         self.assertEqual(
-            [1, 2], list(self.cde.list_lastschrift(RS, active=False)))
+            [1, 3], list(self.cde.list_lastschrift(RS, active=False)))
         self.execute(name)
         # Make sure only the old lastschrift is deleted.
         self.assertEqual(
-            [2], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
         self.execute(name)
         # Make sure nothing changes when the cron job runs again.
         self.assertEqual(
-            [2], list(self.cde.list_lastschrift(RS, active=False))
+            [3], list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 
     @storage
     def test_tally_ballots(self) -> None:
-        ballot_ids: Set[int] = set()
+        ballot_ids: set[int] = set()
         for assembly_id in self.assembly.list_assemblies(RS):
             ballot_ids |= self.assembly.list_ballots(RS, assembly_id).keys()
         ballots = self.assembly.get_ballots(RS, ballot_ids)
@@ -444,13 +444,35 @@ class TestCron(CronTest):
             self.core.get_cron_store(RS, cronjob))
 
     @storage
+    def test_forget_assembly_attachments(self) -> None:
+        self.execute('forget_assembly_attachments')
+        self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
+            self.get_sample_datum(
+                'assembly.attachment_versions', 4)['file_hash']))
+        execsql("UPDATE assembly.attachment_versions SET dtime = now() WHERE id = 4")
+        self.execute('forget_assembly_attachments')
+        self.assertFalse(self.assembly.get_attachment_store(RS).is_available(
+            self.get_sample_datum(
+                'assembly.attachment_versions', 4)['file_hash']))
+        versions = self.get_sample_data('assembly.attachment_versions')
+        for version in versions.values():
+            if version['dtime'] is None and version['id'] != 4:
+                self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
+                    version['file_hash']))
+
+    @storage
+    def test_forget_fotos(self) -> None:
+        # We just want to test that no exception is raised.
+        self.execute('forget_profile_fotos')
+
+    @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
         #
         # Prepare
         #
 
-        class SaveDict(Dict[Any, Any]):
+        class SaveDict(dict[Any, Any]):
             def save(self) -> None:
                 pass
 
@@ -468,9 +490,9 @@ class TestCron(CronTest):
             'pass_types': ['multipart', 'text/plain', 'application/pdf'],
             'convert_html_to_plaintext': True,
             'collapse_alternatives': True,
-            'dmarc_mitigate_action': 'wrap_message',
+            'dmarc_mitigate_action': 'munge_from',
             'dmarc_mitigate_unconditionally': False,
-            'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
+            # 'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,

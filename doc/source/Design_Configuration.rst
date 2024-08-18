@@ -18,7 +18,7 @@ To overwrite this subset of config values (which is highly recommended!), let th
 ``SECRETS_CONFIGPATH`` config option point to your custom secrets config file.
 This file can then be further protected, for example by shrinking its access permissions on
 the file system to a specific user which is running the application (conventionally named
-``www-data``).
+``www-cde``).
 
 Both ``Config`` and ``SecretsConfig`` take config options from a custom file without a default
 value in :mod:`cdedb.config` not into account. However, there are cases where it would be

@@ -25,9 +25,10 @@
                 {{ util.href(cdedblink("event/create_course"), gettext("Create Course"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] %}
-                    {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
+                    {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].course.value}), gettext("Set Field"),
                                   readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
+                {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].event_course}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
             </div>
         </div>
         <div class="col-md-8">
@@ -41,8 +42,10 @@
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the course_query -->
 
-        <div class="p pull-right">
-            {{ generic.query_button_field_set(enums['FieldAssociations'].course) }}
+        <div class="p pull-right query-result-dynamic-actions" style="display: none;">
+            {{ generic.query_result_dynamic_action(
+                    label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
+                    params={"kind": enums['FieldAssociations'].course}, magic_placeholders=["ids"]) }}
         </div>
 
         {{ generic.display_query_result(result, aggregates, query) }}

@@ -39,11 +39,8 @@ from cdedb.uncommon.submanshim import SubscriptionAction
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def __init__(self) -> None:
-        super().__init__()
-
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: Optional[CdEDBObject] = None) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
@@ -1020,8 +1017,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
-        if not self._check_address_change_requirements(
-                rs, mailinglist_id, email, bool(email)):
+        if not self._check_address_change_requirements(rs, mailinglist_id, email):
             return self.redirect(rs, "ml/show_mailinglist")
 
         known_addresses = self.mlproxy.get_persona_addresses(rs)
@@ -1057,8 +1053,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         assert rs.user.persona_id is not None
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
-        if not self._check_address_change_requirements(
-                rs, mailinglist_id, email, setting=False):
+        if not self._check_address_change_requirements(rs, mailinglist_id, email):
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.set_subscription_address(
@@ -1069,7 +1064,6 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def _check_address_change_requirements(
         self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email],
-        setting: bool
     ) -> bool:
         """Check if all conditions required to change a subscription address
         are fulfilled."""
@@ -1078,7 +1072,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.mlproxy.is_subscribed(rs, persona_id, mailinglist_id):
             rs.notify("error", n_("Not subscribed."))
             return False
-        if setting and not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
+        if not self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub:
             rs.notify("error", n_("Disallowed to change address."))
             return False
         if email and self.mlproxy.is_subscription_address_taken(rs, email, persona_id):

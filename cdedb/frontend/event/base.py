@@ -136,7 +136,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     realm = "event"
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> Response:
+               params: Optional[CdEDBObject] = None) -> Response:
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
@@ -417,9 +417,10 @@ class EventBaseFrontend(AbstractUserFrontend):
     @staticmethod
     def calculate_groups(entity_ids: Collection[int], event: models.Event,
                          registrations: CdEDBObjectMap, key: str,
-                         personas: CdEDBObjectMap = None,
-                         instructors: bool = True,
-                         ) -> dict[tuple[int, int], Collection[int]]:
+                         personas: Optional[CdEDBObjectMap] = None,
+                         instructors: bool = True, only_present: bool = True,
+                         only_involved: bool = True,
+                         ) -> dict[tuple[int, int], list[int]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
@@ -430,6 +431,10 @@ class EventBaseFrontend(AbstractUserFrontend):
           lists by name, so that the can be displayed sorted.
         :param instructors: Include instructors of courses. No effect for
           lodgements.
+        :param only_present: Exclude personas which are not present at the event in the
+          specified event part.
+        :param only_involved: Exclude personas which are not involved in specified event
+          part at all.
         """
         tracks = event.tracks
         if key == "course_id":
@@ -450,7 +455,10 @@ class EventBaseFrontend(AbstractUserFrontend):
             else:
                 raise RuntimeError("impossible.")
             ret = (instance[key] == entity_id and
-                   const.RegistrationPartStati(part['status']).is_present())
+                   (const.RegistrationPartStati(part['status']).is_present()
+                    or not only_present) and
+                   (const.RegistrationPartStati(part['status']).is_involved()
+                    or not only_involved))
             if (ret and key == "course_id" and not instructors
                     and instance['course_instructor'] == entity_id):
                 ret = False
@@ -460,7 +468,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             sorter = lambda x: x
         else:
             sorter = lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']])  # type: ignore[index]
+                personas[registrations[anid]['persona_id']])
         if aspect == 'tracks':
             sub_ids: Collection[int] = tracks.keys()
         elif aspect == 'parts':

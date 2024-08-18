@@ -27,14 +27,23 @@ import abc
 import dataclasses
 import datetime
 import decimal
+import functools
 import logging
 from collections.abc import Collection, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, get_args, get_origin
+from typing import (
+    TYPE_CHECKING, Any, Callable, ClassVar, ForwardRef, Optional, get_args, get_origin,
+)
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.fee_condition_parser.parsing as fcp_parsing
+import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
-from cdedb.common.sorting import Sortkey
+from cdedb.common.query import (
+    QueryScope, QuerySpec, QuerySpecEntry, make_course_query_spec,
+    make_registration_query_spec,
+)
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,10 +61,22 @@ if TYPE_CHECKING:
 # meta
 #
 
+EventDataclassMap = CdEDataclassMap["Event"]
+
 
 @dataclasses.dataclass
 class EventDataclass(CdEDataclass, abc.ABC):
     entity_key: ClassVar[str] = "event_id"
+
+    @classmethod
+    def full_export_spec(
+            cls, entity_key: Optional[str] = None,
+    ) -> tuple[str, str, tuple[str, ...]]:
+        return (
+            cls.database_table,
+            entity_key or cls.entity_key,
+            tuple(cls.database_fields()),
+        )
 
 
 #
@@ -104,6 +125,7 @@ class Event(EventDataclass):
     tracks: CdEDataclassMap["CourseTrack"]
 
     fields: CdEDataclassMap["EventField"]
+    custom_query_filters: CdEDataclassMap["CustomQueryFilter"]
     fees: CdEDataclassMap["EventFee"]
 
     part_groups: CdEDataclassMap["PartGroup"]
@@ -117,6 +139,8 @@ class Event(EventDataclass):
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
+        data['custom_query_filters'] = CustomQueryFilter.many_from_database(
+            data['custom_query_filters'])
         data['fees'] = EventFee.many_from_database(data['fees'])
         data['part_groups'] = PartGroup.many_from_database(data['part_groups'])
         data['track_groups'] = TrackGroup.many_from_database(data['track_groups'])
@@ -125,7 +149,10 @@ class Event(EventDataclass):
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
             if get_origin(field.type) is dict:
-                value_class = globals()[(get_args(field.type)[1])]
+                value_kind = get_args(field.type)[1]
+                if isinstance(value_kind, ForwardRef):
+                    value_kind = value_kind.__forward_arg__
+                value_class = globals()[value_kind]
                 if issubclass(value_class, EventDataclass):
                     for obj in getattr(self, field.name).values():
                         obj.event = self
@@ -157,7 +184,7 @@ class Event(EventDataclass):
     @classmethod
     def get_select_query(cls, entities: Collection[int],
                          entity_key: Optional[str] = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
                 {', '.join(cls.database_fields())},
@@ -172,15 +199,15 @@ class Event(EventDataclass):
         params = (entities,)
         return query, params
 
-    @property
+    @functools.cached_property
     def begin(self) -> datetime.date:
         return min(p.part_begin for p in self.parts.values())
 
-    @property
+    @functools.cached_property
     def end(self) -> datetime.date:
         return max(p.part_end for p in self.parts.values())
 
-    @property
+    @functools.cached_property
     def is_open(self) -> bool:
         reference_time = now()
         return bool(
@@ -189,11 +216,19 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
-    @property
+    @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
         return self.fields[self.lodge_field_id]
+
+    @functools.cached_property
+    def personalized_fees(self) -> CdEDataclassMap["EventFee"]:
+        return {fee.id: fee for fee in self.fees.values() if fee.is_personalized()}
+
+    @functools.cached_property
+    def conditional_fees(self) -> CdEDataclassMap["EventFee"]:
+        return {fee.id: fee for fee in self.fees.values() if fee.is_conditional()}
 
     def is_visible_for(self, user: User) -> bool:
         return ("event_admin" in user.roles or user.persona_id in self.orgas
@@ -201,6 +236,14 @@ class Event(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title
+
+    @functools.cached_property
+    def basic_registration_query_spec(self) -> QuerySpec:
+        return make_registration_query_spec(self)
+
+    @functools.cached_property
+    def basic_course_query_spec(self) -> QuerySpec:
+        return make_course_query_spec(self)
 
 
 @dataclasses.dataclass
@@ -360,17 +403,60 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
 class EventFee(EventDataclass):
     database_table = "event.event_fees"
 
-    event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
+
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+    )
+    # Exclude during creation, update and request.
+    event_id: vtypes.ID = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True},
+    )
 
     kind: const.EventFeeType
     title: str
-    amount: decimal.Decimal
-    condition: vtypes.EventFeeCondition
     notes: Optional[str]
 
+    condition: Optional[vtypes.EventFeeCondition]
+    amount: Optional[decimal.Decimal]
+    amount_min: Optional[decimal.Decimal] = dataclasses.field(
+        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+    amount_max: Optional[decimal.Decimal] = dataclasses.field(
+        default=None, metadata={'validation_exclude': True, 'database_exclude': True})
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
+                         ) -> tuple[str, tuple["DatabaseValue_s"]]:
+        query = f"""
+            SELECT {','.join(cls.database_fields())}, amount_min, amount_max
+            FROM {cls.database_table} AS fee
+            LEFT OUTER JOIN (
+                SELECT fee_id, MIN(amount) AS amount_min, MAX(amount) AS amount_max
+                FROM {PersonalizedFee.database_table}
+                GROUP BY fee_id
+            ) AS personalized ON personalized.fee_id = fee.id
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+        """
+        params = (entities,)
+        return query, params
+
+    def is_conditional(self) -> bool:
+        return self.amount is not None and self.condition is not None
+
+    def is_personalized(self) -> bool:
+        return self.amount is None and self.condition is None
+
+    @functools.cached_property
+    def visual_debug(self) -> str:
+        if not self.is_conditional():
+            return ""
+        parse_result = fcp_parsing.parse(self.condition)
+        return fcp_roundtrip.visual_debug(
+            parse_result, {}, {}, {}, condition_only=True)[1]
+
     def get_sortkey(self) -> Sortkey:
-        return self.kind, self.title
+        return self.kind, self.title, self.amount or decimal.Decimal(0)
 
 
 @dataclasses.dataclass
@@ -396,6 +482,66 @@ class EventField(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.sortkey, self.field_name
+
+
+@dataclasses.dataclass
+class CustomQueryFilter(EventDataclass):
+    database_table = "event.custom_query_filters"
+
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+    )
+    event_id: vtypes.ProtoID = dataclasses.field(metadata={'update_exlude': True})
+
+    scope: QueryScope = dataclasses.field(metadata={'update_exlude': True})
+    title: str
+    notes: Optional[str]
+    fields: set[str] = dataclasses.field(metadata={'database_include': True})
+
+    def __post_init__(self) -> None:
+        if isinstance(self.fields, str):  # type: ignore[unreachable]
+            self.fields = set(self.fields.split(','))  # type: ignore[unreachable]
+
+    def to_database(self) -> "CdEDBObject":
+        ret = super().to_database()
+        ret['fields'] = self.get_field_string()
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.event_id, self.scope, self.title)
+
+    @staticmethod
+    def _get_field_string(fields: Collection[str]) -> str:
+        return ",".join(xsorted(fields))
+
+    def get_field_string(self) -> str:
+        return self._get_field_string(self.fields)
+
+    def add_to_spec(self, spec: QuerySpec, scope: QueryScope) -> None:
+        """If this filter is valid for this spec add it to the spec."""
+        if self.scope != scope or not self.is_valid(spec):
+            return
+        type_ = spec[next(iter(self.fields))].type
+        spec[self.get_field_string()] = QuerySpecEntry(type_, self.title)
+
+    def is_valid(self, spec: QuerySpec) -> bool:
+        """Check whether all fields are in the spec and of the same type."""
+        return all(f in spec for f in self.fields) and len(
+            {spec[f].type for f in self.fields}) == 1
+
+    def get_field_titles(self, spec: QuerySpec, g: Callable[[str], str],
+                         ) -> tuple[list[str], list[str]]:
+        """
+        Return a sorted list of titles of existing fields and potentially names
+        of deleted fields.
+        """
+        valid, invalid = [], []
+        for f in self.fields:
+            if f in spec:
+                valid.append(spec[f].get_title(g))
+            else:
+                invalid.append(f.removeprefix("reg_fields.xfield_"))
+        return xsorted(valid), xsorted(invalid)
 
 
 @dataclasses.dataclass
@@ -720,6 +866,42 @@ class RegistrationTrack(EventDataclass):
     instructed: Optional[Course]
 
     choices: list[Course]
+
+    def get_sortkey(self) -> Sortkey:
+        return (0, )
+
+
+@dataclasses.dataclass
+class PersonalizedFee(EventDataclass):
+    database_table = "event.personalized_fees"
+    entity_key = "registration_id"
+
+    registration_id: vtypes.ID
+    fee_id: vtypes.ID
+
+    amount: Optional[decimal.Decimal]
+
+    def get_query(self) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        if self.amount is not None:
+            query = f"""
+                INSERT INTO {self.database_table}
+                (registration_id, fee_id, amount)
+                VALUES (%s, %s, %s)
+                ON CONFLICT(registration_id, fee_id)
+                DO UPDATE SET amount = EXCLUDED.amount
+                RETURNING id
+            """
+            params: tuple[DatabaseValue_s, ...] = (  # pylint: disable=used-before-assignment
+                self.registration_id, self.fee_id, self.amount,
+            )
+            return query, params
+        else:
+            query = f"""
+                DELETE FROM {self.database_table}
+                WHERE registration_id = %s AND fee_id = %s
+            """
+            params = (self.registration_id, self.fee_id)
+            return query, params
 
     def get_sortkey(self) -> Sortkey:
         return (0, )

@@ -19,8 +19,8 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    RequestState, asciificator, determine_age_class, json_serialize, make_persona_name,
-    unwrap,
+    AgeClasses, CdEDBObjectMap, RequestState, asciificator, determine_age_class,
+    json_serialize, make_persona_name, unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -35,7 +35,9 @@ class EventDownloadMixin(EventBaseFrontend):
     @event_guard()
     def downloads(self, rs: RequestState, event_id: int) -> Response:
         """Offer documents like nametags for download."""
-        return self.render(rs, "downloads")
+        lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
+        return self.render(rs, "downloads",
+                           {'lodgements_exist': lodgements_exist})
 
     @access("event")
     @event_guard()
@@ -64,16 +66,24 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']]))
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
+        registrations_by_part_by_age: dict[int, dict[AgeClasses, CdEDBObjectMap]] = {
+            part_id: {age: {} for age in reversed(AgeClasses)}
+            for part_id in rs.ambience['event'].parts
+        }
+        for reg_id, reg in registrations.items():
+            for part_id, reg_part in reg['parts'].items():
+                if reg_part['status'].is_present():
+                    registrations_by_part_by_age[part_id][reg['age']][reg_id] = reg
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
-            'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'courses': courses})
+            'lodgements': lodgements, 'personas': personas, 'courses': courses,
+            'registrations_by_part_by_age': registrations_by_part_by_age,
+        })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
-            filename = "{}_nametags.tex".format(
-                rs.ambience['event'].shortname)
+            filename = f"{rs.ambience['event'].shortname}_nametags.tex"
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
@@ -85,8 +95,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 shutil.copy(src, work_dir / f"logo-{course_id}.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event'].shortname,
-                "{}_nametags.tex".format(rs.ambience['event'].shortname),
-                runs)
+                filename, runs)
             if file:
                 return file
             else:
@@ -514,7 +523,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
-        json = json_serialize(data)
+        json = json_serialize(data, sort_keys=True)
         return self.send_file(
             rs, mimetype="application/json", data=json, inline=False,
             filename="{}_partial_export_event.json".format(
@@ -527,7 +536,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
         return self.send_file(
-            rs, mimetype="application/json", data=json_serialize(data))
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
 
     @access("droid_quick_partial_export")
     def download_quick_partial_export(self, rs: RequestState) -> Response:

@@ -82,6 +82,7 @@ from cdedb.common import (
     decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
     make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
@@ -102,6 +103,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.event import CustomQueryFilter
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -115,7 +117,7 @@ Headers = typing.TypedDict(
     "Headers", {
         "From": str,
         "Prefix": str,
-        "Reply-To": str,
+        "Reply-To": str | None,
         "Return-Path": str,
         "domain": str,
         "Subject": str,
@@ -199,7 +201,8 @@ class BaseApp(metaclass=abc.ABCMeta):
                         mimetype="text/html", status=500)
 
     def encode_notification(self, rs: RequestState, ntype: NotificationType,
-                            nmessage: str, nparams: CdEDBObject = None) -> str:
+                            nmessage: str, nparams: Optional[CdEDBObject] = None,
+                            ) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
@@ -220,7 +223,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
-        timeout, message = self.decode_parameter(
+        _, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id)
         if not message:
             return None, None, None
@@ -233,7 +236,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return ntype, nmessage, nparams
 
     def redirect(self, rs: RequestState, target: str,
-                 params: CdEDBObject = None, anchor: str = None,
+                 params: Optional[CdEDBObject] = None, anchor: Optional[str] = None,
                  ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
@@ -305,9 +308,13 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     comfortable `if` checks as well as `sidenav_active` comparisons.
     """
 
-    __eq__ = jinja2.Undefined.__eq__
-    __ne__ = jinja2.Undefined.__ne__
-    __bool__ = jinja2.Undefined.__bool__
+    # The parent class has incompatible type signatures
+    # which strictly speaking would break the substitution principle.
+    # It would be cleaner to subclass jinja2.Undefined instead
+    # but this is more concise.
+    __eq__ = jinja2.Undefined.__eq__  # type: ignore[assignment]
+    __ne__ = jinja2.Undefined.__ne__  # type: ignore[assignment]
+    __bool__ = jinja2.Undefined.__bool__  # type: ignore[assignment]
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -318,18 +325,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
                                          "frontend", "templates")
+        undefined: type[jinja2.Undefined]
         if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
             undefined = CdEDBUndefined
         else:
             undefined = jinja2.make_logging_undefined(self.logger, jinja2.Undefined)
-            undefined.__bool__ = jinja2.Undefined.__bool__
+            undefined.__bool__ = jinja2.Undefined.__bool__  # type: ignore[method-assign]
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
             undefined=undefined)
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore[attr-defined]
-        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore[attr-defined]
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -423,8 +431,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param templatename: file name of template without extension
         """
 
-        def _cdedblink(endpoint: str, params: CdEDBMultiDict = None,
-                       magic_placeholders: Collection[str] = None) -> str:
+        def _cdedblink(endpoint: str, params: Optional[CdEDBMultiDict] = None,
+                       magic_placeholders: Optional[Collection[str]] = None) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
@@ -456,8 +464,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return staticlink(rs, label="", path=path, version=version, html=False)
 
-        def _show_user_link(user: User, persona_id: int, quote_me: bool = None,
-                            event_id: int = None, ml_id: int = None) -> str:
+        def _show_user_link(user: User, persona_id: int,
+                            quote_me: Optional[bool] = None,
+                            event_id: Optional[int] = None, ml_id: Optional[int] = None,
+                            ) -> str:
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -558,12 +568,45 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
+    def locate_or_store_attachment(
+        self, rs: RequestState, store: AttachmentStore,
+        attachment: Optional[werkzeug.datastructures.FileStorage],
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str] = None,
+    ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
+        """Locate an attachment by hash and store it, if necessary
+
+        :param attachment: A new file uploaded within this request. Supersedes remaining
+            (cached) data, if present.
+        :param attachment_hash: Hash to locate file uploaded within earlier request
+        :param attachment_filename: Filename of file uploaded in earlier request
+        """
+        attachment_data = None
+        if attachment:
+            assert attachment.filename is not None
+            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
+            attachment_data = check_validation(rs, store.type, attachment, 'attachment')
+        if attachment_data:
+            attachment_hash = store.store(attachment_data)
+        elif attachment_hash:
+            # We also end up here and keep the cached attachment if someone tried to
+            # replace the cached attachment with an invalid attachment. In this case,
+            # a validation error will prevent the cached attachment to be used outright.
+            attachment_stored = store.is_available(attachment_hash)
+            if not attachment_stored:
+                attachment_hash = None
+                e = ("cached_attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
+        return attachment_hash, attachment_filename
+
     @staticmethod
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
-                      filename: str = None, inline: bool = True, *,
-                      path: Union[str, pathlib.Path] = None,
-                      afile: IO[bytes] = None,
-                      data: AnyStr = None) -> Response:
+                      filename: Optional[str] = None, inline: bool = True, *,
+                      path: Optional[Union[str, pathlib.Path]] = None,
+                      afile: Optional[IO[bytes]] = None,
+                      data: Optional[AnyStr] = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
         This makes Excel happy by adding a BOM at the beginning of the
@@ -577,10 +620,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             afile=afile, data=data, encoding='utf-8-sig')
 
     @staticmethod
-    def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
-                  inline: bool = True, *, path: PathLike = None,
-                  afile: IO[bytes] = None, data: AnyStr = None,
-                  encoding: str = 'utf-8') -> Response:
+    def send_file(rs: RequestState, mimetype: Optional[str] = None,
+                  filename: Optional[str] = None, inline: bool = True, *,
+                  path: Optional[PathLike] = None, afile: Optional[IO[bytes]] = None,
+                  data: Optional[AnyStr] = None, encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -680,7 +723,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 n_("Unknown download kind {kind}."), {"kind": kind})
 
     def render(self, rs: RequestState, templatename: str,
-               params: CdEDBObject = None) -> werkzeug.Response:
+               params: Optional[CdEDBObject] = None) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
         """
@@ -720,18 +763,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        csp_header_template = glue(
-            "default-src 'self';",
-            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
-            "style-src 'self' 'unsafe-inline';",
-            "img-src *")
+        csp_header_template = (
+            "default-src 'self'; script-src 'unsafe-inline' 'self' https: 'nonce-{}';"
+            " style-src 'self' 'unsafe-inline'; img-src *")
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
 
     def do_mail(self, rs: RequestState, templatename: str,
-                headers: Headers, params: CdEDBObject = None,
-                attachments: Collection[Attachment] = None) -> Optional[str]:
+                headers: Headers, params: Optional[CdEDBObject] = None,
+                attachments: Optional[Collection[Attachment]] = None,
+                suppress_subject_logging: bool = False,
+                suppress_recipient_logging: bool = False,
+                ) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -752,7 +796,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         msg = self._create_mail(text, headers, attachments)
-        ret = self._send_mail(msg)
+        ret = self._send_mail(
+            msg, suppress_subject_logging=suppress_subject_logging,
+            suppress_recipient_logging=suppress_recipient_logging,
+        )
         if ret:
             # This is mostly intended for the test suite.
             rs.notify("info", n_("Stored email to hard drive at %(path)s"),
@@ -774,7 +821,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     }
         merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
-            del headers["Reply-To"]
+            headers["Reply-To"] = None
         msg: email.mime.base.MIMEBase = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
@@ -783,7 +830,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()
+        payload = cast(str, msg.get_payload())
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -794,15 +841,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container  #
+            msg = container
         for header in ("To", "Cc", "Bcc"):
-            nonempty = {x for x in headers[header] if x}  # type: ignore[literal-required]
-            if nonempty != set(headers[header]):  # type: ignore[literal-required]
+            value = headers[header]  # type: ignore[literal-required]
+            nonempty = {x for x in value if x}
+            if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
-            if headers[header]:  # type: ignore[literal-required]
+            if nonempty:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            msg[header] = headers[header]  # type: ignore[literal-required]
+            if value := headers.get(header):
+                msg[header] = value
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
@@ -812,12 +861,46 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
+    def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
+        """Send a welcome mail to new personas.
+
+        This informs new personas in general that an account with this email was
+        created. Additionally, this provides further information for personas with
+        cde realm (and depending on if they are already member or not).
+
+        Therefore, we send this mail again if a persona was granted the cde realm.
+        """
+        success, cookie = self.coreproxy.make_reset_cookie(
+            rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+        reset_link = self.encode_parameter(
+            "core/do_password_reset_form", "email", persona['username'],
+            persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+        transaction_subject = make_membership_fee_reference(persona)
+        if persona['is_member']:
+            subject = "Aufnahme in den CdE"
+        elif persona['is_cde_realm']:
+            subject = "Aufnahmeangebot in den CdE"
+        else:
+            subject = "CdEDB-Account erstellt"
+        meta_info = self.coreproxy.get_meta_info(rs)
+        self.do_mail(rs, "welcome",
+                     {'To': (persona['username'],),
+                      'Subject': subject,
+                      },
+                     {'data': persona,
+                      'fee': self.conf["MEMBERSHIP_FEE"],
+                      'email': reset_link if success else "",
+                      'cookie': cookie if success else "",
+                      'meta_info': meta_info,
+                      'transaction_subject': transaction_subject,
+                      })
+
     def generic_user_search(self, rs: RequestState, download: Optional[str],
                             is_search: bool, scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
                                                            tuple[CdEDBObject, ...]], *,
-                            choices: Mapping[str, Mapping[Any, str]] = None,
-                            query: Query = None) -> werkzeug.Response:
+                            choices: Optional[Mapping[str, Mapping[Any, str]]] = None,
+                            query: Optional[Query] = None) -> werkzeug.Response:
         """Perform user search.
 
         :param download: signals whether the output should be a file. It can either
@@ -836,7 +919,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         spec = scope.get_spec()
         if query:
-            query = check_validation(rs, vtypes.Query, query, "query")
+            query = check_validation(rs, Query, query, "query")
             if query and query.scope != scope:
                 raise ValueError(n_("Scope mismatch."))
         elif is_search:
@@ -907,7 +990,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                            filename=attachment['filename'])
         return ret
 
-    def _send_mail(self, msg: email.message.Message) -> Optional[str]:
+    def _send_mail(self, msg: email.message.Message,
+                   suppress_subject_logging: bool = False,
+                   suppress_recipient_logging: bool = False,
+                   ) -> Optional[str]:
         """Helper for getting an email onto the wire.
 
         :returns: Name of the file the email was saved in -- however this
@@ -929,11 +1015,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
+        log_subject = msg['Subject'] if not suppress_subject_logging else "REDACTED"
+        log_recipient = msg['To'] if not suppress_recipient_logging else "REDACTED"
+        self.logger.info(
+            f"Sent email with subject '{log_subject}' to '{log_recipient}'.")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
-                           quote_me: bool = None) -> werkzeug.Response:
+                           quote_me: Optional[bool] = None) -> werkzeug.Response:
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
@@ -979,6 +1068,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_path.unlink()
             self.logger.debug(f"Exception \"{e}\" caught and handled. Output follows:")
             self.logger.debug(e.stdout)  # lualatex puts its errors to stdout
+            self.logger.debug(e.stderr)
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = f"/tmp/cdedb-latex-error-{tstamp}.tex"
@@ -991,7 +1081,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return pdf_path
 
     def latex_compile(self, rs: RequestState, data: str, runs: int = 2,
-                      errormsg: str = None) -> Optional[bytes]:
+                      errormsg: Optional[str] = None) -> Optional[bytes]:
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
@@ -1016,7 +1106,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     return None
 
     def serve_latex_document(self, rs: RequestState, data: str, filename: str,
-                             runs: int = 2, errormsg: str = None,
+                             runs: int = 2, errormsg: Optional[str] = None,
                              ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1044,7 +1134,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def serve_complex_latex_document(self, rs: RequestState,
                                      tmp_dir: Union[str, pathlib.Path],
                                      work_dir_name: str, tex_file_name: str,
-                                     runs: int = 2, errormsg: str = None,
+                                     runs: int = 2, errormsg: Optional[str] = None,
                                      ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
@@ -1141,7 +1231,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                          filter_class: type[GenericLogFilter],
                          log_retriever: Callable[..., CdEDBLog],
                          *, download: bool, template: str,
-                         template_kwargs: CdEDBObject = None,
+                         template_kwargs: Optional[CdEDBObject] = None,
                          ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
@@ -1242,23 +1332,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
-            success, message = self.coreproxy.make_reset_cookie(rs, data[
-                'username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter(
-                "core/do_password_reset_form", "email", data['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            meta_info = self.coreproxy.get_meta_info(rs)
-            self.do_mail(rs, "welcome",
-                         {'To': (data['username'],),
-                          'Subject': "CdEDB Account erstellt",
-                          },
-                         {'data': data,
-                          'fee': self.conf["MEMBERSHIP_FEE"],
-                          'email': email if success else "",
-                          'cookie': message if success else "",
-                          'meta_info': meta_info,
-                          })
-
+            data["id"] = new_id
+            self.send_welcome_mail(rs, data)
             rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
@@ -1275,7 +1350,7 @@ class CdEMailmanClient(mailmanclient.Client):
                  mailman_basic_auth_password: str):
         """Automatically initializes a client with our custom parameters.
 
-        :param conf: Usually, he config used where this class is instantiated.
+        :param conf: Usually, the config used where this class is instantiated.
         """
         self.conf = conf
 
@@ -1303,16 +1378,20 @@ class CdEMailmanClient(mailmanclient.Client):
         try:
             return self.get_list(address)
         except urllib.error.HTTPError as e:
-            if e.code != 404:
-                self.logger.exception("Mailman connection failed!")
-            return None
+            if e.code == 404:
+                self.logger.exception("Mailinglist not found!")
+        except mailmanclient.MailmanConnectionError:
+            self.logger.exception("Mailman connection failed!")
+        return None
 
     def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
             list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
-        If the list is not managed by mailman, this function returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1333,8 +1412,10 @@ class CdEMailmanClient(mailmanclient.Client):
     def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
         """Returns the number of held messages for a mailman list.
 
-        If the list is not managed by mailman, this returns None instead.
+        If the list is not managed by mailman or inactive, this returns None instead.
         """
+        if not dblist.is_active:
+            return None
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
@@ -1490,6 +1571,7 @@ class AmbienceDict(typing.TypedDict):
     track_group: models_event.TrackGroup
     fee: models_event.EventFee
     orga_token: models_droid.OrgaToken
+    custom_filter: CustomQueryFilter
     attachment: CdEDBObject
     attachment_version: CdEDBObject
     assembly: CdEDBObject
@@ -1566,6 +1648,10 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
               ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
+        # Dirty hack, that relies on the event being retrieved into ambience first.
+        Scout(lambda anid: ambience['event'].custom_query_filters[anid],  # type: ignore[has-type]
+              'custom_filter_id', 'custom_filter',
+              ((lambda a: do_assert(a['custom_filter'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment',
               ((lambda a: do_assert(a['attachment']['assembly_id']
@@ -1625,8 +1711,9 @@ class FrontendEndpoint(Protocol):
 
 
 def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: bool = None, anti_csrf_token_name: str = None,
-           anti_csrf_token_payload: str = None) -> Callable[[F], F]:
+           check_anti_csrf: Optional[bool] = None,
+           anti_csrf_token_name: Optional[str] = None,
+           anti_csrf_token_payload: Optional[str] = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1694,9 +1781,9 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
 
 
 def cdedburl(rs: RequestState, endpoint: str,
-             params: Union[CdEDBObject, CdEDBMultiDict] = None,
+             params: Optional[Union[CdEDBObject, CdEDBMultiDict]] = None,
              force_external: bool = False,
-             magic_placeholders: Collection[str] = None) -> str:
+             magic_placeholders: Optional[Collection[str]] = None) -> str:
     """Construct an HTTP URL.
 
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
@@ -1826,7 +1913,8 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False,
+        *spec: str, _hints: Optional[vtypes.TypeMapping] = None,
+        _postpone_validation: bool = False,
         _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
@@ -1878,7 +1966,7 @@ def REQUESTdata(
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val = rs.request.values.get(name, "")
+                    val: Optional[str] = rs.request.values.get(name, "")
 
                     # TODO allow encoded collections?
                     if encoded and val:
@@ -1956,7 +2044,7 @@ def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            data = {}
+            data: dict[str, Union[str, tuple[str, ...]]] = {}
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
@@ -1979,7 +2067,7 @@ RequestConstraint = tuple[Callable[[CdEDBObject], bool], Error]
 
 def request_extractor(
         rs: RequestState, spec: vtypes.TypeMapping,
-        constraints: Collection[RequestConstraint] = None,
+        constraints: Optional[Collection[RequestConstraint]] = None,
         postpone_validation: bool = False,
         omit_missing: bool = False,
 ) -> CdEDBObject:
@@ -2161,7 +2249,7 @@ def assembly_guard(fun: F) -> F:
 
 
 def check_validation(rs: RequestState, type_: type[T], value: Any,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
+                     name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2183,7 +2271,7 @@ def check_validation(rs: RequestState, type_: type[T], value: Any,
 
 
 def check_validation_optional(rs: RequestState, type_: type[T], value: Any,
-                              name: str = None, **kwargs: Any) -> Optional[T]:
+                              name: Optional[str] = None, **kwargs: Any) -> Optional[T]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
@@ -2282,9 +2370,9 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
     if p['title']:
-        name = glue(p['title'], name)
+        name = f"{p['title']} {name}"
     if p['name_supplement']:
-        name = glue(name, p['name_supplement'])
+        name = f"{name} {p['name_supplement']}"
     ret = [name]
     if p['address_supplement']:
         ret.append(p['address_supplement'])
@@ -2357,8 +2445,8 @@ def process_dynamic_input(
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
-    additional: CdEDBObject = None,
-    creation_spec: vtypes.TypeMapping = None,
+    additional: Optional[CdEDBObject] = None,
+    creation_spec: Optional[vtypes.TypeMapping] = None,
     prefix: str = "",
 ) -> dict[int, Optional[C]]:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2460,8 +2548,8 @@ class CustomCSVDialect(csv.Dialect):
 
 def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
                writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Mapping[str, Mapping[Any, Any]] = None,
-               tzinfo: datetime.timezone = None) -> str:
+               substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
+               tzinfo: Optional[datetime.tzinfo] = None) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2494,8 +2582,8 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
 
 
 def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
-                         substitutions: Mapping[
-                             str, Mapping[Any, Any]] = None) -> str:
+                         substitutions: Optional[Mapping[
+                             str, Mapping[Any, Any]]] = None) -> str:
     """Generate a json representation of the passed data.
 
     :param substitutions: Allow replacements of values with better
@@ -2549,7 +2637,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
+        pre[x]["offset"] = trueoffset - (len(pre) - x) * length
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length
@@ -2571,12 +2659,27 @@ class TransactionObserver:
 
     This should only be used in cases where a failure is deemed sufficiently
     unlikely.
+
+    The recipients always include the troubleshooting address and default to
+    management if no other recipients are given.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str, *,
+                 description: str = "", recipients: Collection[str] = ()):
         self.rs = rs
         self.frontend = frontend
         self.name = name
+        self.description = description
+        if recipients:
+            self.recipients = (
+                *recipients,
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
+        else:
+            self.recipients = (
+                frontend.conf['MANAGEMENT_ADDRESS'],
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
 
     def __enter__(self) -> "TransactionObserver":
         return self
@@ -2588,13 +2691,14 @@ class TransactionObserver:
             self.frontend.do_mail(
                 self.rs, "transaction_error",
                 {
-                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
-                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'To': self.recipients,
                     'Subject': "Transaktionsfehler",
+                    'Reply-To': self.frontend.conf['TROUBLESHOOTING_ADDRESS'],
                 },
                 {
                     'now': now(),
                     'name': self.name,
+                    'description': self.description,
                     'atype': atype,
                     'value': value,
                     'tb': tb,

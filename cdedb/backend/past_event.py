@@ -85,8 +85,8 @@ class PastEventBackend(AbstractBackend):
         participation_infos, "persona_ids", "persona_id")
 
     def past_event_log(self, rs: RequestState, code: const.PastEventLogCodes,
-                       pevent_id: Optional[int], persona_id: int = None,
-                       change_note: str = None) -> int:
+                       pevent_id: Optional[int], persona_id: Optional[int] = None,
+                       change_note: Optional[str] = None) -> int:
         """Make an entry in the log for concluded events.
 
         See
@@ -253,7 +253,8 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_event(self, rs: RequestState, pevent_id: int,
-                          cascade: Collection[str] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None,
+                          ) -> DefaultReturnCode:
         """Remove past event.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -402,7 +403,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_course(self, rs: RequestState, pcourse_id: int,
-                           cascade: Collection[str] = None,
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Remove past course.
 
@@ -509,8 +510,8 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("cde", "event")
-    def list_participants(self, rs: RequestState, *, pevent_id: int = None,
-                          pcourse_id: int = None,
+    def list_participants(self, rs: RequestState, *, pevent_id: Optional[int] = None,
+                          pcourse_id: Optional[int] = None,
                           ) -> dict[tuple[int, Optional[int]], CdEDBObject]:
         """List all participants of a concluded event or course.
 

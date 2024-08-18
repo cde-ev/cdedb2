@@ -236,6 +236,17 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}
                     </dd>
                 {% endif %}
+                {% if 'honorary_member' in data and data['honorary_member'] and "is_member" not in data %}
+                    <div id="honorary-member">
+                        <dt title="{% trans %}Honorary Member{% endtrans %}">
+                            {% trans %}Honorary Member{% endtrans %}
+                        </dt>
+                        <dd>
+                            {{ util.deko_checkbox(checked=data['honorary_member'], anid="honorary_member_checkbox",
+                                                  titles=[gettext("No"), gettext("Yes")]) }}
+                        </dd>
+                    </div>
+                {% endif %}
             </dl>
 
             {# Only a check if the realm bits are contained in data #}
@@ -303,14 +314,19 @@
                     <dt title="{% trans %}Membership{% endtrans %}">
                         {% trans %}Membership{% endtrans %}
                     </dt>
-                    <dd id="membership">
-                        {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
-                        {% if data['is_member'] %}
-                            {% trans %}CdE-Member{% endtrans %}
-                        {% endif %}
-                        {% if data['trial_member'] %}
-                            {% trans %}(Trial Membership){% endtrans %}
-                        {% endif %}
+                    <dd>
+                        <span id="membership">
+                            {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
+                            {% if data['honorary_member'] and data['trial_member'] %}
+                                {% trans %}Honorary & Trial Member{% endtrans %}
+                            {% elif data['honorary_member'] %}
+                                {% trans %}Honorary Member{% endtrans %}
+                            {% elif data['trial_member'] %}
+                                {% trans %}Trial Member{% endtrans %}
+                            {% elif data['is_member'] %}
+                                {% trans %}CdE-Member{% endtrans %}
+                            {% endif %}
+                        </span>
                         {% if is_relative_admin_view and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
@@ -390,7 +406,7 @@
         {% endif %}
 
         {% if 'paper_expuls' in data %}
-            <dl id=paper-expuls class="dl-horizontal">
+            <dl id="paper-expuls" class="dl-horizontal">
                 <dt title="{% trans %}Printed exPuls{% endtrans %}">
                     {% trans %}Printed exPuls{% endtrans %}
                 </dt>
@@ -465,7 +481,7 @@
                     <dd id="address">
                         {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
                         {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
-                        {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
+                        {{ data['postal_code'] }} {{ data['location'] }}{% if data['postal_code'] or data['location'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country']) }}
                     </dd>
                 </dl>

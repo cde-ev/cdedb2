@@ -16,9 +16,6 @@ class ReferencedNames:
         self.field_names.update(other.field_names)
         self.part_names.update(other.part_names)
 
-    def __add__(self, other: "ReferencedNames") -> "ReferencedNames":
-        return self.__class__(self.field_names | other.field_names, self.part_names | other.part_names)
-
 
 def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: AbstractSet[str]) -> None:
     rn = get_referenced_names(result)
@@ -31,8 +28,10 @@ def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: Ab
         raise RuntimeError(" ".join(msgs))
 
 
-def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
+def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
     referenced_names = ReferencedNames()
+    if result is None:
+        return referenced_names
     if result.get_name() == "field":
         referenced_names.field_names.add(result[0])
     elif result.get_name() == "part":
@@ -76,6 +75,7 @@ _EVALUATOR_FUNCTIONS: dict[str, tuple[Callable[..., bool], bool]] = {
 }
 
 
+# TODO: Do we need this? We don't use it?
 def create_evaluator(result: pp.ParseResults) -> Callable[[dict[str, bool], dict[str, bool]], bool]:
     # num_bound_args = _EVALUATOR_NARY[result.get_name()]
     evaluator, evaluate_args = _EVALUATOR_FUNCTIONS[result.get_name()]

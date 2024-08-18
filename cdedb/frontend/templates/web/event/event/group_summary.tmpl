@@ -26,8 +26,10 @@
     <p>
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
-        {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
-                               icon='plus', aclass='btn btn-success btn-sm') }}
+        {% if ambience['event']['tracks'] %}
+            {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
+                                   icon='plus', aclass='btn btn-success btn-sm') }}
+        {% endif %}
     </p>
     <h2>
         {% trans %}Part Groups{% endtrans %}
@@ -87,6 +89,7 @@
         </tbody>
     </table>
 
+    {% if ambience['event']['tracks'] %}
     <h2>
         {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
@@ -164,4 +167,5 @@
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 {% endblock %}

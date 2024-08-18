@@ -4,6 +4,7 @@
 {% block scripts %}
     {{ util.cdedb_script('cdedb_csv_tools.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_search_event.js') }}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
@@ -50,12 +51,33 @@
                     <li>
                         {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}
                     </li>
-                    {% if data["persona{}".format(t_id)] %}
-                        <li>
-                            {% trans %}Matched User{% endtrans %}:
-                            {{ util.print_doppelganger(data["persona{}".format(t_id)]) }}
-                        </li>
-                    {% endif %}
+                    <li>
+                        {% trans %}Transaction Type{% endtrans %}: {{ gettext(data["type{}".format(t_id)]).display_str() }}
+                    </li>
+                    {% with persona = data["persona{}".format(t_id)],
+                            event = data["event{}".format(t_id)] %}
+                        {% if persona %}
+                            <li>
+                                {% trans %}Matched User{% endtrans %}:
+                                {{ util.print_doppelganger(persona, link=True) }}
+                            </li>
+                        {% endif %}
+                        {% if event %}
+                            <li>
+                                {% trans %}Matched Event{% endtrans %}:
+                                {{ util.href(cdedblink("event/show_event", {'event_id': event.id}), event.title) }}
+                            </li>
+                        {% endif %}
+                        {% if persona and event %}
+                            {% with reg_id = params.get('registration_ids', {}).get((persona['id'], event.id)) %}
+                                {% if reg_id %}
+                                    <li>
+                                        {{ util.href(cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': reg_id}), gettext("Matched Registration")) }}
+                                    </li>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    {% endwith %}
                 </ul>
                 <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
                         {% for key, problem in data["errors{}".format(t_id)] %}
@@ -108,7 +130,14 @@
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
+                                    anid="input-event_id{}".format(t_id),
                                     nulloption=nbsp, label=gettext("Event"), horizontal=False, sort=False) }}
+                        <script nonce="{{ csp_nonce }}">
+                            $('#input-event_id{{ t_id }}').cdedbSearchEvent(
+                                '{{ cdedblink('event/select_event') }}',
+                                {{ event_options|tojson }},
+                            );
+                        </script>
                     </div>
                 </div>
             </div>
@@ -187,19 +216,12 @@
             {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
             {{ util.form_input_submit(name="validate", label=gettext("Validate"), icon="sync-alt", horizontal=False) }}
             {% if not params["has_error"] %}
-                {{ util.input_submit(label=gettext("GnuCash Download"), aclass="btn btn-default", value="gnucash", name="gnucash", icon='download') }}
                 {% for account in enums["Accounts"] if account in params["accounts"] %}
-                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()), aclass="btn btn-default",
-                        value=account, name="excel", icon='download') }}
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()),
+                        aclass="btn btn-default", value=account, name="excel", icon='download') }}
                 {% endfor %}
-                {% if params["memberships"] %}
-                    {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership", aclass="btn btn-default",
-                        name="membership", icon='download') }}
-                {% endif %}
-                {% for event_id in params["events"] %}
-                    {{ util.input_submit(label=gettext("%(shortname)s participants")|format(shortname=events[event_id]['shortname']),
-                        aclass="btn btn-default", value=event_id, name="event", icon='download') }}
-                {% endfor %}
+                {{ util.input_submit(label=gettext("Download DB-Import"), value="db_import", aclass="btn btn-default",
+                        name="db_import", icon="download") }}
             {% endif %}
             </div>
         </form>

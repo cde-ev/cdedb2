@@ -195,9 +195,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        if rs.ambience['event'].is_archived:
-            rs.notify("error", n_("Event is already archived."))
-            return self.redirect(rs, "event/show_event")
         params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         data = {
             key.removeprefix("fields."): val
@@ -298,19 +295,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 for i in mixed_existence_sorter(indices))}
         return questionnaire
 
-    @staticmethod
-    def _sanitize_questionnaire_row(row: CdEDBObject) -> CdEDBObject:
-        """Small helper to make validation happy.
-
-        The invokation
-        ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
-        the retrieval method provides additional information which not
-        settable and thus filtered by this method.
-        """
-        whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
-                     'default_value', 'kind')
-        return {k: v for k, v in row.items() if k in whitelist}
-
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata("kind")
@@ -362,8 +346,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
-        new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
-                             for i in order]
+        new_questionnaire = [questionnaire[i] for i in order]
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  {kind: new_questionnaire})
         rs.notify_return_code(code)

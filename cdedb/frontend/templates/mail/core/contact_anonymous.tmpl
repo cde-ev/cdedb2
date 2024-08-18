@@ -1,0 +1,18 @@
+Hier ist eine anonyme Nachricht, die euch über das Kontaktformular zugesandt wurde.
+
+Geheimnis: {{ secret }}
+Zeitpunkt der Nachricht: {{ message.ctime|datetime(lang="de") }}
+
+Um auf die Nachricht zu antworten besucht diesen Link:
+{{ cdedblink("core/contact_reply", {'secret': secret}) }}
+
+Jeder der Zugriff auf das obige Geheimnis, bzw. den obigen Link hat, kann
+auf die Nachricht antworten, jedoch nicht deren Inhalt sehen.
+Falls erforderlich könnt ihr unter diesem Link einen neues Geheimnis generieren
+und so das alte deaktivieren:
+
+{{ cdedblink("core/rotate_anonymous_message", {'secret': secret}) }}
+
+---
+
+{{ message_text }}

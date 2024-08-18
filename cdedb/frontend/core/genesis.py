@@ -6,7 +6,6 @@ import collections
 import datetime
 from typing import Optional
 
-import magic
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -66,27 +65,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This initiates the genesis process.
         """
-        attachment_data = None
-        if attachment:
-            attachment_filename = attachment.filename
-            attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
-        if attachment_data:
-            myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
-            data['attachment_hash'] = myhash
-            rs.values['attachment_hash'] = myhash
-            rs.values['attachment_filename'] = attachment_filename
-        elif data['attachment_hash']:
-            attachment_stored = self.coreproxy.genesis_check_attachment(
-                rs, data['attachment_hash'])
-            if not attachment_stored:
-                data['attachment_hash'] = None
-                e = ("attachment", ValueError(n_(
-                    "It seems like you took too long and "
-                    "your previous upload was deleted.")))
-                rs.append_validation_error(e)
-        elif 'attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
+        rs.values['attachment_hash'], rs.values['attachment_filename'] =\
+            self.locate_or_store_attachment(
+                rs, self.coreproxy.get_genesis_attachment_store(rs), attachment,
+                data.get('attachment_hash'), attachment_filename)
+        if ('attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {})
+                and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
+        data['attachment_hash'] = rs.values['attachment_hash']
 
         data = check(rs, vtypes.GenesisCase, data, creation=True)
         if rs.has_validation_errors():
@@ -164,7 +151,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        code, realm = self.coreproxy.genesis_verify(rs, genesis_case_id)
+        code, _ = self.coreproxy.genesis_verify(rs, genesis_case_id)
         rs.notify_return_code(
             code,
             error=n_("Verification failed. Please contact the administrators."),
@@ -243,7 +230,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        attachment_count = self.coreproxy.genesis_forget_attachments(rs)
+        attachment_count = self.coreproxy.get_genesis_attachment_store(rs).forget(
+            rs, self.coreproxy.get_genesis_attachment_usage)
 
         if count or attachment_count:
             self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"
@@ -251,18 +239,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return store
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm, fields in
-                            REALM_SPECIFIC_GENESIS_FIELDS.items()
-                            if "attachment_hash" in fields))
+    @access("anonymous")
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        data = self.coreproxy.genesis_get_attachment(rs, attachment_hash)
-        mimetype = None
-        if data:
-            mimetype = magic.from_buffer(data, mime=True)
-        return self.send_file(rs, data=data, mimetype=mimetype)
+        path = self.coreproxy.get_genesis_attachment_store(rs).get_path(attachment_hash)
+        if not path.is_file():
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        return self.send_file(rs, path=path, mimetype='application/pdf')
 
     @access("core_admin", *(f"{realm}_admin"
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
@@ -294,8 +278,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                           ) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         persona = reviewer = pevent = pcourse = None
         if case['persona_id']:
@@ -336,8 +319,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                             ) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
@@ -457,28 +439,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # Send notification to the user, depending on decision.
         if decision.is_create():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            success, cookie = self.coreproxy.make_reset_cookie(
-                rs, persona['username'],
-                timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter(
-                "core/do_password_reset_form", "email", persona['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            if case['realm'] == "cde":
-                meta_info = self.coreproxy.get_meta_info(rs)
-                self.do_mail(
-                    rs, "welcome",
-                    {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
-                    {'data': persona, 'email': email, 'cookie': cookie,
-                     'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
-            else:
-                self.do_mail(
-                    rs, "genesis/genesis_approved",
-                    {'To': (persona['username'],), 'Subject': "CdEDB-Account erstellt"},
-                    {'persona': persona, 'email': email, 'cookie': cookie})
+            self.send_welcome_mail(rs, persona)
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            success, cookie = self.coreproxy.make_reset_cookie(
+            _, cookie = self.coreproxy.make_reset_cookie(
                 rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", persona['username'],

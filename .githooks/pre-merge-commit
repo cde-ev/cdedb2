@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# execute pre-commit hook, if existent, also as pre-merge-commit hook
+#
+
+HOOK_DIR=$(dirname $0)
+
+test -x "$HOOK_DIR/pre-commit" &&
+        exec "$HOOK_DIR/pre-commit"
+:

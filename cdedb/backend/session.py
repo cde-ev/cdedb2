@@ -70,10 +70,10 @@ class SessionBackend:
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
-                data = dict(cur.fetchone())
+                data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
-    def lookupsession(self, sessionkey: Optional[str], ip: str) -> User:
+    def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -139,6 +139,7 @@ class SessionBackend:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
+                assert data is not None
         if self._is_locked_down() and not (data['is_meta_admin']
                                            or data['is_core_admin']):
             # Short circuit in case of lockdown
@@ -151,7 +152,7 @@ class SessionBackend:
                                      'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
 
-    def lookuptoken(self, apitoken: Optional[str], ip: str) -> User:
+    def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the

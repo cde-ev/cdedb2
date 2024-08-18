@@ -63,6 +63,8 @@
                                    anid="input_checkbox_is_member") }}
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Member"),
                                        anid="input_checkbox_trial_member") }}
+            {{ util.form_input_checkbox(name="honorary_member", label=gettext("Honorary Member"),
+                                        anid="input_checkbox_trial_member") }}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
                                    anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
@@ -226,7 +228,7 @@
                             <tbody>
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     <tr class="query_sort">
-                                        <td> {{ i|string + "." }} </td>
+                                        <td> {{ (i+1)|string + "." }} </td>
                                         <td>
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
@@ -308,7 +310,7 @@
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
                             <div class="input-group">
-                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
+                                {{ util.input_text("query_name", placeholder=gettext("query name"), anid="query_name_input") }}
                                 {{ util.input_hidden("query_scope", scope) }}
                                 <div class="input-group-btn">
                                     {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
@@ -553,6 +555,8 @@
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
                                         {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
+                                    {% elif format_spec == ResultFormat.event_fee %}
+                                        {{ util.href(cdedblink("event/show_registration_fee", {'registration_id': row[primary_field]}), text|money, title=gettext("Fee Details")) }}
                                     {% else %}
                                         {{ text }}
                                     {% endif %}
@@ -581,7 +585,7 @@
                                     <td title="{{ gettext(aggregate_title) }}" data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
                                         {% set format_spec = query.get_field_format_spec(field) %}
                                         {# For enums etc., only show how many elements are null #}
-                                        {% set value = aggregates.get(key, "–") if (not query.spec[field].choices or aggregate_func == "null") else "–" %}
+                                        {% set value = aggregates.get(key, "–") if (format_spec != ResultFormat.enum or aggregate_func == "null") else "–" %}
                                         {% if format_spec == ResultFormat.date and value != "–" and aggregate_func != "null" %}
                                             {{ value|date(lang=lang) }}
                                         {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
@@ -602,21 +606,27 @@
     {% endif %}
 {% endmacro %}
 
-{% macro query_button_field_set(field_association) %}
-    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+{% macro query_result_dynamic_action(
+        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" class="btn btn-sm {{ aclass }}">
+        {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
+        <script nonce="{{ csp_nonce }}">
+            $('.query-result-dynamic-actions').show();
+            (function (script) {
+                $(script).closest('button').on("click", function () {
+                    console.log($(this));
+                    let list = [];
+                    $('#query-result').find('.ls-selected').each(function () {
+                        list.push($(this).data('id'));
+                    });
+                    console.log(list);
+                    if (list.length === 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink(target, params or {}, magic_placeholders=magic_placeholders)|safe }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            })(document.currentScript);
+        </script>
     </button>
-    <script nonce="{{ csp_nonce }}">
-        $('#btn-set-field').click(function(){
-            var list = [];
-            $('#query-result').find('.ls-selected').each(function(){
-                list.push($(this).attr('data-id'));
-            });
-            if (list.length === 0)
-                return;
-            location.href =
-                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
-                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-        });
-    </script>
 {% endmacro %}

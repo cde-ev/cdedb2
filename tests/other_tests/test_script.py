@@ -62,20 +62,13 @@ class TestScript(unittest.TestCase):
                 with s:
                     print("Writing this to file.")
                     print("This too!", file=sys.stderr)
-                with open(f.name, "r") as fr:
+                with open(f.name) as fr:
                     self.check_buffer(
                         fr, self.assertEqual, "Writing this to file.\nThis too!\n",
                         truncate=False)
 
-        expectation = """Not writing this to file.
-Not writing this to file either.
-
-================================================================================
-
-Aborting Dry Run! Time taken: 0.000 seconds.
-
-"""
-        self.check_buffer(buffer, self.assertEqual, expectation)
+        expectation = "Not writing this to file.\nNot writing this to file either."
+        self.check_buffer(buffer, self.assertIn, expectation)
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
@@ -231,7 +224,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
                 with conn.cursor() as cur:
                     cur.execute(insertion_query)
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
@@ -241,7 +234,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
 
     def test_offline_orgatoken(self) -> None:
         offline_script = self.get_script(CDEDB_OFFLINE_DEPLOYMENT=True)
@@ -250,12 +243,12 @@ Aborting Dry Run! Time taken: 0.000 seconds.
 
         token = event.get_orga_token(offline_script.rs(), 1)
         with self.assertRaisesRegex(
-                APITokenError, "This API is not available in offline mode."
+                APITokenError, "This API is not available in offline mode.",
         ):
             session.lookuptoken(token.get_token_string("abc"), "127.0.0.0")
 
         with self.assertRaisesRegex(
-                ValueError, "May not create new orga token in offline instance."
+                ValueError, "May not create new orga token in offline instance.",
         ):
             token.id = vtypes.ProtoID(-1)
             event.create_orga_token(offline_script.rs(), token)

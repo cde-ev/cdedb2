@@ -35,7 +35,7 @@ class Genders(CdEIntEnum):
 
 
 @enum.unique
-class PersonaChangeStati(enum.IntEnum):
+class PersonaChangeStati(CdEIntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
@@ -172,21 +172,33 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
-    # sorting is not quite nice for historical reasons
+    instructor_refund = 5
+    instructor_donation = 6
     solidary_reduction = 10
+    solidary_donation = 11
     solidary_increase = 12
-    donation = 11
+    other_donation = 20
 
     def get_icon(self) -> str:
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
-            EventFeeType.solidary_reduction: "hand-holding-usd",
-            # TODO replace with hand-holding-medical
+            EventFeeType.instructor_refund: "book",
+            EventFeeType.instructor_donation: "book-medical",
+            EventFeeType.solidary_reduction: "hand-holding-medical",
+            EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
-            EventFeeType.donation: "donate",
+            EventFeeType.other_donation: "donate",
+
         }[self]
+
+    def is_donation(self) -> bool:
+        return self in {
+            EventFeeType.solidary_donation,
+            EventFeeType.instructor_donation,
+            EventFeeType.other_donation,
+        }
 
 
 @enum.unique
@@ -373,6 +385,7 @@ class PastInstitutions(CdEIntEnum):
     dsa = 20  #:
     dja = 40  #:
     jgw = 60  #:
+    bub = 70  #:
     basf = 80  #:
     van = 200  #:
     eisenberg = 400  #:
@@ -388,6 +401,7 @@ class PastInstitutions(CdEIntEnum):
             self.dsa: "DSA",
             self.dja: "DJA",
             self.jgw: "JGW",
+            self.bub: "BuB",
             self.basf: "BASF",
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
@@ -420,6 +434,9 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    send_anonymous_message = 100  #:
+    reply_to_anonymous_message = 101  #:
+    rotate_anonymous_message = 102  #:
 
 
 @enum.unique
@@ -429,6 +446,7 @@ class CdeLogCodes(CdEIntEnum):
     semester_bill_with_addresscheck = 11
     semester_ejection = 12
     semester_balance_update = 13
+    semester_exmember_balance = 16
     semester_advance = 1
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
@@ -449,6 +467,7 @@ class FinanceLogCodes(CdEIntEnum):
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
     start_trial_membership = 15  #:
+    remove_exmember_balance = 17  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
@@ -459,6 +478,8 @@ class FinanceLogCodes(CdEIntEnum):
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
     #: Fallback for strange cases
     other = 99
 
@@ -494,6 +515,7 @@ class EventLogCodes(CdEIntEnum):
     registration_changed = 51  #:
     registration_deleted = 52  #:
     registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:
@@ -507,6 +529,9 @@ class EventLogCodes(CdEIntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    custom_filter_created = 95  #:
+    custom_filter_changed = 96  #:
+    custom_filter_deleted = 97  #:
     part_group_created = 100  #:
     part_group_changed = 101  #:
     part_group_deleted = 102  #:
@@ -521,6 +546,9 @@ class EventLogCodes(CdEIntEnum):
     orga_token_changed = 201  #:
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
+    registration_status_changed = 300  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
 
 
 @enum.unique

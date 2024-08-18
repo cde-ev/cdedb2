@@ -29,9 +29,19 @@ class CdESemesterMixin(CdEBaseFrontend):
         # group all allowed steps into the three steps we display to the user
         in_step_1 = (allowed_semester_steps.advance or allowed_semester_steps.billing
                      or allowed_semester_steps.archival_notification)
-        in_step_2 = (allowed_semester_steps.ejection
+        in_step_2 = (allowed_semester_steps.exmember_balance
+                     or allowed_semester_steps.ejection
                      or allowed_semester_steps.automated_archival)
         in_step_3 = allowed_semester_steps.balance
+        during_step_1 = (period["billing_state"]
+                         or period["archival_notification_state"])
+        # here, we cheat a bit to display two separate backend steps as one
+        during_step_2 = (period['exmember_state']
+                         or period['ejection_state']
+                         or period['archival_state']
+                         or allowed_semester_steps.ejection
+                         or allowed_semester_steps.automated_archival)
+        during_step_3 = period['balance_state']
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -40,6 +50,8 @@ class CdESemesterMixin(CdEBaseFrontend):
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
             'in_step_1': in_step_1, 'in_step_2': in_step_2, 'in_step_3': in_step_3,
+            'during_step_1': during_step_1, 'during_step_2': during_step_2,
+            'during_step_3': during_step_3,
         })
 
     @access("finance_admin", modi={"POST"})
@@ -71,6 +83,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
         meta_info = self.coreproxy.get_meta_info(rs)
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
 
         if rs.has_validation_errors():
             return self.show_semester(rs)
@@ -96,13 +109,16 @@ class CdESemesterMixin(CdEBaseFrontend):
 
                     address = make_postal_address(rrs, persona)
                     transaction_subject = make_membership_fee_reference(persona)
-                    endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                                  and not persona['trial_member']
-                                  and not lastschrift)
+                    endangered = (
+                            persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                            and not persona['trial_member']
+                            and not persona['honorary_member']
+                            and not lastschrift
+                    )
                     if endangered:
-                        subject = "Mitgliedschaft verlängern"
+                        subject = "Deine Mitgliedschaft läuft aus"
                     else:
-                        subject = "Mitgliedschaft verlängert"
+                        subject = "Deine Mitgliedschaft wird verlängert"
 
                     self.do_mail(
                         rrs, "semester/billing",
@@ -110,6 +126,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                          'Subject': subject},
                         {'persona': persona,
                          'fee': self.conf["MEMBERSHIP_FEE"],
+                         'annual_fee': annual_fee,
                          'lastschrift': lastschrift,
                          'open_lastschrift': open_lastschrift,
                          'address': address,
@@ -140,13 +157,17 @@ class CdESemesterMixin(CdEBaseFrontend):
         Worker.create(
             rs, "semester_bill",
             (send_billing_mail, send_archival_notification), self.conf)
-        rs.notify("success", n_("Started sending billing mails."))
-        rs.notify("success", n_("Started sending archival notifications."))
+        if allowed_steps.billing:
+            rs.notify("success", n_("Started sending billing mails."))
+        if allowed_steps.archival_notification:
+            rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit and archive inactive users.
+
+        Immediately before the ejection, remove the remaining balance of all exmembers.
 
         It may happen that the Worker crashs. Then, calling this function will start a
         new worker, but take the latest state of the old worker into account.
@@ -155,12 +176,19 @@ class CdESemesterMixin(CdEBaseFrontend):
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
-        if not (allowed_steps.ejection or allowed_steps.automated_archival):
+        if not (allowed_steps.exmember_balance or allowed_steps.ejection
+                or allowed_steps.automated_archival):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
+        def update_exmember_balance(rrs: RequestState, rs: None = None) -> bool:
+            """Update one exmembers balance and advance state."""
+            proceed, _ = self.cdeproxy.process_for_exmember_balance(
+                rrs, period_id)
+            return proceed
+
         def eject_member(rrs: RequestState, rs: None = None) -> bool:
             """Check one member for ejection and advance semester state."""
             with TransactionObserver(rrs, self, "eject_member"):
@@ -197,18 +225,20 @@ class CdESemesterMixin(CdEBaseFrontend):
                     self._send_mail(mail)
             return proceed
 
+        if allowed_steps.exmember_balance:
+            rs.notify("success", n_("Started updating exmember balance."))
+        if allowed_steps.ejection:
+            rs.notify("success", n_("Started ejection."))
+        if allowed_steps.automated_archival:
+            rs.notify("success", n_("Started automated archival."))
         Worker.create(
-            rs, "semester_eject", (eject_member, automated_archival), self.conf)
-        rs.notify("success", n_("Started ejection."))
-        rs.notify("success", n_("Started automated archival."))
+            rs, "semester_eject",
+            (update_exmember_balance, eject_member, automated_archival), self.conf)
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts.
-
-        This also deduct all remaining balance from exmembers, which accumulated during
-        the previous semester.
 
         It may happen that the Worker crashs. Then, calling this function will start a
         new worker, but take the latest state of the old worker into account.
@@ -216,27 +246,20 @@ class CdESemesterMixin(CdEBaseFrontend):
         if rs.has_validation_errors():  # pragma: no cover
             self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        if not self.cdeproxy.allowed_semester_steps(rs).balance:
+        allowed_steps = self.cdeproxy.allowed_semester_steps(rs)
+        if not allowed_steps.balance:
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
-
-        # TODO fix removal of exmember balance after specification
-        # period = self.cdeproxy.get_period(rs, period_id)
-        # Make sure to perform this step only once, so the amount of balance removed
-        #  in this way is not overwritten by later calls.
-        # if not period["exmember_balance"]:
-        #     ret = self.cdeproxy.remove_exmember_balance(rs, period_id)
-        #     rs.notify_return_code(ret, success=n_("Balance of Exmembers removed."))
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
-            proceed, persona = self.cdeproxy.process_for_semester_balance(
+            proceed, _ = self.cdeproxy.process_for_semester_balance(
                 rrs, period_id)
             return proceed
 
-        Worker.create(rs, "semester_balance_update", update_balance, self.conf)
+        Worker.create(rs, "semester_balance_update", (update_balance,), self.conf)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -244,7 +267,7 @@ class CdESemesterMixin(CdEBaseFrontend):
     @REQUESTdata("testrun", "skip")
     def expuls_addresscheck(self, rs: RequestState, testrun: bool, skip: bool,
                             ) -> Response:
-        """Send address check mail to all members.
+        """Send address check mail to all members who receive a printed exPuls.
 
         In case of a test run we send only a single mail to the button
         presser.

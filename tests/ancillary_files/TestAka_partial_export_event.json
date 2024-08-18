@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         17,
-        0
+        2
     ],
     "kind": "partial",
     "id": 1,
@@ -178,8 +178,12 @@
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false
             },
+            "personalized_fees": {
+                "10": "-20.00"
+            },
+            "is_member": true,
             "amount_paid": "200.00",
-            "amount_owed": "573.99",
+            "amount_owed": "553.99",
             "parts": {
                 "1": {
                     "status": -1,
@@ -262,6 +266,9 @@
                 "brings_balls": true,
                 "transportation": "pedes"
             },
+            "personalized_fees": {
+            },
+            "is_member": false,
             "amount_paid": "0.00",
             "amount_owed": "466.49",
             "parts": {
@@ -345,8 +352,12 @@
                 "is_child": false,
                 "transportation": "car"
             },
+            "personalized_fees": {
+                "10": "-30.00"
+            },
+            "is_member": true,
             "amount_paid": "0.00",
-            "amount_owed": "534.48",
+            "amount_owed": "504.48",
             "parts": {
                 "1": {
                     "status": 2,
@@ -430,6 +441,9 @@
                 "brings_balls": false,
                 "transportation": "etc"
             },
+            "personalized_fees": {
+            },
+            "is_member": true,
             "amount_paid": "0.00",
             "amount_owed": "431.99",
             "parts": {
@@ -513,6 +527,9 @@
                 "is_child": false,
                 "transportation": "pedes"
             },
+            "personalized_fees": {
+            },
+            "is_member": true,
             "amount_paid": "0.00",
             "amount_owed": "584.48",
             "parts": {
@@ -596,6 +613,9 @@
                 "is_child": false,
                 "transportation": "pedes"
             },
+            "personalized_fees": {
+            },
+            "is_member": true,
             "amount_paid": "0.00",
             "amount_owed": "10.50",
             "parts": {
@@ -739,6 +759,12 @@
                 "condition": "part.1.H. and part.2.H. and is_orga",
                 "kind": 1,
                 "notes": null
+            },
+            "KL-Erstattung": {
+                "amount": null,
+                "condition": null,
+                "kind": 5,
+                "notes": "Individuelle Höhe"
             }
         },
         "parts": {

@@ -19,7 +19,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -28,7 +28,7 @@ from cdedb.common.validation.validate import (
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
-    check_validation as check, csv_output,
+    check_validation as check,
 )
 
 COURSESEARCH_DEFAULTS = {
@@ -80,7 +80,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'spec': spec, 'result': result, 'count': count})
 
     def _process_participants(self, rs: RequestState, pevent_id: int,
-                              pcourse_id: int = None, orgas_only: bool = False,
+                              pcourse_id: Optional[int] = None,
+                              orgas_only: bool = False,
                               ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
@@ -164,28 +165,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
-    @access("cde_admin")
-    def download_past_event_participantlist(self, rs: RequestState,
-                                            pevent_id: int) -> Response:
-        """Provide a download of a participant list for a past event."""
-        scope = QueryScope.past_event_user
-        query = Query(
-            scope, scope.get_spec(),
-            ("personas.id", "given_names", "display_name", "family_name", "address",
-             "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id)],
-            (("family_name", True), ("given_names", True),
-             ("personas.id", True)))
-
-        result = self.cdeproxy.submit_general_query(rs, query)
-        fields: list[str] = []
-        for csvfield in query.fields_of_interest:
-            fields.extend(csvfield.split(','))
-        csv_data = csv_output(result, fields, tzinfo=self.conf['DEFAULT_TIMEZONE'])
-        return self.send_csv_file(
-            rs, data=csv_data, inline=False,
-            filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
-
     @access("member", "cde_admin")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
@@ -227,7 +206,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("member", "cde_admin")
     @REQUESTdata("institution")
     def list_past_events(self, rs: RequestState,
-                         institution: const.PastInstitutions = None) -> Response:
+                         institution: Optional[const.PastInstitutions] = None,
+                         ) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))

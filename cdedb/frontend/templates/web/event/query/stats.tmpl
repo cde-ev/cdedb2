@@ -19,7 +19,7 @@
     {% set sorted_parts = ambience['event']['parts'].values()|sort %}
     {% set sorted_part_groups = ambience['event']['part_groups'].values()|sort %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
-        <table id="participant-stats" class="table table-slim table-condensed table-stats">
+        <table id="participant-stats" class="table table-slim table-condensed table-stats table-hover">
             <thead>
                 <tr>
                     {% set first_column_width = per_part_max_indent + 1 %}
@@ -50,7 +50,7 @@
                         {% for part in sorted_parts %}
                             <td class="text-right">
                                 {% set datum = row['parts'][part.id] %}
-                                {% set query = stat.get_query(ambience['event'], part.id) %}
+                                {% set query = stat.get_query(ambience['event'], part.id, datum) %}
                                 {{ util.href(
                                     cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                     datum|length, anid=stat.get_link_id(part_id=part.id)) }}
@@ -72,7 +72,7 @@
     {% if ambience['event']['tracks'] %}
         <h3>{% trans %}Course Statistics{% endtrans %}</h3>
             <p class="text-muted">{{ util.make_icon('info-circle') }}{{ nbsp }}{% trans %}Only includes participants.{% endtrans %}</p>
-            <table id="course-stats" class="table table-condensed table-slim table-stats">
+            <table id="course-stats" class="table table-condensed table-slim table-stats table-hover">
                 <thead>
                     <tr>
                         <th></th>
@@ -145,7 +145,7 @@
                             {% for track in ambience['event']['tracks'].values()|sort %}
                                 <td class="text-right">
                                     {% set datum = row['tracks'][track.id] %}
-                                    {% set query = stat.get_query(ambience['event'], track.id) %}
+                                    {% set query = stat.get_query(ambience['event'], track.id, datum) %}
                                     {{ util.href(
                                         cdedblink(query.scope.get_target(), query.serialize_to_url()) + "#query-results",
                                         datum|length, anid=stat.get_link_id(track_id=track.id)) }}

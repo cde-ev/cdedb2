@@ -81,12 +81,12 @@ class MlMailmanMixin(MlBaseFrontend):
             'subscription_policy': 'moderate',
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
-            'dmarc_mitigate_action': 'wrap_message',
+            'dmarc_mitigate_action': 'munge_from',
             'dmarc_mitigate_unconditionally': False,
-            'dmarc_wrapped_message_text': (
-                "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
-                " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
-                " mit Maillinglisten inkompatibel sind."),
+            # 'dmarc_wrapped_message_text': (
+            #    "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
+            #    " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
+            #    " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,

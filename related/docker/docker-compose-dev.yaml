@@ -1,0 +1,40 @@
+services:
+  cdb:
+    extends:
+      file: docker-compose-base.yaml
+      service: cdb
+  app:
+    image: cdedb-dev
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-cdedb-dev
+    volumes:
+      - files:/var/lib/cdedb # attachments etc
+      - config:/etc/cdedb # config files
+      - cert:/etc/ssl/apache2 # dynamic self-signed certificate
+      - ldap:/etc/ssl/ldap:ro # dynamic self-signed ldap certificate
+      - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
+      - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
+    ports:
+      - 8443:443 # apache
+      - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
+    environment:
+        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
+    depends_on:
+      - cdb
+  ldap:
+    extends:
+      file: docker-compose-base.yaml
+      service: ldap
+  adminer:
+    image: adminer
+    ports:
+      - 127.0.0.1:8080:8080
+
+volumes:
+  database:
+  files:
+  config:
+  cert:
+  ldap:
+  i18nwritable:

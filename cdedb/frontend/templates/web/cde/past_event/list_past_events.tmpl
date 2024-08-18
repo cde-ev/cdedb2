@@ -16,7 +16,7 @@
 
     <nav>
         <ul class="nav nav-tabs mosp" id="navigation">
-            <li role="presentation" {% if 'institution' not in values %}class="active" aria-current="page" {% endif %}>
+            <li role="presentation" {% if 'institution' not in values or not values['institution'] %}class="active" aria-current="page" {% endif %}>
                 {{ util.href(cdedblink('cde/list_past_events', {'institution': None}), gettext("Overview")) }}
             </li>
             {% for i in enums['PastInstitutions'] %}

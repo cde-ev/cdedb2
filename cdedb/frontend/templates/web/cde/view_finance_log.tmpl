@@ -28,11 +28,15 @@
                 <th>{% trans %}Annotation{% endtrans %}</th>
                 <th>{% trans %}Members{% endtrans %}</th>
                 <th>{% trans %}Overall Balance{% endtrans %}</th>
+                <th>{% trans %}Overall Balance (Members only){% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
             {% for entry in log %}
-                <tr id="{{ loop.index }}-{{ entry['id'] }}">
+                <tr id="{{ loop.index }}-{{ entry['id'] }}"
+                        class="{% if not entry['delta'] %}
+                               {% elif entry['delta'] > 0 %}money-positive
+                               {% elif entry['delta'] < 0 %}money-negative{% endif %}">
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                     <td>{{ gettext(enums['FinanceLogCodes'](entry['code'])|string) }}</td>
                     <td>
@@ -54,7 +58,8 @@
                     <td>{{ entry['transaction_date']|date(lang=lang) }}</td>
                     <td>{{ entry['change_note'] }}</td>
                     <td>{{ entry['members'] }}</td>
-                    <td>{{ entry['total']|money(lang=lang) }}</td>
+                    <td>{% if entry['total'] == -1 %}–{% else %}{{ entry['total']|money(lang=lang) }}{% endif %}</td>
+                    <td>{{ entry['member_total']|money(lang=lang) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -13,7 +13,6 @@ import quopri
 import tempfile
 from typing import Any, Optional
 
-import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
@@ -21,11 +20,14 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, User,
     make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
 )
-from cdedb.common.exceptions import ArchiveError, PrivilegeError, ValidationWarning
+from cdedb.common.exceptions import (
+    ArchiveError, CryptographyError, PrivilegeError, ValidationWarning,
+)
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
@@ -230,8 +232,8 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        sessionkey = self.coreproxy.login(rs, username, password,
-                                          rs.request.remote_addr)
+        sessionkey = self.coreproxy.login(
+            rs, username, password, rs.request.remote_addr)
         if not sessionkey:
             rs.notify("error", n_("Login failure."))
             rs.extend_validation_errors(
@@ -364,7 +366,7 @@ class CoreBaseFrontend(AbstractFrontend):
         html_str = markdown_parse_safe(md_str)
         return Response(html_str, mimetype='text/plain')
 
-    @access("searchable", "cde_admin")
+    @access("searchable")
     @REQUESTdata("#confirm_id")
     def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int,
                        ) -> Response:
@@ -378,7 +380,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename=f'{filename}.vcf')
 
-    @access("searchable", "cde_admin")
+    @access("searchable")
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -390,6 +392,45 @@ class CoreBaseFrontend(AbstractFrontend):
         segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
 
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+
+    @staticmethod
+    def _make_vcard_data(rs: RequestState, persona: CdEDBObject) -> str:
+        """Creates a string encoding the contact information as vCard 3.0.
+
+        Only a subset of available `vCard 3.0 properties
+        <https://tools.ietf.org/html/rfc2426>` is supported.
+
+        This is a rewritten form of `segno.helpers.make_vcard_data` to suite our needs.
+        """
+        escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
+        name = [persona['family_name'], persona['given_names'], "",
+                persona['title'], persona['name_supplement']]
+        data = ['BEGIN:VCARD', 'VERSION:3.0',
+                f'N:{";".join(escape(e or "") for e in name)}',
+                f'FN:{escape(make_persona_name(persona, only_given_names=True))}',
+                f'EMAIL:{escape(persona["username"])}']
+        if persona["mobile"]:
+            data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
+        if persona["telephone"]:
+            data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
+        if persona['display_name']:
+            data.append(f'NICKNAME:{escape(persona["display_name"])}')
+        for sub in ["", "2"]:
+            address = [persona[f'address_supplement{sub}'], persona[f'address{sub}'],
+                       persona[f'location{sub}'], "", persona[f'postal_code{sub}'],
+                       rs.gettext(format_country_code(persona[f'country{sub}']))]
+            if any(address):
+                if sub == "":
+                    prefix = 'ADR;TYPE=intl,home,postal,pref:;'
+                else:
+                    prefix = 'ADR;TYPE=intl,home,postal:;'
+                data.append(prefix + ";".join(escape(e or "") for e in address))
+        if persona['birthday'] != datetime.date.min:
+            data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
+        data.append('END:VCARD')
+        data.append('')
+        return '\r\n'.join(data)
 
     def _create_vcard(self, rs: RequestState, persona_id: int) -> str:
         """
@@ -406,24 +447,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-
-        vcard = segno.helpers.make_vcard_data(
-            name=";".join((persona['family_name'], persona['given_names'], "",
-                           persona['title'] or "", persona['name_supplement'] or "")),
-            displayname=make_persona_name(persona, only_given_names=True),
-            nickname=persona['display_name'],
-            birthday=(
-                persona['birthday']
-                if persona['birthday'] != datetime.date.min else None
-            ),
-            street=persona['address'],
-            city=persona['location'],
-            zipcode=persona['postal_code'],
-            country=rs.gettext(format_country_code(persona['country'])),
-            email=persona['username'],
-            homephone=persona['telephone'],
-            cellphone=persona['mobile'],
-        )
+        vcard = self._make_vcard_data(rs, persona)
         return vcard
 
     @access("persona")
@@ -586,8 +610,12 @@ class CoreBaseFrontend(AbstractFrontend):
             data['notes'] = total['notes']
             data['username'] = total['username']
 
-        # Determinate if vcard should be visible
-        data['show_vcard'] = "cde" in access_levels and "cde" in roles
+        # Check whether profile is currently searchable to viewer
+        acutally_searchable_to_you = ("searchable" in rs.user.roles
+                                      and rs.ambience['persona']['is_member']
+                                      and rs.ambience['persona']['is_searchable'])
+        # Determine if vcard should be visible
+        data['show_vcard'] = "cde" in access_levels and acutally_searchable_to_you
 
         # Cull unwanted data
         if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
@@ -623,11 +651,8 @@ class CoreBaseFrontend(AbstractFrontend):
             active_session_count = self.coreproxy.count_active_sessions(rs)
 
         # Check whether we should display an option for using the quota
-        quoteable = (not quote_me
-                     and "cde" not in access_levels
-                     and "searchable" in rs.user.roles
-                     and rs.ambience['persona']['is_member']
-                     and rs.ambience['persona']['is_searchable'])
+        quoteable = (not quote_me and "cde" not in access_levels
+                     and acutally_searchable_to_you)
 
         meta_info = self.coreproxy.get_meta_info(rs)
         reference = make_membership_fee_reference(data)
@@ -1057,8 +1082,10 @@ class CoreBaseFrontend(AbstractFrontend):
         ret: set[str] = set()
         # some fields are of no interest here.
         hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (hidden_fields - {"is_searchable"}) | {
-            "balance", "bub_search", "decided_search", "foto", "trial_member"}
+        hidden_cde_fields = (hidden_fields | {
+            "balance", "bub_search", "decided_search", "foto", "trial_member",
+            "honorary_member",
+        }) - {"is_searchable"}
         roles_to_fields = {
             "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
             "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
@@ -1092,17 +1119,21 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         del data['change_note']
-        merge_dicts(rs.values, data)
-        # The values of rs.values are converted to strings if there was a validation
-        #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if rs.values.get("donation") is not None:
-            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
         shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
+
+        min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
+        max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
+        has_special_donation = (
+            "donation" in shown_fields
+            and not min_donation <= data["donation"] <= max_donation)
+
+        merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {
             'username': data['username'],
             'shown_fields': shown_fields,
-            'min_donation': self.conf["MINIMAL_LASTSCHRIFT_DONATION"],
-            'max_donation': self.conf["MAXIMAL_LASTSCHRIFT_DONATION"],
+            'min_donation': min_donation,
+            'max_donation': max_donation,
+            'has_special_donation': has_special_donation,
         })
 
     @access("persona", modi={"POST"})
@@ -1218,10 +1249,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, (generation,)))
         del data['change_note']
         merge_dicts(rs.values, data)
-        # The values of rs.values are converted to strings if there was a validation
-        #  error. This is a bit hacky, but ensures that donation is always a decimal.
-        if rs.values.get("donation") is not None:
-            rs.values["donation"] = decimal.Decimal(rs.values["donation"])
+
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         roles = extract_roles(rs.ambience['persona'], introspection_only=True)
@@ -1298,6 +1326,240 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
+
+    @access("persona")
+    @REQUESTdata("to")
+    def contact_form(self, rs: RequestState, to: Optional[str] = None) -> Response:
+        """Render form."""
+        # The requestparam of "to" is only for prefilling. This automatically only
+        #  works with valid recipients, so no need to test validity here.
+        rs.ignore_validation_errors()
+        addresses = self.conf["CONTACT_ADDRESSES"]
+        return self.render(rs, "contact", {"addresses": addresses})
+
+    @access("persona", modi={"POST"})
+    @REQUESTdata("to", "anonymous", "subject", "msg")
+    def contact(self, rs: RequestState, to: str, anonymous: str, subject: str,
+                msg: str) -> Response:
+        """Send a possibly anonymous message."""
+        if to is not None and to not in self.conf["CONTACT_ADDRESSES"]:
+            rs.append_validation_error(("to", ValueError(n_("Invalid choice."))))
+        anonymous_from = False
+        if anonymous is not None:
+            if anonymous == "yes":
+                anonymous_from = True
+            elif anonymous == "no":
+                anonymous_from = False
+            else:
+                rs.append_validation_error((
+                    "anonymous", ValueError(n_("Invalid choice."))))
+        if rs.has_validation_errors():
+            return self.contact_form(rs)
+        assert rs.user.persona_id is not None and rs.user.username is not None
+
+        if anonymous_from:
+            message, key = models.AnonymousMessageData.encrypt(
+                recipient=to, persona_id=vtypes.ID(vtypes.ProtoID(rs.user.persona_id)),
+                username=vtypes.Email(rs.user.username), subject=subject,
+            )
+            if not self.coreproxy.log_anonymous_message(rs, message):
+                rs.notify("error", "Something went wrong.")
+                return self.contact_form(rs)
+
+            secret = message.format_secret(key)
+            del key
+
+            self.do_mail(
+                rs, "contact_anonymous",
+                {
+                    'To': (to,),
+                    'Subject': subject,
+                    'From': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                },
+                {
+                    'message_text': msg,
+                    'message': message,
+                    'secret': secret,
+                },
+                suppress_subject_logging=True,
+            )
+        else:
+            name = rs.user.persona_name()
+            sender = self.conf["NOREPLY_ADDRESS"]
+            self.do_mail(
+                rs, "contact",
+                {
+                    'To': (to,),
+                    'Subject': subject,
+                    'From': f"{name} via Kontaktformular <{sender}>",
+                    'Reply-To': rs.user.username,
+                },
+                {
+                    'message': msg,
+                    'name': name,
+                },
+            )
+        self.do_mail(
+            rs, "contact_receipt",
+            {
+                'To': (rs.user.username,),
+                'Subject': "Deine Nachricht ist angekommen.",
+                'From': self.conf["NOREPLY_ADDRESS"],
+                'Reply-To': self.conf["NOREPLY_ADDRESS"],
+            },
+            {
+                'message': msg, 'subject': subject, 'to': to,
+                'anonymous': anonymous_from,
+            },
+            suppress_recipient_logging=anonymous_from,
+        )
+
+        rs.notify("success", n_("Message sent!"))
+        return self.redirect(rs, "core/index")
+
+    @access("persona")
+    @REQUESTdata("secret")
+    def contact_reply_form(
+            self, rs: RequestState, secret: Optional[vtypes.Base64] = None,
+    ) -> Response:
+        """Render the reply form. Takes a message id via GET to prefill the form."""
+        rs.ignore_validation_errors()
+        return self.render(rs, "contact_reply")
+
+    @access("persona", modi={"POST"})
+    @REQUESTdata("secret", "reply_message")
+    def contact_reply(
+            self, rs: RequestState, secret: vtypes.Base64, reply_message: str,
+    ) -> Response:
+        """Send a reply by retrieving and decrypting the stored metadata."""
+        if rs.has_validation_errors():
+            return self.render(rs, "contact_reply")
+        try:
+            message_id, key = models.AnonymousMessageData.parse_secret(secret)
+            message = self.coreproxy.get_anonymous_message(rs, message_id)
+            anonymous_message = self.coreproxy.get_anonymous_message(rs, message_id)
+            message.decrypt(key)
+            del secret
+            del message_id
+            del key
+        except ValueError:
+            rs.append_validation_error(("secret", ValueError(n_("Wrong format."))))
+        except KeyError:
+            rs.append_validation_error(("secret", KeyError(n_("Invalid secret."))))
+        except CryptographyError:
+            if 'message' in locals():
+                # noinspection PyUnboundLocalVariable
+                self.logger.error(
+                    f"User {rs.user.persona_id} tried to decrypt anonymous message"
+                    f" ({message.id}) with an incorrect decryption key.")
+            rs.append_validation_error(("secret", RuntimeError(n_("Invalid secret."))))
+        else:
+            # Can't have validation errors in the else branch.
+            rs.ignore_validation_errors()
+            assert message.persona_id and message.username and message.subject
+            persona = self.coreproxy.get_persona(rs, message.persona_id)
+            original_subject = message.subject
+
+            self.do_mail(
+                rs, "contact_reply",
+                {
+                    'To': {persona['username'], message.username},
+                    'From': message.recipient,
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'Subject': f"Re: {original_subject}",
+                },
+                {
+                    'persona': persona,
+                    'reply_message': reply_message,
+                    'original_subject': original_subject,
+                    'original_recipient': message.recipient,
+                    'ctime': message.ctime,
+                },
+                suppress_recipient_logging=True,
+                suppress_subject_logging=True,
+            )
+            del message
+            del persona
+
+            self.do_mail(
+                rs, "contact_reply_receipt",
+                {
+                    'To': (anonymous_message.recipient,),
+                    'From':
+                        f"{rs.user.persona_name()} via <{anonymous_message.recipient}>",
+                    'Reply-To': anonymous_message.recipient,
+                    'Subject': "Nachricht beantwortet.",
+                },
+                {
+                    'reply_message': reply_message,
+                    'anonymous_message': anonymous_message,
+                    'original_subject': original_subject,
+                },
+            )
+            rs.notify("success", n_("Reply sent."))
+            self.coreproxy.log_contact_reply(rs, anonymous_message.recipient)
+            return self.redirect(rs, "core/index")
+        rs.ignore_validation_errors()
+        return self.render(rs, "contact_reply")
+
+    @access("persona")
+    @REQUESTdata("secret")
+    def rotate_anonymous_message(
+            self, rs: RequestState, secret: vtypes.Base64,
+    ) -> Response:
+        """Change message id and encryption key for a stored message.
+
+        Note that this is uses GET, even though it changes state.
+        """
+        if rs.has_validation_errors():
+            rs.notify("error", n_("Invalid secret."))
+            return self.redirect(rs, "core/index")
+        try:
+            message_id, key = models.AnonymousMessageData.parse_secret(secret)
+            message = self.coreproxy.get_anonymous_message(rs, message_id)
+            message.decrypt(key)
+            del secret
+            del message_id
+            del key
+        except (ValueError, KeyError, CryptographyError):
+            if 'message' in locals():
+                # noinspection PyUnboundLocalVariable
+                self.logger.error(
+                    f"User {rs.user.persona_id} tried to rotate anonymous message"
+                    f" ({message.id}) with an incorrect decryption key.")
+            rs.notify("error", n_("Invalid secret."))
+            return self.redirect(rs, "core/index")
+
+        new_key = message.rotate()
+
+        if self.coreproxy.rotate_anonymous_message(rs, message):
+            new_secret = message.format_secret(new_key)
+            original_subject = message.subject
+            anonymous_message = self.coreproxy.get_anonymous_message(
+                rs, message.message_id)
+            del new_key
+            del message
+
+            self.do_mail(
+                rs, "contact_rotate",
+                {
+                    'To': (anonymous_message.recipient,),
+                    'Subject': "Anonyme Nachricht neu verschlüsselt",
+                    'From': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                },
+                {
+                    'new_secret': new_secret,
+                    'anonymous_message': anonymous_message,
+                    'original_subject': original_subject,
+                },
+            )
+            rs.notify("success", n_(
+                "Encryption has been updated. New secret has been sent."))
+        else:
+            rs.notify("error", n_("Something went wrong."))
+        return self.redirect(rs, "core/index")
 
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int,
@@ -1420,8 +1682,7 @@ class CoreBaseFrontend(AbstractFrontend):
                            "has to be approved by another Meta-Admin."))
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
-        submitter = self.coreproxy.get_persona(
-            rs, privilege_change["submitted_by"])
+        submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
 
         return self.render(rs, "show_privilege_change", {
             "persona": persona, "submitter": submitter, "admin_keys": ADMIN_KEYS,
@@ -1554,21 +1815,22 @@ class CoreBaseFrontend(AbstractFrontend):
             # rather lengthy to specify the exact set of them
             del data[key]
         persona = self.coreproxy.get_total_persona(rs, persona_id)
-        merge_dicts(data, persona)
         # Specific fixes by target realm
         if target_realm == "cde":
             reference = {**CDE_TRANSITION_FIELDS}
-            for key in ('trial_member', 'decided_search', 'bub_search'):
-                if data[key] is None:
-                    data[key] = False
-            if data['paper_expuls'] is None:
-                data['paper_expuls'] = True
-            if data['donation'] is None:
-                data['donation'] = decimal.Decimal("0.0")
+            persona.update({
+                'trial_member': False,
+                'honorary_member': False,
+                'decided_search': False,
+                'bub_search': False,
+                'paper_expuls': True,
+                'donation': decimal.Decimal(0),
+            })
         elif target_realm == "event":
             reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
+        merge_dicts(data, persona)
         for key in tuple(data.keys()):
             if key not in reference and key != 'id':
                 del data[key]
@@ -1596,17 +1858,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, pevent_id, pcourse_id, persona_id,
                     is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
-            meta_info = self.coreproxy.get_meta_info(rs)
-            self.do_mail(rs, "welcome",
-                         {'To': (persona['username'],),
-                          'Subject': "Aufnahme in den CdE",
-                          },
-                         {'data': persona,
-                          'fee': self.conf['MEMBERSHIP_FEE'],
-                          'email': "",
-                          'cookie': "",
-                          'meta_info': meta_info,
-                          })
+            self.send_welcome_mail(rs, persona)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
@@ -1617,28 +1869,31 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        return self.render(rs, "modify_membership", {
-            "trial_member": persona["trial_member"]})
+        return self.render(rs, "modify_membership", {'persona': persona})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("is_member", "trial_member")
+    @REQUESTdata("is_member", "trial_member", "honorary_member", _omit_missing=True)
     def modify_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool, trial_member: bool) -> Response:
+                          is_member: Optional[bool] = None,
+                          trial_member: Optional[bool] = None,
+                          honorary_member: Optional[bool] = None,
+                          ) -> Response:
         """Change association status.
 
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
-        if trial_member and not is_member:
-            rs.append_validation_error(("trial_member", ValueError(
-                n_("Trial membership implies membership."))))
-        if rs.has_validation_errors():
-            return self.modify_membership_form(rs, persona_id)
+        if is_member is False:
+            trial_member = honorary_member = False
+        if trial_member or honorary_member:
+            is_member = True
+        rs.ignore_validation_errors()
         # We really don't want to go halfway here.
         with TransactionObserver(rs, self, "modify_membership"):
             code, revoked_permit, collateral_transaction = (
                 self.cdeproxy.change_membership(
-                    rs, persona_id, is_member=is_member, trial_member=trial_member))
+                    rs, persona_id, is_member=is_member, trial_member=trial_member,
+                    honorary_member=honorary_member))
             rs.notify_return_code(code)
             if revoked_permit:
                 rs.notify("success", n_("Revoked active permit."))
@@ -1691,11 +1946,13 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde")
-    def get_foto(self, rs: RequestState, foto: str) -> Response:
+    def get_foto(self, rs: RequestState, foto: vtypes.Identifier) -> Response:
         """Retrieve profile picture."""
-        ret = self.coreproxy.get_foto(rs, foto)
-        mimetype = magic.from_buffer(ret, mime=True)
-        return self.send_file(rs, data=ret, mimetype=mimetype)
+        mimetype = self.coreproxy.get_foto_store(rs).get_mime_type(foto)
+        if mimetype is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        path = self.coreproxy.get_foto_store(rs).get_path(foto)
+        return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("cde")
     def set_foto_form(self, rs: RequestState, persona_id: int) -> Response:
@@ -1723,10 +1980,18 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
-        code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
+        new_hash = self.coreproxy.get_foto_store(rs).store(foto) if foto else None
+        code = self.coreproxy.change_foto(rs, persona_id, new_hash=new_hash)
         rs.notify_return_code(code, success=n_("Foto updated."),
-                                info=n_("Foto removed."))
+                              info=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
+
+    @periodic("forget_profile_fotos", period=96)
+    def forget_fotos(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Daily delete all fotos no longer referenced."""
+        self.coreproxy.get_foto_store(rs).forget(
+            rs, self.coreproxy.get_foto_usage)
+        return store
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("confirm_username")

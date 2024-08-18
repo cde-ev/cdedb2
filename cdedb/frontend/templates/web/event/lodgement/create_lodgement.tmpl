@@ -25,8 +25,8 @@
         {{ util.anti_csrf_token('event/create_lodgement') }}
         <h4 class="heading-underline">{% trans %}Lodgement{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_text(label=gettext("Regular Capacity"), type="number", type="number", attributes='min="0"') }}
-        {{ util.form_input_text(label=gettext("Camping Mat Capacity"), type="number", type="number", attributes='min="0"') }}
+        {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number", attributes='min="0"') }}
+        {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number", attributes='min="0"') }}
         {% if groups|length == 0 %}
             {{ util.input_hidden(name="group_id", value=none) }}
             {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id") }}

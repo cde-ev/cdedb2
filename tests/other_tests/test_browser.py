@@ -26,7 +26,7 @@ def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
         @functools.wraps(func)
         def new_func(self, *fargs, **fkwargs):  # type: ignore[no-untyped-def]
             if 'page' in fkwargs:
-                raise ValueError('Argument `page` already present.')
+                raise ValueError('Argument `page` already present.')  # pragma: no cover
             with sync_playwright() as pw:
                 # FIXME webkit fails to log in mysteriously
                 # FIXME firefox fails to deterministically reproduce result
@@ -41,10 +41,10 @@ def make_page(*args, headless: bool = True,  # type: ignore[no-untyped-def]
         return new_func
 
     if len(args) > 0:
-        raise ValueError('Unexpected positional argument.')
+        raise ValueError('Unexpected positional argument.')  # pragma: no cover
 
     def mp(func: Callable) -> Callable:  # type: ignore[type-arg]
-        return make_page(func, headless=headless)
+        return make_page(func, headless=headless, timeout=timeout)
     return mp
 
 
@@ -72,7 +72,7 @@ class TestBrowser(BrowserTest):
     """
 
     @storage
-    @make_page
+    @make_page()
     def test_js_interactive_vote(self, page: Page) -> None:
         """Cast a vote with the interactive voting facility.
 
@@ -130,7 +130,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(
-            ("War früher mal berühmt, hat deswegen ihren Nachnamen geändert."))
+            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.")
 
     @event_keeper
     @make_page
@@ -248,7 +248,7 @@ class TestBrowser(BrowserTest):
         page.get_by_role("link", name="Anmeldungen").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div"
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
                      ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Vorname(n)").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
@@ -264,9 +264,9 @@ class TestBrowser(BrowserTest):
         page.locator(".col-sm-6 > .input-group > .selectize-control"
                      " > .selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag"
+        page.locator("#tab_qf_js").get_by_text("Bereits bezahlter Betrag",
                                                ).nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit"
+        page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit",
                                                ).nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
             "button", name="").click()

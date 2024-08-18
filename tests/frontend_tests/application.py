@@ -41,9 +41,9 @@ class TestApplication(FrontendTest):
     @as_users("berta")
     def test_500_before_user_lookup(self) -> None:
         with unittest.mock.patch(
-            'cdedb.backend.session.SessionBackend.lookupsession'
+            'cdedb.backend.session.SessionBackend.lookupsession',
         ) as lookup_mock, unittest.mock.patch(
-            'cdedb.config.Config.__getitem__'
+            'cdedb.config.Config.__getitem__',
         ) as config_mock:
 
             # make SessionBackend.lookupsession() raise a ValueError
@@ -70,9 +70,9 @@ class TestApplication(FrontendTest):
     @as_users("berta")
     def test_500(self) -> None:
         with unittest.mock.patch(
-            'cdedb.frontend.core.CoreFrontend.index'
+            'cdedb.frontend.core.CoreFrontend.index',
         ) as index_mock, unittest.mock.patch(
-            'cdedb.config.Config.__getitem__'
+            'cdedb.config.Config.__getitem__',
         ) as config_mock:
 
             # make CoreFrontend.index() raise a ValueError

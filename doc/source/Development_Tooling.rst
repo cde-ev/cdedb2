@@ -25,7 +25,7 @@ found in the ``bin`` subdirectory.
 There is also a development server running at port 5000
 which bypasses Apache and provides an interactive traceback explorer
 including a console in which expressions can be evaluated in the respective namespace.
-Take care to start the interactive debugger as user ``www-data``.
+Take care to start the interactive debugger as user ``www-cde``.
 
 To access the ldap server from a local vm, it is currently necessary to manually switch
 from TLS to plain TCP connections by removing the ``ssl`` parameter during server
@@ -35,3 +35,15 @@ from the hostname which is used to access the ldap server.
 If those tools are used *within* the vm, everything works fine.
 
 It is also reasonable to increase the debug level in ldap/main.py from WARNING to DEBUG.
+
+
+.. _githooks:
+
+Git Hooks
+---------
+
+Currently, we use one pre-merge-commit hook which aims to reduce the diff size of
+.po translation catalogues. Since in case of merge conflicts git just invokes the
+pre-commit hook, we use this one and also link it as pre-merge-commit.
+
+.. literalinclude:: pre-commit.githook

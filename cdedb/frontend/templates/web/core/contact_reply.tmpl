@@ -1,0 +1,29 @@
+{% set sidenav_active='core_contact' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}
+    {% trans %}
+    	Reply to Anonymous Message
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/contact_reply_form"), gettext("Reply to Anonymous Message"), active="True") }}
+{% endblock %}
+{% block content %}
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#replyform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink('core/contact_reply') }}" method="POST" id="replyform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/contact_reply') }}
+        {{ util.form_input_text(name="secret", label=gettext("Secret"), info=gettext("Enter the secret exactly as in the original message.")) }}
+        {{ util.form_input_textarea(name="reply_message", label=gettext("Reply"), rows=10, info=gettext("A copy of the reply will be sent to the original recipient.")) }}
+        <div>
+            {{ util.form_input_submit(label=gettext("Send"), icon="paper-plane") }}
+        </div>
+    </form>
+{% endblock %}

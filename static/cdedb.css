@@ -169,6 +169,10 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.form-group.multiset-input {
+    padding: 5px;
+    margin-bottom: 2px;
+}
 .form-control-nosp {
     /* negative help-block margin */
     margin-bottom: -5px;
@@ -255,6 +259,11 @@ summary {
     display: list-item;
 }
 
+summary.btn {
+    display: list-item;
+    width: fit-content;
+}
+
 /* List group responsive tear down */
 @media (max-width: 991px) {
     .list-group.tear-down {
@@ -302,6 +311,9 @@ h4.mosp,h5.mosp {
 dl.mosp {
     margin-top: 30px;
     margin-bottom: 30px;
+}
+div.mosp {
+    margin-top: 5px;
 }
 ul.nosp, ol.nosp {
     margin-bottom: 0;
@@ -452,6 +464,23 @@ h1.title {
         text-align: right;
     }
 }
+.float-right {
+    float: right;
+}
+.align-top {
+    vertical-align: top;
+}
+/* Hide Arrows in number fields. (https://www.w3schools.com/howto/howto_css_hide_arrow_number.asp) */
+/* Chrome, Safari, Edge, Opera */
+input[type=number].no-number-arrows::-webkit-outer-spin-button,
+input[type=number].no-number-arrows::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number].no-number-arrows {
+  -moz-appearance: textfield;
+}
 
 /* Selectize Bootstrap enhancements */
 .selectize-dropdown, .selectize-input, .selectize-input input {
@@ -569,8 +598,7 @@ p.textbox {
     background: #eee;
     font-weight: bold;
 }
-.table>tbody>tr.summary>td, .table>tbody>tr.summary>th,
-.table>tfoot>tr.summary>td, .table>tfoot>tr.summary>th {
+tr.summary>td, tr.summary>th {
     border-top: 3px double #888;
     font-weight: bold;
 }
@@ -660,7 +688,7 @@ table {
 .ls-list:focus {
     outline: none;
 }
-tr.ls-selected td {
+tr.ls-selected td, tr:target td{
     background: #d9edf7;
 }
 .ls-item {
@@ -1086,6 +1114,24 @@ span.color-legend {
     margin-bottom: 2px;
 }
 
+/* Finance log style */
+tr.money-positive>td {
+    background-color: #e9ffe9;
+}
+tr.money-negative>td {
+    background-color: #ffe9e9;
+}
+
+/* Event Fees */
+tr.eventfee .money-negative {
+    /*color: #3c763d;*/
+    /*background-color: #dff0d8;*/
+    color: #449d44;
+}
+tr.eventfee .money-positive {
+    /*color: #31708f;*/
+    /*background-color: #d9edf7;*/
+}
 
 /* ************** *
  * Helper classes *

@@ -18,6 +18,7 @@ import pathlib
 import re
 import string
 import sys
+import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
@@ -25,8 +26,6 @@ from typing import (
 
 import phonenumbers
 import psycopg2.extras
-import pytz
-import pytz.tzinfo
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -110,11 +109,11 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: set[Role] = None, display_name: str = "",
+                 roles: Optional[set[Role]] = None, display_name: str = "",
                  given_names: str = "", family_name: str = "",
-                 username: str = "", orga: Collection[int] = None,
-                 moderator: Collection[int] = None,
-                 presider: Collection[int] = None) -> None:
+                 username: str = "", orga: Optional[Collection[int]] = None,
+                 moderator: Optional[Collection[int]] = None,
+                 presider: Optional[Collection[int]] = None) -> None:
         self.persona_id = persona_id
         self.droid_class = droid_class
         self.droid_token_id = droid_token_id
@@ -138,6 +137,13 @@ class User:
         enabled_views = enabled_views_cookie.split(',')
         self.admin_views = self.available_admin_views & set(enabled_views)
 
+    def persona_name(self) -> str:
+        return make_persona_name({
+            'given_names': self.given_names,
+            'display_name': self.display_name,
+            'family_name': self.family_name,
+        })
+
 
 if TYPE_CHECKING:
     from cdedb.frontend.common import AmbienceDict
@@ -150,11 +156,12 @@ class RequestState(ConnectionContainer):
     enough to not be non-nice).
     """
     default_lang = "en"
+    log_lang = "de"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[dict[str, int]],
+                 requestargs: Optional[Mapping[str, Any]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
@@ -173,7 +180,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: "AmbienceDict" = {}  # type: ignore[typeddict-item]
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -216,8 +223,16 @@ class RequestState(ConnectionContainer):
     def default_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.default_lang].ngettext
 
+    @property
+    def log_gettext(self) -> Callable[[str], str]:
+        return self.translations[self.log_lang].gettext
+
+    @property
+    def log_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.log_lang].ngettext
+
     def notify(self, ntype: NotificationType, message: str,
-               params: CdEDBObject = None) -> None:
+               params: Optional[CdEDBObject] = None) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError(n_("Invalid notification type %(t)s found."),
@@ -382,8 +397,8 @@ def make_proxy(backend: B, internal: bool = False) -> B:
 
 
 def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: int = None,
-                 console_log_level: int = None) -> logging.Logger:
+                 log_level: int, syslog_level: Optional[int] = None,
+                 console_log_level: Optional[int] = None) -> logging.Logger:
     """Configure the :py:mod:`logging` module.
 
     Since this works hierarchical, it should only be necessary to call this
@@ -397,7 +412,7 @@ def setup_logger(name: str, logfile_path: pathlib.Path,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True)
+    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -419,7 +434,7 @@ def glue(*args: str) -> str:
 
     It would be possible to use auto string concatenation as in ``("a
     string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we prefer this
+    careful to add boundary white space yourself, so we once preferred this
     explicit function.
     """
     return " ".join(args)
@@ -436,8 +451,7 @@ def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
 S = TypeVar("S")
 
 
-def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
-                *dicts: Mapping[T, S]) -> None:
+def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -453,18 +467,17 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
     if targetdict is None:
         raise ValueError(n_("No inputs given."))
     for adict in dicts:
-        for key in adict:
+        for key, value in adict.items():
             if key not in targetdict:
-                if (isinstance(adict[key], collections.abc.Collection)
-                        and not isinstance(adict[key], str)
+                if (isinstance(value, collections.abc.Collection)
+                        and not isinstance(value, str)
                         and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
-                    value = adict[key]
                     if isinstance(value, dict) and "id" in value:
                         targetdict[key] = value["id"]
                     else:
-                        targetdict.setlist(key, adict[key])
+                        targetdict.setlist(key, value)
                 else:
-                    targetdict[key] = adict[key]
+                    targetdict[key] = value
 
 
 BytesLike = Union[bytes, bytearray, memoryview]
@@ -492,7 +505,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(pytz.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -529,10 +542,10 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
+    now = datetime.datetime.now(datetime.timezone.utc)
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
+        minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
 
 
 def make_persona_forename(persona: CdEDBObject,
@@ -610,9 +623,10 @@ def lastschrift_reference(persona_id: int, lastschrift_id: int) -> str:
 
     This is the so called 'Mandatsreferenz'.
     """
-    return "CDE-I25-{}-{}-{}-{}".format(
-        persona_id, compute_checkdigit(persona_id), lastschrift_id,
-        compute_checkdigit(lastschrift_id))
+    return (
+        f"CDE-I25-{persona_id}-{compute_checkdigit(persona_id)}"
+        f"-{lastschrift_id}-{compute_checkdigit(lastschrift_id)}"
+    )
 
 
 def _small_int_to_words(num: int, lang: str) -> str:
@@ -1015,11 +1029,17 @@ class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
+    Festgeld = "DE45370205000010042605"
     # Fallback if Account is none of the above
     Unknown = "Unknown"
 
     def display_str(self) -> str:
-        return self.value[-7:]
+        return {
+            Accounts.Account0: "8068900",
+            Accounts.Account1: "8068901",
+            Accounts.Festgeld: "Festgeld",
+            Accounts.Unknown: "Unknown",
+        }[self]
 
 
 @enum.unique
@@ -1057,15 +1077,16 @@ class TransactionType(CdEIntEnum):
     MembershipFee = 1
     EventFee = 2
     Donation = 3
-    I25p = 4
-    Other = 5
+    LastschriftInitiative = 4
+    Retoure = 5
+    Other = 100
 
     EventFeeRefund = 10
     InstructorRefund = 11
     EventExpenses = 12
     Expenses = 13
     AccountFee = 14
-    OtherPayment = 15
+    OtherPayment = 200
 
     Unknown = 1000
 
@@ -1081,7 +1102,7 @@ class TransactionType(CdEIntEnum):
     def has_member(self) -> bool:
         return self in {TransactionType.MembershipFee,
                         TransactionType.EventFee,
-                        TransactionType.I25p,
+                        TransactionType.LastschriftInitiative,
                         }
 
     @property
@@ -1102,10 +1123,10 @@ class TransactionType(CdEIntEnum):
                     TransactionType.EventFeeRefund,
                     TransactionType.InstructorRefund}:
             return "Teilnahmebeitrag"
-        if self == TransactionType.I25p:
-            return "Initiative 25+"
+        if self == TransactionType.LastschriftInitiative:
+            return "LastschriftInitiative"
         if self == TransactionType.Donation:
-            return "Spende"
+            return "Sonstiges"
         else:
             return "Sonstiges"
 
@@ -1120,7 +1141,8 @@ class TransactionType(CdEIntEnum):
             TransactionType.MembershipFee: "Mitgliedsbeitrag",
             TransactionType.EventFee: "Teilnahmebeitrag",
             TransactionType.Donation: "Spende",
-            TransactionType.I25p: "Initiative25+",
+            TransactionType.LastschriftInitiative: "Lastschriftinitiative",
+            TransactionType.Retoure: "Storno",
             TransactionType.Other: "Sonstiges",
             TransactionType.EventFeeRefund:
                 "Teilnehmererstattung",
@@ -1394,7 +1416,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: datetime.date = None,
+    val: str, default_date: Optional[datetime.date] = None,
 ) -> datetime.date:
     """Make a string into a datetime.
 
@@ -1415,10 +1437,11 @@ def parse_datetime(
             break
         except ValueError:
             pass
+    # TODO This code seems to be unsed.
     if ret is None and default_date:
+        # Note the difference between formats and time_formats!
         for fmt in time_formats:
             try:
-                # TODO if we get to here this should be unparseable?
                 ret = datetime.datetime.strptime(val, fmt)
                 ret = ret.replace(
                     year=default_date.year, month=default_date.month,
@@ -1429,10 +1452,9 @@ def parse_datetime(
     if ret is None:
         ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
-        timezone: pytz.tzinfo.DstTzInfo = _CONFIG["DEFAULT_TIMEZONE"]
-        ret = timezone.localize(ret)
-        assert ret is not None
-    return ret.astimezone(pytz.utc)
+        timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
+        ret = ret.replace(tzinfo=timezone)
+    return ret.astimezone(datetime.timezone.utc)
 
 
 def parse_phone(val: str) -> str:
@@ -1492,10 +1514,10 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-#: If the partial export and import are unaffected the minor version may be
-#: incremented.
+#: If changes to the partial export and import are backwards compatible,
+#: the minor version may be incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (17, 0)
+EVENT_SCHEMA_VERSION = (17, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
