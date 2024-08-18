@@ -123,8 +123,8 @@ def populate_storage(conf: Config) -> None:
 
     for filename in ("rechen.pdf", "kassen.pdf", "kassen2.pdf", "kandidaten.pdf"):
         with open(testfile_dir / filename, "rb") as f:
-            shutil.copy(testfile_dir / filename,
-                        attachment_dir / get_hash(f.read()))
+            hash_ = get_hash(f.read())
+        shutil.copy(testfile_dir / filename, attachment_dir / hash_)
 
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")

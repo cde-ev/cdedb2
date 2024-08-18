@@ -45,12 +45,16 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         data = affirm(vtypes.GenesisCase, data, creation=True)
 
-        if self.verify_existence(rs, data['username']):
-            return None
+        data['case_status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
             return None
-        data['case_status'] = const.GenesisStati.unconfirmed
+        if (data.get('attachment_hash') and not self.get_genesis_attachment_store(
+                rs).is_available(data['attachment_hash'])):
+            raise RuntimeError(n_("File has been lost."))
+
         with Atomizer(rs):
+            if self.verify_existence(rs, data['username']):
+                return None
             ret = self.sql_insert(rs, "core.genesis_cases", data)
             self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
                           change_note=data['username'])

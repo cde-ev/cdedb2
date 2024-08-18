@@ -991,29 +991,30 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("cde")
     def change_foto(self, rs: RequestState, persona_id: int,
-                    foto: Optional[bytes]) -> DefaultReturnCode:
+                    new_hash: Optional[vtypes.Identifier]) -> DefaultReturnCode:
         """Special modification function for foto changes.
 
         Return 1 on successful change, -1 on successful removal, 0 otherwise.
+
+        :param new_hash: Hash of new foto.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        data: CdEDBObject
         old_hash: str = unwrap(self.sql_select_one(
             rs, "core.personas", ("foto",), persona_id))  # type: ignore[assignment]
 
-        new_hash = self.get_foto_store(rs).store(foto) if foto else None
-        change_note = "Profilbild geändert." if foto else "Profilbild entfernt."
+        change_note = "Profilbild geändert." if new_hash else "Profilbild entfernt."
         # Evaluates to 1 if a new foto was provided, and to -1 otherwise.
-        indicator = (-1) ** (bool(foto) + 1)
-        data = {
+        indicator = (-1) ** (bool(new_hash) + 1)
+        if new_hash and not self.get_foto_store(rs).is_available(new_hash):
+            raise RuntimeError(n_("File has been lost."))
+        data: CdEDBObject = {
             'id': persona_id,
             'foto': new_hash,
         }
         ret = self.set_persona(rs, data, may_wait=False, change_note=change_note,
                                allow_specials=("foto",))
         if ret < 0:
-            raise RuntimeError("Special persona change should not"
-                               " be pending.")
+            raise RuntimeError("Special persona change should not be pending.")
         if old_hash:
             self.get_foto_store(rs).forget_one(rs, self.get_foto_usage, old_hash)
         return ret * indicator
@@ -1588,7 +1589,7 @@ class CoreBaseBackend(AbstractBackend):
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
-                code = self.change_foto(rs, persona_id, foto=None)
+                code = self.change_foto(rs, persona_id, new_hash=None)
                 if not code:
                     raise ArchiveError(n_("Failed to remove foto."))
             # modified version of hash for 'secret' and thus

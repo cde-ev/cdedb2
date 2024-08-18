@@ -172,15 +172,17 @@ class TestCoreBackend(BackendTest):
         other_key = cast(RequestState, self.core.login(
             ANONYMOUS, other_user["username"], other_user["password"], IP))
         self.assertIsNotNone(other_key)
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
         self.assertLess(
-            0, self.core.change_foto(other_key, other_user["id"], new_foto))
+            0, self.core.change_foto(other_key, other_user["id"], new_hash))
 
         # Invalidate the other users password and session.
         self.assertLess(
             0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
-            self.core.change_foto(other_key, other_user["id"], new_foto)
+            new_hash = self.core.get_foto_store(self.key).store(new_foto)
+            self.core.change_foto(other_key, other_user["id"], new_hash)
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
@@ -221,7 +223,8 @@ class TestCoreBackend(BackendTest):
     def test_set_foto(self) -> None:
         new_foto = create_mock_image('png')
         persona_id = 2
-        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
+        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_hash))
         cde_user = self.core.get_cde_user(self.key, persona_id)
         self.assertEqual(get_hash(new_foto), cde_user['foto'])
         self.assertEqual(new_foto, self.core.get_foto_store(self.key).get(
@@ -897,6 +900,14 @@ class TestCoreBackend(BackendTest):
         }
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
+        with self.assertRaises(RuntimeError) as e:
+            self.core.genesis_request(ANONYMOUS, data)
+        self.assertEqual("File has been lost.", str(e.exception))
+        # pylint: disable=line-too-long
+        attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
+        attachment = attachment_content.encode('ascii')
+        data['attachment_hash'] = self.core.get_genesis_attachment_store(
+            self.key).store(attachment)
         case_id = self.core.genesis_request(ANONYMOUS, data)
         assert case_id is not None
         self.assertLess(0, case_id)

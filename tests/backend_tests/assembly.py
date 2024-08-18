@@ -48,7 +48,8 @@ class TestAssemblyBackend(BackendTest):
         if version_nr is None:
             version = self.assembly.get_latest_attachment_version(rs, attachment_id)
         else:
-            version = self.assembly.get_attachment_version(rs, attachment_id, version_nr)
+            version = self.assembly.get_attachment_version(rs, attachment_id,
+                                                           version_nr)
         return self.assembly.get_attachment_store(self.key).get(version['file_hash'])
 
     def _get_sample_quorum(self, assembly_id: int) -> int:

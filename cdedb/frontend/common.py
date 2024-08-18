@@ -571,8 +571,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def locate_or_store_attachment(
         self, rs: RequestState, store: AttachmentStore,
         attachment: Optional[werkzeug.datastructures.FileStorage],
-        attachment_hash: Optional[str], attachment_filename: Optional[str] = None,
-    ) -> tuple[Optional[str], Optional[str]]:
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str] = None,
+    ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
         """Locate an attachment by hash and store it, if necessary
 
         :param attachment: A new file uploaded within this request. Supersedes remaining
@@ -582,7 +583,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         attachment_data = None
         if attachment:
-            attachment_filename = attachment.filename
+            assert attachment.filename is not None
+            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
             attachment_hash = store.store(attachment_data)
@@ -590,7 +592,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             attachment_stored = store.is_available(attachment_hash)
             if not attachment_stored:
                 attachment_hash = None
-                e = ("attachment", ValueError(n_(
+                e = ("cached_attachment", ValueError(n_(
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)

@@ -2,7 +2,6 @@
 
 """Services for the assembly realm."""
 
-import pathlib
 from typing import Optional
 
 import werkzeug.exceptions
@@ -110,7 +109,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     @REQUESTfile("attachment")
     def add_attachment(self, rs: RequestState, assembly_id: int,
                        attachment: werkzeug.datastructures.FileStorage,
-                       attachment_hash: Optional[str],
+                       attachment_hash: Optional[vtypes.Identifier],
                        attachment_filename: Optional[str],
                        title: str, filename: Optional[vtypes.Identifier],
                        authors: Optional[str]) -> Response:
@@ -120,15 +119,17 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.notify('error',
                       n_("Cannot add attachment once the assembly has been locked."))
             return self.redirect(rs, 'assembly/list_attachments')
-        if attachment and not filename:
-            assert attachment.filename is not None
-            tmp = pathlib.Path(attachment.filename).parts[-1]
-            filename = check(rs, vtypes.Identifier, tmp, 'filename')
         rs.values['attachment_hash'], rs.values['attachment_filename'] = \
             self.locate_or_store_attachment(
                 rs, self.assemblyproxy.get_attachment_store(rs), attachment,
-                attachment_hash, attachment_filename or filename)
-
+                attachment_hash, attachment_filename)
+        if not filename:
+            filename = check(rs, vtypes.Identifier, rs.values['attachment_filename'],
+                             'filename')
+        if (rs.values['attachment_hash'] and self.assemblyproxy.get_attachment_usage(
+                rs, rs.values['attachment_hash']) and not rs.ignore_warnings):
+            rs.append_validation_error(("cached_attachment", ValidationWarning(
+                n_("File already in use for other attachment."))))
         if rs.has_validation_errors():
             return self.add_attachment_form(rs, assembly_id=assembly_id)
         data: CdEDBObject = {
@@ -206,7 +207,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     def add_attachment_version(self, rs: RequestState, assembly_id: int,
                                attachment_id: int,
                                attachment: werkzeug.datastructures.FileStorage,
-                               attachment_hash: Optional[str],
+                               attachment_hash: Optional[vtypes.Identifier],
                                attachment_filename: Optional[str],
                                title: str, filename: Optional[vtypes.Identifier],
                                authors: Optional[str],
@@ -223,39 +224,40 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
                       n_("Cannot add attachment version once the assembly has been"
                          " locked."))
             return self.redirect(rs, 'assembly/list_attachments')
-        if attachment and not filename:
-            assert attachment.filename is not None
-            tmp = pathlib.Path(attachment.filename).parts[-1]
-            filename = check(rs, vtypes.Identifier, tmp, 'filename')
         rs.values['attachment_hash'], rs.values['attachment_filename'] =\
             self.locate_or_store_attachment(
                 rs, self.assemblyproxy.get_attachment_store(rs), attachment,
-                attachment_hash, attachment_filename or filename)
+                attachment_hash, attachment_filename)
+        if not filename:
+            filename = check(rs, vtypes.Identifier, rs.values['attachment_filename'],
+                             'filename')
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
                                                                           attachment_id)
         if not is_deletable and not ack_creation:
             rs.append_validation_error(
                 ("ack_creation", ValueError(n_("Must be checked."))))
+
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        if (rs.values['attachment_hash'] and self.assemblyproxy.get_attachment_usage(
+                rs, rs.values['attachment_hash']) and not rs.ignore_warnings):
+            if any(v["file_hash"] == rs.values['attachment_hash']
+                   for v in versions.values()):
+                rs.append_validation_error(("cached_attachment", ValidationWarning(
+                    n_("File already known for earlier version of this attachment."))))
+            else:
+                rs.append_validation_error(("cached_attachment", ValidationWarning(
+                    n_("File already in use for other attachment."))))
         if rs.has_validation_errors():
             return self.add_attachment_version_form(
                 rs, assembly_id=assembly_id, attachment_id=attachment_id)
+
         data: CdEDBObject = {
+            'attachment_id': attachment_id,
             'title': title,
             'filename': filename,
             'authors': authors,
             'file_hash': rs.values['attachment_hash'],
         }
-        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        if self.assemblyproxy.get_attachment_usage(rs, rs.values['attachment_hash']):
-            if any(v["file_hash"] == rs.values['attachment_hash']
-                   for v in versions.values()):
-                rs.append_validation_error(("attachment", ValidationWarning(
-                    n_("File already known for earlier version of this attachment."))))
-            else:
-                rs.append_validation_error(("attachment", ValidationWarning(
-                    n_("File already in use for other attachment."))))
-
-        data['attachment_id'] = attachment_id
         code = self.assemblyproxy.add_attachment_version(rs, data)
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")

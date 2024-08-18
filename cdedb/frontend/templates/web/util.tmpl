@@ -477,6 +477,7 @@
         {{ util.input_hidden(name="attachment_hash") }}
         {{ util.input_hidden(name="attachment_filename") }}
         {{ util.form_input_static(label=gettext("Attachment"), value=values['attachment_filename'], small=small,
+                                  displayerrors=True, errorname="cached_attachment",
                                   info="We already saved your uploaded file, but you can provide a different file below.") }}
     {% endif %}
     {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal) }}
@@ -686,9 +687,9 @@
 {%- endmacro %}
 
 {% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
-        name=none) %}
+        name=none, displayerrors=False, errorname=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, False, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}

@@ -2071,7 +2071,7 @@ class AssemblyBackend(AbstractBackend):
         """Is an attachment file still referenced by some version?"""
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         query = ("SELECT COUNT(*) FROM assembly.attachment_versions"
-                 " WHERE file_hash = %s AND dtime IS NOT NULL")
+                 " WHERE file_hash = %s AND dtime IS NULL")
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("assembly")

@@ -73,6 +73,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 and not rs.values['attachment_hash']):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
+        data['attachment_hash'] = rs.values['attachment_hash']
 
         data = check(rs, vtypes.GenesisCase, data, creation=True)
         if rs.has_validation_errors():
