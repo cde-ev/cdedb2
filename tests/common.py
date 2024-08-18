@@ -1989,10 +1989,10 @@ class MultiAppFrontendTest(FrontendTest):
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
-    def setUp(self) -> None:
+    def setUp(self, *args, **kwargs) -> None:
         """Reset all apps and responses and the current app index."""
         self.responses = [None for _ in range(self.n)]
-        super().setUp()
+        super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
             app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
