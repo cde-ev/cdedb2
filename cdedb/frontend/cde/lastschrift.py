@@ -21,7 +21,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
+    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class,
     lastschrift_reference, merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning

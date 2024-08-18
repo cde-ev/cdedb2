@@ -32,7 +32,7 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
     DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
-    cast_fields, glue, unwrap,
+    cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (

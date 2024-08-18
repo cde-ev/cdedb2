@@ -30,7 +30,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    RequestState, glue, make_proxy, unwrap,
+    RequestState, make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
