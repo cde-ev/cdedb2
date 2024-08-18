@@ -40,7 +40,6 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.models.core import EmailAddressReport
 from cdedb.models.droid import APIToken
 
 if TYPE_CHECKING:

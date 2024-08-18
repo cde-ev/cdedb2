@@ -2907,7 +2907,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def list_email_states(
             self, rs: RequestState,
-            states: Optional[Collection[const.EmailStatus]] = None
+            states: Optional[Collection[const.EmailStatus]] = None,
     ) -> dict[str: const.EmailStatus]:
         """List all explicit email states known to the CdEDB.
 
@@ -2934,7 +2934,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def get_email_reports(
             self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
-            stati: Optional[Collection[const.EmailStatus]] = None
+            stati: Optional[Collection[const.EmailStatus]] = None,
     ) -> dict[str, EmailAddressReport]:
         """Get defect mail addresses and map them to users and mls, if possible.
 
@@ -2990,7 +2990,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin", "ml_admin")
     def mark_email_status(
             self, rs: RequestState, address: str, status: const.EmailStatus,
-            notes: Optional[str] = None
+            notes: Optional[str] = None,
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         status = affirm(const.EmailStatus, status)
@@ -3008,7 +3008,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("core_admin", "ml_admin")
     def remove_email_status(
-        self, rs: RequestState, address: str
+            self, rs: RequestState, address: str,
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         with Atomizer(rs):

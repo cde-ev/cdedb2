@@ -791,7 +791,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        msg = self._create_mail(text, headers, attachments)
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, const.EmailStatus.defect_states())
+        msg = self._create_mail(text, headers, attachments, defect_addresses)
         ret = self._send_mail(
             msg, suppress_subject_logging=suppress_subject_logging,
             suppress_recipient_logging=suppress_recipient_logging,
@@ -804,6 +806,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def _create_mail(self, text: str,
                      headers: Headers, attachments: Optional[Collection[Attachment]],
+                     defect_addresses: dict[str: const.EmailStatus],
                      ) -> Union[email.message.Message,
                                 email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
@@ -838,8 +841,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
             msg = container
-        defect_addresses = self.coreproxy.list_email_states(
-            rs, const.EmailStatus.defect_states())
         for header in ("To", "Cc", "Bcc"):
             value = headers[header]  # type: ignore[literal-required]
             nonempty = {x for x in value if x}

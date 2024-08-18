@@ -1348,7 +1348,7 @@ class CoreBaseFrontend(AbstractFrontend):
                               address: Optional[vtypes.Email] = None) -> Response:
         """Present overview."""
         if rs.has_validation_errors():
-            rs.values['address'] = address = None
+            rs.values['address'] = None
         email_reports = self.coreproxy.get_email_reports(rs)
         persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
         personas = set()

@@ -98,7 +98,8 @@ class SqlQueryBackend:
 
     def sql_insert(self, container: ConnectionContainer, table: str, data: CdEDBObject,
                    entity_key: str = "id", drop_on_conflict: bool = False,
-                   update_on_conflict: bool = False, conflict_target: Optional[str] = None
+                   update_on_conflict: bool = False,
+                   conflict_target: Optional[str] = None,
                    ) -> int:
         """Generic SQL insertion query.
 
