@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Optional
 from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import now, CdEDBObject
+from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.sorting import Sortkey
 from cdedb.database.constants import EmailStatus
