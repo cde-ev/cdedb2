@@ -856,7 +856,19 @@ class EventRegistrationMixin(EventBaseFrontend):
         if query := self._notify_on_registration_query(
                 rs, event, registration_id, prev_timestamp, ref_timestamp,
         ):
-            registrations = self.eventproxy.submit_general_query(rs, query, event.id)
+            if registration_id:
+                registration = self.eventproxy.get_registration(rs, registration_id)
+                persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
+                registrations = [
+                    {
+                        'persona.given_names': persona['given_names'],
+                        'persona.family_name': persona['family_name'],
+                        'id': registration_id,
+                    },
+                ]
+            else:
+                registrations = list(
+                    self.eventproxy.submit_general_query(rs, query, event.id))
             if not registrations:
                 return 0, ref_timestamp
 
