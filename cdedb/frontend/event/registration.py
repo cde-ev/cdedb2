@@ -870,7 +870,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 'serialized_query': {
                     **query.serialize_to_url(),
                     'event_id': event.id,
-                },
+                } if query else None,
                 'NotifyOnRegistration': const.NotifyOnRegistration,
                 'persona_name':
                     lambda r:
