@@ -1234,7 +1234,7 @@ def _password_strength(
     val = _str(val, argname=argname, **kwargs)
     errors = ValidationSummary()
 
-    results: CdEDBObject = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
+    results = cast(CdEDBObject, zxcvbn.zxcvbn(val, list(filter(None, inputs))))
     # if user is admin in any realm, require a score of 4. After
     # migration, everyone must change their password, so this is
     # actually enforced for admins of the old db. Afterwards,
@@ -1685,7 +1685,7 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: Optional[str] = None, *,  ignore_warnings: bool = False,
+    val: Any, argname: Optional[str] = None, *, ignore_warnings: bool = False,
     **kwargs: Any,
 ) -> Phone:
     raw = _printable_ascii(val, argname, **kwargs, ignore_warnings=ignore_warnings)
@@ -2243,7 +2243,7 @@ def _sepa_meta(
 
     errs = ValidationSummary()
     for attribute, validator in SEPA_META_FIELDS.items():
-        if validator == str:
+        if validator is str:
             val[attribute] = asciificator(val[attribute])
         if attribute in SEPA_META_LIMITS:
             if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
@@ -2413,7 +2413,7 @@ def _optional_object_mapping_helper(
     for anid, val in val_dict.items():
         with errs:
             anid = _ALL_TYPED[PartialImportID](anid, argname, **kwargs)
-            creation = (anid < 0)
+            creation = anid < 0
             if creation_only and not creation:
                 raise ValidationSummary(ValueError(
                     argname, n_("Only creation allowed.")))
@@ -2555,7 +2555,7 @@ def _event_part(
             except ValidationSummary as e:
                 errs.extend(e)
             else:
-                creation = (anid < 0)
+                creation = anid < 0
                 try:
                     if creation:
                         track = _ALL_TYPED[EventTrack](
@@ -3687,7 +3687,7 @@ def _serialized_partial_event(
                 errs.extend(e)
                 continue
 
-            creation = (new_key < 0)
+            creation = new_key < 0
             try:
                 new_entry = _ALL_TYPED[type_](
                     entry, domain, creation=creation, **kwargs)
@@ -4364,7 +4364,7 @@ def _ballot(
             except ValidationSummary as e:
                 errs.extend(e)
             else:
-                creation = (anid < 0)
+                creation = anid < 0
                 try:
                     candidate = _ALL_TYPED[Optional[BallotCandidate]](  # type: ignore[index]
                         candidate, 'candidates', creation=creation, **kwargs)
@@ -4463,6 +4463,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
+    'file_hash': str,
 }
 
 

@@ -7,8 +7,8 @@ which are shared by all configurations of the test suite.
 import pathlib
 
 # basic config
-SYSLOG_LEVEL = None
-CONSOLE_LOG_LEVEL = None
+SYSLOG_LEVEL: int | None = None
+CONSOLE_LOG_LEVEL: int | None = None
 
 
 # config

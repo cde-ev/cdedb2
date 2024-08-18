@@ -8458,7 +8458,7 @@
             "filename": "rechen.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "abc"
+            "file_hash": "72a0e2bdc75fd5a95cae07120e4034ad364786e04b6a9fffeb9c168f3dba11e49d6f422322899a9de6d0a03a2ae81f81e22d2751a405160e6bea06748a91e3d6"
         },
         {
             "id": 2,
@@ -8466,10 +8466,10 @@
             "version_nr": 1,
             "title": "Kassenprüferbericht",
             "authors": "Berta",
-            "filename": "kasse.pdf",
+            "filename": "kassen.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "bcd"
+            "file_hash": "68c602823ad8538ee0bedea06ad9d962a608b55f2a1bd62bacee414d3f3c1bfb3486f1fcc9274d2ff4245ece18b69a9182a7bdcc5329b49ce9ccd04edb7de58e"
         },
         {
             "id": 3,
@@ -8491,7 +8491,7 @@
             "filename": "kasse.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "cde"
+            "file_hash": "2007baadffb25f5fb1756a8cb3f69f833318d3d28a517df2c51350200ec4ece3d4b1d11202fb154d3dc6ce630068c22d2a71658b4ad2be3879d73e05937c5aa1"
         },
         {
             "id": 5,
@@ -8502,7 +8502,7 @@
             "filename": "kandidaten.pdf",
             "ctime": "1990-01-01T00:00:00+00:00",
             "dtime": null,
-            "file_hash": "xyz"
+            "file_hash": "c093aa42d1dd7117fbbbc46e027b35b651400b03e5969f9c6ee875c7b0715d5bf02ad0b3e49d43a97afb49a8f6ca3f0d501fffc35417085c51507dc9d372a425"
         }
     ],
     "assembly.attachment_ballot_links": [

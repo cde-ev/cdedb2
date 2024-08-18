@@ -468,7 +468,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             sorter = lambda x: x
         else:
             sorter = lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']])  # type: ignore[index]
+                personas[registrations[anid]['persona_id']])
         if aspect == 'tracks':
             sub_ids: Collection[int] = tracks.keys()
         elif aspect == 'parts':

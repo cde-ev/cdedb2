@@ -179,7 +179,7 @@ class RequestState(ConnectionContainer):
             gettext translation object.
         :param begin: time where we started to process the request
         """
-        self.ambience: "AmbienceDict" = {}  # type: ignore[typeddict-item]
+        self.ambience: AmbienceDict = {}  # type: ignore[typeddict-item]  # pylint: disable=used-before-assignment
         self.sessionkey = sessionkey
         self.apitoken = apitoken
         self.user = user
@@ -433,7 +433,7 @@ def glue(*args: str) -> str:
 
     It would be possible to use auto string concatenation as in ``("a
     string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we prefer this
+    careful to add boundary white space yourself, so we once preferred this
     explicit function.
     """
     return " ".join(args)
@@ -622,9 +622,10 @@ def lastschrift_reference(persona_id: int, lastschrift_id: int) -> str:
 
     This is the so called 'Mandatsreferenz'.
     """
-    return "CDE-I25-{}-{}-{}-{}".format(
-        persona_id, compute_checkdigit(persona_id), lastschrift_id,
-        compute_checkdigit(lastschrift_id))
+    return (
+        f"CDE-I25-{persona_id}-{compute_checkdigit(persona_id)}"
+        f"-{lastschrift_id}-{compute_checkdigit(lastschrift_id)}"
+    )
 
 
 def _small_int_to_words(num: int, lang: str) -> str:

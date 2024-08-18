@@ -113,8 +113,7 @@ class EventEventMixin(EventBaseFrontend):
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
-            params['minor_form_present'] = (
-                    self.eventproxy.get_minor_form(rs, event_id) is not None)
+            params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
             constraint_violations = self.get_constraint_violations(
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
@@ -210,10 +209,10 @@ class EventEventMixin(EventBaseFrontend):
                 or event_id in rs.user.orga
                 or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
-        minor_form = self.eventproxy.get_minor_form(rs, event_id)
+        path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(
-            rs, data=minor_form, mimetype="application/pdf",
-            filename="Elternbrief CdE {}.pdf".format(rs.ambience['event'].shortname))
+            rs, path=path, mimetype="application/pdf",
+            filename=f"Elternbrief CdE {rs.ambience['event'].shortname}.pdf")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -277,7 +276,8 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:
@@ -645,7 +645,7 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(check_offline=True)
     @REQUESTdata("personalized")
     def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
                            fee_id: Optional[int] = None) -> Response:
@@ -666,7 +666,7 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(check_offline=True)
     @REQUESTdata("personalized")
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
@@ -1179,12 +1179,12 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is not concluded yet."))
             return self.redirect(rs, "event/show_event")
 
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        if not any(rpart['status'] == const.RegistrationPartStati.participant
-                   for reg in registrations.values()
-                   for rpart in reg['parts'].values()):
-            if create_past_event:
+        if create_past_event:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            if not any(rpart['status'] == const.RegistrationPartStati.participant
+                       for reg in registrations.values()
+                       for rpart in reg['parts'].values()):
                 rs.notify("error", n_("No event parts have any participants."))
                 return self.redirect(rs, "event/show_event")
 
@@ -1194,6 +1194,13 @@ class EventEventMixin(EventBaseFrontend):
         if message:
             rs.notify("error", message)
             return self.redirect(rs, "event/show_event")
+
+        # Lock all questionnaire entries
+        aq = const.QuestionnaireUsages.additional
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        for entry in questionnaire:
+            entry['readonly'] = True
+        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully

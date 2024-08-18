@@ -71,7 +71,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-click \
     python3-freezegun \
     python3-coverage \
-    flake8 \
     isort \
     wget \
     unzip \
@@ -108,12 +107,18 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     schulze_condorcet==2.0.1 \
     subman==0.1.1 \
     segno==1.5.2 \
-    mypy==1.4.0 \
-    pylint==2.15.0 \
+    mypy==1.10.1 \
+    pylint==3.2.5 \
     types-python-dateutil \
     types-bleach \
     types-Markdown \
     types-tabulate \
+    lxml-stubs \
+    types-Pillow \
+    types-ldap3 \
+    types-passlib \
+    types-psycopg2 \
+    types-zxcvbn \
     'playwright>=1.37.0'
 
 # add startup scripts
@@ -185,5 +190,5 @@ ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["/run-all.sh"]
 
 USER cdedb
-RUN pip install --break-system-packages ruff==0.1.1
+RUN pip install --break-system-packages ruff==0.5.1
 USER root

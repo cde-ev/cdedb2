@@ -216,7 +216,7 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     sortkey=0,
                     entries=None,
-                )
+                ),
             },
             custom_query_filters={
                 1: models.CustomQueryFilter(
@@ -228,7 +228,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_brings_balls",
                         "reg_fields.xfield_is_child",
-                    }
+                    },
                 ),
                 2: models.CustomQueryFilter(
                     id=2,  # type: ignore[arg-type]
@@ -239,7 +239,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_is_child",
                         "reg_fields.xfield_brings_balls",
-                    }
+                    },
                 ),
                 3: models.CustomQueryFilter(
                     id=3,  # type: ignore[arg-type]
@@ -250,7 +250,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg.notes",
                         "reg.orga_notes",
-                    }
+                    },
                 ),
                 4: models.CustomQueryFilter(
                     id=4,  # type: ignore[arg-type]
@@ -261,7 +261,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg.amount_paid",
                         "persona.birthday",
-                    }
+                    },
                 ),
                 5: models.CustomQueryFilter(
                     id=5,  # type: ignore[arg-type]
@@ -272,7 +272,7 @@ class TestEventModels(BackendTest):
                     fields={
                         "reg_fields.xfield_anzahl_GROSSBUCHSTABEN",
                         "reg_fields.xfield_deleted_field",
-                    }
+                    },
                 ),
             },
             fees={
@@ -492,7 +492,7 @@ class TestEventModels(BackendTest):
                     waitlist_field_id=None,
                     camping_mat_field_id=None,
                     tracks=(),  # type: ignore[arg-type]
-                )
+                ),
             },
             # parts=self.event.get_event(self.key, event_id).parts,
             tracks=self.event.get_event(self.key, event_id).tracks,
@@ -623,7 +623,7 @@ class TestEventModels(BackendTest):
                     sortkey=3,
                     tracks=(9, 11, 13),  # type: ignore[arg-type]
                 ),
-            }
+            },
         )
 
         reality = self.event.get_event(self.key, event_id)
@@ -663,7 +663,7 @@ class TestEventModels(BackendTest):
             min_size=2,
             max_size=10,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
-            fields={'room': 'Wald'}
+            fields={'room': 'Wald'},
         )
         reality = self.event.new_get_course(self.key, course_id)
 
@@ -690,8 +690,8 @@ class TestEventModels(BackendTest):
                 min_size=10,
                 max_size=20,
                 notes='Kursleiter hat Sekt angefordert.',
-                fields={'room': 'Theater'}
-            )
+                fields={'room': 'Theater'},
+            ),
         }
         reality = self.event.new_get_courses(self.key, course_ids)
 

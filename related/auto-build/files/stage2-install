@@ -100,14 +100,20 @@ python3 -m pip install --no-cache-dir --break-system-packages \
 # devtools
 # dPROD not present
 python3 -m pip install --no-cache-dir --break-system-packages \
-    mypy==1.4.0 \
+    mypy==1.10.1 \
     flake8==3.8.4 \
-    pylint==2.15.0 \
-    ruff==0.1.1 \
+    pylint==3.2.5 \
+    ruff==0.5.1 \
     types-python-dateutil \
     types-bleach \
     types-Markdown \
     types-tabulate \
+    lxml-stubs \
+    types-Pillow \
+    types-ldap3 \
+    types-passlib \
+    types-psycopg2 \
+    types-zxcvbn \
     'playwright>=1.37.0'
 
 for file in /var/cache/apt/archives/*.deb

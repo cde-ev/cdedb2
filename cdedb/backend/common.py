@@ -332,7 +332,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
-            lowercase = (query.spec[field].type == "str")
+            lowercase = query.spec[field].type == "str"
             if lowercase:
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
@@ -549,7 +549,7 @@ class DatabaseLock:
     available.
 
     """
-    xid: Optional[str]
+    xid: Optional[psycopg2.extensions.Xid]
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs

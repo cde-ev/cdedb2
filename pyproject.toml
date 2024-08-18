@@ -11,13 +11,9 @@ combine_as_imports = true
 [tool.ruff]
 target-version = "py39"
 line-length = 88
+preview = true
+output-format = "grouped"
 src = ["cdedb", "tests"]
-include = [
-    "cdedb/**.py",
-]
-exclude = [
-    "cdedb/ldap",
-]
 [tool.ruff.lint]
 select = [
     "F",  # pyflakes
@@ -27,18 +23,19 @@ select = [
 #    "I",  # isort  # Incompatible with our isort configuration.
 #    "N",  # pep8-naming  # Reports a few things most of which make sense to ignore.
 #    "D",  # pydocstyle  # A whole bunch of complaints. Should be tackled per file if at all.
-    "UP",  # pyupgrade  # Reports many uses of .format, everything autofixable.
-    "YTT",  # flake8-2020
+    "UP",  # pyupgrade  # Upgrades to new syntax. Mostly autofixable.
+    "YTT",  # flake8-2020  # Detects misuse of `sys.version` for python3.10.
 #    "ANN",  # flake8-annotations  # Reports many instances of missing __init__ returns, and a few complicated cases.
 #    "S",  # flake8-bandit  # Reports some interesting things but plenty false positives.
 #    "BLE",  # flake8-blind-except  # Mostly false positives.
 #    "B",  # flake8-bugbear
 #    "A",  # flake8-builtins  # Doesn't report much but seems useful.
-    "COM",  # flake8-commas  # Many reports, all autofixable.
+    "COM",  # flake8-commas  # Enforces consistent trailing commas. Autofixable.
 ]
 ignore = [
-    "E501", # Line too long.
     "F405", # * import.
+    "E226", # Whitespace around arithmetic operator.
+    "E501", # Line too long.
     "E731", # Assigning a lambda.
     "S101",  # Use of assert.
     "ANN101",  # No annotation for `self`.
@@ -48,6 +45,144 @@ ignore = [
     "A003",  # Class attributes shadowing builtin.
     "TRY003",  # Exception message not defined in exception class.
 ]
+[tool.ruff.lint.per-file-ignores]
+"tests/frontend_tests/__init__.py" = ["F401"]
+"tests/backend_tests/__init__.py" = ["F401"]
+"tests/ldap_tests/__init__.py" = ["F401"]
+"tests/other_tests/__init__.py" = ["F401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.mypy]
+python_version = "3.10"
+show_error_codes = true
+#show_error_context = true
+enable_error_code = "ignore-without-code"
+
+allow_redefinition = true
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_unreachable = true
+warn_unused_ignores = true
+#This has way too many false positives, due to CdEDBObject = Dict[str, Any]
+#warn_return_any = true
+
+local_partial_types = true
+
+[[tool.mypy.overrides]]
+module = [
+    # general
+    "icu",
+    # ldap
+    "ldaptor.*",
+    "zope.*",
+    # validation
+    "phonenumbers",
+    # frontend
+    "cgitb",
+    "dateutil.easter",
+    "magic",
+    "mailmanclient.*",
+    "vobject",
+    "qrcode.*",
+    "graphviz.*",
+    # tests
+    "webtest",
+    "webtest.utils",
+]
+ignore_missing_imports = true
+
+[tool.pylint.main]
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use, and will cap the count on Windows to
+# avoid hangs.
+jobs = 0
+
+# List of plugins (as comma separated values of python module names) to load,
+# usually to register additional checkers.
+load-plugins = ["pylint.extensions.bad_builtin"]
+
+[tool.pylint.deprecated_builtins]
+# List of builtins function names that should not be used, separated by a comma
+bad-functions = ["sorted", "breakpoint"]
+
+[tool.pylint.format]
+# Regexp for a line that is allowed to be longer than the limit.
+ignore-long-lines = "^.{0,88}(\\s+# (type: ignore\\[([a-z-](, )?)+\\]|pragma: no cover|noqa(: \\S*)?|TODO: coverage))+.*$"
+
+# Maximum number of characters on a single line.
+max-line-length = 88
+
+[tool.pylint.imports]
+# Allow explicit reexports by alias from a package __init__.
+allow-reexport-from-package = true
+
+[tool.pylint."messages control"]
+disable = [
+    "raw-checker-failed",
+    "bad-inline-option",
+    "locally-disabled",
+    "file-ignored",
+    "suppressed-message",
+    "useless-suppression",
+    "deprecated-pragma",
+    "use-implicit-booleaness-not-comparison-to-string",
+    "use-implicit-booleaness-not-comparison-to-zero",
+    "use-symbolic-message-instead",
+    "no-member",
+    "no-name-in-module",
+    "unsubscriptable-object",
+    "no-value-for-parameter",
+    "no-else-return",
+    "no-else-raise",
+    "no-else-break",
+    "no-else-continue",
+    "unused-argument",
+    "unused-variable",
+    "broad-exception-caught",
+    "redefined-outer-name",
+    "useless-parent-delegation",
+    "too-many-ancestors",
+    "too-many-instance-attributes",
+    "too-few-public-methods",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-branches",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-statements",
+    "too-many-boolean-expressions",
+    "too-many-positional",
+    "too-many-nested-blocks",
+    "too-many-lines",
+    "logging-fstring-interpolation",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "invalid-name",
+    "duplicate-code",
+    "consider-iterating-dictionary",
+    "unnecessary-dict-index-lookup",
+    "useless-option-value",
+    "consider-using-from-import",
+    "consider-using-f-string",
+    "unspecified-encoding",
+    "unnecessary-dunder-call",
+    "use-sequence-for-iteration",
+    "consider-using-with",
+    "consider-using-min-builtin",
+    "arguments-renamed",
+    "arguments-differ",
+    "typevar-name-incorrect-variance",
+    "deprecated-module",
+    "use-dict-literal",
+    "use-list-literal",
+    "unnecessary-lambda-assignment",
+    "fixme",
+    "cyclic-import",
+    "possibly-used-before-assignment",
+]

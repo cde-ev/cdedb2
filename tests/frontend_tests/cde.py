@@ -7,7 +7,7 @@ import itertools
 import json
 import re
 import types
-from typing import Set, Tuple, cast
+from typing import cast
 
 import webtest
 
@@ -198,7 +198,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera", "berta")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},)
+        self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
         # TODO extend
         if self.user_in("berta"):
@@ -346,7 +346,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> Set[Role]:
+        def _roles(user: UserIdentifier) -> set[Role]:
             user = get_user(user)
             return extract_roles(self.core.get_persona(self.key, user['id']))
 
@@ -753,7 +753,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(
             "18",
             self.response.lxml.xpath("//*[@id='query-result']/tfoot/tr/td[@data-col="
-                                     "'null.address_supplement']")[0].text.strip()
+                                     "'null.address_supplement']")[0].text.strip(),
         )
 
     @as_users("vera")
@@ -780,7 +780,7 @@ class TestCdEFrontend(FrontendTest):
             '"Ich bin ein ""Künstler""; im weiteren Sinne."',
             '4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;',
             '6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;',
-            ''
+            '',
         )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
 
@@ -963,7 +963,7 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('berta')
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
-                      {'description': 'Bertålotta Beispiel'},)
+                      {'description': 'Bertålotta Beispiel'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         self.assertPresence("42,23 €", div='donation', exact=True)
         self.get("/cde/user/2/lastschrift/create")
@@ -1229,7 +1229,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         with open(self.testfile_dir / "sepapain_single.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
-        exceptions = (5, 6, 14, 28, 66,)
+        exceptions = (5, 6, 14, 28, 66)
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
                 with self.subTest(i=index):
@@ -1477,7 +1477,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             (r"given_names:\W*Darf nicht leer sein.",
              r"pevent_id:\W*Keine Eingabe vorhanden."),
             tuple(),
@@ -1488,7 +1488,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona:\W*Ähnlicher Account gefunden.",),
             (r"course:\W*Kein Kurs verfügbar.",),
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
-             r"course:\W*Kein Kurs verfügbar.",),
+             r"course:\W*Kein Kurs verfügbar."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             # TODO check that this is actually a warning and no problem
@@ -1498,7 +1498,7 @@ class TestCdEFrontend(FrontendTest):
              r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
-             r"birthday\W*Person ist jünger als 10 Jahre.",),
+             r"birthday\W*Person ist jünger als 10 Jahre."),
             (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
@@ -1551,13 +1551,13 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",
-             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt."),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             tuple(),
@@ -1573,7 +1573,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1583,7 +1583,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"pevent_id:\W*Keine Veranstaltung gefungen.",
-             r"course:\W*Kein Kurs verfügbar.",),
+             r"course:\W*Kein Kurs verfügbar."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Tag liegt nicht im Monat.",
              r"birthday:\W*Notwendige Angabe fehlt."),
@@ -1591,7 +1591,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"pevent_id\W*Nur unscharfer Treffer.",
-             r"pevent_id\W*Nur unscharfer Treffer.",),
+             r"pevent_id\W*Nur unscharfer Treffer."),
             tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
@@ -1625,7 +1625,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1645,13 +1645,13 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",
-             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt."),
             tuple(),
             tuple(),
             tuple(),
@@ -1731,8 +1731,8 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long  # noqa: E501
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long  # noqa: E501
         )
 
         self.traverse({'description': 'Mitglieder'},
@@ -1917,7 +1917,7 @@ class TestCdEFrontend(FrontendTest):
         content = self.response.lxml.xpath(
             "//ol[@id='transfer-validation']")[0].text_content()
         output = re.split(r" Zeile \d+:", content)[1:]
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             (
                 "category: Darf nicht leer sein.",
                 "date: Kein Datum gefunden.",
@@ -1962,15 +1962,15 @@ class TestCdEFrontend(FrontendTest):
                     self.assertRegex(out, piece)
         lines = f['transfers'].value.split('\n')
         inputdata = '\n'.join(
-            lines[4:]
+            lines[4:],
         ).replace(
-            '-12.34', '12.34'
+            '-12.34', '12.34',
         ).replace(
-            'Party50', 'Mitgliedsbeitrag'
+            'Party50', 'Mitgliedsbeitrag',
         ).replace(
-            'Charly', 'Charly C.'
+            'Charly', 'Charly C.',
         ).replace(
-            'Daniel', 'Daniel D.'
+            'Daniel', 'Daniel D.',
         )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
@@ -2042,7 +2042,7 @@ class TestCdEFrontend(FrontendTest):
                 'persona_id': 1,
                 'code': const.EventLogCodes.registration_payment_reimbursed,
                 'change_note': "26,01 € am 16.03.2019 zurückerstattet.",
-            }
+            },
         ]
         self.assertLogEqual(
             event_log_expectation, realm="event", event_id=1,

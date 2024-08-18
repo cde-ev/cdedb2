@@ -48,7 +48,7 @@
         {% endfor %}
         {% if not preview %}
             {{ util.form_input_submit(label=gettext("Submit"), cancellink=cdedblink("event/registration_status"),
-                                      readonly=is_locked or ambience['event']['is_archived']) }}
+                                      readonly=is_locked) }}
         {% endif %}
         {% if lodgement_wishes %}
             <hr />

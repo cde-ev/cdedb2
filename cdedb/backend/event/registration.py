@@ -32,7 +32,7 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
     DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
-    cast_fields, glue, unwrap,
+    cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -133,7 +133,12 @@ class ComplexRegistrationFee:
 
     @property
     def donation(self) -> decimal.Decimal:
-        return self.by_kind[const.EventFeeType.donation]
+        return sum(
+            (
+                self.by_kind[kind] for kind in const.EventFeeType if kind.is_donation()
+            ),
+            start=decimal.Decimal(0),
+        )
 
     @property
     def nonmember_surcharge(self) -> decimal.Decimal:
@@ -915,7 +920,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
-            persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
+            _, event_id = self._get_registration_info(rs, reg_id=data['id'])
 
             # Actually alter the registration.
             ret = self._set_registration(rs, data, change_note, orga_input)
@@ -1182,6 +1187,7 @@ class EventRegistrationBackend(EventBaseBackend):
         * registration_parts: The registration's registration parts.
         * registration_tracks: The registration's registration tracks.
         * course_choices: The registrations course choices.
+        * amount_paid: The registration having non-zero amount_paid.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1206,6 +1212,11 @@ class EventRegistrationBackend(EventBaseBackend):
             entity_key="registration_id")
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
+
+        amount_paid = unwrap(self.sql_select_one(
+            rs, "event.registrations", ("amount_paid",), registration_id))
+        if amount_paid:
+            blockers["amount_paid"] = [True]
 
         return blockers
 
@@ -1250,6 +1261,12 @@ class EventRegistrationBackend(EventBaseBackend):
                 if "course_choices" in cascade:
                     ret *= self.sql_delete(rs, "event.course_choices",
                                            blockers["course_choices"])
+                if "amount_paid" in cascade:
+                    data = {
+                        'id': registration_id,
+                        'amount_paid': decimal.Decimal("0.00"),
+                    }
+                    ret *= self.sql_update(rs, "event.registrations", data)
 
                 # check if registration is deletable after cascading
                 blockers = self.delete_registration_blockers(
@@ -1625,16 +1642,17 @@ class EventRegistrationBackend(EventBaseBackend):
             )
             ret = self.query_exec(rs, *personalized_fee.get_query())
             self._update_registration_amount_owed(rs, registration_id)
-            change_note = event.fees[fee_id].title
-            if amount is None:
-                code = const.EventLogCodes.personalized_fee_amount_deleted
-            else:
-                code = const.EventLogCodes.personalized_fee_amount_set
-                change_note += f" ({money_filter(amount)})"
-            self.event_log(
-                rs, code=code, event_id=event_id, persona_id=persona_id,
-                change_note=change_note,
-            )
+            if ret:
+                change_note = event.fees[fee_id].title
+                if amount is None:
+                    code = const.EventLogCodes.personalized_fee_amount_deleted
+                else:
+                    code = const.EventLogCodes.personalized_fee_amount_set
+                    change_note += f" ({money_filter(amount)})"
+                self.event_log(
+                    rs, code=code, event_id=event_id, persona_id=persona_id,
+                    change_note=change_note,
+                )
             return ret
 
     @internal
@@ -1747,9 +1765,9 @@ class EventRegistrationBackend(EventBaseBackend):
             # an opaque error (as would happen without this) would be rather
             # frustrating for the users -- hence some extra error handling
             # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
+                " <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

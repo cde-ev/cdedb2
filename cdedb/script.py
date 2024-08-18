@@ -123,11 +123,14 @@ class Script:
         "event": "EventFrontend",
     }
 
+    _conn: IrradiatedConnection
+
     def __init__(self, *, persona_id: Optional[int] = None,
                  dry_run: Optional[bool] = None, dbuser: str = 'cdb_anonymous',
                  outfile: Optional[PathLike] = None,
                  outfile_append: Optional[bool] = None,
-                 cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
+                 cursor: type[
+                     psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
                  check_system_user: bool = True, configpath: Optional[PathLike] = None,
                  **config: Any):
         """Setup a helper class containing everything you might need for a script.
@@ -179,7 +182,6 @@ class Script:
         # Setup internals.
         self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
         self._atomizer: Optional[ScriptAtomizer] = None
-        self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
         with self._tempconfig:
             self.config = Config()
@@ -191,24 +193,24 @@ class Script:
         self._backends = {}
         self._frontends = {}
         self._request_states: dict[int, RequestState] = {}
+        self._conn = None  # type: ignore[assignment]
         self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, cursor: psycopg2.extensions.cursor,
+    def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor],
                  ) -> None:
         """Create and save a database connection."""
         if self._conn:
             return  # pragma: no cover
 
-        connection_parameters = {
-            "dbname": self.config["CDB_DATABASE_NAME"],
-            "user": dbuser,
-            "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
-            "host": self.config["DB_HOST"],
-            "port": self.config["DIRECT_DB_PORT"],
-            "connection_factory": IrradiatedConnection,
-            "cursor_factory": cursor,
-        }
-        self._conn = psycopg2.connect(**connection_parameters)
+        self._conn = psycopg2.connect(
+            dbname=self.config["CDB_DATABASE_NAME"],
+            user=dbuser,
+            password=self._secrets["CDB_DATABASE_ROLES"][dbuser],
+            host=self.config["DB_HOST"],
+            port=self.config["DIRECT_DB_PORT"],
+            connection_factory=IrradiatedConnection,
+            cursor_factory=cursor,
+        )
         self._conn.set_client_encoding("UTF8")
 
     def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]

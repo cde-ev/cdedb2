@@ -82,6 +82,7 @@ from cdedb.common import (
     decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
     make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
@@ -116,7 +117,7 @@ Headers = typing.TypedDict(
     "Headers", {
         "From": str,
         "Prefix": str,
-        "Reply-To": str,
+        "Reply-To": str | None,
         "Return-Path": str,
         "domain": str,
         "Subject": str,
@@ -222,7 +223,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
-        timeout, message = self.decode_parameter(
+        _, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id)
         if not message:
             return None, None, None
@@ -567,6 +568,39 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
 
+    def locate_or_store_attachment(
+        self, rs: RequestState, store: AttachmentStore,
+        attachment: Optional[werkzeug.datastructures.FileStorage],
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str] = None,
+    ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
+        """Locate an attachment by hash and store it, if necessary
+
+        :param attachment: A new file uploaded within this request. Supersedes remaining
+            (cached) data, if present.
+        :param attachment_hash: Hash to locate file uploaded within earlier request
+        :param attachment_filename: Filename of file uploaded in earlier request
+        """
+        attachment_data = None
+        if attachment:
+            assert attachment.filename is not None
+            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
+            attachment_data = check_validation(rs, store.type, attachment, 'attachment')
+        if attachment_data:
+            attachment_hash = store.store(attachment_data)
+        elif attachment_hash:
+            # We also end up here and keep the cached attachment if someone tried to
+            # replace the cached attachment with an invalid attachment. In this case,
+            # a validation error will prevent the cached attachment to be used outright.
+            attachment_stored = store.is_available(attachment_hash)
+            if not attachment_stored:
+                attachment_hash = None
+                e = ("cached_attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
+        return attachment_hash, attachment_filename
+
     @staticmethod
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: Optional[str] = None, inline: bool = True, *,
@@ -729,11 +763,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        csp_header_template = glue(
-            "default-src 'self';",
-            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
-            "style-src 'self' 'unsafe-inline';",
-            "img-src *")
+        csp_header_template = (
+            "default-src 'self'; script-src 'unsafe-inline' 'self' https: 'nonce-{}';"
+            " style-src 'self' 'unsafe-inline'; img-src *")
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
@@ -789,7 +821,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     }
         merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
-            del headers["Reply-To"]
+            headers["Reply-To"] = None
         msg: email.mime.base.MIMEBase = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
@@ -798,7 +830,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # however at the end of lines the standard requires spaces to be
         # encoded hence we have to be a bit careful (encoding is a pain!)
         # 'quoted-printable' ensures we only get str here:
-        payload: str = msg.get_payload()
+        payload = cast(str, msg.get_payload())
         payload = re.sub('=20(.)', r' \1', payload)
         # do this twice for adjacent encoded spaces
         payload = re.sub('=20(.)', r' \1', payload)
@@ -809,16 +841,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
-            msg = container  #
+            msg = container
         for header in ("To", "Cc", "Bcc"):
-            nonempty = {x for x in headers[header] if x}  # type: ignore[literal-required]
-            if nonempty != set(headers[header]):  # type: ignore[literal-required]
+            value = headers[header]  # type: ignore[literal-required]
+            nonempty = {x for x in value if x}
+            if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
-            if headers[header]:  # type: ignore[literal-required]
+            if nonempty:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Return-Path"):
-            if header in headers:
-                msg[header] = headers[header]  # type: ignore[literal-required]
+            if value := headers.get(header):
+                msg[header] = value
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
@@ -2337,9 +2370,9 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
     if p['title']:
-        name = glue(p['title'], name)
+        name = f"{p['title']} {name}"
     if p['name_supplement']:
-        name = glue(name, p['name_supplement'])
+        name = f"{name} {p['name_supplement']}"
     ret = [name]
     if p['address_supplement']:
         ret.append(p['address_supplement'])
@@ -2604,7 +2637,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     loglinks["first"]["offset"] = "0"
     loglinks["last"]["offset"] = ""
     for x, _ in enumerate(pre):
-        pre[x]["offset"] = (trueoffset - (len(pre) - x) * length)
+        pre[x]["offset"] = trueoffset - (len(pre) - x) * length
     loglinks["previous"]["offset"] = trueoffset - length
     for x, _ in enumerate(post):
         post[x]["offset"] = trueoffset + (x + 1) * length
@@ -2626,12 +2659,27 @@ class TransactionObserver:
 
     This should only be used in cases where a failure is deemed sufficiently
     unlikely.
+
+    The recipients always include the troubleshooting address and default to
+    management if no other recipients are given.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str, *,
+                 description: str = "", recipients: Collection[str] = ()):
         self.rs = rs
         self.frontend = frontend
         self.name = name
+        self.description = description
+        if recipients:
+            self.recipients = (
+                *recipients,
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
+        else:
+            self.recipients = (
+                frontend.conf['MANAGEMENT_ADDRESS'],
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
 
     def __enter__(self) -> "TransactionObserver":
         return self
@@ -2643,13 +2691,14 @@ class TransactionObserver:
             self.frontend.do_mail(
                 self.rs, "transaction_error",
                 {
-                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
-                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'To': self.recipients,
                     'Subject': "Transaktionsfehler",
+                    'Reply-To': self.frontend.conf['TROUBLESHOOTING_ADDRESS'],
                 },
                 {
                     'now': now(),
                     'name': self.name,
+                    'description': self.description,
                     'atype': atype,
                     'value': value,
                     'tb': tb,
