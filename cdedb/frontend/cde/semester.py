@@ -217,11 +217,13 @@ class CdESemesterMixin(CdEBaseFrontend):
                 if persona:
                     # TODO: somehow combine all failures into a single mail.
                     # This requires storing the ids somehow.
+                    defect_addresses = self.coreproxy.list_email_states(
+                        rs, const.EmailStatus.defect_states())
                     mail = self._create_mail(
                         text=f"Automated archival of persona {persona['id']} failed",
                         headers={'Subject': "Automated Archival failure",
                                  'To': (rrs.user.username,)},
-                        attachments=None)
+                        attachments=None, defect_addresses=defect_addresses)
                     self._send_mail(mail)
             return proceed
 

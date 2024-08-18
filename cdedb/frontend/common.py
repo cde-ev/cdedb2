@@ -65,7 +65,6 @@ import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
-import cdedb.models.core as EmailAddressReport
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
@@ -103,6 +102,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
 

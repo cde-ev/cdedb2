@@ -262,10 +262,13 @@ class EventQueryMixin(EventBaseFrontend):
         if data:
             pdata = pprint.pformat(data)
             self.logger.warning(f"Invalid stored event queries: {pdata}")
-            msg = self._create_mail(f"{text}\n{pdata}",
-                                    {"To": ("cdedb@lists.cde-ev.de",),
-                                     "Subject": "Ungültige Event-Queries"},
-                                    attachments=None)
+            defect_addresses = self.coreproxy.list_email_states(
+                rs, const.EmailStatus.defect_states())
+            msg = self._create_mail(
+                f"{text}\n{pdata}",
+                {"To": ("cdedb@lists.cde-ev.de",),
+                 "Subject": "Ungültige Event-Queries"},
+                attachments=None, defect_addresses=defect_addresses)
             self._send_mail(msg)
         return state
 
