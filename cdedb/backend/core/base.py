@@ -2984,16 +2984,24 @@ class CoreBaseBackend(AbstractBackend):
         status = affirm(const.EmailStatus, status)
         notes = affirm_optional(str, notes)
 
-        code = self.sql_insert(
-            rs, EmailAddressReport.database_table,
-            {"address": address, "status": status, "notes": notes},
-            update_on_conflict=True)
-        return code
+        with Atomizer(rs):
+            code = self.sql_insert(
+                rs, EmailAddressReport.database_table,
+                {"address": address, "status": status, "notes": notes},
+                update_on_conflict=True)
+            change_note = f"'{address}' als {status} markiert"
+            self.core_log(rs, const.CoreLogCodes.modify_email_status,
+                          change_note=change_note)
+            return code
 
     @access("core_admin", "ml_admin")
     def remove_email_status(
         self, rs: RequestState, address: str
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
-        return self.sql_delete_one(rs, EmailAddressReport.database_table, address,
-                                   "address")
+        with Atomizer(rs):
+            change_note = f"'{address}' entfernt"
+            self.core_log(rs, const.CoreLogCodes.delete_email_status,
+                          change_note=change_note)
+            return self.sql_delete_one(rs, EmailAddressReport.database_table,
+                                       address, "address")
