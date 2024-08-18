@@ -1279,6 +1279,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                                          "application/octet-stream")
         self.submit(f, check_notification=False)
         self.assertPresence("Datei wird bereits für anderen Anhang verwendet.")
+        saved_response = self.response
+        self.traverse("form.pdf")
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = saved_response
         self.traverse("Dateien")
 
         self.assertTitle("Dateien (Internationaler Kongress)")
