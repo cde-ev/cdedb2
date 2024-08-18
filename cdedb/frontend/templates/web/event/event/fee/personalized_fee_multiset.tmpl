@@ -46,7 +46,8 @@
 
     {% if ambience['fee'] %}
 
-        <form action="{{ cdedblink('event/personalized_fee_multiset') }}" method="POST" id="setpersonalizedfeeamountsform" class="form-horizontal">
+        <form action="{{ cdedblink('event/personalized_fee_multiset') }}" method="POST"
+              id="personalizedfeemultisetform" class="form-horizontal">
             <p class="text-info">
                 {{ util.make_icon("info-circle") }}
                 {% trans %}
@@ -79,7 +80,7 @@
         </form>
 
         <script nonce="{{ csp_nonce }}">
-            $('#setpersonalizedfeeamountsform').cdedbProtectChanges().multiset(
+            $('#personalizedfeemultisetform').cdedbProtectChanges().multiset(
                 '{{ util.make_icon("trash-alt") }}', '{{ gettext("Delete") }}',
                 '{{ util.make_icon("redo") }}', '{{ gettext("Restore") }}',
             );

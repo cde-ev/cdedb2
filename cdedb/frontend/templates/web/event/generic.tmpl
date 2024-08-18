@@ -590,6 +590,7 @@
                             {% endif %}
                         {% else %}
                             {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
+                                         anid="personalized_fee{}_multiset".format(fee.id),
                                          label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
                                          title=gettext("Set personalized amount for multiple registrations.")) }}
                         {% endif %}
