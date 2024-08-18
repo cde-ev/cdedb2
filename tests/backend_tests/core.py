@@ -4,7 +4,7 @@
 import copy
 import datetime
 import decimal
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -172,15 +172,17 @@ class TestCoreBackend(BackendTest):
         other_key = cast(RequestState, self.core.login(
             ANONYMOUS, other_user["username"], other_user["password"], IP))
         self.assertIsNotNone(other_key)
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
         self.assertLess(
-            0, self.core.change_foto(other_key, other_user["id"], new_foto))
+            0, self.core.change_foto(other_key, other_user["id"], new_hash))
 
         # Invalidate the other users password and session.
         self.assertLess(
             0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
-            self.core.change_foto(other_key, other_user["id"], new_foto)
+            new_hash = self.core.get_foto_store(self.key).store(new_foto)
+            self.core.change_foto(other_key, other_user["id"], new_hash)
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
@@ -221,10 +223,12 @@ class TestCoreBackend(BackendTest):
     def test_set_foto(self) -> None:
         new_foto = create_mock_image('png')
         persona_id = 2
-        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
+        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_hash))
         cde_user = self.core.get_cde_user(self.key, persona_id)
         self.assertEqual(get_hash(new_foto), cde_user['foto'])
-        self.assertEqual(new_foto, self.core.get_foto(self.key, cde_user['foto']))
+        self.assertEqual(new_foto, self.core.get_foto_store(self.key).get(
+            cde_user['foto']))
         self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
         self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
 
@@ -331,7 +335,7 @@ class TestCoreBackend(BackendTest):
             'bub_search': False,
             'foto': None,
             'paper_expuls': True,
-            'donation': decimal.Decimal(0)
+            'donation': decimal.Decimal(0),
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -621,7 +625,7 @@ class TestCoreBackend(BackendTest):
         expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
-            'Finanzvorstand_Name': 'Zelda'
+            'Finanzvorstand_Name': 'Zelda',
         }
         self.assertLess(0, self.core.set_meta_info(self.key, update))
         expectation.update(update)
@@ -870,6 +874,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(expectation, value)
 
+    @storage
     @as_users("vera")
     def test_genesis_cde(self) -> None:
         attachment_hash = "really_cool_filename"
@@ -893,13 +898,17 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        self.assertFalse(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
+        with self.assertRaises(RuntimeError) as e:
+            self.core.genesis_request(ANONYMOUS, data)
+        self.assertEqual("File has been lost.", str(e.exception))
+        # pylint: disable=line-too-long
+        attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
+        attachment = attachment_content.encode('ascii')
+        data['attachment_hash'] = self.core.get_genesis_attachment_store(
+            self.key).store(attachment)
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertTrue(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
         assert case_id is not None
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
@@ -975,8 +984,6 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
 
     @storage
     def test_genesis_attachments(self) -> None:
@@ -985,13 +992,13 @@ class TestCoreBackend(BackendTest):
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
         self.assertEqual(
-            pdfhash, self.core.genesis_set_attachment(self.key, pdfdata))
+            pdfhash, self.core.get_genesis_attachment_store(self.key).store(pdfdata))
         with self.assertRaises(PrivilegeError):
-            self.core.genesis_attachment_usage(self.key, pdfhash)
+            self.core.get_genesis_attachment_usage(self.key, pdfhash)
         self.login(USER_DICT["anton"])
-        self.assertEqual(
-            0, self.core.genesis_attachment_usage(self.key, pdfhash))
-        self.assertEqual(1, self.core.genesis_forget_attachments(self.key))
+        self.assertEqual(0, self.core.get_genesis_attachment_usage(self.key, pdfhash))
+        self.assertEqual(1, self.core.get_genesis_attachment_store(self.key).forget(
+            self.key, self.core.get_genesis_attachment_usage))
 
     def test_genesis_verify_multiple(self) -> None:
         self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))
@@ -1005,9 +1012,9 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
         assert case_id is not None
         self.assertLess(0, case_id)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(0, ret)
-        ret, realm = self.core.genesis_verify(ANONYMOUS, case_id)
+        ret, _realm = self.core.genesis_verify(ANONYMOUS, case_id)
         self.assertLess(ret, 0)
         self.login(USER_DICT["anton"])
         total, _ = self.core.retrieve_log(
@@ -1458,7 +1465,7 @@ class TestCoreBackend(BackendTest):
         newpass = "er3NQ_5bkrc#"
         self.core.change_password(self.key, self.user['password'], newpass)
 
-        log_expectation: List[CdEDBObject] = [
+        log_expectation: list[CdEDBObject] = [
             {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
@@ -1523,5 +1530,5 @@ class TestCoreBackend(BackendTest):
                             "automated_change")
                 self.assertLogEqual(
                     tuple(self.get_sample_data(table, keys=keys).values()),
-                    realm=log_realm
+                    realm=log_realm,
                 )

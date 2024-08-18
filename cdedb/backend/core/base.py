@@ -15,7 +15,6 @@ import copy
 import datetime
 import decimal
 from collections.abc import Collection
-from pathlib import Path
 from secrets import token_hex
 from typing import Any, Optional, Protocol, Union, overload
 
@@ -33,6 +32,7 @@ from cdedb.common import (
     RequestState, Role, User, decode_parameter, encode_parameter, get_hash, glue, now,
     unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
     META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
@@ -72,9 +72,18 @@ class CoreBaseBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, reset_salt, cookie))
-        self.foto_dir: Path = self.conf['STORAGE_DIR'] / 'foto'
-        self.genesis_attachment_dir: Path = (
-                self.conf['STORAGE_DIR'] / 'genesis_attachment')
+        self._foto_store = AttachmentStore(self.conf['STORAGE_DIR'] / 'foto',
+                                           vtypes.ProfilePicture)
+        self._genesis_attachment_store = AttachmentStore(
+            self.conf['STORAGE_DIR'] / 'genesis_attachment')
+
+    @access("cde")
+    def get_foto_store(self, rs: RequestState) -> AttachmentStore:
+        return self._foto_store
+
+    @access("anonymous")
+    def get_genesis_attachment_store(self, rs: RequestState) -> AttachmentStore:
+        return self._genesis_attachment_store
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -974,66 +983,41 @@ class CoreBaseBackend(AbstractBackend):
                     honorary_member=honorary_member)
         return ret
 
-    @access("persona")
+    @access("cde")
+    def get_foto_usage(self, rs: RequestState, file_hash: str) -> bool:
+        file_hash = affirm(vtypes.RestrictiveIdentifier, file_hash)
+        query = "SELECT COUNT(*) FROM core.personas WHERE foto = %s"
+        return bool(unwrap(self.query_one(rs, query, (file_hash,))))
+
+    @access("cde")
     def change_foto(self, rs: RequestState, persona_id: int,
-                    foto: Optional[bytes]) -> DefaultReturnCode:
+                    new_hash: Optional[vtypes.Identifier]) -> DefaultReturnCode:
         """Special modification function for foto changes.
 
         Return 1 on successful change, -1 on successful removal, 0 otherwise.
+
+        :param new_hash: Hash of new foto.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        foto = affirm_optional(vtypes.ProfilePicture, foto, file_storage=False)
-        data: CdEDBObject
-        if foto is None:
-            with Atomizer(rs):
-                old_hash = unwrap(self.sql_select_one(
-                    rs, "core.personas", ("foto",), persona_id))
-                data = {
-                    'id': persona_id,
-                    'foto': None,
-                }
-                ret = self.set_persona(
-                    rs, data, may_wait=False,
-                    change_note="Profilbild entfernt.",
-                    allow_specials=("foto",))
-                # Return a negative value to signify deletion.
-                if ret < 0:
-                    raise RuntimeError("Special persona change should not"
-                                       " be pending.")
-                ret = -1 * ret
-                if ret and old_hash and not self.foto_usage(rs, old_hash):
-                    path = self.foto_dir / old_hash
-                    if path.exists():
-                        path.unlink()
-        else:
-            my_hash = get_hash(foto)
-            data = {
-                'id': persona_id,
-                'foto': my_hash,
-            }
-            ret = self.set_persona(
-                rs, data, may_wait=False, change_note="Profilbild geändert.",
-                allow_specials=("foto",))
-            if ret:
-                path = self.foto_dir / my_hash
-                if not path.exists():
-                    with open(path, 'wb') as f:
-                        f.write(foto)
-        return ret
+        old_hash: str = unwrap(self.sql_select_one(
+            rs, "core.personas", ("foto",), persona_id))  # type: ignore[assignment]
 
-    @access("persona")
-    def get_foto(self, rs: RequestState, foto: str) -> Optional[bytes]:
-        """Retrieve a stored foto.
-
-        The foto is identified by its hash rather than the persona id it
-         belongs to, to prevent scraping."""
-        foto = affirm(str, foto)
-        path = self.foto_dir / foto
-        ret = None
-        if path.exists():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
+        change_note = "Profilbild geändert." if new_hash else "Profilbild entfernt."
+        # Evaluates to 1 if a new foto was provided, and to -1 otherwise.
+        indicator = (-1) ** (bool(new_hash) + 1)
+        if new_hash and not self.get_foto_store(rs).is_available(new_hash):
+            raise RuntimeError(n_("File has been lost."))
+        data: CdEDBObject = {
+            'id': persona_id,
+            'foto': new_hash,
+        }
+        ret = self.set_persona(rs, data, may_wait=False, change_note=change_note,
+                               allow_specials=("foto",))
+        if ret < 0:
+            raise RuntimeError("Special persona change should not be pending.")
+        if old_hash:
+            self.get_foto_store(rs).forget_one(rs, self.get_foto_usage, old_hash)
+        return ret * indicator
 
     @access("meta_admin")
     def initialize_privilege_change(self, rs: RequestState,
@@ -1605,7 +1589,7 @@ class CoreBaseBackend(AbstractBackend):
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
-                code = self.change_foto(rs, persona_id, foto=None)
+                code = self.change_foto(rs, persona_id, new_hash=None)
                 if not code:
                     raise ArchiveError(n_("Failed to remove foto."))
             # modified version of hash for 'secret' and thus
@@ -1857,9 +1841,7 @@ class CoreBaseBackend(AbstractBackend):
             if not newest:
                 # TODO allow this?
                 raise ArchiveError(n_("Cannot purge silently."))
-            query = glue(
-                "DELETE FROM core.changelog",
-                "WHERE persona_id = %s AND NOT id = %s")
+            query = "DELETE FROM core.changelog WHERE persona_id = %s AND NOT id = %s"
             ret *= self.query_exec(rs, query, (persona_id, newest['id']))
             #
             # 4. Finish
@@ -2543,7 +2525,7 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return ret, new_password
+        return bool(ret), new_password
 
     @access("persona")
     def change_password(self, rs: RequestState, old_password: str,

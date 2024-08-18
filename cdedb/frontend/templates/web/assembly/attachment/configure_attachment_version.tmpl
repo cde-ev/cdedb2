@@ -56,7 +56,7 @@
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=(gettext("Leave empty for current filename.") if not ambience['attachment_version'] else "")) }}
         {% if not ambience['attachment_version'] %}
-            {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
+            {{ util.form_input_attachment(accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
             {% if not is_deletable %}
                 {{ util.form_input_checkbox("ack_creation", gettext("Are you sure?") + " " + gettext("This attachment version cannot be changed or deleted after it was created.")) }}
             {% endif %}

@@ -369,5 +369,13 @@ class EventImportMixin(EventBaseFrontend):
             reg_titles[f"parts.{part_id}.is_camping_mat"] = (
                     prefix + rs.gettext("Camping Mat"))
 
+        for fee in event.fees.values():
+            if fee.is_personalized():
+                reg_titles[f"personalized_fees.{fee.id}"] = safe_filter(
+                    rs.gettext(
+                        "Amount for %(personalized_fee_title)s",
+                    ) % {'personalized_fee_title': f"<i>{fee.title}</i>"},
+                )
+
         return (reg_titles, reg_choices, course_titles, course_choices,
                 lodgement_titles)

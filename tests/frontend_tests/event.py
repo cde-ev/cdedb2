@@ -10,7 +10,8 @@ import json
 import re
 import tempfile
 import unittest
-from typing import Collection, Optional, Sequence
+from collections.abc import Collection, Sequence
+from typing import Optional
 
 import lxml.etree
 import segno.helpers
@@ -44,7 +45,7 @@ class TestEventFrontend(FrontendTest):
 
     def _set_payment_info(
         self, reg_id: int, event_id: int, amount_paid: decimal.Decimal,
-        payment: Optional[datetime.date] = None
+        payment: Optional[datetime.date] = None,
     ) -> None:
         """Mocker around book_fees to ease setting of payment stuff in tests.
 
@@ -887,7 +888,7 @@ class TestEventFrontend(FrontendTest):
             {
                 'code': const.EventLogCodes.part_deleted,
                 'change_note': "Größere Hälfte",
-            }
+            },
         ])
 
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
@@ -1415,7 +1416,7 @@ etc;anything else""", f['entries_2'].value)
                 'change_note': "Mailadresse der Orgas gesetzt.",
                 'code': const.EventLogCodes.event_changed,
                 'event_id': 1002,
-            }
+            },
         ])
         self.assertLogEqual(
             log_expectation, realm="event", offset=self.EVENT_LOG_OFFSET)
@@ -1909,7 +1910,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         "DELETE FROM event.course_choices;"
         "DELETE FROM event.registration_tracks;"
         "DELETE FROM event.registration_parts;"
-        "DELETE FROM event.registrations;"
+        "DELETE FROM event.registrations;",
     )
     def test_register_with_fee_modifier(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
@@ -2422,7 +2423,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                                "und Admins sichtbar.", div='static-notifications')
         self.assertPresence("Warmup")
         self.assertPresence("Zweite Hälfte")
-        self.traverse({'description': 'Zweite Hälfte'},)
+        self.traverse({'description': 'Zweite Hälfte'})
         self.assertPresence("α. Heldentum (KL)")
 
         # check non-visibility for participant without list consent
@@ -3180,10 +3181,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                         track_id: {
                             'num_choices': 0,
                             'min_choices': 0,
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+            },
         }
         self.event.set_event(self.key, event_id, edata)
         # Make Daniel a course instructor.
@@ -3191,9 +3192,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             'id': registration_id,
             'tracks': {
                 track_id: {
-                    'course_instructor': course_id
-                }
-            }
+                    'course_instructor': course_id,
+                },
+            },
         }
         self.event.set_registration(self.key, rdata)
         # Multiedit doesn't work without JS.
@@ -3720,7 +3721,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @event_keeper
     @as_users("garcia")
-    def test_field_set(self) -> None:
+    def test_field_multiset(self) -> None:
         # first for registration-associated fields
         self.get('/event/event/1/field/setselect?kind=1&ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
@@ -3825,7 +3826,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/stats'},)
+                      {'href': '/event/event/1/stats'})
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
         self.assertPresence("Teilnehmer-Statistik")
@@ -3862,14 +3863,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/stats'}, )
+                      {'href': '/event/event/1/stats'})
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
         event = self.event.get_event(self.key, event_id)
 
         def _test_one_stat(
                 stat: StatisticMixin,
-                *, track_id: int = 0, part_id: int = 0, part_group_id: int = 0
+                *, track_id: int = 0, part_id: int = 0, part_group_id: int = 0,
         ) -> None:
             """Only one of track_id, part_id and part_group_id should be given."""
 
@@ -3987,7 +3988,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/stats'},)
+                      {'href': '/event/event/1/course/stats'})
         self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
         self.assertPresence("Heldentum")
         self.assertPresence("1")
@@ -3997,7 +3998,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_course_choices(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/choices'},)
+                      {'href': '/event/event/1/course/choices'})
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
         self.assertPresence("Morgenkreis", div="course_choice_table")
         self.assertPresence("Morgenkreis", div="assignment-options")
@@ -4126,7 +4127,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # Single-track event
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/3/show'},
-                      {'href': '/event/event/3/course/choices'}, )
+                      {'href': '/event/event/3/course/choices'})
         self.assertTitle("Kurswahlen (CyberTestAkademie)")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [7]
@@ -4150,7 +4151,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/choices'},)
+                      {'href': '/event/event/1/course/choices'})
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2, 3, 4]
@@ -4170,7 +4171,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     def test_course_choices_filter_persistence(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/choices'},)
+                      {'href': '/event/event/1/course/choices'})
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
 
         # Test persistence of filters when submitting assignment
@@ -4209,7 +4210,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
     @as_users("garcia")
     def test_course_choices_problems(self) -> None:
         self.traverse({'href': '/event/$'}, {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/choices'}, )
+                      {'href': '/event/event/1/course/choices'})
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
         # Assigning Anton and Emilia to their 3rd choice (which is not present)
         # should not raise an exception but a warning
@@ -4360,6 +4361,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
     @as_users("garcia")
     def test_lodgement_wishes_graph(self) -> None:
+        # pylint: disable=protected-access
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/'},
@@ -4376,20 +4378,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         xml_namespaces = {'svg': "http://www.w3.org/2000/svg",
                           'xlink': "http://www.w3.org/1999/xlink"}
 
-        node_link = xml.xpath('//svg:a[.//svg:text[contains(text(),"Garcia")]]',
-                              namespaces=xml_namespaces)[0]
+        node_link = xml.xpath(  # type: ignore[index]
+            '//svg:a[.//svg:text[contains(text(),"Garcia")]]',
+            namespaces=xml_namespaces,
+        )[0]
+        assert isinstance(node_link, lxml.etree._Element)
         self.assertEqual("/event/event/1/registration/3/show",
                          node_link.attrib['{http://www.w3.org/1999/xlink}href'])
         parts_text_text = node_link.xpath('./svg:text/text()',
                                           namespaces=xml_namespaces)
+        assert isinstance(parts_text_text, list)
         self.assertIn("Wu, 1.H., 2.H.", parts_text_text[1])
-        edge_group = xml.xpath(
-            '//svg:g[@class="edge"]',
-            namespaces=xml_namespaces)
+        edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
+        assert isinstance(edge_group, list)
         self.assertEqual(1, len(edge_group))
+        assert isinstance(edge_group[0], lxml.etree._Element)
         edge_link_title = edge_group[0].xpath(
-            './/svg:a/@xlink:title',
-            namespaces=xml_namespaces)
+            './/svg:a/@xlink:title', namespaces=xml_namespaces)
+        assert isinstance(edge_link_title, list)
         self.assertEqual("Anton Administrator → Garcia Generalis",
                          edge_link_title[0])
         # Emilia has no wishes and has not been wished
@@ -4414,6 +4420,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         # Anton is not present in 1. Hälfte
         self.assertNotIn("Anton", self.response.text)
         edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
+        assert isinstance(edge_group, list)
         self.assertEqual(0, len(edge_group))
 
         # Only lodgement groups
@@ -4455,7 +4462,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
+                      {'href': '/event/event/1/download'})
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         save = self.response
 
@@ -4581,7 +4588,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
+                      {'href': '/event/event/1/download'})
         save = self.response
         self.response = save.click(href='/event/event/1/download/csv_registrations')
 
@@ -5966,7 +5973,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['queryform']
         self.assertEqual(
             f['qval_ctime.creation_time'].value,
-            reference_time.isoformat()
+            reference_time.isoformat(),
         )
 
         # Now store that query.
@@ -5978,7 +5985,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['queryform']
         self.assertEqual(
             f['qval_ctime.creation_time'].value,
-            reference_time.isoformat()
+            reference_time.isoformat(),
         )
 
         # Now retrieve the stored query and check that the value is still the same.
@@ -5986,7 +5993,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f = self.response.forms['queryform']
         self.assertEqual(
             f['qval_ctime.creation_time'].value,
-            reference_time.isoformat()
+            reference_time.isoformat(),
         )
 
     @as_users("garcia")
@@ -6789,7 +6796,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             {
                 'code': const.EventLogCodes.orga_token_deleted,
                 'change_note': "To be deleted.",
-            }
+            },
         ]
         self.assertLogEqual(
             log_expectation, 'event', event_id=event_id, offset=self.EVENT_LOG_OFFSET)
@@ -6910,28 +6917,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("-30,00 € – -20,00 €", div="eventfee_10")
         self.assertPresence("Personalisierter Teilnahmebeitrag", div="eventfee_10")
 
+        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
         self.traverse("Personalisierten Teilnahmebeitrag hinzufügen")
         f = self.response.forms['configureeventfeeform']
-        self.assertIsNone(f.get('amount', default=None))
         self.assertIsNone(f.get('condition', default=None))
         f['title'] = "Rabatt auf Ehrenhomiebasis"
         f['kind'] = const.EventFeeType.solidary_reduction
+        f['amount'] = "-33.33"
         self.submit(f)
 
         self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
-        self.assertPresence("–", exact=True, div="eventfee_amount_1001")
-
-        self.traverse("Meine Anmeldung", "Als Orga ansehen", "Teilnahmebeitragsdetails")
-        self.assertPresence("Rabatt auf Ehrenhomiebasis", div="eventfee_1001")
-        self.assertPresence("Personalisierter Teilnahmebeitrag", exact=True,
-                            div="eventfee_condition_1001")
-        f = self.response.forms['addpersonalizedfeeform1001']
-        f['amount1001'] = "-33.33"
-        self.submit(f)
-
+        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
         self.assertPresence("Personalisierter Teilnahmebeitrag (-33,33 €)", exact=True,
                             div="eventfee_condition_1001")
-        self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
+
         self.traverse("Teilnahmebeiträge")
         self.assertPresence("-33,33 €", exact=True, div="eventfee_amount_1001")
 
@@ -6941,19 +6940,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.submit(f)
         self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1")
 
-        self.traverse({'linkid': "eventfee_owed_1001"})
-        self.traverse(r"-33,33\s€")
-        self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1")
-
-        f = self.response.forms['deletepersonalizedfeeform1001']
+        self.traverse({'linkid': "personalized_fee1001_multiset"})
+        f = self.response.forms['personalizedfeemultisetform']
+        self.assertEqual(f['amount3'].value, "-33.33")
+        self.assertEqual(f['amount5'].value, "")
+        f['amount3'] = "0"
+        f['amount5'] = "12"
         self.submit(f)
 
-        f = self.response.forms['addpersonalizedfeeform1001']
-        f['amount1001'] = 0
-        self.submit(f)
-        self.assertPresence("0,00 €", exact=True, div="eventfee_amount_1001")
-
-        self.traverse("Teilnahmebeiträge")
+        self.assertPresence("0,00 € – 12,00 €", exact=True, div="eventfee_amount_1001")
         f = self.response.forms['deleteeventfeeform1001']
         self.submit(f)
 
@@ -6972,19 +6967,24 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
                 'change_note': "Teilnahmebeitrag Warmup",
             },
             {
-                'code': const.EventLogCodes.personalized_fee_amount_deleted,
-                'change_note': "Rabatt auf Ehrenhomiebasis",
-                'persona_id': self.user['id'],
-            },
-            {
                 'code': const.EventLogCodes.personalized_fee_amount_set,
                 'change_note': "Rabatt auf Ehrenhomiebasis (0,00 €)",
                 'persona_id': self.user['id'],
             },
             {
+                'code': const.EventLogCodes.personalized_fee_amount_set,
+                'change_note': "Rabatt auf Ehrenhomiebasis (12,00 €)",
+                'persona_id': 100,
+            },
+            {
                 'code': const.EventLogCodes.personalized_fee_amount_deleted,
                 'change_note': "Rabatt auf Ehrenhomiebasis",
                 'persona_id': self.user['id'],
+            },
+            {
+                'code': const.EventLogCodes.personalized_fee_amount_deleted,
+                'change_note': "Rabatt auf Ehrenhomiebasis",
+                'persona_id': 100,
             },
             {
                 'code': const.EventLogCodes.fee_modifier_deleted,

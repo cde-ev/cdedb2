@@ -208,14 +208,15 @@
     force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none) %}
+                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none,
+                          outerclass='') %}
     {%- set name = name or "fields." + field['field_name'] %}
     {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
                               and not force_label and not field['entries'])
                      else label or field['title']) %}
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
-                                     displayerrors=displayerrors, horizontal=True) %}
+                                     displayerrors=displayerrors, horizontal=True, aclass=outerclass) %}
         {{- field_input(field, name, readonly, defaultvalue, anid, text_rows, bool_label) }}
     {%- endcall %}
 {%- endmacro %}
@@ -426,7 +427,7 @@
 
 {% macro active_fee_registration_query_link(registration_ids, label=None, anid="", query=None, fee_id=None) %}
     {% with query = query or get_query(registration_ids, fee_id) %}
-        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()),
+        {{ util.href(cdedblink(query.scope.get_target(redirect=True), query.serialize_to_url()) + '#query-results',
                      registration_ids|length|string + (" " + label if label else ""), icon='list',
                      title=gettext("View Registrations"), anid=anid) }}
     {% endwith %}
@@ -506,10 +507,13 @@
                             {{ "alert-success" if fee.id in complex_fee.active_fees else "alert-danger" }}
                         {% endif %}">
                     {% if js_preview %}
-                        {{ util.deko_checkbox(True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
-                        {{ util.deko_checkbox(False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
+                        {{ util.deko_checkbox(
+                                True, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-active") }}
+                        {{ util.deko_checkbox(
+                                False, titles=[gettext("Active"), gettext("Inactive")], anid="checkbox-inactive") }}
                     {% elif complex_fee %}
-                        {{ util.deko_checkbox(fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
+                        {{ util.deko_checkbox(
+                                fee.id in complex_fee.active_fees, titles=[gettext("Active"), gettext("Inactive")]) }}
                     {% endif %}
                     {% if not js_preview and not complex_fee %}
                         <strong>
@@ -550,8 +554,9 @@
                             {{ util.anti_csrf_token("event/add_personalized_fee") }}
                             <td class="text-right">
                                 {% call util.output_errors("amount" + fee.id|string, wrapper=True) %}
-                                    {{ util.input_text("amount" + fee.id|string,
-                                                       attributes='style="float:right;width:5em"'|safe) }}
+                                    {{ util.input_text("amount" + fee.id|string, type="number", placeholder="",
+                                                       aclass="form-control float-right no-number-arrows",
+                                                       attributes='style="width:5em" step="0.01"'|safe) }}
                                 {% endcall %}
                             </td>
                             <td>
@@ -564,18 +569,30 @@
                 {% endif %}
                 {% if not js_preview and not complex_fee %}
                     <td class="nowrap">
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id, anid="eventfee_owed_" + fee.id|string) }}
+                        {{ active_fee_registration_query_link(
+                                fee_stats[fee.kind][fee.id].registrations_owed, gettext("Owed"), fee_id=fee.id,
+                                anid="eventfee_owed_" + fee.id|string) }}
                         <br />
-                        {{ active_fee_registration_query_link(fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id, anid="eventfee_paid_" + fee.id|string) }}
+                        {{ active_fee_registration_query_link(
+                                fee_stats[fee.kind][fee.id].registrations_paid, gettext("Paid"), fee_id=fee.id,
+                                anid="eventfee_paid_" + fee.id|string) }}
                     </td>
                 {% endif %}
-                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}" id="eventfee_condition_{{ fee.id }}">
+                <td class="active-fee-condition nowrap {{ "alert-info" if not fee.condition else "" }}"
+                        id="eventfee_condition_{{ fee.id }}">
                     {% if not fee.condition %}
                         <i>
                             {% trans %}Personalized Fee{% endtrans %}
                         </i>
-                        {% if fee.amount_min is not none and (js_preview or complex_fee) %}
-                            ({{ _print_fee_amount_range(fee) }})
+                        {% if js_preview or complex_fee %}
+                            {% if fee.amount_min is not none %}
+                                ({{ _print_fee_amount_range(fee) }})
+                            {% endif %}
+                        {% else %}
+                            {{ util.href(cdedblink("event/personalized_fee_multiset", {'fee_id': fee.id}),
+                                         anid="personalized_fee{}_multiset".format(fee.id),
+                                         label=None, icon="calculator", aclass="btn btn-sm btn-warning float-right",
+                                         title=gettext("Set personalized amount for multiple registrations.")) }}
                         {% endif %}
                     {% elif complex_fee %}
                         {{ complex_fee.visual_debug[fee.id]|safe }}

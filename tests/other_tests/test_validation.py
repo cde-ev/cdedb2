@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
@@ -29,9 +29,9 @@ T = TypeVar('T')
 class TestValidation(unittest.TestCase):
     def do_validator_test(
         self,
-        type_: Type[T],
-        spec: Iterable[Tuple[Any, T, Union[Type[Exception], Exception, None]]],
-        extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True
+        type_: type[T],
+        spec: Iterable[tuple[Any, T, Union[type[Exception], Exception, None]]],
+        extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.
 
@@ -101,7 +101,8 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(
             None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
         self.assertLess(
-            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1])
+            0, len(validate.validate_check_optional(
+                int, "garbage", ignore_warnings)[1]),
         )
 
         self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
@@ -269,7 +270,7 @@ class TestValidation(unittest.TestCase):
             ("True", True, None),
             ("False", False, None),
             (54, True, None),
-            (None, None, TypeError)
+            (None, None, TypeError),
         ))
 
     def test_empty(self) -> None:
@@ -446,7 +447,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_member_data(self) -> None:
-        base_example: Dict[str, Any] = {
+        base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
@@ -501,7 +502,7 @@ class TestValidation(unittest.TestCase):
             ignore_warnings=False)
 
     def test_event_user_data(self) -> None:
-        base_example: Dict[str, Any] = {
+        base_example: dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
@@ -550,7 +551,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_vote(self) -> None:
-        ballot: Dict[str, Any] = {
+        ballot: dict[str, Any] = {
             'votes': None,
             'use_bar': True,
             'candidates': {
@@ -559,7 +560,7 @@ class TestValidation(unittest.TestCase):
                 3: {'shortname': 'C'},
                 4: {'shortname': 'D'},
                 5: {'shortname': 'E'},
-            }
+            },
         }
         classical_ballot = copy.deepcopy(ballot)
         classical_ballot['votes'] = 2
@@ -702,7 +703,7 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test(SafeStr, spec)
 
     def test_generic_list(self) -> None:
-        self.do_validator_test(List[int], [
+        self.do_validator_test(list[int], [
             ([0, 1, 2, 3], [0, 1, 2, 3], None),
             ([0, 1.7, 2, 3], None, ValueError),
             ([0, "Test", 2, 3], None, ValueError),
@@ -725,7 +726,7 @@ class TestValidation(unittest.TestCase):
         # With `timezone_aware`, tzinfo is kept.
         self.assertEqual(
             query.serialize(timezone_aware=True)['qval_time'],
-            timestamp.isoformat()
+            timestamp.isoformat(),
         )
 
         # Default is `False`.
@@ -733,24 +734,24 @@ class TestValidation(unittest.TestCase):
         serialized_timestamp = query.serialize_to_url()['qval_time']
         self.assertEqual(
             query.serialize(timezone_aware=False)['qval_time'],
-            serialized_timestamp
+            serialized_timestamp,
         )
         self.assertEqual(
             serialized_timestamp,
-            timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0]
+            timestamp.astimezone(conf['DEFAULT_TIMEZONE']).isoformat().split('+')[0],
         )
 
         # `serialize_to_url` is an alias for `timezone_aware=False`
         self.assertEqual(
             query.serialize_to_url(),
-            query.serialize(timezone_aware=False)
+            query.serialize(timezone_aware=False),
         )
 
         # The serialized timestampt gets parsed back to the original one.
         self.assertEqual(
             validate.validate_assert(
                 datetime.datetime, serialized_timestamp, ignore_warnings=False),
-            timestamp
+            timestamp,
         )
 
     def test_validation_summary(self) -> None:
@@ -789,5 +790,5 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(validate.ValidationSummary):
             validate._serialized_event_configuration({
                 'id': -1,
-                'iban': "DE75512108001245126199"
+                'iban': "DE75512108001245126199",
             }, "", creation=True, current=None)

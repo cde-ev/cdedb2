@@ -3,7 +3,6 @@
 
 import datetime
 import urllib.parse
-from typing import Dict, Set
 
 from cdedb.common import CdEDBObject
 from tests.common import (
@@ -45,20 +44,20 @@ class TestPrivacyFrontend(FrontendTest):
         "Interessen": 'additional',
         "Verschiedenes": 'additional',
         "Verg. Veranstaltungen": 'past-events',
-        "VCard": 'vcard'
+        "VCard": 'vcard',
     }
 
     ALL_FIELDS = set(FIELD_TO_DIV.keys())
 
-    def _profile_base_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_base_view(self, inspected: UserObject) -> set[str]:
         expected = {"Name", "CdEDB-ID", "E-Mail"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         return expected
 
-    def _profile_relative_admin_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_relative_admin_view(self, inspected: UserObject) -> set[str]:
         expected = {
-            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
+            "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -67,20 +66,20 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_ml_admin_view(self, inspected: UserObject) -> Set[str]:
-        expected: Set[str] = set()
+    def _profile_ml_admin_view(self, inspected: UserObject) -> set[str]:
+        expected: set[str] = set()
         checked = self._profile_relative_admin_view(inspected)
         return expected | checked
 
-    def _profile_assembly_admin_view(self, inspected: UserObject) -> Set[str]:
-        expected: Set[str] = set()
+    def _profile_assembly_admin_view(self, inspected: UserObject) -> set[str]:
+        expected: set[str] = set()
         checked = self._profile_relative_admin_view(inspected)
         return expected | checked
 
-    def _profile_event_context_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_event_context_view(self, inspected: UserObject) -> set[str]:
         expected = {
             "Geburtsdatum", "Geschlecht", "Pronomen", "Pronomen auf Namensschild",
-            "Telefon", "Mobiltelefon", "Adresse"
+            "Telefon", "Mobiltelefon", "Adresse",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -89,15 +88,15 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_event_admin_view(self, inspected: UserObject) -> Set[str]:
-        expected: Set[str] = set()
+    def _profile_event_admin_view(self, inspected: UserObject) -> set[str]:
+        expected: set[str] = set()
         # for field in expected:
         #     self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_relative_admin_view(inspected)
         checked.update(self._profile_event_context_view(inspected))
         return expected | checked
 
-    def _profile_cde_context_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_cde_context_view(self, inspected: UserObject) -> set[str]:
         expected = {
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
@@ -111,11 +110,11 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertPresence(inspected['username'], div='contact-email')
         return expected | checked
 
-    def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_cde_admin_view(self, inspected: UserObject) -> set[str]:
         expected = {
             "Geschlecht", "Pronomen", "Pronomen auf Namensschild", "Mitgliedschaft",
             "Guthaben", "Sichtbarkeit", "Gedruckter exPuls", "Jährliche Spende",
-            "Zahlungsmethode"
+            "Zahlungsmethode",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -123,7 +122,7 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_cde_context_view(inspected))
         return expected | checked
 
-    def _profile_core_admin_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_core_admin_view(self, inspected: UserObject) -> set[str]:
         # Core Admins should view all Fields. This is used, to test if any field
         # was forgotten to test
         checked = set()
@@ -135,7 +134,7 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_meta_admin_view(inspected))
         return checked
 
-    def _profile_meta_admin_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_meta_admin_view(self, inspected: UserObject) -> set[str]:
         expected = {"Bereiche", "Account aktiv", "Admin-Privilegien", "E-Mail",
                     "Admin-Notizen"}
         for field in expected:
@@ -145,35 +144,35 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_member_view(self, inspected: UserObject) -> Set[str]:
+    def _profile_member_view(self, inspected: UserObject) -> set[str]:
         # Note that event context is no subset of this, because missing gender
-        expected: Set[str] = {"VCard"}
+        expected: set[str] = {"VCard"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_cde_context_view(inspected)
         return expected | checked
 
-    def _profile_orga_view(self, inspected: UserObject) -> Set[str]:
-        expected: Set[str] = set()
+    def _profile_orga_view(self, inspected: UserObject) -> set[str]:
+        expected: set[str] = set()
         # for field in expected:
         #     self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_event_context_view(inspected)
         return expected | checked
 
-    def _profile_moderator_view(self, inspected: UserObject) -> Set[str]:
-        expected: Set[str] = set()
+    def _profile_moderator_view(self, inspected: UserObject) -> set[str]:
+        expected: set[str] = set()
         # actual username should be displayed
         self.assertPresence(inspected['username'], div='contact-email')
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_of_archived(self, inspected: UserObject) -> Set[str]:
+    def _profile_of_archived(self, inspected: UserObject) -> set[str]:
         # TODO this assumes that the inspected user has CdE realm
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
             "Geschlecht", "Geburtsdatum", "Pronomen",
-            "Pronomen auf Namensschild", "Zahlungsmethode"
+            "Pronomen auf Namensschild", "Zahlungsmethode",
         }
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
@@ -503,7 +502,7 @@ class TestPrivacyFrontend(FrontendTest):
         users = ("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
                  "paul", "rowena", "viktor")
 
-        cases: Dict[str, CdEDBObject] = {
+        cases: dict[str, CdEDBObject] = {
             'ml': {
                 'inspected': USER_DICT['janis'],
                 'access': ("janis", "nina", "paul"),
@@ -532,7 +531,7 @@ class TestPrivacyFrontend(FrontendTest):
                 'access': ("berta", "quintus", "paul"),
                 'no_access': ("annika", "nina", "viktor", "emilia", "kalif", "janis",
                               "rowena"),
-            }
+            },
         }
 
         # now the actual testing
@@ -577,19 +576,19 @@ class TestPrivacyFrontend(FrontendTest):
                  "viktor")
         # users who should have access to the specific user search
         core = {
-            USER_DICT['farin']['id'], USER_DICT['paul']['id']
+            USER_DICT['farin']['id'], USER_DICT['paul']['id'],
         }
         cde = {
-            USER_DICT['farin']['id'], USER_DICT['quintus']['id']
+            USER_DICT['farin']['id'], USER_DICT['quintus']['id'],
         }
         event = {
-            USER_DICT['farin']['id'], USER_DICT['annika']['id']
+            USER_DICT['farin']['id'], USER_DICT['annika']['id'],
         }
         ml = {
-            USER_DICT['farin']['id'], USER_DICT['nina']['id']
+            USER_DICT['farin']['id'], USER_DICT['nina']['id'],
         }
         assembly = {
-            USER_DICT['farin']['id'], USER_DICT['viktor']['id']
+            USER_DICT['farin']['id'], USER_DICT['viktor']['id'],
         }
 
         for user in users:
