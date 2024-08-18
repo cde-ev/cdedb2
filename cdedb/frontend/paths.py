@@ -542,7 +542,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/delete", methods=_POST, endpoint="delete_fee"),
                         rule("/set", methods=_GET,
                              endpoint="personalized_fee_multiset_form"),
-                        rule("/set", methods=_POST, endpoint="personalized_fee_multiset"),
+                        rule("/set", methods=_POST,
+                             endpoint="personalized_fee_multiset"),
                     )),
                 )),
                 sub('/part', (
