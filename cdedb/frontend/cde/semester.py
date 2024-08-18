@@ -9,7 +9,6 @@ which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin
 from werkzeug import Response
 
 import cdedb.database.constants as const
-
 from cdedb.common import CdEDBObject, RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import CdELogFilter
