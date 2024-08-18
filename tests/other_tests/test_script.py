@@ -231,7 +231,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
                 with conn.cursor() as cur:
                     cur.execute(insertion_query)
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
             # Now make the change for real.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
@@ -241,7 +241,7 @@ Aborting Dry Run! Time taken: 0.000 seconds.
             with ScriptAtomizer(rs, dry_run=False) as conn:
                 with conn.cursor() as cur:
                     cur.execute(selection_query)
-                    self.assertEqual(unwrap(dict(cur.fetchone())), "Test")
+                    self.assertEqual(unwrap(dict(cur.fetchone() or {})), "Test")
 
     def test_offline_orgatoken(self) -> None:
         offline_script = self.get_script(CDEDB_OFFLINE_DEPLOYMENT=True)
