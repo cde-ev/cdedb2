@@ -279,8 +279,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                           ) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         persona = reviewer = pevent = pcourse = None
         if case['persona_id']:
@@ -321,8 +320,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                             ) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
+        if not self.is_admin(rs) and f"{case['realm']}_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))

@@ -15,8 +15,9 @@ import subprocess
 import sys
 from typing import Collection
 
-from psycopg2.extras import DictCursor, Json
+from psycopg2.extras import Json, RealDictCursor
 
+import cdedb.models.event as models
 from cdedb.common import CdEDBObject
 from cdedb.config import (
     DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
@@ -65,7 +66,7 @@ def update_defaults(table: str, entry: CdEDBObject) -> CdEDBObject:
     return {**defaults, **entry}
 
 
-def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
+def populate_table(cur: RealDictCursor, table: str, data: CdEDBObject) -> None:
     """Insert the passed data into the DB."""
     if data:
         for entry in data.values():
@@ -90,7 +91,7 @@ def populate_table(cur: DictCursor, table: str, data: CdEDBObject) -> None:
         print("No data for table found")
 
 
-def make_meta_info(cur: DictCursor) -> None:
+def make_meta_info(cur: RealDictCursor) -> None:
     query = """INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb)"""
     cur.execute(query, tuple())
 
@@ -130,12 +131,12 @@ def shift_existing_ids(tables: list[str], shift_amount: int) -> None:
                 cur.execute(query, ())
 
 
-def update_event(cur: DictCursor, event: CdEDBObject) -> None:
+def update_event(cur: RealDictCursor, event: CdEDBObject) -> None:
     query = """UPDATE event.events SET lodge_field_id = %s"""
     cur.execute(query, [event['lodge_field_id']])
 
 
-def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
+def update_parts(cur: RealDictCursor, parts: Collection[CdEDBObject]) -> None:
     query = """UPDATE event.event_parts
                SET (waitlist_field_id, camping_mat_field_id) = (%s, %s) WHERE id = %s"""
     for part in parts:
@@ -143,7 +144,7 @@ def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
         cur.execute(query, params)
 
 
-def update_tracks(cur: DictCursor, tracks: Collection[CdEDBObject]) -> None:
+def update_tracks(cur: RealDictCursor, tracks: Collection[CdEDBObject]) -> None:
     query = "UPDATE event.course_tracks SET course_room_field_id = %s WHERE id = %s"
     for track in tracks:
         cur.execute(query, (track['course_room_field_id'], track['id']))
@@ -261,6 +262,7 @@ def work(
         'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log',
         'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
+        models.PersonalizedFee.database_table,
         OrgaToken.database_table,
     )
 
@@ -317,7 +319,7 @@ def work(
                     target_count = len(data[table])
                     query = "SELECT COUNT(*) AS count FROM {}".format(table)
                     cur.execute(query)
-                    real_count = cur.fetchone()['count']
+                    real_count = (cur.fetchone() or {'count': 0})['count']
                     if target_count != real_count:
                         fails.append("Table {} has {} not {} entries".format(
                             table, real_count, target_count))

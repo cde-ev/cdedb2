@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-08-14 18:38+0200\n"
+"POT-Creation-Date: 2024-08-18 23:13+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -21,29 +21,29 @@ msgstr ""
 msgid "Initial import."
 msgstr ""
 
-#: cdedb/backend/assembly.py:256
+#: cdedb/backend/assembly.py:258
 msgid "No vote found."
 msgstr ""
 
-#: cdedb/backend/assembly.py:297 cdedb/backend/event/base.py:136
+#: cdedb/backend/assembly.py:299 cdedb/backend/event/base.py:137
 msgid "Must be admin to access global log."
 msgstr ""
 
-#: cdedb/backend/assembly.py:301 cdedb/backend/assembly.py:448
-#: cdedb/backend/assembly.py:553 cdedb/backend/assembly.py:836
-#: cdedb/backend/assembly.py:1517 cdedb/backend/cde/lastschrift.py:94
+#: cdedb/backend/assembly.py:303 cdedb/backend/assembly.py:450
+#: cdedb/backend/assembly.py:555 cdedb/backend/assembly.py:838
+#: cdedb/backend/assembly.py:1518 cdedb/backend/cde/lastschrift.py:94
 #: cdedb/backend/cde/lastschrift.py:119 cdedb/backend/cde/lastschrift.py:276
 #: cdedb/backend/core/base.py:672 cdedb/backend/core/base.py:906
-#: cdedb/backend/core/genesis.py:209 cdedb/backend/core/genesis.py:212
-#: cdedb/backend/core/genesis.py:240 cdedb/backend/core/genesis.py:263
-#: cdedb/backend/core/genesis.py:329 cdedb/backend/event/__init__.py:310
-#: cdedb/backend/event/__init__.py:421 cdedb/backend/event/base.py:140
-#: cdedb/backend/event/base.py:624 cdedb/backend/event/base.py:698
-#: cdedb/backend/event/base.py:715 cdedb/backend/event/base.py:805
-#: cdedb/backend/event/base.py:906 cdedb/backend/event/base.py:1007
-#: cdedb/backend/event/base.py:1070 cdedb/backend/event/base.py:1101
-#: cdedb/backend/event/base.py:1126 cdedb/backend/event/base.py:1219
-#: cdedb/backend/event/base.py:1455 cdedb/backend/event/course.py:121
+#: cdedb/backend/core/genesis.py:213 cdedb/backend/core/genesis.py:216
+#: cdedb/backend/core/genesis.py:244 cdedb/backend/core/genesis.py:267
+#: cdedb/backend/core/genesis.py:333 cdedb/backend/event/__init__.py:310
+#: cdedb/backend/event/__init__.py:421 cdedb/backend/event/base.py:141
+#: cdedb/backend/event/base.py:620 cdedb/backend/event/base.py:694
+#: cdedb/backend/event/base.py:711 cdedb/backend/event/base.py:801
+#: cdedb/backend/event/base.py:902 cdedb/backend/event/base.py:1003
+#: cdedb/backend/event/base.py:1066 cdedb/backend/event/base.py:1097
+#: cdedb/backend/event/base.py:1122 cdedb/backend/event/base.py:1215
+#: cdedb/backend/event/base.py:1451 cdedb/backend/event/course.py:121
 #: cdedb/backend/event/course.py:238 cdedb/backend/event/course.py:312
 #: cdedb/backend/event/lodgement.py:63 cdedb/backend/event/lodgement.py:100
 #: cdedb/backend/event/lodgement.py:128 cdedb/backend/event/lodgement.py:223
@@ -70,53 +70,53 @@ msgstr ""
 #: cdedb/backend/ml.py:936 cdedb/backend/ml.py:999 cdedb/backend/ml.py:1028
 #: cdedb/backend/ml.py:1061 cdedb/backend/ml.py:1128 cdedb/backend/ml.py:1174
 #: cdedb/backend/ml.py:1200 cdedb/backend/ml.py:1238 cdedb/backend/ml.py:1319
-#: cdedb/common/exceptions.py:31 cdedb/frontend/assembly/attachment.py:84
+#: cdedb/common/exceptions.py:31 cdedb/frontend/assembly/attachment.py:83
 #: cdedb/frontend/assembly/ballot.py:79 cdedb/frontend/assembly/ballot.py:239
 #: cdedb/frontend/assembly/ballot.py:323 cdedb/frontend/assembly/ballot.py:608
 #: cdedb/frontend/assembly/ballot.py:822 cdedb/frontend/assembly/ballot.py:880
 #: cdedb/frontend/assembly/base.py:127 cdedb/frontend/assembly/base.py:480
-#: cdedb/frontend/core/base.py:682 cdedb/frontend/core/base.py:711
-#: cdedb/frontend/core/base.py:928 cdedb/frontend/core/base.py:931
-#: cdedb/frontend/core/base.py:935 cdedb/frontend/core/base.py:940
-#: cdedb/frontend/core/base.py:946 cdedb/frontend/core/base.py:954
-#: cdedb/frontend/core/base.py:960 cdedb/frontend/core/base.py:968
-#: cdedb/frontend/core/base.py:973 cdedb/frontend/core/base.py:985
-#: cdedb/frontend/core/base.py:1965 cdedb/frontend/core/base.py:1980
-#: cdedb/frontend/core/base.py:2385 cdedb/frontend/core/base.py:2406
-#: cdedb/frontend/core/genesis.py:283 cdedb/frontend/core/genesis.py:325
-#: cdedb/frontend/core/genesis.py:375 cdedb/frontend/core/genesis.py:402
+#: cdedb/frontend/core/base.py:681 cdedb/frontend/core/base.py:710
+#: cdedb/frontend/core/base.py:927 cdedb/frontend/core/base.py:930
+#: cdedb/frontend/core/base.py:934 cdedb/frontend/core/base.py:939
+#: cdedb/frontend/core/base.py:945 cdedb/frontend/core/base.py:953
+#: cdedb/frontend/core/base.py:959 cdedb/frontend/core/base.py:967
+#: cdedb/frontend/core/base.py:972 cdedb/frontend/core/base.py:984
+#: cdedb/frontend/core/base.py:1961 cdedb/frontend/core/base.py:1976
+#: cdedb/frontend/core/base.py:2389 cdedb/frontend/core/base.py:2410
+#: cdedb/frontend/core/genesis.py:283 cdedb/frontend/core/genesis.py:324
+#: cdedb/frontend/core/genesis.py:374 cdedb/frontend/core/genesis.py:401
 #: cdedb/frontend/event/query.py:589 cdedb/frontend/ml/base.py:202
 msgid "Not privileged."
 msgstr ""
 
-#: cdedb/backend/assembly.py:330 cdedb/backend/cde/base.py:597
+#: cdedb/backend/assembly.py:332 cdedb/backend/cde/base.py:595
 #: cdedb/backend/core/base.py:2861 cdedb/backend/event/query.py:653
 #: cdedb/backend/ml.py:310 cdedb/backend/past_event.py:760
 msgid "Bad scope."
 msgstr ""
 
-#: cdedb/backend/assembly.py:374 cdedb/backend/assembly.py:398
-#: cdedb/backend/assembly.py:2197 cdedb/backend/event/base.py:87
+#: cdedb/backend/assembly.py:376 cdedb/backend/assembly.py:400
+#: cdedb/backend/assembly.py:2199 cdedb/backend/event/base.py:88
 #: cdedb/backend/event/lowlevel.py:72 cdedb/backend/past_event.py:532
-#: cdedb/frontend/common.py:637
+#: cdedb/frontend/common.py:639
 msgid "No input specified."
 msgstr ""
 
-#: cdedb/backend/assembly.py:376
+#: cdedb/backend/assembly.py:378
 msgid "Can only retrieve id for exactly one assembly."
 msgstr ""
 
-#: cdedb/backend/assembly.py:400 cdedb/backend/assembly.py:2199
-#: cdedb/backend/event/base.py:76 cdedb/backend/event/lowlevel.py:74
+#: cdedb/backend/assembly.py:402 cdedb/backend/assembly.py:2201
+#: cdedb/backend/event/base.py:77 cdedb/backend/event/lowlevel.py:74
 #: cdedb/backend/past_event.py:524
 msgid "Too many inputs specified."
 msgstr ""
 
-#: cdedb/backend/assembly.py:582
+#: cdedb/backend/assembly.py:584
 msgid "Must have privileged access to change assembly."
 msgstr ""
 
-#: cdedb/backend/assembly.py:587 cdedb/backend/assembly.py:1070
+#: cdedb/backend/assembly.py:589 cdedb/backend/assembly.py:1072
 #: cdedb/frontend/assembly/ballot.py:144 cdedb/frontend/assembly/ballot.py:190
 #: cdedb/frontend/assembly/base.py:169 cdedb/frontend/assembly/base.py:192
 #: cdedb/frontend/assembly/base.py:210 cdedb/frontend/assembly/base.py:225
@@ -124,27 +124,27 @@ msgstr ""
 msgid "Assembly already concluded."
 msgstr ""
 
-#: cdedb/backend/assembly.py:606
+#: cdedb/backend/assembly.py:608
 msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""
 
-#: cdedb/backend/assembly.py:609 cdedb/backend/ml.py:454
+#: cdedb/backend/assembly.py:611 cdedb/backend/ml.py:454
 #: cdedb/frontend/assembly/base.py:174 cdedb/frontend/assembly/base.py:345
-#: cdedb/frontend/event/event.py:1070 cdedb/frontend/ml/base.py:258
+#: cdedb/frontend/event/event.py:1069 cdedb/frontend/ml/base.py:258
 #: cdedb/frontend/ml/base.py:674 cdedb/frontend/ml/base.py:766
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
-#: cdedb/backend/assembly.py:612 cdedb/frontend/assembly/base.py:177
+#: cdedb/backend/assembly.py:614 cdedb/frontend/assembly/base.py:177
 #: cdedb/frontend/assembly/base.py:349
 msgid "Some of these users are not assembly users."
 msgstr ""
 
-#: cdedb/backend/assembly.py:767
+#: cdedb/backend/assembly.py:769
 msgid "Cannot delete assembly with locked ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:772 cdedb/backend/assembly.py:823
+#: cdedb/backend/assembly.py:774 cdedb/backend/assembly.py:825
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:11
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:27
 #: cdedb/frontend/templates/web/assembly/attachment/list_attachments.tmpl:15
@@ -166,54 +166,54 @@ msgstr ""
 msgid "Assembly"
 msgstr ""
 
-#: cdedb/backend/assembly.py:1000
+#: cdedb/backend/assembly.py:1002
 msgid "Must have privileged access to change ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1003 cdedb/frontend/assembly/ballot.py:630
+#: cdedb/backend/assembly.py:1005 cdedb/frontend/assembly/ballot.py:630
 #: cdedb/frontend/assembly/ballot.py:666
 msgid "Unable to modify active ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1013
+#: cdedb/backend/assembly.py:1015
 msgid "Non-existing candidates specified."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1065
+#: cdedb/backend/assembly.py:1067
 msgid "Must have privileged access to create ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1074
+#: cdedb/backend/assembly.py:1076
 #, fuzzy
 msgid "Ballot creation failed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/assembly.py:1110
+#: cdedb/backend/assembly.py:1112
 msgid "Must have privileged access to comment ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1114 cdedb/frontend/assembly/ballot.py:743
+#: cdedb/backend/assembly.py:1116 cdedb/frontend/assembly/ballot.py:743
 #: cdedb/frontend/assembly/ballot.py:756
 msgid "Comments are only allowed for concluded ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1148 cdedb/backend/assembly.py:1191
+#: cdedb/backend/assembly.py:1150 cdedb/backend/assembly.py:1193
 msgid "Must have privileged access to delete ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1194
+#: cdedb/backend/assembly.py:1196
 msgid "Cannot delete ballot once it has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1197
+#: cdedb/backend/assembly.py:1199
 msgid "Cannot delete ballot once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1200
+#: cdedb/backend/assembly.py:1202
 msgid "Cannot delete ballot that has votes."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1205 cdedb/backend/assembly.py:1233
+#: cdedb/backend/assembly.py:1207 cdedb/backend/assembly.py:1235
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:19
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:223
 #: cdedb/frontend/templates/web/assembly/ballot/ballot_template.tmpl:20
@@ -222,103 +222,104 @@ msgstr ""
 msgid "Ballot"
 msgstr ""
 
-#: cdedb/backend/assembly.py:1256
+#: cdedb/backend/assembly.py:1258
 msgid "Normal voting still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1288 cdedb/frontend/assembly/base.py:444
+#: cdedb/backend/assembly.py:1290 cdedb/frontend/assembly/base.py:444
 #: cdedb/frontend/assembly/base.py:459
 msgid "Signup already ended."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1324
+#: cdedb/backend/assembly.py:1326
 msgid "Must have privileged access to add an external assembly participant."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1329
+#: cdedb/backend/assembly.py:1331
 msgid "Not allowed for members."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1331
+#: cdedb/backend/assembly.py:1333
 msgid "Only allowed for assembly users."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1367
+#: cdedb/backend/assembly.py:1369
 msgid "Must attend to vote."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1369
+#: cdedb/backend/assembly.py:1371
 msgid "Ballot is not open for voting."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1381
+#: cdedb/backend/assembly.py:1383
 msgid "Could not determine secret."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1415 cdedb/backend/assembly.py:1452
+#: cdedb/backend/assembly.py:1417 cdedb/backend/assembly.py:1454
 msgid "Must attend the ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1478
+#: cdedb/backend/assembly.py:1479
 msgid "May not access result for this ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1524
+#: cdedb/backend/assembly.py:1525
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:141
 msgid "This ballot has not yet begun."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1526
+#: cdedb/backend/assembly.py:1527
 msgid "Voting is still going on."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1627
+#: cdedb/backend/assembly.py:1628
 msgid "Assembly is not active."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1629
+#: cdedb/backend/assembly.py:1630
 msgid "Assembly has open ballots."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1632 cdedb/backend/assembly.py:1665
+#: cdedb/backend/assembly.py:1633 cdedb/backend/assembly.py:1666
 #, python-format
 msgid "Conclusion of assembly blocked by %(block)s."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1679
+#: cdedb/backend/assembly.py:1680
 msgid "Can only access attachments from exactly one assembly at a time."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1695
+#: cdedb/backend/assembly.py:1697
 msgid "Must have privileged access to add attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1704 cdedb/frontend/assembly/attachment.py:102
-#: cdedb/frontend/assembly/attachment.py:121
+#: cdedb/backend/assembly.py:1706 cdedb/frontend/assembly/attachment.py:101
+#: cdedb/frontend/assembly/attachment.py:120
 msgid "Cannot add attachment once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1710 cdedb/frontend/core/base.py:1562
+#: cdedb/backend/assembly.py:1712 cdedb/frontend/core/base.py:1561
 msgid "Something went wrong."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1712 cdedb/backend/assembly.py:2102
+#: cdedb/backend/assembly.py:1714 cdedb/backend/assembly.py:2104
+#: cdedb/backend/core/base.py:1009 cdedb/backend/core/genesis.py:53
 msgid "File has been lost."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1758
+#: cdedb/backend/assembly.py:1760
 msgid "Must have privileged access to delete attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1762
+#: cdedb/backend/assembly.py:1764
 msgid "Cannot delete attachment once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1765
+#: cdedb/backend/assembly.py:1767
 msgid "Cannot delete attachment once any linked ballot has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1771 cdedb/backend/assembly.py:1797
+#: cdedb/backend/assembly.py:1773 cdedb/backend/assembly.py:1797
 #, fuzzy
 msgid "Assembly Attachment"
 msgstr "administrator coetuum"
@@ -339,68 +340,68 @@ msgstr ""
 msgid "Cannot unlink attachment from ballot that has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2086
+#: cdedb/backend/assembly.py:2088
 msgid "Must have privileged access to add attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2089 cdedb/frontend/assembly/attachment.py:182
-#: cdedb/frontend/assembly/attachment.py:223
+#: cdedb/backend/assembly.py:2091 cdedb/frontend/assembly/attachment.py:183
+#: cdedb/frontend/assembly/attachment.py:224
 msgid "Cannot add attachment version once the assembly has been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2096
+#: cdedb/backend/assembly.py:2098
 msgid "Attachment does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2117
+#: cdedb/backend/assembly.py:2119
 msgid "Must have privileged access to change attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2120
+#: cdedb/backend/assembly.py:2122
 msgid ""
 "Cannot change attachment version once the assembly or any linked ballots "
 "have been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2126
+#: cdedb/backend/assembly.py:2128
 #, fuzzy
 msgid "Deleted attachment version can not be changed."
 msgstr "Versio appendicis retractata"
 
-#: cdedb/backend/assembly.py:2152
+#: cdedb/backend/assembly.py:2154
 msgid "Must have privileged access to remove attachment version."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2155
+#: cdedb/backend/assembly.py:2157
 msgid ""
 "Cannot remove attachment version once the assembly or any linked ballots "
 "have been locked."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2160 cdedb/frontend/assembly/attachment.py:338
+#: cdedb/backend/assembly.py:2162 cdedb/frontend/assembly/attachment.py:340
 msgid "This version does not exist."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2162 cdedb/frontend/assembly/attachment.py:341
+#: cdedb/backend/assembly.py:2164 cdedb/frontend/assembly/attachment.py:343
 msgid "This version has already been deleted."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2165 cdedb/frontend/assembly/attachment.py:332
+#: cdedb/backend/assembly.py:2167 cdedb/frontend/assembly/attachment.py:334
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:2339 cdedb/backend/cde/base.py:493
+#: cdedb/backend/assembly.py:2341 cdedb/backend/cde/base.py:492
 #: cdedb/backend/cde/lastschrift.py:461 cdedb/backend/common.py:432
-#: cdedb/backend/core/base.py:2265 cdedb/backend/event/base.py:1189
+#: cdedb/backend/core/base.py:2265 cdedb/backend/event/base.py:1185
 #: cdedb/common/__init__.py:264 cdedb/frontend/assembly/ballot.py:520
-#: cdedb/frontend/cde/base.py:681 cdedb/frontend/cde/lastschrift.py:530
-#: cdedb/frontend/cde/parse_statement.py:729 cdedb/frontend/common.py:658
+#: cdedb/frontend/cde/base.py:681 cdedb/frontend/cde/lastschrift.py:528
+#: cdedb/frontend/cde/parse_statement.py:729 cdedb/frontend/common.py:660
 #: cdedb/frontend/event/base.py:477 cdedb/frontend/event/query_stats.py:435
 #: cdedb/frontend/event/query_stats.py:610
 #: cdedb/frontend/event/query_stats.py:653
 #: cdedb/frontend/event/query_stats.py:684
 #: cdedb/frontend/event/query_stats.py:737
-#: cdedb/frontend/event/query_stats.py:784 cdedb/script.py:263
+#: cdedb/frontend/event/query_stats.py:784 cdedb/script.py:265
 msgid "Impossible."
 msgstr ""
 
@@ -408,80 +409,80 @@ msgstr ""
 msgid "Impossible"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:238
+#: cdedb/backend/cde/base.py:237
 msgid "No period exists."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:289
+#: cdedb/backend/cde/base.py:288
 msgid "num_members"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:289
+#: cdedb/backend/cde/base.py:288
 msgid "num_of_searchable"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:289
+#: cdedb/backend/cde/base.py:288
 msgid "num_of_trial"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:290
+#: cdedb/backend/cde/base.py:289
 msgid "num_ex_members"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:290
+#: cdedb/backend/cde/base.py:289
 msgid "num_of_honorary"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:290
+#: cdedb/backend/cde/base.py:289
 #, fuzzy
 msgid "num_of_printed_expuls"
 msgstr "exPulsus impressus"
 
-#: cdedb/backend/cde/base.py:291
+#: cdedb/backend/cde/base.py:290
 msgid "num_all"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:305
+#: cdedb/backend/cde/base.py:304
 msgid "members_by_country"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:309
+#: cdedb/backend/cde/base.py:308
 msgid "members_by_city"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:318
+#: cdedb/backend/cde/base.py:317
 msgid "members_by_birthday"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:354
+#: cdedb/backend/cde/base.py:353
 msgid "members_by_first_event"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:357
+#: cdedb/backend/cde/base.py:356
 msgid "users_by_first_event"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:379
+#: cdedb/backend/cde/base.py:378
 msgid "unique_participants_per_year"
 msgstr ""
 
-#: cdedb/backend/cde/base.py:420
+#: cdedb/backend/cde/base.py:419
 msgid "Cannot restore purged account."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:461
+#: cdedb/backend/cde/base.py:460
 msgid "Need extra data."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:482 cdedb/frontend/cde/base.py:506
+#: cdedb/backend/cde/base.py:481 cdedb/frontend/cde/base.py:506
 msgid "May not grant trial membership to member."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:562 cdedb/backend/core/base.py:2070
+#: cdedb/backend/cde/base.py:560 cdedb/backend/core/base.py:2070
 msgid "Too many queries."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:577 cdedb/backend/event/query.py:287
+#: cdedb/backend/cde/base.py:575 cdedb/backend/event/query.py:287
 msgid "Admin only."
 msgstr ""
 
@@ -498,9 +499,9 @@ msgid "Invalid persona."
 msgstr ""
 
 #: cdedb/backend/cde/lastschrift.py:228 cdedb/backend/cde/lastschrift.py:254
-#: cdedb/backend/core/genesis.py:106 cdedb/backend/core/genesis.py:129
+#: cdedb/backend/core/genesis.py:110 cdedb/backend/core/genesis.py:133
 #: cdedb/backend/event/__init__.py:197 cdedb/backend/event/__init__.py:297
-#: cdedb/backend/event/base.py:543 cdedb/backend/event/base.py:579
+#: cdedb/backend/event/base.py:539 cdedb/backend/event/base.py:575
 #: cdedb/backend/event/course.py:321 cdedb/backend/event/course.py:405
 #: cdedb/backend/event/lodgement.py:184 cdedb/backend/event/lodgement.py:209
 #: cdedb/backend/event/lodgement.py:422 cdedb/backend/event/lodgement.py:446
@@ -517,8 +518,8 @@ msgstr ""
 msgid "Deletion of %(type)s blocked by %(block)s."
 msgstr ""
 
-#: cdedb/backend/cde/lastschrift.py:234 cdedb/backend/core/genesis.py:117
-#: cdedb/backend/core/genesis.py:120
+#: cdedb/backend/cde/lastschrift.py:234 cdedb/backend/core/genesis.py:121
+#: cdedb/backend/core/genesis.py:124
 #, python-format
 msgid "Unable to cascade %(blocker)s."
 msgstr ""
@@ -527,8 +528,8 @@ msgstr ""
 msgid "Lastschrift already revoked."
 msgstr ""
 
-#: cdedb/backend/cde/lastschrift.py:366 cdedb/frontend/cde/lastschrift.py:353
-#: cdedb/frontend/cde/lastschrift.py:426
+#: cdedb/backend/cde/lastschrift.py:366 cdedb/frontend/cde/lastschrift.py:352
+#: cdedb/frontend/cde/lastschrift.py:424
 msgid "Existing pending transaction."
 msgstr ""
 
@@ -609,7 +610,7 @@ msgstr ""
 msgid "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
 msgstr ""
 
-#: cdedb/backend/common.py:183 cdedb/database/connection.py:238
+#: cdedb/backend/common.py:183 cdedb/database/connection.py:242
 msgid "No contamination!"
 msgstr ""
 
@@ -625,8 +626,8 @@ msgstr ""
 msgid "Persona and Changelog are inconsistent."
 msgstr ""
 
-#: cdedb/backend/core/base.py:470 cdedb/backend/core/base.py:1319
-#: cdedb/frontend/core/base.py:1938
+#: cdedb/backend/core/base.py:470 cdedb/backend/core/base.py:1321
+#: cdedb/frontend/core/base.py:1937 cdedb/frontend/event/registration.py:1219
 msgid "Nothing changed."
 msgstr ""
 
@@ -646,17 +647,17 @@ msgstr ""
 msgid "Modification failed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:608 cdedb/frontend/core/base.py:746
-#: cdedb/frontend/core/base.py:1242 cdedb/frontend/core/base.py:1270
-#: cdedb/frontend/core/base.py:2139 cdedb/frontend/core/base.py:2295
-#: cdedb/frontend/core/base.py:2308 cdedb/frontend/core/base.py:2326
-#: cdedb/frontend/core/base.py:2421 cdedb/frontend/core/base.py:2444
-#: cdedb/frontend/core/base.py:2454
+#: cdedb/backend/core/base.py:608 cdedb/frontend/core/base.py:745
+#: cdedb/frontend/core/base.py:1241 cdedb/frontend/core/base.py:1269
+#: cdedb/frontend/core/base.py:2143 cdedb/frontend/core/base.py:2299
+#: cdedb/frontend/core/base.py:2312 cdedb/frontend/core/base.py:2330
+#: cdedb/frontend/core/base.py:2425 cdedb/frontend/core/base.py:2448
+#: cdedb/frontend/core/base.py:2458
 msgid "Not a relative admin."
 msgstr ""
 
 #: cdedb/backend/core/base.py:812 cdedb/backend/core/base.py:2629
-#: cdedb/backend/core/base.py:2652 cdedb/frontend/core/base.py:2088
+#: cdedb/backend/core/base.py:2652 cdedb/frontend/core/base.py:2092
 msgid "Nonexistent user."
 msgstr ""
 
@@ -713,109 +714,109 @@ msgstr ""
 msgid "Special change not committed."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1033 cdedb/backend/core/base.py:1097
-#: cdedb/frontend/core/base.py:1631 cdedb/frontend/core/base.py:1711
+#: cdedb/backend/core/base.py:1035 cdedb/backend/core/base.py:1099
+#: cdedb/frontend/core/base.py:1630 cdedb/frontend/core/base.py:1710
 msgid "Cannot modify own meta admin privileges."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1040
+#: cdedb/backend/core/base.py:1042
 msgid "Pending privilege change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1047
+#: cdedb/backend/core/base.py:1049
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1091
+#: cdedb/backend/core/base.py:1093
 #, python-format
 msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1100 cdedb/frontend/core/base.py:1714
+#: cdedb/backend/core/base.py:1102 cdedb/frontend/core/base.py:1713
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1146
+#: cdedb/backend/core/base.py:1148
 msgid "Invalid new privilege change status."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1222
+#: cdedb/backend/core/base.py:1224
 msgid "No realm provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1250
+#: cdedb/backend/core/base.py:1252
 msgid "Tried to credit balance to non-cde person."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1298
+#: cdedb/backend/core/base.py:1300
 msgid "Not a CdE account."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1300 cdedb/common/validation/validate.py:1573
+#: cdedb/backend/core/base.py:1302 cdedb/common/validation/validate.py:1573
 msgid "Trial membership requires membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1302 cdedb/common/validation/validate.py:1577
+#: cdedb/backend/core/base.py:1304 cdedb/common/validation/validate.py:1577
 msgid "Honorary membership requires membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1311
+#: cdedb/backend/core/base.py:1313
 msgid "Active lastschrift permit found."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1555
+#: cdedb/backend/core/base.py:1557
 msgid "You are not allowed to archive this user."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1563
+#: cdedb/backend/core/base.py:1565
 msgid "Cannot archive admins."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1572
+#: cdedb/backend/core/base.py:1574
 msgid "Active lastschrift exists."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1588
+#: cdedb/backend/core/base.py:1590
 msgid "Failed to revoke membership."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1592
+#: cdedb/backend/core/base.py:1594
 msgid "Failed to remove foto."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1687
+#: cdedb/backend/core/base.py:1689
 msgid "Involved in unfinished event."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1716
+#: cdedb/backend/core/base.py:1718
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1748
+#: cdedb/backend/core/base.py:1750
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1769 cdedb/frontend/common.py:1327
-#: cdedb/frontend/core/base.py:2458
+#: cdedb/backend/core/base.py:1771 cdedb/frontend/common.py:1327
+#: cdedb/frontend/core/base.py:2462
 msgid "User with this E-Mail exists already."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1798
+#: cdedb/backend/core/base.py:1800
 msgid "Persona is not archived."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1841
+#: cdedb/backend/core/base.py:1843
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1867 cdedb/frontend/core/base.py:2242
+#: cdedb/backend/core/base.py:1867 cdedb/frontend/core/base.py:2246
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core/base.py:1887 cdedb/frontend/core/genesis.py:120
-#: cdedb/frontend/core/genesis.py:429
+#: cdedb/backend/core/base.py:1887 cdedb/frontend/core/genesis.py:121
+#: cdedb/frontend/core/genesis.py:428
 msgid "Failed."
 msgstr ""
 
@@ -893,7 +894,7 @@ msgid "No new password provided."
 msgstr ""
 
 #: cdedb/backend/core/base.py:2505 cdedb/common/validation/validate.py:1250
-#: cdedb/frontend/core/base.py:2045 cdedb/frontend/core/base.py:2211
+#: cdedb/frontend/core/base.py:2049 cdedb/frontend/core/base.py:2215
 msgid "Password too weak."
 msgstr ""
 
@@ -907,7 +908,7 @@ msgstr ""
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2568 cdedb/frontend/core/base.py:2194
+#: cdedb/backend/core/base.py:2568 cdedb/frontend/core/base.py:2198
 #, fuzzy
 msgid "Unknown email address."
 msgstr "inscriptio electronica nova"
@@ -925,47 +926,47 @@ msgstr ""
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/core/genesis.py:97
+#: cdedb/backend/core/genesis.py:101
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:100
+#: cdedb/backend/core/genesis.py:104
 msgid "Unable to remove genesis case with status {}."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:265
+#: cdedb/backend/core/genesis.py:269
 msgid "Genesis case already finalized."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:306 cdedb/frontend/core/genesis.py:327
-#: cdedb/frontend/core/genesis.py:377 cdedb/frontend/core/genesis.py:422
+#: cdedb/backend/core/genesis.py:310 cdedb/frontend/core/genesis.py:326
+#: cdedb/frontend/core/genesis.py:376 cdedb/frontend/core/genesis.py:421
 msgid "Case not to review."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:322
+#: cdedb/backend/core/genesis.py:326
 #, fuzzy
 msgid "Genesis modification failed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/core/genesis.py:333
+#: cdedb/backend/core/genesis.py:337
 msgid "Dearchival failed."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:338
+#: cdedb/backend/core/genesis.py:342
 msgid "Username change failed."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:380 cdedb/frontend/cde/base.py:467
-#: cdedb/frontend/cde/base.py:490 cdedb/frontend/core/genesis.py:362
-#: cdedb/frontend/core/genesis.py:406
+#: cdedb/backend/core/genesis.py:384 cdedb/frontend/cde/base.py:467
+#: cdedb/frontend/cde/base.py:490 cdedb/frontend/core/genesis.py:361
+#: cdedb/frontend/core/genesis.py:405
 msgid "Email address already taken."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:395
+#: cdedb/backend/core/genesis.py:399
 msgid "Invalid genesis state."
 msgstr ""
 
-#: cdedb/backend/core/genesis.py:399
+#: cdedb/backend/core/genesis.py:403
 msgid "Wrong target realm."
 msgstr ""
 
@@ -997,78 +998,78 @@ msgstr ""
 msgid "Referential integrity of lodgement groups violated."
 msgstr ""
 
-#: cdedb/backend/event/base.py:91
+#: cdedb/backend/event/base.py:92
 msgid "Event does not exist"
 msgstr ""
 
-#: cdedb/backend/event/base.py:105
+#: cdedb/backend/event/base.py:106
 msgid "Event offline lock error."
 msgstr ""
 
-#: cdedb/backend/event/base.py:251
+#: cdedb/backend/event/base.py:262
 msgid "Must be orga or admin to change the minor form."
 msgstr ""
 
-#: cdedb/backend/event/base.py:317
+#: cdedb/backend/event/base.py:313
 msgid "Some of these orgas do not exist or are archived."
 msgstr ""
 
-#: cdedb/backend/event/base.py:320
+#: cdedb/backend/event/base.py:316
 msgid "Some of these orgas are not event users."
 msgstr ""
 
-#: cdedb/backend/event/base.py:396
+#: cdedb/backend/event/base.py:392
 #, fuzzy
 msgid "Only orga tokens from one event allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/event/base.py:422
+#: cdedb/backend/event/base.py:418
 msgid "May not create new orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:453
+#: cdedb/backend/event/base.py:449
 msgid "May not change orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:482 cdedb/backend/event/base.py:550
+#: cdedb/backend/event/base.py:478 cdedb/backend/event/base.py:546
 msgid "May not revoke orga token in offline instance."
 msgstr ""
 
-#: cdedb/backend/event/base.py:486
+#: cdedb/backend/event/base.py:482
 msgid "This orga token has already been revoked."
 msgstr ""
 
-#: cdedb/backend/event/base.py:663 cdedb/backend/event/lowlevel.py:578
+#: cdedb/backend/event/base.py:659 cdedb/backend/event/lowlevel.py:578
 msgid "At least one event part required."
 msgstr ""
 
-#: cdedb/backend/event/base.py:734
+#: cdedb/backend/event/base.py:730
 msgid "Unknown part group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:756 cdedb/backend/event/base.py:785
+#: cdedb/backend/event/base.py:752 cdedb/backend/event/base.py:781
 #: cdedb/backend/event/registration.py:591
 msgid "Unknown part for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:773 cdedb/backend/event/base.py:870
+#: cdedb/backend/event/base.py:769 cdedb/backend/event/base.py:866
 msgid "May not change constraint type."
 msgstr ""
 
-#: cdedb/backend/event/base.py:829
+#: cdedb/backend/event/base.py:825
 msgid "Unknown track group."
 msgstr ""
 
-#: cdedb/backend/event/base.py:851 cdedb/backend/event/base.py:882
+#: cdedb/backend/event/base.py:847 cdedb/backend/event/base.py:878
 msgid "Unknown track for the given event."
 msgstr ""
 
-#: cdedb/backend/event/base.py:926
+#: cdedb/backend/event/base.py:922
 #, fuzzy
 msgid "Non-existing event fee specified."
 msgstr "non dictum"
 
-#: cdedb/backend/event/base.py:1452
+#: cdedb/backend/event/base.py:1448
 msgid "Cannot use questionnaire import to delete questionnaire."
 msgstr ""
 
@@ -1208,7 +1209,7 @@ msgstr ""
 #: cdedb/backend/event/registration.py:834
 #: cdedb/backend/event/registration.py:952
 #: cdedb/backend/event/registration.py:1538
-#: cdedb/backend/event/registration.py:1752
+#: cdedb/backend/event/registration.py:1753
 msgid "Only registrations from exactly one event allowed."
 msgstr ""
 
@@ -1227,19 +1228,19 @@ msgid "This is not useful."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1130 cdedb/frontend/assembly/base.py:464
-#: cdedb/frontend/event/event.py:255 cdedb/frontend/event/registration.py:1146
+#: cdedb/frontend/event/event.py:254 cdedb/frontend/event/registration.py:1316
 msgid "This user does not exist or is archived."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1132 cdedb/frontend/event/event.py:258
-#: cdedb/frontend/event/registration.py:1150
+#: cdedb/backend/event/registration.py:1132 cdedb/frontend/event/event.py:257
+#: cdedb/frontend/event/registration.py:1320
 msgid "This user is not an event user."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1134
-#: cdedb/frontend/event/registration.py:385
-#: cdedb/frontend/event/registration.py:764
-#: cdedb/frontend/event/registration.py:1155
+#: cdedb/frontend/event/registration.py:384
+#: cdedb/frontend/event/registration.py:760
+#: cdedb/frontend/event/registration.py:1325
 msgid "Already registered."
 msgstr ""
 
@@ -1251,7 +1252,7 @@ msgstr ""
 msgid "Missing track dataset."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1719
+#: cdedb/backend/event/registration.py:1720
 msgid "Cannot book fee with amount of zero."
 msgstr ""
 
@@ -1350,7 +1351,7 @@ msgstr ""
 msgid "This past event participant is no event user."
 msgstr ""
 
-#: cdedb/backend/past_event.py:473 cdedb/frontend/core/genesis.py:367
+#: cdedb/backend/past_event.py:473 cdedb/frontend/core/genesis.py:366
 msgid "Course not associated with past event specified."
 msgstr ""
 
@@ -1386,39 +1387,39 @@ msgstr ""
 msgid "Needs both admin privileges."
 msgstr ""
 
-#: cdedb/backend/past_event.py:746 cdedb/frontend/event/event.py:1189
+#: cdedb/backend/past_event.py:746 cdedb/frontend/event/event.py:1188
 msgid "No event parts have any participants."
 msgstr ""
 
-#: cdedb/backend/session.py:165
+#: cdedb/backend/session.py:166
 msgid "Malformed API token."
 msgstr ""
 
-#: cdedb/backend/session.py:176
+#: cdedb/backend/session.py:177
 #, fuzzy
 msgid "Unknown droid name."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/session.py:201
+#: cdedb/backend/session.py:202
 msgid "This API is not available in offline mode."
 msgstr ""
 
-#: cdedb/backend/session.py:220
+#: cdedb/backend/session.py:221
 #, python-format
 msgid "Unknown %(droid_name)s token."
 msgstr ""
 
-#: cdedb/backend/session.py:232
+#: cdedb/backend/session.py:233
 #, python-format
 msgid "This %(droid_name)s token has been revoked."
 msgstr ""
 
-#: cdedb/backend/session.py:239
+#: cdedb/backend/session.py:240
 #, python-format
 msgid "Invalid %(droid_name)s token."
 msgstr ""
 
-#: cdedb/backend/session.py:246
+#: cdedb/backend/session.py:247
 #, python-format
 msgid "This %(droid_name)s token has expired."
 msgstr ""
@@ -1428,13 +1429,13 @@ msgstr ""
 msgid "Invalid notification type %(t)s found."
 msgstr ""
 
-#: cdedb/common/__init__.py:243 cdedb/frontend/core/base.py:1718
-#: cdedb/frontend/core/base.py:2411
+#: cdedb/common/__init__.py:243 cdedb/frontend/core/base.py:1717
+#: cdedb/frontend/core/base.py:2415
 msgid "Change committed."
 msgstr ""
 
-#: cdedb/common/__init__.py:244 cdedb/frontend/core/base.py:1121
-#: cdedb/frontend/core/base.py:1255
+#: cdedb/common/__init__.py:244 cdedb/frontend/core/base.py:1120
+#: cdedb/frontend/core/base.py:1254
 msgid "Change pending."
 msgstr ""
 
@@ -1907,7 +1908,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:36
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
-#: cdedb/frontend/templates/web/util.tmpl:1001
+#: cdedb/frontend/templates/web/util.tmpl:1008
 msgid "Mailinglists"
 msgstr "tabellae epistularum electronicarum"
 
@@ -1927,7 +1928,7 @@ msgstr "regnum"
 #: cdedb/frontend/templates/web/event/base.tmpl:137
 #: cdedb/frontend/templates/web/event/event/index.tmpl:5
 #: cdedb/frontend/templates/web/event/event/index.tmpl:10
-#: cdedb/frontend/templates/web/util.tmpl:1000
+#: cdedb/frontend/templates/web/util.tmpl:1007
 msgid "Events"
 msgstr "eventus"
 
@@ -1937,13 +1938,13 @@ msgstr "eventus"
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:5
 #: cdedb/frontend/templates/web/base.tmpl:169
-#: cdedb/frontend/templates/web/util.tmpl:1002
+#: cdedb/frontend/templates/web/util.tmpl:1009
 msgid "Assemblies"
 msgstr "coetus"
 
 #: cdedb/common/query/__init__.py:421
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:25
-#: cdedb/frontend/templates/web/util.tmpl:999
+#: cdedb/frontend/templates/web/util.tmpl:1006
 msgid "cde_realm"
 msgstr ""
 
@@ -2204,7 +2205,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:32
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:26
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:21
-#: cdedb/frontend/templates/web/event/generic.tmpl:273
+#: cdedb/frontend/templates/web/event/generic.tmpl:274
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:79
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:27
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:27
@@ -2323,7 +2324,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:51
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:56
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:46
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:59
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:64
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:44
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:112
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:60
@@ -2797,7 +2798,7 @@ msgstr ""
 
 #: cdedb/common/validation/validate.py:653
 #: cdedb/common/validation/validate.py:707 cdedb/frontend/cde/parse.py:318
-#: cdedb/frontend/event/registration.py:120
+#: cdedb/frontend/event/registration.py:121
 msgid "Must not be zero."
 msgstr ""
 
@@ -2809,9 +2810,9 @@ msgstr ""
 #: cdedb/common/validation/validate.py:1142
 #: cdedb/common/validation/validate.py:2671
 #: cdedb/common/validation/validate.py:4165
-#: cdedb/common/validation/validate.py:4833 cdedb/frontend/core/base.py:1174
-#: cdedb/frontend/core/genesis.py:98 cdedb/frontend/event/event.py:234
-#: cdedb/frontend/event/registration.py:740
+#: cdedb/common/validation/validate.py:4833 cdedb/frontend/core/base.py:1173
+#: cdedb/frontend/core/genesis.py:99 cdedb/frontend/event/event.py:233
+#: cdedb/frontend/event/registration.py:736
 msgid "Must not be empty."
 msgstr ""
 
@@ -3386,13 +3387,13 @@ msgstr ""
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
 
-#: cdedb/database/connection.py:110
+#: cdedb/database/connection.py:109
 #, python-format
 msgid "role %(role)s not available"
 msgstr ""
 
-#: cdedb/database/connection.py:116 cdedb/database/connection.py:119
-#: cdedb/database/connection.py:122 cdedb/database/connection.py:125
+#: cdedb/database/connection.py:115 cdedb/database/connection.py:118
+#: cdedb/database/connection.py:121 cdedb/database/connection.py:124
 msgid "Not available for instant pool"
 msgstr ""
 
@@ -3434,64 +3435,65 @@ msgid ""
 "access. Please reload the page to try again."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:37
+#: cdedb/frontend/assembly/attachment.py:36
 msgid "May not access attachments for this assembly."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:91
+#: cdedb/frontend/assembly/attachment.py:90
 msgid "File not found."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:142
-#: cdedb/frontend/assembly/attachment.py:260
-msgid "Attachment added."
-msgstr ""
-
-#: cdedb/frontend/assembly/attachment.py:153
-#: cdedb/frontend/assembly/attachment.py:238
-#: cdedb/frontend/assembly/attachment.py:319
-#: cdedb/frontend/assembly/ballot.py:797 cdedb/frontend/assembly/base.py:395
-#: cdedb/frontend/assembly/base.py:522 cdedb/frontend/cde/past_event.py:311
-#: cdedb/frontend/cde/past_event.py:371 cdedb/frontend/core/base.py:2424
-#: cdedb/frontend/core/base.py:2473 cdedb/frontend/event/course.py:261
-#: cdedb/frontend/event/event.py:367 cdedb/frontend/event/event.py:889
-#: cdedb/frontend/event/event.py:1174 cdedb/frontend/event/event.py:1231
-#: cdedb/frontend/event/lodgement.py:548
-#: cdedb/frontend/event/registration.py:1179 cdedb/frontend/ml/base.py:508
-msgid "Must be checked."
-msgstr ""
-
-#: cdedb/frontend/assembly/attachment.py:158
-msgid "Attachment can not be deleted."
-msgstr ""
-
-#: cdedb/frontend/assembly/attachment.py:164
-msgid "Remove all but the last version before deleting the attachment."
-msgstr ""
-
-#: cdedb/frontend/assembly/attachment.py:253
-msgid "File already known for earlier version of this attachment."
-msgstr ""
-
-#: cdedb/frontend/assembly/attachment.py:256
+#: cdedb/frontend/assembly/attachment.py:132
+#: cdedb/frontend/assembly/attachment.py:249
 msgid "File already in use for other attachment."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:271
-#: cdedb/frontend/assembly/attachment.py:293
+#: cdedb/frontend/assembly/attachment.py:143
+#: cdedb/frontend/assembly/attachment.py:262
+msgid "Attachment added."
+msgstr ""
+
+#: cdedb/frontend/assembly/attachment.py:154
+#: cdedb/frontend/assembly/attachment.py:238
+#: cdedb/frontend/assembly/attachment.py:321
+#: cdedb/frontend/assembly/ballot.py:797 cdedb/frontend/assembly/base.py:395
+#: cdedb/frontend/assembly/base.py:522 cdedb/frontend/cde/past_event.py:311
+#: cdedb/frontend/cde/past_event.py:371 cdedb/frontend/core/base.py:2428
+#: cdedb/frontend/core/base.py:2477 cdedb/frontend/event/course.py:261
+#: cdedb/frontend/event/event.py:366 cdedb/frontend/event/event.py:888
+#: cdedb/frontend/event/event.py:1173 cdedb/frontend/event/event.py:1230
+#: cdedb/frontend/event/lodgement.py:548
+#: cdedb/frontend/event/registration.py:1349 cdedb/frontend/ml/base.py:508
+msgid "Must be checked."
+msgstr ""
+
+#: cdedb/frontend/assembly/attachment.py:159
+msgid "Attachment can not be deleted."
+msgstr ""
+
+#: cdedb/frontend/assembly/attachment.py:165
+msgid "Remove all but the last version before deleting the attachment."
+msgstr ""
+
+#: cdedb/frontend/assembly/attachment.py:246
+msgid "File already known for earlier version of this attachment."
+msgstr ""
+
+#: cdedb/frontend/assembly/attachment.py:273
+#: cdedb/frontend/assembly/attachment.py:295
 msgid "Attachment version can not be changed."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:307
+#: cdedb/frontend/assembly/attachment.py:309
 #, fuzzy
 msgid "Attachment changed."
 msgstr "Appendix mutata"
 
-#: cdedb/frontend/assembly/attachment.py:326
+#: cdedb/frontend/assembly/attachment.py:328
 msgid "Attachment version can not be deleted."
 msgstr ""
 
-#: cdedb/frontend/assembly/attachment.py:346
+#: cdedb/frontend/assembly/attachment.py:348
 msgid "Unknown version."
 msgstr ""
 
@@ -3548,7 +3550,7 @@ msgstr ""
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly/ballot.py:882
+#: cdedb/frontend/assembly/ballot.py:883
 msgid "Ballot not yet tallied."
 msgstr ""
 
@@ -3557,7 +3559,7 @@ msgid "Duplicate shortname."
 msgstr ""
 
 #: cdedb/frontend/assembly/base.py:183 cdedb/frontend/assembly/base.py:201
-#: cdedb/frontend/event/event.py:262 cdedb/frontend/event/event.py:277
+#: cdedb/frontend/event/event.py:261 cdedb/frontend/event/event.py:276
 #: cdedb/frontend/ml/base.py:684 cdedb/frontend/ml/base.py:722
 #: cdedb/frontend/ml/base.py:794
 msgid "Action had no effect."
@@ -3582,13 +3584,13 @@ msgid "Attendee mailinglist created."
 msgstr ""
 
 #: cdedb/frontend/assembly/base.py:318 cdedb/frontend/assembly/base.py:369
-#: cdedb/frontend/assembly/base.py:384 cdedb/frontend/event/event.py:304
-#: cdedb/frontend/event/event.py:1097 cdedb/frontend/event/event.py:1113
+#: cdedb/frontend/assembly/base.py:384 cdedb/frontend/event/event.py:303
+#: cdedb/frontend/event/event.py:1096 cdedb/frontend/event/event.py:1112
 #, python-format
 msgid "Mailinglist %(address)s already exists."
 msgstr ""
 
-#: cdedb/frontend/assembly/base.py:354 cdedb/frontend/event/event.py:1084
+#: cdedb/frontend/assembly/base.py:354 cdedb/frontend/event/event.py:1083
 msgid "Must not be empty in order to create a mailinglist."
 msgstr ""
 
@@ -3759,32 +3761,32 @@ msgstr ""
 msgid "Permit revoked."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:397
+#: cdedb/frontend/cde/lastschrift.py:395
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:458
+#: cdedb/frontend/cde/lastschrift.py:456
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:476
+#: cdedb/frontend/cde/lastschrift.py:474
 msgid "Unable to skip transaction."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:478
+#: cdedb/frontend/cde/lastschrift.py:476
 msgid "Skipped."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:517
+#: cdedb/frontend/cde/lastschrift.py:515
 msgid "Wrong number of actions."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:521
+#: cdedb/frontend/cde/lastschrift.py:519
 msgid "No transactions selected."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:630
+#: cdedb/frontend/cde/lastschrift.py:627
 msgid ""
 "Form could not be created. Please refrain from using special characters if "
 "possible."
@@ -3816,17 +3818,17 @@ msgstr ""
 msgid "Unknown event."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/frontend/cde/parse.py:329 cdedb/frontend/event/registration.py:104
+#: cdedb/frontend/cde/parse.py:329 cdedb/frontend/event/registration.py:105
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:335 cdedb/frontend/core/base.py:685
-#: cdedb/frontend/core/base.py:714 cdedb/frontend/core/base.py:1244
-#: cdedb/frontend/core/base.py:1570 cdedb/frontend/core/base.py:1791
-#: cdedb/frontend/core/base.py:1870 cdedb/frontend/core/base.py:1919
-#: cdedb/frontend/core/base.py:1941 cdedb/frontend/core/base.py:1967
-#: cdedb/frontend/core/base.py:2297 cdedb/frontend/core/base.py:2331
+#: cdedb/frontend/cde/parse.py:335 cdedb/frontend/core/base.py:684
+#: cdedb/frontend/core/base.py:713 cdedb/frontend/core/base.py:1243
+#: cdedb/frontend/core/base.py:1569 cdedb/frontend/core/base.py:1790
+#: cdedb/frontend/core/base.py:1869 cdedb/frontend/core/base.py:1918
+#: cdedb/frontend/core/base.py:1940 cdedb/frontend/core/base.py:1963
+#: cdedb/frontend/core/base.py:2301 cdedb/frontend/core/base.py:2335
 msgid "Persona is archived."
 msgstr ""
 
@@ -3847,21 +3849,21 @@ msgstr ""
 msgid "Payment date before registration."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/cde/parse.py:382 cdedb/frontend/event/registration.py:133
+#: cdedb/frontend/cde/parse.py:382 cdedb/frontend/event/registration.py:134
 #, python-format
 msgid "Not enough money. %(total)s < %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:390 cdedb/frontend/event/registration.py:141
+#: cdedb/frontend/cde/parse.py:390 cdedb/frontend/event/registration.py:142
 #, python-format
 msgid "Too much money. %(total)s > %(expected)s"
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:398 cdedb/frontend/event/registration.py:156
+#: cdedb/frontend/cde/parse.py:398 cdedb/frontend/event/registration.py:157
 msgid "Family name doesn’t match."
 msgstr ""
 
-#: cdedb/frontend/cde/parse.py:403 cdedb/frontend/event/registration.py:164
+#: cdedb/frontend/cde/parse.py:403 cdedb/frontend/event/registration.py:165
 msgid "Given names don’t match."
 msgstr ""
 
@@ -3978,7 +3980,7 @@ msgstr ""
 msgid "Line %(lineno)s is faulty."
 msgstr ""
 
-#: cdedb/frontend/cde/past_event.py:301 cdedb/frontend/event/event.py:1115
+#: cdedb/frontend/cde/past_event.py:301 cdedb/frontend/event/event.py:1114
 msgid "Event created."
 msgstr ""
 
@@ -3990,7 +3992,7 @@ msgstr ""
 msgid "Some of these users do not exist."
 msgstr ""
 
-#: cdedb/frontend/cde/past_event.py:401 cdedb/frontend/event/event.py:1076
+#: cdedb/frontend/cde/past_event.py:401 cdedb/frontend/event/event.py:1075
 msgid "Some of these users are not event users."
 msgstr ""
 
@@ -4069,29 +4071,29 @@ msgstr ""
 msgid "Template not found: %(file)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:593
+#: cdedb/frontend/common.py:595
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 
-#: cdedb/frontend/common.py:639
+#: cdedb/frontend/common.py:641
 msgid "Ambiguous input."
 msgstr ""
 
-#: cdedb/frontend/common.py:656
+#: cdedb/frontend/common.py:658
 msgid "Invalid input type."
 msgstr ""
 
-#: cdedb/frontend/common.py:718
+#: cdedb/frontend/common.py:720
 msgid "Unknown download kind {kind}."
 msgstr ""
 
-#: cdedb/frontend/common.py:745
+#: cdedb/frontend/common.py:747
 msgid ""
 "The CdEDB is curently locked for maintenance. You can still access it as "
 "admin. Only use the CdEDB if you know why it was locked!"
 msgstr ""
 
-#: cdedb/frontend/common.py:749
+#: cdedb/frontend/common.py:751
 msgid "The CdE database is currently under maintenance and is unavailable."
 msgstr ""
 
@@ -4158,7 +4160,7 @@ msgstr ""
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/common.py:2176 cdedb/frontend/event/registration.py:56
+#: cdedb/frontend/common.py:2176 cdedb/frontend/event/registration.py:57
 #: cdedb/frontend/event/registration.py:224
 msgid "This event is locked for offline usage."
 msgstr ""
@@ -4182,236 +4184,236 @@ msgid ""
 "admins."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:62
+#: cdedb/frontend/core/base.py:61
 msgid "CdE user / Member"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:63
+#: cdedb/frontend/core/base.py:62
 msgid "Event user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:64
+#: cdedb/frontend/core/base.py:63
 msgid "Assembly user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:65
+#: cdedb/frontend/core/base.py:64
 msgid "Mailinglist user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:239
+#: cdedb/frontend/core/base.py:238
 msgid "Login failure."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:276 cdedb/frontend/core/base.py:2064
+#: cdedb/frontend/core/base.py:275 cdedb/frontend/core/base.py:2068
 #, python-format
 msgid "%(count)s session(s) terminated."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:320
+#: cdedb/frontend/core/base.py:319
 msgid "Unsupported locale"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:443
+#: cdedb/frontend/core/base.py:442
 msgid "No cde access to profile."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:447 cdedb/frontend/core/base.py:543
+#: cdedb/frontend/core/base.py:446 cdedb/frontend/core/base.py:542
 msgid "Access to non-searchable member data."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:501
+#: cdedb/frontend/core/base.py:500
 msgid "Only admins may view archived datasets."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:876
+#: cdedb/frontend/core/base.py:875
 msgid "No account found."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:980
+#: cdedb/frontend/core/base.py:979
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1162
+#: cdedb/frontend/core/base.py:1161
 #, python-format
 msgid "Lastschrift donation must be between %(min)s and %(max)s."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1170
+#: cdedb/frontend/core/base.py:1169
 msgid ""
 "You are not the owner of the linked bank account. Make sure the owner agreed "
 "to the change before submitting it here."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1219
+#: cdedb/frontend/core/base.py:1218
 msgid "No valid realm."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1288
+#: cdedb/frontend/core/base.py:1287
 #, python-format
 msgid ""
 "Lastschrift donation is outside of %(min)s and %(max)s. The user will not be "
 "able to change this amount by himself."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1347 cdedb/frontend/core/base.py:1356
+#: cdedb/frontend/core/base.py:1346 cdedb/frontend/core/base.py:1355
 msgid "Invalid choice."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1419
+#: cdedb/frontend/core/base.py:1418
 msgid "Message sent!"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1448
+#: cdedb/frontend/core/base.py:1447
 msgid "Wrong format."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1450 cdedb/frontend/core/base.py:1457
-#: cdedb/frontend/core/base.py:1517 cdedb/frontend/core/base.py:1532
+#: cdedb/frontend/core/base.py:1449 cdedb/frontend/core/base.py:1456
+#: cdedb/frontend/core/base.py:1516 cdedb/frontend/core/base.py:1531
 msgid "Invalid secret."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1501
+#: cdedb/frontend/core/base.py:1500
 msgid "Reply sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1559
+#: cdedb/frontend/core/base.py:1558
 msgid "Encryption has been updated. New secret has been sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1577 cdedb/frontend/core/base.py:1601
+#: cdedb/frontend/core/base.py:1576 cdedb/frontend/core/base.py:1600
 msgid "Resolve pending privilege change first."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1607
+#: cdedb/frontend/core/base.py:1606
 msgid "non-cde user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1608
+#: cdedb/frontend/core/base.py:1607
 msgid "non-event user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1609
+#: cdedb/frontend/core/base.py:1608
 msgid "non-ml user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1610
+#: cdedb/frontend/core/base.py:1609
 msgid "non-assembly user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1611
+#: cdedb/frontend/core/base.py:1610
 #, fuzzy
 msgid "non-cde admin"
 msgstr "administrator CdEi"
 
-#: cdedb/frontend/core/base.py:1622
+#: cdedb/frontend/core/base.py:1621
 #, python-format
 msgid "Cannot grant this privilege to %(reason)s."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1624
+#: cdedb/frontend/core/base.py:1623
 msgid "this user"
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1639
+#: cdedb/frontend/core/base.py:1638
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1644
+#: cdedb/frontend/core/base.py:1643
 msgid "No changes were made."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1671 cdedb/frontend/core/base.py:1702
+#: cdedb/frontend/core/base.py:1670 cdedb/frontend/core/base.py:1701
 msgid "Privilege change not pending."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1677
+#: cdedb/frontend/core/base.py:1676
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has to "
 "be approved by another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1682
+#: cdedb/frontend/core/base.py:1681
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1718
+#: cdedb/frontend/core/base.py:1717
 msgid "Change rejected."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1719
+#: cdedb/frontend/core/base.py:1718
 msgid "Password reset issued for new admin."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1795
+#: cdedb/frontend/core/base.py:1794
 msgid "No promotion necessary."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1900
+#: cdedb/frontend/core/base.py:1899
 msgid "Revoked active permit."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1954
+#: cdedb/frontend/core/base.py:1953
 msgid "File does not exist."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1988
+#: cdedb/frontend/core/base.py:1985
 msgid "Foto updated."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:1989
+#: cdedb/frontend/core/base.py:1986
 msgid "Foto removed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2000
+#: cdedb/frontend/core/base.py:2004
 msgid "Please provide the user's email address."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2006
+#: cdedb/frontend/core/base.py:2010
 msgid "Password invalidated."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2031 cdedb/frontend/core/base.py:2032
-#: cdedb/frontend/core/base.py:2034 cdedb/frontend/core/base.py:2198
-#: cdedb/frontend/core/base.py:2199 cdedb/frontend/core/base.py:2201
+#: cdedb/frontend/core/base.py:2035 cdedb/frontend/core/base.py:2036
+#: cdedb/frontend/core/base.py:2038 cdedb/frontend/core/base.py:2202
+#: cdedb/frontend/core/base.py:2203 cdedb/frontend/core/base.py:2205
 msgid "Passwords don’t match."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2052
+#: cdedb/frontend/core/base.py:2056
 msgid "Password changed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2056
+#: cdedb/frontend/core/base.py:2060
 msgid "Wrong password."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2112 cdedb/frontend/core/base.py:2120
-#: cdedb/frontend/core/base.py:2160
+#: cdedb/frontend/core/base.py:2116 cdedb/frontend/core/base.py:2124
+#: cdedb/frontend/core/base.py:2164
 msgid "Email sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2179
+#: cdedb/frontend/core/base.py:2183
 msgid "Please try again."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2218
+#: cdedb/frontend/core/base.py:2222
 msgid "Password reset."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2237
+#: cdedb/frontend/core/base.py:2241
 msgid "Must be different from current email address."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2279 cdedb/frontend/core/base.py:2313
+#: cdedb/frontend/core/base.py:2283 cdedb/frontend/core/base.py:2317
 msgid "Email address changed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2390
+#: cdedb/frontend/core/base.py:2394
 msgid "Persona has no pending change."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2411
+#: cdedb/frontend/core/base.py:2415
 msgid "Change dropped."
 msgstr ""
 
@@ -4435,42 +4437,42 @@ msgstr ""
 msgid "Attachment missing."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:86
+#: cdedb/frontend/core/genesis.py:87
 msgid "Rationale too long."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:92
+#: cdedb/frontend/core/genesis.py:93
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:109
+#: cdedb/frontend/core/genesis.py:110
 msgid "Confirmation email has been resent."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:112
+#: cdedb/frontend/core/genesis.py:113
 msgid "Your request is currently pending review."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:115
+#: cdedb/frontend/core/genesis.py:116
 msgid "Email address already in DB. Reset password."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:139
+#: cdedb/frontend/core/genesis.py:140
 msgid ""
 "We just sent you an email. To complete your account request, please follow "
 "the link contained in the email."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:156
+#: cdedb/frontend/core/genesis.py:157
 msgid "Verification failed. Please contact the administrators."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:157
+#: cdedb/frontend/core/genesis.py:158
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:159
+#: cdedb/frontend/core/genesis.py:160
 msgid "This account request was already verified."
 msgstr ""
 
@@ -4478,32 +4480,32 @@ msgstr ""
 msgid "Insufficient admin privileges."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:409
+#: cdedb/frontend/core/genesis.py:408
 msgid "Persona selected, but genesis case approved."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:413
+#: cdedb/frontend/core/genesis.py:412
 msgid "No persona selected."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:417
+#: cdedb/frontend/core/genesis.py:416
 #, python-format
 msgid "Invalid persona for update. Add additional realm first: %(realm)s."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:439
+#: cdedb/frontend/core/genesis.py:438
 msgid "Past event attendance could not be established."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:445
+#: cdedb/frontend/core/genesis.py:444
 msgid "Case approved."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:457
+#: cdedb/frontend/core/genesis.py:456
 msgid "User updated."
 msgstr ""
 
-#: cdedb/frontend/core/genesis.py:464
+#: cdedb/frontend/core/genesis.py:463
 msgid "Case rejected."
 msgstr ""
 
@@ -4617,145 +4619,145 @@ msgstr ""
 msgid "Cannot delete orga token after it has been used."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:125 cdedb/frontend/event/event.py:212
+#: cdedb/frontend/event/event.py:124 cdedb/frontend/event/event.py:211
 msgid "The event is not published yet."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:195 cdedb/frontend/event/event.py:1062
+#: cdedb/frontend/event/event.py:194 cdedb/frontend/event/event.py:1061
 msgid "Shortname already in use for another event."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:238
+#: cdedb/frontend/event/event.py:237
 msgid "Minor form updated."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:239
+#: cdedb/frontend/event/event.py:238
 msgid "Minor form has been removed."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:240
+#: cdedb/frontend/event/event.py:239
 msgid "Nothing to remove."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:290
+#: cdedb/frontend/event/event.py:289
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:411
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:436
 msgid "Must have orgas in order to create a mailinglist."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:297 cdedb/frontend/event/event.py:1101
+#: cdedb/frontend/event/event.py:296 cdedb/frontend/event/event.py:1100
 msgid "Orga mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:298 cdedb/frontend/event/event.py:1111
+#: cdedb/frontend/event/event.py:297 cdedb/frontend/event/event.py:1110
 msgid "Participant mailinglist created."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:371
+#: cdedb/frontend/event/event.py:370
 msgid "Registrations exist, no deletion."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:374
+#: cdedb/frontend/event/event.py:373
 msgid "This part can not be deleted."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:401 cdedb/frontend/event/event.py:415
+#: cdedb/frontend/event/event.py:400 cdedb/frontend/event/event.py:414
 #, fuzzy
 msgid "Registrations exist, no part creation possible."
 msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
 
-#: cdedb/frontend/event/event.py:428 cdedb/frontend/event/event.py:511
-#: cdedb/frontend/event/event.py:545
+#: cdedb/frontend/event/event.py:427 cdedb/frontend/event/event.py:510
+#: cdedb/frontend/event/event.py:544
 msgid "Linked to non-fitting field."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:527
+#: cdedb/frontend/event/event.py:526
 msgid "Registrations exist, no track deletion possible."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:529
+#: cdedb/frontend/event/event.py:528
 msgid "Some tracks can not be deleted."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:531
+#: cdedb/frontend/event/event.py:530
 msgid "Registrations exist, no track creation possible."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:657 cdedb/frontend/event/event.py:693
+#: cdedb/frontend/event/event.py:656 cdedb/frontend/event/event.py:692
 #, fuzzy
 msgid "Unknown fee."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/frontend/event/event.py:717
+#: cdedb/frontend/event/event.py:716
 msgid "Unknown part."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:727 cdedb/frontend/event/event.py:731
-#: cdedb/frontend/event/event.py:762 cdedb/frontend/event/event.py:766
+#: cdedb/frontend/event/event.py:726 cdedb/frontend/event/event.py:730
+#: cdedb/frontend/event/event.py:761 cdedb/frontend/event/event.py:765
 msgid "A part group with this name already exists."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:798
+#: cdedb/frontend/event/event.py:797
 msgid "Unknown track."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:809 cdedb/frontend/event/event.py:813
-#: cdedb/frontend/event/event.py:869 cdedb/frontend/event/event.py:873
+#: cdedb/frontend/event/event.py:808 cdedb/frontend/event/event.py:812
+#: cdedb/frontend/event/event.py:868 cdedb/frontend/event/event.py:872
 msgid "A track group with this name already exists."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:826
+#: cdedb/frontend/event/event.py:825
 msgid "Cannot have more than one course choice sync track group per track."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:834
+#: cdedb/frontend/event/event.py:833
 msgid "Incompatible tracks."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:838
+#: cdedb/frontend/event/event.py:837
 msgid "Cannot create CCS group due to incompatible choices."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1144
+#: cdedb/frontend/event/event.py:1143
 #: cdedb/frontend/event/partial_import.py:111
 msgid "Data from wrong event."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1151
+#: cdedb/frontend/event/event.py:1150
 msgid "There exist unmigrated personas."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1170
+#: cdedb/frontend/event/event.py:1169
 msgid "Event already archived."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1180 cdedb/frontend/event/event.py:1236
+#: cdedb/frontend/event/event.py:1179 cdedb/frontend/event/event.py:1235
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:461
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:494
 msgid "Event is not concluded yet."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1212
+#: cdedb/frontend/event/event.py:1211
 msgid "Event archived."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1216
+#: cdedb/frontend/event/event.py:1215
 msgid "Created past event."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1220
+#: cdedb/frontend/event/event.py:1219
 msgid "Created multiple past events."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1251
+#: cdedb/frontend/event/event.py:1250
 msgid "Event deleted."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1293
+#: cdedb/frontend/event/event.py:1292
 msgid "Active characters found in search."
 msgstr ""
 
-#: cdedb/frontend/event/event.py:1340 cdedb/frontend/event/registration.py:148
+#: cdedb/frontend/event/event.py:1339 cdedb/frontend/event/registration.py:149
 msgid "No registration found."
 msgstr ""
 
@@ -4763,7 +4765,7 @@ msgstr ""
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:184 cdedb/frontend/event/registration.py:1387
+#: cdedb/frontend/event/fields.py:184 cdedb/frontend/event/registration.py:1557
 msgid "Wrong associated event."
 msgstr ""
 
@@ -4771,7 +4773,7 @@ msgstr ""
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:278
+#: cdedb/frontend/event/fields.py:281
 msgid "change_note only supported for registrations."
 msgstr ""
 
@@ -4970,6 +4972,11 @@ msgstr ""
 msgid "Camping Mat"
 msgstr ""
 
+#: cdedb/frontend/event/partial_import.py:375
+#, fuzzy, python-format
+msgid "Amount for %(personalized_fee_title)s"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
 #: cdedb/frontend/event/query.py:218
 msgid "Invalid query name."
 msgstr ""
@@ -4987,9 +4994,9 @@ msgid "Open Registrations"
 msgstr ""
 
 #: cdedb/frontend/event/query_stats.py:342
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:27
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:98
-#: cdedb/frontend/templates/web/event/generic.tmpl:569
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:28
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:99
+#: cdedb/frontend/templates/web/event/generic.tmpl:577
 msgid "Paid"
 msgstr ""
 
@@ -5122,9 +5129,9 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:148
 #: cdedb/frontend/event/questionnaire.py:189
-#: cdedb/frontend/event/registration.py:806
-#: cdedb/frontend/event/registration.py:895
-#: cdedb/frontend/event/registration.py:946
+#: cdedb/frontend/event/registration.py:801
+#: cdedb/frontend/event/registration.py:890
+#: cdedb/frontend/event/registration.py:941
 msgid "Not registered for event."
 msgstr ""
 
@@ -5135,15 +5142,15 @@ msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:156
 #: cdedb/frontend/event/questionnaire.py:196
-#: cdedb/frontend/event/registration.py:391
-#: cdedb/frontend/event/registration.py:758
-#: cdedb/frontend/event/registration.py:907
-#: cdedb/frontend/event/registration.py:956
+#: cdedb/frontend/event/registration.py:390
+#: cdedb/frontend/event/registration.py:754
+#: cdedb/frontend/event/registration.py:902
+#: cdedb/frontend/event/registration.py:951
 msgid "Event locked."
 msgstr ""
 
 #: cdedb/frontend/event/questionnaire.py:167
-#: cdedb/frontend/event/registration.py:402
+#: cdedb/frontend/event/registration.py:401
 msgid "Must be Orga to use preview."
 msgstr ""
 
@@ -5171,7 +5178,7 @@ msgstr ""
 msgid "Every row must occur exactly once."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:114
+#: cdedb/frontend/event/registration.py:115
 msgid "Multiple transfers for this user."
 msgstr ""
 
@@ -5180,24 +5187,24 @@ msgstr ""
 msgid "Committed %(num)s fees."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:388
-#: cdedb/frontend/event/registration.py:755
+#: cdedb/frontend/event/registration.py:387
+#: cdedb/frontend/event/registration.py:751
 msgid "Registration not open."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:394
-#: cdedb/frontend/event/registration.py:761
-#: cdedb/frontend/event/registration.py:898
-#: cdedb/frontend/event/registration.py:953
+#: cdedb/frontend/event/registration.py:393
+#: cdedb/frontend/event/registration.py:757
+#: cdedb/frontend/event/registration.py:893
+#: cdedb/frontend/event/registration.py:948
 msgid "Event is already archived."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:397
-#: cdedb/frontend/event/registration.py:778
+#: cdedb/frontend/event/registration.py:396
+#: cdedb/frontend/event/registration.py:773
 msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:463
+#: cdedb/frontend/event/registration.py:459
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:163
 #, python-format
 msgid ""
@@ -5205,59 +5212,82 @@ msgid ""
 "%(additional_fee)s (already included in the above figure)."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:677
+#: cdedb/frontend/event/registration.py:673
 msgid "Instructed course must not be chosen."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:679
+#: cdedb/frontend/event/registration.py:675
 msgid "You may not choose your own course."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:687
+#: cdedb/frontend/event/registration.py:683
 #, python-format
 msgid "Cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:690
+#: cdedb/frontend/event/registration.py:686
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:699
+#: cdedb/frontend/event/registration.py:695
 msgid "Invalid course choice for this track."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:706
+#: cdedb/frontend/event/registration.py:702
 #, python-format
 msgid "You must choose at least %(min_choices)s courses."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:798
+#: cdedb/frontend/event/registration.py:793
 msgid "Registered for event."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:904
+#: cdedb/frontend/event/registration.py:899
 msgid "Registration closed, no changes possible."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:950
+#: cdedb/frontend/event/registration.py:945
 msgid "No changes allowed anymore."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1022
-#: cdedb/frontend/event/registration.py:1043
+#: cdedb/frontend/event/registration.py:1045
+#, fuzzy
+msgid "Fee creation failed."
+msgstr "epistula electronica ad verificandum mitte"
+
+#: cdedb/frontend/event/registration.py:1057
+#: cdedb/frontend/event/registration.py:1078
 msgid "Cannot set personalized amount for conditional fee."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1160
+#: cdedb/frontend/event/registration.py:1124
+#: cdedb/frontend/event/registration.py:1131
+#: cdedb/frontend/event/registration.py:1170
+#: cdedb/frontend/event/registration.py:1178
+#, fuzzy
+msgid "Invalid registrations."
+msgstr "Annuntiationes"
+
+#: cdedb/frontend/event/registration.py:1134
+#, fuzzy
+msgid "No registrations selected."
+msgstr "Annuntiationes"
+
+#: cdedb/frontend/event/registration.py:1216
+#, python-format
+msgid "Updated %(count)s personalized fees."
+msgstr ""
+
+#: cdedb/frontend/event/registration.py:1330
 msgid "Rate-limit reached."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1215
+#: cdedb/frontend/event/registration.py:1385
 msgid "No participants found to edit."
 msgstr ""
 
-#: cdedb/frontend/event/registration.py:1389
+#: cdedb/frontend/event/registration.py:1559
 msgid "Already checked in."
 msgstr ""
 
@@ -5518,8 +5548,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:26
 #: cdedb/frontend/templates/web/assembly/util.tmpl:3
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:173
-#: cdedb/frontend/templates/web/util.tmpl:474
-#: cdedb/frontend/templates/web/util.tmpl:479
+#: cdedb/frontend/templates/web/util.tmpl:475
+#: cdedb/frontend/templates/web/util.tmpl:480
 msgid "Attachment"
 msgstr ""
 
@@ -5580,8 +5610,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:65
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:66
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:64
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:66
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:66
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:77
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:79
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:84
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:178
 #: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:76
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:39
@@ -5633,7 +5664,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:232
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:189
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:128
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:84
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:492
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:93
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:143
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:318
@@ -6136,7 +6169,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:124
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:221
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:98
-#: cdedb/frontend/templates/web/event/generic.tmpl:316
+#: cdedb/frontend/templates/web/event/generic.tmpl:317
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:45
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:74
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:71
@@ -6179,7 +6212,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/ballot_template.tmpl:29
 #: cdedb/frontend/templates/web/core/create_user.tmpl:25
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:51
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:43
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:100
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:49
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
 msgid "Continue"
 msgstr "Porro"
@@ -6223,7 +6257,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:17
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:143
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:25
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:76
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:84
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:20
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:16
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:138
@@ -6720,7 +6754,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:183
 #: cdedb/frontend/templates/web/ml/base.tmpl:121
-#: cdedb/frontend/templates/web/util.tmpl:1023
+#: cdedb/frontend/templates/web/util.tmpl:1030
 msgid "Auditor"
 msgstr ""
 
@@ -7409,7 +7443,7 @@ msgid "Line %(lineno)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:95
-#: cdedb/frontend/templates/web/util.tmpl:986
+#: cdedb/frontend/templates/web/util.tmpl:993
 msgid "born"
 msgstr ""
 
@@ -8023,8 +8057,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:38
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:46
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:62
-#: cdedb/frontend/templates/web/event/generic.tmpl:491
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:71
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:73
+#: cdedb/frontend/templates/web/event/generic.tmpl:492
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:45
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:137
 #: cdedb/frontend/templates/web/logging.tmpl:122
@@ -8346,8 +8381,8 @@ msgid "Info"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:119
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:75
-#: cdedb/frontend/templates/web/event/generic.tmpl:669
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:76
+#: cdedb/frontend/templates/web/event/generic.tmpl:686
 msgid "Total"
 msgstr ""
 
@@ -8417,12 +8452,12 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:31
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:34
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:11
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:16
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:15
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:24
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:20
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:27
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:20
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:19
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:17
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:15
@@ -8511,8 +8546,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:216
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:32
-#: cdedb/frontend/templates/web/util.tmpl:701
-#: cdedb/frontend/templates/web/util.tmpl:724
+#: cdedb/frontend/templates/web/util.tmpl:708
+#: cdedb/frontend/templates/web/util.tmpl:731
 msgid "Ignore Warnings"
 msgstr ""
 
@@ -8610,8 +8645,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:14
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:17
 #: cdedb/frontend/templates/web/event/event/index.tmpl:135
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:33
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:29
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:36
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:61
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:13
@@ -8702,7 +8737,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:179
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:55
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:102
-#: cdedb/frontend/templates/web/event/generic.tmpl:320
+#: cdedb/frontend/templates/web/event/generic.tmpl:321
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:49
 msgid "Remove"
 msgstr ""
@@ -9274,7 +9309,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:125
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:31
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:119
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:60
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:93
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:218
 msgid "Changenotes"
@@ -9419,42 +9454,42 @@ msgid "Privilege changes will have to be approved by another Meta-Admin."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
-#: cdedb/frontend/templates/web/util.tmpl:1015
+#: cdedb/frontend/templates/web/util.tmpl:1022
 msgid "Meta-Admin"
 msgstr "administrator administratorum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:1016
+#: cdedb/frontend/templates/web/util.tmpl:1023
 msgid "Core-Admin"
 msgstr "administrator capitis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
-#: cdedb/frontend/templates/web/util.tmpl:1017
+#: cdedb/frontend/templates/web/util.tmpl:1024
 msgid "CdE-Admin"
 msgstr "administrator CdEi"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
-#: cdedb/frontend/templates/web/util.tmpl:1018
+#: cdedb/frontend/templates/web/util.tmpl:1025
 msgid "Finance-Admin"
 msgstr "administrator pecuniae"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
-#: cdedb/frontend/templates/web/util.tmpl:1019
+#: cdedb/frontend/templates/web/util.tmpl:1026
 msgid "Event-Admin"
 msgstr "administrator eventuum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:43
-#: cdedb/frontend/templates/web/util.tmpl:1020
+#: cdedb/frontend/templates/web/util.tmpl:1027
 msgid "Mailinglist-Admin"
 msgstr "administrator tabellarum epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
-#: cdedb/frontend/templates/web/util.tmpl:1021
+#: cdedb/frontend/templates/web/util.tmpl:1028
 msgid "CdElokal-Admin"
 msgstr "administrator CdElocalis"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:47
-#: cdedb/frontend/templates/web/util.tmpl:1022
+#: cdedb/frontend/templates/web/util.tmpl:1029
 msgid "Assembly-Admin"
 msgstr "administrator coetuum"
 
@@ -9992,13 +10027,15 @@ msgstr "(ab %(date)s annuntiari potest)"
 #: cdedb/frontend/templates/web/core/index.tmpl:158
 #: cdedb/frontend/templates/web/event/base.tmpl:44
 #: cdedb/frontend/templates/web/event/downloads.tmpl:143
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:42
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:50
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:67
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:43
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:51
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:68
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:29
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:105
 #: cdedb/frontend/templates/web/event/event/index.tmpl:128
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:31
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:27
-#: cdedb/frontend/templates/web/event/generic.tmpl:493
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:34
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:27
+#: cdedb/frontend/templates/web/event/generic.tmpl:494
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:96
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:57
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:50
@@ -10481,9 +10518,9 @@ msgid "– {num} more versions –"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:198
-#: cdedb/frontend/templates/web/event/generic.tmpl:509
-#: cdedb/frontend/templates/web/event/generic.tmpl:510
-#: cdedb/frontend/templates/web/event/generic.tmpl:512
+#: cdedb/frontend/templates/web/event/generic.tmpl:511
+#: cdedb/frontend/templates/web/event/generic.tmpl:513
+#: cdedb/frontend/templates/web/event/generic.tmpl:516
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:38
 msgid "Active"
@@ -11109,13 +11146,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:52
 #: cdedb/frontend/templates/web/event/course/course_assignment_checks.tmpl:13
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:14
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:71
 msgid "Course Assignment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:55
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:36
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:32
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:39
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:15
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:15
@@ -11172,9 +11208,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:74
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:41
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:16
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:17
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:26
 msgid "Fees"
 msgstr ""
 
@@ -11209,7 +11246,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:11
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:14
 #: cdedb/frontend/templates/web/event/course/course_assignment_checks.tmpl:40
-#: cdedb/frontend/templates/web/event/generic.tmpl:332
+#: cdedb/frontend/templates/web/event/generic.tmpl:333
 #, fuzzy
 msgid "Constraint Violations"
 msgstr "notitiae rationis"
@@ -11701,8 +11738,8 @@ msgid "Manage Courses"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:34
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:30
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:30
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:19
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:54
@@ -11849,9 +11886,9 @@ msgid "All Course Choices"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:165
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:104
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:115
-#: cdedb/frontend/templates/web/event/generic.tmpl:431
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:105
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:116
+#: cdedb/frontend/templates/web/event/generic.tmpl:432
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:124
 msgid "View Registrations"
 msgstr ""
@@ -12046,10 +12083,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:49
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:55
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:45
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:57
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:62
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:42
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:110
-#: cdedb/frontend/templates/web/event/generic.tmpl:490
+#: cdedb/frontend/templates/web/event/generic.tmpl:491
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:82
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:82
 msgid "Title"
@@ -12077,7 +12114,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:29
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:39
-#: cdedb/frontend/templates/web/event/generic.tmpl:634
+#: cdedb/frontend/templates/web/event/generic.tmpl:651
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:69
 msgid "Fee"
 msgstr ""
@@ -12434,11 +12471,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:60
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:55
 #: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:61
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:58
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:24
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:63
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:25
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:41
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:109
-#: cdedb/frontend/templates/web/event/generic.tmpl:489
+#: cdedb/frontend/templates/web/event/generic.tmpl:490
 msgid "Type"
 msgstr ""
 
@@ -12636,7 +12673,7 @@ msgid "Add Conditional Fee (%(event_title)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:30
-#: cdedb/frontend/templates/web/event/generic.tmpl:595
+#: cdedb/frontend/templates/web/event/generic.tmpl:612
 #, python-format
 msgid "Change fee %(fee_title)s"
 msgstr ""
@@ -12647,6 +12684,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:46
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:24
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:56
 msgid "Add Personalized Fee"
 msgstr ""
 
@@ -12655,8 +12693,18 @@ msgstr ""
 msgid "Add Conditional Fee"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:63
-#: cdedb/frontend/templates/web/event/generic.tmpl:494
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:68
+#, fuzzy
+msgid "Initially affected Registrations"
+msgstr "Annuntiationes"
+
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:69
+#, fuzzy
+msgid "Set initial personalized amount to"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:74
+#: cdedb/frontend/templates/web/event/generic.tmpl:495
 msgid "Condition"
 msgstr ""
 
@@ -12665,23 +12713,23 @@ msgstr ""
 msgid "Fee Stats (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:11
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:18
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:26
 #, fuzzy
 msgid "Fee Stats"
 msgstr "statistica consociorum"
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:25
-#: cdedb/frontend/templates/web/event/generic.tmpl:567
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:26
+#: cdedb/frontend/templates/web/event/generic.tmpl:573
 msgid "Owed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:55
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:56
 msgid "Surplus"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:97
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:98
 #, python-format
 msgid ""
 "%(incomplete_paid_count)s people have paid %(incomplete_paid_amount)s "
@@ -12689,7 +12737,7 @@ msgid ""
 "and has been excluded from the \"%(paid)s\" column above."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:110
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:111
 #, python-format
 msgid "%(not_paid_count)s people have not paid anything of their fee yet."
 msgstr ""
@@ -12697,6 +12745,61 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:6
 #, python-format
 msgid "Fees (%(title)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:12
+#, fuzzy, python-format
+msgid "Set Personalized Fees for %(fee_title)s (%(event_title)s)"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:16
+#, fuzzy, python-format
+msgid "Select Personalized Fee (%(event_title)s)"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:31
+#, fuzzy
+msgid "Set Personalized Amounts"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:37
+#, fuzzy, python-format
+msgid "Set Personalized Fees for %(fee_title)s"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:40
+msgid "Select Personalized Fee"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:53
+msgid ""
+"This form can be used to set the individual amounts of the chosen "
+"personalized fee for multiple registrations at once."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:59
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:57
+msgid ""
+"Changed entries are highlighted in yellow. Newly added entries are shown in "
+"green and deleted entries in red. You can use the \"Restore\"-button to "
+"restore a changed or deleted entry to its original value. You can use the "
+"\"Delete\"-button to set an entry to empty, which will delete it."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:85
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:94
+msgid "Restore"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:93
+msgid ""
+"Select a personalized fee to set individual amounts for that fee for the "
+"following registrations:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:97
+#: cdedb/frontend/templates/web/event/generic.tmpl:585
+msgid "Personalized Fee"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:10
@@ -13137,18 +13240,18 @@ msgid ""
 "concluded."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:17
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:20
 #, python-format
 msgid "Set Field %(field)s (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:23
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:26
 #, python-format
 msgid "Set %(field)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:37
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:33
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:33
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:40
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:58
@@ -13156,48 +13259,62 @@ msgstr ""
 msgid "Lodgement Query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:39
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:35
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:42
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:35
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:28
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:47
 #: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:29
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:48
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:28
-#: cdedb/frontend/templates/web/generic.tmpl:611
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:81
 msgid "Set Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:61
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:49
+msgid ""
+"This form can be used to set the individual value of the chosen custom data "
+"field for multiple registrations at once."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:79
 #, python-format
 msgid ""
 "Summary to be added to the log entries. This is prefixed with \"%s gesetzt: "
 "\""
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set.tmpl:70
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:88
 msgid "No registrations found."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:13
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:13
 #, python-format
 msgid "Select Field (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:19
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:19
 msgid "Select Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:40
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:42
+msgid ""
+"Select a custom data field to set individual values for that field for the "
+"following entities:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:46
 msgid "Field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:49
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:55
 msgid "Participants/Registrations to be changed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:51
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:57
 msgid "Courses to be changed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/field_set_select.tmpl:53
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:59
 msgid "Lodgements to be changed"
 msgstr ""
 
@@ -13362,128 +13479,128 @@ msgstr ""
 msgid "Notes for Orgas"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:226
+#: cdedb/frontend/templates/web/event/generic.tmpl:227
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:205
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:282
 msgid "Custom Fields"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:233
+#: cdedb/frontend/templates/web/event/generic.tmpl:234
 msgid "No custom fields for lodgements available."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:235
+#: cdedb/frontend/templates/web/event/generic.tmpl:236
 msgid "No custom fields for courses available."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:237
+#: cdedb/frontend/templates/web/event/generic.tmpl:238
 msgid "No custom fields for registrations available."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:278
+#: cdedb/frontend/templates/web/event/generic.tmpl:279
 msgid "Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:283
+#: cdedb/frontend/templates/web/event/generic.tmpl:284
 msgid "Supports Markdown for “Only Text” fields."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:287
+#: cdedb/frontend/templates/web/event/generic.tmpl:288
 msgid "Query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:289
+#: cdedb/frontend/templates/web/event/generic.tmpl:290
 msgid "— Only Text —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:293
+#: cdedb/frontend/templates/web/event/generic.tmpl:294
 msgid "Input Size"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:294
 #: cdedb/frontend/templates/web/event/generic.tmpl:295
+#: cdedb/frontend/templates/web/event/generic.tmpl:296
 msgid "multiline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:294
+#: cdedb/frontend/templates/web/event/generic.tmpl:295
 msgid "singleline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:299
+#: cdedb/frontend/templates/web/event/generic.tmpl:300
 msgid "Default Value"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:305
+#: cdedb/frontend/templates/web/event/generic.tmpl:306
 msgid "read-only"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:357
+#: cdedb/frontend/templates/web/event/generic.tmpl:358
 #, python-format
 msgid ""
 "%(reg_link)s is in violation of the %(constraint_shortname)s mutually "
 "exclusive participation constraint."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:361
+#: cdedb/frontend/templates/web/event/generic.tmpl:362
 #, python-format
 msgid "(Present in %(parts)s)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:380
+#: cdedb/frontend/templates/web/event/generic.tmpl:381
 #, python-format
 msgid ""
 "%(course_link)s is in violation of the %(constraint_shortname)s mutually "
 "exclusive course constraint."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:384
+#: cdedb/frontend/templates/web/event/generic.tmpl:385
 #, python-format
 msgid "(Taking place in %(tracks)s)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:403
+#: cdedb/frontend/templates/web/event/generic.tmpl:404
 #, python-format
 msgid ""
 "%(reg_link)s is in violation of the %(constraint_shortname)s course choice "
 "sync."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:413
+#: cdedb/frontend/templates/web/event/generic.tmpl:414
 msgid "Assigned to sleep on a camping mat."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:418
+#: cdedb/frontend/templates/web/event/generic.tmpl:419
 msgid "May sleep on a camping mat."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:420
+#: cdedb/frontend/templates/web/event/generic.tmpl:421
 msgid "Assigned to, but may not sleep on a camping mat."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:509
-#: cdedb/frontend/templates/web/event/generic.tmpl:510
-#: cdedb/frontend/templates/web/event/generic.tmpl:512
+#: cdedb/frontend/templates/web/event/generic.tmpl:511
+#: cdedb/frontend/templates/web/event/generic.tmpl:513
+#: cdedb/frontend/templates/web/event/generic.tmpl:516
 msgid "Inactive"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:575
-msgid "Personalized Fee"
+#: cdedb/frontend/templates/web/event/generic.tmpl:595
+msgid "Set personalized amount for multiple registrations."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:590
+#: cdedb/frontend/templates/web/event/generic.tmpl:607
 msgid "Go to event fee summary"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:601
+#: cdedb/frontend/templates/web/event/generic.tmpl:618
 #, python-format
 msgid "Delete fee %(fee_title)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:618
+#: cdedb/frontend/templates/web/event/generic.tmpl:635
 msgid "Activate JavaScript for automatic fee preview."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/generic.tmpl:626
+#: cdedb/frontend/templates/web/event/generic.tmpl:643
 msgid "Fee Preview"
 msgstr ""
 
@@ -14140,6 +14257,16 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/query/registration_query.tmpl:64
 msgid "Email button is only available, if the email field is shown."
 msgstr ""
+
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:71
+#, fuzzy
+msgid "Course Assignments"
+msgstr "quaesitio curriculorum"
+
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:77
+#, fuzzy
+msgid "Set Personalized Fee Amount"
+msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:5
 #, python-format
@@ -15073,12 +15200,12 @@ msgid "First"
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:173
-#: cdedb/frontend/templates/web/util.tmpl:1038
+#: cdedb/frontend/templates/web/util.tmpl:1045
 msgid "Previous"
 msgstr ""
 
 #: cdedb/frontend/templates/web/logging.tmpl:201
-#: cdedb/frontend/templates/web/util.tmpl:1042
+#: cdedb/frontend/templates/web/util.tmpl:1049
 msgid "Next"
 msgstr ""
 
@@ -15841,88 +15968,88 @@ msgstr ""
 msgid "Markdown Preview"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:419
+#: cdedb/frontend/templates/web/util.tmpl:420
 msgid "Phone number in the format +49 1234 5678910"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:425
+#: cdedb/frontend/templates/web/util.tmpl:426
 msgid "Datetime in the format YYYY-MM-DD HH:MM"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:429
+#: cdedb/frontend/templates/web/util.tmpl:430
 msgid "IBAN in the usual format, spaces are allowed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:476
+#: cdedb/frontend/templates/web/util.tmpl:477
 msgid "New Attachment"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:616
+#: cdedb/frontend/templates/web/util.tmpl:621
 msgid ""
 "Empty string values with defaultvalue not supported. default: {} value: {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:758
+#: cdedb/frontend/templates/web/util.tmpl:765
 msgid "from"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:759
+#: cdedb/frontend/templates/web/util.tmpl:766
 #, python-format
 msgid "%s from"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:760
+#: cdedb/frontend/templates/web/util.tmpl:767
 msgid "to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:761
+#: cdedb/frontend/templates/web/util.tmpl:768
 #, python-format
 msgid "%s to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:858
+#: cdedb/frontend/templates/web/util.tmpl:865
 #, python-format
 msgid "Hide %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:858
+#: cdedb/frontend/templates/web/util.tmpl:865
 #, python-format
 msgid "Show %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:861
+#: cdedb/frontend/templates/web/util.tmpl:868
 msgid "(enabled)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:905
+#: cdedb/frontend/templates/web/util.tmpl:912
 msgid "Info!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:905
+#: cdedb/frontend/templates/web/util.tmpl:912
 msgid "Success!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:906
+#: cdedb/frontend/templates/web/util.tmpl:913
 msgid "Error!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:906
+#: cdedb/frontend/templates/web/util.tmpl:913
 msgid "Warning!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:945
+#: cdedb/frontend/templates/web/util.tmpl:952
 msgid "Permanent link"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:981
+#: cdedb/frontend/templates/web/util.tmpl:988
 msgid "archived"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:991
+#: cdedb/frontend/templates/web/util.tmpl:998
 msgid "(not a member)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:993
+#: cdedb/frontend/templates/web/util.tmpl:1000
 msgid "(trial member)"
 msgstr ""
 

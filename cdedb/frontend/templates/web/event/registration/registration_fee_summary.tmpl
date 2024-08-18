@@ -52,5 +52,9 @@
     </dd>
 
     <h4 class="heading-underline">{% trans %}Composition of the fee{% endtrans %}</h4>
+    <p>
+        {{ util.href(cdedblink('event/add_new_personalized_fee'), gettext("Add Personalized Fee"),
+                               icon='plus', aclass='btn btn-success btn-sm') }}
+    </p>
     {{ generic_event.fee_composition_table() }}
 {% endblock %}
