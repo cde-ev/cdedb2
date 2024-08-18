@@ -724,7 +724,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         defect_addresses = {}
         if rs.user.persona_id:
-            defect_addresses = self.coreproxy.get_defect_addresses(
+            defect_addresses = self.coreproxy.get_defect_address_reports(
                 rs, [rs.user.persona_id])
         self.update_defect_addresses(rs, params, defect_addresses)
 
@@ -838,13 +838,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 container.attach(self._create_attachment(attachment))
             # put the container in place as message to send
             msg = container
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, const.EmailStatus.defect_states())
         for header in ("To", "Cc", "Bcc"):
             value = headers[header]  # type: ignore[literal-required]
             nonempty = {x for x in value if x}
             if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
-            if nonempty:
-                msg[header] = ", ".join(nonempty)
+            effective = {x for x in nonempty if x not in defect_addresses}
+            if effective != nonempty:
+                diff = nonempty - effective
+                self.logger.warning(
+                    f"Dropped the following recipients from email: {diff}")
+            if effective:
+                msg[header] = ", ".join(effective)
         for header in ("From", "Reply-To", "Return-Path"):
             if value := headers.get(header):
                 msg[header] = value
