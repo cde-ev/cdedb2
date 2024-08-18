@@ -40,8 +40,7 @@
         <div>
             {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
-            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True,
-                                    aclass="genesis-realm-specific") }}
+            {# No birth name to avoid mistakes #}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
                                     attributes='autocomplete="email"'|s) }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
@@ -60,13 +59,13 @@
             </noscript>
             {{ util.form_input_select(name="gender", entries=allowed_genders|enum_entries(processing=gettext),
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
-                                    type="date", small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", small=True,
+                                    aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
+            {{ util.form_input_text(name="address", label=gettext("Street and House Number"), small=True,
                                     aclass="genesis-realm-specific", info=gettext("Example: Dream Alley 1")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"), small=True,
                                     aclass="genesis-realm-specific",
@@ -79,19 +78,10 @@
                                       defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
 
             {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
-            {% if values["attachment_hash"] %}
-                {{ util.input_hidden(name="attachment_hash") }}
-                {{ util.input_hidden(name="attachment_filename") }}
-                {{ util.form_input_static(label=gettext("Attachment"), value=values['attachment_filename'], small=True) }}
-                {% set attachment_info = gettext("We already saved your uploaded file, but you can provide a different file instead.") %}
-                {{ util.form_input_file(name="attachment", label=gettext("New Attachment"), small=True, accept="text/*,application/pdf",
-                                        aclass="genesis-realm-specific", info=attachment_info + attachment_restrictions) }}
-            {% else %}
-                {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
-                {{ util.form_input_file(name="attachment", label=gettext("Attachment"), small=True, accept="text/*,application/pdf",
-                                        aclass="genesis-realm-specific", info=attachment_info + attachment_restrictions) }}
-            {% endif %}
-
+            {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
+            {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash')}),
+                                          small=True, accept="text/*,application/pdf", aclass="genesis-realm-specific",
+                                          info=attachment_info + attachment_restrictions) }}
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');

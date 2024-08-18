@@ -33,6 +33,14 @@
     {% endif %}
 
     <dl class="dl-horizontal">
+        {% if ambience['event']['website_url'] %}
+            <dt title="{% trans %}Website Link{% endtrans %}">
+                {% trans %}Website Link{% endtrans %}
+            </dt>
+            <dd id="website-link">
+                {{ util.href(ambience['event']['website_url'], ambience['event']['title']) }}
+            </dd>
+        {% endif %}
         {% if ambience['event']['parts']|length > 0 %}
             <dt title="{% trans %}Timeframe{% endtrans %}">
                 {% trans %}Timeframe{% endtrans %}
@@ -44,7 +52,7 @@
                         {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full') }}</span>
                     {% endwith %}
                 {% else %}
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% for part in ambience['event'].parts.values()|sort %}
                         {{ part['title'] }}:
                         {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang) }}<br />
@@ -72,9 +80,13 @@
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})
                             {% endtrans %}
-                        {% else %}
+                        {% elif now() > soft_limit %}
                             {% trans %}
                                 (Late registration open)
+                            {% endtrans %}
+                        {% else  %}
+                            {% trans %}
+                                (Afterwards late registration open)
                             {% endtrans %}
                         {% endif %}
                     {% endif %}
@@ -362,14 +374,14 @@
                                     {% trans count=mec_violations|length %}
                                         There are {{ count }} violations of mutually exclusive course constraints.
                                     {% endtrans %}
-                                </li>
+                                </a></li>
                             {% endif %}
                             {% if ccs_violations %}
                                 <li><a href="{{ cdedblink("event/constraint_violations") }}#ccs-violations">
                                     {% trans count=ccs_violations|length %}
                                         There are {{ count }} violations of course choice sync constraints.
                                     {% endtrans %}
-                                </li>
+                                </a></li>
                             {% endif %}
                         </ul>
                     {% endif %}
@@ -380,7 +392,9 @@
     </div>
 
 
-    {% if "event_mgmt" in user.admin_views %}
+    {% if "event_mgmt" in user.admin_views or (
+            values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
+        {# This ensures no empty box is shown for orgas. #}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['event']['orga_address'] %}
                 <div class="row" id="create-orga-list">
@@ -432,7 +446,8 @@
                     </div>
                 </div>
             {% endif %}
-            {% if "cde_admin" in user.roles and not ambience['event']['is_archived']%}
+            {% if "event_mgmt" in user.admin_views %}
+                {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
@@ -467,7 +482,7 @@
                     $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
-            {% endif %}
+                {% endif %}
             <div class="row" id="delete-event">
                 <div class="col-sm-4">
                     <div class="p">
@@ -494,6 +509,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         {% endcall %}
     {% endif %}
 {% endblock %}

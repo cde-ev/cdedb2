@@ -38,7 +38,7 @@
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
                     {{ util.input_checkboxes(name="part_ids", slice=4,
-                        entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
+                        entries=ambience['event']['parts'].values()|sort|entries('id', 'title')) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             </div>
@@ -55,7 +55,7 @@
             <div class="row">
                 <div class="col-sm-9">
                 <div class="row">
-                    <div class="col-sm-6">
+                    <div class="{% if lodgements %}col-sm-6{% else %}col-sm-12{% endif %}">
                         <span class="searchname">
                             {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>
@@ -65,10 +65,10 @@
                         {% if ambience['event']['parts']|length > 1 %}
                             <br />
                             <span class="small text-muted">
-                                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                   if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
+                                {% for part in ambience['event']['parts'].values()|sort
+                                   if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %}
                                     {{ part['shortname'] }}
-                                    {% if registration['parts'][part_id]['status']
+                                    {% if registration['parts'][part.id]['status']
                                             == enums['RegistrationPartStati'].guest.value %}
                                         ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                                     {% endif %}
@@ -79,18 +79,18 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
+                    {% if lodgements %}
                     <div class="col-sm-6">
-                        <small class="text-info">
+                        <small>
                             {% trans %}Lodgement{% endtrans %}:
-                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                   if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
-                                {% if registration['parts'][part_id]['lodgement_id'] %}
-                                    {{ lodgements[registration['parts'][part_id]['lodgement_id']]['title'] }}
-                                    {# This is somewhat redundant regarding camping mat consent for now, but we want
-                                       to change this to be by part either way. #}
+                            {% for part in ambience['event']['parts'].values()|sort
+                                   if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() %}
+                                {% if registration['parts'][part.id]['lodgement_id'] %}
+                                    {% set lodgement = lodgements[registration['parts'][part.id]['lodgement_id']] %}
+                                    {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement['id']}), lodgement['title'])  }}
                                     {{ generic_event.camping_mat_icon(
-                                            registration['parts'][part_id]['is_camping_mat'],
-                                            registration['fields'].get(camping_mat_field_names[part_id])) }}
+                                            registration['parts'][part.id]['is_camping_mat'],
+                                            registration['fields'].get(camping_mat_field_names[part.id])) }}
                                 {% else %}
                                     –
                                 {% endif %}
@@ -98,15 +98,16 @@
                             {% endfor %}
                         </small>
                     </div>
+                    {% endif %}
                 </div>
                 {% if checkin_fields %}
                     <hr class="nosp" />
                     <div class="row" id="checkin-fields-{{ registration_id }}">
-                        {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
+                        {% for slice in checkin_fields.values()|sort|slice(2) %}
                             <div class="col-sm-6">
                                 <dl class="dl-horizontal small">
-                                    {% for field_id, field in slice %}
-                                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
+                                    {% for field in slice %}
+                                        {% set field_key = ambience['event']['fields'][field.id]['field_name'] %}
                                         <dt class="text-muted">{{ field['title'] }}</dt>
                                         <dd class="text-muted">
                                             {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}
@@ -116,6 +117,19 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% endif %}
+                {% if registration['orga_notes'] %}
+                    <hr class="nosp" />
+                    <details>
+                        <summary class="btn btn-sm btn-default">
+                            <b class="text-muted">
+                                {% trans %}Orga-Notes{% endtrans %}
+                            </b>
+                        </summary>
+                        <div class="mosp">
+                            {{ registration['orga_notes']|md }}
+                        </div>
+                    </details>
                 {% endif %}
                 </div>
                     <div class="col-sm-3 col-xs-12 button-par">
@@ -142,17 +156,35 @@
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">
+        let re;
+        let timer;
+        // save names and registration divs in JS datastructures for faster access on searching
+        let names = [];
+        let registrationBlocks = {};
+        let counter = 0;  // appended to names to deal with duplicate names, still being efficient in matching
+        $(".searchname").each(function() {
+            let name = removeDiacritics($(this).text()).trim() + counter++;
+            names.push(name);
+            registrationBlocks[name] = $(this).closest(".selectee");
+        })
+
+        function filterCheckin() {
+            names.forEach(name => {
+                // adding/removing classes ist 100 times faster than using .show()/.hide()
+                if (name.match(re))
+                    registrationBlocks[name].removeClass("softhide");
+                else
+                    registrationBlocks[name].addClass("softhide");
+            });
+        }
+
         $("#namesearch").show();
         $("#selector").focus()
-            .on('keydown paste input', function(){
+            .on('paste input', function(){
+                clearTimeout(timer);
                 /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
-                var re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-                $(".selectee").each(function(){
-                    if (removeDiacritics($(this).text()).match(re))
-                        $(this).show();
-                    else
-                        $(this).hide();
-                });
+                re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+                timer = setTimeout(filterCheckin, 0);  // asynchronous call for better performance
             })
             .trigger('input');
         $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");

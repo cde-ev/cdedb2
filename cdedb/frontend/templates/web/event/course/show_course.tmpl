@@ -50,7 +50,7 @@
             </dl>
 
             <dl class="dl-horizontal">
-                {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
+                {% for field in ambience['event']['fields'].values()|sort %}
                     {% if field['association'] == enums['FieldAssociations'].course %}
                         <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
                         <dd>
@@ -75,17 +75,17 @@
 
     <h2>{% trans %}Attendees{% endtrans %}</h2>
     {% set relevant_tracks = [] %}
-    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-            if track_id in ambience['course']['segments'] %}
-        {% do relevant_tracks.append((track_id, track)) %}
+    {% for track in ambience['event']['tracks'].values()|sort if track.id in ambience['course']['segments'] %}
+        {% do relevant_tracks.append((track.id, track)) %}
     {% endfor %}
     {% for batch in relevant_tracks|batch(3) %}
         <div class="row">
         {% for track_id, track in batch %}
-            {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed" id="track{{ track_id }}-attendees">
                     <div class="panel-heading">
+                        {% set num_track_instructors = num_attendees[track_id] - num_learners[track_id] %}
+                        <div class="pull-right">{{ num_learners[track_id] }}&nbsp;+&nbsp;{{ num_track_instructors }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
@@ -100,33 +100,39 @@
                                 <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['min_size'] is not none and
-                                num_track_learners < ambience['course']['min_size'] %}
+                                num_learners[track_id] < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_track_learners) %}
+                                    {% trans count=(ambience['course']['min_size'] - num_learners[track_id]) %}
                                         Course has {{ count }} attendees too few.
                                     {% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['max_size'] is not none and
-                                num_track_learners > ambience['course']['max_size'] %}
+                                num_learners[track_id] > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(num_track_learners - ambience['course']['max_size']) %}
+                                    {% trans count=(num_learners[track_id] - ambience['course']['max_size']) %}
                                     	Course has {{ count }} attendees too many.
                                     {% endtrans %}</strong>
                             </p>
                         {% endif %}
                         <ul class="slim">
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                                {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
                                 <li>
+                                    {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                     {{ util.href(cdedblink('event/show_registration',
-                                                           {'registration_id': registration_id}),
-                                                 util.persona_name(personas[registrations[registration_id]
+                                                        {'registration_id': registration_id}),
+                                                util.persona_name(personas[registrations[registration_id]
                                                         ['persona_id']])) }}
-                                    {% if registrations[registration_id]['tracks'][track_id]['course_instructor']
+                                    {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})
-                                    {% endif %}
+                                    {%- endif %}
+                                    {%- if not registration_part_status.is_involved() %}</s>{% endif -%}
+                                    {% if registration_part_status != enums['RegistrationPartStati'].participant %}
+                                        <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
+                                    {% endif -%}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -142,12 +148,13 @@
                                              label=gettext("All Course Choices"),
                                              icon=util.make_icon('crosshairs')) }}
                             </li>
-                        {% if num_track_learners %}
+                        {% if num_learners[track_id] > 0 %}
                             <li>
                                 {{ util.href(cdedblink('event/course_choices', {
                                                  'track_id': track_id,
                                                  'course_id': ambience['course']['id'],
                                                  'position': enums.CourseFilterPositions.assigned.value,
+                                                 'include_active': True,
                                                  'submitform': True}),
                                              label=gettext("Attendees"),
                                              icon=util.make_icon('crosshairs')) }}

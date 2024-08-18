@@ -51,13 +51,13 @@
             </noscript>
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                       label=gettext("Gender"), small=True, aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD",
-                                    type="date", small=True, aclass="genesis-realm-specific") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", small=True,
+                                    aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel", small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="address", label=gettext("Street, Nr."), small=True,
+            {{ util.form_input_text(name="address", label=gettext("Street and House Number"), small=True,
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"), small=True,
                                     aclass="genesis-realm-specific") }}
@@ -80,7 +80,7 @@
                                               nulloption=nbsp, label=gettext("Course"), aclass="genesis-realm-specific",
                                               defaultvalue='', sort=True) }}
                 {% else %}
-                    {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
+                    {{ util.form_input_static(name="pcourse_id", aclass='text-info genesis-realm-specific', icon='info-circle', small=True, label=gettext("Course"),
                                               value=gettext("Course can be specified if past event is given.")) }}
                 {% endif %}
             {% endif %}

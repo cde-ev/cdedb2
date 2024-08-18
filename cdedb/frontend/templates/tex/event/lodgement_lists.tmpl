@@ -6,7 +6,7 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
-        <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
+        <<% for part in ambience['event']['parts'].values()|sort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -16,7 +16,7 @@
             \end{wrapfigure}
             \section*{<<< lodgement['title']|te >>> (<<< part['title']|te >>>)}
             \begin{itemize}
-                <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
+                <<% for registration_id in inhabitants[(lodgement_id, part.id)] %>>
                     \item
                         <<< personas[registrations[registration_id]['persona_id']]|persona_name|te >>>
                 <<% else %>>

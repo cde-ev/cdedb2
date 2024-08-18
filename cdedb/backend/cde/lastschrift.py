@@ -8,7 +8,8 @@ transactions.
 
 import datetime
 import decimal
-from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
+from collections.abc import Collection
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -30,9 +31,9 @@ from cdedb.database.connection import Atomizer
 class CdELastschriftBackend(CdEBaseBackend):
     @access("core_admin", "cde_admin")
     def change_membership(
-            self, rs: RequestState, persona_id: int, is_member: bool = None,
-            trial_member: bool = None
-    ) -> Tuple[DefaultReturnCode, Optional[int], Optional[int]]:
+            self, rs: RequestState, persona_id: int, is_member: Optional[bool] = None,
+            trial_member: Optional[bool] = None, honorary_member: Optional[bool] = None,
+    ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -49,6 +50,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm_optional(bool, is_member)
         trial_member = affirm_optional(bool, trial_member)
+        honorary_member = affirm_optional(bool, honorary_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
@@ -73,13 +75,14 @@ class CdELastschriftBackend(CdEBaseBackend):
                             "Failed to revoke active lastschrift permit"))
                     revoked_permit = lastschrift_id
             code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member=is_member, trial_member=trial_member)
+                rs, persona_id, is_member=is_member, trial_member=trial_member,
+                honorary_member=honorary_member)
         return code, revoked_permit, collateral_transaction
 
     @access("cde", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
-                         persona_ids: Collection[int] = None,
-                         active: Optional[bool] = True) -> Dict[int, int]:
+                         persona_ids: Optional[Collection[int]] = None,
+                         active: Optional[bool] = True) -> dict[int, int]:
         """List all direct debit permits.
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
@@ -105,7 +108,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("cde")
-    def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int]
+    def get_lastschrifts(self, rs: RequestState, lastschrift_ids: Collection[int],
                          ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
@@ -163,7 +166,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         return new_id
 
     @access("finance_admin")
-    def delete_lastschrift_blockers(self, rs: RequestState, lastschrift_id: int
+    def delete_lastschrift_blockers(self, rs: RequestState, lastschrift_id: int,
                                     ) -> DeletionBlockers:
         """Determine what keeps a lastschrift from being revoked.
 
@@ -205,7 +208,7 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("finance_admin")
     def delete_lastschrift(self, rs: RequestState, lastschrift_id: int,
-                           cascade: Collection[str] = None
+                           cascade: Optional[Collection[str]] = None,
                            ) -> DefaultReturnCode:
         """Remove data about an old lastschrift.
 
@@ -254,9 +257,9 @@ class CdELastschriftBackend(CdEBaseBackend):
 
     @access("member", "cde_admin")
     def list_lastschrift_transactions(
-            self, rs: RequestState, lastschrift_ids: Collection[int] = None,
-            stati: Collection[const.LastschriftTransactionStati] = None,
-            periods: Collection[int] = None) -> Dict[int, int]:
+            self, rs: RequestState, lastschrift_ids: Optional[Collection[int]] = None,
+            stati: Optional[Collection[const.LastschriftTransactionStati]] = None,
+            periods: Optional[Collection[int]] = None) -> dict[int, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.
@@ -277,7 +280,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
-        params: List[Any] = []
+        params: list[Any] = []
         constraints = []
         if lastschrift_ids:
             constraints.append("lastschrift_id = ANY(%s)")
@@ -329,13 +332,16 @@ class CdELastschriftBackend(CdEBaseBackend):
         """The amount of a lastschrift transaction."""
         persona_id = affirm(vtypes.ID, persona_id)
         user = self.core.get_cde_user(rs, persona_id)
-        return user["donation"] + self.annual_membership_fee(rs)
+        ret = user["donation"]
+        if not user['honorary_member']:
+            ret += self.annual_membership_fee(rs)
+        return ret
 
     @access("finance_admin")
     def issue_lastschrift_transaction_batch(
             self, rs: RequestState, lastschrift_ids: Collection[int],
-            payment_date: datetime.date
-    ) -> Dict[int, int]:
+            payment_date: datetime.date,
+    ) -> dict[int, int]:
         """Make a new direct debit transaction for each given lastschrift.
 
         This only creates the database entry. The SEPA file will be
@@ -368,7 +374,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                     'submitted_by': rs.user.persona_id,
                     'period_id': period,
                     'status': stati.issued,
-                    'amount': self.transaction_amount(rs, persona_id)
+                    'amount': self.transaction_amount(rs, persona_id),
                 }
                 ret[lastschrift_id] = self.sql_insert(
                     rs, "cde.lastschrift_transactions", data)
@@ -394,10 +400,6 @@ class CdELastschriftBackend(CdEBaseBackend):
 
         :param status: If this is ``failed`` the direct debit permit is revoked
           so that no further transactions are issued for it.
-        :param tally: The actual amount of money that was moved. This may be
-          negative if we incur fees for failed transactions. In case of
-          success the balance of the persona is increased by the yearly
-          membership fee.
         """
         transaction_id = affirm(vtypes.ID, transaction_id)
         status = affirm(const.LastschriftTransactionStati, status)
@@ -424,18 +426,26 @@ class CdELastschriftBackend(CdEBaseBackend):
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
             lastschrift = self.get_lastschrift(rs, transaction['lastschrift_id'])
             persona_id = lastschrift['persona_id']
-            delta = None
-            new_balance = None
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
-                delta = self.annual_membership_fee(rs)
-                new_balance = user['balance'] + delta
-                ret *= self.core.change_persona_balance(
-                    rs, persona_id, new_balance, code,
-                    change_note="Erfolgreicher Lastschrifteinzug.")
-                # We provide membership directly after the successful transaction.
-                self.change_membership(rs, persona_id, is_member=True)
+                if user['honorary_member']:
+                    self.core.finance_log(
+                        rs, code, persona_id, delta=None, new_balance=user['balance'],
+                        change_note="Ehrenmitglied",
+                        transaction_date=transaction['payment_date'],
+                    )
+                else:
+                    user['balance'] += self.annual_membership_fee(rs)
+                    ret *= self.core.change_persona_balance(
+                        rs, persona_id, user['balance'], code,
+                        change_note="Erfolgreicher Lastschrifteinzug.",
+                        transaction_date=transaction['payment_date'],
+                    )
+                    # We provide membership directly after the successful transaction.
+                    if not user['is_member']:
+                        self.core.change_membership_easy_mode(
+                            rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
@@ -449,14 +459,14 @@ class CdELastschriftBackend(CdEBaseBackend):
                 code = const.FinanceLogCodes.lastschrift_transaction_cancelled
             else:
                 raise RuntimeError(n_("Impossible."))
-            self.core.finance_log(rs, code, persona_id, delta, new_balance,
+            self.core.finance_log(rs, code, persona_id, delta=None, new_balance=None,
                                   change_note=str(update['tally']))
         return ret
 
     @access("finance_admin")
     def finalize_lastschrift_transactions(
             self, rs: RequestState, transaction_ids: Collection[int],
-            status: const.LastschriftTransactionStati
+            status: const.LastschriftTransactionStati,
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
         transaction_ids = affirm_set(vtypes.ID, transaction_ids)

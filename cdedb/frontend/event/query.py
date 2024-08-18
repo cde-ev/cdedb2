@@ -5,15 +5,19 @@ The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints 
 querying registrations, courses and lodgements.
 """
 import collections
+import itertools
 import pprint
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState, determine_age_class, unwrap
+import cdedb.models.event as models
+from cdedb.common import (
+    CdEDBObject, RequestState, determine_age_class, merge_dicts, unwrap,
+)
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
@@ -25,8 +29,8 @@ from cdedb.common.query.defaults import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, check_validation as check, event_guard,
-    inspect_validation as inspect, periodic,
+    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
+    inspect_validation as inspect, periodic, request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.query_stats import (
@@ -40,12 +44,12 @@ class EventQueryMixin(EventBaseFrontend):
     @event_guard()
     def stats(self, rs: RequestState, event_id: int) -> Response:
         """Present an overview of the basic stats."""
-        event_parts = rs.ambience['event']['parts']
-        tracks = rs.ambience['event']['tracks']
-        stat_part_groups = {
+        event_parts = rs.ambience['event'].parts
+        tracks = rs.ambience['event'].tracks
+        stat_part_groups: dict[int, models.PartGroup] = {
             part_group_id: part_group
-            for part_group_id, part_group in rs.ambience['event']['part_groups'].items()
-            if part_group['constraint_type'] == const.EventPartGroupType.Statistic
+            for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+            if part_group.constraint_type == const.EventPartGroupType.Statistic
         }
 
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -56,85 +60,84 @@ class EventQueryMixin(EventBaseFrontend):
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         # Precompute age classes of participants for all registration parts.
         for reg in registrations.values():
+            persona = personas[reg['persona_id']]
+            reg['birthday'] = persona['birthday']
             for part_id, reg_part in reg['parts'].items():
                 reg_part['age_class'] = determine_age_class(
-                    personas[reg['persona_id']]['birthday'],
-                    event_parts[part_id]['part_begin'])
+                    reg['birthday'], event_parts[part_id].part_begin)
 
-        per_part_statistics: Dict[
-            EventRegistrationPartStatistic, Dict[str, Dict[int, Set[int]]]]
+        per_part_statistics: dict[
+            EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
+            _parts: dict[int, set[int]] = {
+                part_id: set(
+                    reg['id'] for reg in registrations.values()
+                    if reg_stat.test(rs.ambience['event'], reg, part_id))
+                for part_id in event_parts
+            }
+            _part_groups: dict[int, set[int]] = {
+                part_group.id: set().union(
+                    *(_parts[part_id] for part_id in part_group.parts))
+                for part_group in stat_part_groups.values()
+            }
             per_part_statistics[reg_stat] = {
-                'parts': {
-                    part_id: set(
-                        reg['id'] for reg in registrations.values()
-                        if reg_stat.test(rs.ambience['event'], reg, part_id))
-                    for part_id in event_parts
-                },
-                'part_groups': {
-                    part_group_id: set(
-                        reg['id'] for reg in registrations.values()
-                        if reg_stat.test_part_group(
-                            rs.ambience['event'], reg, part_group_id))
-                    for part_group_id in stat_part_groups
-                }
+                'parts': _parts,
+                'part_groups': _part_groups,
             }
         # Needed for formatting in template. We do it here since it's ugly in jinja
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
-        per_track_statistics: Dict[
+        per_track_statistics: dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],
-            Dict[str, Dict[int, Set[int]]]]
+            dict[str, dict[int, set[int]]]]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
+                _tracks: dict[int, set[int]] = {
+                    track_id: set(
+                        course['id'] for course in courses.values()
+                        if course_stat.test(rs.ambience['event'], course, track_id))
+                    for track_id in tracks
+                }
+                _parts = {
+                    part.id: set().union(
+                        *(_tracks[track_id] for track_id in part.tracks))
+                    for part in event_parts.values()
+                }
+                _part_groups = {
+                    part_group.id: set().union(
+                        *(_parts[part_id] for part_id in part_group.parts))
+                    for part_group in stat_part_groups.values()
+                }
                 per_track_statistics[course_stat] = {
-                    'tracks': {
-                        track_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test(rs.ambience['event'], course, track_id))
-                        for track_id in tracks
-                    },
-                    'parts': {
-                        part_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test_part(
-                                rs.ambience['event'], course, part_id))
-                        for part_id in event_parts
-                    },
-                    'part_groups': {
-                        part_group_id: set(
-                            course['id'] for course in courses.values()
-                            if course_stat.test_part_group(
-                                rs.ambience['event'], course, part_group_id))
-                        for part_group_id in stat_part_groups
-                    }
+                    'tracks': _tracks,
+                    'parts': _parts,
+                    'part_groups': _part_groups,
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
+                _tracks = {
+                    track_id: set(
+                        reg['id'] for reg in registrations.values()
+                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
+                    for track_id in tracks
+                }
+                _parts = {
+                    part.id: set().union(
+                        *(_tracks[track_id] for track_id in part.tracks))
+                    for part in event_parts.values()
+                }
+                _part_groups = {
+                    part_group.id: set().union(
+                        *(_parts[part_id] for part_id in part_group.parts))
+                    for part_group in stat_part_groups.values()
+                }
                 per_track_statistics[reg_track_stat] = {
-                    'tracks': {
-                        track_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test(rs.ambience['event'], reg, track_id))
-                        for track_id in tracks
-                    },
-                    'parts': {
-                        part_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test_part(
-                                rs.ambience['event'], reg, part_id))
-                        for part_id in event_parts
-                    },
-                    'part_groups': {
-                        part_group_id: set(
-                            reg['id'] for reg in registrations.values()
-                            if reg_track_stat.test_part_group(
-                                rs.ambience['event'], reg, part_group_id))
-                        for part_group_id in stat_part_groups
-                    }
+                    'tracks': _tracks,
+                    'parts': _parts,
+                    'part_groups': _part_groups,
                 }
 
             grouper = EventRegistrationInXChoiceGrouper(
@@ -158,13 +161,12 @@ class EventQueryMixin(EventBaseFrontend):
         This is a pretty versatile method building on the query module.
         """
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
         scope = QueryScope.registration
-        spec = scope.get_spec(event=rs.ambience["event"], courses=courses,
+        spec = scope.get_spec(event=rs.ambience['event'], courses=courses,
                               lodgements=lodgements, lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)
 
@@ -186,7 +188,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'has_registrations': has_registrations,
         }
@@ -215,18 +217,17 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not query_name:
             rs.notify("error", n_("Invalid query name."))
 
-        spec = query_scope.get_spec(event=rs.ambience["event"])
+        spec = query_scope.get_spec(event=rs.ambience['event'])
         query_input = query_scope.mangle_query_input(rs)
         query_input["is_search"] = "True"
         query: Optional[Query] = check(
             rs, vtypes.QueryInput, query_input, "query", spec=spec, allow_empty=False)
         if not rs.has_validation_errors() and query:
             query_id = self.eventproxy.store_event_query(
-                rs, rs.ambience["event"]["id"], query)
+                rs, rs.ambience['event'].id, query)
             rs.notify_return_code(query_id)
             if query_id:
                 query.query_id = query_id
-                del query_input["query_name"]
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
@@ -241,6 +242,7 @@ class EventQueryMixin(EventBaseFrontend):
                 self.eventproxy.get_event_queries(rs, event_id, query_ids=(query_id,))
                 or None)
             if stored_query:
+                # noinspection PyUnresolvedReferences
                 query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
@@ -249,7 +251,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event", query_input)
 
     @periodic("validate_stored_event_queries", 4 * 24)
-    def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject
+    def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject,
                                       ) -> CdEDBObject:
         """Validate all stored event queries, to ensure nothing went wrong."""
         data = {}
@@ -259,13 +261,163 @@ class EventQueryMixin(EventBaseFrontend):
         text = "Liebes Datenbankteam, einige gespeicherte Event-Queries sind ungültig:"
         if data:
             pdata = pprint.pformat(data)
-            self.logger.warning(f"Invalid stroed event queries: {pdata}")
+            self.logger.warning(f"Invalid stored event queries: {pdata}")
             msg = self._create_mail(f"{text}\n{pdata}",
                                     {"To": ("cdedb@lists.cde-ev.de",),
                                      "Subject": "Ungültige Event-Queries"},
                                     attachments=None)
             self._send_mail(msg)
         return state
+
+    @staticmethod
+    def retrieve_custom_filter_fields(rs: RequestState, spec: QuerySpec) -> set[str]:
+        field_spec = {f"cf_{f}": bool for f in spec}
+        return set(itertools.chain.from_iterable(
+            k.removeprefix("cf_").split(",")
+            for k, v in request_extractor(rs, field_spec).items()
+            if v
+        ))
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata("scope")
+    def custom_filter_summary(self, rs: RequestState, event_id: int,
+                              scope: Optional[QueryScope] = None) -> Response:
+        rs.ignore_validation_errors()
+
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.new_get_courses(rs, course_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+
+        query_specs = {
+            scope: scope.get_spec(
+                event=rs.ambience['event'], courses=courses,
+                lodgements=lodgements, lodgement_groups=lodgement_groups)
+            for scope in [
+                QueryScope.registration, QueryScope.event_course, QueryScope.lodgement,
+            ]
+        }
+        return self.render(rs, "query/custom_filter_summary", {
+            'query_specs': query_specs, 'scope': scope,
+        })
+
+    @access("event")
+    @event_guard()
+    def create_registration_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
+
+    @access("event")
+    @event_guard()
+    def create_course_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
+
+    @access("event")
+    @event_guard()
+    def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
+        return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
+
+    def configure_custom_filter_form(self, rs: RequestState, event_id: int,
+                                     scope: QueryScope) -> Response:
+        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
+        fields_by_kind = collections.defaultdict(list)
+        for field, field_spec in spec.items():
+            fields_by_kind[field_spec.type].append(field)
+
+        return self.render(rs, "query/configure_custom_filter", {
+            'scope': scope, 'spec': spec, 'fields_by_kind': fields_by_kind,
+        })
+
+    @staticmethod
+    def _validate_custom_filter_uniqueness(rs: RequestState, data: CdEDBObject,
+                                           custom_filter_id: Optional[int]) -> None:
+        if any(cf.title == data['title'] and cf.id != custom_filter_id
+               for cf in rs.ambience['event'].custom_query_filters.values()):
+            rs.append_validation_error(
+                ('title', KeyError(n_("A filter with this title already exists."))))
+        if any(cf.get_field_string() == data['fields'] and cf.id != custom_filter_id
+               for cf in rs.ambience['event'].custom_query_filters.values()):
+            rs.append_validation_error(
+                ('field', KeyError(n_(
+                    "A filter with this selection of fields already exists."))))
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                             ) -> Response:
+        scope = check(rs, QueryScope, data['scope'])
+        if rs.has_validation_errors() or not scope:
+            rs.notify("error", "Invalid Scope.")
+            return self.redirect(rs, "event/custom_filter_summary")
+        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
+
+        data.update({
+            'fields': self.retrieve_custom_filter_fields(rs, spec),
+            'id': -1,
+            'event_id': event_id,
+        })
+        data = check(rs, vtypes.CustomQueryFilter, data, creation=True, query_spec=spec)
+        if data:
+            self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
+        if rs.has_validation_errors() or not data:
+            return self.configure_custom_filter_form(rs, event_id, scope)
+        custom_filter = models.CustomQueryFilter(**data)
+        custom_filter.event = None  # type: ignore[assignment]
+        code = self.eventproxy.add_custom_query_filter(rs, custom_filter)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
+
+    @access("event")
+    @event_guard()
+    def change_custom_filter_form(self, rs: RequestState, event_id: int,
+                                  custom_filter_id: int) -> Response:
+        custom_filter = rs.ambience['custom_filter']
+
+        values = custom_filter.to_database()
+        del values['fields']
+        values.update({
+            f"cf_{f}": True for f in custom_filter.fields
+        })
+        merge_dicts(rs.values, values)
+
+        return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
+    def change_custom_filter(self, rs: RequestState, event_id: int,
+                             custom_filter_id: int, data: CdEDBObject) -> Response:
+        custom_filter = rs.ambience['custom_filter']
+        spec = self.eventproxy.get_query_spec(rs, event_id, custom_filter.scope)
+
+        data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
+        data['id'] = custom_filter_id
+        del data['event_id']
+        del data['scope']
+
+        data = check(rs, vtypes.CustomQueryFilter, data, query_spec=spec)
+        if data:
+            self._validate_custom_filter_uniqueness(rs, data, custom_filter_id)
+        if rs.has_validation_errors() or not data:
+            return self.change_custom_filter_form(rs, event_id, custom_filter_id)
+
+        code = self.eventproxy.change_custom_query_filter(rs, data)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {
+            'scope': custom_filter.scope,
+        })
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def delete_custom_filter(self, rs: RequestState, event_id: int,
+                             custom_filter_id: int) -> Response:
+        code = self.eventproxy.delete_custom_query_filter(rs, custom_filter_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "event/custom_filter_summary", {
+            'scope': rs.ambience['custom_filter'].scope,
+        })
 
     @access("event")
     @event_guard()
@@ -275,7 +427,7 @@ class EventQueryMixin(EventBaseFrontend):
                      ) -> Response:
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        courses = self.eventproxy.new_get_courses(rs, course_ids.keys())
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)
@@ -288,7 +440,7 @@ class EventQueryMixin(EventBaseFrontend):
         selection_default = ["course.nr", "course.shortname", "course.instructors"]
         for col in ("takes_place",):
             selection_default.extend(
-                f"track{t_id}.{col}" for t_id in rs.ambience['event']['tracks'])
+                f"track{t_id}.{col}" for t_id in rs.ambience['event'].tracks)
 
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
@@ -300,7 +452,7 @@ class EventQueryMixin(EventBaseFrontend):
                          for k, spec_entry in spec.items()
                          if spec_entry.choices}
 
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             'spec': spec, 'query': query, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'selection_default': selection_default,
         }
@@ -326,12 +478,9 @@ class EventQueryMixin(EventBaseFrontend):
 
         scope = QueryScope.lodgement
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodgement_group_ids = self.eventproxy.list_lodgement_groups(
-            rs, event_id)
-        lodgement_groups = self.eventproxy.get_lodgement_groups(
-            rs, lodgement_group_ids)
-        spec = scope.get_spec(event=rs.ambience["event"], lodgements=lodgements,
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        spec = scope.get_spec(event=rs.ambience['event'], lodgements=lodgements,
                               lodgement_groups=lodgement_groups)
         self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
@@ -340,11 +489,11 @@ class EventQueryMixin(EventBaseFrontend):
             query = check(rs, vtypes.QueryInput,
                           query_input, "query", spec=spec, allow_empty=False)
 
-        parts = rs.ambience['event']['parts']
+        parts = rs.ambience['event'].parts
         selection_default = ["lodgement.title"] + [
-            f"lodgement_fields.xfield_{field['field_name']}"
-            for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement]
+            f"lodgement_fields.xfield_{field.field_name}"
+            for field in rs.ambience['event'].fields.values()
+            if field.association == const.FieldAssociations.lodgement]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)
 
@@ -379,21 +528,18 @@ class EventQueryMixin(EventBaseFrontend):
         # Add choices that could not be automatically applied before.
         for k, v in spec.items():
             if k.endswith("gender"):
-                spec[k] = spec[k].replace_choices(
-                    dict(enum_entries_filter(const.Genders, rs.gettext)))
+                spec[k].choices = dict(enum_entries_filter(const.Genders, rs.gettext))
             if k.endswith(".status"):
-                spec[k] = spec[k].replace_choices(
-                    dict(enum_entries_filter(
-                        const.RegistrationPartStati, rs.gettext)))
+                spec[k].choices = dict(enum_entries_filter(
+                    const.RegistrationPartStati, rs.gettext))
             if k.endswith(("country", "country2")):
-                spec[k] = spec[k].replace_choices(
-                    dict(get_localized_country_codes(rs)))
+                spec[k].choices = dict(get_localized_country_codes(rs))
 
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: QueryScope, query: Query,
                            params: CdEDBObject) -> Response:
         if download:
-            shortname = rs.ambience['event']['shortname']
+            shortname = rs.ambience['event'].shortname
             return self.send_query_download(
                 rs, params['result'], query, kind=download,
                 filename=f"{shortname}_{filename}")
@@ -429,7 +575,7 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
-        search_additions: List[QueryConstraint] = []
+        search_additions: list[QueryConstraint] = []
         event = None
         num_preview_personas = (self.conf["NUM_PREVIEW_PERSONAS_CORE_ADMIN"]
                                 if {"core_admin", "meta_admin"} & rs.user.roles
@@ -439,7 +585,7 @@ class EventQueryMixin(EventBaseFrontend):
                 return self.send_json(rs, {})
             event = self.eventproxy.get_event(rs, aux)
             if not self.is_admin(rs):
-                if rs.user.persona_id not in event['orgas']:
+                if rs.user.persona_id not in event.orgas:
                     raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         else:
             return self.send_json(rs, {})
@@ -459,7 +605,7 @@ class EventQueryMixin(EventBaseFrontend):
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
             return self.send_json(rs, {})
 
-        terms: List[str] = []
+        terms: list[str] = []
         if data is None:
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
@@ -491,7 +637,7 @@ class EventQueryMixin(EventBaseFrontend):
             return "{} {}".format(x['given_names'], x['family_name'])
 
         # Check if name occurs multiple times to add email address in this case
-        counter: Dict[str, int] = collections.defaultdict(int)
+        counter: dict[str, int] = collections.defaultdict(int)
         for entry in data:
             counter[name(entry)] += 1
 

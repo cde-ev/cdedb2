@@ -1,7 +1,8 @@
 # pylint: disable=line-too-long,bad-builtin,missing-module-docstring
 import dataclasses
+from collections.abc import Set as AbstractSet
 from functools import partial
-from typing import AbstractSet, Callable, Dict, Tuple
+from typing import Callable
 
 import pyparsing as pp
 
@@ -15,9 +16,6 @@ class ReferencedNames:
         self.field_names.update(other.field_names)
         self.part_names.update(other.part_names)
 
-    def __add__(self, other: "ReferencedNames") -> "ReferencedNames":
-        return self.__class__(self.field_names | other.field_names, self.part_names | other.part_names)
-
 
 def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: AbstractSet[str]) -> None:
     rn = get_referenced_names(result)
@@ -30,8 +28,10 @@ def check(result: pp.ParseResults, field_names: AbstractSet[str], part_names: Ab
         raise RuntimeError(" ".join(msgs))
 
 
-def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
+def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
     referenced_names = ReferencedNames()
+    if result is None:
+        return referenced_names
     if result.get_name() == "field":
         referenced_names.field_names.add(result[0])
     elif result.get_name() == "part":
@@ -44,8 +44,8 @@ def get_referenced_names(result: pp.ParseResults) -> ReferencedNames:
     return referenced_names
 
 
-def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values: Dict[str, bool],
-             other_values: Dict[str, bool]) -> bool:
+def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
+             other_values: dict[str, bool]) -> bool:
     functions = {
         'and': lambda x: evaluate(x[0], field_values, part_values, other_values) and evaluate(x[1], field_values, part_values, other_values),
         'or': lambda x: evaluate(x[0], field_values, part_values, other_values) or evaluate(x[1], field_values, part_values, other_values),
@@ -62,7 +62,7 @@ def evaluate(result: pp.ParseResults, field_values: Dict[str, bool], part_values
 
 
 #: Tuple (evaluator, evaluate_args) for each result Group name.
-_EVALUATOR_FUNCTIONS: Dict[str, Tuple[Callable[..., bool], bool]] = {
+_EVALUATOR_FUNCTIONS: dict[str, tuple[Callable[..., bool], bool]] = {
     'and': (lambda x, y, f, p, o: x(f, p, o) and y(f, p, o), True),
     'or': (lambda x, y, f, p, o: x(f, p, o) or y(f, p, o), True),
     'xor': (lambda x, y, f, p, o: x(f, p, o) != y(f, p, o), True),
@@ -75,7 +75,8 @@ _EVALUATOR_FUNCTIONS: Dict[str, Tuple[Callable[..., bool], bool]] = {
 }
 
 
-def create_evaluator(result: pp.ParseResults) -> Callable[[Dict[str, bool], Dict[str, bool]], bool]:
+# TODO: Do we need this? We don't use it?
+def create_evaluator(result: pp.ParseResults) -> Callable[[dict[str, bool], dict[str, bool]], bool]:
     # num_bound_args = _EVALUATOR_NARY[result.get_name()]
     evaluator, evaluate_args = _EVALUATOR_FUNCTIONS[result.get_name()]
     if evaluate_args:

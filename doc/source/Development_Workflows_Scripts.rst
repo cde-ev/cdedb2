@@ -111,9 +111,9 @@ Setting environment variables.
 ------------------------------
 
 When running the script, most parameters can be set via environment variables. Note
-that this needs to happen after switching the executing user to ``www-data``. ::
+that this needs to happen after switching the executing user to ``www-cde``. ::
 
-    sudo -u www-data SCRIPT_PERSONA_ID=1 SCRIPT_DRY_RUN="" SCRIPT_CONFIGPATH="/etc/cdedb/config.py" python3 bin/some_script.py
+    sudo -u www-cde -g www-data SCRIPT_PERSONA_ID=1 SCRIPT_DRY_RUN="" SCRIPT_CONFIGPATH="/etc/cdedb/config.py" python3 bin/some_script.py
 
 Note that in order to deactivate dry run mode, the ``SCRIPT_DRY_RUN`` environment
 variable needs to be falsy, so the only viable option is setting it to an empty string.

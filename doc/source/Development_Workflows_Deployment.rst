@@ -10,11 +10,11 @@ following steps to deploy a new revision.
     git checkout stable
     git merge origin/master # or another branch or an explicit commit
 
-* Run the ``bin/push-stable.sh`` script. If any new commits with deployment
-  relevance are present (marked by a line starting with "Deploy:" in the
-  commit message) they will be displayed and there will be the option to
-  abort the push. If no such commits are present the push simply
-  proceeds. The script accepts the parameter "-d" which enables the dry-run
+* Run the ``bin/push-stable.sh`` script.
+  If any new files have been added to the ``related/deploy`` folder, their names will
+  be displayed and you will be prompted whether to proceed with the push.
+  (The same goes for commit messages containing a line starting with "Deploy:".)
+  The script also accepts the parameter "-d" which enables the dry-run
   mode where no actual push happens.
   The script also automatically creates a new release tag marked as "release/YYYY-MM-DD"
   and pushes to the stable branch of the ``mirror`` remote if it is set up.
@@ -40,7 +40,7 @@ following steps to deploy a new revision.
     sudo -i
     cdedb-update.sh
     sudo -u cdb psql -U cdb -d cdb -f evolution.sql
-    sudo -u www-data SCRIPT_CONFIGPATH="/etc/cdedb/config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
+    sudo -u www-cde -g www-data SCRIPT_CONFIGPATH="/etc/cdedb/config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
     cdedb-restart.sh
 
 * Send update information to the Aktivenforum. These should include a short summary of
@@ -52,4 +52,3 @@ following steps to deploy a new revision.
   ::
 
     git shortlog release/X..stable
-

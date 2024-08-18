@@ -1,9 +1,8 @@
 """Parse a given json dict into sql statements."""
 
+from collections.abc import Sized
 from itertools import chain
-from typing import (
-    Any, Callable, Dict, List, Optional, Set, Sized, Tuple, Type, TypedDict,
-)
+from typing import Any, Callable, Optional, TypedDict
 
 from psycopg2.extensions import connection
 
@@ -17,13 +16,13 @@ from cdedb.database.query import DatabaseValue_s
 
 class AuxData(TypedDict):
     conn: connection
-    core: Type[CoreBackend]
-    seq_id_tables: List[str]
-    cyclic_references: Dict[str, Tuple[str, ...]]
+    core: type[CoreBackend]
+    seq_id_tables: list[str]
+    cyclic_references: dict[str, tuple[str, ...]]
     constant_replacements: CdEDBObject
-    entry_replacements: Dict[str, Dict[str, Callable[..., Any]]]
-    xss_field_excludes: Set[str]
-    xss_table_excludes: Set[str]
+    entry_replacements: dict[str, dict[str, Callable[..., Any]]]
+    xss_field_excludes: set[str]
+    xss_table_excludes: set[str]
 
 
 def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> AuxData:
@@ -46,10 +45,10 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     # This maps full table names to a list of column names in that table that
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
-    cyclic_references: Dict[str, Tuple[str, ...]] = {
-        "event.events": ("lodge_field",),
-        "event.event_parts": ("camping_mat_field",),
-        "event.course_tracks": ("course_room_field",),
+    cyclic_references: dict[str, tuple[str, ...]] = {
+        "event.events": ("lodge_field_id",),
+        "event.event_parts": ("camping_mat_field_id",),
+        "event.course_tracks": ("course_room_field_id",),
     }
 
     # This contains a list of replacements performed on the resulting SQL
@@ -81,7 +80,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
         "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
         "modifier_name", "transaction_date", "condition", "donation", "payment_date",
-        'etime', 'rtime', 'secret_hash',
+        'etime', 'rtime', 'secret_hash', 'member_total',
     }
     xss_table_excludes = {
         "cde.org_period", "cde.expuls_period",
@@ -99,8 +98,8 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     )
 
 
-def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
-                   params: List[DatabaseValue_s], aux: AuxData) -> List[str]:
+def format_inserts(table_name: str, table_data: Sized, keys: tuple[str, ...],
+                   params: list[DatabaseValue_s], aux: AuxData) -> list[str]:
     ret = []
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
@@ -117,7 +116,7 @@ def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
 
 
 def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
-             xss_payload: Optional[str] = None) -> List[str]:
+             xss_payload: Optional[str] = None) -> list[str]:
     """Convert a dict loaded from a json file into sql statements.
 
     The dict contains tables, mapped to columns, mapped to values. The table and column
@@ -128,7 +127,7 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
     :returns: A list of sql statements, inserting the given data.
     """
     aux = prepare_aux(data, config, secrets)
-    commands: List[str] = []
+    commands: list[str] = []
 
     # Start off by resetting the sequential ids to 1.
     commands.extend(f"ALTER SEQUENCE IF EXISTS {table}_id_seq RESTART WITH 1;"
@@ -152,7 +151,7 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
         # Convert the keys to a tuple to ensure consistent ordering.
         keys = tuple(key_set)
         # FIXME more precise type
-        params_list: List[DatabaseValue_s] = []
+        params_list: list[DatabaseValue_s] = []
         for entry in table_data:
             for k in keys:
                 if k not in entry:

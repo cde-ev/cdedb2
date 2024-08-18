@@ -6,18 +6,20 @@ functionality for managing lodgements and lodgement groups belonging to an event
 """
 import collections
 import dataclasses
-from typing import Any, Collection, Dict, Iterator, List, Optional, Protocol, Tuple
+from collections.abc import Collection, Iterator
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    cast_fields, read_conditional_write_composer, singularize,
+    read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, unwrap,
+    RequestState, cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
@@ -30,11 +32,11 @@ from cdedb.database.query import DatabaseValue_s
 @dataclasses.dataclass(frozen=True)
 class LodgementInhabitants:
     """Small helper class to store and add inhabitants of a lodgement."""
-    regular: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
-    camping_mat: Tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    regular: tuple[int, ...] = dataclasses.field(default_factory=tuple)
+    camping_mat: tuple[int, ...] = dataclasses.field(default_factory=tuple)
 
     @property
-    def all(self) -> Tuple[int, ...]:
+    def all(self) -> tuple[int, ...]:
         return self.regular + self.camping_mat
 
     def __add__(self, other: Any) -> "LodgementInhabitants":
@@ -43,7 +45,7 @@ class LodgementInhabitants:
         return self.__class__(self.regular + other.regular,
                               self.camping_mat + other.camping_mat)
 
-    def __iter__(self) -> Iterator[Tuple[int, ...]]:
+    def __iter__(self) -> Iterator[tuple[int, ...]]:
         """Enable tuple unpacking."""
         return iter((self.regular, self.camping_mat))
 
@@ -51,7 +53,7 @@ class LodgementInhabitants:
 class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-method
     @access("event")
     def list_lodgement_groups(self, rs: RequestState,
-                              event_id: int) -> Dict[int, str]:
+                              event_id: int) -> dict[int, str]:
         """List all lodgement groups for an event.
 
         :returns: dict mapping ids to names
@@ -64,7 +66,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgement_groups(self, rs: RequestState, group_ids: Collection[int]
+    def get_lodgement_groups(self, rs: RequestState, group_ids: Collection[int],
                              ) -> CdEDBObjectMap:
         """Retrieve data for some lodgement groups.
 
@@ -104,6 +106,15 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         get_lodgement_groups, "group_ids", "group_id")
 
     @access("event")
+    def new_get_lodgement_groups(self, rs: RequestState, event_id: int,
+                                 ) -> models.CdEDataclassMap[models.LodgementGroup]:
+        event_id = affirm(vtypes.ID, event_id)
+        with Atomizer(rs):
+            group_data = self.query_all(
+                rs, *models.LodgementGroup.get_select_query((event_id,)))
+        return models.LodgementGroup.many_from_database(group_data)
+
+    @access("event")
     def set_lodgement_group(self, rs: RequestState,
                             data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a lodgement group."""
@@ -126,7 +137,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     class _RCWLodgementGroupProtocol(Protocol):
-        def __call__(self, rs: RequestState, data: CdEDBObject
+        def __call__(self, rs: RequestState, data: CdEDBObject,
                      ) -> DefaultReturnCode: ...
     rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
         get_lodgement_group, set_lodgement_group, id_param_name='group_id')
@@ -156,7 +167,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement_group(self, rs: RequestState, group_id: int,
-                               cascade: Collection[str] = None
+                               cascade: Optional[Collection[str]] = None,
                                ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
@@ -200,8 +211,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return ret
 
     @access("event")
-    def list_lodgements(self, rs: RequestState, event_id: int, group_id: int = None
-                        ) -> Dict[int, str]:
+    def list_lodgements(self, rs: RequestState, event_id: int,
+                        group_id: Optional[int] = None) -> dict[int, str]:
         """List all lodgements for an event.
 
         :param group_id: If given, limit to lodgements in this group.
@@ -226,7 +237,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int]
+    def get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int],
                        ) -> CdEDBObjectMap:
         """Retrieve data for some lodgements.
 
@@ -246,16 +257,54 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
-            event_fields = self._get_event_fields(rs, event_id)
+            event_fields = models.EventField.many_from_database(
+                self._get_event_fields(rs, event_id).values())
             ret = {e['id']: e for e in data}
-            for entry in ret.values():
-                entry['fields'] = cast_fields(entry['fields'], event_fields)
+            for lodge in ret.values():
+                lodge['fields'] = cast_fields(lodge['fields'], event_fields)
         return {e['id']: e for e in data}
 
     class _GetLodgementProtocol(Protocol):
         def __call__(self, rs: RequestState, lodgement_id: int) -> CdEDBObject: ...
     get_lodgement: _GetLodgementProtocol = singularize(
         get_lodgements, "lodgement_ids", "lodgement_id")
+
+    @access("event")
+    def new_get_lodgements(self, rs: RequestState, lodgement_ids: Collection[int],
+                           ) -> models.CdEDataclassMap[models.Lodgement]:
+        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+        with Atomizer(rs):
+            lodgement_data = self.query_all(
+                rs, *models.Lodgement.get_select_query(lodgement_ids))
+            if not lodgement_data:
+                return {}
+            events = {e['event_id'] for e in lodgement_data}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only lodgements from exactly one event allowed!"))
+            event_id = unwrap(events)
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            group_data = {
+                e['id']: e for e in self.query_all(
+                    rs, *models.LodgementGroup.get_select_query(
+                        [lodge['group_id'] for lodge in lodgement_data], "id"))
+            }
+            event_fields = self._get_event_fields(rs, event_id)
+        return models.Lodgement.many_from_database([
+            {
+                **lodge,
+                'group_data': group_data[lodge['group_id']],
+                'event_fields': models.EventField.many_from_database(
+                    event_fields.values()),
+            }
+            for lodge in lodgement_data
+        ])
+
+    class _NewGetLodgementProtocol(Protocol):
+        def __call__(self, rs: RequestState, lodgement_id: int) -> models.Lodgement: ...
+    new_get_lodgement: _NewGetLodgementProtocol = singularize(
+        new_get_lodgements, "lodgement_ids", "lodgement_id")
 
     @access("event")
     def set_lodgement(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
@@ -283,8 +332,9 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
                 event_fields = self._get_event_fields(rs, event_id)
                 fdata = affirm(
                     vtypes.EventAssociatedFields, data['fields'],
-                    fields=event_fields,
-                    association=const.FieldAssociations.lodgement)
+                    fields=models.EventField.many_from_database(event_fields.values()),
+                    association=const.FieldAssociations.lodgement,
+                )
 
                 fupdate = {
                     'id': data['id'],
@@ -306,8 +356,10 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
         event_fields = self._get_event_fields(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            vtypes.EventAssociatedFields, fdata, fields=event_fields,
-            association=const.FieldAssociations.lodgement)
+            vtypes.EventAssociatedFields, fdata,
+            fields=models.EventField.many_from_database(event_fields.values()),
+            association=const.FieldAssociations.lodgement,
+        )
         data['fields'] = PsycoJson(fdata)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
@@ -346,7 +398,8 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def delete_lodgement(self, rs: RequestState, lodgement_id: int,
-                         cascade: Collection[str] = None) -> DefaultReturnCode:
+                         cascade: Optional[Collection[str]] = None,
+                         ) -> DefaultReturnCode:
         """Delete a lodgement.
 
         :param cascade: Specify which deletion blockers to cascadingly
@@ -397,19 +450,24 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
     @access("event")
     def get_grouped_inhabitants(
             self, rs: RequestState, event_id: int,
-            lodgement_ids: Collection[int] = None,
-    ) -> Dict[int, Dict[int, LodgementInhabitants]]:
+            lodgement_ids: Optional[Collection[int]] = None,
+            only_involved: bool = False,
+    ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
             raise PrivilegeError
-        params: List[DatabaseValue_s] = [event_id]
+        params: list[DatabaseValue_s] = [event_id]
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
         else:
             lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
+        if only_involved:
+            condition += " AND rp.status = ANY(%s)"
+            params.append([s.value
+                           for s in const.RegistrationPartStati.involved_states()])
         query = f"""
             SELECT
                 lodgement_id, part_id, is_camping_mat AS is_cm,
@@ -419,7 +477,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
             WHERE ep.event_id = %s AND {condition}
             GROUP BY lodgement_id, part_id, is_camping_mat
         """
-        ret: Dict[int, Dict[int, LodgementInhabitants]]
+        ret: dict[int, dict[int, LodgementInhabitants]]
         ret = collections.defaultdict(
             lambda: collections.defaultdict(LodgementInhabitants))
         for e in self.query_all(rs, query, params):
@@ -432,7 +490,7 @@ class EventLodgementBackend(EventBaseBackend):  # pylint: disable=abstract-metho
 
     @access("event")
     def move_lodgements(self, rs: RequestState, group_id: int,
-                        target_group_id: Optional[int], delete_group: bool
+                        target_group_id: Optional[int], delete_group: bool,
                         ) -> DefaultReturnCode:
         """Move lodgements from one group to another or delete them with the group."""
         ret = 1

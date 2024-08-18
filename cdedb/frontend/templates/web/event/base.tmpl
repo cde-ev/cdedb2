@@ -24,6 +24,10 @@
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
+        {% if data['id'] in user.orga or 'event_orga' in user.admin_views %}
+            {{ util.href(cdedblink("event/register_form", {"event_id": data['id'], "preview": True}), gettext("Registration Preview"),
+                    aclass="list-group-item", icon="sign-in-alt") }}
+        {% endif %}
         {% if (is_participant and data['participant_info']) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": data['id']}),
                          gettext("Participant info"), aclass='list-group-item', icon='info',
@@ -56,9 +60,11 @@
                     icon="cloud-upload-alt", active=(sidenav_active == 'partial_import')) }}
             {{ util.href(cdedblink("event/orga_token_summary", {"event_id": data['id']}), gettext("Orga Tokens"),
                     aclass="list-group-item", icon="robot", active=(sidenav_active == 'orga_tokens')) }}
+            {% if 'finance' in user.admin_views %}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
                          aclass="list-group-item", icon="euro-sign", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}
+            {% endif %}
         </div>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/change_event", {"event_id": data['id']}), gettext("Configuration"),
@@ -86,6 +92,12 @@
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), gettext("Checkin"),
                     aclass="list-group-item", icon="check-double", active=(sidenav_active == 'event_checkin')) }}
+        </div>
+    {% elif 'finance' in user.admin_views %}
+        <div class="list-group tear-down">
+            {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
+                         aclass="list-group-item", icon="euro-sign", readonly=is_locked,
+                         active=(sidenav_active == 'event_batch_fees')) }}
         </div>
     {% endif %}
 {% endmacro %}
@@ -155,11 +167,13 @@
         {% if user.persona_id in ambience['event']['orgas'] %}
             {{ util.admin_views_toggle((
                     (gettext("Event Administration"), ["event_mgmt"], None),
+                    (gettext("Finance Administration"), ["finance"], None),
                 )) }}
         {% else %}
             {{ util.admin_views_toggle((
                     (gettext("Event Administration"), ["event_mgmt"], None),
                     (gettext("Orga Controls"), ["event_orga"], None),
+                    (gettext("Finance Administration"), ["finance"], None),
                 )) }}
         {% endif %}
     {% else %}

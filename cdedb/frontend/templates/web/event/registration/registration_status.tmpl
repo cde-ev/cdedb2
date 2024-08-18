@@ -51,21 +51,54 @@
             {{ ambience['event']['registration_text']|md }}
         {% endcall %}
     {% endif %}
-    {% if fee %}
-    {% if registration['amount_paid'] >= fee %}
-        {{ util.h(n_("Payment"), underline=true) }}
-        <p>
-            {% trans fee=fee|money(lang=lang) %}
-                You have already paid the registration fee of {{ fee }}.
-            {% endtrans %}
-        </p>
+    {% if not ambience['event']['iban'] and not fee %}
+        {# No fee. #}
+    {% elif not fee and not to_pay %}
+        {# No fee. #}
     {% else %}
-        {% set to_pay=(fee - registration['amount_paid'])|money(lang=lang) %}
-        {% if ambience['event']['iban'] %}
+        {{ util.h(n_("Payment"), underline=true) }}
+        {% if complex_fee.is_complex() %}
+            <p>
+                {% trans %}
+                    Your fee consists of:
+                {% endtrans %}
+            </p>
+            {{ generic_event.fee_breakdown_by_kind() }}
+        {% else %}
+            <p>
+                {% trans %}Fee{% endtrans %}: {{ fee|money(lang=lang) }}
+            </p>
+        {% endif %}
+        {% if to_pay == 0 %}
+            <p>
+                {% trans fee=fee|money(lang=lang) %}
+                    You have already paid the registration fee of {{ fee }}.
+                {% endtrans %}
+            </p>
+        {% elif to_pay > 0 %}
+            <p>
+                {% if registration['amount_paid'] %}
+                    {% trans paid=registration['amount_paid']|money(lang=lang) %}
+                        You have already paid {{ paid }}.
+                    {% endtrans %}
+                {% endif %}
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    You still need to pay the outstanding amount of {{ to_pay }}.
+                {% endtrans %}
+            </p>
+        {% elif to_pay < 0 %}
+            <p>
+                {% trans fee=fee|money(lang=lang), to_pay=-to_pay|money(lang=lang) %}
+                    You have overpaid your fee of {{ fee }} by {{ to_pay }}.
+                    The orgas will be in contact with you.
+                {% endtrans %}
+            </p>
+        {% endif %}
+        {% if ambience['event']['iban'] and to_pay > 0 %}
             {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
                          aclass="btn btn-sm btn-default pull-right", anid="show-registration-fee-qr",
                          title=gettext("Bank transfer data as QR code")) }}
-            {{ util.h(n_("Bank Transfer"), underline=true) }}
+            {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
             <script nonce="{{ csp_nonce }}">
                 $("#show-registration-fee-qr").cdedbQRCodeModal(
                     {{ {'title': ambience['event']['title'],
@@ -74,10 +107,11 @@
             </script>
 
             <p>
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    Please transfer {{ to_pay }} to the following Account.
+                {% endtrans %}
                 {% trans %}
-                    Please keep in mind that your Registration will only be complete, once
-                    you pay your participation fee. Please transfer {{ to_pay }} to the following
-                    Account. Please make sure, the recipient does not have to pay any fees,
+                    Please make sure, the recipient does not have to pay any fees,
                     especially when paying internationally.
                 {% endtrans %}
             </p>
@@ -101,7 +135,7 @@
                     </tr>
                     <tr>
                         <td>{% trans %}Amount{% endtrans %}</td>
-                        <td>{{ to_pay }}</td>
+                        <td>{{ to_pay|money(lang=lang) }}</td>
                     </tr>
                     <tr>
                         <td>{% trans %}Reference{% endtrans %}</td>
@@ -109,20 +143,6 @@
                     </tr>
                 </tbody>
             </table>
-        {% else %}
-            {{ util.h(n_("Payment"), underline=true) }}
-            <p>
-                {% trans %}
-                    The orgas will tell you separately how to pay your fee of {{ to_pay }}.
-                {% endtrans %}
-            </p>
-        {% endif %}
-        <p>
-            {% trans fee=fee|money(lang=lang), amount_paid=registration['amount_paid']|money(lang=lang) %}
-                We have already registered a payment of {{ amount_paid }}. The total registration fee is {{ fee }}.
-            {% endtrans %}
-        </p>
-        {% if ambience['event']['iban'] %}
             <p class="text-muted">
                 {{ util.make_icon('info-circle') }}
                 {% trans %}
@@ -130,25 +150,22 @@
                     (up to a few weeks) until the payment is registered here.
                 {% endtrans %}
             </p>
+        {% elif not ambience['event'].iban and to_pay > 0 %}
+            <p>
+                {% trans to_pay=to_pay|money(lang=lang) %}
+                    The orgas will tell you separately how to pay your fee of {{ to_pay }}.
+                {% endtrans %}
+            </p>
         {% endif %}
         {% if complex_fee.nonmember_surcharge %}
             <div class="text-info" id="nonmember-surcharge" style="font-weight: bold;">
                 <p>
-                {% trans additional_fee=complex_fee.nonmember_surcharge_amount|money(lang=lang) %}
-                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
-                {% endtrans %}
-                </p>
-                {% if "cde" in user.roles %}
-                    <p>
-                    {% trans semester_fee=semester_fee|money(lang=lang) %}
-                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
-                        If you choose to do so, please do so with two separate payments.
+                    {% trans additional_fee=complex_fee.nonmember_surcharge|money(lang=lang) %}
+                        Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                     {% endtrans %}
-                    </p>
-                {% endif %}
+                </p>
             </div>
         {% endif %}
-    {% endif %}
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
@@ -162,7 +179,7 @@
 
     {{ util.h(n_("Status"), underline=true) }}
     <dl class="dl-horizontal">
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <dt title="{{ part['title'] }}: {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang) }}">
@@ -173,28 +190,26 @@
                     {% trans %}Registration Status{% endtrans %}
                 </dt>
             {% endif %}
-            <dd id="registration_status_part{{ part_id }}">
-                {{ gettext(registration['parts'][part_id]['status']|enum(enums['RegistrationPartStati'])) }}
-                {# We assume that an orga sets 'payment' if enough has been paid for admission as participant.
-                   E.g. one might only request a second installment of the fee by participants shortly before the event
-                   See also EventRegistrationBackend.get_registration_payment_info() #}
-                {% if registration['parts'][part_id]['status'].has_to_pay() and not registration['payment'] and fee %}
+            <dd id="registration_status_part{{ part.id }}">
+                {{ gettext(registration['parts'][part.id]['status']|enum(enums['RegistrationPartStati'])) }}
+                {# TODO: Use Registration.remaining_owed here #}
+                {% if registration['parts'][part.id]['status'].has_to_pay() and registration['amount_owed'] > registration['amount_paid'] %}
                     <span class="text-danger">({% trans %}payment pending{% endtrans %})</span>
                 {% endif %}
-                {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
-                    ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part_id] }})
+                {% if registration['parts'][part.id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part.id] %}
+                    ({% trans %}Placement{% endtrans %}{{ nbsp }}{{ waitlist_position[part.id] }})
                 {% endif %}
             </dd>
         {% endfor %}
     </dl>
 
-    {% set sorted_tracks = ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+    {% set sorted_tracks = ambience['event']['tracks'].values()|sort %}
 
     {% for batch in filtered_choice_objects|batch(2) %}
         <div class="row">
         {% for cco in batch %}
-        {% set track, track_group = (reference_tracks[cco['id']], cco) if 'constraint_type' in cco else (cco, None) %}
-        {% set id_suffix = "group-{}".format(track_group['id']) if track_group else track['id'] %}
+        {% set track = cco.reference_track %}
+        {% set id_suffix = "group-{}".format(cco['id']) if cco.is_complex() else track['id'] %}
         {% set reg_track = registration['tracks'][track['id']] %}
 
         <div class="col-md-{{ 6 if filtered_choice_objects|length > 1 else 12 }}">
@@ -203,12 +218,12 @@
 
             {% if ambience['event']['is_course_assignment_visible'] %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
-                    {% if 'track_ids' in cco %}
-                        {% for track_id, track in sorted_tracks if track_id in cco['track_ids'] %}
+                    {% if cco.is_complex() %}
+                        {% for track in sorted_tracks if track.id in cco['tracks'] %}
                             <dt title="{{ track['title'] }}">
                                 {{ track['title'] }}
                             </dt>
-                            {{ print_course(registration['tracks'][track_id], courses) }}
+                            {{ print_course(registration['tracks'][track.id], courses) }}
                         {% endfor %}
                     {% else %}
                         <dt title="{% trans %}Assigned to{% endtrans %}">

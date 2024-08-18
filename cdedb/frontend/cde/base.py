@@ -14,13 +14,15 @@ import decimal
 import itertools
 import operator
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
+from collections.abc import Collection, Sequence
+from typing import Any, Optional
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
     get_hash, merge_dicts, now,
@@ -60,8 +62,8 @@ MEMBERSEARCH_DEFAULTS = {
         QueryOperators.match,
     'qop_pevent_id': QueryOperators.equal,
     'qop_pcourse_id': QueryOperators.equal,
-    'qord_primary': 'family_name,birth_name',
-    'qord_primary_ascending': True,
+    'qord_0': 'family_name,birth_name',
+    'qord_0_ascending': True,
 }
 
 
@@ -202,14 +204,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} {:0<5}".format(
-                pl, pu)
+            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
         elif pl:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} 99999".format(
-                pl)
+            defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} 99999"
         elif pu:
-            defaults['qval_postal_code,postal_code2'] = "00000 {:0<5}".format(
-                pu)
+            defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         scope = QueryScope.cde_member
@@ -225,7 +224,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 pevent_id = int(pevent_id)
             except ValueError:
                 pass
-        courses: Dict[int, str] = {}
+        courses: dict[int, str] = {}
         if pevent_id:
             courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
         choices = {"pevent_id": events, 'pcourse_id': courses}
@@ -244,7 +243,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 def restrict(constraint: QueryConstraint) -> QueryConstraint:
                     field, operation, value = constraint
                     if field == 'fulltext':
-                        value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                        value = [fr"\m{val}\M" if len(val) <= 3 else val
                                  for val in value]
                     elif len(str(value)) <= 3:
                         operation = QueryOperators.equal
@@ -281,12 +280,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")
-    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool
+    def user_search(self, rs: RequestState, download: Optional[str], is_search: bool,
                     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         courses = self.pasteventproxy.list_past_courses(rs)
-        choices: Dict[str, OrderedDict[Any, str]] = {
+        choices: dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'pcourse_id': OrderedDict(
@@ -306,7 +305,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
-            'bub_search': False,
+            'trial_member': False,
+            'honorary_member': False,
+            'is_searchable': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
         }
@@ -323,16 +324,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_assembly_realm': True,
             'is_active': True,
             'decided_search': False,
-            'paper_expuls': True,
-            'donation': decimal.Decimal(0)
+            'bub_search': False,
         }
         data.update(defaults)
         return super().create_user(rs, data)
 
     @access("cde_admin")
     def batch_admission_form(self, rs: RequestState,
-                             data: List[CdEDBObject] = None,
-                             csvfields: Tuple[str, ...] = None) -> Response:
+                             data: Optional[list[CdEDBObject]] = None,
+                             csvfields: Optional[tuple[str, ...]] = None) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -359,7 +359,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'data': data, 'pevents': pevents, 'pcourses': pcourses,
             'csvfields': csv_position})
 
-    def examine_for_admission(self, rs: RequestState, datum: CdEDBObject
+    def examine_for_admission(self, rs: RequestState, datum: CdEDBObject,
                               ) -> CdEDBObject:
         """Check one line of batch admission.
 
@@ -368,8 +368,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         :returns: The processed input datum.
         """
-        warnings: List[Error] = []
-        problems: List[Error]
+        warnings: list[Error] = []
+        problems: list[Error]
 
         # short-circuit if additional fields like the resolution are error prone
         problems = [
@@ -411,6 +411,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'is_member': True,
             'display_name': persona['display_name'] or persona['given_names'],
             'trial_member': False,
+            'honorary_member': False,
             'paper_expuls': True,
             'donation': decimal.Decimal(0),
             'bub_search': False,
@@ -525,9 +526,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
-                                trial_membership: bool, consent: bool, sendmail: bool
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+    def perform_batch_admission(self, rs: RequestState, data: list[CdEDBObject],
+                                trial_membership: bool, consent: bool, sendmail: bool,
+                                ) -> tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -542,34 +543,19 @@ class CdEBaseFrontend(AbstractUserFrontend):
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "perform_batch_admission"):
-            success, count_new, count_renewed = self.cdeproxy.perform_batch_admission(
+            success, stats = self.cdeproxy.perform_batch_admission(
                 rs, relevant_data, trial_membership, consent)
             if not success:
-                return success, count_new, count_renewed
+                assert stats is None or isinstance(stats, int)
+                return success, stats, None
+            assert isinstance(stats, BatchAdmissionStats)
             # Send mail after the transaction succeeded
             if sendmail:
-                for datum in data:
-                    if datum['resolution'] == LineResolutions.create:
-                        success, message = self.coreproxy.make_reset_cookie(
-                            rs, datum['raw']['username'],
-                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                        email = self.encode_parameter(
-                            "core/do_password_reset_form", "email",
-                            datum['raw']['username'],
-                            persona_id=None,
-                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                        meta_info = self.coreproxy.get_meta_info(rs)
-                        self.do_mail(rs, "welcome",
-                                     {'To': (datum['raw']['username'],),
-                                      'Subject': "Aufnahme in den CdE",
-                                      },
-                                     {'data': datum['persona'],
-                                      'fee': self.conf["MEMBERSHIP_FEE"],
-                                      'email': email if success else "",
-                                      'cookie': message if success else "",
-                                      'meta_info': meta_info,
-                                      })
-            return True, count_new, count_renewed
+                personas = self.coreproxy.get_personas(rs, stats.new_accounts)
+                for persona in personas.values():
+                    self.send_welcome_mail(rs, persona)
+            count_new = len(stats.new_accounts | stats.new_members)
+            return True, count_new, len(stats.modified_accounts)
 
     @staticmethod
     def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:
@@ -741,8 +727,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     def determine_open_permits(self, rs: RequestState,
-                               lastschrift_ids: Collection[int] = None
-                               ) -> Set[int]:
+                               lastschrift_ids: Optional[Collection[int]] = None,
+                               ) -> set[int]:
         """Find ids, which to debit this period.
 
         Helper to find out which of the passed lastschrift permits has
@@ -774,7 +760,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("cde_admin", "auditor")
-    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool
+    def view_finance_log(self, rs: RequestState, data: CdEDBObject, download: bool,
                          ) -> Response:
         """View financial activity."""
         return self.generic_view_log(

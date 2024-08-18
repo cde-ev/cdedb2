@@ -10,12 +10,13 @@ All parts are combined together in the `CdEBackend` class via multiple inheritan
 together with a handful of high-level methods that use functionalities of multiple
 backend parts.
 """
-
+import collections
 import copy
+import dataclasses
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import Optional, Union
 
 import psycopg2.extensions
 
@@ -25,10 +26,11 @@ from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
     affirm_validation as affirm,
 )
+from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    RequestState, glue, make_proxy, unwrap,
+    RequestState, make_proxy, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
@@ -42,6 +44,55 @@ from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 
 
+@dataclasses.dataclass
+class BatchAdmissionStats:
+    # New accounts created via batch admission
+    new_accounts: set[int]
+    # Existing accounts which were granted trial membership
+    new_members: set[int]
+    # Existing accounts which were only modified
+    modified_accounts: set[int]
+
+    def add(self, persona_id: int, resolution: LineResolutions) -> None:
+        """Add a persona to the right stat set, depending on the chosen resolution."""
+        if resolution == LineResolutions.skip:
+            pass
+        elif resolution == LineResolutions.create:
+            self.new_accounts.add(persona_id)
+        elif resolution.do_trial():
+            self.new_members.add(persona_id)
+        elif resolution.do_update():
+            self.modified_accounts.add(persona_id)
+        else:
+            raise RuntimeError(n_("Impossible"))
+
+
+@dataclasses.dataclass
+class MoneyTransfer:
+    persona: CdEDBObject
+    amount: decimal.Decimal
+    date: datetime.date
+
+    registration: Optional[CdEDBObject] = None
+
+
+@dataclasses.dataclass
+class MoneyTransfersResult:
+    success: bool = True
+    index: int = -1
+
+    membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
+    event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
+        default_factory=lambda: collections.defaultdict(list))
+    event_reimbursements: dict[int, list[MoneyTransfer]] = dataclasses.field(
+        default_factory=lambda: collections.defaultdict(list))
+
+    new_members: int = 0
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 class CdEBaseBackend(AbstractBackend):
     """This is the backend with the most additional role logic.
 
@@ -52,13 +103,14 @@ class CdEBaseBackend(AbstractBackend):
     def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
+        self.event = make_proxy(EventBackend(), internal=True)
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
     def cde_log(self, rs: RequestState, code: const.CdeLogCodes,
-                persona_id: int = None, change_note: str = None
+                persona_id: Optional[int] = None, change_note: Optional[str] = None,
                 ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -89,7 +141,7 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("core_admin", "cde_admin", "auditor")
-    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter
+    def retrieve_finance_log(self, rs: RequestState, log_filter: FinanceLogFilter,
                              ) -> CdEDBLog:
         """Get financial activity.
 
@@ -100,77 +152,81 @@ class CdEBaseBackend(AbstractBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("finance_admin")
-    def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
-        """Resolve all money transfer entries.
-
-        :returns: A bool indicating success and:
-            * In case of success:
-                * The number of recorded transactions
-                * The number of new members.
-            * In case of error:
-                * The index of the erronous line or None
-                    if a DB-serialization error occurred.
-                * None
-        """
-        data = affirm_array(vtypes.MoneyTransferEntry, data)
+    def book_money_transfers(self, rs: RequestState, transfers: list[CdEDBObject],
+                             ) -> MoneyTransfersResult:
+        transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
         index = 0
-        note_template = ("Guthabenänderung um {amount} auf {new_balance} "
-                         "(Überwiesen am {date})")
-        # noinspection PyBroadException
+
+        changelog_note_template = ("Guthabenänderung um {amount} auf {new_balance}"
+                                   " (Überwiesen am {date})")
+
         try:
             with Atomizer(rs):
-                count = 0
-                memberships_gained = 0
-                persona_ids = tuple(e['persona_id'] for e in data)
+                result = MoneyTransfersResult()
+                persona_ids = {t['persona_id'] for t in transfers}
                 personas = self.core.get_total_personas(rs, persona_ids)
-                for index, datum in enumerate(data):
-                    assert isinstance(datum['amount'], decimal.Decimal)
-                    new_balance = (personas[datum['persona_id']]['balance']
-                                   + datum['amount'])
-                    note = datum['note']
-                    date = None
-                    if note:
-                        try:
-                            date = datetime.datetime.strptime(
-                                note, PARSE_OUTPUT_DATEFORMAT)
-                        except ValueError:
-                            pass
-                        else:
-                            # This is the default case and makes it pretty
-                            note = note_template.format(
-                                amount=money_filter(datum['amount']),
-                                new_balance=money_filter(new_balance),
-                                date=date.strftime(PARSE_OUTPUT_DATEFORMAT))
-                    count += self.core.change_persona_balance(
-                        rs, datum['persona_id'], new_balance,
-                        const.FinanceLogCodes.increase_balance,
-                        change_note=note, transaction_date=date)
-                    if (new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not personas[datum['persona_id']]['is_member']):
-                        code = self.core.change_membership_easy_mode(
-                            rs, datum['persona_id'], is_member=True)
-                        memberships_gained += bool(code)
-                    # Remember the changed balance in case of multiple transfers.
-                    personas[datum['persona_id']]['balance'] = new_balance
+                for index, transfer in enumerate(transfers):
+                    persona = personas[transfer['persona_id']]
+                    amount, date = transfer['amount'], transfer['date']
+                    if transfer['registration_id'] is None:
+                        new_balance = persona['balance'] + amount
+                        change_note = changelog_note_template.format(
+                            amount=money_filter(amount),
+                            new_balance=money_filter(new_balance),
+                            date=date.strftime(PARSE_OUTPUT_DATEFORMAT),
+                        )
+
+                        # Increase balance.
+                        self.core.change_persona_balance(
+                            rs, persona['id'], new_balance,
+                            const.FinanceLogCodes.increase_balance,
+                            change_note=change_note, transaction_date=date,
+                        )
+
+                        # Grant membership if necessary.
+                        if (new_balance >= self.conf["MEMBERSHIP_FEE"]
+                                and not persona['is_member']):
+                            code = self.core.change_membership_easy_mode(
+                                rs, persona['id'], is_member=True)
+                            result.new_members += bool(code)
+
+                        # Add to tally.
+                        result.membership_fees.append(MoneyTransfer(
+                            persona=persona, amount=amount, date=date,
+                        ))
+
+                        # Remember the changed balance in case of multiple transfers.
+                        persona['balance'] = new_balance
+                    else:
+                        registration = self.event.book_registration_payment(
+                            rs, transfer['registration_id'], amount, date,
+                        )
+                        event_id = registration['event_id']
+                        ret = MoneyTransfer(
+                            persona=persona, amount=amount, date=date,
+                            registration=registration,
+                        )
+                        if amount > 0:
+                            result.event_fees[event_id].append(ret)
+                        elif amount < 0:
+                            result.event_reimbursements[event_id].append(ret)
         except psycopg2.extensions.TransactionRollbackError:
-            # We perform a rather big transaction, so serialization errors
-            # could happen.
-            return False, None, None
+            # We perform a rather big transaction, so serialization errors could happen.
+            return MoneyTransfersResult(success=False)
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
-            # frustrating for the users -- hence some extra error handling
-            # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
+            # frustrating for the users -- hence some extra error handling here.
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
+                " <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index, None
-        return True, count, memberships_gained
+
+            return MoneyTransfersResult(success=False, index=index)
+        return result
 
     @access("cde")
     def current_period(self, rs: RequestState) -> int:
@@ -182,13 +238,13 @@ class CdEBaseBackend(AbstractBackend):
         return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState
-                         ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
+    def get_member_stats(self, rs: RequestState,
+                         ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
-            num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_honorary,
+            num_of_printed_expuls, num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -205,6 +261,11 @@ class CdEBaseBackend(AbstractBackend):
                 FROM core.personas
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
+            (
+                SELECT COUNT(*) AS num_of_honorary
+                FROM core.personas
+                WHERE is_member = True AND honorary_member = True
+            ) AS honorary_count,
             (
                 SELECT COUNT(*) AS num_of_printed_expuls
                 FROM core.personas
@@ -225,9 +286,11 @@ class CdEBaseBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
+            n_("num_of_honorary"), n_("num_of_printed_expuls"), n_("num_ex_members"),
+            n_("num_all"),
+        ))
 
-        def query_stats(select: str, condition: str, order: str, limit: int = 0
+        def query_stats(select: str, condition: str, order: str, limit: int = 0,
                         ) -> OrderedDict[str, int]:
             query = (f"SELECT COUNT(*) AS num, {select} AS datum"
                      f" FROM core.personas"
@@ -319,13 +382,11 @@ class CdEBaseBackend(AbstractBackend):
         return simple_stats, other_stats, year_stats
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
-                                     trial_membership: bool, consent: bool
-                                     ) -> Optional[bool]:
+                                     trial_membership: bool, consent: bool,
+                                     ) -> Optional[int]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: None if nothing happened. True if a new member account was created or
-            membership was granted to an existing (non-member) account. False if
-            the existing user was already a member.
+        :returns: The affected persona_id, or None if the entry was skipped.
         """
         # Require an Atomizer.
         self.affirm_atomized_context(rs)
@@ -350,9 +411,7 @@ class CdEBaseBackend(AbstractBackend):
             persona_id = self.core.create_persona(rs, new_persona)
             self.core.change_membership_easy_mode(
                 rs, persona_id, is_member=True, trial_member=trial_membership)
-            ret = True
         elif datum['resolution'].is_modification():
-            ret = False
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
             if current['is_archived']:
@@ -378,6 +437,7 @@ class CdEBaseBackend(AbstractBackend):
                     'is_ml_realm': True,
                     'decided_search': False,
                     'trial_member': False,
+                    'honorary_member': False,
                     'paper_expuls': True,
                     'donation': decimal.Decimal(0),
                     'bub_search': False,
@@ -419,10 +479,8 @@ class CdEBaseBackend(AbstractBackend):
             if datum['resolution'].do_trial():
                 if current['is_member']:
                     raise RuntimeError(n_("May not grant trial membership to member."))
-                code = self.core.change_membership_easy_mode(
+                self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True)
-                # This will be true if the user was not a member before.
-                ret = bool(code)
             if datum['resolution'].do_update():
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
@@ -436,28 +494,27 @@ class CdEBaseBackend(AbstractBackend):
             self.pastevent.add_participant(
                 rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
                 is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
-        return ret
+        return persona_id
 
     @access("cde_admin")
-    def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
-                                trial_membership: bool, consent: bool
-                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+    def perform_batch_admission(
+            self, rs: RequestState, data: list[CdEDBObject], trial_membership: bool,
+            consent: bool,
+    ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
         needs to be in atomized context.
 
-        :returns: A tuple consisting of a bool and two optional integers.:
+        :returns: A tuple consisting of a bool and an optional second argument.:
             A boolean signalling success.
             If the operation was successful:
-                An integer signalling the number of newly created accounts.
-                An integer signalling the number of modified/renewed accounts.
+                The second argument is an instance of BatchAdmissionStats.
             If the operation was not successful:
-                If a TransactionRollbackError occrured:
-                    Both integer parameters are None.
+                If a TransactionRollbackError occurred:
+                    The second argument is None
                 Otherwise:
-                    The index where the error occured.
-                    The second parameter is None.
+                    The second argument is an int, the index where the error occurred.
         """
         data = affirm_array(vtypes.BatchAdmissionEntry, data)
         trial_membership = affirm(bool, trial_membership)
@@ -465,38 +522,34 @@ class CdEBaseBackend(AbstractBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count_new = count_renewed = 0
+                stats = BatchAdmissionStats(set(), set(), set())
                 for index, datum in enumerate(data, start=1):
-                    account_created = self._perform_one_batch_admission(
+                    persona_id = self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
-                    if account_created is None:
-                        pass
-                    elif account_created:
-                        count_new += 1
-                    else:
-                        count_renewed += 1
+                    if persona_id is None:
+                        continue
+                    stats.add(persona_id, datum['resolution'])
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None, None
+            return False, None
         except Exception:  # pragma: no cover
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
             # frustrating for the users -- hence some extra error handling
             # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation",
-                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during batch creation <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index, None
-        return True, count_new, count_renewed
+            return False, index  # pylint: disable=used-before-assignment
+        return True, stats
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
-                             aggregate: bool = False) -> Tuple[CdEDBObject, ...]:
+                             aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """

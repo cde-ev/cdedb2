@@ -19,14 +19,14 @@ Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ reference }}
 
 {% if complex_fee.nonmember_surcharge %}
-Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge_amount|money }}
+Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge|money }}
 bezahlen (bereits in der obigen Summe enthalten).
-{% if "cde" in user.roles %}
-
-Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen
-und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.
-Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.
-{% endif %}
+{#{% if "cde" in user.roles %}#}
+{##}
+{#Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen#}
+{#und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.#}
+{#Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.#}
+{#{% endif %}#}
 {% endif %}
 
 {% else %}

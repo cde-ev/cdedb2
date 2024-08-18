@@ -9,6 +9,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members"), active="True") }}
 {% endblock %}
 {% block content %}
+    <p>
+        {% trans faq=util.href("https://www.cde-ev.de/faq/mitglied/", gettext("FAQ")) %}
+            Here you can find the CdE’s internal member area.
+            If you have further questions, please consult the {{ faq }} at the CdE website.
+        {% endtrans %}
+    </p>
     <div class="row">
         <div class="col-md-6" id="member-quick-search">
             {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}
@@ -86,17 +92,28 @@
         {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro-sign') %}
             {% if "member" in user.roles %}
                 <p>
-                    {% trans amount=data['balance']|money(lang=lang) %}
-                        Your current Balance is {{ amount }}.
-                    {% endtrans %}
-                    {% if deadline <= now().date() %}
+                    {% if data['honorary_member'] %}
                         {% trans %}
-                            Your Membership will end in a few days.
+                            You are an honorary member, therefore your membership will not automatically expire.
                         {% endtrans %}
+                        {% if data['balance'] %}
+                            {% trans amount=data['balance']|money(lang=lang) %}
+                                Regardless, your current balance is {{ amount }}.
+                            {% endtrans %}
+                        {% endif %}
                     {% else %}
-                        {% trans date=deadline|date(lang=lang) %}
-                            This will presumably last until {{ date }}.
+                        {% trans amount=data['balance']|money(lang=lang) %}
+                            Your current Balance is {{ amount }}.
                         {% endtrans %}
+                        {% if deadline <= now().date() %}
+                            {% trans %}
+                                Your Membership will end in a few days.
+                            {% endtrans %}
+                        {% else %}
+                            {% trans date=deadline|date(lang=lang) %}
+                                This will presumably last until {{ date }}.
+                            {% endtrans %}
+                        {% endif %}
                     {% endif %}
                 </p>
             {% else %}
@@ -107,42 +124,44 @@
                     {% endtrans %}
                 </p>
             {% endif %}
-            <p>
-                {% trans %}
-                    To replenish your Account Balance, transfer money to the following Account:
-                {% endtrans %}
-            </p>
-            <table class="table table-condensed">
-                <tbody>
-                    <tr>
-                        <td>{% trans %}Account holder{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
-                    </tr>
-                    <tr>
-                        <td>{% trans %}IBAN{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_IBAN']|iban }}</td>
-                    </tr>
-                    <tr>
-                        <td>{% trans %}BIC{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
-                    </tr>
-                    <tr>
-                        <td>{% trans %}Bank{% endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
-                    </tr>
-                    <tr>
-                        <td>{% trans %}Payment reference{% endtrans %}</td>
-                        <td>{{ reference }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p class="text-muted">
-                {{ util.make_icon('info-circle') }}
-                {% trans %}
-                    Note: After your transfer incurred at the bank account, it may take some time
-                    (up to a few weeks) until the payment is registered here.
-                {% endtrans %}
-            </p>
+            {% if not data['honorary_member'] %}
+                <p>
+                    {% trans %}
+                        To replenish your Account Balance, transfer money to the following Account:
+                    {% endtrans %}
+                </p>
+                <table class="table table-condensed">
+                    <tbody>
+                        <tr>
+                            <td>{% trans %}Account holder{% endtrans %}</td>
+                            <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>{% trans %}IBAN{% endtrans %}</td>
+                            <td>{{ meta_info['CdE_Konto_IBAN']|iban }}</td>
+                        </tr>
+                        <tr>
+                            <td>{% trans %}BIC{% endtrans %}</td>
+                            <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>{% trans %}Bank{% endtrans %}</td>
+                            <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>{% trans %}Payment reference{% endtrans %}</td>
+                            <td>{{ reference }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="text-muted">
+                    {{ util.make_icon('info-circle') }}
+                    {% trans %}
+                        Note: After your transfer incurred at the bank account, it may take some time
+                        (up to a few weeks) until the payment is registered here.
+                    {% endtrans %}
+                </p>
+            {% endif %}
         {% endcall %}
     {% endif %}
 {% endblock %}

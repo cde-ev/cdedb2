@@ -40,7 +40,7 @@
 
         {% if realm in ("cde", "event") %}
             <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
-            {{ util.form_input_text(name="address", label=gettext("Street, Nr.")) }}
+            {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
@@ -49,7 +49,7 @@
         {% endif %}
         {% if realm == "cde" %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
-            {{ util.form_input_text(name="address2", label=gettext("Street, Nr.")) }}
+            {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
@@ -63,6 +63,8 @@
                                    anid="input_checkbox_is_member") }}
             {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Member"),
                                        anid="input_checkbox_trial_member") }}
+            {{ util.form_input_checkbox(name="honorary_member", label=gettext("Honorary Member"),
+                                        anid="input_checkbox_trial_member") }}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
                                    anid="input_checkbox_is_searchable") }}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
@@ -224,25 +226,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
-                                                       ("3.", "qord_tertiary"))%}
+                                {% for i in range(MAX_QUERY_ORDERS) %}
                                     <tr class="query_sort">
-                                        <td> {{ title }} </td>
+                                        <td> {{ (i+1)|string + "." }} </td>
                                         <td>
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
                                             {%- for field in spec if ',' not in field %}
                                                 {%- do myentries.append((field, spec[field].get_title(gettext))) %}
                                             {%- endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption=nbsp,
+                                            {{ util.input_select("qord_" + i|string, entries=myentries, nulloption=nbsp,
                                                                  aclass="form-control input-sm sort-field",
-                                                                 arialabel=gettext("%s sort key")|format(title)) }}
+                                                                 arialabel=gettext("%s. sort key")|format(i)) }}
                                         </td>
                                         <td>
-                                            {{ util.input_select(name + "_ascending", defaultvalue=True,
+                                            {{ util.input_select("qord_" + i|string + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
                                                                  entries=((True, "A→Z"), (False, "Z→A")),
-                                                                 arialabel=gettext("%s sort order")|format(title)) }}
+                                                                 arialabel=gettext("%s. sort order")|format(i)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -309,7 +310,7 @@
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
                             <div class="input-group">
-                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
+                                {{ util.input_text("query_name", placeholder=gettext("query name"), anid="query_name_input") }}
                                 {{ util.input_hidden("query_scope", scope) }}
                                 <div class="input-group-btn">
                                     {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
@@ -483,13 +484,18 @@
                                         {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
-                                {% if values.get("qord_primary") == field or
-                                        values.get("qord_secondary") == field or
-                                        values.get("qord_tertiary") == field %}
-                                    <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {{ util.make_icon('sort-alpha-down') }}
-                                    </span>
-                                {% endif %}
+                                {% for i in range(MAX_QUERY_ORDERS) %}
+                                    {% if values.get("qord_" + i|string) == field %}
+                                        <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
+                                        {% if values.get("qord_" + i|string + "_ascending") == "False" %}
+                                            {{ util.make_icon('sort-alpha-down') }}
+                                        {% else %}
+                                            {{ util.make_icon('sort-alpha-down-alt') }}
+                                        {% endif %}
+                                        </span>
+                                        {% break %}
+                                    {% endif %}
+                                {% endfor %}
                             </th>
                         {% endfor %}
                     {% endfor %}
@@ -549,6 +555,8 @@
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
                                     {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
                                         {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
+                                    {% elif format_spec == ResultFormat.event_fee %}
+                                        {{ util.href(cdedblink("event/show_registration_fee", {'registration_id': row[primary_field]}), text|money, title=gettext("Fee Details")) }}
                                     {% else %}
                                         {{ text }}
                                     {% endif %}
@@ -577,7 +585,7 @@
                                     <td title="{{ gettext(aggregate_title) }}" data-col="{{ key }}">  {# The data-col attribute is mainly used for testing #}
                                         {% set format_spec = query.get_field_format_spec(field) %}
                                         {# For enums etc., only show how many elements are null #}
-                                        {% set value = aggregates.get(key, "–") if (not query.spec[field].choices or aggregate_func == "null") else "–" %}
+                                        {% set value = aggregates.get(key, "–") if (format_spec != ResultFormat.enum or aggregate_func == "null") else "–" %}
                                         {% if format_spec == ResultFormat.date and value != "–" and aggregate_func != "null" %}
                                             {{ value|date(lang=lang) }}
                                         {% elif format_spec == ResultFormat.datetime and value != "–" and aggregate_func != "null" %}
@@ -598,21 +606,27 @@
     {% endif %}
 {% endmacro %}
 
-{% macro query_button_field_set(field_association) %}
-    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+{% macro query_result_dynamic_action(
+        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" class="btn btn-sm {{ aclass }}">
+        {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
+        <script nonce="{{ csp_nonce }}">
+            $('.query-result-dynamic-actions').show();
+            (function (script) {
+                $(script).closest('button').on("click", function () {
+                    console.log($(this));
+                    let list = [];
+                    $('#query-result').find('.ls-selected').each(function () {
+                        list.push($(this).data('id'));
+                    });
+                    console.log(list);
+                    if (list.length === 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink(target, params or {}, magic_placeholders=magic_placeholders)|safe }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            })(document.currentScript);
+        </script>
     </button>
-    <script nonce="{{ csp_nonce }}">
-        $('#btn-set-field').click(function(){
-            var list = [];
-            $('#query-result').find('.ls-selected').each(function(){
-                list.push($(this).attr('data-id'));
-            });
-            if (list.length === 0)
-                return;
-            location.href =
-                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
-                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-        });
-    </script>
 {% endmacro %}

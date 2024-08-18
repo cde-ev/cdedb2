@@ -17,30 +17,33 @@ import abc
 import collections
 import copy
 import datetime
-from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
+import decimal
+from collections.abc import Collection, Iterable
+from pathlib import Path
+from typing import Any, Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    cast_fields, encrypt_password, internal, singularize,
+    encrypt_password, internal, singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, glue, json_serialize,
-    make_persona_name, now, unwrap,
+    DefaultReturnCode, DeletionBlockers, RequestState, cast_fields, glue,
+    json_serialize, make_persona_name, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS,
-    TRACK_GROUP_FIELDS,
+    EVENT_FIELDS, EVENT_PART_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
+    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import EventLogFilter
@@ -50,7 +53,7 @@ from cdedb.filter import datetime_filter
 from cdedb.models.droid import OrgaToken
 
 # type alias for questionnaire specification.
-CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
+CdEDBQuestionnaire = dict[const.QuestionnaireUsages, list[CdEDBObject]]
 
 
 class EventBaseBackend(EventLowLevelBackend):
@@ -63,8 +66,8 @@ class EventBaseBackend(EventLowLevelBackend):
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime")
 
     @access("event")
-    def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
-                          course_id: int = None) -> bool:
+    def is_offline_locked(self, rs: RequestState, *, event_id: Optional[int] = None,
+                          course_id: Optional[int] = None) -> bool:
         """Helper to determine if an event or course is locked for offline
         usage.
 
@@ -89,8 +92,8 @@ class EventBaseBackend(EventLowLevelBackend):
             raise ValueError(n_("Event does not exist"))
         return data['offline_lock']
 
-    def assert_offline_lock(self, rs: RequestState, *, event_id: int = None,
-                            course_id: int = None) -> None:
+    def assert_offline_lock(self, rs: RequestState, *, event_id: Optional[int] = None,
+                            course_id: Optional[int] = None) -> None:
         """Helper to check locking state of an event or course.
 
         This raises an exception in case of the wrong locking state. Exactly
@@ -103,8 +106,8 @@ class EventBaseBackend(EventLowLevelBackend):
             raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
-    def orga_infos(self, rs: RequestState, persona_ids: Collection[int]
-                   ) -> Dict[int, Set[int]]:
+    def orga_infos(self, rs: RequestState, persona_ids: Collection[int],
+                   ) -> dict[int, set[int]]:
         """List events organized by specific personas."""
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
@@ -115,7 +118,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     class _OrgaInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
     @access("event", "auditor")
@@ -140,9 +143,9 @@ class EventBaseBackend(EventLowLevelBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
-    def list_events(self, rs: RequestState, visible: bool = None,
-                       current: bool = None,
-                       archived: bool = None) -> Dict[int, str]:
+    def list_events(self, rs: RequestState, visible: Optional[bool] = None,
+                       current: Optional[bool] = None,
+                       archived: Optional[bool] = None) -> dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
@@ -153,7 +156,7 @@ class EventBaseBackend(EventLowLevelBackend):
             "FROM event.events AS e JOIN event.event_parts AS p",
             "ON p.event_id = e.id",
             "GROUP BY e.id")
-        query = "SELECT e.* from ({}) as e".format(subquery)
+        query = f"SELECT e.* from ({subquery}) as e"
         constraints = []
         params = []
         if visible is not None:
@@ -177,119 +180,57 @@ class EventBaseBackend(EventLowLevelBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_events(self, rs: RequestState, event_ids: Collection[int]
-                   ) -> CdEDBObjectMap:
-        """Retrieve data for some events organized via DB.
-
-        This queries quite a lot of additional tables since there is quite
-        some data attached to such an event. Namely we have additional data on:
-
-        * parts,
-        * part_groups,
-        * orgas,
-        * fields.
-
-        The tracks are inside the parts entry. This allows to create tracks
-        during event creation.
-
-        Furthermore we have the following derived keys:
-
-        * tracks,
-        * begin,
-        * end,
-        * is_open.
-        """
+    def get_events(self, rs: RequestState, event_ids: Collection[int],
+                   ) -> models.CdEDataclassMap[models.Event]:
         event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
-            event_data = self.sql_select(rs, "event.events", EVENT_FIELDS, event_ids)
-            ret = {e['id']: e for e in event_data}
-            for anid in event_ids:
-                ret[anid]['orgas'] = set()
-                ret[anid]['parts'] = {}
-                ret[anid]['tracks'] = {}
-                ret[anid]['part_groups'] = {}
-                ret[anid]['track_groups'] = {}
-                ret[anid]['fees'] = {}
-                ret[anid]['institution'] =\
-                    const.PastInstitutions(ret[anid]['institution'])
-            part_data = self.sql_select(
-                rs, "event.event_parts", EVENT_PART_FIELDS,
-                event_ids, entity_key="event_id")
+            event_data = {
+                e['id']: e
+                for e in self.query_all(rs, *models.Event.get_select_query(event_ids))
+            }
+            part_data = self.query_all(
+                rs, *models.EventPart.get_select_query(event_ids))
             all_parts = {e['id']: e['event_id'] for e in part_data}
-            part_group_data = self.sql_select(
-                rs, "event.part_groups", PART_GROUP_FIELDS,
-                event_ids, entity_key="event_id")
-            part_group_part_data = self.sql_select(
-                rs, "event.part_group_parts", ("part_group_id", "part_id"),
-                all_parts.keys(), entity_key="part_id")
-            track_data = self.sql_select(
-                rs, "event.course_tracks", COURSE_TRACK_FIELDS,
-                all_parts.keys(), entity_key="part_id")
-            all_tracks = {e['id']: all_parts[e['part_id']] for e in track_data}
-            track_group_data = self.sql_select(
-                rs, "event.track_groups", TRACK_GROUP_FIELDS,
-                event_ids, entity_key="event_id")
-            track_group_track_data = self.sql_select(
-                rs, "event.track_group_tracks", ("track_group_id", "track_id"),
-                all_tracks.keys(), entity_key="track_id")
-            fee_data = self.sql_select(
-                rs, "event.event_fees", EVENT_FEE_FIELDS, event_ids,
-                entity_key="event_id")
-            orga_data = self.sql_select(
-                rs, "event.orgas", ("persona_id", "event_id"), event_ids,
-                entity_key="event_id")
-            for d in orga_data:
-                ret[d['event_id']]['orgas'].add(d['persona_id'])
-            for d in part_data:
-                d['tracks'] = {}
-                d['part_groups'] = {}
-                ret[d['event_id']]['parts'][d['id']] = d
-            for d in part_group_data:
-                d['part_ids'] = set()
-                d['constraint_type'] = const.EventPartGroupType(d['constraint_type'])
-                ret[d['event_id']]['part_groups'][d['id']] = d
-            for d in part_group_part_data:
-                event_id = all_parts[d['part_id']]
-                part_group = ret[event_id]['part_groups'][d['part_group_id']]
-                part_group['part_ids'].add(d['part_id'])
-                part = ret[event_id]['parts'][d['part_id']]
-                part['part_groups'][d['part_group_id']] = part_group
-            for d in track_data:
-                d['track_groups'] = {}
-                event_id = all_tracks[d['id']]
-                ret[event_id]['tracks'][d['id']] = d
-                ret[event_id]['parts'][d['part_id']]['tracks'][d['id']] = d
-            for d in track_group_data:
-                d['track_ids'] = set()
-                d['constraint_type'] = const.CourseTrackGroupType(d['constraint_type'])
-                ret[d['event_id']]['track_groups'][d['id']] = d
-            for d in track_group_track_data:
-                event_id = all_tracks[d['track_id']]
-                track_group = ret[event_id]['track_groups'][d['track_group_id']]
-                track_group['track_ids'].add(d['track_id'])
-                track = ret[event_id]['tracks'][d['track_id']]
-                track['track_groups'][d['track_group_id']] = track_group
-            for d in fee_data:
-                d['kind'] = const.EventFeeType(d['kind'])
-                ret[d['event_id']]['fees'][d['id']] = d
-            for event_id, fields in self._get_events_fields(rs, event_ids).items():
-                ret[event_id]['fields'] = fields
-        for anid in event_ids:
-            reference_time = now()
-            ret[anid]['begin'] = min((p['part_begin']
-                                      for p in ret[anid]['parts'].values()))
-            ret[anid]['end'] = max((p['part_end']
-                                    for p in ret[anid]['parts'].values()))
-            ret[anid]['is_open'] = (
-                    ret[anid]['registration_start']
-                    and ret[anid]['registration_start'] <= reference_time
-                    and (ret[anid]['registration_hard_limit'] is None
-                         or ret[anid]['registration_hard_limit'] >= reference_time))
-        return ret
+            part_group_data = self.query_all(
+                rs, *models.PartGroup.get_select_query(event_ids))
+            track_data = self.query_all(
+                rs, *models.CourseTrack.get_select_query(all_parts.keys()))
+            track_group_data = self.query_all(
+                rs, *models.TrackGroup.get_select_query(event_ids))
+            fee_data = self.query_all(
+                rs, *models.EventFee.get_select_query(event_ids))
+            field_data = self.query_all(
+                rs, *models.EventField.get_select_query(event_ids))
+            custom_filter_data = self.query_all(
+                rs, *models.CustomQueryFilter.get_select_query(event_ids))
+        for e in event_data.values():
+            e['parts'] = []
+            e['part_groups'] = []
+            e['tracks'] = []
+            e['track_groups'] = []
+            e['fees'] = []
+            e['fields'] = []
+            e['custom_query_filters'] = []
+        for p in part_data:
+            event_data[p['event_id']]['parts'].append(p)
+        for pg in part_group_data:
+            event_data[pg['event_id']]['part_groups'].append(pg)
+        for t in track_data:
+            event_data[all_parts[t['part_id']]]['tracks'].append(t)
+        for tg in track_group_data:
+            event_data[tg['event_id']]['track_groups'].append(tg)
+        for fee in fee_data:
+            event_data[fee['event_id']]['fees'].append(fee)
+        for field in field_data:
+            event_data[field['event_id']]['fields'].append(field)
+        for custom_filter in custom_filter_data:
+            event_data[custom_filter['event_id']]['custom_query_filters'].append(
+                custom_filter)
+        return models.Event.many_from_database(event_data.values())
 
-    class _GetEventProtocol(Protocol):
-        def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
-    get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
+    class _NewGetEventProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
+    get_event: _NewGetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
@@ -297,6 +238,16 @@ class EventBaseBackend(EventLowLevelBackend):
         shortname = affirm(str, shortname)
         return bool(self.query_all(
             rs, "SELECT id FROM event.events WHERE shortname = %s", (shortname,)))
+
+    @access("anonymous")
+    def get_minor_form_path(self, rs: RequestState, event_id: int) -> Path:
+        event_id = affirm(vtypes.ID, event_id)
+        return self.minor_form_dir / str(event_id)
+
+    @access("anonymous")
+    def has_minor_form(self, rs: RequestState, event_id: int) -> bool:
+        event_id = affirm(vtypes.ID, event_id)
+        return self.get_minor_form_path(rs, event_id).is_file()
 
     @access("event")
     def change_minor_form(self, rs: RequestState, event_id: int,
@@ -310,9 +261,9 @@ class EventBaseBackend(EventLowLevelBackend):
         if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
-        path = self.minor_form_dir / str(event_id)
+        path = self.get_minor_form_path(rs, event_id)
         if minor_form is None:
-            if path.exists():
+            if path.is_file():
                 path.unlink()
                 # Since this is not acting on our database, do not demand an atomized
                 # context.
@@ -330,24 +281,9 @@ class EventBaseBackend(EventLowLevelBackend):
                            atomized=False)
             return 1
 
-    @access("event")
-    def get_minor_form(self, rs: RequestState,
-                       event_id: int) -> Optional[bytes]:
-        """Retrieve the minor form for an event.
-
-        Returns None if no minor form exists for the given event."""
-        event_id = affirm(vtypes.ID, event_id)
-        # TODO accesscheck?
-        path = self.minor_form_dir / str(event_id)
-        ret = None
-        if path.exists():
-            with open(path, "rb") as f:
-                ret = f.read()
-        return ret
-
     @internal
     @access("event")
-    def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
+    def set_event_archived(self, rs: RequestState, event_id: int) -> None:
         """Wrapper around ``set_event()`` for archiving an event.
 
         This exists to emit the correct log message. It delegates
@@ -355,9 +291,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         with Atomizer(rs):
             with Silencer(rs):
-                self.set_event(rs, data)
-            self.event_log(rs, const.EventLogCodes.event_archived,
-                           data['id'])
+                self.set_event(rs, event_id, {'is_archived': True})
+            self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
     def add_event_orgas(self, rs: RequestState, event_id: int,
@@ -392,6 +327,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
                 ret *= r
+
+        # Update session orga status
+        if rs.user.persona_id in persona_ids:
+            rs.user.orga.add(event_id)
+
         return ret
 
     @access("event_admin")
@@ -412,6 +352,11 @@ class EventBaseBackend(EventLowLevelBackend):
             if ret:
                 self.event_log(rs, const.EventLogCodes.orga_removed,
                                event_id, persona_id=persona_id)
+
+        # Update session orga status
+        if rs.user.persona_id == persona_id:
+            rs.user.orga.remove(event_id)
+
         return ret
 
     @access("event")
@@ -423,12 +368,12 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id):
             raise PrivilegeError
-        data = self.sql_select(rs, OrgaToken.database_table, ("id", "title",),
+        data = self.sql_select(rs, OrgaToken.database_table, ("id", "title"),
                                (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
     @access("event")
-    def get_orga_tokens(self, rs: RequestState, orga_token_ids: Collection[int]
+    def get_orga_tokens(self, rs: RequestState, orga_token_ids: Collection[int],
                         ) -> dict[int, OrgaToken]:
         """Retrieve information about orga tokens."""
         orga_token_ids = affirm_set(vtypes.ID, orga_token_ids)
@@ -436,19 +381,18 @@ class EventBaseBackend(EventLowLevelBackend):
             return {}
 
         with Atomizer(rs):
-            data = self.sql_select(
-                rs, OrgaToken.database_table, OrgaToken.database_fields(),
-                orga_token_ids)
+            ret = OrgaToken.many_from_database(
+                self.query_all(
+                    rs, *OrgaToken.get_select_query(orga_token_ids, "id"),
+                ),
+            )
 
-            event_ids = {e['event_id'] for e in data}
+            event_ids = {token.event_id for token in ret.values()}
             if not len(event_ids) == 1:
                 raise ValueError(n_("Only orga tokens from one event allowed."))
             if not self.is_orga(rs, event_id=unwrap(event_ids)):
                 raise PrivilegeError
 
-            ret: dict[int, OrgaToken] = {}
-            for e in data:
-                ret[e['id']] = OrgaToken.from_database(e)
         return ret
 
     class _GetOrgaAPITokenProtocol(Protocol):
@@ -457,7 +401,7 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id")
 
     @access("event")
-    def create_orga_token(self, rs: RequestState, data: OrgaToken
+    def create_orga_token(self, rs: RequestState, data: OrgaToken,
                           ) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
@@ -486,7 +430,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return new_id, secret
 
     @access("event")
-    def change_orga_token(self, rs: RequestState, data: CdEDBObject
+    def change_orga_token(self, rs: RequestState, data: CdEDBObject,
                           ) -> DefaultReturnCode:
         """Change some keys of an existing orga token.
 
@@ -519,7 +463,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def revoke_orga_token(self, rs: RequestState, orga_token_id: int
+    def revoke_orga_token(self, rs: RequestState, orga_token_id: int,
                           ) -> DefaultReturnCode:
         """Revoke an existing orga token and delete its hashed secret."""
         orga_token_id = affirm(vtypes.ID, orga_token_id)
@@ -549,7 +493,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def delete_orga_token_blockers(self, rs: RequestState, orga_token_id: int
+    def delete_orga_token_blockers(self, rs: RequestState, orga_token_id: int,
                                    ) -> DeletionBlockers:
         """Determine what keeps an orga  token from being deleted.
 
@@ -580,7 +524,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def delete_orga_token(self, rs: RequestState, orga_token_id: int,
-                          cascade: Collection[str] = None) -> DefaultReturnCode:
+                          cascade: Optional[Collection[str]] = None,
+                          ) -> DefaultReturnCode:
         """Delete an orga  token.
 
         :param cascade: Specify which deletion blockers to cascadingly remove or ignore.
@@ -633,8 +578,8 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event", "droid_orga")
-    def set_event(self, rs: RequestState, data: CdEDBObject,
-                  change_note: str = None) -> DefaultReturnCode:
+    def set_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
+                  change_note: Optional[str] = None) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
         The syntax for updating the associated data on orgas, parts and
@@ -664,40 +609,44 @@ class EventBaseBackend(EventLowLevelBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
-        data = affirm(vtypes.Event, data)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
-        self.assert_offline_lock(rs, event_id=data['id'])
-
+        event_id = affirm(vtypes.ID, event_id)
         ret = 1
         with Atomizer(rs):
+            current = self.get_event(rs, event_id)
+            data = affirm(vtypes.Event, data, current=current)
+            data['id'] = event_id
+
+            if not self.is_orga(rs, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             # Set top-level event fields.
             if len(edata) > 1:
                 # Do additional validation for these references to custom datafields.
                 indirect_fields = set(
-                    edata[f] for f in ("lodge_field",) if f in edata
+                    edata[f] for f in ("lodge_field_id",) if f in edata
                 )
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
                         rs, "event.field_definitions",
                         ("id", "event_id", "kind", "association"), indirect_fields)}
-                    if edata.get('lodge_field'):
+                    if edata.get('lodge_field_id'):
                         self._validate_special_event_field(
                             rs, data['id'], "lodge_field",
-                            indirect_data[edata['lodge_field']])
+                            indirect_data[edata['lodge_field_id']])
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'], change_note=change_note)
 
             if 'orgas' in data:
-                ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
+                ret *= self.add_event_orgas(rs, event_id, data['orgas'])
             if 'fields' in data:
-                ret *= self._set_event_fields(rs, data['id'], data['fields'])
+                ret *= self._set_event_fields(rs, event_id, data['fields'])
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
-                ret *= self._set_event_parts(rs, data['id'], data['parts'])
+                ret *= self._set_event_parts(rs, event_id, data['parts'])
 
         return ret
 
@@ -712,13 +661,12 @@ class EventBaseBackend(EventLowLevelBackend):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
-            update_data = {aspect: data[aspect]
-                           for aspect in ('parts', 'orgas', 'fields')
-                           if aspect in data}
-            if update_data:
-                update_data['id'] = new_id
-                self.set_event(rs, update_data)
-            # lg_data: vtypes.LodgementGroup
+            if 'orgas' in data:
+                self.add_event_orgas(rs, new_id, data['orgas'])
+            if 'fields' in data:
+                self._set_event_fields(rs, new_id, data['fields'])
+            if 'parts' in data:
+                self._set_event_parts(rs, new_id, data['parts'])
             if groups := data.get('lodgement_groups'):
                 for creation_id in mixed_existence_sorter(groups):
                     lg_data = groups[creation_id]
@@ -945,7 +893,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap
+    def set_event_fees(self, rs: RequestState, event_id: int, fees: CdEDBOptionalMap,
                        ) -> DefaultReturnCode:
         """Create, delete and/or update fees for one event."""
         event_id = affirm(vtypes.ID, event_id)
@@ -960,8 +908,10 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             questionnaire = self.get_questionnaire(rs, event_id)
-            fees = affirm(vtypes.EventFeeSetter, fees, event=event,
-                          questionnaire=questionnaire)
+            fees = affirm(
+                vtypes.EventFeeSetter, fees, event=event.as_dict(),
+                questionnaire=questionnaire,
+            )
 
             existing_fees = {unwrap(e) for e in self.sql_select(
                 rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")}
@@ -977,11 +927,37 @@ class EventBaseBackend(EventLowLevelBackend):
                     updated_fees | deleted_fees)}
 
                 if deleted_fees:
+                    personalized_fees = models.PersonalizedFee.many_from_database(
+                        self.query_all(
+                            rs, *models.PersonalizedFee.get_select_query(
+                                deleted_fees, 'fee_id',
+                            ),
+                        ),
+                    )
+                    regs_by_fee = collections.defaultdict(list)
+                    all_regs = set()
+                    for p_fee in personalized_fees.values():
+                        regs_by_fee[int(p_fee.fee_id)].append(p_fee.registration_id)
+                        all_regs.add(p_fee.registration_id)
+                    reg_persona_map = {
+                        e['id']: e['persona_id'] for e in self.sql_select(
+                            rs, models.Registration.database_table,
+                            ('id', 'persona_id'), all_regs,
+                        )
+                    }
                     ret *= self.sql_delete(rs, "event.event_fees", deleted_fees)
                     for x in mixed_existence_sorter(deleted_fees):
                         current = current_fee_data[x]
-                        self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                       event_id, change_note=current['title'])
+                        for reg_id in mixed_existence_sorter(regs_by_fee[x]):
+                            self.event_log(
+                                rs, const.EventLogCodes.personalized_fee_amount_deleted,
+                                event_id, reg_persona_map[reg_id],
+                                change_note=current['title'],
+                            )
+                        self.event_log(
+                            rs, const.EventLogCodes.fee_modifier_deleted,
+                            event_id, change_note=current['title'],
+                        )
 
                 for x in mixed_existence_sorter(updated_fees):
                     updated_fee = copy.deepcopy(fees[x])
@@ -996,6 +972,7 @@ class EventBaseBackend(EventLowLevelBackend):
             for x in mixed_existence_sorter(new_fees):
                 new_fee = copy.deepcopy(fees[x])
                 assert new_fee is not None
+                new_fee.pop('id', None)
                 new_fee['event_id'] = event_id
                 ret *= self.sql_insert(rs, "event.event_fees", new_fee)
                 self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
@@ -1006,7 +983,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @abc.abstractmethod
-    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int
+    def _update_registrations_amount_owed(self, rs: RequestState, event_id: int,
                                           ) -> DefaultReturnCode: ...
 
     @access("event")
@@ -1037,7 +1014,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event", "droid_quick_partial_export", "droid_orga")
     def get_questionnaire(self, rs: RequestState, event_id: int,
-                          kinds: Collection[const.QuestionnaireUsages] = None
+                          kinds: Optional[Collection[const.QuestionnaireUsages]] = None,
                           ) -> CdEDBQuestionnaire:
         """Retrieve the questionnaire rows for a specific event.
 
@@ -1050,7 +1027,7 @@ class EventBaseBackend(EventLowLevelBackend):
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
         query = f"SELECT {columns} FROM event.questionnaire_rows"
         constraints = ["event_id = %s"]
-        params: List[Any] = [event_id]
+        params: list[Any] = [event_id]
         if kinds:
             constraints.append("kind = ANY(%s)")
             params.append(kinds)
@@ -1080,9 +1057,10 @@ class EventBaseBackend(EventLowLevelBackend):
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
+            field_defitions = {k: v.as_dict() for k, v in event.fields.items()}
             # FIXME what is the correct type here?
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
-                          field_definitions=event['fields'],
+                          field_definitions=field_defitions,
                           fees_by_field=fees_by_field)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -1156,33 +1134,42 @@ class EventBaseBackend(EventLowLevelBackend):
                 'timestamp': now(),
             }
             # Table name; column to scan; fields to extract
-            tables: List[Tuple[str, str, Tuple[str, ...]]] = [
-                ('event.event_parts', "event_id", EVENT_PART_FIELDS),
-                ('event.part_groups', "event_id", PART_GROUP_FIELDS),
+            tables: list[tuple[str, str, tuple[str, ...]]] = [
+                models.EventPart.full_export_spec(),
+                models.PartGroup.full_export_spec(),
+                models.CourseTrack.full_export_spec(),
+                models.TrackGroup.full_export_spec(),
+                models.Course.full_export_spec("event_id"),
+                models.EventField.full_export_spec(),
+                models.EventFee.full_export_spec(),
+                models.LodgementGroup.full_export_spec(),
+                models.Lodgement.full_export_spec("event_id"),
+                OrgaToken.full_export_spec("event_id"),
                 ('event.part_group_parts', "part_id", ("part_group_id", "part_id")),
-                ('event.course_tracks', "part_id", COURSE_TRACK_FIELDS),
-                ('event.track_groups', "event_id", TRACK_GROUP_FIELDS),
-                ('event.track_group_tracks', "track_id", (
-                    "track_group_id", "track_id")),
-                ('event.courses', "event_id", COURSE_FIELDS),
+                (
+                    'event.track_group_tracks',
+                     "track_id",
+                     ("track_group_id", "track_id"),
+                ),
                 ('event.course_segments', "track_id", COURSE_SEGMENT_FIELDS),
-                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id',)),
-                ('event.field_definitions', "event_id", FIELD_DEFINITION_FIELDS),
-                ('event.event_fees', "event_id", EVENT_FEE_FIELDS),
-                ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
-                ('event.lodgements', "event_id", LODGEMENT_FIELDS),
+                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
                 ('event.registration_tracks', "track_id", REGISTRATION_TRACK_FIELDS),
-                ('event.course_choices', "track_id", (
-                    'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
-                (OrgaToken.database_table, "event_id", tuple(
-                    OrgaToken.database_fields())),
+                (
+                    'event.course_choices',
+                    "track_id",
+                    ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
+                ),
+                models.PersonalizedFee.full_export_spec(),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
                 ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
-                ('event.log', "event_id", (
-                    'id', 'ctime', 'code', 'submitted_by', 'event_id',
-                    'persona_id', 'change_note')),
+                (
+                    'event.log',
+                    "event_id",
+                    ('id', 'ctime', 'code', 'submitted_by', 'event_id',
+                     'persona_id', 'change_note'),
+                ),
             ]
             personas = set()
             for table, id_name, columns in tables:
@@ -1192,6 +1179,8 @@ class EventBaseBackend(EventLowLevelBackend):
                     id_range = set(ret['event.event_parts'])
                 elif id_name == "track_id":
                     id_range = set(ret['event.course_tracks'])
+                elif id_name == "registration_id":
+                    id_range = set(ret['event.registrations'])
                 else:
                     raise RuntimeError(n_("Impossible."))
                 if 'id' not in columns:
@@ -1257,6 +1246,11 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            personalized_fees = models.PersonalizedFee.many_from_database(
+                self.query_all(
+                    rs, *models.PersonalizedFee.get_select_query(registrations.keys()),
+                ),
+            )
             tokens = list_to_dict(self.sql_select(
                 rs, OrgaToken.database_table, OrgaToken.database_fields(),
                 (event_id,), entity_key="event_id"))
@@ -1274,7 +1268,7 @@ class EventBaseBackend(EventLowLevelBackend):
             'timestamp': now(),
         }
         # courses
-        lookup: Dict[int, Dict[int, bool]] = collections.defaultdict(dict)
+        lookup: dict[int, dict[int, bool]] = collections.defaultdict(dict)
         for e in course_segments:
             lookup[e['course_id']][e['track_id']] = e['is_active']
         for course_id, course in courses.items():
@@ -1282,7 +1276,7 @@ class EventBaseBackend(EventLowLevelBackend):
             del course['event_id']
             course['segments'] = lookup[course_id]
             course['fields'] = cast_fields(
-                course['fields'], event['fields'])
+                course['fields'], event.fields)
         ret['courses'] = courses
         # lodgement groups
         for lodgement_group in lodgement_groups.values():
@@ -1293,18 +1287,24 @@ class EventBaseBackend(EventLowLevelBackend):
         for lodgement in lodgements.values():
             del lodgement['id']
             del lodgement['event_id']
-            lodgement['fields'] = cast_fields(lodgement['fields'],
-                                              event['fields'])
+            lodgement['fields'] = cast_fields(
+                lodgement['fields'], event.fields)
         ret['lodgements'] = lodgements
         # registrations
-        part_lookup: Dict[int, Dict[int, CdEDBObject]]
+        part_lookup: dict[int, dict[int, CdEDBObject]]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
             part_lookup[e['registration_id']][e['part_id']] = e
-        track_lookup: Dict[int, Dict[int, CdEDBObject]]
+        track_lookup: dict[int, dict[int, CdEDBObject]]
         track_lookup = collections.defaultdict(dict)
         for e in registration_tracks:
             track_lookup[e['registration_id']][e['track_id']] = e
+        personalized_fee_lookup: dict[int, dict[int, decimal.Decimal]]
+        personalized_fee_lookup = collections.defaultdict(dict)
+        for personalized_fee in personalized_fees.values():
+            if personalized_fee.amount is not None:
+                personalized_fee_lookup[personalized_fee.registration_id][
+                    personalized_fee.fee_id] = personalized_fee.amount
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
@@ -1326,63 +1326,83 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['registration_id']
                 del track['track_id']
             registration['tracks'] = tracks
-            registration['fields'] = cast_fields(registration['fields'],
-                                                 event['fields'])
+            registration['fields'] = cast_fields(
+                registration['fields'], event.fields)
+            registration['personalized_fees'] = {}
+            for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
+                registration['personalized_fees'][fee_id] = fee_amount
         ret['registrations'] = registrations
+
+        ret['event'] = event.as_dict()
 
         for token_id, orga_token in tokens.items():
             del orga_token['id']
             del orga_token['event_id']
-        event['orga_tokens'] = tokens
+        ret['event']['orga_tokens'] = tokens
 
         # now we add additional information that is only auxillary and
         # does not correspond to changeable entries
         #
         # event
-        del event['id']
-        del event['begin']
-        del event['end']
-        del event['is_open']
+        del ret['event']['id']
         # Delete this later.
-        # del event['orgas']
-        del event['tracks']
-        event['fees'] = {
-            fee['title']: fee for fee in event['fees'].values()}
-        for fee in event['fees'].values():
+        # del ret['event']['orgas']
+        del ret['event']['tracks']
+        del ret['event']['custom_query_filters']
+        ret['event']['fees'] = {
+            fee['title']: fee for fee in ret['event']['fees'].values()}
+        for fee in ret['event']['fees'].values():
             del fee['id']
             del fee['event_id']
             del fee['title']
-        for part in event['parts'].values():
+            del fee['amount_min']
+            del fee['amount_max']
+        for part in ret['event']['parts'].values():
             del part['id']
             del part['event_id']
-            del part['part_groups']
-            for f in ('waitlist_field', 'camping_mat_field',):
+            del part['part_group_ids']
+            for f in ('waitlist_field_id', 'camping_mat_field_id'):
+                new_key = f.removesuffix("_id")
                 if part[f]:
-                    part[f] = event['fields'][part[f]]['field_name']
+                    part[new_key] = ret['event']['fields'][part[f]]['field_name']
+                else:
+                    part[new_key] = None
+                del part[f]
             for track in part['tracks'].values():
                 del track['id']
                 del track['part_id']
-                del track['track_groups']
-                for f in ('course_room_field',):
+                del track['track_group_ids']
+                for f in ('course_room_field_id',):
+                    new_key = f.removesuffix("_id")
                     if track[f]:
-                        track[f] = event['fields'][track[f]]['field_name']
-        for pg in event['part_groups'].values():
+                        track[new_key] = ret['event']['fields'][track[f]]['field_name']
+                    else:
+                        track[new_key] = None
+                    del track[f]
+        for pg in ret['event']['part_groups'].values():
             del pg['id']
             del pg['event_id']
             pg['constraint_type'] = const.EventPartGroupType(pg['constraint_type'])
-            pg['part_ids'] = xsorted(pg['part_ids'])
-        for tg in event['track_groups'].values():
+            pg['part_ids'] = xsorted(pg['parts'].keys())
+            del pg['parts']
+        for tg in ret['event']['track_groups'].values():
             del tg['id']
             del tg['event_id']
             tg['constraint_type'] = const.CourseTrackGroupType(tg['constraint_type'])
-            tg['track_ids'] = xsorted(tg['track_ids'])
-        for f in ('lodge_field',):
-            if event[f]:
-                event[f] = event['fields'][event[f]]['field_name']
+            tg['track_ids'] = xsorted(tg['tracks'].keys())
+            del tg['tracks']
+        for f in ('lodge_field_id',):
+            new_key = f.removesuffix("_id")
+            if ret['event'][f]:
+                ret['event'][new_key] = ret['event']['fields'][
+                    ret['event'][f]]['field_name']
+            else:
+                ret['event'][new_key] = None
+            del ret['event'][f]
         # Fields and questionnaire
         new_fields = {
             field['field_name']: field
-            for field in event['fields'].values()
+            for field in ret['event']['fields'].values()
         }
         new_questionnaire = {
             str(usage): rows
@@ -1391,7 +1411,8 @@ class EventBaseBackend(EventLowLevelBackend):
         for usage, rows in new_questionnaire.items():
             for q in rows:
                 if q['field_id']:
-                    q['field_name'] = event['fields'][q['field_id']]['field_name']
+                    q['field_name'] = ret[
+                        'event']['fields'][q['field_id']]['field_name']
                 else:
                     q['field_name'] = None
                 del q['pos']
@@ -1405,14 +1426,13 @@ class EventBaseBackend(EventLowLevelBackend):
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
             del registration['persona_id']
-            persona['is_orga'] = persona['id'] in event['orgas']
+            persona['is_orga'] = persona['id'] in ret['event']['orgas']
             for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
-        del event['orgas']
-        event['fields'] = new_fields
-        event['questionnaire'] = new_questionnaire
-        ret['event'] = event
+        del ret['event']['orgas']
+        ret['event']['fields'] = new_fields
+        ret['event']['questionnaire'] = new_questionnaire
         return ret
 
     @access("event")
@@ -1432,7 +1452,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_offline_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
-            ret = self.set_event(rs, {'id': event_id, 'fields': fields})
+            ret = self.set_event(rs, event_id, {'fields': fields})
             ret *= self.set_questionnaire(rs, event_id, questionnaire)
         return ret
 
@@ -1456,7 +1476,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int, commit_msg: str, *,
-                            after_change: bool = False, is_initial: bool = False
+                            after_change: bool = False, is_initial: bool = False,
                             ) -> Optional[CdEDBObject]:
         """Commit the current state of the event to its git repository.
 
@@ -1491,13 +1511,13 @@ class EventBaseBackend(EventLowLevelBackend):
             author_name = make_persona_name(persona)
             author_email = rs.user.username
         self._event_keeper.commit(
-            event_id, json_serialize(export), commit_msg, author_name, author_email,
-            may_drop=may_drop, logs=logs)
+            event_id, json_serialize(export, sort_keys=True), commit_msg, author_name,
+            author_email, may_drop=may_drop, logs=logs)
         return export
 
     @internal
     def _process_event_keeper_logs(self, rs: RequestState,
-                                   event_id: int) -> Optional[Tuple[CdEDBObject, ...]]:
+                                   event_id: int) -> Optional[tuple[CdEDBObject, ...]]:
         """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)

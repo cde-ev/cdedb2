@@ -91,20 +91,16 @@ import datetime
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
+from re import Pattern
 from secrets import token_hex
-from typing import TYPE_CHECKING, ClassVar, Optional, Pattern, Type, Union
+from typing import ClassVar, Optional, Union
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import User, n_, now
 from cdedb.common.roles import droid_roles
 from cdedb.common.sorting import Sortkey
-from cdedb.common.validation.types import TypeMapping
 from cdedb.models.common import CdEDataclass
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
-
-    from cdedb.common import CdEDBObject  # pylint:disable=ungrouped-imports
+from cdedb.models.event import EventDataclass
 
 
 class APIToken(abc.ABC):
@@ -125,7 +121,7 @@ class APIToken(abc.ABC):
     """
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         """
         Return a regex pattern matching all droid names for this class.
@@ -262,52 +258,34 @@ class DynamicAPIToken(CdEDataclass, APIToken):
 
     title: str  #: Configurable title.
     notes: Optional[str]  #: Configurable notes field.
-    etime: datetime.datetime  #: Expiration time. Set once during creation.
+    #: Expiration time. Set once during creation.
+    etime: datetime.datetime = field(metadata={'update_exclude': True})
 
     # Special logging fields.
 
     #: Creation time. Automatically set by event backend on creation.
-    ctime: datetime.datetime = field(default_factory=now, init=False)
+    ctime: datetime.datetime = field(
+        default_factory=now, kw_only=True, metadata={
+            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
+        },
+    )
     #: Revocation time. Automatically set by event backend on revocation.
-    rtime: Optional[datetime.datetime] = field(default=None, init=False)
+    rtime: Optional[datetime.datetime] = field(
+        default=None, kw_only=True, metadata={
+            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
+        },
+    )
     #: Last access time. Automatically updated by session backend on every request.
-    atime: Optional[datetime.datetime] = field(default=None, init=False)
-
-    # Special fields and methods for datacase storage using `CdEDataclass` interface.
-
-    #: Subclasses may define unchangeable fields.
-    fixed_fields: ClassVar[tuple[str, ...]] = ('etime',)
-
-    @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
-        """Add special treatment for non-init attributes."""
-        ctime = data.pop('ctime')
-        rtime = data.pop('rtime')
-        atime = data.pop('atime')
-
-        ret = super().from_database(data)
-
-        ret.ctime = ctime
-        ret.rtime = rtime
-        ret.atime = atime
-
-        return ret
-
-    @classmethod
-    def validation_fields(cls, *, creation: bool) -> tuple[TypeMapping, TypeMapping]:
-        mandatory, optional = super().validation_fields(creation=creation)
-        for key in cls.fixed_fields:
-            if key in optional:
-                del optional[key]
-        if 'ctime' in mandatory:
-            optional['ctime'] = mandatory['ctime']
-            del mandatory['ctime']
-        return mandatory, optional
+    atime: Optional[datetime.datetime] = field(
+        default=None, kw_only=True, metadata={
+            'validation_exclude': True, 'request_exclude': True, 'asdict_exclude': True,
+        },
+    )
 
     # Implementations of inherited methods.
 
     @classmethod
-    @lru_cache()
+    @lru_cache
     def get_droid_name_pattern(cls) -> Pattern[str]:
         return re.compile(rf"{cls.name}/(\d+)")
 
@@ -327,7 +305,7 @@ class DynamicAPIToken(CdEDataclass, APIToken):
         return User(
             droid_class=self.__class__,
             droid_token_id=self.id,
-            roles=droid_roles(self.name)
+            roles=droid_roles(self.name),
         )
 
     def __str__(self) -> str:
@@ -336,14 +314,9 @@ class DynamicAPIToken(CdEDataclass, APIToken):
     def get_sortkey(self) -> Sortkey:
         return (self.name, self.title, self.ctime, self.id)
 
-    def __lt__(self, other: "DynamicAPIToken") -> bool:
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-        return self.get_sortkey() < other.get_sortkey()
-
 
 @dataclass
-class OrgaToken(DynamicAPIToken):
+class OrgaToken(DynamicAPIToken, EventDataclass):
     """
     OrgaToken(
         id: vtypes.ID, title: str, notes: Optional[str], etime: datetime.datetime,
@@ -351,14 +324,11 @@ class OrgaToken(DynamicAPIToken):
         atime: Optional[datetime.datetime], event_id: vtypes.ID)
 
     """
-    name = "orga"  #:
+    name = "orga"
 
-    event_id: vtypes.ID  #: ID of the event this token is linked to. May not change.
+    #: ID of the event this token is linked to. May not change.
+    event_id: vtypes.ID = field(metadata={'update_exclude': True})
 
-    # Special attributes for `CdEDatabase` interface.
-
-    #: Fields which may not change.
-    fixed_fields = DynamicAPIToken.fixed_fields + ("event_id",)
     #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"
 
@@ -373,10 +343,10 @@ class OrgaToken(DynamicAPIToken):
 
 
 def resolve_droid_name(
-        droid_name: str
+        droid_name: str,
 ) -> Union[
-    tuple[Type[StaticAPIToken], None],
-    tuple[Type[DynamicAPIToken], int],
+    tuple[type[StaticAPIToken], None],
+    tuple[type[DynamicAPIToken], int],
     tuple[None, None],
 ]:
     """Determine the class of token from the given droid name.

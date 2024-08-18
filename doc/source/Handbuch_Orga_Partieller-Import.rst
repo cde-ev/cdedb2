@@ -170,6 +170,15 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (17, 2): Personalisierte Teilnahmebeiträge sind nun im Export enthalten.
+  Mit dem partiellen Import können personalisierten Beiträge für einzelne Anmeldungen
+  gesetzt werden.
+* Version (17, 1): Für jede Anmeldung wird nun gespeichert und exportiert, ob der
+  Benutzer zum Zeitpunkt der Anmeldung CdE-Mitglied war.
+* Version (17, 0): Der bereits bezahlte Betrag und das Zahlungsdatum können jetzt nicht
+  mehr durch den partiellen Import geändert werden, sind aber weiterhin im Export vorhanden.
+* Version (16, 2): Gespeicherte Suchabfragen verwenden nun ein anderes Schema zur
+  Angabe ihrer Sortierungsschlüssel.
 * Version (16, 1): Das Isomattenfeld wird jetzt pro Veranstaltungsteil, der Kursraum pro
   Kursschiene erfasst.
 * Version (16, 0): Einführung von Conditional Event Fees.

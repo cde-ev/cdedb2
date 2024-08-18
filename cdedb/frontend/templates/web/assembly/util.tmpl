@@ -28,6 +28,10 @@
                                 title=gettext("Add Version")) }}
                 {% endif %}
                 {% if delete_attachment %}
+                    {{ util.href(cdedblink("assembly/change_attachment_version_form",
+                                           {'attachment_id': version['attachment_id'], 'version_nr': version['version_nr']}),
+                                label=util.make_icon("pen"), aclass="btn btn-warning btn-xs hide-hover",
+                                title=gettext("Change Version")) }}
                     <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': version["attachment_id"]}) }}"
                           method="POST" id="deleteattachmentform{{ version["attachment_id"] }}"
                           class="hide-hover display-inline">

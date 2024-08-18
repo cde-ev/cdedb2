@@ -2,8 +2,11 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
-{% set jshint='weak' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_register.js') }}
+{% endblock %}
+{% set jshint='strong' %}
 {% block title %}
     {% trans name=util.persona_name(persona), title=ambience['event']['title'] %}
         Edit Registration by {{ name }} ({{ title }})
@@ -47,27 +50,26 @@
                 minors – the status of the parental consent at “{{ my_registration }}”.
             {% endtrans %}
         </p>
-        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
-                                placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number", attributes='step="0.01"'|s) }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
         {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 readonly='reg.checkin' in skip) }}
 
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for part in ambience['event']['parts'].values()|sort %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
-            {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
+            {{ util.form_input_select(name="part{}.status".format(part.id), label=gettext("Status"), attributes='data-part_id=' + part.id|s,
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
-            {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat")) }}
+            {% if lodgements %}
+                {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
+                                          entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+            {% endif %}
+            {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat")) }}
 
-            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
+            {% for track in ambience['event']['tracks'].values()|sort if track['part_id'] == part.id %}
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track_id]) %}
-                {{ util.form_input_select(name="track{}.course_id".format(track_id),
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=courses_per_track[track.id]) %}
+                {{ util.form_input_select(name="track{}.course_id".format(track.id),
                                           label=gettext("Course %s")|format(track['shortname'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                           entries=course_entries,
@@ -84,6 +86,8 @@
 
         {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration) }}
 
+        {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
+
         <div class="panel panel-primary">
             <div class="panel-body">
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"),
@@ -94,6 +98,12 @@
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_registration")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
-        $('#changeregistrationform').cdedbProtectChanges();
+        feePreviewConstants = {
+            'endpoint': '{{ cdedblink('event/precompute_fee') }}',
+            'persona_id': {{ persona['id'] }},
+            'is_member': {{ ambience['registration']['is_member']|tojson }},
+            'is_orga': {{ (persona['id'] in ambience['event']['orgas'])|tojson }},
+        }
+        $('#changeregistrationform').cdedbProtectChanges().cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

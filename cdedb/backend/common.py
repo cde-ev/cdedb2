@@ -8,15 +8,14 @@ template for all services.
 
 import abc
 import cgitb
-import copy
 import functools
 import logging
 import sys
 import uuid
+from collections.abc import Iterable, Mapping
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Dict, Iterable, List, Literal, Mapping, Optional, Set,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    Any, Callable, ClassVar, Literal, Optional, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.errors
@@ -26,7 +25,7 @@ from passlib.hash import sha512_crypt
 
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, RequestState, Role,
+    CdEDBLog, CdEDBObject, DefaultReturnCode, Error, RequestState, Role,
     diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -34,7 +33,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.sorting import LOCALE
-from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -51,7 +49,7 @@ DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 @overload
 def singularize(function: Callable[..., Mapping[Any, T]],
                 array_param_name: str = "",
-                singular_param_name: str = ""
+                singular_param_name: str = "",
                 ) -> Callable[..., T]: ...
 
 
@@ -98,47 +96,10 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
     return singularized
 
 
-def batchify(function: Callable[..., T],
-             array_param_name: str = "data",
-             singular_param_name: str = "data") -> Callable[..., List[T]]:
-    """This takes a function and returns a batchified version.
-
-    The function has to accept an a singular parameter.
-    The singular parameter has either to be a keyword only parameter
-    or the first positional parameter after the request state.
-    Batchification creates a function which accepts an array instead
-    and loops over this array wrapping everything in a database transaction.
-    It returns an array of all return values.
-
-    :param array_param_name: new name of the batchified parameter
-    :param singular_param_name: name of the parameter to batchify
-    """
-
-    @functools.wraps(function)
-    def batchified(self: AbstractBackend, rs: RequestState, *args: Any,
-                   **kwargs: Any) -> List[T]:
-        ret = []
-        with Atomizer(rs):
-            if array_param_name in kwargs:
-                param = kwargs.pop(array_param_name)
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[singular_param_name] = datum
-                    ret.append(function(self, rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(function(self, rs, *new_args, **kwargs))
-        return ret
-
-    return batchified
-
-
 def read_conditional_write_composer(
         reader: Callable[..., Any], writer: Callable[..., int],
         id_param_name: str = "anid", datum_param_name: str = "data",
-        id_key_name: str = "id",) -> Callable[..., int]:
+        id_key_name: str = "id") -> Callable[..., int]:
     """This takes two functions and returns a combined version.
 
     The overall semantics are similar to the writer. However the write is
@@ -194,7 +155,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                     n_("%(user_roles)s is disjoint from %(roles)s"
                        " for method %(method)s."),
                     {"user_roles": rs.user.roles, "roles": roles,
-                     "method": function.__name__}
+                     "method": function.__name__},
                 )
             return function(self, rs, *args, **kwargs)
 
@@ -249,7 +210,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
-        self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
+        self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
         self.logger.debug(
             f"Instantiated {self} with configpath {self.conf._configpath}.")
         # make the logger available to the query mixin
@@ -277,9 +238,10 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         Maybe this can be beefed up to check for orgas and moderators too,
         but for now it only checks the admin role.
         """
-        return "{}_admin".format(cls.realm) in rs.user.roles
+        return f"{cls.realm}_admin" in rs.user.roles
 
-    def cgitb_log(self) -> None:
+    # coverage: We do not expect to trigger an exception to be logged by this.
+    def cgitb_log(self) -> None:  # pragma: no cover
         """Log the current exception.
 
         This uses the standard logger and formats the exception with cgitb.
@@ -295,8 +257,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             pass
 
     def general_query(self, rs: RequestState, query: Query,
-                      distinct: bool = True, view: str = None, aggregate: bool = False
-                      ) -> Tuple[CdEDBObject, ...]:
+                      distinct: bool = True, view: Optional[str] = None,
+                      aggregate: bool = False) -> tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 
@@ -311,31 +273,33 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
         fields = {column: column.replace('"', '') for field in query.fields_of_interest
                   for column in field.split(",")}
+        aggregate_select = ""
         if aggregate:
             agg = {}
             for field, field_as in fields.items():
-                # distinct count for primary keys is necessary for queries that
-                # duplicate rows due to JOIN, e.g. cde user search
-                agg[(f"COUNT(DISTINCT {query.scope.get_primary_key()})"
-                     f" FILTER (WHERE {field} IS NULL)")] = f"null.{field_as}"
+                agg[
+                    f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
+                ] = f"null.{field_as}"
                 if query.spec[field].type in ("int", "float"):
-                    agg[f"SUM({field})"] = f"sum.{field_as}"
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
-                    agg[f"AVG({field})"] = f"avg.{field_as}"
-                    agg[f"STDDEV_SAMP({field})"] = f"stddev.{field_as}"
+                    agg[f'SUM("{field_as}")'] = f"sum.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'AVG("{field_as}")'] = f"avg.{field_as}"
+                    agg[f'STDDEV_SAMP("{field_as}")'] = f"stddev.{field_as}"
                 elif query.spec[field].type == "bool":
-                    agg[f"SUM({field}::int)"] = f"sum.{field_as}"
+                    agg[f'SUM("{field_as}"::int)'] = f"sum.{field_as}"
                 elif query.spec[field].type in ("date", "datetime"):
-                    agg[f"MIN({field})"] = f"min.{field_as}"
-                    agg[f"MAX({field})"] = f"max.{field_as}"
+                    agg[f'MIN("{field_as}")'] = f"min.{field_as}"
+                    agg[f'MAX("{field_as}")'] = f"max.{field_as}"
                     # TODO add avg for dates
-            select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
+            aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
-        else:
-            select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-            select += ', ' + query.scope.get_primary_key()
-        q, params = self._construct_query(query, select, distinct=distinct, view=view)
+        select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
+        select += ', ' + query.scope.get_primary_key()
+        q, params = self._construct_query(
+            query, select, distinct=distinct, view=view,
+            aggregate_select=aggregate_select,
+        )
         data = self.query_all(rs, q, params)
 
         if aggregate:
@@ -352,7 +316,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(query: Query, select: str, distinct: bool,
-                         view: Optional[str]) -> Tuple[str, List[DatabaseValue]]:
+                         view: Optional[str], aggregate_select: str,
+                         ) -> tuple[str, list[DatabaseValue]]:
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -363,12 +328,11 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
         view = view or query.scope.get_view()
-        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
-        params: List[DatabaseValue] = []
+        params: list[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
-            lowercase = (query.spec[field].type == "str")
+            lowercase = query.spec[field].type == "str"
             if lowercase:
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
@@ -397,16 +361,16 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 connector = " AND " if operator == _ops.containsall else " OR "
                 constraint = connector.join(phrase for _ in range(len(values)))
                 if operator == _ops.containsnone:
-                    constraint = "NOT ( {} )".format(constraint)
+                    constraint = f"NOT ( {constraint} )"
                 constraints.append(constraint)
                 continue  # skip constraints.append below
             if operator == _ops.empty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NULL OR {0} = '' )"
                 else:
                     phrase = "( {0} IS NULL )"
             elif operator == _ops.nonempty:
-                if query.spec[field] == "str":
+                if query.spec[field].type == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
@@ -418,7 +382,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
                 if operator in (_ops.equalornull, _ops.unequalornull):
-                    if query.spec[field] == "str":
+                    if query.spec[field].type == "str":
                         phrase += " OR {0} IS NULL OR {0} = '' )"
                     else:
                         phrase += " OR {0} IS NULL )"
@@ -427,9 +391,9 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 phrase = phrase.format(sql_param_str)
             elif operator in (_ops.oneof, _ops.otherthan):
                 if operator == _ops.oneof:
-                    phrase = "{0} = ANY(%s)".format(sql_param_str)
+                    phrase = f"{sql_param_str} = ANY(%s)"
                 else:
-                    phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
+                    phrase = f"NOT({sql_param_str} = ANY(%s))"
                 params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
@@ -467,8 +431,12 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
+        where = ""
         if constraints:
-            q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
+            where = f'WHERE ({") AND (".join(constraints)})'
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view} {where}"
+        if aggregate_select:
+            q = f"SELECT {aggregate_select} FROM ({q}) AS tmp"
         if query.order:
             # Collate compatible to COLLATOR in python
             orders = []
@@ -484,7 +452,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             q = glue(q, "ORDER BY", ", ".join(orders))
         return q, params
 
-    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter
+    def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter,
                              ) -> CdEDBLog:
         """Get recorded activity.
 
@@ -551,10 +519,10 @@ class Silencer:
     def __enter__(self) -> None:
         if self.rs.is_quiet:
             raise RuntimeError("Already silenced. Reentrant use is unsupported.")
-        self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
+        self.rs.is_quiet = True
 
-    def __exit__(self, atype: Type[Exception], value: Exception,
+    def __exit__(self, atype: type[Exception], value: Exception,
                  tb: TracebackType) -> None:
         self.rs.is_quiet = False
 
@@ -581,7 +549,7 @@ class DatabaseLock:
     available.
 
     """
-    xid: Optional[str]
+    xid: Optional[psycopg2.extensions.Xid]
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
@@ -599,13 +567,14 @@ class DatabaseLock:
 
         self.xid = self.rs._conn.xid(42, "cdedb_database_lock", str(self.id))
         if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
-            raise RuntimeError("Connection not ready!")
+            raise RuntimeError("Connection not ready!")  # pragma: no cover
         try:
             self.rs._conn.tpc_begin(self.xid)
             cur = self.rs._conn.cursor()
             cur.execute(query, (params,))
             self.rs._conn.tpc_prepare()
-        except psycopg2.errors.LockNotAvailable:
+        except psycopg2.errors.LockNotAvailable:  # pragma: no cover
+            # coverage: covered by `tests.backend.common` but not registered correctly.
             # No lock was acquired, abort
             self.rs._conn.tpc_rollback()
             self.xid = None
@@ -620,24 +589,24 @@ class DatabaseLock:
                 # connection available for further use
                 self.rs._conn.reset()
             elif self.xid:
-                raise RuntimeError("Transaction exists, but status is not prepared.")
+                raise RuntimeError("Transaction exists, but status is not prepared.")  # pragma: no cover
 
         return self if was_locking_successful else None
 
-    def __exit__(self, atype: Type[Exception], value: Exception,
+    def __exit__(self, atype: type[Exception], value: Exception,
                  tb: TracebackType) -> Literal[False]:
         if self.rs._conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
             # We are not atomized so a commit is always possible
             self.rs._conn.commit()
         if self.rs._conn.status != psycopg2.extensions.STATUS_READY:
-            raise RuntimeError(f"Connection not ready but {self.rs._conn.status}!")
+            raise RuntimeError(f"Connection not ready but {self.rs._conn.status}!")  # pragma: no cover
         if self.xid:
             # release the lock only when actually having acquired it
             self.rs._conn.tpc_commit(self.xid)
         return False
 
 
-def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     ValidationWarnings are used to hint the user to re-think about a given valid entry.
@@ -648,7 +617,7 @@ def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_dataclass(assertion: Type[DC], value: Any, **kwargs: Any) -> DC:
+def affirm_dataclass(assertion: type[DC], value: Any, **kwargs: Any) -> DC:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.backend.common.affirm_validation`
@@ -659,7 +628,7 @@ def affirm_dataclass(assertion: Type[DC], value: Any, **kwargs: Any) -> DC:
 
 
 def affirm_validation_optional(
-    assertion: Type[T], value: Any, **kwargs: Any
+    assertion: type[T], value: Any, **kwargs: Any,
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -671,8 +640,8 @@ def affirm_validation_optional(
 
 
 def affirm_array_validation(
-    assertion: Type[T], values: Iterable[Any], **kwargs: Any
-) -> Tuple[T, ...]:
+    assertion: type[T], values: Iterable[Any], **kwargs: Any,
+) -> tuple[T, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return tuple(
         affirm_validation(assertion, value, **kwargs)
@@ -681,8 +650,8 @@ def affirm_array_validation(
 
 
 def affirm_set_validation(
-    assertion: Type[T], values: Iterable[T], **kwargs: Any
-) -> Set[T]:
+    assertion: type[T], values: Iterable[T], **kwargs: Any,
+) -> set[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
     return set(
         affirm_validation(assertion, value, **kwargs)
@@ -691,8 +660,8 @@ def affirm_set_validation(
 
 
 def inspect_validation(
-    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+    type_: type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any,
+) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to
@@ -712,33 +681,6 @@ def verify_password(password: str, password_hash: str) -> bool:
 def encrypt_password(password: str) -> str:
     """We currently use passlib for password protection."""
     return sha512_crypt.hash(password)
-
-
-def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
-    """Helper to deserialize json fields.
-
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
-    """
-    spec: Dict[str, FieldDatatypes]
-    spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
-        FieldDatatypes.int: lambda x: x,
-        FieldDatatypes.str: lambda x: x,
-        FieldDatatypes.float: lambda x: x,
-        FieldDatatypes.date: parse_date,
-        FieldDatatypes.datetime: parse_datetime,
-        FieldDatatypes.bool: lambda x: x,
-    }
-
-    def _do_cast(key: str, val: Any) -> Any:
-        if val is None:
-            return None
-        if key in spec:
-            return casters[spec[key]](val)
-        return val
-
-    return {key: _do_cast(key, val) for key, val in data.items()}
 
 
 #: Translate between validator names and sql data types.

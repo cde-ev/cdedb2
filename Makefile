@@ -6,7 +6,7 @@ help:
 	@echo "I18NDIR             -- directory of the translation files. Default: ./i18n"
 	@echo ""
 	@echo "General:"
-	@echo "cron                -- trigger cronjob execution (as user www-data)"
+	@echo "cron                -- trigger cronjob execution (as user www-cde)"
 	@echo "doc                 -- build documentation"
 	@echo "reload              -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo ""
@@ -15,7 +15,7 @@ help:
 	@echo ""
 	@echo "Code formatting:"
 	@echo "mypy                -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint                -- run linters (isort, flake8 and pylint)"
+	@echo "lint                -- run linters (ruff, isort and pylint)"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -36,8 +36,8 @@ help:
 
 PYTHONBIN ?= python3
 ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
-FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
+RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -47,8 +47,12 @@ MYPY ?= $(PYTHONBIN) -m mypy
 #####################
 
 # Use makes command-line arguments to override the following default variables
-# Directory where the translation files are stored. Especially used by the i18n-targets.
+# Directory where the translation input files are stored.
+# Especially used by the i18n-targets.
 I18NDIR = ./i18n
+# Directory where the translation output files are stored.
+# Especially used by the i18n-targets.
+I18NOUTDIR = ./i18n-output
 # Available languages, by default detected as subdirectories of the translation targets.
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
@@ -58,7 +62,7 @@ I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*
 
 .PHONY: cron
 cron:
-	sudo -u www-data /cdedb2/bin/cron_execute.py
+	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -70,8 +74,10 @@ reload: i18n-compile
 	python3 -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
+	kill $$(pidof -x gunicorn) || true
+	/run-gunicorn.sh
 else
-	sudo systemctl restart apache2
+	sudo systemctl restart apache2.service cdedb-app.service
 endif
 
 
@@ -79,24 +85,31 @@ endif
 # Translations #
 ################
 
+.PHONY: i18n-output-dirs
+i18n-output-dirs:
+	for lang in $(I18N_LANGUAGES) ; do \
+		mkdir -p $(I18NOUTDIR)/$$lang/LC_MESSAGES ; \
+	done
+
 .PHONY: i18n-refresh
 i18n-refresh: i18n-extract i18n-update
 
 .PHONY: i18n-extract
-i18n-extract:
+i18n-extract: i18n-output-dirs
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
+		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
 i18n-update: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.po)
 
-$(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NDIR)/cdedb.pot
+$(I18NDIR)/%/LC_MESSAGES/cdedb.po: $(I18NOUTDIR)/cdedb.pot
 	msgmerge --lang=$* --update $@ $<
 	msgattrib --no-obsolete --sort-by-file -o $@ $@
 
-i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.mo)
+i18n-compile: i18n-output-dirs
+i18n-compile: $(foreach lang, $(I18N_LANGUAGES), $(I18NOUTDIR)/$(lang)/LC_MESSAGES/cdedb.mo)
 
-$(I18NDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
+$(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 	msgfmt --verbose --check --statistics -o $@ $<
 
 
@@ -122,20 +135,22 @@ isort:
 	$(ISORT) --check-only bin/*.py cdedb tests
 	@echo ""
 
-.PHONY: flake8
-flake8:
-	@echo $(BANNERLINE)
-	@echo "All of flake8"
-	@echo $(BANNERLINE)
-	$(FLAKE8) cdedb tests
-	@echo ""
-
 .PHONY: pylint
 pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	$(PYLINT) cdedb tests
+	@echo ""
+
+.PHONY: ruff
+ruff:
+	@echo $(BANNERLINE)
+	@echo "All of ruff"
+	@echo $(BANNERLINE)
+	sudo mkdir .ruff_cache -p
+	sudo chown cdedb -R .ruff_cache
+	$(RUFF) cdedb tests
 	@echo ""
 
 .PHONY: template-line-length
@@ -147,7 +162,7 @@ template-line-length:
 	@echo ""
 
 .PHONY: lint
-lint: isort flake8 pylint
+lint: ruff isort pylint
 
 
 ################
@@ -214,4 +229,4 @@ sample-data-dump:
 
 .PHONY: sample-data
 sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-data
+	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data

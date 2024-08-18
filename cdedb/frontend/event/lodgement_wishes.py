@@ -6,17 +6,22 @@ wishes heuristics.
 """
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Pattern, Set, Tuple
+from re import Pattern
+from typing import Optional
 
 import graphviz
 
+import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
     make_persona_name,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
+from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import cdedburl
 
 
@@ -44,12 +49,12 @@ class LodgementWish:
 
 def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             personas: CdEDBObjectMap,
-                            event: CdEDBObject,
+                            event: models.Event,
                             restrict_part_id: Optional[int],
-                            restrict_registration_id: int = None,
+                            restrict_registration_id: Optional[int] = None,
                             check_edges: bool = True,
                             ) \
-        -> Tuple[List[LodgementWish], List[Notification]]:
+        -> tuple[list[LodgementWish], list[Notification]]:
     """ Detect lodgement wish graph edges from all registrations' raw rooming
     preferences text.
 
@@ -87,14 +92,17 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         a list of localizable problem notification messages.
     """
     # Create a list of regex patterns, referencing the other personas, to search
-    lookup_map: List[Tuple[Pattern[str], int]] = [
+    lookup_map: list[tuple[Pattern[str], int]] = [
         (make_identifying_regex(personas[registration['persona_id']]),
          registration_id)
         for registration_id, registration in registrations.items()
     ]
-    wish_field_name = event['fields'][event['lodge_field']]['field_name']
-    wishes: Dict[Tuple[int, int], LodgementWish] = {}
-    problems: List[Notification] = []
+    if event.lodge_field:
+        wish_field_name = event.lodge_field.field_name
+    else:
+        return [], []
+    wishes: dict[tuple[int, int], LodgementWish] = {}
+    problems: list[Notification] = []
 
     # Limit registrations to check for matches if necessary.
     registrations_to_check = list(registrations.items())
@@ -110,7 +118,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         # Skip registrations with emtpy wishes field
         if not registration['fields'].get(wish_field_name):
             continue
-        match_positions: List[Tuple[Tuple[int, int], int]] = []
+        match_positions: list[tuple[tuple[int, int], int]] = []
         # Check each of the regex patterns against the wishes field
         for pattern, other_registration_id in lookup_map:
             # Self-wishes are not allowed
@@ -204,21 +212,28 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     return list(wishes.values()), problems
 
 
+def escape(s: str) -> str:
+    return inverse_diacritic_patterns(re.escape(s.strip()))
+
+
 def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
     """
     patterns = [
-        inverse_diacritic_patterns(re.escape(f"{given_name} {persona['family_name']}"))
+        rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
         for given_name in persona['given_names'].split()
     ]
-    patterns.append(inverse_diacritic_patterns(re.escape(
-        f"{persona['display_name']} {persona['family_name']}")))
-    patterns.append(re.escape(f"DB-{persona['id']}-"))
+    patterns.append(
+        rf"{escape(persona['display_name'])}\s+{escape(persona['family_name'])}",
+    )
+    persona_id = persona['id']
+    assert isinstance(persona_id, int)
+    patterns.append(re.escape(cdedbid_filter(persona_id)))
     if persona['username']:
         patterns.append(re.escape(persona['username']))
-    return re.compile('|'.join(p.strip() for p in patterns), flags=re.I)
+    return re.compile('|'.join(rf"\b{p.strip()}\b" for p in patterns), flags=re.I)
 
 
 PRESENT_STATI = {status for status in RegistrationPartStati
@@ -227,7 +242,7 @@ ACTIVE_STATI = PRESENT_STATI | {RegistrationPartStati.waitlist}
 
 
 def _parts_with_status(registration: CdEDBObject,
-                       stati: Set[RegistrationPartStati]) -> Set[int]:
+                       stati: set[RegistrationPartStati]) -> set[int]:
     """ Return a set of event part ids in which the given registration/
     participant has one of the given stati"""
     return {
@@ -235,6 +250,12 @@ def _parts_with_status(registration: CdEDBObject,
         for part_id, part in registration['parts'].items()
         if part['status'] in stati
     }
+
+
+def _sort_parts(part_ids: set[int], event: models.Event) -> list[int]:
+    """Sort the given parts accordingly to EntitySorter."""
+    sorted_parts = xsorted(event.parts.values())
+    return [part.id for part in sorted_parts if part.id in part_ids]
 
 
 def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
@@ -259,11 +280,12 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
 
 def create_lodgement_wishes_graph(
         rs: RequestState,
-        registrations: CdEDBObjectMap, wishes: List[LodgementWish],
+        registrations: CdEDBObjectMap, wishes: list[LodgementWish],
         lodgements: CdEDBObjectMap,
         lodgement_groups: CdEDBObjectMap,
-        event: CdEDBObject,
+        event: models.Event,
         personas: CdEDBObjectMap,
+        camping_mat_field_names: Mapping[int, Optional[str]],
         filter_part_id: Optional[int], show_all: bool,
         cluster_part_id: Optional[int],
         cluster_by_lodgement: bool,
@@ -330,21 +352,21 @@ def create_lodgement_wishes_graph(
     # dynamically based on the `cluster_by_lodgement_in_part` parameter.
 
     # Gather wishing and wished paticipants (required later if not show_all)
-    referenced_registraion_ids: Set[int] = set()
+    referenced_registraion_ids: set[int] = set()
     for wish in wishes:
         referenced_registraion_ids.add(wish.wished)
         referenced_registraion_ids.add(wish.wishing)
 
     # We offer clustering by lodgement and/or by lodgement group.
-    lodgement_clusters: Dict[int, graphviz.Digraph] = {}
+    lodgement_clusters: dict[int, graphviz.Digraph] = {}
     if cluster_by_lodgement:
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_{lodgement_id}',
-                graph_attr={'label': lodgement['title'],
+                graph_attr={'label': _make_lodgement_label(lodgement),
                             'URL': cdedburl(rs, 'event/show_lodgement',
                                             {'lodgement_id': lodgement_id})})
-    lodgement_group_clusters: Dict[int, graphviz.Digraph] = {}
+    lodgement_group_clusters: dict[int, graphviz.Digraph] = {}
     if cluster_by_lodgement_group:
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
@@ -373,15 +395,18 @@ def create_lodgement_wishes_graph(
                 subgraph = lodgement_clusters[lodgement_id]
             elif cluster_by_lodgement_group:
                 if lodgement_group_id := lodgements[lodgement_id]["group_id"]:
-                    subgraph = lodgement_group_clusters[lodgement_group_id]
+                    subgraph = lodgement_group_clusters[lodgement_group_id]  # pylint: disable=undefined-loop-variable
         # Create node
         is_present = (
             filter_part_id in present_parts if filter_part_id
             else bool(present_parts))
-        wish_field_name = event['fields'][event['lodge_field']]['field_name']
+        if event.lodge_field:
+            wish_field_name = event.lodge_field.field_name
+        else:
+            return graph
         subgraph.node(
             str(registration['id']),
-            _make_node_label(registration, personas, event),
+            _make_node_label(registration, personas, event, camping_mat_field_names),
             tooltip=_make_node_tooltip(rs, registration, personas, event),
             fillcolor=_make_node_color(registration, personas, event),
             color=("black" if registration['fields'].get(wish_field_name)
@@ -426,40 +451,67 @@ def create_lodgement_wishes_graph(
     return graph
 
 
+def _make_lodgement_label(lodgement: CdEDBObject) -> str:
+    return (f"{lodgement['title']} ({lodgement['regular_capacity']}"
+            f" + {lodgement['camping_mat_capacity']})")
+
+
+def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
+    if may_camp and is_camping:
+        # Assigned to sleep on a camping mat.
+        return " (⛺←)"
+    elif may_camp:
+        # May sleep on a camping mat.
+        return " (⛺?)"
+    elif is_camping:
+        # Assigned to, but may not sleep on a camping mat.
+        return " (⛺!)"
+    return ""
+
+
 def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: CdEDBObject) -> str:
+                     event: models.Event,
+                     camping_mat_field_names: Mapping[int, Optional[str]]) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
-    parts = ("\n({})".format(
-                 ', '.join(event['parts'][p]['shortname']
-                           for p in presence_parts))
-             if len(event['parts']) > 1 and presence_parts
-             else "")
-    return make_persona_name(personas[registration['persona_id']]) + parts
+    icons = {p: _camping_mat_icon(
+        registration['fields'].get(camping_mat_field_names[p]),
+        registration['parts'][p]['is_camping_mat'])
+        for p in presence_parts}
+    parts = ', '.join(
+        f"{event.parts[p].shortname if len(event.parts) > 1 else ''}{icons[p]}"
+        for p in _sort_parts(presence_parts, event))
+    persona = personas[registration['persona_id']]
+    linebreak = "\n" if parts else ""
+    return f"{make_persona_name(persona)}{linebreak}{parts}"
 
 
 def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                       personas: CdEDBObjectMap, event: CdEDBObject) -> str:
+                       personas: CdEDBObjectMap, event: models.Event) -> str:
     parts = ""
-    if len(event['parts']) > 1:
+    if len(event.parts) > 1:
         parts = "\n"
         present_parts = _parts_with_status(registration, PRESENT_STATI)
-        parts += ', '.join(event['parts'][p]['title']
-                           for p in present_parts)
+        parts += ', '.join(event.parts[p].title
+                           for p in _sort_parts(present_parts, event))
         waitlist_parts = _parts_with_status(registration,
                                             {RegistrationPartStati.waitlist})
         if waitlist_parts:
             if present_parts:
                 parts += "  |  "
             parts += (rs.gettext("Waitlist: ")
-                      + ', '.join(event['parts'][p]['title']
-                                  for p in waitlist_parts))
+                      + ', '.join(event.parts[p].title
+                                  for p in _sort_parts(waitlist_parts, event)))
+
     persona = personas[registration['persona_id']]
-    return "{name}\n{email}{parts}\n\n{wishes}".format(
+    lodge_field_name = event.fields[event.lodge_field.id].field_name  # type: ignore[union-attr]
+    wishes = ""
+    if raw_wishes := registration['fields'].get(lodge_field_name):
+        wishes = f"\n\n{raw_wishes}"
+    return "{name}\n{email}{parts}{wishes}".format(
         name=make_persona_name(persona, given_and_display_names=True),
         email=persona['username'],
         parts=parts,
-        wishes=registration['fields'].get(
-            event['fields'][event['lodge_field']]['field_name'], ""),
+        wishes=wishes,
     )
 
 
@@ -470,12 +522,12 @@ def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
             personas[registrations[edge.wishing]['persona_id']]),
         name2=make_persona_name(
             personas[registrations[edge.wished]['persona_id']]),
-        sign="↔" if edge.bidirectional else "→"
+        sign="↔" if edge.bidirectional else "→",
     )
 
 
 def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: CdEDBObject) -> str:
+                     event: models.Event) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
     age = _get_age(personas[registration['persona_id']], event)
@@ -499,7 +551,7 @@ def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
         return "#87d0ff"
 
 
-def _get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
+def _get_age(persona: CdEDBObject, event: models.Event) -> float:
     """
     Roughly calculate the age of a persona at the begin of a given event in
     years as a fractional number.
@@ -508,4 +560,4 @@ def _get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
     does not consider leapyaers correctly. For other purposes, consider using
     :func:`cdedb.common.deduct_years` instead.
     """
-    return float((event['begin'] - persona['birthday']).days) / 365
+    return float((event.begin - persona['birthday']).days) / 365

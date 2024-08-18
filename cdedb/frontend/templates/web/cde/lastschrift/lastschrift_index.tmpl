@@ -51,7 +51,7 @@
 
     <table class="table table-condensed" id="open-dd-authorization">
         <tbody>
-        {% for lastschrift_id, lastschrift in lastschrifts.items() if lastschrift['open']%}
+        {% for lastschrift_id, lastschrift in active_lastschrifts.items() if lastschrift['open']%}
             <tr>
                 <td>
                     {% set persona = personas[lastschrift['persona_id']] %}
@@ -202,11 +202,43 @@
     {% endif %}
     </div>
 
-    <h2>{% trans %}All active Authorizations{% endtrans %}</h2>
-    <div class="row">
-        {% for chunk in lastschrifts.items()|slice(3 if lastschrifts|length > 10
-                                                    else 2 if lastschrifts|length > 5
-                                                         else 1) %}
+    <h2>{% trans %}All active Authorizations{% endtrans %} [{{ active_lastschrifts|length }}]</h2>
+    <p>
+        {% trans money=active_lastschrift_donations|money %}
+            The total amount of donations is %(money)s.
+        {% endtrans %}
+        {% trans money=(active_lastschrift_donations + annual_fee*active_lastschrifts|length)|money %}
+            Including the annual membership fees, this sums up to %(money)s.
+        {% endtrans %}
+    </p>
+    <div class="row" id="active-authorizations">
+        {% for chunk in active_lastschrifts.items()|slice(3 if active_lastschrifts|length > 10 else
+                                                         (2 if active_lastschrifts|length > 5 else 1)) %}
+            <div class="col-sm-4">
+                <ul class="nosp slim">
+                    {% for lastschrift_id, lastschrift in chunk %}
+                        <li class="clearfix-after">
+                            {% set persona = personas[lastschrift['persona_id']] %}
+                            {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
+                                         util.persona_name(persona, only_given_names=True)) }}
+                            {{ util.href(show_user_link(user, lastschrift['persona_id']),
+                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2>{% trans %}All inactive Authorizations{% endtrans %} [{{ inactive_lastschrifts|length }}]</h2>
+    <p>
+        {% trans %}
+            Only authorizations of users without an active authorization are shown.
+        {% endtrans %}
+    </p>
+    <div class="row" id="inactive-authorizations">
+        {% for chunk in inactive_lastschrifts.items()|slice(3 if inactive_lastschrifts|length > 10 else
+                                                           (2 if inactive_lastschrifts|length > 5 else 1)) %}
             <div class="col-sm-4">
                 <ul class="nosp slim">
                     {% for lastschrift_id, lastschrift in chunk %}

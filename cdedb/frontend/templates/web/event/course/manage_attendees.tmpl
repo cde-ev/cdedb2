@@ -23,9 +23,8 @@
     <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
         {{ util.anti_csrf_token('event/manage_attendees') }}
         {% set relevant_tracks = [] %}
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-                if track_id in ambience['course']['segments'] %}
-            {% do relevant_tracks.append((track_id, track)) %}
+        {% for track in ambience['event']['tracks'].values()|sort if track.id in ambience['course']['segments'] %}
+            {% do relevant_tracks.append((track.id, track)) %}
         {% endfor %}
         {% for batch in relevant_tracks|batch(3) %}
             <div class="row">
@@ -33,13 +32,23 @@
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
                                                                        else gettext("Assigned Attendees")),
-                                                 aclass="panel-info") %}
+                                                 aclass="panel-info", anid="track{}-attendees".format(track_id)) %}
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                                {% set registration_part_status = registrations[registration_id]['parts'][track.part.id]['status'] %}
                                 <tr id="attendee-{{ track_id }}-{{ registration_id }}">
                                     <td>
+                                        {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                         {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
+                                        {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
+                                                == ambience['course']['id'] %}
+                                            ({% trans %}Instr.{% endtrans %})
+                                        {%- endif %}
+                                        {%- if not registration_part_status.is_involved() %}</s>{% endif -%}
+                                        {% if registration_part_status != enums['RegistrationPartStati'].participant %}
+                                            <small>({{ gettext(registration_part_status|enum(enums['RegistrationPartStati'])) }})</small>
+                                        {% endif -%}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),

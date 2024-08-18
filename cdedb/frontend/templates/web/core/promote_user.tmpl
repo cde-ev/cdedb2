@@ -80,15 +80,14 @@
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
                     {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-                    {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date",
-                            placeholder="YYYY-MM-DD") }}
+                    {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
                     {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                               label=gettext("Gender")) }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
                     {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
-                    {{ util.form_input_text(name="address", label=gettext("Street, Nr.")) }}
+                    {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
                     {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
                     {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
                     {{ util.form_input_text(name="location", label=gettext("City")) }}
@@ -120,6 +119,15 @@
                         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
                     </div>
                 </div>
+                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                    <div class="text-muted">
+                        {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
+                                                                        gettext("welcome email")) %}
+                            The CdEDB will automatically send a %(welcome_mail)s to the user.
+                            If the user receives no trial membership, this also includes payment instructions.
+                        {% endtrans %}
+                    </div>
+                {% endif %}
                 {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>

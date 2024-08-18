@@ -25,20 +25,19 @@
         {{ generic_ml.index_buttons() }}
     {% endif %}
     <p>
-        {% trans infolink=util.href("https://www.cde-ev.de/vereinsleben/mailinglisten/", gettext("CdE website")) %}
-            Here you can find the CdE’s Mailinglists, notably also those linked to events and assemblies.
-            For further information on the general lists see the {{ infolink }}.
+        {% trans general_mailinglists=util.href("https://www.cde-ev.de/vereinsleben/mailinglisten/", gettext("general mailinglists")) %}
+            Here you can find the CdE’s mailinglists, notably also those linked to events and assemblies.
+            Further information about the {{ general_mailinglists }} are provided on the CdE website.
         {% endtrans %}
     </p>
     {% for group in groups %}
         {% if mailinglists[group] %}
             {{ util.h(group|string) }}
             <div class="row">
-                {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
-                    |slice(2 if mailinglists[group]|length > 5 else 1) %}
+                {% for list in mailinglists[group]|xdictsort('title')|slice(2 if mailinglists[group]|length > 5 else 1) %}
                 <ul class="styleless col-md-6">
-                    {% for mailinglist_id, ml in list %}
-                        {{ format_entry(mailinglist_id, ml['title']) }}
+                    {% for ml_id, ml in list %}
+                        {{ format_entry(ml_id, ml['title']) }}
                     {% endfor %}
                 </ul>
                 {% endfor %}

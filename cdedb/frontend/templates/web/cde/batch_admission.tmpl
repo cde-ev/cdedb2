@@ -49,7 +49,8 @@
             </div>
             <div class="col-md-6">
                 {{ util.form_input_checkbox("consent", label=gettext("Privacy Consent given"), horizontal=False) }}
-                {{ util.form_input_checkbox("sendmail", label=gettext("Send Welcome Mail"), horizontal=False) }}
+                {{ util.form_input_checkbox("sendmail", label=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
+                                                                        gettext("Send Welcome Mail")), horizontal=False) }}
             </div>
         </div>
         {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}
@@ -64,7 +65,7 @@
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
                 format(_("Academy"), _("Course"), _("Family Name"), _("Given Names"), _("Known as (Forename)"), _("Title_[[of a persona]]"), _("Name Affix"),
-                       _("Birth Name"), _("Gender"), _("Address Supplement"), _("Street, Nr."), _("Zipcode"), _("City"),
+                       _("Birth Name"), _("Gender"), _("Address Supplement"), _("Street and House Number"), _("Zipcode"), _("City"),
                        _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))|s }}
         </pre>
         <p class="help-block">

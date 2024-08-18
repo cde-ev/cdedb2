@@ -62,6 +62,7 @@ annika@example.cde      DB-27-2   secret     former member, corresponding to Aka
 farin@example.cde       DB-32-9   secret     former member, corresponding to Finanzvorstand
 katarina@example.cde    DB-37-X   secret     auditor (Kassenprüfer)
 ludwig@example.cde      DB-38-8   secret     former member, corresponding to CdElokal-Koordination
+petra@example.cde       DB-42-6   secret     honorary member
 viktor@example.cde      DB-48-5   secret     assembly admin
 akira@example.cde       DB-100-7  secret     equal to Anton - to test sorting
 ======================= ========= ========== ================================================

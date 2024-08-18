@@ -5,7 +5,7 @@
 import datetime
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import nearly_now
@@ -47,6 +47,7 @@ implicit_columns = {
     "past_event.participants": {"id"},
     "past_event.log": {"id"},
     "event.course_segments": {"id"},
+    "event.custom_query_filters": {"id"},
     "event.event_fees": {"id"},
     "event.lodgement_groups": {"id"},
     "event.log": {"id"},
@@ -67,7 +68,8 @@ implicit_columns = {
 }
 
 
-def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str, Any]]]:
+def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
+             ) -> dict[str, list[dict[str, Any]]]:
     """Generate a valid JSON dict from the current state of the given database."""
     conn = connect(config, secrets)
     rs = fake_rs(conn)
@@ -78,7 +80,7 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
     sql = SqlQueryBackend(logger)
 
     # extract the tables to be created from the database tables
-    with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
+    with open("/cdedb2/cdedb/database/cdedb-tables.sql") as f:
         tables = [
             table.group('name')
             for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
@@ -98,11 +100,12 @@ def sql2json(config: Config, secrets: SecretsConfig) -> Dict[str, List[Dict[str,
         entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
-        print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        if not silent:
+            print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved
-            sorted_entity: Dict[str, Any] = dict()
+            sorted_entity: dict[str, Any] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
                     pass

@@ -9,13 +9,14 @@ This should be the only module which makes subsistantial use of psycopg.
 """
 
 import logging
+from collections.abc import Collection, Mapping
 from types import TracebackType
-from typing import Any, Collection, Literal, Mapping, NoReturn, Optional, Type
+from typing import Any, NoReturn, Optional
 
 import psycopg2
 import psycopg2.extensions
-import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
+from psycopg2.extras import RealDictCursor
 
 from cdedb.common.n_ import n_
 
@@ -45,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _create_connection(dbname: str, dbuser: str, password: str, host: str,
-                       port: int, isolation_level: Optional[int] = SERIALIZABLE
+                       port: int, isolation_level: Optional[int] = SERIALIZABLE,
                        ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
@@ -55,16 +56,15 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
         very sparingly!
     :returns: open database connection
     """
-    connection_parameters = {
-            "dbname": dbname,
-            "user": dbuser,
-            "password": password,
-            "host": host,
-            "port": port,
-            "connection_factory": IrradiatedConnection,
-            "cursor_factory": psycopg2.extras.RealDictCursor
-    }
-    conn = psycopg2.connect(**connection_parameters)
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=dbuser,
+        password=password,
+        host=host,
+        port=port,
+        connection_factory=IrradiatedConnection,
+        cursor_factory=RealDictCursor,
+    )
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
     _LOGGER.debug(f"Created connection to {dbname} as {dbuser}")
@@ -73,7 +73,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
 
 def connection_pool_factory(dbname: str, roles: Collection[Role],
                             secrets: SecretsConfig, host: str, port: int,
-                            isolation_level: Optional[int] = SERIALIZABLE
+                            isolation_level: Optional[int] = SERIALIZABLE,
                             ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
@@ -168,9 +168,9 @@ class Atomizer:
         self.rs._conn.contaminate()
         return self.rs._conn.__enter__()
 
-    def __exit__(self, atype: Optional[Type[Exception]],
+    def __exit__(self, atype: Optional[type[Exception]],
                  value: Optional[Exception],
-                 tb: Optional[TracebackType]) -> Literal[False]:
+                 tb: Optional[TracebackType]) -> None:
         self.rs._conn.decontaminate()
         return self.rs._conn.__exit__(atype, value, tb)
 
@@ -185,12 +185,13 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     See :py:class:`Atomizer` for the documentation.
     """
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
         # keep a copy of any exception we encounter.
-        self._saved_etype: Optional[Type[Exception]] = None
-        self._saved_evalue: Optional[Exception] = None
+        self._saved_etype: Optional[type[BaseException]] = None
+        self._saved_evalue: Optional[BaseException] = None
         self._saved_tb: Optional[TracebackType] = None
 
     def __enter__(self) -> "IrradiatedConnection":
@@ -198,22 +199,22 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             return self
         else:
             if self.status != psycopg2.extensions.STATUS_READY:
-                raise RuntimeError(n_("Connection in use!"))
+                raise RuntimeError(n_("Connection in use!"))  # pragma: no cover
             # clear saved exception
             self._saved_etype = None
             self._saved_evalue = None
             self._saved_tb = None
             return super().__enter__()
 
-    def __exit__(self, etype: Optional[Type[Exception]],
-                 evalue: Optional[Exception],
-                 tb: Optional[TracebackType]) -> Literal[False]:
+    def __exit__(self, etype: Optional[type[BaseException]],
+                 evalue: Optional[BaseException],
+                 tb: Optional[TracebackType]) -> None:
         if self._radiation_level:
             # grab any exception
             self._saved_etype = etype or self._saved_etype
             self._saved_evalue = evalue or self._saved_evalue
             self._saved_tb = tb or self._saved_tb
-            return False
+            return None
         else:
             if not etype and self._saved_etype:
                 # we encountered an exception but it was suppressed
@@ -227,6 +228,10 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
 
+    # Override this to annotate, that we always use a RealDictCursor.
+    def cursor(self, *args: Any, **kwargs: Any) -> RealDictCursor:  # type: ignore[override]
+        return super().cursor(*args, **kwargs)
+
     def contaminate(self) -> None:
         """Increase recursion by one."""
         self._radiation_level += 1
@@ -234,7 +239,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
     def decontaminate(self) -> None:
         """Reduce recursion by one."""
         if self._radiation_level <= 0:
-            raise RuntimeError(n_("No contamination!"))
+            raise RuntimeError(n_("No contamination!"))  # pragma: no cover
         self._radiation_level -= 1
 
     @property

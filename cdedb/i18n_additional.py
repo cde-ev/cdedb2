@@ -46,6 +46,7 @@ I18N_STRINGS = (
     n_("CdeLogCodes.semester_bill_with_addresscheck"),
     n_("CdeLogCodes.semester_ejection"),
     n_("CdeLogCodes.semester_balance_update"),
+    n_("CdeLogCodes.semester_exmember_balance"),
     n_("CdeLogCodes.semester_advance"),
     n_("CdeLogCodes.expuls_addresscheck"),
     n_("CdeLogCodes.expuls_addresscheck_skipped"),
@@ -75,6 +76,9 @@ I18N_STRINGS = (
     n_("CoreLogCodes.realm_change"),
     n_("CoreLogCodes.username_change"),
     n_("CoreLogCodes.quota_violation"),
+    n_("CoreLogCodes.send_anonymous_message"),
+    n_("CoreLogCodes.reply_to_anonymous_message"),
+    n_("CoreLogCodes.rotate_anonymous_message"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
@@ -103,6 +107,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_created"),
     n_("EventLogCodes.registration_changed"),
     n_("EventLogCodes.registration_deleted"),
+    n_("EventLogCodes.registration_payment_received"),
+    n_("EventLogCodes.registration_payment_reimbursed"),
     n_("EventLogCodes.event_locked"),
     n_("EventLogCodes.event_unlocked"),
     n_("EventLogCodes.event_partial_import"),
@@ -130,6 +136,12 @@ I18N_STRINGS = (
     n_("EventLogCodes.orga_token_changed"),
     n_("EventLogCodes.orga_token_revoked"),
     n_("EventLogCodes.orga_token_deleted"),
+    n_("EventLogCodes.custom_filter_created"),
+    n_("EventLogCodes.custom_filter_changed"),
+    n_("EventLogCodes.custom_filter_deleted"),
+    n_("EventLogCodes.registration_status_changed"),
+    n_("EventLogCodes.personalized_fee_amount_set"),
+    n_("EventLogCodes.personalized_fee_amount_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -140,6 +152,7 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.manual_balance_correction"),
     n_("FinanceLogCodes.remove_balance_on_archival"),
     n_("FinanceLogCodes.start_trial_membership"),
+    n_("FinanceLogCodes.remove_exmember_balance"),
     n_("FinanceLogCodes.grant_lastschrift"),
     n_("FinanceLogCodes.revoke_lastschrift"),
     n_("FinanceLogCodes.modify_lastschrift"),
@@ -150,6 +163,8 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.lastschrift_transaction_skip"),
     n_("FinanceLogCodes.lastschrift_transaction_cancelled"),
     n_("FinanceLogCodes.lastschrift_transaction_revoked"),
+    n_("FinanceLogCodes.honorary_membership_granted"),
+    n_("FinanceLogCodes.honorary_membership_revoked"),
     n_("FinanceLogCodes.other"),
 
     n_("FieldAssociations.registration"),
@@ -258,8 +273,10 @@ I18N_STRINGS = (
     n_("PastInstitutions.dsa"),
     n_("PastInstitutions.dja"),
     n_("PastInstitutions.jgw"),
+    n_("PastInstitutions.bub"),
     n_("PastInstitutions.basf"),
     n_("PastInstitutions.van"),
+    n_("PastInstitutions.eisenberg"),
 
     n_("QueryOperators.empty"),
     n_("QueryOperators.nonempty"),
@@ -283,6 +300,10 @@ I18N_STRINGS = (
     n_("QueryOperators.outside"),
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
+
+    n_("QueryScope.registration"),
+    n_("QueryScope.event_course"),
+    n_("QueryScope.lodgement"),
 
     n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
@@ -313,11 +334,30 @@ I18N_STRINGS = (
     n_("MailinglistTypes.public_member_implicit"),
     n_("MailinglistTypes.cdelokal"),
 
+    n_("MailinglistRosterVisibility.none"),
+    n_("MailinglistRosterVisibility.subscribable"),
+    n_("MailinglistRosterVisibility.viewers"),
+
     n_("EventFeeType.common"),
     n_("EventFeeType.storno"),
     n_("EventFeeType.external"),
-    n_("EventFeeType.solidarity"),
-    n_("EventFeeType.donation"),
+    n_("EventFeeType.solidary_reduction"),
+    n_("EventFeeType.solidary_donation"),
+    n_("EventFeeType.solidary_increase"),
+    n_("EventFeeType.instructor_refund"),
+    n_("EventFeeType.instructor_donation"),
+    n_("EventFeeType.other_donation"),
+
+    #
+    # Query datatypes
+    #
+    n_("str"),
+    n_("int"),
+    n_("float"),
+    n_("date"),
+    n_("datetime"),
+    n_("bool"),
+    n_("id"),
 
     #
     # Validation errors
@@ -377,6 +417,14 @@ I18N_STRINGS = (
     n_("subman_managing_no-unsubscribe-possible"),
     n_("subman_managing_not-privileged"),
     n_("subman_managing_no-cleanup-necessary"),
+
+    #
+    # schulze-condorcet localization
+    #
+    n_("A candidate contains a forbidden character."),
+    n_("Superfluous candidate in vote string."),
+    n_("Missing candidate in vote string."),
+    n_("Every candidate must occur exactly once in each vote."),
 
     #
     # Default Strings

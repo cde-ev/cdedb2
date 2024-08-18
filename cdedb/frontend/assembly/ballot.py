@@ -7,7 +7,8 @@ import datetime
 import io
 import json
 import time
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
+from collections.abc import Collection
+from typing import Any, Optional, Union
 
 import werkzeug.exceptions
 from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
@@ -45,7 +46,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
     realm = "assembly"
 
-    def _group_ballots(self, rs: RequestState, assembly_id: int
+    def _group_ballots(self, rs: RequestState, assembly_id: int,
                        ) -> Optional[GroupedBallots]:
         """Helper to group all ballots of an assembly by status.
 
@@ -94,7 +95,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         })
 
     @access("assembly")
-    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int
+    def ballot_template(self, rs: RequestState, assembly_id: int, ballot_id: int,
                         ) -> Response:
         """Offer a choice of appropriate assemblies to create the new ballot.
 
@@ -182,7 +183,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     # the linked_attachments must be passed here since we expect a list
     @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
     def create_ballot(self, rs: RequestState, assembly_id: int,
-                      data: Dict[str, Any]) -> Response:
+                      data: dict[str, Any]) -> Response:
         """Make a new ballot."""
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
@@ -199,7 +200,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return self.redirect(rs, "assembly/show_ballot", {'ballot_id': new_id})
 
     def _set_ballot_attachments(self, rs: RequestState, ballot_id: int,
-                                attachment_ids: Set[Optional[int]]
+                                attachment_ids: set[Optional[int]],
                                 ) -> DefaultReturnCode:
         """Wrapper around `AssemblyBackend.set_ballot_attachments` to filter None.
 
@@ -223,7 +224,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())
 
     @access("assembly")
-    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int
+    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int,
                     ) -> Response:
         """Present a ballot.
 
@@ -277,7 +278,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         merge_dicts(rs.values, current_candidates)
 
         # now, process the grouped ballots from above for the navigation buttons.
-        ballot_list: List[int] = sum((
+        ballot_list: list[int] = sum((
             xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
             for bdict in (grouped.upcoming, grouped.running, grouped.concluded)), [])
 
@@ -302,12 +303,12 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             'prev_ballot': prev_ballot,
             'next_ballot': next_ballot,
             'managed_assembly_ids': assembly_ids,
-            **vote_dict
+            **vote_dict,
         })
 
     @access("assembly")
     def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                           secret: str = None) -> Response:
+                           secret: Optional[str] = None) -> Response:
         """This shows a more detailed result of a tallied ballot.
 
         All information provided on this side is constructable from the downloadable
@@ -377,10 +378,9 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         # show links to next and previous ballots
         # we are only interested in concluded ballots
-        ballot_list: List[int] = xsorted(
+        ballot_list: list[int] = xsorted(
             grouped.concluded.keys(),
-            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_])  # type: ignore[union-attr]
-            # Seems like a mypy bug.
+            key=lambda id_: EntitySorter.ballot(grouped.concluded[id_]),
         )
 
         i = ballot_list.index(ballot_id)
@@ -400,7 +400,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         })
 
     @staticmethod
-    def count_equal_votes(vote_strings: List[VoteString], classical: bool = False
+    def count_equal_votes(vote_strings: list[VoteString], classical: bool = False,
                           ) -> collections.Counter[VoteString]:
         """This counts how often a specific vote was submitted."""
         # convert the votes into their tuple representation
@@ -417,7 +417,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return collections.Counter(as_vote_strings(votes))
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
-                           secret: str = None) -> CdEDBObject:
+                           secret: Optional[str] = None) -> CdEDBObject:
         """Helper function to present the own vote
 
         This handles the personalised information of the current viewer interacting with
@@ -456,8 +456,8 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
-    def _update_ballots(self, rs: RequestState, assembly_id: int
-                        ) -> Tuple[int, int, int]:
+    def _update_ballots(self, rs: RequestState, assembly_id: int,
+                        ) -> tuple[int, int, int]:
         """Helper to automatically update all ballots of an assembly.
 
         State updates are necessary for extending and tallying a ballot.
@@ -472,7 +472,8 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         extended = tallied = unchanged = 0
 
         timestamp = now()
-        for ballot_id, ballot in ballots.items():
+        # sort ballots, so especially tallying is done in a meaningful order
+        for ballot in xsorted(ballots.values(), key=EntitySorter.ballot):
             # check for extension
             if ballot['extended'] is None and timestamp > ballot['vote_end']:
                 if self.assemblyproxy.check_voting_period_extension(rs, ballot['id']):
@@ -488,6 +489,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                              or timestamp > ballot['vote_extension_end']))
             # check whether we need to initiate tallying
             # tally_ballot returns None if ballot was already tallied
+            ballot_id = ballot['id']
             if finished and (result := self.assemblyproxy.tally_ballot(rs, ballot_id)):
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
@@ -505,7 +507,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                     rs, "ballot_tallied", {
                         'To': to,
                         'Subject': subject,
-                        'Reply-To': reply_to
+                        'Reply-To': reply_to,
                     },
                     attachments=(attachment_result,),
                     params={'sha': my_hash, 'title': ballot['title']})
@@ -518,7 +520,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             raise RuntimeError(n_("Impossible."))
         return ret
 
-    def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
+    def get_online_result(self, rs: RequestState, ballot: dict[str, Any],
                           ) -> Optional[CdEDBObject]:
         """Helper to get the result information of a tallied ballot."""
         if ballot['is_tallied']:
@@ -526,8 +528,8 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             assert ballot_result is not None
             result = json.loads(ballot_result)
 
-            preferred: List[Collection[str]] = []
-            rejected: List[Collection[str]] = []
+            preferred: list[Collection[str]] = []
+            rejected: list[Collection[str]] = []
             tmp = preferred
             lookup = {e['shortname']: e['id']
                       for e in ballot['candidates'].values()}
@@ -542,7 +544,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             result['rejected'] = rejected
 
             # vote count for classical vote ballots
-            counts: Union[Dict[str, int], List[DetailedResultLevel]]
+            counts: Union[dict[str, int], list[DetailedResultLevel]]
             if ballot['votes']:
                 counts = {e['shortname']: 0 for e in ballot['candidates'].values()}
                 if ballot['use_bar']:
@@ -582,7 +584,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return None
 
     @periodic("check_tally_ballot", period=1)
-    def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
+    def check_tally_ballot(self, rs: RequestState, store: CdEDBObject,
                            ) -> CdEDBObject:
         """Check whether any ballots need to be tallied or extended."""
         tally_count = 0
@@ -657,7 +659,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     # the linked_attachments must be passed here since we expect a list
     @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
     def change_ballot(self, rs: RequestState, assembly_id: int,
-                      ballot_id: int, data: Dict[str, Any]) -> Response:
+                      ballot_id: int, data: dict[str, Any]) -> Response:
         """Modify a ballot."""
         if rs.ambience['ballot']['is_locked']:
             rs.ignore_validation_errors()
@@ -673,6 +675,65 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         code *= self.assemblyproxy.set_ballot(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
+
+    @access("assembly")
+    @assembly_guard
+    def reschedule_ballots_form(self, rs: RequestState, assembly_id: int) -> Response:
+        """Render form allowing to select some ballots for rescheduling."""
+        if not (grouped := self._group_ballots(rs, assembly_id)):
+            # some ballots updated state
+            return self.redirect(rs, "assembly/reschedule_ballots")
+
+        config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
+        return self.render(rs, "ballot/reschedule_ballots", {
+            'ballots': grouped.upcoming, 'config_grouped': config_grouped})
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("ballot_ids", "vote_begin", "vote_end", "vote_extension_end")
+    def reschedule_ballots(
+            self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
+            vote_begin: Optional[datetime.datetime],
+            vote_end: Optional[datetime.datetime],
+            vote_extension_end: Optional[datetime.datetime]) -> Response:
+        """Change the voting dates for all selected ballots."""
+        if rs.has_validation_errors():
+            return self.reschedule_ballots_form(rs, assembly_id)
+        if not ballot_ids:
+            rs.notify("error", n_("You need to select at least one ballot."))
+            return self.reschedule_ballots_form(rs, assembly_id)
+
+        code = 1
+        if self.assemblyproxy.is_any_ballot_locked(rs, ballot_ids):
+            rs.notify("error",
+                      n_("Modification of locked ballots prevented."))
+            return self.redirect(rs, "assembly/reschedule_ballots")
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
+        # Compile and validate all updated data first
+        updated_ballots = []
+        for ballot_id, ballot in ballots.items():
+            updated_ballot = {
+                'id': ballot_id,
+                'abs_quorum': ballot['abs_quorum'],
+                'rel_quorum': ballot['rel_quorum'],
+                'vote_begin': vote_begin,
+                'vote_end': vote_end,
+                'vote_extension_end': vote_extension_end,
+            }
+            if not ballot['vote_extension_end']:
+                updated_ballot['vote_extension_end'] = None
+            updated_ballot = check(rs, vtypes.Ballot, updated_ballot)
+            updated_ballots.append(updated_ballot)
+
+        if rs.has_validation_errors():
+            return self.reschedule_ballots_form(rs, assembly_id)
+        for updated_ballot in updated_ballots:
+            assert updated_ballot is not None
+            code *= self.assemblyproxy.set_ballot(rs, updated_ballot)
+        rs.notify_return_code(code)
+
+        return self.redirect(rs, "assembly/summary_ballots")
 
     @access("assembly")
     @assembly_guard
@@ -817,10 +878,11 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         """Download the tallied stats of a ballot."""
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not (result := self.assemblyproxy.get_ballot_result(rs, ballot_id)):
+        path = self.assemblyproxy.get_ballot_file_path(rs, ballot_id)
+        if not path.is_file():
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        return self.send_file(rs, data=result, inline=False,
+        return self.send_file(rs, path=path, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
     @access("assembly", modi={"POST"})
@@ -831,7 +893,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         spec = {
             'shortname': vtypes.ShortnameRestrictiveIdentifier,
-            'title': vtypes.LegacyShortname
+            'title': vtypes.LegacyShortname,
         }
         existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
@@ -839,12 +901,12 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
 
-        shortnames: Set[str] = set()
+        shortnames: set[str] = set()
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
                     (drow_name("shortname", candidate_id),
-                     ValueError(n_("Duplicate shortname.")))
+                     ValueError(n_("Duplicate shortname."))),
                 )
             if candidate:
                 shortnames.add(candidate['shortname'])
@@ -853,7 +915,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         data = {
             'id': ballot_id,
-            'candidates': candidates
+            'candidates': candidates,
         }
         code = self.assemblyproxy.set_ballot(rs, data)
         rs.notify_return_code(code)

@@ -2,19 +2,13 @@
 """Module containing all tests for the CdEDB-LDAP interface."""
 
 import ssl
-from typing import Dict, List, Set, Union
+from typing import Optional, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
 from ldap3.core.tls import Tls
-from ldap3.utils.config import _ATTRIBUTES_EXCLUDED_FROM_CHECK
 
 from tests.common import USER_DICT, BasicTest
-
-# this is likely a bug in ldaptor and already reported upstream, see
-# https://github.com/cannatag/ldap3/issues/1017
-_ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(
-    ["objectClasses", "attributeTypes", "createTimestamp", "modifyTimestamp"])
 
 
 class TestLDAP(BasicTest):
@@ -65,22 +59,22 @@ class TestLDAP(BasicTest):
             use_ssl=True, tls=tls)
 
     def single_result_search(
-        self, search_filter: str, raw_expectation: Dict[str, List[str]], *,
+        self, search_filter: str, raw_expectation: dict[str, list[str]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES,
-        excluded_attributes: List[str] = None,
+        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
+        excluded_attributes: Optional[list[str]] = None,
     ) -> None:
         with ldap3.Connection(
-            self.server, user=user, password=password, raise_exceptions=True
+            self.server, user=user, password=password, raise_exceptions=True,
         ) as conn:
             conn.search(
                 search_base=search_base,
                 search_filter=search_filter,
-                attributes=attributes
+                attributes=attributes,
             )
             self.assertEqual(1, len(conn.entries), conn.entries)
-            raw_result: Dict[str, List[str]] = conn.entries[0].entry_attributes_as_dict
+            raw_result: dict[str, list[str]] = conn.entries[0].entry_attributes_as_dict
             # Accordingly to RFC 4511, attributes and values of attributes are unordered
             result = {key: set(values) for key, values in raw_result.items()}
             expectation = {key: set(values) for key, values in raw_expectation.items()}
@@ -92,27 +86,27 @@ class TestLDAP(BasicTest):
     def no_result_search(
         self,
         search_filter: str, *,
-        except_users: Set[str] = None,
+        except_users: Optional[set[str]] = None,
         search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES
+        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
     ) -> None:
         """Test that this search yields no results for all DUAs and all users.
 
         The 'except_users' argument may be used to exclude some users from this check.
         """
-        users: Dict[str, str] = {**self.DUAs, **self.USERS}
-        passwords: Dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
+        users: dict[str, str] = {**self.DUAs, **self.USERS}
+        passwords: dict[str, str] = {**self.DUA_passwords, **self.USER_passwords}
         except_users = except_users or set()
         for user in users:
             with self.subTest(user):
                 with ldap3.Connection(
                     self.server, user=users[user], password=passwords[user],
-                    raise_exceptions=True
+                    raise_exceptions=True,
                 ) as conn:
                     conn.search(
                         search_base=search_base,
                         search_filter=search_filter,
-                        attributes=attributes
+                        attributes=attributes,
                     )
                     # if the current user should access the entries, we check if he does
                     if user in except_users:
@@ -175,7 +169,7 @@ class TestLDAP(BasicTest):
         user_dn = self.USERS[user]
         with ldap3.Connection(
             self.server, user=user_dn, password=self.USER_passwords[user],
-            raise_exceptions=True
+            raise_exceptions=True,
         ) as conn:
             conn.compare(user_dn, "sn", "Administrator")
             self.assertEqual("compareTrue", conn.result["description"])
@@ -198,7 +192,7 @@ class TestLDAP(BasicTest):
 
         # users may access their own data
         attributes = ["objectClass", "cn"]
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'cn': ['Anton Armin A. Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
@@ -258,7 +252,7 @@ class TestLDAP(BasicTest):
                 'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            ]
+            ],
         }
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=user, password=password)
@@ -284,7 +278,7 @@ class TestLDAP(BasicTest):
                 'dcObject',
                 'organization',
             ],
-            'o': ['CdE e.V.']
+            'o': ['CdE e.V.'],
         }
         search_filter = "(objectClass=organization)"
         self.single_result_search(search_filter, expectation)
@@ -294,7 +288,7 @@ class TestLDAP(BasicTest):
         organizational_unit_o = "Users"
         expectation = {
             'objectClass': ['organizationalUnit'],
-            'o': ['Users']
+            'o': ['Users'],
         }
         search_filter = (
             "(&"
@@ -307,7 +301,7 @@ class TestLDAP(BasicTest):
     def test_user_entity(self) -> None:
         """Check if all attributes of an user are correctly present."""
         user_id = 1
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
@@ -340,9 +334,9 @@ class TestLDAP(BasicTest):
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',
                 'uid=100,ou=users,dc=cde-ev,dc=de',
-                'uid=38,ou=users,dc=cde-ev,dc=de'
+                'uid=38,ou=users,dc=cde-ev,dc=de',
             ],
-            'objectClass': ['groupOfUniqueNames']
+            'objectClass': ['groupOfUniqueNames'],
         }
         search_filter = (
             "(&"
@@ -364,7 +358,7 @@ class TestLDAP(BasicTest):
             'ipaUniqueID': ['mls/gutscheine@lists.cde-ev.de'],
             'uniqueMember': [
                 'uid=100,ou=users,dc=cde-ev,dc=de',
-                'uid=11,ou=users,dc=cde-ev,dc=de'
+                'uid=11,ou=users,dc=cde-ev,dc=de',
             ],
             'objectClass': ['groupOfUniqueNames'],
         }
@@ -388,7 +382,7 @@ class TestLDAP(BasicTest):
             'description': ['Gutscheine <gutscheine-owner@lists.cde-ev.de>'],
             'ipaUniqueID': ['ml_moderator_groups/gutscheine@lists.cde-ev.de'],
             'uniqueMember': [
-                'uid=9,ou=users,dc=cde-ev,dc=de'
+                'uid=9,ou=users,dc=cde-ev,dc=de',
             ],
             'objectClass': ['groupOfUniqueNames'],
         }
@@ -412,7 +406,7 @@ class TestLDAP(BasicTest):
             'description': ['Große Testakademie 2222 (TestAka)'],
             'ipaUniqueID': ['event_orga_groups/1'],
             'uniqueMember': [
-                'uid=7,ou=users,dc=cde-ev,dc=de'
+                'uid=7,ou=users,dc=cde-ev,dc=de',
             ],
             'objectClass': ['groupOfUniqueNames'],
         }
@@ -436,7 +430,7 @@ class TestLDAP(BasicTest):
             'description': ['Internationaler Kongress (kongress)'],
             'ipaUniqueID': ['assembly_presider_groups/1'],
             'uniqueMember': [
-                'uid=23,ou=users,dc=cde-ev,dc=de'
+                'uid=23,ou=users,dc=cde-ev,dc=de',
             ],
             'objectClass': ['groupOfUniqueNames'],
         }
@@ -454,7 +448,7 @@ class TestLDAP(BasicTest):
     def test_dua_entity(self) -> None:
         """Check if all attributes of DUAs are correctly present."""
         dua_cn = "test"
-        expectation: Dict[str, List[str]] = {
+        expectation: dict[str, list[str]] = {
             'cn': ['test'],
             'ipaUniqueID': ['duas/test'],
             'objectClass': ['person', 'simpleSecurityObject'],
@@ -506,7 +500,7 @@ class TestLDAP(BasicTest):
             'cn=orgas-1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
             'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_presider: Set[str] = set()
+        expectation_presider: set[str] = set()
         expectation_all = {
             *expectation_status, *expectation_subscriber, *expectation_moderator,
             *expectation_orga, *expectation_presider}
@@ -518,13 +512,13 @@ class TestLDAP(BasicTest):
         )
         self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         with ldap3.Connection(
-                self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
+                self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
         with ldap3.Connection(
-                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"],
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
@@ -554,7 +548,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: Set[str] = set()
+        expectation_orga: set[str] = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
@@ -570,13 +564,13 @@ class TestLDAP(BasicTest):
         )
         self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         with ldap3.Connection(
-            self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
+            self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
         with ldap3.Connection(
-                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"]
+                self.server, user=self.DUAs["rqt"], password=self.DUA_passwords["rqt"],
         ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
@@ -595,7 +589,7 @@ class TestLDAP(BasicTest):
         )
         expectation = {
             'cn': ['42@lists.cde-ev.de'],
-            'objectClass': ['groupOfUniqueNames']
+            'objectClass': ['groupOfUniqueNames'],
         }
         self.no_result_search(search_filter, except_users={"cloud", "apache", "rqt"})
         # TODO use appropiate non-admin-dua here
@@ -632,6 +626,74 @@ class TestLDAP(BasicTest):
             ")"
         )
         self.single_result_search(search_filter, expectation, attributes=attributes)
+
+    def test_search_pagination(self) -> None:
+        """Test search with pagedResultsControl."""
+        search_filter = (
+            "(&"
+            "(objectclass=inetOrgPerson)"
+            ")"
+        )
+
+        with ldap3.Connection(
+            self.server, user=self.test_dua_dn, password=self.test_dua_pw,
+            raise_exceptions=True,
+        ) as conn:
+            # first page
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=2,
+                paged_cookie=None,
+                attributes=["uid"],
+            )
+            self.assertEqual(2, len(conn.entries))
+            self.assertEqual(['1'], conn.entries[0].entry_attributes_as_dict["uid"])
+            self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
+
+            # second page
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
+            self.assertNotEqual(b"", cookie)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=2,
+                paged_cookie=cookie,
+                attributes=["uid"],
+            )
+            self.assertEqual(2, len(conn.entries))
+            self.assertEqual(['3'], conn.entries[0].entry_attributes_as_dict["uid"])
+            self.assertEqual(['4'], conn.entries[1].entry_attributes_as_dict["uid"])
+
+            # next try, with more results
+            # first page
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=20,
+                paged_cookie=None,
+                attributes=["uid"],
+            )
+            self.assertEqual(20, len(conn.entries))
+
+            # second and last page
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
+            size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
+            self.assertNotEqual(b"", cookie)
+            self.assertLess(size, 40)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                paged_size=20,
+                paged_cookie=cookie,
+                attributes=["uid"],
+            )
+            self.assertLess(len(conn.entries), 20)
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
+                "value"]["cookie"]
+            self.assertEqual(b"", cookie)
 
     def test_caseinsensitive_attributes(self) -> None:
         user_id = 9

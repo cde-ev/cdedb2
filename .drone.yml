@@ -209,7 +209,9 @@ steps:
     path: /coverage
   commands:
   - python3 -m coverage combine /coverage/
-  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=91
+  - python3 -m coverage report --include 'cdedb/*' --show-missing --fail-under=92
+  - python3 -m coverage report --include 'tests/common.py' --show-missing
+  - python3 -m coverage report --include 'tests/*/*.py' --show-missing --fail-under=100
 - name: xss
   image: cdedb
   pull: never
@@ -239,10 +241,7 @@ steps:
   environment:
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
   commands:
-    - python3 -m cdedb db create
-    - python3 -m cdedb db populate
-    - python3 -m cdedb dev compile-sample-data-json
-    - diff -u tests/ancillary_files/sample_data.json /tmp/sample_data.json
+    - python3 -m cdedb dev check-sample-data-consistency
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub

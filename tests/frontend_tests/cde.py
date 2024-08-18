@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
 
-import csv
 import datetime
 import decimal
 import itertools
 import json
 import re
 import types
-from typing import Set, Tuple, cast
+from typing import cast
 
 import webtest
 
@@ -91,52 +90,64 @@ class TestCdEFrontend(FrontendTest):
                     deadline = deadline.replace(month=8)
             return deadline.replace(
                 year=deadline.year + periods_left // 2)
-        persona_data = {
-            "balance": 0,
-            "trial_member": False,
+
+        def _assert_ejection_deadline(date_str: str, persona: CdEDBObject,
+                                      period: CdEDBObject) -> None:
+            self.assertEqual(
+                datetime.date.fromisoformat(date_str),
+                _calculate_ejection_deadline(persona, period),
+            )
+
+        member = {
+            'balance': 0,
+            'trial_member': False,
         }
-        period_data = {
+        trial_member = {
+            'balance': 0,
+            'trial_member': True,
+        }
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-02-01", member, period)
+        _assert_ejection_deadline("2020-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2020-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2020-08-01", member, period)
+        _assert_ejection_deadline("2021-02-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-07-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": False,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-02-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
-        period_data = {
+        _assert_ejection_deadline("2021-02-01", member, period)
+        _assert_ejection_deadline("2021-08-01", trial_member, period)
+
+        period = {
             "semester_start": datetime.datetime.fromisoformat("2020-12-01"),
             "balance_done": True,
         }
-        self.assertEqual(datetime.date.fromisoformat("2021-08-01"),
-                         _calculate_ejection_deadline(
-                             persona_data, period_data))
+        _assert_ejection_deadline("2021-08-01", member, period)
+        _assert_ejection_deadline("2022-02-01", trial_member, period)
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner",
               "katarina")
@@ -187,7 +198,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera", "berta")
     def test_showuser(self) -> None:
-        self.traverse({'description': self.user['display_name']},)
+        self.traverse({'description': self.user['display_name']})
         self.assertTitle(self.user['default_name_format'])
         # TODO extend
         if self.user_in("berta"):
@@ -224,6 +235,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['donation'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+                                   "Ungültige Eingabe für eine Dezimalzahl")
+        f['donation'] = "0"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            'donation',
+            "Die Spende der Lastschrift ist außerhalb von 2,00 € und 1.000,00 €. Der"
+            " Nutzer wird nicht in der Lage sein, den Betrag selbstständig zu ändern.")
+        f = self.response.forms['changedataform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
 
         # Olaf, disabled
         self.realm_admin_view_profile('olaf', "cde")
@@ -320,7 +346,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> Set[Role]:
+        def _roles(user: UserIdentifier) -> set[Role]:
             user = get_user(user)
             return extract_roles(self.core.get_persona(self.key, user['id']))
 
@@ -724,11 +750,11 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['queryform']
         f['qsel_address_supplement'].checked = True
         self.submit(f)
-        self.assertPresence("Ergebnis [19]", div='query-results')
+        self.assertPresence("Ergebnis [20]", div='query-results')
         self.assertEqual(
-            "17",
+            "18",
             self.response.lxml.xpath("//*[@id='query-result']/tfoot/tr/td[@data-col="
-                                     "'null.address_supplement']")[0].text.strip()
+                                     "'null.address_supplement']")[0].text.strip(),
         )
 
     @as_users("vera")
@@ -744,7 +770,7 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_decided_search'].checked = True
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
-        f['qord_primary'] = "personas.id"
+        f['qord_0'] = "personas.id"
         self.response = f.submit("download", value="csv")
         expectation = "\n".join((
             'personas.id;given_names;family_name;username;birthday;decided_search;'
@@ -755,7 +781,7 @@ class TestCdEFrontend(FrontendTest):
             '"Ich bin ein ""Künstler""; im weiteren Sinne."',
             '4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;',
             '6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;',
-            ''
+            '',
         )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
 
@@ -772,7 +798,7 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_decided_search'].checked = True
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
-        f['qord_primary'] = "personas.id"
+        f['qord_0'] = "personas.id"
         self.response = f.submit("download", value="json")
         expectation = [
             {'birthday': '1981-02-11',
@@ -829,21 +855,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Daten sind für andere Mitglieder sichtbar.")
 
         # grant membership
-        self.traverse({'description': 'Status ändern'})
+        self.traverse('Status ändern')
         f = self.response.forms['modifymembershipform']
-        self.submit(f)
+        self.submit(f, button="is_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
 
         # grant trial membership
-        self.traverse({'description': 'Status ändern'})
+        self.traverse('Status ändern')
         self.assertPresence("Probemitgliedschaft gewähren")
-        f = self.response.forms['modifymembershipform']
+        f = self.response.forms['modifytrialmembershipform']
         self.submit(f, button="trial_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
+        self.assertPresence("Probemitglied", div='membership', exact=True)
 
         # revoke membership and trial membership
         self.traverse({'description': 'Status ändern'})
@@ -854,21 +880,57 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
         # grant membership and trial membership
-        self.traverse({'description': 'Status ändern'})
-        self.assertPresence("Zum Mitglied machen")
-        f = self.response.forms['modifymembershipform']
-        f['trial_member'].checked = True
-        self.submit(f)
-        self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)", div='membership')
-
-        # revoke trial membership
-        self.traverse({'description': 'Status ändern'})
-        self.assertPresence("Probemitgliedschaft terminieren")
-        f = self.response.forms['modifymembershipform']
+        self.traverse('Status ändern')
+        self.assertPresence("Probemitgliedschaft (und Mitgliedschaft) gewähren")
+        f = self.response.forms['modifytrialmembershipform']
         self.submit(f, button="trial_member")
         self.assertTitle("Bertå Beispiel")
-        self.assertPresence("CdE-Mitglied Status ändern", div='membership', exact=True)
+        self.assertPresence("Probemitglied", div='membership', exact=True)
+
+        # revoke trial membership
+        self.traverse('Status ändern')
+        self.assertPresence("Probemitgliedschaft beenden")
+        f = self.response.forms['modifytrialmembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Bertå Beispiel")
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
+
+        # Revoke honorary membership.
+        self.admin_view_profile('petra')
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
+        self.traverse("Status ändern")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("CdE-Mitglied", div='membership', exact=True)
+
+        # Grant honorary membership.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
+
+        # Also grant trial memberhip.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifytrialmembershipform']
+        self.submit(f, button="trial_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehren- und Probemitglied", div='membership', exact=True)
+
+        # Revoke everything.
+        self.traverse("Status ändern")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f, button="is_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertNonPresence("itglied", div='membership')
+
+        # Grant membership and honorary membership.
+        self.traverse("Status änder")
+        f = self.response.forms['modifyhonorarymembershipform']
+        self.submit(f, button="honorary_member")
+        self.assertTitle("Petra Philanthrop")
+        self.assertPresence("Ehrenmitglied", div='membership', exact=True)
 
     @as_users("farin")
     def test_iban_visibility(self) -> None:
@@ -902,7 +964,7 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('berta')
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
-                      {'description': 'Bertålotta Beispiel'},)
+                      {'description': 'Bertålotta Beispiel'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         self.assertPresence("42,23 €", div='donation', exact=True)
         self.get("/cde/user/2/lastschrift/create")
@@ -941,8 +1003,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("+49 160 20479204", div='contact-mobile', exact=True)
         self.assertPresence("12345 Lynna", div='address')
         self.assertPresence("Ligusterweg 4", div='address2')
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div='membership')
+        self.assertPresence("Probemitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
@@ -1005,6 +1066,9 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
+        self.assertPresence("Bertålotta Beispiel", div='active-authorizations')
+        self.assertPresence("Akira Abukara", div='inactive-authorizations')
+        self.assertNonPresence("Bertålotta Beispiel", div='inactive-authorizations')
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:
@@ -1019,12 +1083,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
+        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Das Mitglied ist der Kontoinhaber.",
+                            div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
-            self.assertIn("receiptform3", self.response.forms)
         else:
             self.assertNotIn("revokeform", self.response.forms)
-            self.assertNotIn("receiptform3", self.response.forms)
 
     def test_membership_lastschrift_revoke(self) -> None:
         # create a new lastschrift
@@ -1090,18 +1155,65 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
-        exceptions = (5, 6, 14, 28, 66,)
+        exceptions = (5, 6, 14, 28, 66, 98)
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
-                self.assertEqual(expectation[index], line)
+                with self.subTest(i=index):
+                    self.assertEqual(expectation[index].strip(), line.strip())
         self.submit(g)
-        self.assertPresence("1 Lastschriften initialisiert.",
-                            div="notifications")
-        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization',
-                            exact=True)
-        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
-                               "Schwebe.")
+        self.assertPresence("2 Lastschriften initialisiert.", div="notifications")
+        self.assertPresence(
+            "Keine zu bearbeitenden Lastschriften für dieses Semester.",
+            div='open-dd-authorization', exact=True)
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
+
+        f = self.response.forms['finalizationform']
+        f['transaction_ids'] = [1001, 1002]
+        self.submit(f, button="success")
+
+        payment_date = self.app.app.cde._calculate_payment_date()  # pylint: disable=protected-access
+        log_expectation = [
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_issue,
+                'persona_id': 2,
+                'change_note': "50.23",
+                'members': 9,
+                'member_total': "114.76",
+                'total': "725.87",
+                'transaction_date': None,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_issue,
+                'persona_id': 42,
+                'change_note': "2000.00",
+                'members': 9,
+                'member_total': "114.76",
+                'total': "725.87",
+                'transaction_date': None,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_success,
+                'persona_id': 2,
+                'delta': self.cde.annual_membership_fee(self.key),
+                'new_balance': "20.50",
+                'members': 9,
+                'member_total': "122.76",
+                'total': "733.87",
+                'transaction_date': payment_date,
+            },
+            {
+                'code': const.FinanceLogCodes.lastschrift_transaction_success,
+                'persona_id': 42,
+                'delta': None,
+                'new_balance': "0.00",
+                'members': 9,
+                'member_total': "122.76",
+                'total': "733.87",
+                'transaction_date': payment_date,
+                'change_note': "Ehrenmitglied",
+            },
+        ]
+        self.assertLogEqual(log_expectation, realm="finance", offset=3)
 
     @storage
     @as_users("farin")
@@ -1109,27 +1221,25 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
-                               "dieses Semester.")
+        self.assertPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
                             "Schwebe.", div='open-dd', exact=True)
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
-        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain_single.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
-        exceptions = (5, 6, 14, 28, 66,)
+        exceptions = (5, 6, 14, 28, 66)
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
-                self.assertEqual(expectation[index], line)
+                with self.subTest(i=index):
+                    self.assertEqual(expectation[index].strip(), line.strip())
         self.submit(g)
-        self.assertPresence("1 Lastschriften initialisiert.",
-                            div="notifications")
-        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization',
-                            exact=True)
-        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
-                               "Schwebe.")
+        self.assertPresence("1 Lastschriften initialisiert.", div="notifications")
+        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
+        self.assertNonPresence("Bertålotta Beispiel", div='open-dd-authorization')
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
@@ -1250,12 +1360,29 @@ class TestCdEFrontend(FrontendTest):
     @as_users("berta")
     def test_lastschrift_change_donation(self) -> None:
         self.traverse(self.user['display_name'], "Bearbeiten")
+        # invalid/uncommon input for donation
+        f = self.response.forms['changedataform']
+        f['donation'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('donation',
+                                   "Ungültige Eingabe für eine Dezimalzahl")
         f = self.response.forms['changedataform']
         f['donation'] = "4200"
         self.submit(f, check_notification=False)
         self.assertValidationError('donation',
-            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+            "Spende einer Lastschrift muss zwischen 2,00 € und 1.000,00 € sein.")
+        # there is some interdependence between validation of donation and other
+        # fields, check that still a working response is returned if both invalid
+        f['telephone'] = "invalid"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('telephone', "Das ist keine Telefonnummer.")
+        # This is the donation info text if currently an extraordinary high/low donation
+        # is saved. It should not be shown if high value was entered but not saved.
+        self.assertNonPresence("außerhalb der vorgesehenen Grenzwerte")
+
+        # valid input, but berta does not pay herself
         f = self.response.forms['changedataform']
+        f['telephone'] = ""
         f['donation'] = "3"
         self.submit(f, check_notification=False)
         self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
@@ -1279,15 +1406,6 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
                             exact=True)
-
-    @as_users("farin")
-    def test_lastschrift_receipt(self) -> None:
-        self.admin_view_profile('berta')
-        self.traverse({'description': 'Einzugsermächtigung'})
-        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        f = self.response.forms['receiptform3']
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("vera")
     def test_lastschrift_subscription_form(self) -> None:
@@ -1360,7 +1478,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             (r"given_names:\W*Darf nicht leer sein.",
              r"pevent_id:\W*Keine Eingabe vorhanden."),
             tuple(),
@@ -1371,7 +1489,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona:\W*Ähnlicher Account gefunden.",),
             (r"course:\W*Kein Kurs verfügbar.",),
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
-             r"course:\W*Kein Kurs verfügbar.",),
+             r"course:\W*Kein Kurs verfügbar."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             # TODO check that this is actually a warning and no problem
@@ -1381,7 +1499,7 @@ class TestCdEFrontend(FrontendTest):
              r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
-             r"birthday\W*Person ist jünger als 10 Jahre.",),
+             r"birthday\W*Person ist jünger als 10 Jahre."),
             (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
@@ -1434,13 +1552,13 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",
-             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt."),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             tuple(),
@@ -1456,7 +1574,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1466,7 +1584,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"pevent_id:\W*Keine Veranstaltung gefungen.",
-             r"course:\W*Kein Kurs verfügbar.",),
+             r"course:\W*Kein Kurs verfügbar."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Tag liegt nicht im Monat.",
              r"birthday:\W*Notwendige Angabe fehlt."),
@@ -1474,7 +1592,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"pevent_id\W*Nur unscharfer Treffer.",
-             r"pevent_id\W*Nur unscharfer Treffer.",),
+             r"pevent_id\W*Nur unscharfer Treffer."),
             tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
@@ -1508,7 +1626,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
+        expectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1528,13 +1646,13 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation: Tuple[Tuple[str, ...], ...] = (
+        nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",
-             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt.",),
+             r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt."),
             tuple(),
             tuple(),
             tuple(),
@@ -1585,8 +1703,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
-                            div="membership")
+        self.assertPresence("Probemitglied", div="membership")
         self.assertNonPresence("Geburtsname", div='personal-information')
 
         self.response = save_response
@@ -1615,8 +1732,8 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long  # noqa: E501
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long  # noqa: E501
         )
 
         self.traverse({'description': 'Mitglieder'},
@@ -1799,132 +1916,153 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertFalse(f['checksum'].value)
         content = self.response.lxml.xpath(
-            "//div[@id='{}']".format("content"))[0].text_content()
-        _, content = content.split(" Zeile 1:")
-        output = []
-        for i in range(2, 7):
-            head, content = content.split(" Zeile {}:".format(i))
-            output.append(head)
-        head, _ = content.split("Validieren")
-        output.append(head)
-        expectation: Tuple[Tuple[str, ...], ...] = (
-            (r"persona_id:\W*Darf nicht leer sein.",
-             r"family_name:\W*Darf nicht leer sein.",
-             r"given_names:\W*Darf nicht leer sein.",
-             r"amount:.*\W*Ungültige Eingabe für eine Dezimalzahl.",),
-            (r"persona_id:\W*Falsches Format.",),
-            (r"family_name:\W*Nachname passt nicht.",),
-            (r"persona_id:\W*Falsches Format.",),
-            (r"amount:\W*Überweisungsbetrag ist negativ.",),
-            tuple(),
-            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
-            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
-            )
-        for ex, out in zip(expectation, output):
+            "//ol[@id='transfer-validation']")[0].text_content()
+        output = re.split(r" Zeile \d+:", content)[1:]
+        expectation: tuple[tuple[str, ...], ...] = (
+            (
+                "category: Darf nicht leer sein.",
+                "date: Kein Datum gefunden.",
+                "amount: Ungültige Eingabe für einen Betrag.",
+                "persona_id: Darf nicht leer sein.",
+                "family_name: Darf nicht leer sein.",
+                "given_names: Darf nicht leer sein.",
+                "category: Unzulässige Kategorie",
+            ),
+            (
+                "date: Ungültige Eingabe für ein Datum.",
+                "persona_id: Falsches Format.",
+            ),
+            (
+                "persona_id: Falsches Format.",
+                "category: Unzulässige Kategorie.",
+            ),
+            (
+                "amount: Ungültige Eingabe für einen Betrag.",
+            ),
+            (
+                "amount: Muss größer als Null sein.",
+                "given_names: Vornamen passen nicht zusammen.",
+            ),
+            (
+                "persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                "amount: Zu viel Geld.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+            ),
+        )
+        for ex, out in zip(expectation, output, strict=True):
+            out = re.sub(r"\s+", " ", out)
             for piece in ex:
-                self.assertTrue(re.search(piece, out))
+                with self.subTest(search=piece, target=out):
+                    self.assertRegex(out, piece)
         lines = f['transfers'].value.split('\n')
-        inputdata = '\n'.join(lines[4:8]).replace('-12.34', '12.34')
+        inputdata = '\n'.join(
+            lines[4:],
+        ).replace(
+            '-12.34', '12.34',
+        ).replace(
+            'Party50', 'Mitgliedsbeitrag',
+        ).replace(
+            'Charly', 'Charly C.',
+        ).replace(
+            'Daniel', 'Daniel D.',
+        )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
 
         # second round
         self.assertPresence("Bestätigen")
-        self.assertPresence("Saldo: 151,09 €", div='saldo', exact=True)
+        self.assertPresence("Gesamtsumme 486,33 €", div='saldo-table')
+        self.assertPresence("Mitgliedsbeiträge 112,34 €", div='saldo-table')
+        self.assertPresence("Große Testakademie 2222 373,99 €", div='saldo-table')
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
-                            div="notifications")
+        self.assertPresence(
+            "2 Mitgliedsbeiträge verbucht. 1 neue Mitglieder.", div="notifications")
+        self.assertPresence(
+            "1 Überweisungen verbucht für Große Testakademie 2222",
+            div="notifications")
+        self.assertPresence(
+            "1 Erstattungen eingetragen für Große Testakademie 2222",
+            div="notifications")
 
-        log_expectation: list[CdEDBObject] = [
-            # sample data entry:
-            {
-                'persona_id': 9,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "5.00",
-                'new_balance': "5.00",
-                'total': "116.50",
-                'members': 7,
-                'submitted_by': 32,
-                'transaction_date': now().date(),
-            },
+        finance_log_expectation: list[CdEDBObject] = [
             # new entries:
             {
                 'persona_id': 3,
                 'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
                 'delta': "12.34",
                 'new_balance': "13.34",
-                'total': "127.10",
-                'members': 8,
-                'transaction_date': None,
+                'total': "738.21",
+                'member_total': "127.10",
+                'members': 9,
+                'transaction_date': datetime.date(2024, 3, 26),
             },
             {
                 'persona_id': 4,
                 'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
                 'delta': "100.00",
                 'new_balance': "100.00",
-                'total': "127.10",
-                'members': 8,
+                'total': "838.21",
+                'member_total': "127.10",
+                'members': 9,
                 'transaction_date': datetime.date(2019, 3, 17),
             },
             {
                 'persona_id': 4,
                 'code': const.FinanceLogCodes.gain_membership,
-                'change_note': None,
                 'delta': None,
                 'new_balance': None,
-                'total': "227.10",
-                'members': 9,
+                'total': "838.21",
+                'member_total': "227.10",
+                'members': 10,
                 'transaction_date': None,
-            },
-            {
-                'persona_id': 6,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "25.00",
-                'new_balance': "47.20",
-                'total': "252.10",
-                'members': 9,
-                'transaction_date': datetime.date(2019, 3, 15),
-            },
-            {
-                'persona_id': 6,
-                'code': const.FinanceLogCodes.increase_balance,
-                'change_note': None,
-                'delta': "13.75",
-                'new_balance': "60.95",
-                'total': "265.85",
-                'members': 9,
-                'transaction_date': datetime.date(2019, 3, 16),
             },
         ]
         self.assertLogEqual(
-            log_expectation, realm="finance",
+            finance_log_expectation, realm="finance",
             codes=[const.FinanceLogCodes.increase_balance,
-                   const.FinanceLogCodes.gain_membership])
+                   const.FinanceLogCodes.gain_membership],
+            offset=1,
+        )
+        event_log_expectation = [
+            {
+                'persona_id': 1,
+                'code': const.EventLogCodes.registration_payment_received,
+                'change_note': "400,00 € am 15.03.2019 gezahlt.",
+            },
+            {
+                'persona_id': 1,
+                'code': const.EventLogCodes.registration_payment_reimbursed,
+                'change_note': "26,01 € am 16.03.2019 zurückerstattet.",
+            },
+        ]
+        self.assertLogEqual(
+            event_log_expectation, realm="event", event_id=1,
+            codes=[const.EventLogCodes.registration_payment_received,
+                   const.EventLogCodes.registration_payment_reimbursed],
+        )
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungshistorie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "
                             "(Überwiesen am 17.03.2019)")
-        self.admin_view_profile("ferdinand")
-        self.traverse("Änderungshistorie")
-        self.assertPresence("Guthabenänderung um 25,00 € auf 47,20 €"
-                            " (Überwiesen am 15.03.2019)")
-        self.assertPresence("Guthabenänderung um 13,75 € auf 60,95 €"
-                            " (Überwiesen am 16.03.2019)")
 
         # Test for correctly applying duplicate transfer with same amount.
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        f['transfers'] = """"10";"DB-1-9";"Administrator";"Anton Armin A.";"15.03.2019"
-"10";"DB-1-9";"Administrator";"Anton Armin A.";"16.03.2019"
+        f['transfers'] = """
+"15.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
+"16.03.2019";"10";"DB-1-9";"Administrator";"Anton Armin A.";"Mitgliedsbeitrag"
 """.strip()
         self.submit(f, check_notification=False)
         self.assertPresence("Mehrere Überweisungen für diesen Account"
@@ -1932,7 +2070,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("2 Überweisungen gebucht. 0 neue Mitglieder",
+        self.assertPresence("2 Mitgliedsbeiträge verbucht. 0 neue Mitglieder",
                             div="notifications")
         self.admin_view_profile("anton")
         self.traverse("Änderungshistorie")
@@ -1957,8 +2095,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms['transfersform']
-        # This file has a newline at the end, which needs to be stripped or it
-        # causes the checksum to differ and require a third round.
 
         with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
             data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
@@ -1968,7 +2104,7 @@ class TestCdEFrontend(FrontendTest):
             "money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
-        self.submit(f)
+        self.submit(f, verbose=True)
 
     @as_users("farin")
     def test_money_transfer_low_balance(self) -> None:
@@ -1978,7 +2114,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms["transfersform"]
-        f["transfers"] = "1.00;DB-4-3;Dino;Daniel D.;"
+        f["transfers"] = "01.01.1900;1.00;DB-4-3;Dino;Daniel D.;Mitgliedsbeitrag"
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f)
@@ -1986,7 +2122,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
     @prepsql(f"UPDATE core.changelog SET ctime ="
-             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}'")
+    @prepsql("DELETE FROM ml.subscription_states"
+             " WHERE persona_id = 4 AND mailinglist_id = 62")
     @as_users("farin")
     def test_semester(self) -> None:
         link = {'description': 'Semesterverwaltung'}
@@ -2006,6 +2144,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
         self.assertPresence("Zusätzlich gibt es 2 Probemitglieder.",
                             div='eject-members')
+        self.assertPresence("Sowie 1 Ehrenmitglieder.", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='balance-update')
 
         f = self.response.forms['ejectform']
@@ -2019,8 +2158,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("2 Mitgliedschaften beendet.", div="eject-members")
         self.assertPresence("1 Benutzer archiviert.", div="eject-members")
 
-        self.assertPresence("Insgesamt 6 Mitglieder.", div='balance-update')
+        self.assertPresence("Insgesamt 7 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 2 Probemitglieder.", div='balance-update')
+        self.assertPresence("Davon 1 Ehrenmitglieder.", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
         self.assertPresence('Falscher Zeitpunkt für Bereinigung', div='notifications')
@@ -2055,6 +2195,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Davon 0 mit Einzugsermächtigung.", div='eject-members')
         self.assertPresence("Zusätzlich gibt es 0 Probemitglieder.",
                             div='eject-members')
+        self.assertPresence("Sowie 1 Ehrenmitglieder.")
 
         # Check error handling for bill
         self.submit(f, check_notification=False)
@@ -2067,8 +2208,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 5 Mitglieder.", div='balance-update')
+        self.assertPresence("Insgesamt 6 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 0 Probemitglieder.", div='balance-update')
+        self.assertPresence("Davon 1 Ehrenmitglieder.", div='balance-update')
 
         f = self.response.forms['balanceform']
         self.submit(f)
@@ -2084,34 +2226,69 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Semester Nummer 45", div='current-semester')
 
         # Verify Log
-        self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–12 von 12]")
-        self.assertPresence("2 inaktive Mitglieder gestrichen.", div="1-1001")
-        self.assertPresence("1 Accounts archiviert.", div="2-1002")
-        self.assertPresence("2 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("16,00 € Guthaben abgebucht.", div="3-1003")
-        # self.assertPresence("567,55 € Guthaben von 11 Exmitgliedern", div="3-1003")
-        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="3-1003")
-        self.assertPresence("Nächstes Semester", div="4-1004")
-        self.assertPresence("44", div="4-1004")
-
-        self.assertPresence("Zahlungsaufforderung mit Addresscheck", div="5-1005")
-        self.assertPresence("6 E-Mails versandt", div="5-1005")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="6-1006")
-        self.assertPresence("0 E-Mails versandt", div="6-1006")
-        self.assertPresence("1 inaktive Mitglieder gestrichen.", div="7-1007")
-        self.assertPresence("0 Accounts archiviert.", div="8-1008")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="9-1009")
-        self.assertPresence("20,00 € Guthaben abgebucht.", div="9-1009")
-        # self.assertPresence("1,00 € Guthaben von 1 Exmitgliedern", div="9-1009")
-        self.assertPresence("0,00 € Guthaben von 0 Exmitgliedern", div="9-1009")
-        self.assertPresence("Nächstes Semester", div="10-1010")
-        self.assertPresence("45", div="10-1010")
-
-        self.assertPresence("Zahlungsaufforderung versendet", div="11-1011")
-        self.assertPresence("5 E-Mails versandt", div="11-1011")
-        self.assertPresence("Archivierungsbenachrichtigungen versandt", div="12-1012")
-        self.assertPresence("0 E-Mails versandt", div="12-1012")
+        log_expectation: list[CdEDBObject] = [
+            {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "561,11 € Guthaben von 9 Exmitgliedern aufgelöst.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_ejection,
+                'change_note': "2 inaktive Mitglieder gestrichen.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_done,
+                'change_note': "1 Accounts archiviert.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_balance_update,
+                'change_note': "2 Probemitgliedschaften beendet."
+                               " 16,00 € Guthaben von Mitgliedern abgebucht.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_advance,
+                'change_note': "44",
+            },
+            # Semester 44
+            {
+                'code': const.CdeLogCodes.semester_bill_with_addresscheck,
+                'change_note': "7 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_notification_done,
+                'change_note': "0 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_exmember_balance,
+                'change_note': "6,44 € Guthaben von 2 Exmitgliedern aufgelöst.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_ejection,
+                'change_note': "1 inaktive Mitglieder gestrichen.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_done,
+                'change_note': "0 Accounts archiviert.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_balance_update,
+                'change_note': "0 Probemitgliedschaften beendet."
+                               " 20,00 € Guthaben von Mitgliedern abgebucht.",
+            },
+            {
+                'code': const.CdeLogCodes.semester_advance,
+                'change_note': "45",
+            },
+            # Semester 45
+            {
+                'code': const.CdeLogCodes.semester_bill,
+                'change_note': "6 E-Mails versandt.",
+            },
+            {
+                'code': const.CdeLogCodes.automated_archival_notification_done,
+                'change_note': "0 E-Mails versandt.",
+            },
+        ]
+        self.assertLogEqual(log_expectation, realm="cde")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
@@ -2403,38 +2580,6 @@ class TestCdEFrontend(FrontendTest):
                 if not self.user_in("charly"):
                     # requested user not searchable.
                     self.assertNoLink(content="Charly")
-
-    @as_users("vera")
-    def test_past_event_addresslist(self) -> None:
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg. Veranstaltungen'},
-                      {'description': 'PfingstAkademie 2014'})
-        self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Bertå Beispiel", div='list-participants')
-        self.assertPresence("Charly Clown", div='list-participants')
-        self.assertPresence("Emilia E. Eventis", div='list-participants')
-        self.assertPresence("Ferdinand Findus", div='list-participants')
-        self.assertPresence("Akira Abukara", div='list-participants')
-
-        save = self.response
-        self.response = save.click(href='/cde/past/event/1/download',
-                                   description='Teilnehmerliste')
-
-        class dialect(csv.Dialect):
-            delimiter = ';'
-            quotechar = '"'
-            doublequote = False
-            escapechar = '\\'
-            lineterminator = '\n'
-            quoting = csv.QUOTE_MINIMAL
-
-        result = list(csv.DictReader(self.response.text.split('\n'),
-                                     dialect=dialect))
-        given_names = {e["given_names"] for e in result}
-        expectation = {
-            "Bertålotta", "Charly C.", "Daniel D.", "Emilia E.", "Ferdinand F.", "Akira"
-        }
-        self.assertEqual(expectation, given_names)
 
     @as_users("vera")
     def test_change_past_event(self) -> None:
@@ -2751,14 +2896,15 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['ejectform']
         self.submit(f)
         self.join_worker_thread('semester_eject', link)
-        logs.append((1001, const.CdeLogCodes.semester_ejection))
-        logs.append((1002, const.CdeLogCodes.automated_archival_done))
+        logs.append((1001, const.CdeLogCodes.semester_exmember_balance))
+        logs.append((1002, const.CdeLogCodes.semester_ejection))
+        logs.append((1003, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         f = self.response.forms['balanceform']
         self.submit(f)
         self.join_worker_thread('semester_balance_update', link)
-        logs.append((1003, const.CdeLogCodes.semester_balance_update))
+        logs.append((1004, const.CdeLogCodes.semester_balance_update))
 
         # Payment Request with addresscheck
         # (the variant without addresscheck is tested in test_semester)
@@ -2766,30 +2912,30 @@ class TestCdEFrontend(FrontendTest):
         f['addresscheck'].checked = True
         self.submit(f)
         self.join_worker_thread('semester_bill', link)
-        logs.append((1004, const.CdeLogCodes.semester_advance))
-        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
-        logs.append((1006, const.CdeLogCodes.automated_archival_notification_done))
+        logs.append((1005, const.CdeLogCodes.semester_advance))
+        logs.append((1006, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1007, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         f = self.response.forms['addresscheckform']
         self.submit(f)
         self.join_worker_thread('expuls_addresscheck', link)
-        logs.append((1007, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1008, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1008, const.CdeLogCodes.expuls_advance))
+        logs.append((1009, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append((1009, const.CdeLogCodes.expuls_addresscheck_skipped))
+        logs.append((1010, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1010, const.CdeLogCodes.expuls_advance))
+        logs.append((1011, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
@@ -2815,19 +2961,10 @@ class TestCdEFrontend(FrontendTest):
         f['length'] = 2
         self.response = f.submit("download", value="csv")
         self.assertIn(
-            ';5.00;7;5.00;DB-9-4;Iota;Inga;DB-32-9;Finanzvorstand;Farin;116.50;20',
+            ';5.00;114.76;7;5.00;DB-9-4;Iota;Inga;DB-32-9;'
+            'Finanzvorstand;Farin;725.87;20',
             self.response.text)
         self.assertNotIn('Beispiel', self.response.text)
-
-    @as_users("vera")
-    def test_changelog_meta(self) -> None:
-        self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–33 von 33]")
-        f = self.response.forms['logshowform']
-        f['persona_id'] = "DB-2-7"
-        self.submit(f)
-        self.assertTitle("Nutzerdaten-Log [1–1 von 1]")
-        self.assertPresence("Bertå Beispiel")
 
     @as_users("vera")
     def test_postal_address(self) -> None:
@@ -2836,7 +2973,7 @@ class TestCdEFrontend(FrontendTest):
             USER_DICT["farin"]["id"], USER_DICT["katarina"]["id"],
             USER_DICT["martin"]["id"], USER_DICT["olaf"]["id"],
             USER_DICT["vera"]["id"], USER_DICT["werner"]["id"],
-            USER_DICT["ludwig"]["id"],
+            USER_DICT["ludwig"]["id"], USER_DICT["petra"]["id"],
         }
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations

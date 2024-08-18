@@ -37,7 +37,7 @@
         {% if "event_mgmt" in user.admin_views %}
         <div class="col-sm-3 small">
             <a href="{{ querylink(event['id']) }}">
-                {% trans count=event['registrations'] %}
+                {% trans count=events_registrations[event.id] %}
                 	{{ count }} Registrations
                 {% endtrans -%}
             </a>,
@@ -60,7 +60,7 @@
 
     {{ util.h(n_("Current Events")) }}
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
-        {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
+        {% for entry in events.values()|sort %}
             {% if not entry['is_archived'] and
                     ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
@@ -70,7 +70,7 @@
 
     {{ util.h(n_("Archived Events")) }}
     <div class="list-group list-group-hover list-group-condensed" id="archived-events">
-        {% for event_id, entry in events|keydictsort(EntitySorter.event, reverse=True) %}
+        {% for entry in events.values()|sort(reverse=True) %}
             {% if entry['is_archived'] and
                     ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}

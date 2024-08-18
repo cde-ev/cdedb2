@@ -8,7 +8,7 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict, Optional, Set
+from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -34,7 +34,7 @@ class Genders(CdEIntEnum):
 
 
 @enum.unique
-class PersonaChangeStati(enum.IntEnum):
+class PersonaChangeStati(CdEIntEnum):
     """Spec for field code of core.changelog."""
     pending = 1  #:
     committed = 2  #:
@@ -60,7 +60,7 @@ class RegistrationPartStati(CdEIntEnum):
         return (RegistrationPartStati.applied,
                 RegistrationPartStati.participant,
                 RegistrationPartStati.waitlist,
-                RegistrationPartStati.guest,)
+                RegistrationPartStati.guest)
 
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
@@ -69,7 +69,7 @@ class RegistrationPartStati(CdEIntEnum):
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
         return self in (RegistrationPartStati.participant,
-                        RegistrationPartStati.guest,)
+                        RegistrationPartStati.guest)
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""
@@ -158,17 +158,33 @@ class EventFeeType(CdEIntEnum):
     common = 1
     storno = 2
     external = 3
-    solidarity = 10
-    donation = 11
+    instructor_refund = 5
+    instructor_donation = 6
+    solidary_reduction = 10
+    solidary_donation = 11
+    solidary_increase = 12
+    other_donation = 20
 
     def get_icon(self) -> str:
         return {
             EventFeeType.common: "coins",
             EventFeeType.storno: "ban",
             EventFeeType.external: "external-link-alt",
-            EventFeeType.solidarity: "hands-helping",
-            EventFeeType.donation: "donate",
+            EventFeeType.instructor_refund: "book",
+            EventFeeType.instructor_donation: "book-medical",
+            EventFeeType.solidary_reduction: "hand-holding-medical",
+            EventFeeType.solidary_donation: "handshake",
+            EventFeeType.solidary_increase: "hands-helping",
+            EventFeeType.other_donation: "donate",
+
         }[self]
+
+    def is_donation(self) -> bool:
+        return self in {
+            EventFeeType.solidary_donation,
+            EventFeeType.instructor_donation,
+            EventFeeType.other_donation,
+        }
 
 
 @enum.unique
@@ -188,7 +204,7 @@ class GenesisStati(CdEIntEnum):
     rejected = 10
 
     @classmethod
-    def finalized_stati(cls) -> Set["GenesisStati"]:
+    def finalized_stati(cls) -> set["GenesisStati"]:
         return {cls.successful, cls.existing_updated, cls.rejected}
 
     def is_finalized(self) -> bool:
@@ -276,7 +292,7 @@ class MailinglistDomain(CdEIntEnum):
         """Return a readable string representation to be displayed in the UI."""
         return self.get_domain()
 
-    def get_acceptable_aliases(self) -> Set[str]:
+    def get_acceptable_aliases(self) -> set[str]:
         """Return alias domains which might exist for a given type.
 
         This is only used to allow emails to <local_part>@alias to be sent to the list
@@ -289,13 +305,24 @@ class MailinglistDomain(CdEIntEnum):
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
-_DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
+_DOMAIN_STR_MAP: dict[MailinglistDomain, str] = {
     MailinglistDomain.lists: "lists.cde-ev.de",
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
     MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
+
+
+@enum.unique
+class MailinglistRosterVisibility(CdEIntEnum):
+    """Visibility of the subscriber list to non-moderators or admins.
+
+    Roster of inactive mailinglists are always hidden.
+    """
+    none = 1
+    subscribable = 10
+    viewers = 20
 
 
 @enum.unique
@@ -344,8 +371,10 @@ class PastInstitutions(CdEIntEnum):
     dsa = 20  #:
     dja = 40  #:
     jgw = 60  #:
+    bub = 70  #:
     basf = 80  #:
     van = 200  #:
+    eisenberg = 400  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -358,8 +387,10 @@ class PastInstitutions(CdEIntEnum):
             self.dsa: "DSA",
             self.dja: "DJA",
             self.jgw: "JGW",
+            self.bub: "BuB",
             self.basf: "BASF",
             self.van: "VAN",
+            self.eisenberg: "FV Eisenberg",
         }
         return shortnames[self]
 
@@ -389,6 +420,9 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    send_anonymous_message = 100  #:
+    reply_to_anonymous_message = 101  #:
+    rotate_anonymous_message = 102  #:
 
 
 @enum.unique
@@ -398,6 +432,7 @@ class CdeLogCodes(CdEIntEnum):
     semester_bill_with_addresscheck = 11
     semester_ejection = 12
     semester_balance_update = 13
+    semester_exmember_balance = 16
     semester_advance = 1
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
@@ -418,6 +453,7 @@ class FinanceLogCodes(CdEIntEnum):
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
     start_trial_membership = 15  #:
+    remove_exmember_balance = 17  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
@@ -428,6 +464,8 @@ class FinanceLogCodes(CdEIntEnum):
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
     #: Fallback for strange cases
     other = 99
 
@@ -462,6 +500,8 @@ class EventLogCodes(CdEIntEnum):
     registration_created = 50  #:
     registration_changed = 51  #:
     registration_deleted = 52  #:
+    registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:
@@ -475,6 +515,9 @@ class EventLogCodes(CdEIntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    custom_filter_created = 95  #:
+    custom_filter_changed = 96  #:
+    custom_filter_deleted = 97  #:
     part_group_created = 100  #:
     part_group_changed = 101  #:
     part_group_deleted = 102  #:
@@ -489,6 +532,9 @@ class EventLogCodes(CdEIntEnum):
     orga_token_changed = 201  #:
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
+    registration_status_changed = 300  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
 
 
 @enum.unique

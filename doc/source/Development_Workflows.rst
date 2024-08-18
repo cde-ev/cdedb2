@@ -10,6 +10,7 @@ Workflows
    Development_Workflows_Internationalization
    Development_Workflows_Scripts
    Development_Workflows_Deployment
+   Development_Workflows_Load_Test
 
 .. todo:: Add information about PR&Issues (short with link to gitea), Test-Suite, Input validation,
           Autobuild ...

@@ -71,13 +71,23 @@
     }}\hskip 0pt\relax}
 <<% endblock %>>
 <<% block content %>>
-    <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) -%>>
+    <<% for part in ambience['event']['parts'].values()|sort -%>>
+        <<< part.title|te >>>
+        \begin{itemize}
+            <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
+                \item <<< gettext(age_class|string) >>>: <<< ((registrations|length - 1) // 8) + 1 >>> <<% trans %>>pages<<% endtrans %>>
+            <<% else %>>
+                \item <<< gettext("No Participants") >>>
+            <<% endfor %>>
+            \clearpage
+        \end{itemize}
+        <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
         <<% for registration_id, registration in registrations.items() -%>>
-            <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -%>>
+            <<% if enums['RegistrationPartStati'](registration['parts'][part.id]['status']).is_present() -%>>
                 <<# jinja does not support list comprehension ... -#>>
                 <<% set mycourses = [] -%>>
                 <<% for track_id, track in registration['tracks'].items()
-                        if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -%>>
+                        if ambience['event']['tracks'][track_id]['part.id'] == part.id and track['course_id'] -%>>
                     <<% do mycourses.append((track_id, track['course_id']))|te -%>>
                 <<% endfor -%>>
                 <<% set persona = personas[registration['persona_id']] -%>>
@@ -105,8 +115,8 @@
                             \emph{<<% trans %>> Orga <<% endtrans %>>}
                         <<%- endif -%>>
                     }{
-                        <<%- if registration['parts'][part_id]['lodgement_id'] -%>>
-                            <<< lodgements[registration['parts'][part_id]['lodgement_id']]['title']|te >>>
+                        <<%- if registration['parts'][part.id]['lodgement_id'] -%>>
+                            <<< lodgements[registration['parts'][part.id]['lodgement_id']]['title']|te >>>
                         <<%- endif -%>>
                     }{
                         <<%- if mycourses|length == 1 -%>>
@@ -127,6 +137,8 @@
                     }% <<< registration_id|te >>> / <<< mycourses|te >>>
             <<% endif -%>>
         <<% endfor -%>>
+        \clearpage
+        <<% endfor %>>
         \clearpage
     <<% endfor -%>>
 <<% endblock %>>

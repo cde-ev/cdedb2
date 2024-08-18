@@ -3,8 +3,6 @@
 
 import datetime
 
-import pytz
-
 import cdedb.database.constants as const
 from cdedb.common import nearly_now
 from cdedb.common.sorting import xsorted
@@ -26,12 +24,12 @@ class TestPastEventBackend(BackendTest):
                                     'title': 'Swish -- und alles ist gut',
                                     'nr': '1a',
                                     'is_instructor': True,
-                                    }
+                                    },
                                 },
                     'title': 'PfingstAkademie 2014',
                     'tempus': datetime.date(2014, 5, 25),
                     },
-                }
+                },
             }
         self.assertEqual(expectation, participation_infos)
         participation_info = self.pastevent.participation_info(self.key, 1)
@@ -218,12 +216,13 @@ class TestPastEventBackend(BackendTest):
         # past course not associated with specified past event
         with self.assertRaises(ValueError) as cm:
             self.pastevent.add_participant(self.key, 2, 1, 5, False, False)
-            self.assertIn("Teilnehmer ist kein Veranstaltungsnutzer.",
-                          cm.exception.args[0])
+        self.assertIn(
+            "Course not associated with past event specified.", cm.exception.args[0])
         # mailinglist user can not be added to past event
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as cm:
             self.pastevent.add_participant(self.key, 1, 1, 10, False, False)
-            self.assertIn("Vergangener Kurs ist nicht", cm.exception.args[0])
+        self.assertIn(
+            "This past event participant is no event user.", cm.exception.args[0])
 
     @as_users("vera")
     def test_participant_consistency(self) -> None:
@@ -322,23 +321,19 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
-        update = {
-            'id': 2,
-            'is_cancelled': True
-        }
-        self.event.set_event(self.key, update)
+        self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
         with self.assertRaises(ValueError):
             self.pastevent.archive_event(self.key, 2)
         new_ids, _ = self.pastevent.archive_event(self.key, 2, create_past_event=False)
         self.assertEqual(None, new_ids)
 
         # Event with participants
+        event_id = 1
         update = {
-            'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
-                                                         tzinfo=pytz.utc),
+                                                         tzinfo=datetime.timezone.utc),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),
@@ -351,11 +346,11 @@ class TestPastEventBackend(BackendTest):
                 3: {
                     'part_begin': datetime.date(2003, 11, 11),
                     'part_end': datetime.date(2003, 11, 30),
-                }
-            }
+                },
+            },
         }
-        self.event.set_event(self.key, update)
-        new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        self.event.set_event(self.key, event_id, update)
+        new_ids, _ = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = xsorted(
@@ -369,7 +364,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
             'tempus': datetime.date(2003, 2, 2),
-            'participant_info': None, }
+            'participant_info': None}
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
@@ -378,7 +373,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
             'tempus': datetime.date(2003, 11, 1),
-            'participant_info': None, }
+            'participant_info': None}
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
@@ -387,7 +382,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
             'tempus': datetime.date(2003, 11, 11),
-            'participant_info': None, }
+            'participant_info': None}
         self.assertEqual(expectation, pevent_data[2])
         self.assertEqual(
             set(),

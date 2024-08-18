@@ -105,6 +105,9 @@
 			"fields": {
 				"transportation": "pedes"
 			},
+			"personalized_fees": {
+				"10": "-45"
+			},
 			"mixed_lodging": false,
 			"orga_notes": "Wir wurden hinters Licht gefuehrt, alles ist anders",
 			"parts": {
@@ -125,7 +128,6 @@
 				}
 			},
 			"checkin": null,
-			"payment": "2014-03-04",
 			"list_consent": false,
 			"notes": "Reingelegt",
 			"parental_agreement": true,
@@ -169,7 +171,6 @@
 					"status": 2
 				}
 			},
-			"amount_owed": "589.48",
 			"tracks": {
 				"3": {
 					"course_id": 5
@@ -218,9 +219,6 @@
 				}
 			},
 			"checkin": null,
-			"payment": null,
-			"amount_paid": "0.00",
-			"amount_owed": "573.99",
 			"list_consent": true,
 			"persona_id": 3,
 			"notes": null,
@@ -255,7 +253,7 @@
 		}
 	},
         "EVENT_SCHEMA_VERSION": [
-			16,
-			1
+			17,
+			2
 		]
 }

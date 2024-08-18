@@ -3,9 +3,11 @@
 Most of these are just wrappers around methods in their resepective submodule
 and should not be called directly.
 """
+import difflib
 import json
 import pathlib
-from typing import Any, Dict, List
+import sys
+from typing import Any, Optional
 
 import click
 
@@ -71,10 +73,14 @@ def get_default_configpath() -> None:
     help="Use this user as the owner.",
     default=get_user,
     show_default="current user")
+@click.option("--group",
+    help="Use this group for file permissions.",
+    default=None,
+    show_default="same as owner")
 @click.pass_context
-def filesystem(ctx: click.Context, owner: str) -> None:
+def filesystem(ctx: click.Context, owner: str, group: Optional[str]) -> None:
     """Preparations regarding the file system."""
-    ctx.obj = owner
+    ctx.obj = {'user': owner, 'group': group}
 
 
 @filesystem.group(name="storage")
@@ -85,20 +91,20 @@ def storage() -> None:
 @storage.command(name="create")
 @click.pass_obj
 @pass_config
-def create_storage_cmd(config: TestConfig, owner: str) -> None:
+def create_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Create the file storage."""
     click.echo(f"Create storage directory at {config['STORAGE_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         create_storage(config)
 
 
 @storage.command(name="populate")
 @click.pass_obj
 @pass_config
-def populate_storage_cmd(config: TestConfig, owner: str) -> None:
+def populate_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Populate the file storage with sample data."""
     click.echo(f"Populate storage directory at {config['STORAGE_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         populate_storage(config)
         populate_sample_event_keepers(config)
 
@@ -107,11 +113,12 @@ def populate_storage_cmd(config: TestConfig, owner: str) -> None:
 @click.argument('event_id', type=int)
 @click.pass_obj
 @pass_config
-def populate_event_keeper_cmd(config: TestConfig, owner: str, event_id: int) -> None:
+def populate_event_keeper_cmd(config: TestConfig, ownership: dict[str, str],
+                              event_id: int) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
     click.echo(f"Populate event keeper at {path}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         path.mkdir(parents=True, exist_ok=True)
         populate_event_keeper(config, [event_id])
 
@@ -124,10 +131,10 @@ def log() -> None:
 @log.command(name="create")
 @click.pass_obj
 @pass_config
-def create_log_cmd(config: TestConfig, owner: str) -> None:
+def create_log_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
     """Create the log storage."""
     click.echo(f"Create log directory at {config['LOG_DIR']}.")
-    with switch_user(owner):
+    with switch_user(**ownership):
         create_log(config)
 
 
@@ -162,7 +169,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 @pass_secrets
 @pass_config
 def populate_database_cmd(
-    config: TestConfig, secrets: SecretsConfig, xss: bool
+    config: TestConfig, secrets: SecretsConfig, xss: bool,
 ) -> None:
     """Populate the database tables with sample data."""
     click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
@@ -189,12 +196,13 @@ def development() -> None:
 @development.command(name="compile-sample-data-json")
 @click.option("-o", "--outfile", default="/tmp/sample_data.json",
               type=click.Path(), help="the place to store the sql file")
+@click.option("-s", "--silent", default=False, type=bool)
 @pass_secrets
 @pass_config
 def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
-                             outfile: pathlib.Path) -> None:
+                             outfile: pathlib.Path, silent: bool) -> None:
     """Generate a JSON-file from the current state of the database."""
-    data = sql2json(config, secrets)
+    data = sql2json(config, secrets, silent=silent)
     with open(outfile, "w", encoding='UTF-8') as f:
         json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
         f.write("\n")
@@ -212,7 +220,7 @@ def compile_sample_data_json(config: TestConfig, secrets: SecretsConfig,
 @pass_config
 def compile_sample_data_sql(
     config: TestConfig, secrets: SecretsConfig, infile: pathlib.Path,
-    outfile: pathlib.Path, xss: bool
+    outfile: pathlib.Path, xss: bool,
 ) -> None:
     """Parse sample data from a .json to a .sql file.
 
@@ -222,8 +230,8 @@ def compile_sample_data_sql(
     The xss-switch decides if the sample data should be contaminated with script
     tags, to check proper escaping afterwards.
     """
-    with open(infile, "r", encoding="utf8") as f:
-        data: Dict[str, List[Any]] = json.load(f)
+    with open(infile, encoding="utf8") as f:
+        data: dict[str, list[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
     commands = json2sql(config, secrets, data, xss_payload=xss_payload)
@@ -238,11 +246,15 @@ def compile_sample_data_sql(
     help="Use this user as the owner of storage and logs.",
     default=get_user,
     show_default="current user")
+@click.option("--group",
+    help="Use this group for file permissions.",
+    default=None,
+    show_default="same as owner")
 @pass_config
-def apply_sample_data(config: TestConfig, owner: str) -> None:
+def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> None:
     """Repopulates the application with sample data."""
     config, secrets = reset_config(config)
-    with switch_user(owner):
+    with switch_user(owner, group):
         create_log(config)
         create_storage(config)
         populate_storage(config)
@@ -279,7 +291,7 @@ def serve_debugger_cmd(test: bool) -> None:
 @pass_config
 def execute_sql_script_cmd(
         config: TestConfig, secrets: SecretsConfig, file: pathlib.Path, verbose: int,
-        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool
+        as_postgres: bool, outfile: pathlib.Path, outfile_append: bool,
 ) -> None:
     with redirect_to_file(outfile, outfile_append):
         execute_sql_script(config, secrets, file.read_text(), verbose=verbose,
@@ -297,13 +309,47 @@ def describe_database(config: TestConfig, secrets: SecretsConfig,
         execute_sql_script(config, secrets, description_file.read_text(), verbose=2)
 
 
+@development.command(name="check-sample-data-consistency")
+@click.pass_context
+def check_sample_data_consistency(ctx: click.Context) -> None:
+    """Ensure json2sql() -> sql2json() leaves sample_data.json invariant."""
+    clean_data = pathlib.Path("/tmp/sample_data.json")
+    current_data = pathlib.Path("/cdedb2/tests/ancillary_files/sample_data.json")
+
+    # setup fresh database
+    # it does not matter which database we use here, but we don't want to flush the
+    # current one, so we use a test database instead.
+    set_configpath("/cdedb2/tests/config/test_ldap.py")
+    config = TestConfig()
+    secrets = SecretsConfig()
+    create_database(config, secrets)
+    populate_database(config, secrets)
+
+    # get a fresh sample_data.json from this database
+    ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
+
+    # compare the fresh one with the current one
+    with open(clean_data, encoding='UTF-8') as f:
+        fresh = f.readlines()
+    with open(current_data, encoding='UTF-8') as f:
+        current = f.readlines()
+    diff = "".join(difflib.unified_diff(
+        fresh, current, fromfile="Cleanly generated sampledata.",
+        tofile="/cdedb2/tests/ancillary_files/sample_data.json", n=2))
+    if diff:
+        print(diff, file=sys.stderr)
+        sys.exit(1)
+    else:
+        print("\nConsistent.", file=sys.stdout)
+
+
 def main() -> None:
     try:
         cli()
     except PermissionError as e:
         raise PermissionError(
             "Unable to perform this command due to missing permissions."
-            " Some commands allow invoking them as root and passing a --owner."
+            " Some commands allow invoking them as root and passing a --owner.",
         ) from e
 
 

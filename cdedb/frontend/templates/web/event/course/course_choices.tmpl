@@ -66,7 +66,7 @@
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
                         name="track_id", nulloption=gettext("— any —"),
-                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
+                        entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'),
                         aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack"))) %}
                 {% else %}
                     {% set select1 = "" %}
@@ -115,7 +115,7 @@
                 {% set tracks='<label class="sr-only" id="input-track_ids-label">%s</label><div class="col-md-3 strip-inner-space">%s%s</div>'|s|format(
                     gettext("Coursetracks"), gettext("in Tracks"),
                     util.input_checkboxes(name="assign_track_ids", arialabeledby="input-track_ids-label",
-                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'))) %}
+                                          entries=ambience['event']['tracks'].values()|sort|entries('id', 'title'))) %}
             {% endif %}
             <div class="row">
                 {% trans assign='<div class="col-md-1">%s</div>'|s|format(gettext("Assign")),
@@ -175,7 +175,7 @@
                     <tr>
                         <th rowspan="2"></th>
                         <th rowspan="2">{% trans %}Full Name{% endtrans %}</th>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                        {% for track in ambience['event']['tracks'].values()|sort %}
                             <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['shortname'] }}</th>
                         {% endfor %}
                     </tr>
@@ -198,15 +198,15 @@
                             {% endif -%}
                         {% endif -%}
                     {% endmacro %}
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
+                    {% for track in ambience['event']['tracks'].values()|sort %}
+                        <th class="b-left text-center {{ filtered_col_class(track.id, cfp.assigned.value) }}">
                             {{ util.make_icon('crosshairs', title=gettext("assigned to")) }}
                         </th>
-                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">
+                        <th class="b-left text-center {{ filtered_col_class(track.id, cfp.instructor.value) }}">
                             {% trans %}Instr.{% endtrans %}
                         </th>
                         {% for i in range(track['num_choices']) %}
-                            <th class="text-center {{ filtered_col_class(track_id, i) }}">
+                            <th class="text-center {{ filtered_col_class(track.id, i) }}">
                                 {{ (i + 1) }}.</th>
                         {% endfor %}
                     {% endfor %}
@@ -226,20 +226,20 @@
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
                                          util.persona_name(persona)) }}
                         </td>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                            {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
+                        {% for track in ambience['event']['tracks'].values()|sort %}
+                            {% set track_is_filtered = (values['track_id'] in ('', track.id)) %}
                             {% if registration['parts'][track['part_id']]['status'] != enums['RegistrationPartStati'].not_applied %}
                                 {% set is_participant = registration['parts'][track['part_id']]['status']
                                                             == enums['RegistrationPartStati'].participant %}
-                                {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
+                                {{ course_cell(registration['tracks'][track.id]['course_id'], track.id, border_left=True,
                                                complain_empty=is_participant, primary=True,
                                                not_participating=not is_participant) }}
-                                {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
+                                {{ course_cell(registration['tracks'][track.id]['course_instructor'], track.id,
                                                border_left=True, not_participating=not is_participant) }}
                                 {% for j in range(track['num_choices']) %}
-                                    {{ course_cell(registration['tracks'][track_id]['choices'][j]
-                                                   if registration['tracks'][track_id]['choices']|length > j else None,
-                                                   track_id, not_participating=not is_participant) }}
+                                    {{ course_cell(registration['tracks'][track.id]['choices'][j]
+                                                   if registration['tracks'][track.id]['choices']|length > j else None,
+                                                   track.id, not_participating=not is_participant) }}
                                 {% endfor %}
                             {% else %}
                                 <td class="b-left"></td>

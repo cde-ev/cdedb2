@@ -4,7 +4,8 @@ import dataclasses
 import datetime
 import decimal
 import enum  # pylint: disable=unused-import
-from typing import ClassVar, Collection, Optional, Type
+from collections.abc import Collection
+from typing import ClassVar, Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -40,7 +41,7 @@ class GenericLogFilter:
     annotations to validate the parameters.
     """
     log_table: ClassVar[str]
-    log_code_class: ClassVar["Type[enum.IntEnum]"]
+    log_code_class: ClassVar["type[enum.IntEnum]"]
     additional_columns: ClassVar[tuple[str, ...]] = ()
     additional_persona_columns: ClassVar[tuple[str, ...]] = ()
 
@@ -72,7 +73,7 @@ class GenericLogFilter:
         # Fix offset and length to ensure valid SQL.
         if self.offset and self.offset < 0:
             # Avoid non-positive lengths
-            if -self.offset < self.length:
+            if -self.offset < self.length:  # pylint: disable=invalid-unary-operand-type
                 self.length = self.length + self.offset
             self.offset = 0
 
@@ -189,7 +190,7 @@ class CdELogFilter(GenericLogFilter):
 class ChangelogLogFilter(GenericLogFilter):
     log_table = "core.changelog"
     log_code_class = const.PersonaChangeStati
-    additional_columns = ("reviewed_by", "generation", "automated_change",)
+    additional_columns = ("reviewed_by", "generation", "automated_change")
     additional_persona_columns = ("reviewed_by",)
 
     reviewed_by: Optional[int] = None  # ID of the reviewer.
@@ -309,7 +310,7 @@ class FinanceLogFilter(GenericLogFilter):
     log_table = "cde.finance_log"
     log_code_class = const.FinanceLogCodes
     additional_columns = (
-        "delta", "new_balance", "transaction_date", "members", "total",
+        "delta", "new_balance", "transaction_date", "members", "total", "member_total",
     )
 
     delta_from: Optional[decimal.Decimal] = None
@@ -323,6 +324,9 @@ class FinanceLogFilter(GenericLogFilter):
 
     total_from: Optional[decimal.Decimal] = None
     total_to: Optional[decimal.Decimal] = None
+
+    member_total_from: Optional[decimal.Decimal] = None
+    member_total_to: Optional[decimal.Decimal] = None
 
     members_from: Optional[int] = None
     members_to: Optional[int] = None
@@ -358,6 +362,13 @@ class FinanceLogFilter(GenericLogFilter):
             conditions.append("total <= %s")
             params.append(self.total_to)
 
+        if self.member_total_from:
+            conditions.append("member_total >= %s")
+            params.append(self.member_total_from)
+        if self.member_total_to:
+            conditions.append("member_total <= %s")
+            params.append(self.member_total_to)
+
         if self.members_from:
             conditions.append("members >= %s")
             params.append(self.members_from)
@@ -368,7 +379,7 @@ class FinanceLogFilter(GenericLogFilter):
         return conditions, params
 
 
-ALL_LOG_FILTERS: tuple[Type[GenericLogFilter], ...] = (
+ALL_LOG_FILTERS: tuple[type[GenericLogFilter], ...] = (
     CoreLogFilter,
     CdELogFilter,
     ChangelogLogFilter,

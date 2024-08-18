@@ -15,7 +15,7 @@ For every step "foo" of semester management, there are the following methods:
 """
 import dataclasses
 import decimal
-from typing import Optional, Tuple
+from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -38,6 +38,7 @@ class AllowedSemesterSteps:
     ejection: bool = False
     automated_archival: bool = False
     balance: bool = False
+    exmember_balance: bool = False
     advance: bool = False
 
     def any(self) -> bool:
@@ -53,25 +54,44 @@ class CdESemesterBackend(CdELastschriftBackend):
         Mostly for use by the 'Semesterverwaltung'.
         """
         with Atomizer(rs):
-            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
-                     " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = True AND balance < %s "
-                     " AND trial_member = False")
-            data = self.query_one(
-                rs, query, (self.conf["MEMBERSHIP_FEE"],))
+            query = """
+                SELECT
+                    COALESCE(SUM(balance), 0) as total,
+                    COUNT(*) as count
+                FROM core.personas
+                WHERE
+                    is_member = True
+                    AND balance < %s
+                    AND trial_member = False
+                    AND honorary_member = False
+            """
+            data = self.query_one(rs, query, (self.conf["MEMBERSHIP_FEE"],))
             ret = {
                 'low_balance_members': data['count'] if data else 0,
                 'low_balance_total': data['total'] if data else 0,
             }
             query = "SELECT COUNT(*) FROM core.personas WHERE is_member = True"
-            ret['total_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas"
-                     " WHERE is_member = True AND trial_member = True")
-            ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
-            query = ("SELECT COUNT(*) FROM core.personas AS p"
-                     " JOIN cde.lastschrift AS l ON p.id = l.persona_id"
-                     " WHERE p.is_member = True AND p.balance < %s"
-                     " AND p.trial_member = False AND l.revoked_at IS NULL")
+            ret['total_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            """
+            ret['trial_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*) FROM core.personas
+                WHERE is_member = True AND honorary_member = True
+            """
+            ret['honorary_members'] = unwrap(self.query_one(rs, query, ()))
+            query = """
+                SELECT COUNT(*)
+                FROM core.personas AS p JOIN cde.lastschrift AS l ON p.id = l.persona_id
+                WHERE
+                    p.is_member = True
+                    AND p.balance < %s
+                    AND p.trial_member = False
+                    AND p.honorary_member = False
+                    AND l.revoked_at IS NULL
+            """
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
         return ret
@@ -121,7 +141,13 @@ class CdESemesterBackend(CdELastschriftBackend):
         if allowed_steps.any():
             return allowed_steps
 
-        # after both are done, next ones are member ejections and archival
+        # after both are done, remove balance of exmembers
+        if not period["exmember_done"]:
+            allowed_steps.exmember_balance = True
+        if allowed_steps.any():
+            return allowed_steps
+
+        # after that, we can eject members and perform archival
         if not period["ejection_done"]:
             allowed_steps.ejection = True
         if not period["archival_done"]:
@@ -258,13 +284,32 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             ret = self.set_period(rs, period_update)
             total = money_filter(period["balance_total"], lang="de")
-            exbalance = money_filter(period["exmember_balance"], lang="de")
-            exmembers = period["exmember_count"]
             msg = (f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
-                   f" {total} Guthaben abgebucht."
-                   f" {exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst.")
+                   f" {total} Guthaben von Mitgliedern abgebucht.")
             self.cde_log(
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
+                change_note=msg)
+        return ret
+
+    @access("finance_admin")
+    def finish_semester_exmember_update(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the exmember balance removal semester step."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not self.allowed_semester_steps(rs).exmember_balance:
+                raise RuntimeError(n_("Wrong timing for removing exmembers."))
+            period_update = {
+                'id': period_id,
+                'exmember_state': None,
+                'exmember_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            exbalance = money_filter(period["exmember_balance"], lang="de")
+            exmembers = period["exmember_count"]
+            msg = f"{exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst."
+            self.cde_log(
+                rs, const.CdeLogCodes.semester_exmember_balance, persona_id=None,
                 change_note=msg)
         return ret
 
@@ -337,7 +382,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         with Atomizer(rs):
             expuls_id = self.current_expuls(rs)
             expuls = self.get_expuls(rs, expuls_id)
-            if not expuls['addresscheck_done'] is None:
+            if expuls['addresscheck_done'] is not None:
                 raise RuntimeError(n_(
                     "Addresscheck already done for this expuls."))
             expuls_update = {
@@ -357,8 +402,8 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_bill(self, rs: RequestState, period_id: int,
-                                  addresscheck: bool, testrun: bool
-                                  ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                  addresscheck: bool, testrun: bool,
+                                  ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to bill one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -392,8 +437,8 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_prearchival(self, rs: RequestState, period_id: int,
-                                         testrun: bool
-                                         ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                         testrun: bool,
+                                         ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -431,7 +476,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_eject(self, rs: RequestState, period_id: int,
-                                   ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                   ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to eject one (soon to be ex-)member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -453,12 +498,14 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'ejection_state': persona_id,
             }
             persona = self.core.get_cde_user(rs, persona_id)
-            do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member'])
+            do_eject = (
+                    persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                    and not persona['trial_member']
+                    and not persona['honorary_member']
+            )
             if do_eject:
                 self.change_membership(rs, persona_id, is_member=False)
-                period_update['ejection_count'] = \
-                    period['ejection_count'] + 1
+                period_update['ejection_count'] = period['ejection_count'] + 1
             else:
                 persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)
@@ -466,7 +513,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_archival(self, rs: RequestState, period_id: int,
-                                      ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                      ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -513,7 +560,7 @@ class CdESemesterBackend(CdELastschriftBackend):
 
     @access("finance_admin")
     def process_for_semester_balance(self, rs: RequestState, period_id: int,
-                                     ) -> Tuple[bool, Optional[CdEDBObject]]:
+                                     ) -> tuple[bool, Optional[CdEDBObject]]:
         """Atomized call to update the balance of one member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -536,63 +583,71 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_state': persona_id,
             }
             if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                    and not persona['trial_member']):
+                    and not (persona['trial_member'] or persona['honorary_member'])):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
             else:
                 if persona['trial_member']:
-                    self.change_membership(rs, persona_id, trial_member=False)
+                    self.core.change_membership_easy_mode(
+                        rs, persona_id, trial_member=False)
                     period_update['balance_trialmembers'] = \
                         period['balance_trialmembers'] + 1
                 else:
-                    new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
-                    note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                        money_filter(self.conf["MEMBERSHIP_FEE"]))
+                    if not persona['honorary_member']:
+                        persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
+                        period_update['balance_total'] = (
+                                period['balance_total'] + self.conf["MEMBERSHIP_FEE"])
+                        note = (f"Mitgliedsbeitrag abgebucht"
+                                f" ({money_filter(self.conf['MEMBERSHIP_FEE'])})")
+                    else:
+                        note = "Mitgliedsbeitrag erlassen für Ehrenmitglied"
                     self.core.change_persona_balance(
-                        rs, persona_id, new_b,
-                        const.FinanceLogCodes.deduct_membership_fee,
-                        change_note=note)
-                    new_total = (period['balance_total']
-                                 + self.conf["MEMBERSHIP_FEE"])
-                    period_update['balance_total'] = new_total
+                        rs, persona_id, persona['balance'],
+                        const.FinanceLogCodes.deduct_membership_fee, change_note=note)
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
-    def remove_exmember_balance(self, rs: RequestState, period_id: int
-                                ) -> DefaultReturnCode:
+    def process_for_exmember_balance(self, rs: RequestState, period_id: int,
+                                     ) -> tuple[bool, Optional[CdEDBObject]]:
         """Set the balance of all former members to zero.
 
-        We keep the balance of all former members during one semester, so they get their
+        We keep the balance of all former members for one semester, so they get their
         remaining balance back if they pay again in this time.
+        Immediately before we perform the next wave of ejections, we remove it.
         """
         period_id = affirm(int, period_id)
         with Atomizer(rs):
-            if not self.allowed_semester_steps(rs).balance:
-                raise RuntimeError(n_("Wrong timing for removing exmembers."))
-            zero = decimal.Decimal("0.00")
-            query = ("SELECT COALESCE(SUM(balance), 0) as total,"
-                     " COUNT(*) as count FROM core.personas "
-                     " WHERE is_member = False AND balance > %s"
-                     " AND is_cde_realm = True AND is_archived = False")
-            data = self.query_one(rs, query, (zero,))
-            update = {
-                "id": period_id,
-                "exmember_balance": data["total"] if data else decimal.Decimal(0),
-                "exmember_count": data["count"] if data else 0,
+            period = self.get_period(rs, period_id)
+            persona_id = self.core.next_persona(
+                rs, period['exmember_state'], is_member=False,
+                is_archived=False, is_cde_realm=True)
+            # We are finished if we reached the end or if this was previously done.
+            if not persona_id or period['exmember_done']:
+                if not period['exmember_done']:
+                    self.finish_semester_exmember_update(rs)
+                return False, None
+            persona = self.core.get_cde_user(rs, persona_id)
+            period_update = {
+                'id': period_id,
+                'exmember_state': persona_id,
             }
-            self.set_period(rs, update)
-            query = ("UPDATE core.personas SET balance = %s "
-                     " WHERE is_member = False AND balance > %s"
-                     " AND is_cde_realm = True AND is_archived = False")
-            ret = self.query_exec(rs, query, (zero, zero))
-        return ret
+            if persona['balance']:
+                self.core.change_persona_balance(
+                    rs, persona_id, balance=decimal.Decimal("0.00"),
+                    log_code=const.FinanceLogCodes.remove_exmember_balance,
+                    change_note="Guthaben von Exmitglied abgebucht.")
+                period_update['exmember_balance'] = \
+                    period['exmember_balance'] + persona['balance']
+                period_update['exmember_count'] = period['exmember_count'] + 1
+            self.set_period(rs, period_update)
+            return True, persona
 
     @access("finance_admin")
     def process_for_expuls_check(self, rs: RequestState, expuls_id: int,
-                                 testrun: bool) -> Tuple[bool, Optional[CdEDBObject]]:
-        """Atomized call to initiate addres check.
+                                 testrun: bool) -> tuple[bool, Optional[CdEDBObject]]:
+        """Atomized call to initiate address check.
 
         :returns: A tuple consisting of a boolean signalling whether there
             is more work to do and an optional persona which is present if
@@ -604,7 +659,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             expuls = self.get_expuls(rs, expuls_id)
             persona_id = self.core.next_persona(
                 rs, expuls['addresscheck_state'],
-                is_member=True, is_archived=False)
+                is_member=True, is_archived=False, paper_expuls=True)
             if testrun:
                 persona_id = rs.user.persona_id
             # We are finished if we reached the end or if this was previously done.

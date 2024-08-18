@@ -2,21 +2,23 @@
 import contextlib
 import functools
 import getpass
+import grp
 import io
 import os
 import pathlib
 import pwd
+from collections.abc import Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Generator, Iterator, Union
+from typing import Any, Callable, Optional, Union
 
 import click
-import psycopg2.extensions
 import psycopg2.extras
 import werkzeug.routing
 
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.database.connection import IrradiatedConnection
 
 pass_config = click.make_pass_decorator(TestConfig, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
@@ -66,18 +68,21 @@ def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @contextlib.contextmanager
-def switch_user(user: str) -> Generator[None, None, None]:
+def switch_user(user: str, group: Optional[str] = None) -> Generator[None, None, None]:
     """Use as context manager to temporary switch the running user's effective uid."""
     original_uid = os.geteuid()
     original_gid = os.getegid()
     wanted_user = pwd.getpwnam(user)
+    wanted_group = grp.getgrnam(group) if group else None
+    new_uid = wanted_user.pw_uid
+    new_gid = wanted_group.gr_gid if wanted_group else wanted_user.pw_gid
     try:
-        os.setegid(wanted_user.pw_gid)
-        os.seteuid(wanted_user.pw_uid)
+        os.setegid(new_gid)
+        os.seteuid(new_uid)
         yield
     except PermissionError as e:
         raise PermissionError(
-            f"Insufficient permissions to switch to user {user}."
+            f"Insufficient permissions to switch to user {user}.",
         ) from e
     finally:
         os.setegid(original_gid)
@@ -99,7 +104,7 @@ def get_user() -> str:
 def connect(
     config: Config, secrets: SecretsConfig, as_nobody: bool = False,
     as_postgres: bool = False,
-) -> psycopg2.extensions.connection:
+) -> IrradiatedConnection:
     """Create a very basic database connection.
 
     This allows to connect to the database specified as CDB_DATABASE_NAME in the given
@@ -109,7 +114,7 @@ def connect(
     which is used for very low-level setups (like generation of sample data).
     """
 
-    conn_factory = psycopg2.extensions.connection
+    conn_factory = IrradiatedConnection
     curser_factory = psycopg2.extras.RealDictCursor
 
     if as_postgres:
@@ -144,8 +149,8 @@ def connect(
     return conn
 
 
-def fake_rs(conn: psycopg2.extensions.connection, persona_id: int = 0,
-            urls: werkzeug.routing.MapAdapter = None) -> RequestState:
+def fake_rs(conn: IrradiatedConnection, persona_id: int = 0,
+            urls: Optional[werkzeug.routing.MapAdapter] = None) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
     This is needed when we want to interact with the CdEDB on a higher level of
@@ -208,16 +213,26 @@ def execute_sql_script(
     with connect(config, secrets, as_postgres=as_postgres) as conn:
         with conn.cursor() as cur:
             for statement in sql_text.split(";"):
-                if not statement.strip() or statement.strip().startswith("--"):
+                if not statement.strip():
                     continue
-                cur.execute(statement)
+
                 if verbose > 2:
                     click.echo(cur.query)
                 if verbose > 1:
                     click.echo(cur.statusmessage)
+
+                try:
+                    cur.execute(statement)
+                except psycopg2.ProgrammingError as e:
+                    click.echo(e)
+                    continue
+
                 if verbose > 0:
                     try:
                         for x in cur:
                             click.echo(x)
-                    except psycopg2.ProgrammingError:
-                        pass
+                    except psycopg2.ProgrammingError as e:
+                        if str(e) == "no results to fetch":
+                            pass
+                        else:
+                            click.echo(e)

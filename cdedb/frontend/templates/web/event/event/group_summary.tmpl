@@ -26,8 +26,10 @@
     <p>
         {{ util.href(cdedblink('event/add_part_group_form'), gettext("Add part group"),
                                icon='plus', aclass='btn btn-success btn-sm') }}
-        {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
-                               icon='plus', aclass='btn btn-success btn-sm') }}
+        {% if ambience['event']['tracks'] %}
+            {{ util.href(cdedblink('event/add_track_group_form'), gettext("Add track group"),
+                                   icon='plus', aclass='btn btn-success btn-sm') }}
+        {% endif %}
     </p>
     <h2>
         {% trans %}Part Groups{% endtrans %}
@@ -40,7 +42,7 @@
                 <th>{% trans %}Title{% endtrans %}</th>
                 <th>{% trans %}Shortname{% endtrans %}</th>
                 <th>{% trans %}Notes{% endtrans %}</th>
-                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                {% for part in ambience['event']['parts'].values()|sort %}
                     <th {% if loop.first %}class="b-left"{% endif %} title="{% trans %}Event Part{% endtrans %}: {{ part['title'] }}">
                         {{ part['shortname'] }}
                     </th>
@@ -49,8 +51,8 @@
             </tr>
         </thead>
         <tbody>
-            {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
-                <tr id="partgroup_{{ part_group_id }}">
+            {% for part_group in ambience['event']['part_groups'].values()|sort %}
+                <tr id="partgroup_{{ part_group.id }}">
                     <td>
                         {{ util.make_icon(part_group['constraint_type'].get_icon(), title=gettext(part_group['constraint_type']|string)) }}
                     </td>
@@ -63,18 +65,18 @@
                     <td>
                         {{ part_group['notes'] }}
                     </td>
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    {% for part in ambience['event']['parts'].values()|sort %}
                         <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
-                            {{ util.deko_checkbox(part_id in part_group['part_ids'], titles=['', part['shortname']]) }}
+                            {{ util.deko_checkbox(part.id in part_group['parts'], titles=['', part['shortname']]) }}
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">
-                        {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group_id}),
+                        {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group.id}),
                                      title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
-                                     label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group_id),
+                                     label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group.id),
                                      aclass="btn btn-sm btn-warning") }}
-                        <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group_id}) }}"
-                              method="POST" id="deletepartgroupform{{ part_group_id }}"
+                        <form action="{{ cdedblink("event/delete_part_group", {'part_group_id': part_group.id}) }}"
+                              method="POST" id="deletepartgroupform{{ part_group.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_part_group") }}
                             {{ util.input_submit(
@@ -87,6 +89,7 @@
         </tbody>
     </table>
 
+    {% if ambience['event']['tracks'] %}
     <h2>
         {% trans %}Track Groups{% endtrans %}
         {{ util.doclink_("Handbuch_Orga_Kursschienengruppen") }}
@@ -108,7 +111,7 @@
                 <th>{% trans %}Shortname{% endtrans %}</th>
                 <th>{% trans %}Notes{% endtrans %}</th>
                 <th>{% trans %}Sortkey{% endtrans %}</th>
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                {% for track in ambience['event']['tracks'].values()|sort %}
                     <th {% if loop.first %}class="b-left"{% endif %} title="{% trans %}Track{% endtrans %}: {{ track['title'] }}">
                         {{ track['shortname'] }}
                     </th>
@@ -117,8 +120,8 @@
             </tr>
         </thead>
         <tbody>
-            {% for track_group_id, track_group in ambience['event']['track_groups']|keydictsort(EntitySorter.course_track_group) %}
-                <tr id="trackgroup_{{ track_group_id }}">
+            {% for track_group in ambience['event']['track_groups'].values()|sort %}
+                <tr id="trackgroup_{{ track_group.id }}">
                     <td>
                         {{ util.make_icon(track_group['constraint_type'].get_icon(), title=gettext(track_group['constraint_type']|string)) }}
                     </td>
@@ -134,18 +137,18 @@
                     <td>
                         {{ track_group['sortkey'] }}
                     </td>
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                    {% for track in ambience['event']['tracks'].values()|sort %}
                         <td class="{% if loop.first %} b-left {% endif %} {% if loop.last %}b-right{% endif %}">
-                            {{ util.deko_checkbox(track_id in track_group['track_ids'], titles=['', track['shortname']]) }}
+                            {{ util.deko_checkbox(track.id in track_group['tracks'], titles=['', track['shortname']]) }}
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">
-                        {{ util.href(cdedblink("event/change_track_group", {'track_group_id': track_group_id}),
+                        {{ util.href(cdedblink("event/change_track_group", {'track_group_id': track_group.id}),
                                      title=gettext("Change track group %(shortname)s")|format(shortname=track_group['shortname']),
-                                     label=util.make_icon("pen"), anid="trackgroup{}_change".format(track_group_id),
+                                     label=util.make_icon("pen"), anid="trackgroup{}_change".format(track_group.id),
                                      aclass="btn btn-sm btn-warning") }}
-                        <form action="{{ cdedblink("event/delete_track_group", {'track_group_id': track_group_id}) }}"
-                              method="POST" id="deletetrackgroupform{{ track_group_id }}"
+                        <form action="{{ cdedblink("event/delete_track_group", {'track_group_id': track_group.id}) }}"
+                              method="POST" id="deletetrackgroupform{{ track_group.id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token("event/delete_track_group") }}
                             {{ util.input_submit(
@@ -156,12 +159,13 @@
                             {% endcall %}
                         </form>
                         <script nonce="{{ csp_nonce }}">
-                            $('#deletetrackgroupform{{ track_group_id }}').cdedbProtectAction("{{ gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.") }}");
-                            $('#deletetrackgroupform{{ track_group_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                            $('#deletetrackgroupform{{ track_group.id }}').cdedbProtectAction("{{ gettext("The track group will be deleted. You may not be able to recreate it if registrations already exist.") }}");
+                            $('#deletetrackgroupform{{ track_group.id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                         </script>
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 {% endblock %}

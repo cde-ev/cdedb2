@@ -2,7 +2,7 @@
 
 import pathlib
 
-from tests.config.base import *
+from tests.config.base import *  # noqa: F403
 
 # temporary directory created during the test run for this test thread
 _TMP_DIR = pathlib.Path("/tmp/cdedb-test-2")
