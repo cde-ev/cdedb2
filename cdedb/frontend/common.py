@@ -82,6 +82,7 @@ from cdedb.common import (
     decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
     make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
@@ -566,6 +567,39 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
         t = jinja_env.get_template(str(tmpl))
         return t.render(**data)
+
+    def locate_or_store_attachment(
+        self, rs: RequestState, store: AttachmentStore,
+        attachment: Optional[werkzeug.datastructures.FileStorage],
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str] = None,
+    ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
+        """Locate an attachment by hash and store it, if necessary
+
+        :param attachment: A new file uploaded within this request. Supersedes remaining
+            (cached) data, if present.
+        :param attachment_hash: Hash to locate file uploaded within earlier request
+        :param attachment_filename: Filename of file uploaded in earlier request
+        """
+        attachment_data = None
+        if attachment:
+            assert attachment.filename is not None
+            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
+            attachment_data = check_validation(rs, store.type, attachment, 'attachment')
+        if attachment_data:
+            attachment_hash = store.store(attachment_data)
+        elif attachment_hash:
+            # We also end up here and keep the cached attachment if someone tried to
+            # replace the cached attachment with an invalid attachment. In this case,
+            # a validation error will prevent the cached attachment to be used outright.
+            attachment_stored = store.is_available(attachment_hash)
+            if not attachment_stored:
+                attachment_hash = None
+                e = ("cached_attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
+        return attachment_hash, attachment_filename
 
     @staticmethod
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',

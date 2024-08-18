@@ -470,6 +470,21 @@
     {%- endcall %}
 {%- endmacro %}
 
+{% macro form_input_attachment(info='', displayerrors=True, readonly=False, accept=none, anid=none, aclass=none,
+        small=False, horizontal=True) %}
+    {% set label = gettext("Attachment") %}
+    {% if 'attachment_hash' in values %}
+        {% set label = gettext("New Attachment") %}
+        {{ util.input_hidden(name="attachment_hash") }}
+        {{ util.input_hidden(name="attachment_filename") }}
+        {{ util.form_input_static(label=gettext("Attachment"), value=values['attachment_filename'], small=small,
+                                  displayerrors=True, errorname="cached_attachment",
+                                  info="We already saved your uploaded file, but you can provide a different file below.") }}
+    {% endif %}
+    {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal) }}
+{%- endmacro %}
+
+
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
                         arialabel=none, attributes='', actualreadonly=False) %}
     <textarea{{ dict(
@@ -677,9 +692,9 @@
 {%- endmacro %}
 
 {% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
-        name=none, outerclass='') %}
+        name=none, outerclass='', displayerrors=False, errorname=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, False, horizontal, aclass=outerclass) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}

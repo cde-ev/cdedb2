@@ -16,7 +16,7 @@ from cdedb.backend.common import (
 from cdedb.backend.core.base import CoreBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, GenesisDecision,
-    RequestState, get_hash, glue, merge_dicts, now, unwrap,
+    RequestState, glue, merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -34,60 +34,6 @@ from cdedb.database.connection import Atomizer
 
 class CoreGenesisBackend(CoreBaseBackend):
     @access("anonymous")
-    def genesis_set_attachment(self, rs: RequestState, attachment: bytes,
-                               ) -> str:
-        """Store a file for genesis usage. Returns the file hash."""
-        attachment = affirm(vtypes.PDFFile, attachment, file_storage=False)
-        myhash = get_hash(attachment)
-        path = self.genesis_attachment_dir / myhash
-        if not path.exists():
-            with open(path, 'wb') as f:
-                f.write(attachment)
-        return myhash
-
-    @access("anonymous")
-    def genesis_check_attachment(self, rs: RequestState, attachment_hash: str,
-                                 ) -> bool:
-        """Check whether a genesis attachment with the given hash is available.
-
-        Contrary to `genesis_get_attachment` this does not retrieve it's
-        content.
-        """
-        attachment_hash = affirm(str, attachment_hash)
-        path = self.genesis_attachment_dir / attachment_hash
-        return path.is_file()
-
-    @access(*REALM_ADMINS)
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
-                               ) -> Optional[bytes]:
-        """Retrieve a stored genesis attachment."""
-        attachment_hash = affirm(str, attachment_hash)
-        path = self.genesis_attachment_dir / attachment_hash
-        if path.is_file():
-            with open(path, 'rb') as f:
-                return f.read()
-        return None
-
-    @internal
-    @access("core_admin")
-    def genesis_attachment_usage(self, rs: RequestState,
-                                 attachment_hash: str) -> bool:
-        """Check whether a genesis attachment is still referenced in a case."""
-        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
-        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
-        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
-
-    @access("core_admin")
-    def genesis_forget_attachments(self, rs: RequestState) -> int:
-        """Delete genesis attachments that are no longer in use."""
-        ret = 0
-        for f in self.genesis_attachment_dir.iterdir():
-            if f.is_file() and not self.genesis_attachment_usage(rs, f.name):
-                f.unlink()
-                ret += 1
-        return ret
-
-    @access("anonymous")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         ) -> Optional[DefaultReturnCode]:
         """Log a request for a new account.
@@ -99,12 +45,16 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         data = affirm(vtypes.GenesisCase, data, creation=True)
 
-        if self.verify_existence(rs, data['username']):
-            return None
+        data['case_status'] = const.GenesisStati.unconfirmed
         if self.is_locked_down(rs) and not self.is_admin(rs):
             return None
-        data['case_status'] = const.GenesisStati.unconfirmed
+        if (data.get('attachment_hash') and not self.get_genesis_attachment_store(
+                rs).is_available(data['attachment_hash'])):
+            raise RuntimeError(n_("File has been lost."))
+
         with Atomizer(rs):
+            if self.verify_existence(rs, data['username']):
+                return None
             ret = self.sql_insert(rs, "core.genesis_cases", data)
             self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
                           change_note=data['username'])
@@ -184,6 +134,14 @@ class CoreGenesisBackend(CoreBaseBackend):
                     {"type": "assembly", "block": blockers.keys()})
 
         return ret
+
+    @access("core_admin", "cde_admin")
+    def get_genesis_attachment_usage(self, rs: RequestState, attachment_hash: str,
+                                     ) -> bool:
+        """Check whether an attachment is still referenced."""
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
+        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("anonymous")
     def genesis_case_by_email(self, rs: RequestState,
