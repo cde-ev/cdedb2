@@ -651,6 +651,13 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.user.persona_id == persona_id:
             active_session_count = self.coreproxy.count_active_sessions(rs)
 
+        # Check for email trouble
+        email_report = None
+        if (rs.user.persona_id == persona_id
+                or ({"core_admin", "ml_admin"} & rs.user.roles)):
+            tmp = self.coreproxy.get_email_reports(rs, [persona_id])
+            email_report = tmp.get(data['username'])
+
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me and "cde" not in access_levels
                      and acutally_searchable_to_you)
@@ -663,6 +670,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
+            'email_report': email_report,
         })
 
     @access("member")

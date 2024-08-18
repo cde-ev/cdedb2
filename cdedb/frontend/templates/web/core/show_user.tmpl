@@ -435,6 +435,19 @@
                     {% else %}
                         —
                     {% endif %}
+                    {%- if "core" in user.admin_views or "ml" in user.admin_views %}
+                        {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
+                            <span class="text-danger">({{gettext(email_report.status)}})
+                            {{ util.href(cdedblink('core/email_status_overview') + "#emailstatus-"
+                                         + get_hash(data['username'].encode('utf-8')), gettext("Manage"),
+                                         aclass="btn btn-xs btn-warning", icon="at") }}
+                            </span>
+                        {% endif %}
+                        {% if not email_report %}
+                            {{ util.href(cdedblink('core/email_status_overview', params={"address": data['username']}),
+                                         gettext("Mark defect"), aclass="btn btn-xs btn-danger", icon="at") }}
+                        {% endif %}
+                    {% endif %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}

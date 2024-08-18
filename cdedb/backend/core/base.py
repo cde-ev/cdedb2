@@ -2926,7 +2926,6 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def get_defect_addresses(
             self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
-            stati: Optional[Collection[const.EmailStatus]] = None
     ) -> dict[str, EmailAddressReport]:
         # Input validation and permission checks are delegated
         return self.get_email_reports(rs, persona_ids,
