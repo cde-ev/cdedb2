@@ -10125,11 +10125,6 @@
             "address": "new-anton@example.cde"
         },
         {
-            "mailinglist_id": 3,
-            "persona_id": 2,
-            "address": "new-berta@example.cde"
-        },
-        {
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
@@ -10138,6 +10133,11 @@
             "mailinglist_id": 52,
             "persona_id": 9,
             "address": "inga-papierkorb@example.cde"
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 2,
+            "address": "new-berta@example.cde"
         }
     ],
     "ml.whitelist": [
