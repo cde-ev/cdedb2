@@ -240,7 +240,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return store
 
     @access("anonymous")
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str) -> Response:
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
+                               ) -> Response:
         """Retrieve attachment for genesis case."""
         path = self.coreproxy.get_genesis_attachment_store(rs).get_path(attachment_hash)
         if not path.is_file():
