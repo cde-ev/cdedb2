@@ -1234,7 +1234,7 @@ def _password_strength(
     val = _str(val, argname=argname, **kwargs)
     errors = ValidationSummary()
 
-    results: CdEDBObject = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
+    results = cast(CdEDBObject, zxcvbn.zxcvbn(val, list(filter(None, inputs))))
     # if user is admin in any realm, require a score of 4. After
     # migration, everyone must change their password, so this is
     # actually enforced for admins of the old db. Afterwards,

@@ -549,7 +549,7 @@ class DatabaseLock:
     available.
 
     """
-    xid: Optional[str]
+    xid: Optional[psycopg2.extensions.Xid]
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
