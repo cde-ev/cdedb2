@@ -20,7 +20,7 @@ from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
-    storage,
+    prepsql, storage,
 )
 
 
@@ -1308,6 +1308,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT[other_user_name])
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]

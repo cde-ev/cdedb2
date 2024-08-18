@@ -933,6 +933,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ehrenmitglied", div='membership', exact=True)
 
     @as_users("farin")
+    @prepsql("DELETE FROM core.email_states")
     def test_iban_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},

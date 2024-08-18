@@ -23,7 +23,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
+    AbstractBackend, access, affirm_array_validation as affirm_array,
+    affirm_dataclass, affirm_set_validation as affirm_set,
     affirm_validation as affirm, affirm_validation_optional as affirm_optional,
     encrypt_password, inspect_validation as inspect, internal, singularize,
     verify_password,
@@ -2904,7 +2905,7 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self.general_query(rs, query)
 
-    @access("ml")
+    @access("anonymous")
     def list_email_states(
             self, rs: RequestState,
             states: Optional[Collection[const.EmailStatus]] = None,
@@ -2913,8 +2914,15 @@ class CoreBaseBackend(AbstractBackend):
 
         This is mainly used for handling defect addresses.
 
+        .. note:: This has anonymous access as we send emails in anonymous
+                  context (e.g. password reset links). So to be able to do
+                  checks during email dispatch this is world-readable (between
+                  frontend and backend).
+
         :param states: Restrict to addresses with one of these states.
+
         """
+        states = affirm_array(const.EmailStatus, states or [])
         query = "SELECT address, status FROM core.email_states"
         params: tuple[Collection[const.EmailStatus], ...] = tuple()
         if states:
@@ -2941,12 +2949,13 @@ class CoreBaseBackend(AbstractBackend):
         :param persona_ids: Retrieve only defect addresses of those users.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids or set())
+        if stati is None:
+            stati = tuple(const.EmailStatus)
+        stati = affirm_array(const.EmailStatus, stati or [])
 
         if (not {"ml_admin", "core_admin"} & rs.user.roles
                 and persona_ids != {rs.user.persona_id}):
             raise PrivilegeError
-        if stati is None:
-            stati = tuple(const.EmailStatus)
 
         # first, query core.personas
         query = """

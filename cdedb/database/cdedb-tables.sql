@@ -453,7 +453,7 @@ CREATE TABLE core.email_states (
         status                  integer NOT NULL,
         notes                   varchar
 );
-GRANT SELECT on core.email_states TO cdb_persona;
+GRANT SELECT on core.email_states TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.email_states_id_seq TO cdb_admin;
 GRANT INSERT, UPDATE, DELETE ON core.email_states TO cdb_admin;
 
