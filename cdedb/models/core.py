@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, Optional
 from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
+import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.sorting import Sortkey
-from cdedb.database.constants import EmailStatus
 from cdedb.models.common import CdEDataclass
 
 __all__ = ["AnonymousMessageData"]
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class EmailAddressReport(CdEDataclass):
     address: vtypes.Email
-    status: EmailStatus
+    status: const.EmailStatus
     notes: Optional[str] = None
     # This persona has this address as username.
     user_id: Optional[vtypes.ID] = None

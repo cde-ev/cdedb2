@@ -23,11 +23,10 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_dataclass, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    encrypt_password, inspect_validation as inspect, internal, singularize,
-    verify_password,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, encrypt_password,
+    inspect_validation as inspect, internal, singularize, verify_password,
 )
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
