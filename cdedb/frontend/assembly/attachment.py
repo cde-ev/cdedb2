@@ -263,6 +263,18 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly")
+    def get_cached_attachment(self, rs: RequestState, assembly_id: int,
+                              attachment_hash: vtypes.Identifier) -> Response:
+        """Retrieve cached attachment."""
+        # Half-hearted access check: Non-presiders have no business using this.
+        if not self.is_admin(rs) and not rs.user.presider:
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        path = self.assemblyproxy.get_attachment_store(rs).get_path(attachment_hash)
+        if not path.is_file():
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        return self.send_file(rs, path=path, mimetype='application/pdf')
+
+    @access("assembly")
     @assembly_guard
     def change_attachment_version_form(self, rs: RequestState, assembly_id: int,
                                        attachment_id: int, version_nr: int) -> Response:

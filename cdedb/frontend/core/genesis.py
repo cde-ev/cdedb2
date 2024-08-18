@@ -239,14 +239,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return store
 
-    @access("core_admin", *(f"{realm}_admin"
-                            for realm, fields in
-                            REALM_SPECIFIC_GENESIS_FIELDS.items()
-                            if "attachment_hash" in fields))
-    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str,
-                               ) -> Response:
+    @access("anonymous")
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str) -> Response:
         """Retrieve attachment for genesis case."""
         path = self.coreproxy.get_genesis_attachment_store(rs).get_path(attachment_hash)
+        if not path.is_file():
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
     @access("core_admin", *(f"{realm}_admin"

@@ -2286,6 +2286,10 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
+        saved_response = self.response
+        self.traverse("my_participation_certificate.pdf")
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = saved_response
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
         f['birthday'] = ""
