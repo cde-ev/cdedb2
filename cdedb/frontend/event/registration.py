@@ -26,7 +26,7 @@ from cdedb.common import (
     diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.query import Query, QueryConstraint, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import date_filter, money_filter
@@ -798,48 +798,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/registration_status")
 
-    def _notify_on_registration_query(
-            self, rs: RequestState, event: models.Event,
-            registration_id: Optional[int],
-            prev_timestamp: Optional[datetime.datetime],
-            ref_timestamp: datetime.datetime,
-    ) -> Optional[Query]:
-
-        if event.notify_on_registration.send_on_register():
-            constraints: list[QueryConstraint] = [
-                (
-                    "reg.id",
-                    QueryOperators.equal,
-                    registration_id,
-                ),
-            ]
-        elif event.notify_on_registration.send_periodically():
-            constraints = [
-                (
-                    "ctime.creation_time",
-                    QueryOperators.between,
-                    (
-                        prev_timestamp,
-                        ref_timestamp,
-                    ),
-                ),
-            ]
-        else:
-            return None
-        return Query(
-            QueryScope.registration, QueryScope.registration.get_spec(event=event),
-            [
-                "persona.given_names",
-                "persona.family_name",
-                "persona.username",
-                "ctime.creation_time",
-            ],
-            constraints,
-            [
-                ("ctime.creation_time", False),
-            ],
-        )
-
     def _notify_on_registration(self, rs: RequestState, event: models.Event,
                                 registration_id: Optional[int] = None,
                                 prev_timestamp: Optional[datetime.datetime] = None,
@@ -856,48 +814,70 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not event.orga_address:
             return 0, ref_timestamp
 
-        if query := self._notify_on_registration_query(
-                rs, event, registration_id, prev_timestamp, ref_timestamp,
-        ):
-            if registration_id:
-                registration = self.eventproxy.get_registration(rs, registration_id)
-                persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
-                registrations = [
-                    {
-                        'persona.given_names': persona['given_names'],
-                        'persona.family_name': persona['family_name'],
-                        'id': registration_id,
-                    },
-                ]
-            else:
-                registrations = list(
-                    self.eventproxy.submit_general_query(rs, query, event.id))
-            if not registrations:
-                return 0, ref_timestamp
-
-            self.do_mail(
-                rs, "notify_on_registration",
+        if event.notify_on_registration.send_on_register() and registration_id:
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
+            registrations = [
                 {
-                    "Subject": "Neue Anmeldung(en) für eure Veranstaltung",
-                    "To": (event.orga_address,),
+                    'persona.given_names': persona['given_names'],
+                    'persona.family_name': persona['family_name'],
+                    'id': registration_id,
                 },
-                {
-                    'event': event,
-                    'registrations': registrations,
-                    'query': query,
-                    'serialized_query': {
-                        **query.serialize_to_url(),
-                        'event_id': event.id,
-                    },
-                    'NotifyOnRegistration': const.NotifyOnRegistration,
-                    'persona_name':
-                        lambda r:
-                            f"{r['persona.given_names']} {r['persona.family_name']}",
-                },
+            ]
+            query: Query | None = None
+        elif event.notify_on_registration.send_periodically():
+            query = Query(
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=event),
+                [
+                    "persona.given_names",
+                    "persona.family_name",
+                    "persona.username",
+                    "ctime.creation_time",
+                ],
+                [
+                    (
+                        "ctime.creation_time",
+                        QueryOperators.between,
+                        (
+                            prev_timestamp,
+                            ref_timestamp,
+                        ),
+                    ),
+                ],
+                [
+                    ("ctime.creation_time", False),
+                ],
             )
-            return len(registrations), ref_timestamp
+            registrations = list(
+                self.eventproxy.submit_general_query(rs, query, event.id))
+        else:
+            return 0, ref_timestamp
 
-        return 0, ref_timestamp
+        if not registrations:
+            return 0, ref_timestamp
+
+        self.do_mail(
+            rs, "notify_on_registration",
+            {
+                "Subject": "Neue Anmeldung(en) für eure Veranstaltung",
+                "To": (event.orga_address,),
+            },
+            {
+                'event': event,
+                'registrations': registrations,
+                'query': query,
+                'serialized_query': {
+                    **query.serialize_to_url(),
+                    'event_id': event.id,
+                },
+                'NotifyOnRegistration': const.NotifyOnRegistration,
+                'persona_name':
+                    lambda r:
+                        f"{r['persona.given_names']} {r['persona.family_name']}",
+            },
+        )
+        return len(registrations), ref_timestamp
 
     @periodic("notify_on_registration")
     def notify_on_registration(self, rs: RequestState, store: CdEDBObject,
