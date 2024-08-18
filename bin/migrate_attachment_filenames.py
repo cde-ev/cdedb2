@@ -17,18 +17,19 @@ script = Script(dbuser="cdb_persona", persona_id=0, dry_run=False)
 
 # Execution
 
-with script:
-    # Create root directory for event keeper
-    root_dir: Path = script.config["STORAGE_DIR"] / "assembly_attachment"
-    count = 0
+root_dir: Path = script.config["STORAGE_DIR"] / "assembly_attachment"
+count = 0
 
-    with os.scandir(root_dir) as it:
-        for entry in it:
-            if entry.is_file():
-                with open(entry.path, "rb") as f:
-                    file_hash = get_hash(f.read())
-                shutil.move(entry.path, root_dir / file_hash)
-                print(f"{entry.name} moved to {root_dir / file_hash}.")
-                count += 1
+with os.scandir(root_dir) as it:
+    for entry in it:
+        if entry.is_file():
+            with open(entry.path, "rb") as f:
+                file_hash = get_hash(f.read())
+            if (root_dir / file_hash).exists():
+                print(f"File {entry.name} is redundant, deleting")
+                os.remove(root_dir / entry.path)
+            shutil.move(entry.path, root_dir / file_hash)
+            print(f"{entry.name} moved to {root_dir / file_hash}.")
+            count += 1
 
-    print(f"Moved {count} files in {root_dir}.")
+print(f"Moved {count} files in {root_dir}.")
