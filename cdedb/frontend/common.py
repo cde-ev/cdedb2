@@ -80,8 +80,8 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
     NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
-    decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
-    make_proxy, merge_dicts, now, setup_logger, unwrap,
+    decode_parameter, encode_parameter, get_hash, glue, json_serialize,
+    make_persona_name, make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
@@ -343,6 +343,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'now': now,
             'nbsp': "\u00A0",
             'query_mod': query_mod,
+            'get_hash': get_hash,
             'glue': glue,
             'enums': ENUMS_DICT,
             'raise': raise_jinja,

@@ -1335,18 +1335,34 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("core_admin", "ml_admin")
-    def defect_addresses(self, rs: RequestState) -> Response:
-        defect_addresses = self.coreproxy.get_defect_addresses(rs)
-        persona_ids = set().union(*(e.persona_ids for e in defect_addresses.values()))
+    def email_status_overview(self, rs: RequestState) -> Response:
+        """Present overview."""
+        email_reports = self.coreproxy.get_email_reports(rs)
+        persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
         personas = set()
         if persona_ids:
             personas = self.coreproxy.get_personas(rs, persona_ids)
-        ml_ids = set().union(*(e.ml_ids for e in defect_addresses.values()))
+        ml_ids = set().union(*(e.ml_ids for e in email_reports.values()))
         mls = set()
         if ml_ids:
             mls = self.mlproxy.get_mailinglists(rs, ml_ids)
-        return self.render(rs, "defect_addresses", {
-            'defect_addresses': defect_addresses, 'personas': personas, 'mls': mls})
+        return self.render(rs, "email_status_overview", {
+            'email_reports': email_reports, 'personas': personas, 'mls': mls})
+
+    @access("core_admin", "ml_admin")
+    @REQUESTdata("address", "status")
+    def set_email_status(self, rs: RequestState, address: vtypes.Email,
+                         status: const.EmailStatus) -> Response:
+        """Insert or update the status of an email address."""
+        xxx
+        return self.redirect()
+
+    @access("core_admin", "ml_admin")
+    @REQUESTdata("address", "status")
+    def delete_email_status(self, rs: RequestState, address: vtypes.Email) -> Response:
+        """Remove the status entry of an email address."""
+        xxx
+        return self.redirect()
 
     @access("persona")
     @REQUESTdata("to")

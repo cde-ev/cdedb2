@@ -2925,7 +2925,17 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("ml")
     def get_defect_addresses(
-            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None
+            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
+            stati: Optional[Collection[const.EmailStatus]] = None
+    ) -> dict[str, EmailAddressReport]:
+        # Input validation and permission checks are delegated
+        return self.get_email_reports(rs, persona_ids,
+                                      const.EmailStatus.defect_states())
+
+    @access("ml")
+    def get_email_reports(
+            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
+            stati: Optional[Collection[const.EmailStatus]] = None
     ) -> dict[str, EmailAddressReport]:
         """Get defect mail addresses and map them to users and mls, if possible.
 
@@ -2936,6 +2946,8 @@ class CoreBaseBackend(AbstractBackend):
         if (not {"ml_admin", "core_admin"} & rs.user.roles
                 and persona_ids != {rs.user.persona_id}):
             raise PrivilegeError
+        if stati is None:
+            stati = tuple(const.EmailStatus)
 
         # first, query core.personas
         query = """
@@ -2946,7 +2958,7 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN core.personas ON estat.address = core.personas.username
             WHERE estat.status = ANY(%s)
         """
-        params: tuple[set[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
+        params: tuple[set[vtypes.ID], ...] = (stati,)
         if persona_ids:
             query += "AND core.personas.id = ANY(%s)"
             params += (persona_ids, )
@@ -2964,11 +2976,12 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
             WHERE estat.status = ANY(%s)
         """
-        params: tuple[list[vtypes.ID], ...] = (const.EmailStatus.defect_states(),)
+        params: tuple[list[vtypes.ID], ...] = (stati,)
         if persona_ids:
             query += " AND sa.persona_id = ANY(%s)"
             params += (persona_ids,)
-        query += " GROUP BY estat.id, estat.address, estat.status, estat.notes, subscriber_id"
+        query += (" GROUP BY estat.id, estat.address, estat.status, estat.notes,"
+                  " subscriber_id")
         for e in self.query_all(rs, query, params):
             data[e['address']].update(e)
 

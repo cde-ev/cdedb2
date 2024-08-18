@@ -24,7 +24,7 @@
                         icon="users", active=(sidenav_active=='core_manage_users')) }}
             {% endif %}
             {% if "ml_user" in user.admin_views or "core_user" in user.admin_views %}
-                {{ util.href(cdedblink("core/defect_addresses"), gettext("Defect Addresses"),
+                {{ util.href(cdedblink("core/email_status_overview"), gettext("Defect Addresses"),
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'defect_addresses')) }}
             {% endif %}
             {% if user.admin_views.intersection(('core_user', 'cde_user', 'event_user')) %}

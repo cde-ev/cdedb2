@@ -59,6 +59,14 @@ class EmailStatus(CdEIntEnum):
     def defect_states(cls) -> tuple["EmailStatus", ...]:
         return (cls.defect,)
 
+    @classmethod
+    def notable_states(cls) -> tuple["EmailStatus", ...]:
+        """States which should cause a notification.
+
+        In some locations annotating every state could get really noisy.
+        """
+        return (cls.defect,)
+
 
 @enum.unique
 class RegistrationPartStati(CdEIntEnum):
