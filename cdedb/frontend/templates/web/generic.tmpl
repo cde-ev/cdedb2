@@ -606,21 +606,27 @@
     {% endif %}
 {% endmacro %}
 
-{% macro query_button_field_set(field_association) %}
-    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+{% macro query_result_dynamic_action(
+        label, icon, target, aclass="btn-warning", params=none, magic_placeholders=()) %}
+    <button type="button" class="btn btn-sm {{ aclass }}">
+        {% if icon %}{{ util.make_icon(icon) }}{% if label %}{{ nbsp }}{% endif %}{% endif %}{{ label }}
+        <script nonce="{{ csp_nonce }}">
+            $('.query-result-dynamic-actions').show();
+            (function (script) {
+                $(script).closest('button').on("click", function () {
+                    console.log($(this));
+                    let list = [];
+                    $('#query-result').find('.ls-selected').each(function () {
+                        list.push($(this).data('id'));
+                    });
+                    console.log(list);
+                    if (list.length === 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink(target, params or {}, magic_placeholders=magic_placeholders)|safe }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            })(document.currentScript);
+        </script>
     </button>
-    <script nonce="{{ csp_nonce }}">
-        $('#btn-set-field').click(function(){
-            var list = [];
-            $('#query-result').find('.ls-selected').each(function(){
-                list.push($(this).attr('data-id'));
-            });
-            if (list.length === 0)
-                return;
-            location.href =
-                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
-                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-        });
-    </script>
 {% endmacro %}

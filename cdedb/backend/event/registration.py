@@ -1642,16 +1642,17 @@ class EventRegistrationBackend(EventBaseBackend):
             )
             ret = self.query_exec(rs, *personalized_fee.get_query())
             self._update_registration_amount_owed(rs, registration_id)
-            change_note = event.fees[fee_id].title
-            if amount is None:
-                code = const.EventLogCodes.personalized_fee_amount_deleted
-            else:
-                code = const.EventLogCodes.personalized_fee_amount_set
-                change_note += f" ({money_filter(amount)})"
-            self.event_log(
-                rs, code=code, event_id=event_id, persona_id=persona_id,
-                change_note=change_note,
-            )
+            if ret:
+                change_note = event.fees[fee_id].title
+                if amount is None:
+                    code = const.EventLogCodes.personalized_fee_amount_deleted
+                else:
+                    code = const.EventLogCodes.personalized_fee_amount_set
+                    change_note += f" ({money_filter(amount)})"
+                self.event_log(
+                    rs, code=code, event_id=event_id, persona_id=persona_id,
+                    change_note=change_note,
+                )
             return ret
 
     @internal

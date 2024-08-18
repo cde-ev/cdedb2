@@ -645,7 +645,7 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(check_offline=True)
     @REQUESTdata("personalized")
     def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
                            fee_id: Optional[int] = None) -> Response:
@@ -666,7 +666,7 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(check_offline=True)
     @REQUESTdata("personalized")
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
