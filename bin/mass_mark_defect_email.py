@@ -14,7 +14,7 @@ rs = script.rs()
 core = script.make_backend("core")
 cutoff = datetime.timedelta(days=90)
 notes = "Massenimport defekter Emailadressen."  # explicate
-email_addresses = [
+email_addresses: list[str] = [
     # fill in
 ]
 

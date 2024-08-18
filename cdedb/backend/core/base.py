@@ -2908,7 +2908,7 @@ class CoreBaseBackend(AbstractBackend):
     def list_email_states(
             self, rs: RequestState,
             states: Optional[Collection[const.EmailStatus]] = None,
-    ) -> dict[str: const.EmailStatus]:
+    ) -> dict[str, const.EmailStatus]:
         """List all explicit email states known to the CdEDB.
 
         This is mainly used for handling defect addresses.
@@ -2916,7 +2916,7 @@ class CoreBaseBackend(AbstractBackend):
         :param states: Restrict to addresses with one of these states.
         """
         query = "SELECT address, status FROM core.email_states"
-        params = tuple()
+        params: tuple[Collection[const.EmailStatus], ...] = tuple()
         if states:
             query += " WHERE status = ANY(%s)"
             params += (states,)
@@ -2925,7 +2925,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("ml")
     def get_defect_address_reports(
-            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
+            self, rs: RequestState, persona_ids: Optional[Collection[int]] = None,
     ) -> dict[str, EmailAddressReport]:
         # Input validation and permission checks are delegated
         return self.get_email_reports(rs, persona_ids,
@@ -2933,7 +2933,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("ml")
     def get_email_reports(
-            self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
+            self, rs: RequestState, persona_ids: Optional[Collection[int]] = None,
             stati: Optional[Collection[const.EmailStatus]] = None,
     ) -> dict[str, EmailAddressReport]:
         """Get defect mail addresses and map them to users and mls, if possible.
@@ -2957,11 +2957,11 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN core.personas ON estat.address = core.personas.username
             WHERE estat.status = ANY(%s)
         """
-        params: tuple[set[vtypes.ID], ...] = (stati,)
+        params: tuple[Collection[int], ...] = (stati,)
         if persona_ids:
             query += "AND core.personas.id = ANY(%s)"
             params += (persona_ids, )
-        data = collections.defaultdict(dict)
+        data: dict[str, dict[str, Any]] = collections.defaultdict(dict)
         for e in self.query_all(rs, query, params):
             data[e['address']] = e
 
@@ -2975,7 +2975,7 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
             WHERE estat.status = ANY(%s)
         """
-        params: tuple[list[vtypes.ID], ...] = (stati,)
+        params: tuple[Collection[int], ...] = (stati,)
         if persona_ids:
             query += " AND sa.persona_id = ANY(%s)"
             params += (persona_ids,)

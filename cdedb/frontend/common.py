@@ -748,7 +748,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return response
 
     def update_defect_addresses(self, rs: RequestState, params: dict[str, Any],
-                                defect_addresses: dict[str, EmailAddressReport]):
+                                defect_addresses: dict[str, EmailAddressReport]
+                                ) -> None:
         defect_username = None
         mls_with_defect_explicits = None
         # protect against execution in anonymous / no login setting
@@ -806,7 +807,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def _create_mail(self, text: str,
                      headers: Headers, attachments: Optional[Collection[Attachment]],
-                     defect_addresses: dict[str: const.EmailStatus],
+                     defect_addresses: dict[str, const.EmailStatus],
                      ) -> Union[email.message.Message,
                                 email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""

@@ -1351,13 +1351,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.values['address'] = None
         email_reports = self.coreproxy.get_email_reports(rs)
         persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
-        personas = set()
-        if persona_ids:
-            personas = self.coreproxy.get_personas(rs, persona_ids)
+        personas = (self.coreproxy.get_personas(rs, persona_ids)
+                    if persona_ids else set())
         ml_ids = set().union(*(e.ml_ids for e in email_reports.values()))
-        mls = set()
-        if ml_ids:
-            mls = self.mlproxy.get_mailinglists(rs, ml_ids)
+        mls = self.mlproxy.get_mailinglists(rs, ml_ids) if ml_ids else set()
         return self.render(rs, "email_status_overview", {
             'email_reports': email_reports, 'personas': personas, 'mls': mls})
 
