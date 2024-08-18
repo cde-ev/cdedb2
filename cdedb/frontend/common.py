@@ -748,7 +748,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return response
 
     def update_defect_addresses(self, rs: RequestState, params: dict[str, Any],
-                                defect_addresses: dict[str, EmailAddressReport]
+                                defect_addresses: dict[str, EmailAddressReport],
                                 ) -> None:
         defect_username = None
         mls_with_defect_explicits = None
