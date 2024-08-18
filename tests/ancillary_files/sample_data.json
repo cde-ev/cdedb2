@@ -4088,11 +4088,13 @@
     "core.email_states": [
         {
             "address": "anton@example.cde",
-            "status": 1
+            "status": 1,
+            "notes": null
         },
         {
             "address": "new-berta@example.cde",
-            "status": 10
+            "status": 10,
+            "notes": null
         },
         {
             "address": "berta@example.cde",
