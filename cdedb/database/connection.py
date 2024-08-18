@@ -15,7 +15,6 @@ from typing import Any, NoReturn, Optional
 
 import psycopg2
 import psycopg2.extensions
-import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 from psycopg2.extras import RealDictCursor
 
@@ -64,7 +63,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, host: str,
         host=host,
         port=port,
         connection_factory=IrradiatedConnection,
-        cursor_factory=psycopg2.extras.RealDictCursor,
+        cursor_factory=RealDictCursor,
     )
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)

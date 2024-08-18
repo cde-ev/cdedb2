@@ -5,7 +5,6 @@ import unittest
 from typing import Any, cast
 
 import psycopg2.extensions
-import psycopg2.extras
 
 from cdedb.backend.common import DatabaseLock, Silencer, _affirm_atomized_context
 from cdedb.common import RequestState

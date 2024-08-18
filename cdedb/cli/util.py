@@ -12,7 +12,6 @@ from shutil import which
 from typing import Any, Callable, Optional, Union
 
 import click
-import psycopg2.extensions
 import psycopg2.extras
 import werkzeug.routing
 

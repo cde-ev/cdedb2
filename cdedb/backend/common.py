@@ -18,7 +18,6 @@ from typing import (
     Any, Callable, ClassVar, Literal, Optional, TypeVar, Union, cast, overload,
 )
 
-import psycopg2
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras

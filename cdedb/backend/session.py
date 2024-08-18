@@ -13,7 +13,6 @@ import logging
 from typing import Optional
 
 import psycopg2.extensions
-import psycopg2.extras
 from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
