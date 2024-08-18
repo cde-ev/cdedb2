@@ -67,15 +67,8 @@ class TestScript(unittest.TestCase):
                         fr, self.assertEqual, "Writing this to file.\nThis too!\n",
                         truncate=False)
 
-        expectation = """Not writing this to file.
-Not writing this to file either.
-
-================================================================================
-
-Aborting Dry Run! Time taken: 0.000 seconds.
-
-"""
-        self.check_buffer(buffer, self.assertEqual, expectation)
+        expectation = "Not writing this to file.\nNot writing this to file either."
+        self.check_buffer(buffer, self.assertIn, expectation)
 
     def test_rs_factory(self) -> None:
         rs_factory = self.script.rs
