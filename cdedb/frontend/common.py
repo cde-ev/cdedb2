@@ -729,11 +729,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        csp_header_template = glue(
-            "default-src 'self';",
-            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
-            "style-src 'self' 'unsafe-inline';",
-            "img-src *")
+        csp_header_template = (
+            "default-src 'self'; script-src 'unsafe-inline' 'self' https: 'nonce-{}';"
+            " style-src 'self' 'unsafe-inline'; img-src *")
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
@@ -2338,9 +2336,9 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
     if p['title']:
-        name = glue(p['title'], name)
+        name = f"{p['title']} {name}"
     if p['name_supplement']:
-        name = glue(name, p['name_supplement'])
+        name = f"{name} {p['name_supplement']}"
     ret = [name]
     if p['address_supplement']:
         ret.append(p['address_supplement'])
@@ -2627,12 +2625,27 @@ class TransactionObserver:
 
     This should only be used in cases where a failure is deemed sufficiently
     unlikely.
+
+    The recipients always include the troubleshooting address and default to
+    management if no other recipients are given.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str, *,
+                 description: str = "", recipients: Collection[str] = ()):
         self.rs = rs
         self.frontend = frontend
         self.name = name
+        self.description = description
+        if recipients:
+            self.recipients = (
+                *recipients,
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
+        else:
+            self.recipients = (
+                frontend.conf['MANAGEMENT_ADDRESS'],
+                frontend.conf['TROUBLESHOOTING_ADDRESS'],
+            )
 
     def __enter__(self) -> "TransactionObserver":
         return self
@@ -2644,13 +2657,14 @@ class TransactionObserver:
             self.frontend.do_mail(
                 self.rs, "transaction_error",
                 {
-                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
-                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'To': self.recipients,
                     'Subject': "Transaktionsfehler",
+                    'Reply-To': self.frontend.conf['TROUBLESHOOTING_ADDRESS'],
                 },
                 {
                     'now': now(),
                     'name': self.name,
+                    'description': self.description,
                     'atype': atype,
                     'value': value,
                     'tb': tb,

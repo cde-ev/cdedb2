@@ -3,9 +3,11 @@ Teilnahmebeiträge
 
 Für die automatische Berechnung von Teilnahmebeiträgen für Teilnehmende von
 Veranstaltungen gibt es die Möglichkeit auch komplizierte Sachverhalte durch
-boolsche Funktionen akkurat abzubilden.
+boolsche Funktionen akkurat abzubilden. Ergänzend können personalisierte
+Teilnahmebeiträge angelegt werden, die nur für einzelne Anmeldungen gelten
+und einen individuell pro Anmeldung konfigurierten Betrag haben.
 
-Für viele Veranstaltungen ist dies kaum notwendig. Beim Erstellen der
+Für viele Veranstaltungen ist beides kaum notwendig. Beim Erstellen der
 Veranstaltung werden automatisch zwei Teilnahmebeiträge eingerichtet, in Folge
 dessen müsst ihr als Orgas lediglich die Höhe des Teilnahmebeitrags und des
 Externenzusatzbeitrags -- beides in Absprache mit dem Vorstand -- anpassen.
@@ -17,8 +19,34 @@ könnt ihr zusätzliche Teilnahmebeiträge anlegen und diese mit selbst
 definierten Datenfeldern verknüpfen. Diese Datenfelder solltet ihr dann auch
 bei der Anmeldung abfragen.
 
+Alle Aspekte eines konfigurierten Beitrages lassen sich nachträglich anpassen.
+
 Wie das alles funktioniert und was mit diesem System möglich ist erfahrt ihr hier.
 
+Beitragstypen
+-------------
+
+Alle Teilnahmebeiträge haben einen der folgenden Typen:
+
+- Regulärer Teilnahmebeitrag
+- Stornokosten
+- Externenzusatzbeitrag
+- KL-Erstattung
+- KL-Spende
+- Solidarische Reduktion
+- Solidarische Erhöhung
+- Solidarische Spende
+- Sonstige Spende
+
+Die Typen dienen der Übersichtlichkeit, sowie der Statistik und haben fast keine
+direkte Auswirkung in ihrer Funktionalität.
+
+Die einzige Ausnahme hiervon ist, dass im vorgeschlagenen Verwendungszweck der Anteil
+vom Typ Spende gesondert ausgewiesen wird.
+
+Teilnehmende, deren zu zahlender Beitrag sich aus mehr als einem Beitragstypen
+zusammensetzt, erhalten bei und nach ihrer Anmeldung eine Übersicht über die
+Zusammensetzung ihres Beitrags, aufgeschlüsselt nach Beitragstyp.
 
 Bedingte Teilnahmebeiträge
 --------------------------
@@ -28,7 +56,7 @@ verknüpft. Es gibt eine eigene Konfigurations- und Übersichtsseite für
 Teilnahmebeiträge, erreichbar über den Knopf "Teilnahmebeiträge" in der
 Navigationsleiste der Veranstaltung.
 
-Für jeden Teilnahmebeitrag können hier Titel, Betrag, Bedingung und optional
+Für jeden Teilnahmebeitrag können hier Titel, Typ, Betrag, Bedingung und optional
 Notizen konfiguriert werden. Die Bedingung ist eine boolsche Formeln, d.h. eine
 Formel, die abhängig von den enthaltenen Variablen, entweder "wahr" oder "falsch"
 ist. Falls das Ergebnis "wahr" ist, trifft die Formel zu und der entsprechende
@@ -90,6 +118,29 @@ Auswertungsreihenfolge zu verändern.
 
 Die Verwendung solcher Formeln sei im Folgenden anhand von Beispielen erläutert:
 
+Personalisierte Teilnahmebeiträge
+---------------------------------
+
+Personalisierte Beiträge verfügen genau wie bedingte Teilnahmebeiträge über einen Titel,
+einen Typen und optional über Notizen, haben jedoch keinen Betrag und keine Bedingung.
+
+Stattdessen kann, nachdem der Personalisierte Beitrag angelegt wurde, für einzelne
+Anmeldungen (über die jeweilige "Teilnahmebeitragsdetails"-Seite) ein jeweils
+individueller Betrag festgelegt werden, welcher dann nur für diese eine Anmeldung gilt.
+
+Alternativ kann über die Seite "Teilnahmebeiträge" oder eine Anmeldungssuche für alle,
+Anmeldungen bzw. eine ausgewählte Teilmenge aller Anmeldungen gleichzeitig ein Betrag
+festgelegt (oder geändert) werden. Hierzu dient der Knopf "Personalisierten Betrag für
+mehrere Anmeldungen festlegen" auf der Teilnahmebeitragsübersicht, bzw. beim Ergebnis
+einer Anmeldungssuche.
+
+Der angedachte Nutzen von Personalisierten Teilnahmebeiträgen ist für die Modellierung
+von semantisch ähnlichen oder identischen Beiträgen, Erstattungen oder Erlassungen,
+welche in mehreren unterschiedlichen Höhen existieren, bspw. KL-Erstattungen, wenn sich
+die Höhe der Erstattung von TN- oder KL-Zahl abhängt, oder viele KLs Teile der
+Erstattung spenden möchten, und daher eine Modellierung über bedingte Beiträge wegen
+der festen Beträge umständlich ist.
+
 Beispiel 1 (einfache Veranstaltung)
 -----------------------------------
 
@@ -123,19 +174,19 @@ Beispiel 2 (mehrteilige Veranstaltung)
 Es gibt eine SommerAkademie mit drei Teilen. Die Teilnahme am mittleren Teil
 kostet 230 Euro, während die beiden anderen Teile 215 Euro kosten.
 
-* ``part.A1 OR part.A2 OR part.A3`` => 215 Euro
-* ``part.A2`` => 15 Euro
+* ``part.A1 OR part.A2 OR part.A3`` => 215 Euro (Regulärer Beitrag)
+* ``part.A2`` => 15 Euro (Regulärer Beitrag)
 
 Darüber hinaus wird für die Erstellung einer Anmeldung eine Bearbeitungsgebühr
 in Höhe von 5 Euro erhoben.
 
-* ``True`` => 5 Euro
+* ``True`` => 5 Euro (Regulärer Beitrag)
 
 Die Teilnehmenden sollen angeben können, dass sie nur zu einem der Teile oder
 nicht zu allen Teilen, für die sie sich angemeldet haben, kommen.
 
-* ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro
+* ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1)) AND NOT field.one_part`` => 215 Euro (Regulärer Beitrag)
+* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts``  => 215 Euro (Regulärer Beitrag)
 
 Hier ist anzumerken, dass diese Formeln fehlertolerant sind: Sie werten auch
 dann richtig aus, wenn die Person sowieso nur für die entsprechende Zahl an
@@ -144,26 +195,35 @@ Teilen angemeldet ist.
 Kinder unter 13 Jahren kosten beim Feriendorf weniger, daher müssen sie
 15 Euro weniger bezahlen.
 
-* ``(part.A1 OR part.A2 OR part.A3) AND field.is_child`` => -15 Euro
+* ``(part.A1 OR part.A2 OR part.A3) AND field.is_child`` => -15 Euro (Regulärer Beitrag)
 * ``((part.A1 AND part.A2) OR (part.A2 AND part.A3) OR (part.A3 AND part.A1))``
-  ``AND NOT field.one_part AND field.is_child`` => -15 Euro
-* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro
+  ``AND NOT field.one_part AND field.is_child`` => -15 Euro (Regulärer Beitrag)
+* ``part.A1 AND part.A2 AND part.A3 AND NOT field.not_all_parts AND field.is_child`` => -15 Euro (Regulärer Beitrag)
 
 Finanziell besser situierte Teilnehmende sollen die Möglichkeit bekommen,
 mit einem "Solidarzusatzbeitrag" in Höhe von 9 Euro pro Teil den Verein und
 zukünftige Veranstaltungen zu unterstützen.
 
-* ``part.A1 AND field.solidarity`` => 9 Euro
-* ``part.A2 AND field.solidarity`` => 9 Euro
-* ``part.A3 AND field.solidarity`` => 9 Euro
+* ``part.A1 AND field.solidarity`` => 9 Euro (Solidarische Erhöhung)
+* ``part.A2 AND field.solidarity`` => 9 Euro (Solidarische Erhöhung)
+* ``part.A3 AND field.solidarity`` => 9 Euro (Solidarische Erhöhung)
 
 Nicht-Mitglieder müssen einen Zusatzbeitrag in Höhe des Mitgliedsbeitrags
 errichten, wenn sie teilnehmen möchten.
 Wer eine Doku möchte, muss 10 Euro extra zahlen.
 
-* ``any_part AND NOT is_member`` => 8 Euro
-* ``any_part AND field.doku`` => 10 Euro
+* ``any_part AND NOT is_member`` => 8 Euro (Externenbeitrag)
+* ``any_part AND field.doku`` => 10 Euro (Regulärer Beitrag)
 
+Gäste, oder Personen, welche früher ab- oder später angereist sind, zahlen einen
+anteiligen Beitrag berechnet an der Anzahl von Tagen, die sie tatsächlich anwesend
+waren.
+Alle Kursleitenden bekommen eine Erstattung von 50 € angeboten. Einige KL verzichten
+auf einen Teil der Erstattung und spenden diesen.
+
+* *Personalisierter Teilnahmebeitrag* "Zusatzübernachtungen" (Regulärer Beitrag)
+* ``field.kl_erstattung`` => 50 Euro (KL-Erstattung)
+* *Personalisierter Teilnahmebeitrag* "KL-Spende" (KL-Spende)
 
 Die entsprechenden :doc:`eigenen Datenfelder <Handbuch_Orga_Datenfelder>` vom Typ ``Anmeldungsfeld``
 müssen zuvor angelegt werden:
@@ -181,6 +241,10 @@ müssen zuvor angelegt werden:
    * Optionen: "True;Ich möchte eine gedruckte Doku haben (10 Euro) *(neue Zeile)* False;Ich verzichte auf die gedruckte Doku"
 
 4. * Feldname: "solidarity"
+   * Datentyp: "Ja/Nein"
+   * Optionen: *(Feld leer lassen)*
+
+5. * Feldname: "kl_erstattung"
    * Datentyp: "Ja/Nein"
    * Optionen: *(Feld leer lassen)*
 
@@ -221,3 +285,15 @@ geht unter "Anmeldung konfigurieren":
 
 Speichern und fertig! Während der Anmeldung bekommen alle Teilnehmenden nun die
 entsprechenden vier Checkboxen angezeigt.
+
+Für Gäste und "Anti-Gäste" können die entstehenden, bzw. gesparten Kosten als
+individuelle Beträge für den personalisierten Beitrag "Zusatzübernachtungen"
+eingetragen werden. Gäste sehen so automatisch den (zusätzlichen) Beitrag den sie
+bezahlen müssen, während für Anti-Gäste angezeigt wird, wie viele diese erstattet
+bekommen sollen.
+
+Nach der Akademie wird bei allen KLs das Feld "kl_erstattung" gesetzt. Die Datenbank
+zeigt nun (korrekterweise) an, dass diese Personen zu viel bezahlt haben.
+
+Für Kursleitende, die einen Teil ihres Beitrags spenden wollen, wird ein individueller
+Betrag für den Beitrag "KL-Spende" eingetragen.

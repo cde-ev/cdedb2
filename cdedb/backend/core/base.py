@@ -1857,9 +1857,7 @@ class CoreBaseBackend(AbstractBackend):
             if not newest:
                 # TODO allow this?
                 raise ArchiveError(n_("Cannot purge silently."))
-            query = glue(
-                "DELETE FROM core.changelog",
-                "WHERE persona_id = %s AND NOT id = %s")
+            query = "DELETE FROM core.changelog WHERE persona_id = %s AND NOT id = %s"
             ret *= self.query_exec(rs, query, (persona_id, newest['id']))
             #
             # 4. Finish
@@ -2543,7 +2541,7 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return ret, new_password
+        return bool(ret), new_password
 
     @access("persona")
     def change_password(self, rs: RequestState, old_password: str,
