@@ -844,7 +844,10 @@ class EventRegistrationMixin(EventBaseFrontend):
                                 registration_id: Optional[int] = None,
                                 prev_timestamp: Optional[datetime.datetime] = None,
                                 ) -> tuple[int, datetime.datetime]:
-        """Retrieve recent registrations and if any, send notification."""
+        """Retrieve recent registrations and if any, send notification.
+
+        :returns: The number of new registrations and the current timestamp.
+        """
         ref_timestamp = now().replace(microsecond=0)
         td = datetime.timedelta(minutes=15)
         prev_timestamp = \
