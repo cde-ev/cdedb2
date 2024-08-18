@@ -222,9 +222,14 @@ class Event(EventDataclass):
             return None
         return self.fields[self.lodge_field_id]
 
-    def is_visible_for(self, user: User, is_registered: bool) -> bool:
-        return ("event_admin" in user.roles or user.persona_id in self.orgas
-                or is_registered or self.is_visible)
+    def is_visible_for(self, user: User, is_registered: bool, *,
+                       personal_only: bool) -> bool:
+        """Whether an event is visible dependent on your own registration status.
+
+         :param personal: If only about access in a non-privileged capacity."""
+
+        return is_registered or self.is_visible or (not personal_only and (
+            "event_admin" in user.roles or user.persona_id in self.orgas))
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title

@@ -989,11 +989,13 @@ class TestEventBackend(BackendTest):
         visible_events = {event.id: event.title for event in events.values()
                           if event.is_visible}
         my_visible_events = {event.id: event.title for event in events.values()
-                             if event.is_visible_for(self.key.user, False)}
+                             if event.is_visible_for(self.key.user, False,
+                                                     personal_only=True)}
         self.assertEqual(expectation, visible_events)
         self.assertEqual(expectation, my_visible_events)
         total_registration = {event.id: event.title for event in events.values()
-                             if event.is_visible_for(self.key.user, True)}
+                             if event.is_visible_for(self.key.user, True,
+                                                     personal_only=True)}
         self.assertEqual(events, total_registration)
 
     @as_users("annika", "garcia")

@@ -163,9 +163,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 for event_id, event in events.items():
                     registration, payment_pending = (
                         self.eventproxy.get_registration_payment_info(rs, event_id))
-                    # Skip event, if neither public nor you are involved, emulating
-                    # event.is_visible_for(User(roles="event", registration is not None)
-                    if not event.is_visible and not registration:
+                    if not event.is_visible_for(rs.user, registration is True,
+                                                personal_only=True):
                         continue
                     # Skip event, if not registered and the registration begins
                     # more than 2 weeks in future

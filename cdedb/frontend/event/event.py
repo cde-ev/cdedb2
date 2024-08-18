@@ -50,10 +50,11 @@ class EventEventMixin(EventBaseFrontend):
     @access("anonymous")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
-        open_event_list = self.eventproxy.list_events(rs, current=True, archived=False)
+        current_event_list = self.eventproxy.list_events(rs, current=True,
+                                                         archived=False)
         other_event_list = self.eventproxy.list_events(
             rs, current=False, archived=False)
-        open_events = self.eventproxy.get_events(rs, open_event_list)
+        current_events = self.eventproxy.get_events(rs, current_event_list)
         other_events = self.eventproxy.get_events(
             rs, set(other_event_list) - set(rs.user.orga))
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
@@ -61,12 +62,12 @@ class EventEventMixin(EventBaseFrontend):
         events_registration: dict[int, Optional[bool]] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
-            for event_id, event in open_events.items():
+            for event_id, event in current_events.items():
                 events_registration[event_id], events_payment_pending[event_id] = (
                     self.eventproxy.get_registration_payment_info(rs, event_id))
 
         return self.render(rs, "event/index", {
-            'open_events': open_events, 'orga_events': orga_events,
+            'current_events': current_events, 'orga_events': orga_events,
             'other_events': other_events, 'events_registration': events_registration,
             'events_payment_pending': events_payment_pending})
 
@@ -101,18 +102,19 @@ class EventEventMixin(EventBaseFrontend):
     def show_event(self, rs: RequestState, event_id: int) -> Response:
         """Display event organized via DB."""
         params: CdEDBObject = {}
+        is_registered = False
         if "event" in rs.user.roles:
             params['orgas'] = OrderedDict(
                 (e['id'], e) for e in xsorted(
                     self.coreproxy.get_personas(
                         rs, rs.ambience['event'].orgas).values(),
                     key=EntitySorter.persona))
+            is_registered = bool(self.eventproxy.list_registrations(
+                rs, event_id, rs.user.persona_id))
         if "ml" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'].as_dict())
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
-        is_registered = bool(self.eventproxy.list_registrations(
-            rs, event_id, rs.user.persona_id))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
             constraint_violations = self.get_constraint_violations(
@@ -121,7 +123,8 @@ class EventEventMixin(EventBaseFrontend):
             params['mec_violations'] = constraint_violations['mec_violations']
             params['ccs_violations'] = constraint_violations['ccs_violations']
             params['violation_severity'] = constraint_violations['max_severity']
-        elif not rs.ambience['event'].is_visible_for(rs.user, is_registered):
+        elif not rs.ambience['event'].is_visible_for(rs.user, is_registered,
+                                                     personal_only=False):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
@@ -208,7 +211,8 @@ class EventEventMixin(EventBaseFrontend):
         """Retrieve minor form."""
         is_registered = bool(self.eventproxy.list_registrations(
             rs, event_id, rs.user.persona_id))
-        if not (rs.ambience['event'].is_visible_for(rs.user, is_registered)):
+        if not rs.ambience['event'].is_visible_for(rs.user, is_registered,
+                                                   personal_only=False):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(

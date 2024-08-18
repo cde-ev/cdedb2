@@ -365,8 +365,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         event = is_registered = None
         if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
-            is_registered = bool(self.eventproxy.list_registrations(
-                rs, ml.event_id, rs.user.persona_id))
+            if 'event' in rs.user.roles:
+                is_registered = bool(self.eventproxy.list_registrations(
+                    rs, ml.event_id, rs.user.persona_id))
 
         assembly = None
         if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
