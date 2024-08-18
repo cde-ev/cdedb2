@@ -450,7 +450,7 @@ class TestCron(CronTest):
     def test_notify_on_registration(self) -> None:
         cronjob = "notify_on_registration"
 
-        base_time = now().replace(microsecond=0)
+        base_time = now().replace(microsecond=0) + datetime.timedelta(seconds=5)
         delta = datetime.timedelta(minutes=5)
         with freezegun.freeze_time(base_time) as frozen_time:
 
