@@ -98,24 +98,30 @@ class SqlQueryBackend:
 
     def sql_insert(self, container: ConnectionContainer, table: str, data: CdEDBObject,
                    entity_key: str = "id", drop_on_conflict: bool = False,
-                   update_on_conflict: bool = False) -> int:
+                   update_on_conflict: bool = False, conflict_target: Optional[str] = None
+                   ) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
 
         :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :param update_on_conflict: Whether to upsert if conflicting with a constraint
+        :param conflict_target: Basically the column names that can cause
+                                conflict for which we want to do an upsert.
         :returns: id of inserted row
         """
         if drop_on_conflict and update_on_conflict:
             raise ValueError("Only one conflict resolution may be chosen.")
+        if update_on_conflict and not conflict_target:
+            raise ValueError("A conflict target must be provided.")
         keys = tuple(key for key in data)
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
                  f" ({', '.join(('%s',) * len(keys))})")
         if drop_on_conflict:
             query += " ON CONFLICT DO NOTHING"
         if update_on_conflict:
-            query += " ON CONFLICT DO UPDATE"
+            resolution = ', '.join(f'{key}=excluded.{key}' for key in keys)
+            query += f" ON CONFLICT ({conflict_target}) DO UPDATE SET {resolution}"
         query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(container, query, params)) or 0

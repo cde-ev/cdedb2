@@ -1335,8 +1335,12 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("core_admin", "ml_admin")
-    def email_status_overview(self, rs: RequestState) -> Response:
+    @REQUESTdata("address")
+    def email_status_overview(self, rs: RequestState,
+                              address: Optional[vtypes.Email] = None) -> Response:
         """Present overview."""
+        if rs.has_validation_errors():
+            rs.values['address'] = address = None
         email_reports = self.coreproxy.get_email_reports(rs)
         persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
         personas = set()
@@ -1349,20 +1353,26 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "email_status_overview", {
             'email_reports': email_reports, 'personas': personas, 'mls': mls})
 
-    @access("core_admin", "ml_admin")
-    @REQUESTdata("address", "status")
+    @access("core_admin", "ml_admin", modi={"POST"})
+    @REQUESTdata("address", "notes", "status")
     def set_email_status(self, rs: RequestState, address: vtypes.Email,
-                         status: const.EmailStatus) -> Response:
+                         status: const.EmailStatus, notes: Optional[str]) -> Response:
         """Insert or update the status of an email address."""
-        xxx
-        return self.redirect()
+        if rs.has_validation_errors():
+            return self.email_status_overview(rs)
+        code = self.coreproxy.mark_email_status(rs, address, status, notes)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/email_status_overview")
 
-    @access("core_admin", "ml_admin")
-    @REQUESTdata("address", "status")
+    @access("core_admin", "ml_admin", modi={"POST"})
+    @REQUESTdata("address")
     def delete_email_status(self, rs: RequestState, address: vtypes.Email) -> Response:
         """Remove the status entry of an email address."""
-        xxx
-        return self.redirect()
+        if rs.has_validation_errors():
+            return self.email_status_overview(rs)
+        code = self.coreproxy.remove_email_status(rs, address)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/email_status_overview")
 
     @access("persona")
     @REQUESTdata("to")

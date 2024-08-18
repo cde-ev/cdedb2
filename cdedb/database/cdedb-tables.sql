@@ -453,8 +453,9 @@ CREATE TABLE  core.email_states (
         status                  integer NOT NULL,
         notes                   varchar
 );
-GRANT SELECT, DELETE on core.email_states TO cdb_persona;
-GRANT INSERT, UPDATE (notes) ON core.email_states TO cdb_admin;
+GRANT SELECT on core.email_states TO cdb_persona;
+GRANT SELECT, UPDATE ON core.email_states_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON core.email_states TO cdb_admin;
 
 CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,

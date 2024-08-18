@@ -16,8 +16,9 @@
     {% call util.bootstrap_panel(title=gettext("Add defect email address"), icon='at',
                                  anid="adminshowuser-box") %}
         <form action="{{ cdedblink('core/set_email_status') }}" method="POST" id="setemailstatusform">
+            {{ util.anti_csrf_token('core/set_email_status') }}
             {{ util.form_input_text('address', gettext('Email address')) }}
-            {{ util.form_input_textarea('address', gettext('Notes')) }}
+            {{ util.form_input_textarea('notes', gettext('Notes')) }}
             {{ util.input_hidden('status', value=enums['EmailStatus'].defect.value) }}
             {{ util.form_input_submit(gettext('Add')) }}
         </form>
@@ -42,7 +43,7 @@
                     <br />
                     <form action="{{ cdedblink('core/delete_email_status') }}"
                               method="POST"
-                              id="modifyemailstatus{{ 'xxx' }}"
+                              id="modifyemailstatus{{ get_hash(address.encode('utf-8')) }}"
                               class="hide-hover display-inline">
                         {{ util.anti_csrf_token('core/delete_email_status') }}
                         {{ util.input_hidden(name="address", value=address) }}
@@ -54,9 +55,6 @@
                     {% if infos.notes or infos.user_id or infos.subscriber_id %}
                         <details>
                             <summary>{% trans %}Details{% endtrans %}</summary>
-                            {% if infos.notes %}
-                                <span class="text-muted small">{{ infos.notes }}</span>
-                            {% endif %}
                             {% if infos.user_id or infos.subscriber_id %}
                                 <ul>
                                     {% if infos.user_id %}
@@ -75,6 +73,9 @@
                                         </li>
                                     {% endif %}
                                 </ul>
+                            {% endif %}
+                            {% if infos.notes %}
+                                <span class="text-muted small">{{ infos.notes }}</span>
                             {% endif %}
                         </details>
                     {% endif %}

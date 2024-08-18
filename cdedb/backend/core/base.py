@@ -3001,7 +3001,7 @@ class CoreBaseBackend(AbstractBackend):
             code = self.sql_insert(
                 rs, EmailAddressReport.database_table,
                 {"address": address, "status": status, "notes": notes},
-                update_on_conflict=True)
+                update_on_conflict=True, conflict_target='address')
             change_note = f"'{address}' als {status} markiert"
             self.core_log(rs, const.CoreLogCodes.modify_email_status,
                           change_note=change_note)
