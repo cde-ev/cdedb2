@@ -193,8 +193,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if success and send_notifications:
                 persona_amounts = {e['persona_id']: e['amount'] for e in data}
                 personas = self.coreproxy.get_personas(rs, persona_amounts)
-                subject = "Überweisung für {} eingetroffen".format(
-                    rs.ambience['event'].title)
+                subject = f"Überweisung für {rs.ambience['event'].title} eingetroffen"
                 for persona in personas.values():
                     headers: Headers = {
                         'To': (persona['username'],),

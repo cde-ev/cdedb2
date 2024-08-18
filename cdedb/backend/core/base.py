@@ -1857,9 +1857,7 @@ class CoreBaseBackend(AbstractBackend):
             if not newest:
                 # TODO allow this?
                 raise ArchiveError(n_("Cannot purge silently."))
-            query = glue(
-                "DELETE FROM core.changelog",
-                "WHERE persona_id = %s AND NOT id = %s")
+            query = "DELETE FROM core.changelog WHERE persona_id = %s AND NOT id = %s"
             ret *= self.query_exec(rs, query, (persona_id, newest['id']))
             #
             # 4. Finish

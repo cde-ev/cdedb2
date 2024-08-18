@@ -217,11 +217,10 @@ class CdEBaseBackend(AbstractBackend):
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
-            # frustrating for the users -- hence some extra error handling
-            # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
+            # frustrating for the users -- hence some extra error handling here.
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
+                " <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
@@ -540,9 +539,8 @@ class CdEBaseBackend(AbstractBackend):
             # an opaque error (as would happen without this) would be rather
             # frustrating for the users -- hence some extra error handling
             # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation",
-                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during batch creation <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

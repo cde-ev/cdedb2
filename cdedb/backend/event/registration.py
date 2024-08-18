@@ -1764,9 +1764,9 @@ class EventRegistrationBackend(EventBaseBackend):
             # an opaque error (as would happen without this) would be rather
             # frustrating for the users -- hence some extra error handling
             # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
+                " <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

@@ -729,11 +729,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        csp_header_template = glue(
-            "default-src 'self';",
-            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
-            "style-src 'self' 'unsafe-inline';",
-            "img-src *")
+        csp_header_template = (
+            "default-src 'self'; script-src 'unsafe-inline' 'self' https: 'nonce-{}';"
+            " style-src 'self' 'unsafe-inline'; img-src *")
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
@@ -2338,9 +2336,9 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list
     p = persona
     name = "{} {}".format(p['given_names'], p['family_name'])
     if p['title']:
-        name = glue(p['title'], name)
+        name = f"{p['title']} {name}"
     if p['name_supplement']:
-        name = glue(name, p['name_supplement'])
+        name = f"{name} {p['name_supplement']}"
     ret = [name]
     if p['address_supplement']:
         ret.append(p['address_supplement'])
