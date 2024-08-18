@@ -32,7 +32,7 @@
     </p>
     {% if open_events %}
         <ul class="spaced" id="current-events">
-            {% for event in open_events.values()|sort %}
+            {% for event in open_events.values()|sort if event.is_visible_for(user, events_registration.get(event.id) is not none) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
@@ -65,8 +65,11 @@
                     <br />
                     {% if "event" in user.roles and events_registration[event.id] is not none %}
                         {% set link=cdedblink('event/registration_status', {'event_id': event.id}) %}
-                        {% if events_registration[event.id] %}
-                            ({% trans registered=util.href(link, gettext("registered")) -%}
+                        {% if not event.is_visible %}
+                            ({% trans -%}
+                                event hidden,&#32;
+                            {% endtrans %}
+                            {% trans registered=util.href(link, gettext("registered")) -%}
                                 already {{ registered }}
                             {% endtrans %}
                             {%- if events_payment_pending[event.id] -%}
@@ -143,7 +146,7 @@
     {% if other_events %}
         {{ util.h(n_("Other Events")) }}
         <ul class="spaced" id="other-events">
-            {% for event in other_events.values()|sort %}
+            {% for event in other_events.values()|sort if event.is_visible_for(user, events_registration.get(event.id) is not none) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />

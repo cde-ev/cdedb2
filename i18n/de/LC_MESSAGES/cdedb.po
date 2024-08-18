@@ -13458,6 +13458,10 @@ msgstr "Veranstaltung findet gerade statt."
 msgid "Event is past."
 msgstr "Veranstaltung ist vorbei"
 
+#: cdedb/frontend/templates/web/event/event/index.tmpl:69
+msgid "event hidden,&#32;"
+msgstr "Veranstaltung versteckt,&#32;"
+
 #: cdedb/frontend/templates/web/event/event/index.tmpl:90
 #: cdedb/frontend/templates/web/event/event/index.tmpl:103
 #, python-format

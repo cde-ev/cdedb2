@@ -362,9 +362,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             sub_address = self.mlproxy.get_subscription_address(
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
-        event = None
+        event = is_registered = None
         if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
+            is_registered = bool(self.eventproxy.list_registrations(
+                rs, ml.event_id, rs.user.persona_id))
 
         assembly = None
         if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
@@ -381,9 +383,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                 personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
 
         return self.render(rs, "show_mailinglist", {
-            'sub_address': sub_address, 'state': state,
-            'subscription_policy': subscription_policy,
-            'event': event, 'assembly': assembly, 'moderators': moderators})
+            'sub_address': sub_address, 'state': state, 'moderators': moderators,
+            'subscription_policy': subscription_policy, 'assembly': assembly,
+            'event': event, 'is_registered': is_registered})
 
     @access("ml")
     @mailinglist_guard()

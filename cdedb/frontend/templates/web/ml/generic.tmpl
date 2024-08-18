@@ -27,7 +27,8 @@
         <div class="col-sm-5 small">
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
-                {%- if events[ml['event_id']].is_visible_for(user) -%}
+                {# No special casing on admin page based on personal state #}
+                {%- if events[ml['event_id']].is_visible_for(user, is_registered=False) -%}
                     {% set link = util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
                                             events[ml['event_id']]['title'], icon='chalkboard-teacher') %}
                 {%- else -%}

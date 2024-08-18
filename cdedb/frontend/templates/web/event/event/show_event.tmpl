@@ -28,7 +28,8 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if "event" in user.roles %}
+    {# If non-privileged, only show description if logged in and event is set as visible #}
+    {% if "event" in user.roles and ambience['event'].is_visible_for(user, is_registered=False) %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
     {% endif %}
 

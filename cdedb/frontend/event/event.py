@@ -50,10 +50,9 @@ class EventEventMixin(EventBaseFrontend):
     @access("anonymous")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
-        open_event_list = self.eventproxy.list_events(
-            rs, visible=True, current=True, archived=False)
+        open_event_list = self.eventproxy.list_events(rs, current=True, archived=False)
         other_event_list = self.eventproxy.list_events(
-            rs, visible=True, current=False, archived=False)
+            rs, current=False, archived=False)
         open_events = self.eventproxy.get_events(rs, open_event_list)
         other_events = self.eventproxy.get_events(
             rs, set(other_event_list) - set(rs.user.orga))
@@ -112,6 +111,8 @@ class EventEventMixin(EventBaseFrontend):
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'].as_dict())
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
+        is_registered = bool(self.eventproxy.list_registrations(
+            rs, event_id, rs.user.persona_id))
         if event_id in rs.user.orga or self.is_admin(rs):
             params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
             constraint_violations = self.get_constraint_violations(
@@ -120,7 +121,7 @@ class EventEventMixin(EventBaseFrontend):
             params['mec_violations'] = constraint_violations['mec_violations']
             params['ccs_violations'] = constraint_violations['ccs_violations']
             params['violation_severity'] = constraint_violations['max_severity']
-        elif not rs.ambience['event'].is_visible:
+        elif not rs.ambience['event'].is_visible_for(rs.user, is_registered):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
@@ -205,9 +206,9 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     def get_minor_form(self, rs: RequestState, event_id: int) -> Response:
         """Retrieve minor form."""
-        if not (rs.ambience['event'].is_visible
-                or event_id in rs.user.orga
-                or self.is_admin(rs)):
+        is_registered = bool(self.eventproxy.list_registrations(
+            rs, event_id, rs.user.persona_id))
+        if not (rs.ambience['event'].is_visible_for(rs.user, is_registered)):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(
