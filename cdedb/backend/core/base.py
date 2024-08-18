@@ -2955,7 +2955,11 @@ class CoreBaseBackend(AbstractBackend):
 
         if (not {"ml_admin", "core_admin"} & rs.user.roles
                 and persona_ids != {rs.user.persona_id}):
-            raise PrivilegeError
+            relative_admin = False
+            if len(persona_ids) == 1:
+                relative_admin = self.is_relative_admin(rs, unwrap(persona_ids))
+            if not relative_admin:
+                raise PrivilegeError
 
         # first, query core.personas
         query = """

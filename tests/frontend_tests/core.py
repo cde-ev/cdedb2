@@ -137,6 +137,7 @@ class TestCoreFrontend(FrontendTest):
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
+        defect_email = {"Defekte Email-Adressen"}
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
@@ -144,27 +145,27 @@ class TestCoreFrontend(FrontendTest):
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = pending | genesis | core_admin | meta_admin | log
+            out = pending | defect_email | genesis | core_admin | meta_admin | log
         # event admin (genesis, review)
         elif self.user_in('annika'):
             ins = everyone | genesis | pending
-            out = core_admin | meta_admin | log
+            out = core_admin | meta_admin | log | defect_email
         # ml admin (genesis)
         elif self.user_in('nina'):
-            ins = everyone | genesis
+            ins = everyone | genesis | defect_email
             out = pending | core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | pending | genesis | core_admin | log
+            ins = everyone | pending | genesis | core_admin | log | defect_email
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = pending | genesis | core_admin | log
+            out = pending | genesis | core_admin | log | defect_email
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = pending | genesis | core_admin | meta_admin
+            out = pending | genesis | core_admin | meta_admin | defect_email
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -959,7 +960,7 @@ class TestCoreFrontend(FrontendTest):
         for key, val in new_passwords.items():
             for i, u in enumerate(("anton", "berta", "emilia", "ferdinand")):
                 with self.subTest(u=u):
-                    self.setUp()
+                    self.setUp(prepsql="DELETE FROM core.email_states")
                     user = USER_DICT[u]
                     self.get('/')
                     self.traverse({'description': 'Passwort zurücksetzen'})
@@ -996,6 +997,7 @@ class TestCoreFrontend(FrontendTest):
                             "Das ist ähnlich zu einem häufig genutzten Passwort.",
                             notification="Passwort ist zu schwach.")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_repeated_password_reset(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT["berta"]
@@ -1031,6 +1033,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
                             div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_password_reset_username_change(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT['berta']
@@ -1193,6 +1196,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Viktor", div='query-result')
         self.assertPresence("Vera", div='query-result')
 
+    @prepsql("DELETE FROM core.email_states")
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]

@@ -655,8 +655,11 @@ class CoreBaseFrontend(AbstractFrontend):
         email_report = None
         if (rs.user.persona_id == persona_id
                 or ({"core_admin", "ml_admin"} & rs.user.roles)):
-            tmp = self.coreproxy.get_email_reports(rs, [persona_id])
-            email_report = tmp.get(data['username'])
+            # the username may be masked by admin views, but then we also
+            # don't need the email report
+            if 'username' in data:
+                tmp = self.coreproxy.get_email_reports(rs, [persona_id])
+                email_report = tmp.get(data['username'])
 
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me and "cde" not in access_levels
