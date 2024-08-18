@@ -43,10 +43,10 @@
                 Select a custom data field to set individual values for that field for the following entities:
             {% endtrans %}
         </p>
-        {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, nulloption="", small=True) }}
+        {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, nulloption="") }}
         {{ util.input_hidden(name="ids") }}
         {{ util.input_hidden(name="kind") }}
-        {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink(cancellink), icon="chevron-right", small=True) }}
+        {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink(cancellink), icon="chevron-right") }}
     </form>
 
     {% if ordered %}

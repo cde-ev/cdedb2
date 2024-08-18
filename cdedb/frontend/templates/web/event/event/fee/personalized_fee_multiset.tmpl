@@ -94,10 +94,10 @@
                 {% endtrans %}
             </p>
             {{ util.form_input_select("fee_id", label=gettext("Personalized Fee"), nulloption="",
-                                      entries=fee_titles.items(), small=True) }}
+                                      entries=fee_titles.items()) }}
             {{ util.input_hidden(name="registration_ids") }}
             {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("event/fee_summary"),
-                                      icon="chevron-right", small=True) }}
+                                      icon="chevron-right") }}
         </form>
         {% if registrations %}
             <h4 class="mosp">
