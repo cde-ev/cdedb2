@@ -589,6 +589,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if attachment_data:
             attachment_hash = store.store(attachment_data)
         elif attachment_hash:
+            # We also end up here and keep the cached attachment if someone tried to
+            # replace the cached attachment with an invalid attachment. In this case,
+            # a validation error will prevent the cached attachment to be used outright.
             attachment_stored = store.is_available(attachment_hash)
             if not attachment_stored:
                 attachment_hash = None
