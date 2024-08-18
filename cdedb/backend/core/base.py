@@ -2904,7 +2904,7 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self.general_query(rs, query)
 
-    @access("core_admin", "ml_admin")
+    @access("ml")
     def list_email_states(
             self, rs: RequestState,
             states: Optional[Collection[const.EmailStatus]] = None
@@ -2915,7 +2915,7 @@ class CoreBaseBackend(AbstractBackend):
 
         :param states: Restrict to addresses with one of these states.
         """
-        query = "SELECT address, status FROM core.email_status"
+        query = "SELECT address, status FROM core.email_states"
         params = tuple()
         if states:
             query += " WHERE status = ANY(%s)"
@@ -2924,7 +2924,7 @@ class CoreBaseBackend(AbstractBackend):
         return {e['address']: e['status'] for e in data}
 
     @access("ml")
-    def get_defect_addresses(
+    def get_defect_address_reports(
             self, rs: RequestState, persona_ids: Optional[Collection[vtypes.ID]] = None,
     ) -> dict[str, EmailAddressReport]:
         # Input validation and permission checks are delegated
@@ -3001,7 +3001,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs, EmailAddressReport.database_table,
                 {"address": address, "status": status, "notes": notes},
                 update_on_conflict=True, conflict_target='address')
-            change_note = f"'{address}' als {status} markiert"
+            change_note = f"'{address}' als '{status.name}' markiert"
             self.core_log(rs, const.CoreLogCodes.modify_email_status,
                           change_note=change_note)
             return code

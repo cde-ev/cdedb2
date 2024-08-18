@@ -726,7 +726,7 @@ class CoreBaseFrontend(AbstractFrontend):
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
         mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
-        defect_addresses = self.coreproxy.get_defect_addresses(rs, [persona_id])
+        defect_addresses = self.coreproxy.get_defect_address_reports(rs, [persona_id])
 
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)

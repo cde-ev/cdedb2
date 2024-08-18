@@ -380,10 +380,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             personas[anid] for anid in xsorted(
                 personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
 
+        email_report = None
+        if state and state.is_subscribed():
+            tmp = self.coreproxy.get_email_reports(rs, [rs.user.persona_id])
+            email_report = tmp.get(sub_address or rs.user.username)
+
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
             'subscription_policy': subscription_policy,
-            'event': event, 'assembly': assembly, 'moderators': moderators})
+            'event': event, 'assembly': assembly, 'moderators': moderators,
+            'email_report': email_report})
 
     @access("ml")
     @mailinglist_guard()
