@@ -2317,6 +2317,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
+        self.assertNoLink('/db/core/genesis/attachment/')
         self.assertValidationError('attachment')
         f = self.response.forms['genesisform']
         f['notes'] = ""  # Do not send this to test upload permanance.

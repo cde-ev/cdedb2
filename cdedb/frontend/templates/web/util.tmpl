@@ -473,7 +473,7 @@
 {% macro form_input_attachment(link, info='', displayerrors=True, readonly=False, accept=none, anid=none, aclass=none,
         small=False, horizontal=True) %}
     {% set label = gettext("Attachment") %}
-    {% if values['attachment_hash'] %}
+    {% if values.get('attachment_hash') %}
         {% set label = gettext("New Attachment") %}
         {{ util.input_hidden(name="attachment_hash") }}
         {{ util.input_hidden(name="attachment_filename") }}
