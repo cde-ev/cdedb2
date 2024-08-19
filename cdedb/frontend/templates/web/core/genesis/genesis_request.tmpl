@@ -78,19 +78,10 @@
                                       defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
 
             {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
-            {% if values["attachment_hash"] %}
-                {{ util.input_hidden(name="attachment_hash") }}
-                {{ util.input_hidden(name="attachment_filename") }}
-                {{ util.form_input_static(label=gettext("Attachment"), value=values['attachment_filename'], small=True) }}
-                {% set attachment_info = gettext("We already saved your uploaded file, but you can provide a different file instead.") %}
-                {{ util.form_input_file(name="attachment", label=gettext("New Attachment"), small=True, accept="text/*,application/pdf",
-                                        aclass="genesis-realm-specific", info=attachment_info + attachment_restrictions) }}
-            {% else %}
-                {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
-                {{ util.form_input_file(name="attachment", label=gettext("Attachment"), small=True, accept="text/*,application/pdf",
-                                        aclass="genesis-realm-specific", info=attachment_info + attachment_restrictions) }}
-            {% endif %}
-
+            {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
+            {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash')}),
+                                          small=True, accept="text/*,application/pdf", aclass="genesis-realm-specific",
+                                          info=attachment_info + attachment_restrictions) }}
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');

@@ -1817,6 +1817,32 @@ class TestCoreFrontend(FrontendTest):
 
         _reset()
         _berta_change_profile()
+        with self.switch_user("berta"):
+            # Second edit: Change information which requires no review
+            self.traverse("Meine Daten", "Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['affiliation'] = "Jederfrau"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Die Änderung wartet auf Bestätigung.",
+                                div='notifications')
+            self.assertPresence(self.user['family_name'],
+                                div='personal-information')
+            self.assertPresence("Jedermann", div='additional')
+            self.assertNonPresence("Jederfrau")
+            self.assertNonPresence('Ganondorf')
+            # Third edit: Reset information which require review
+            self.traverse("Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['family_name'] = "Beispiel"
+            self.submit(f)
+            # Result: No review necessary
+            self.assertPresence("Beispiel", div='personal-information')
+            self.assertNonPresence("Jedermann")
+            self.assertPresence("Jederfrau", div='additional')
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        _berta_change_profile()
         _quintus_displace_change("Ganondorf")
         self.assertTitle("Bertå Ganondorf")
         self.assertNonPresence("Beispiel", div='personal-information')
@@ -1852,7 +1878,22 @@ class TestCoreFrontend(FrontendTest):
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.PersonaChangeStati.committed.value,
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': 17,
                     'submitted_by': 2,
                 },
@@ -2291,6 +2332,10 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
+        saved_response = self.response
+        self.traverse("my_participation_certificate.pdf")
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = saved_response
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
         f['birthday'] = ""

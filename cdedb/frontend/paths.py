@@ -541,10 +541,16 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/stats", methods=_GET, endpoint="fee_stats"),
                     rule("/add", methods=_GET, endpoint="configure_fee_form"),
                     rule("/add", methods=_POST, endpoint="configure_fee"),
+                    rule("/set", methods=_GET,
+                         endpoint="personalized_fee_multiset_form"),
                     sub('/<int:fee_id>', (
                         rule("/change", methods=_GET, endpoint="configure_fee_form"),
                         rule("/change", methods=_POST, endpoint="configure_fee"),
                         rule("/delete", methods=_POST, endpoint="delete_fee"),
+                        rule("/set", methods=_GET,
+                             endpoint="personalized_fee_multiset_form"),
+                        rule("/set", methods=_POST,
+                             endpoint="personalized_fee_multiset"),
                     )),
                 )),
                 sub('/part', (
@@ -655,6 +661,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         sub('/fee', (
                             rule("/summary", methods=_GET,
                                  endpoint="show_registration_fee"),
+                            rule("/add", methods=_GET,
+                                 endpoint="add_new_personalized_fee_form"),
+                            rule("/add", methods=_POST,
+                                 endpoint="add_new_personalized_fee"),
                             sub('/<int:fee_id>', (
                                 rule('/add', methods=_POST,
                                      endpoint="add_personalized_fee"),
@@ -716,16 +726,16 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 )),
                 sub('/field', (
                     rule("/setselect", methods=_GET,
-                         endpoint="field_set_select"),
+                         endpoint="field_multiset_select"),
                     rule("/summary", methods=_GET,
                          endpoint="field_summary_form"),
                     rule("/summary", methods=_POST,
                          endpoint="field_summary"),
                     sub('/<int:field_id>', (
                         rule("/set", methods=_GET,
-                             endpoint="field_set_form"),
+                             endpoint="field_multiset_form"),
                         rule("/set", methods=_POST,
-                             endpoint="field_set"),
+                             endpoint="field_multiset"),
                     )),
                 )),
             )),
@@ -783,6 +793,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="add_attachment_form"),
                     rule("/add", methods=_POST,
                          endpoint="add_attachment"),
+                    rule("/cached/<filename:attachment_hash>", methods=_GET,
+                     endpoint="get_cached_attachment"),
                     sub("/<int:attachment_id>", (
                         rule("/latest", methods=_GET,
                              endpoint="get_attachment"),

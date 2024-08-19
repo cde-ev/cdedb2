@@ -1433,6 +1433,7 @@
             "iban": "DE26370205000008068900",
             "shortname": "TestAka",
             "use_additional_questionnaire": false,
+            "notify_on_registration": -1,
             "is_archived": false,
             "description": "Everybody come!",
             "website_url": "https://www.cde-ev.de/",

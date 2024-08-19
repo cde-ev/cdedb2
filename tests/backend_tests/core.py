@@ -172,15 +172,17 @@ class TestCoreBackend(BackendTest):
         other_key = cast(RequestState, self.core.login(
             ANONYMOUS, other_user["username"], other_user["password"], IP))
         self.assertIsNotNone(other_key)
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
         self.assertLess(
-            0, self.core.change_foto(other_key, other_user["id"], new_foto))
+            0, self.core.change_foto(other_key, other_user["id"], new_hash))
 
         # Invalidate the other users password and session.
         self.assertLess(
             0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
-            self.core.change_foto(other_key, other_user["id"], new_foto)
+            new_hash = self.core.get_foto_store(self.key).store(new_foto)
+            self.core.change_foto(other_key, other_user["id"], new_hash)
         self.assertIsNone(self.login(other_user))
 
     @as_users("anton", "berta", "janis")
@@ -221,10 +223,12 @@ class TestCoreBackend(BackendTest):
     def test_set_foto(self) -> None:
         new_foto = create_mock_image('png')
         persona_id = 2
-        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_foto))
+        new_hash = self.core.get_foto_store(self.key).store(new_foto)
+        self.assertLess(0, self.core.change_foto(self.key, persona_id, new_hash))
         cde_user = self.core.get_cde_user(self.key, persona_id)
         self.assertEqual(get_hash(new_foto), cde_user['foto'])
-        self.assertEqual(new_foto, self.core.get_foto(self.key, cde_user['foto']))
+        self.assertEqual(new_foto, self.core.get_foto_store(self.key).get(
+            cde_user['foto']))
         self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
         self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
 
@@ -870,6 +874,7 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(expectation, value)
 
+    @storage
     @as_users("vera")
     def test_genesis_cde(self) -> None:
         attachment_hash = "really_cool_filename"
@@ -893,13 +898,17 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        self.assertFalse(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
+        with self.assertRaises(RuntimeError) as e:
+            self.core.genesis_request(ANONYMOUS, data)
+        self.assertEqual("File has been lost.", str(e.exception))
+        # pylint: disable=line-too-long
+        attachment_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
+        attachment = attachment_content.encode('ascii')
+        data['attachment_hash'] = self.core.get_genesis_attachment_store(
+            self.key).store(attachment)
         case_id = self.core.genesis_request(ANONYMOUS, data)
-        self.assertTrue(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
         assert case_id is not None
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
@@ -975,8 +984,6 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
-        self.assertFalse(self.core.genesis_attachment_usage(
-            self.key, attachment_hash))
 
     @storage
     def test_genesis_attachments(self) -> None:
@@ -985,13 +992,13 @@ class TestCoreBackend(BackendTest):
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
         self.assertEqual(
-            pdfhash, self.core.genesis_set_attachment(self.key, pdfdata))
+            pdfhash, self.core.get_genesis_attachment_store(self.key).store(pdfdata))
         with self.assertRaises(PrivilegeError):
-            self.core.genesis_attachment_usage(self.key, pdfhash)
+            self.core.get_genesis_attachment_usage(self.key, pdfhash)
         self.login(USER_DICT["anton"])
-        self.assertEqual(
-            0, self.core.genesis_attachment_usage(self.key, pdfhash))
-        self.assertEqual(1, self.core.genesis_forget_attachments(self.key))
+        self.assertEqual(0, self.core.get_genesis_attachment_usage(self.key, pdfhash))
+        self.assertEqual(1, self.core.get_genesis_attachment_store(self.key).forget(
+            self.key, self.core.get_genesis_attachment_usage))
 
     def test_genesis_verify_multiple(self) -> None:
         self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))

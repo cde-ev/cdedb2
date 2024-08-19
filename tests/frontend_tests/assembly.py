@@ -13,7 +13,8 @@ import freezegun
 import webtest
 
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, CdEDBObject, NearlyNow, now,
+    ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, IGNORE_WARNINGS_NAME, CdEDBObject,
+    NearlyNow, now,
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
@@ -460,6 +461,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # test deletion of other created assembly wtih some potential blockers
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             attachment = datafile.read()
+        with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
+            redundant_attachment = datafile.read()
         bdata = {
             'title': 'Müssen wir wirklich regeln...',
             'vote_begin': "2222-12-12 00:00:00",
@@ -478,10 +481,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse("Dateien", "Datei hinzufügen")
         f = self.response.forms['addattachmentform']
         f['title'] = "Vorläufige Beschlussvorlage"
-        f['attachment'] = webtest.Upload("form", attachment, "application/octet-stream")
+        f['attachment'] = webtest.Upload("kandidaten", redundant_attachment,
+                                         "application/octet-stream")
         f['filename'] = "beschluss.pdf"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Datei wird bereits für anderen Anhang verwendet.")
+        f = self.response.forms['addattachmentform']
+        f['attachment'] = webtest.Upload("form", attachment, "application/octet-stream")
         self.submit(f)
         self.assertPresence("Vorläufige Beschlussvorlage")
+        self.assertPresence("beschluss.pdf")
         # Make sure assemblies with attendees can be deleted
         with self.switch_user("ferdinand"):
             self.traverse("Versammlungen", "Drittes CdE-Konzil")
@@ -748,6 +757,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['title'] = "Satzung mit weniger Paragrafen"
             f['attachment'] = webtest.Upload("kurz.pdf", attachment,
                                              "application/octet-stream")
+            self.submit(f, check_notification=False)
+            self.assertPresence("Datei wird bereits für anderen Anhang verwendet")
+            f = self.response.forms['addattachmentform']
+            f[IGNORE_WARNINGS_NAME].checked = True
             self.submit(f)
 
             # regression test for #2310
@@ -1235,7 +1248,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(data, self.response.body)
         self.response = saved_response
 
-        # Add a new version and check prefilling works properly
+        # Add a new version and check prefilling and validation work properly
         self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
         self.assertNonPresence("Eine verknüpfte Abstimmung wurde bereits gesperrt",
                                div='static-notifications', check_div=True)
@@ -1250,7 +1263,29 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['authors'] = "Der Vorstand"
         f['filename'] = ""
         f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
+        self.submit(f, check_notification=False)
+        self.assertPresence("Datei bereits für frühere Version hinterlegt.")
+        f = self.response.forms['configureattachmentversionform']
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
+        self.assertTitle("Dateien (Internationaler Kongress)")
+
+        # Check global uniqueness check works
+        with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
+            redundant_attachment = datafile.read()
+        self.traverse({"href": "/assembly/assembly/1/attachment/1001/add"})
+        f = self.response.forms['configureattachmentversionform']
+        f['attachment'] = webtest.Upload("form.pdf", redundant_attachment,
+                                         "application/octet-stream")
+        self.submit(f, check_notification=False)
+        self.assertPresence("Datei wird bereits für anderen Anhang verwendet.")
+        f['attachment'] = webtest.Upload("picutre.jpg", redundant_attachment,
+                                         "application/octet-stream")
+        saved_response = self.response
+        self.traverse("form.pdf")
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.response = saved_response
+        self.traverse("Dateien")
 
         self.assertTitle("Dateien (Internationaler Kongress)")
         self.assertPresence(
@@ -1332,6 +1367,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['attachment'] = webtest.Upload("form.pdf", data,
                                              "application/octet-stream")
             f['ack_creation'] = True
+            self.submit(f, check_notification=False)
+            self.assertPresence("Datei bereits für frühere Version hinterlegt.")
+            f = self.response.forms['configureattachmentversionform']
+            f[IGNORE_WARNINGS_NAME].checked = True
             self.submit(f)
 
             # this version can not be changed or deleted

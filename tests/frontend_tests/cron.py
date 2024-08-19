@@ -9,10 +9,12 @@ import numbers
 import unittest.mock
 from typing import Any, Union, cast
 
+import freezegun
+
 import cdedb.database.constants as const
-from cdedb.common import RequestState, now
+from cdedb.common import CdEDBObject, RequestState, now
 from cdedb.common.sorting import xsorted
-from tests.common import CronTest, event_keeper, prepsql, storage
+from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});
@@ -442,6 +444,101 @@ class TestCron(CronTest):
         self.assertEqual(
             {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
             self.core.get_cron_store(RS, cronjob))
+
+    @prepsql(f"UPDATE event.events SET notify_on_registration ="
+             f" {const.NotifyOnRegistration.hourly.value}")
+    def test_notify_on_registration(self) -> None:
+        cronjob = "notify_on_registration"
+
+        base_time = now().replace(microsecond=0) + datetime.timedelta(seconds=5)
+        delta = datetime.timedelta(minutes=5)
+        with freezegun.freeze_time(base_time) as frozen_time:
+
+            self.execute(cronjob)
+            mail_expectation = ["notify_on_registration"]
+            store_expectation: CdEDBObject = {
+                'period': 0,
+                'timestamps': {
+                    "1": now().isoformat(),
+                    "2": now().isoformat(),
+                    "3": now().isoformat(),
+                    "4": now().isoformat(),
+                },
+            }
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+            self.assertEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+
+            frozen_time.tick(delta * 2)
+
+            execsql(f"UPDATE event.log SET ctime = '{base_time + delta}'")
+
+            for _ in range(const.NotifyOnRegistration.hourly - 1):
+                self.execute(cronjob)
+                self.assertEqual(
+                    mail_expectation,
+                    [mail.template for mail in self.mails],
+                )
+                store_expectation['period'] += 1
+                self.assertEqual(
+                    store_expectation,
+                    self.core.get_cron_store(RS, cronjob),
+                )
+
+                frozen_time.tick(delta)
+
+            self.execute(cronjob)
+
+            mail_expectation *= 2
+            store_expectation['period'] += 1
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+            self.assertNotEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+            store_expectation = {
+                'period': 4,
+                'timestamps': {
+                    "1": now().isoformat(),
+                    "2": now().isoformat(),
+                    "3": now().isoformat(),
+                    "4": now().isoformat(),
+                },
+            }
+            self.assertEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+
+    @storage
+    def test_forget_assembly_attachments(self) -> None:
+        self.execute('forget_assembly_attachments')
+        self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
+            self.get_sample_datum(
+                'assembly.attachment_versions', 4)['file_hash']))
+        execsql("UPDATE assembly.attachment_versions SET dtime = now() WHERE id = 4")
+        self.execute('forget_assembly_attachments')
+        self.assertFalse(self.assembly.get_attachment_store(RS).is_available(
+            self.get_sample_datum(
+                'assembly.attachment_versions', 4)['file_hash']))
+        versions = self.get_sample_data('assembly.attachment_versions')
+        for version in versions.values():
+            if version['dtime'] is None and version['id'] != 4:
+                self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
+                    version['file_hash']))
+
+    @storage
+    def test_forget_fotos(self) -> None:
+        # We just want to test that no exception is raised.
+        self.execute('forget_profile_fotos')
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")

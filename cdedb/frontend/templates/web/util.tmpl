@@ -368,14 +368,15 @@
 {% endmacro %}
 
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
-        horizontal=True, labelid=none, addon='', markdown=False, wide=False, errorname=none) %}
-    <div class="form-group {% if (errorname or name) in errors %}
-                               {% if is_warning(errorname or name) %}
-                                   has-warning
-                               {% else %}
-                                   has-error
-                               {% endif %}
-                           {% endif %}">
+        horizontal=True, labelid=none, addon='', markdown=False, wide=False, errorname=none, aclass='') %}
+    <div class="form-group {{ aclass }}
+            {% if (errorname or name) in errors %}
+               {% if is_warning(errorname or name) %}
+                   has-warning
+               {% else %}
+                   has-error
+               {% endif %}
+           {% endif %}">
         {%- if label %}
             <label{{ dict(
                 id=labelid,
@@ -441,10 +442,10 @@
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
-        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False) %}
+        aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='') %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
-                                markdown=markdown, errorname=errorname, wide=wide) %}
+                                markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
@@ -463,12 +464,27 @@
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept=none, anid=none,
-        aclass=none, small=False, horizontal=True) %}
+        aclass=none, small=False, horizontal=True, outerclass='') %}
     {%- set anid = anid or "input-file-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
         {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
 {%- endmacro %}
+
+{% macro form_input_attachment(link, info='', displayerrors=True, readonly=False, accept=none, anid=none, aclass=none,
+        small=False, horizontal=True) %}
+    {% set label = gettext("Attachment") %}
+    {% if 'attachment_hash' in values %}
+        {% set label = gettext("New Attachment") %}
+        {{ util.input_hidden(name="attachment_hash") }}
+        {{ util.input_hidden(name="attachment_filename") }}
+        {{ util.form_input_static(label=gettext("Attachment"),
+                                  value=util.href(link, values['attachment_filename'], icon="download"), small=small, displayerrors=True, errorname="cached_attachment",
+                                  info="We already saved your uploaded file, but you can provide a different file below.") }}
+    {% endif %}
+    {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal) }}
+{%- endmacro %}
+
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid=none, aclass='form-control', maxlength=none, rows=3,
                         arialabel=none, attributes='', actualreadonly=False) %}
@@ -489,9 +505,10 @@
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
         aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False, actualreadonly=False,
-        wide=False) %}
+        wide=False, outerclass='') %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown, wide=wide,
+                                aclass=outerclass) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                            actualreadonly=actualreadonly, aclass='form-control ' + (aclass or '')) }}
     {%- endcall %}
@@ -548,10 +565,12 @@
 {%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
-        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='') %}
+        actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='',
+        outerclass='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
+        {{ outerclass }}
         {{ ("has-warning" if is_warning(name) else "has-error") if name in errors }}
     ">
         <div{% if horizontal %} class="
@@ -571,9 +590,9 @@
     entries is of type [(str, str)]. #}
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', small=False, wide=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False, slice=1,
-        checkboxclass='') %}
+        checkboxclass='', outerclass='') %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, wide=wide) %}
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, wide=wide, aclass=outerclass) %}
         {{- input_checkboxes(name, entries, readonly=readonly, actualreadonly=actualreadonly, defaultvalue=defaultvalue,
                              radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort, slice=slice, checkboxclass='') }}
     {%- endcall %}
@@ -619,9 +638,9 @@
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False,
-        wide=False) %}
+        wide=False, outerclass='') %}
     {%- set anid = anid or "input-select-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, wide=wide, aclass=outerclass) %}
         {{- input_select(name, entries, readonly, actualreadonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
@@ -659,10 +678,11 @@
     {% endif %}
 {%- endmacro %}
 
-{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="", sort=False) %}
+{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False,
+       actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
+       attributes="", sort=False, outerclass='') %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
         {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
     {%- endcall %}
@@ -673,9 +693,9 @@
 {%- endmacro %}
 
 {% macro form_input_static(label="", info='', value='', anid=none, small=False, horizontal=True, aclass=none, icon=none,
-        name=none) %}
+        name=none, outerclass='', displayerrors=False, errorname=none) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, False, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
             {{ make_icon(icon) if icon }}
             {{- value -}}
@@ -707,12 +727,12 @@
 
 {% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
-        small=False, horizontal=True, title=none, info=none, wide=False) %}
+        small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
                                readonly=readonly, horizontal=horizontal, small=small) }}
     {% endif %}
-    <div class="form-group mosp">
+    <div class="form-group mosp {{ outerclass }}">
         <div{% if horizontal %} class="
             {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
         "{% endif %}>
@@ -736,8 +756,8 @@
  # ############################ #}
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
-        horizontal=True, attributes='') %}
-    <div class="form-group{{ " has-error" if name1 in errors or name2 in errors }}">
+        horizontal=True, attributes='', outerclass='') %}
+    <div class="form-group {{ outerclass }} {{ " has-error" if name1 in errors or name2 in errors }}">
         <label class="control-label{% if horizontal %} {{ "col-sm-2" if small else "col-sm-4" }}{% endif %}">
             {{- label -}}
         </label>

@@ -32,7 +32,7 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
     DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
-    cast_fields, glue, unwrap,
+    cast_fields, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -1642,16 +1642,17 @@ class EventRegistrationBackend(EventBaseBackend):
             )
             ret = self.query_exec(rs, *personalized_fee.get_query())
             self._update_registration_amount_owed(rs, registration_id)
-            change_note = event.fees[fee_id].title
-            if amount is None:
-                code = const.EventLogCodes.personalized_fee_amount_deleted
-            else:
-                code = const.EventLogCodes.personalized_fee_amount_set
-                change_note += f" ({money_filter(amount)})"
-            self.event_log(
-                rs, code=code, event_id=event_id, persona_id=persona_id,
-                change_note=change_note,
-            )
+            if ret:
+                change_note = event.fees[fee_id].title
+                if amount is None:
+                    code = const.EventLogCodes.personalized_fee_amount_deleted
+                else:
+                    code = const.EventLogCodes.personalized_fee_amount_set
+                    change_note += f" ({money_filter(amount)})"
+                self.event_log(
+                    rs, code=code, event_id=event_id, persona_id=persona_id,
+                    change_note=change_note,
+                )
             return ret
 
     @internal
@@ -1764,9 +1765,9 @@ class EventRegistrationBackend(EventBaseBackend):
             # an opaque error (as would happen without this) would be rather
             # frustrating for the users -- hence some extra error handling
             # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.error(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing"
+                " <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()

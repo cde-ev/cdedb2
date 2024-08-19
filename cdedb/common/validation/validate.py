@@ -2369,6 +2369,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
     'website_url': Optional[Url],
+    'notify_on_registration': const.NotifyOnRegistration,
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -4457,6 +4458,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
+    'file_hash': str,
 }
 
 

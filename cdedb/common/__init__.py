@@ -433,7 +433,7 @@ def glue(*args: str) -> str:
 
     It would be possible to use auto string concatenation as in ``("a
     string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we prefer this
+    careful to add boundary white space yourself, so we once preferred this
     explicit function.
     """
     return " ".join(args)

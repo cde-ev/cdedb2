@@ -32,15 +32,21 @@
         {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
         {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("event/field_set_select", {'kind': kind}), gettext("Set Field"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/field_multiset_select", {'kind': kind}), gettext("Set Field"), active=True) }}
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
-        {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, small=True) }}
+    <form action="{{ cdedblink('event/field_multiset_select') }}" method="GET" id="selectfieldform" class="form-horizontal">
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Select a custom data field to set individual values for that field for the following entities:
+            {% endtrans %}
+        </p>
+        {{ util.form_input_select("field_id", label=gettext("Field"), entries=fields, nulloption="") }}
         {{ util.input_hidden(name="ids") }}
         {{ util.input_hidden(name="kind") }}
-        {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink(cancellink), icon="chevron-right", small=True) }}
+        {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink(cancellink), icon="chevron-right") }}
     </form>
 
     {% if ordered %}
@@ -53,10 +59,17 @@
                 {% trans %}Lodgements to be changed{% endtrans %}
             {% endif %}
         </h4>
-        <ul>
-            {% for anid in ordered %}
-                <li>{{ labels[anid] }}</li>
+        <div class="row">
+            {% set slices = 1 if ordered|length <= 5 else (2 if ordered|length <= 10 else 3) %}
+            {% for list in ordered|slice(slices) %}
+                <div class="col-sm-{{ 12 // slices }}">
+                    <ul>
+                        {% for anid in list %}
+                            <li>{{ labels[anid] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% endif %}
 {% endblock %}
