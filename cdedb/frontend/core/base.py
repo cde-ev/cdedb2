@@ -1346,12 +1346,17 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
     @access("core_admin", "ml_admin")
-    @REQUESTdata("address")
+    @REQUESTdata("address", "notes")
     def email_status_overview(self, rs: RequestState,
-                              address: Optional[vtypes.Email] = None) -> Response:
-        """Present overview."""
+                              address: Optional[vtypes.Email] = None,
+                              notes: Optional[str] = None) -> Response:
+        """Present overview.
+
+        Take arguments to prefill the input mask.
+        """
         if rs.has_validation_errors():
             rs.values['address'] = None
+            rs.values['notes'] = None
         email_reports = self.coreproxy.get_email_reports(rs)
         persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
         personas = (self.coreproxy.get_personas(rs, persona_ids)

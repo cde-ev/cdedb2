@@ -12,7 +12,10 @@
 {% endblock %}
 
 {% block content %}
-    <div class="col-md-9 float-right">
+    <div class="col-md-3">
+    <!-- float next container to the right -->
+    </div>
+    <div class="col-md-9">
     {% call util.bootstrap_panel(title=gettext("Add defect email address"), icon='at',
                                  anid="adminshowuser-box") %}
         <form action="{{ cdedblink('core/set_email_status') }}" method="POST" class="form-horizontal"
@@ -29,8 +32,8 @@
         {% for status, email_reports in grouped_reports.items() | sort %}
             <h2>{{ gettext(status|string) }}</h2>
             {% if email_reports %}
-                {% for alist in email_reports.items() | slice(
-                        3 if email_reports|length > 10 else (2 if email_reports|length > 5 else 1)) %}
+                {% for alist in email_reports.items() | sort | slice(
+                        3 if email_reports|length > 5 else (2 if email_reports|length > 3 else 1)) %}
                     <div class="col-sm-4">
                         <ul class="nosp slim">
                             {% for address, infos in alist %}
@@ -48,18 +51,21 @@
                                         {% endif %}
                                     {% endif %}
                                     <br />
-                                    <form action="{{ cdedblink('core/delete_email_status') }}"
-                                              method="POST"
-                                              id="modifyemailstatus{{ get_hash(address.encode('utf-8')) }}"
-                                              class="hide-hover display-inline">
-                                        {{ util.anti_csrf_token('core/delete_email_status') }}
-                                        {{ util.input_hidden(name="address", value=address) }}
-                                        <div class="button-par">
-                                            {{ util.input_submit(label=gettext('Delete'), icon='trash-alt',
-                                                                 value='discard', name="action",
-                                                                 aclass=("btn btn-sm btn-danger")) }}
-                                        </div>
-                                    </form>
+                                    <div class="button-par">
+                                        {{ util.href(cdedblink('core/email_status_overview',
+                                                               params={"address": address, "notes": infos.notes}),
+                                                     gettext("Edit"), aclass="btn btn-sm btn-warning", icon="pen") }}
+                                        <form action="{{ cdedblink('core/delete_email_status') }}"
+                                                  method="POST"
+                                                  id="modifyemailstatus{{ get_hash(address.encode('utf-8')) }}"
+                                                  class="hide-hover display-inline">
+                                            {{ util.anti_csrf_token('core/delete_email_status') }}
+                                            {{ util.input_hidden(name="address", value=address) }}
+                                                {{ util.input_submit(label=gettext('Delete'), icon='trash-alt',
+                                                                     value='discard', name="action",
+                                                                     aclass=("btn btn-sm btn-danger")) }}
+                                        </form>
+                                    </div>
                                     {% if infos.notes or infos.user_id or infos.subscriber_id %}
                                         <details>
                                             <summary>{% trans %}Details{% endtrans %}</summary>
