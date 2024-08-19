@@ -143,14 +143,17 @@
             {{ otherwise }}
         {% endif %}
     {% else %}
-        {% if field['kind'] == enums['FieldDatatypes'].bool %}
+        {% set datatypes = enums['FieldDatatypes'] %}
+        {% if field['kind'] == datatypes.bool %}
             {{ util.deko_checkbox(checked=entry) }}
-        {% elif field['kind'] == enums['FieldDatatypes'].date %}
+        {% elif field['kind'] == datatypes.date %}
             {{ entry|date(lang=lang, passthrough=True) }}
-        {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
+        {% elif field['kind'] == datatypes.datetime %}
             {{ entry|datetime(lang=lang, passthrough=True) }}
-        {% elif field['kind'] == enums['FieldDatatypes'].float %}
+        {% elif field['kind'] in (datatypes.float, datatypes.non_negative_float) %}
             {{ entry|decimal(lang=lang) }}
+        {% elif field['kind'] == datatypes.phone %}
+            {{ util.tel_link(entry|phone) }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}

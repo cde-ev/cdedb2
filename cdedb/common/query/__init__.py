@@ -99,6 +99,7 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
+VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["str"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -407,8 +408,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
@@ -446,8 +447,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
@@ -502,8 +503,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
@@ -534,7 +535,7 @@ _QUERY_SPECS = {
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),
             "location,location2": QuerySpecEntry("str", n_("City")),
             "country,country2": QuerySpecEntry("str", n_("Country")),
-            "telephone,mobile": QuerySpecEntry("str", n_("Phone")),
+            "telephone,mobile": QuerySpecEntry("phone", n_("Phone")),
             "weblink,specialisation,affiliation,timeline,interests,free_form":
                 QuerySpecEntry("str", n_("Interests")),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
@@ -594,6 +595,7 @@ class QueryResultEntryFormat(enum.Enum):
     date = 20
     datetime = 21
     bool = 22
+    phone = 27
     enum = 30
 
 
@@ -742,6 +744,8 @@ class Query:
             return QueryResultEntryFormat.datetime
         if self.spec[field].type == "bool":
             return QueryResultEntryFormat.bool
+        if self.spec[field].type == "phone":
+            return QueryResultEntryFormat.phone
         if self.scope == QueryScope.registration:
             if field == "persona.id":
                 return QueryResultEntryFormat.persona
@@ -879,8 +883,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
         "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
-        "persona.telephone": QuerySpecEntry("str", n_("Phone")),
-        "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+        "persona.telephone": QuerySpecEntry("phone", n_("Phone")),
+        "persona.mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
         "persona.address": QuerySpecEntry("str", n_("Address")),
         "persona.address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
         "persona.postal_code": QuerySpecEntry("str", n_("ZIP")),

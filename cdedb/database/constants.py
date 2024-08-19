@@ -110,8 +110,6 @@ class FieldDatatypes(CdEIntEnum):
 
     @property
     def spec_type(self) -> builtins.str:
-        if self == FieldDatatypes.phone:
-            return 'str'
         if self == FieldDatatypes.non_negative_float:
             return 'float'
         if self == FieldDatatypes.non_negative_int:
