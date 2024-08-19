@@ -1785,7 +1785,7 @@ GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
 @_add_typed_validator
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, **kwargs: Any,
+    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
 ) -> GenesisCase:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1826,6 +1826,14 @@ def _genesis_case(
         postal_code = _german_postal_code(
             val['postal_code'], 'postal_code', aux=val.get('country', ""), **kwargs)
         val['postal_code'] = postal_code
+
+    if birthday := val.get('birthday'):
+        if (now().date() - birthday) < datetime.timedelta(days=365):
+            if not ignore_warnings:
+                raise ValidationSummary(ValidationWarning(
+                    'birthday',
+                    n_("Birthday was less than a year ago. Please check the birth year."),
+                ))
 
     return GenesisCase(val)
 
