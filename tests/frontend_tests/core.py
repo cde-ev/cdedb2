@@ -725,7 +725,7 @@ class TestCoreFrontend(FrontendTest):
             f[IGNORE_WARNINGS_NAME].checked = True
         if self.user_in("vera"):
             self.submit(f, check_notification=False)
-            msg = "Specifying an address is mandatory."
+            msg = "Die Angabe einer Adresse ist verpflichtend."
             self.assertValidationError('address', msg)
             self.assertValidationError('location', msg)
             f['address'] = "Hinter der Geheimtür 3"
