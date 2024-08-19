@@ -457,7 +457,7 @@ _QUERY_SPECS = {
             "country": QuerySpecEntry("enum_str", n_("Country")),
             "address2": QuerySpecEntry("str", n_("Address (2)")),
             "address_supplement2": QuerySpecEntry("str", n_("Address Supplement (2)")),
-            "show_address2": QuerySpecEntry("bool", n_("Address searchable (2)")),
+            "show_address2": QuerySpecEntry("bool", n_("Address (2) searchable")),
             "postal_code2": QuerySpecEntry("str", n_("ZIP (2)")),
             "location2": QuerySpecEntry("str", n_("City (2)")),
             "country2": QuerySpecEntry("enum_str", n_("Country (2)")),
