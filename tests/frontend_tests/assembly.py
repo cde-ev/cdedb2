@@ -1279,6 +1279,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                                          "application/octet-stream")
         self.submit(f, check_notification=False)
         self.assertPresence("Datei wird bereits für anderen Anhang verwendet.")
+        f['attachment'] = webtest.Upload("picutre.jpg", redundant_attachment,
+                                         "application/octet-stream")
         saved_response = self.response
         self.traverse("form.pdf")
         self.assertTrue(self.response.body.startswith(b"%PDF"))

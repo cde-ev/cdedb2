@@ -581,13 +581,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param attachment_hash: Hash to locate file uploaded within earlier request
         :param attachment_filename: Filename of file uploaded in earlier request
         """
-        attachment_data = None
+        attachment_data = new_filename = None
         if attachment:
             assert attachment.filename is not None
-            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
+            new_filename = pathlib.Path(attachment.filename).parts[-1]
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
             attachment_hash = store.store(attachment_data)
+            attachment_filename = new_filename
         elif attachment_hash:
             # We also end up here and keep the cached attachment if someone tried to
             # replace the cached attachment with an invalid attachment. In this case,
