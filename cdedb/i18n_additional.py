@@ -348,6 +348,11 @@ I18N_STRINGS = (
     n_("EventFeeType.instructor_donation"),
     n_("EventFeeType.other_donation"),
 
+    n_("NotifyOnRegistration.everytime"),
+    n_("NotifyOnRegistration.never"),
+    n_("NotifyOnRegistration.hourly"),
+    n_("NotifyOnRegistration.daily"),
+    n_("NotifyOnRegistration.weekly"),
     #
     # Query datatypes
     #

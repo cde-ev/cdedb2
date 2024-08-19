@@ -1,0 +1,34 @@
+Liebe Orgas,
+
+{% if event.notify_on_registration.send_on_register() -%}
+{{ persona_name(registrations[0]) }} hat sich gerade für eure Veranstaltung angemeldet.
+
+Hier könnt ihr die Anmeldung ansehen:
+{{ cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': registrations[0]['id']}) }}
+
+{% else -%}
+{% set timespan = {
+        NotifyOnRegistration.hourly: "In der letzten Stunde",
+        NotifyOnRegistration.daily: "In den letzten 24 Stunden",
+        NotifyOnRegistration.hourly: "In den letzten sieben Tagen",
+    }[event.notify_on_registration]
+-%}
+{{ timespan }} {% if registrations|length > 1 -%}
+haben sich folgende Personen
+{%- else -%}
+hat sich folgende Person
+{%- endif %} für eure Veranstaltung angemeldet:
+
+{% for reg in registrations -%}
+    - {{ persona_name(reg) }}
+{% endfor %}
+
+Hier könnt ihr diese Anmeldungen ansehen:
+{{ cdedblink(query.scope.get_target(), serialized_query) }}
+
+{%- endif %}
+
+
+Viele Grüße
+
+Die Datenbank
