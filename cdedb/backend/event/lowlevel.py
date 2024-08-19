@@ -12,6 +12,8 @@ from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Callable, Optional, Protocol
 
+import phonenumbers
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
@@ -393,7 +395,7 @@ class EventLowLevelBackend(AbstractBackend):
                 continue
             try:
                 new_value = casters[new_kind](value)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, phonenumbers.NumberParseException):
                 new_value = None
             fdata[field_data['field_name']] = new_value
             new = {

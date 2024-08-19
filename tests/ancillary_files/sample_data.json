@@ -5902,6 +5902,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "lodge": "015112345678",
                 "is_child": false,
                 "brings_balls": true,
                 "transportation": "pedes",

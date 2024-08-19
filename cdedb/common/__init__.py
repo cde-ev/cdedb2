@@ -1458,6 +1458,8 @@ def parse_datetime(
 
 
 def parse_phone(val: str) -> str:
+    # This kind of duplicates the phone validator, because our needs at error handling
+    # are very different.
     phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
     # handle the phone number as normalized string internally
     return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)

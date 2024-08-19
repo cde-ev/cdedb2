@@ -730,7 +730,7 @@ def _float(
 
 @_add_typed_validator
 def _non_negative_float(
-    val: Any, argname: str = None, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
 ) -> NonNegativeFloat:
     val = _float(val, argname, **kwargs)
     if val < 0:

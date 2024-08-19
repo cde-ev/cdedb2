@@ -1101,6 +1101,19 @@ etc;anything else""", f['entries_2'].value)
         f['lodge_field_id'] = ''
         self.submit(f)
 
+
+        # Change datatype of "lodge" fiel to phone number and check those are preserved
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['kind_3'] = const.FieldDatatypes.phone
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_lodge'].checked = True
+        self.submit(f)
+        self.assertPresence("+49 1511 2345678")
+
         # Change datatype of "transportation" field to datetime and delete
         # options, delete and recreate "lodge" field with int type.
         self.get("/event/event/1/field/summary")
