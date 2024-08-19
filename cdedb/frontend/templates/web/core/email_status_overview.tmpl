@@ -30,7 +30,7 @@
     </div>
     <div class="col-md-12">
         {% for status, email_reports in grouped_reports.items() | sort %}
-            <h2>{{ gettext(status|string) }}</h2>
+            <h2>{{ gettext(status|string) }} ({{email_reports | length }})</h2>
             {% if email_reports %}
                 {% for alist in email_reports.items() | sort | slice(
                         3 if email_reports|length > 5 else (2 if email_reports|length > 3 else 1)) %}
@@ -57,7 +57,7 @@
                                                      gettext("Edit"), aclass="btn btn-sm btn-warning", icon="pen") }}
                                         <form action="{{ cdedblink('core/delete_email_status') }}"
                                                   method="POST"
-                                                  id="modifyemailstatus{{ get_hash(address.encode('utf-8')) }}"
+                                                  id="deleteemailstatus{{ get_hash(address.encode('utf-8')) }}"
                                                   class="hide-hover display-inline">
                                             {{ util.anti_csrf_token('core/delete_email_status') }}
                                             {{ util.input_hidden(name="address", value=address) }}

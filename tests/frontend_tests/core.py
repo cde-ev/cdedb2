@@ -3298,3 +3298,53 @@ LG Emilia
                 log_expectation, realm="core",
                 offset=len(self.get_sample_data('core.log')),
             )
+
+    @as_users("vera", "nina")
+    def test_defect_email_overview(self) -> None:
+        self.traverse({'description': 'Defekte Email-Adressen'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("anton@example.cde")
+        self.assertPresence("berta@example.cde")
+        self.assertPresence("new-berta@example.cde")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+
+        f = self.response.forms['setemailstatusform']
+        f['address'] = 'charly@example.cde'
+        f['notes'] = 'Totale Verstopfung'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertPresence("Totale Verstopfung")
+
+        self.traverse({'description': 'Bearbeiten', 'index': 1})
+        f = self.response.forms['setemailstatusform']
+        f['notes'] = 'Gesperrt wegen Entstehung eines schwarzen Lochs'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+        self.assertPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+        formid = f'deleteemailstatus{get_hash(b"charly@example.cde")}'
+        f = self.response.forms[formid]
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+    @as_users("vera", "nina")
+    def test_defect_email_roster(self) -> None:
+        pass
+
+    @as_users("vera", "nina")
+    def test_defect_email_profile(self) -> None:
+        pass
+
+    @as_users("vera", "nina")
+    def test_defect_email_nosend(self) -> None:
+        pass
+
+    @as_users("vera", "nina")
+    def test_defect_email_mailman(self) -> None:
+        pass
