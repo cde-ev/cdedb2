@@ -444,6 +444,8 @@ class CdEBaseBackend(AbstractBackend):
                     'pronouns_nametag': False,
                     'pronouns_profile': False,
                     'id': persona_id,
+                    'show_address': True,
+                    'show_address2': True,
                 }
                 # This applies a part of the newly imported data necessary for realm
                 # transition. The remaining data will be updated later.
