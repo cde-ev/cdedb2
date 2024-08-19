@@ -963,7 +963,7 @@ class FrontendTest(BackendTest):
             for file in folder.iterdir():
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
-    def setUp(self, *, prepsql=None) -> None:
+    def setUp(self, *, prepsql: Optional[str] = None) -> None:
         """Reset web application.
 
         :param prepsql: Similar to the @prepsql decorator this executes a raw
@@ -1989,7 +1989,7 @@ class MultiAppFrontendTest(FrontendTest):
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
-    def setUp(self, *args, **kwargs) -> None:
+    def setUp(self, *args: Optional[str], **kwargs: Optional[str]) -> None:
         """Reset all apps and responses and the current app index."""
         self.responses = [None for _ in range(self.n)]
         super().setUp(*args, **kwargs)

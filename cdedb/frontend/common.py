@@ -750,7 +750,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def transform_defect_addresses(
             self, rs: RequestState, defect_addresses: dict[str, EmailAddressReport],
-    ) -> tuple[Optional[str], Optional[dict[str, list[dict[str, Any]]]]]:
+    ) -> tuple[Optional[str],
+               Optional[dict[vtypes.Email, list[models_ml.Mailinglist]]]]:
         """Uninlined code to get the data in the required shape."""
         defect_username = None
         mls_with_defect_explicits = None

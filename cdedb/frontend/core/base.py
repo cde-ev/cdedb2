@@ -1358,7 +1358,8 @@ class CoreBaseFrontend(AbstractFrontend):
                     if persona_ids else set())
         ml_ids = set().union(*(e.ml_ids for e in email_reports.values()))
         mls = self.mlproxy.get_mailinglists(rs, ml_ids) if ml_ids else set()
-        grouped_reports = collections.defaultdict(dict)
+        grouped_reports: dict[const.EmailStatus, dict[str, Any]] = (
+            collections.defaultdict(dict))
         for email, infos in email_reports.items():
             if infos.status in const.EmailStatus.notable_states():
                 grouped_reports[infos.status][email] = infos
