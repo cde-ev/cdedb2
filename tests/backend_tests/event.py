@@ -1000,6 +1000,7 @@ class TestEventBackend(BackendTest):
             'ctime': nearly_now(),
             'event_id': 1,
             'fields': {
+                'lodge': '015112345678',
                 'anzahl_GROSSBUCHSTABEN': 3,
                 'brings_balls': True,
                 'transportation': 'pedes',
@@ -1241,6 +1242,7 @@ class TestEventBackend(BackendTest):
                 'ctime': nearly_now(),
                 'event_id': 1,
                 'fields': {
+                    'lodge': '015112345678',
                     'anzahl_GROSSBUCHSTABEN': 3,
                     'brings_balls': True,
                     'transportation': 'pedes',

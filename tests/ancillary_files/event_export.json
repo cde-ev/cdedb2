@@ -190,6 +190,7 @@
             "persona_id": 5,
             "list_consent": true,
             "fields": {
+                "lodge": "015112345678",
                 "brings_balls": true,
                 "transportation": "pedes",
                 "is_child": false,
