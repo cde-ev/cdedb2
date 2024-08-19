@@ -28,6 +28,7 @@ with os.scandir(root_dir) as it:
             if (root_dir / file_hash).exists():
                 print(f"File {entry.name} is redundant, deleting")
                 os.remove(root_dir / entry.path)
+                continue
             shutil.move(entry.path, root_dir / file_hash)
             print(f"{entry.name} moved to {root_dir / file_hash}.")
             count += 1
