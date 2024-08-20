@@ -445,8 +445,11 @@
                                          aclass="btn btn-xs btn-warning", icon="at") }}
                             </span>
                         {% else %}
-                            {{ util.href(cdedblink('core/email_status_overview', params={"address": data['username']}),
-                                         gettext("Mark defect"), aclass="btn btn-xs btn-danger", icon="at") }}
+                            {% if data['username'] %}
+                                {{ util.href(cdedblink('core/email_status_overview',
+                                                       params={"address": data['username']}),
+                                             gettext("Mark defect"), aclass="btn btn-xs btn-danger", icon="at") }}
+                            {% endif %}
                         {% endif %}
                     {% endif %}
                     {% if data['id'] == user.persona_id %}
