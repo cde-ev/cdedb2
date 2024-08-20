@@ -8,9 +8,9 @@ Hier könnt ihr die Anmeldung ansehen:
 
 {% else -%}
 {% set timespan = {
-        NotifyOnRegistration.hourly: "In der letzten Stunde",
+        NotifyOnRegistration.weekly: "In den letzten sieben Tagen",
         NotifyOnRegistration.daily: "In den letzten 24 Stunden",
-        NotifyOnRegistration.hourly: "In den letzten sieben Tagen",
+        NotifyOnRegistration.hourly: "In der letzten Stunde",
     }[event.notify_on_registration]
 -%}
 {{ timespan }} {% if registrations|length > 1 -%}

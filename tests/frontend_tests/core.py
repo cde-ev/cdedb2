@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
+import datetime
 import random
 import re
 import urllib.parse
@@ -12,7 +13,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
-    make_persona_name,
+    make_persona_name, now,
 )
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
@@ -2322,6 +2323,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
+        self.assertNoLink('/db/core/genesis/attachment/')
         self.assertValidationError('attachment')
         f = self.response.forms['genesisform']
         f['notes'] = ""  # Do not send this to test upload permanance.
@@ -2341,7 +2343,15 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError("birthday", "Darf nicht leer sein.")
-        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
+        f['birthday'] = (now().date() + datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationError("birthday", "muss in der Vergangenheit liegen.")
+        f['birthday'] = (now().date() - datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f = self.response.forms['genesisform']
+        f[IGNORE_WARNINGS_NAME] = True
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2376,6 +2386,10 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
 
         # select a past event

@@ -1187,7 +1187,7 @@ UMLAUT_MAP = {
 }
 
 
-def asciificator(s: str) -> str:
+def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
     """Pacify a string.
 
     Replace or omit all characters outside a known good set. This is to
@@ -1204,6 +1204,8 @@ def asciificator(s: str) -> str:
             ret += char
         else:
             ret += ' '
+    if normalize_whitespace:
+        ret = re.sub(r"\s+", " ", ret)
     return ret
 
 
