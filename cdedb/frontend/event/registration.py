@@ -1134,7 +1134,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
-        return self.render(rs, "event/fee/configure_fee", 
+        return self.render(rs, "event/fee/configure_fee",
                            {'persona': persona, 'personalized': True})
 
     @access("event", modi={"POST"})
