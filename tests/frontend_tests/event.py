@@ -41,7 +41,7 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = 6
+    EVENT_LOG_OFFSET = 9
 
     def _set_payment_info(
         self, reg_id: int, event_id: int, amount_paid: decimal.Decimal,
@@ -731,13 +731,10 @@ class TestEventFrontend(FrontendTest):
                                in f['track3.course_choice_0'].options])
 
     @event_keeper
-    @as_users("annika", "garcia")
+    @as_users("garcia")
     def test_part_summary_trivial(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
-
         # check there is no log generation if nothing changes
-        self.traverse("Veranstaltungsteile")
+        self.traverse("Veranstaltungen", "Große Testakademie", "Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         self.traverse({"href": "/event/event/1/part/1/change"})
         f = self.response.forms['changepartform']
@@ -749,9 +746,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['fieldsummaryform']
         self.submit(f)
 
-        # check the that no log entries were added
-        self.traverse("Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
+        self.assertLogEqual([], 'event', event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:

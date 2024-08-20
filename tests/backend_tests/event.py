@@ -3149,7 +3149,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=6)
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=9)
 
     @storage
     @event_keeper
@@ -3594,7 +3594,6 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_log(self) -> None:
         # first check the already existing log
-        offset = 6
         expectation = (
             {
                 'code': const.EventLogCodes.registration_created,
@@ -3632,9 +3631,31 @@ class TestEventBackend(BackendTest):
                 'persona_id': 2,
                 'submitted_by': 2,
             },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 1,
+                'submitted_by': 1,
+                'change_note': "200,00 € am 01.01.2014 gezahlt.",
+            },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 9,
+                'submitted_by': 1,
+                'change_note': "548,48 € am 04.04.2014 gezahlt.",
+            },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 2,
+                'submitted_by': 1,
+                'change_note': "10,50 € am 06.06.2014 gezahlt.",
+            },
         )
 
         self.assertLogEqual(expectation, realm="event")
+        offset = len(expectation)
 
         # then generate some data
         data: CdEDBObject = {
