@@ -590,7 +590,7 @@ class Transaction:
         elif amount_owed is not None and self.amount == amount_owed:
             ret = EventMatch(
                 event=event,
-                confidence=ConfidenceLevel.Medium,
+                confidence=ConfidenceLevel.High,
                 warnings=[(
                     'event',
                     ValueError(
