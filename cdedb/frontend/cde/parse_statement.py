@@ -568,7 +568,10 @@ class Transaction:
 
     @staticmethod
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
-        s = re.escape(asciificator(s))
+        s = "|".join(map(
+            re.escape,
+            {s, asciificator(s), asciificator(s, normalize_whitespace=True)},
+        ))
         if strict:
             s = rf"\b{s}\b"
         return re.compile(s, flags=re.I)

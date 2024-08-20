@@ -67,7 +67,7 @@ class TestParseFrontend(FrontendTest):
             "begin": now().date(),
             "end": now().date()}))
         velbert = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "JuniorAkademie NRW - Nachtreffen Velbert 2019",
+            "title": "JuniorAkademie NRW – Nachtreffen Velbert 2019",
             "shortname": "velbert19",
             "begin": datetime.date(2019, 11, 15),
             "end": datetime.date(2019, 11, 17)}))
@@ -106,7 +106,10 @@ class TestParseFrontend(FrontendTest):
         match(naka, "CdE NachhaltigkeitsAkademie(n)", cl.Full)
 
         match(velbert, "velbert19", cl.Medium)
-        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW – Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW   Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", None)
         match(velbert, "Velbert 2019", None)
 
     def test_fee_matching(self) -> None:
