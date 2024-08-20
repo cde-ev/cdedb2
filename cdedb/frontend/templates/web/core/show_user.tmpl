@@ -435,9 +435,9 @@
                     {% else %}
                         —
                     {% endif %}
-                    {%- if "core" in user.admin_views or "ml" in user.admin_views %}
+                    {%- if "core" in user.admin_views or "ml_user" in user.admin_views %}
                         {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
-                            <span class="text-danger">({{gettext(email_report.status)}})
+                            <span class="text-danger">({{gettext(email_report.status|string)}})
                         {% endif %}
                         {% if email_report %}
                             {{ util.href(cdedblink('core/email_status_overview') + "#emailstatus-"

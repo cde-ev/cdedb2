@@ -3334,17 +3334,38 @@ LG Emilia
         self.assertNonPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
 
     @as_users("vera", "nina")
-    def test_defect_email_roster(self) -> None:
-        pass
-
-    @as_users("vera", "nina")
     def test_defect_email_profile(self) -> None:
-        pass
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertNonPresence('defekte Email-Adresse')
+        self.assertPresence('Als defekt markieren')
 
-    @as_users("vera", "nina")
+        self.traverse({'description': 'Als defekt markieren'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("janis@example.cde")
+
+        f = self.response.forms['setemailstatusform']
+        self.submit(f)
+        self.assertPresence("janis@example.cde")
+
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertPresence('defekte Email-Adresse')
+        self.assertNonPresence('Als defekt markieren')
+
     def test_defect_email_nosend(self) -> None:
-        pass
-
-    @as_users("vera", "nina")
-    def test_defect_email_mailman(self) -> None:
-        pass
+        user = USER_DICT["berta"]
+        self.get('/')
+        self.traverse({'description': 'Passwort zurücksetzen'})
+        f = self.response.forms['passwordresetform']
+        f['email'] = user['username']
+        self.submit(f)
+        with self.assertRaises(IndexError):
+            # no email for Berta
+            self.fetch_mail_content()
