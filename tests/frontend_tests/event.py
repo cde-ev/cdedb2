@@ -1101,7 +1101,7 @@ etc;anything else""", f['entries_2'].value)
         f['lodge_field_id'] = ''
         self.submit(f)
 
-        # Change datatype of "lodge" fiel to phone number and check those are preserved
+        # Change datatype of "lodge" field to phone number and check those are preserved
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['kind_3'] = const.FieldDatatypes.phone
