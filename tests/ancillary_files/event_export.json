@@ -174,7 +174,7 @@
                 "anzahl_GROSSBUCHSTABEN": 4
             },
             "orga_notes": null,
-            "payment": null,
+            "payment": "2014-01-01",
             "id": 1,
             "is_member": true,
             "parental_agreement": true,
@@ -197,7 +197,7 @@
                 "anzahl_GROSSBUCHSTABEN": 3
             },
             "orga_notes": "Unbedingt in die Einzelzelle.",
-            "payment": "2014-02-02",
+            "payment": null,
             "id": 2,
             "is_member": false,
             "parental_agreement": true,
@@ -218,7 +218,7 @@
                 "anzahl_GROSSBUCHSTABEN": 3
             },
             "orga_notes": null,
-            "payment": "2014-03-03",
+            "payment": null,
             "id": 3,
             "is_member": true,
             "parental_agreement": true,
@@ -228,7 +228,7 @@
         },
         "4": {
             "amount_owed": "431.99",
-            "amount_paid": "0.00",
+            "amount_paid": "548.48",
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,
@@ -271,7 +271,7 @@
             "real_persona_id": null},
         "6": {
             "amount_owed": "10.50",
-            "amount_paid": "0.00",
+            "amount_paid": "10.50",
             "checkin": null,
             "event_id": 1,
             "fields": {
@@ -286,7 +286,7 @@
             "notes": null,
             "orga_notes": null,
             "parental_agreement": true,
-            "payment": null,
+            "payment": "2014-06-06",
             "persona_id": 2,
             "real_persona_id": null}
     },
@@ -1377,7 +1377,7 @@
             "event_id": 1,
             "id": 2,
             "code": 50,
-            "ctime": "2014-01-01T02:05:06+00:00",
+            "ctime": "2014-01-01T01:00:00+00:00",
             "submitted_by": 5,
             "change_note": null,
             "persona_id": 5
@@ -1386,7 +1386,7 @@
             "event_id": 1,
             "id": 1,
             "code": 50,
-            "ctime": "2014-01-01T01:04:05+00:00",
+            "ctime": "2014-01-01T02:00:00+00:00",
             "submitted_by": 1,
             "change_note": null,
             "persona_id": 1
@@ -1395,7 +1395,7 @@
             "event_id": 1,
             "id": 3,
             "code": 50,
-            "ctime": "2014-01-01T03:06:07+00:00",
+            "ctime": "2014-01-01T03:00:00+00:00",
             "submitted_by": 7,
             "change_note": null,
             "persona_id": 7
@@ -1404,7 +1404,7 @@
             "event_id": 1,
             "id": 4,
             "code": 50,
-            "ctime": "2014-01-01T04:07:08+00:00",
+            "ctime": "2014-01-01T04:00:08+00:00",
             "submitted_by": 9,
             "change_note": null,
             "persona_id": 9
@@ -1413,7 +1413,7 @@
             "event_id": 1,
             "id": 5,
             "code": 50,
-            "ctime": "2014-01-01T03:06:07+00:00",
+            "ctime": "2014-01-01T05:00:00+00:00",
             "submitted_by": 100,
             "change_note": null,
             "persona_id": 100
@@ -1422,9 +1422,36 @@
             "event_id": 1,
             "id": 6,
             "code": 50,
-            "ctime": "2014-01-01T04:07:08+00:00",
+            "ctime": "2014-01-01T06:00:00+00:00",
             "submitted_by": 2,
             "change_note": null,
+            "persona_id": 2
+        },
+        "7": {
+            "event_id": 1,
+            "id": 7,
+            "code": 55,
+            "ctime": "2014-01-01T07:00:00+00:00",
+            "submitted_by": 1,
+            "change_note": "200,00 € am 01.01.2014 gezahlt.",
+            "persona_id": 1
+        },
+        "8": {
+            "event_id": 1,
+            "id": 8,
+            "code": 55,
+            "ctime": "2014-01-01T08:00:00+00:00",
+            "submitted_by": 1,
+            "change_note": "548,48 € am 04.04.2014 gezahlt.",
+            "persona_id": 9
+        },
+        "9": {
+            "event_id": 1,
+            "id": 9,
+            "code": 55,
+            "ctime": "2014-01-01T09:00:00+00:00",
+            "submitted_by": 1,
+            "change_note": "10,50 € am 06.06.2014 gezahlt.",
             "persona_id": 2
         }
     },

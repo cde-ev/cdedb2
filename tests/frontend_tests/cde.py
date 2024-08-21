@@ -2049,6 +2049,7 @@ class TestCdEFrontend(FrontendTest):
             event_log_expectation, realm="event", event_id=1,
             codes=[const.EventLogCodes.registration_payment_received,
                    const.EventLogCodes.registration_payment_reimbursed],
+            offset=3,  # 3 Entries in sample data.
         )
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungshistorie"})

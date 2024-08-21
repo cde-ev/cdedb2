@@ -1062,7 +1062,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'personalized_fees': {},
-            'payment': datetime.date(2014, 2, 2),
+            'payment': None,
             'persona_id': 5,
             'real_persona_id': None,
         }
@@ -1232,7 +1232,7 @@ class TestEventBackend(BackendTest):
                 'personalized_fees': {
                     10: decimal.Decimal("-20.00"),
                 },
-                'payment': None,
+                'payment': datetime.date(2014, 1, 1),
                 'persona_id': 1,
                 'real_persona_id': None,
             },
@@ -1304,13 +1304,13 @@ class TestEventBackend(BackendTest):
                     },
                 },
                 'personalized_fees': {},
-                'payment': datetime.date(2014, 2, 2),
+                'payment': None,
                 'persona_id': 5,
                 'real_persona_id': None,
             },
             4: {
                 'amount_owed': decimal.Decimal("431.99"),
-                'amount_paid': decimal.Decimal("0.00"),
+                'amount_paid': decimal.Decimal("548.48"),
                 'checkin': None,
                 'ctime': nearly_now(),
                 'event_id': 1,
@@ -1524,11 +1524,14 @@ class TestEventBackend(BackendTest):
                 self.key, 1, ("registration_parts", "registration_tracks",
                               "course_choices"))
         del expectation[1]
-        for reg_id in expectation.keys():
+        for reg_id in [2, 3, 5]:
             self.assertLess(0, self.event.delete_registration(
                 self.key, reg_id, ("registration_parts", "registration_tracks",
                               "course_choices")))
-        self.assertEqual({1: 1}, self.event.list_registrations(self.key, 1))
+        self.assertEqual(
+            {1: 1, 4: 9, 6: 2},
+            self.event.list_registrations(self.key, 1),
+        )
 
     @as_users("annika", "garcia")
     def test_course_filtering(self) -> None:
@@ -1939,7 +1942,7 @@ class TestEventBackend(BackendTest):
              'reg.id': 2,
              'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
              'lodgement1.id': None,
-             'reg.payment': datetime.date(2014, 2, 2),
+             'reg.payment': None,
              'is_cde_realm': False,
              'course1.xfield_room': None,
              'part3.status': 2,
@@ -1980,7 +1983,7 @@ class TestEventBackend(BackendTest):
              'part3.status': -1,
              'persona.family_name': 'Beispiel',
              'reg.id': 6,
-             'reg.payment': None,
+             'reg.payment': datetime.date(2014, 6, 6),
              'reg_fields.xfield_brings_balls': None,
              'reg_fields.xfield_transportation': 'pedes'})
         self.assertEqual(expectation, result)
@@ -3137,7 +3140,7 @@ class TestEventBackend(BackendTest):
             },
             {
                 'code': const.EventLogCodes.registration_deleted,
-                'persona_id': 9,
+                'persona_id': 100,
             },
             {
                 'code': const.EventLogCodes.registration_created,
@@ -3148,7 +3151,7 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=6)
+        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=9)
 
     @storage
     @event_keeper
@@ -3272,7 +3275,7 @@ class TestEventBackend(BackendTest):
                         3: {
                             'course_id': -1,
                             'choices': [4, -1, 5]}}},
-                4: None,
+                5: None,
                 1001: {
                     'parts': {
                         2: {'lodgement_id': -1},
@@ -3593,7 +3596,6 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_log(self) -> None:
         # first check the already existing log
-        offset = 6
         expectation = (
             {
                 'code': const.EventLogCodes.registration_created,
@@ -3631,9 +3633,31 @@ class TestEventBackend(BackendTest):
                 'persona_id': 2,
                 'submitted_by': 2,
             },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 1,
+                'submitted_by': 1,
+                'change_note': "200,00 € am 01.01.2014 gezahlt.",
+            },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 9,
+                'submitted_by': 1,
+                'change_note': "548,48 € am 04.04.2014 gezahlt.",
+            },
+            {
+                'code': const.EventLogCodes.registration_payment_received,
+                'event_id': 1,
+                'persona_id': 2,
+                'submitted_by': 1,
+                'change_note': "10,50 € am 06.06.2014 gezahlt.",
+            },
         )
 
         self.assertLogEqual(expectation, realm="event")
+        offset = len(expectation)
 
         # then generate some data
         data: CdEDBObject = {

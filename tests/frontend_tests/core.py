@@ -97,6 +97,7 @@ class TestCoreFrontend(FrontendTest):
                                'description': "1 Abonnement-Anfrage"})
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
+                self.assertPresence("bereits angemeldet", div='event-box')
             else:
                 self.assertPresence("Account-Log", div='sidebar')
                 self.assertPresence("Admin-Änderungen", div='sidebar')
@@ -109,12 +110,12 @@ class TestCoreFrontend(FrontendTest):
                                'description': "3 E-Mails"})
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
+                self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
+                                    div='event-box')
             self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
             self.assertPresence("Orga-Veranstaltungen", div='orga-box')
             self.assertPresence("CdE-Party 2050", div='orga-box')
             self.assertNonPresence("Große Testakademie 2222", div='orga-box')
-            self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
-                                div='event-box')
             self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
             self.assertPresence("Internationaler Kongress", div='assembly-box')
         else:
