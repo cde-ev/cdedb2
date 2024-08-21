@@ -17389,7 +17389,7 @@ msgstr "Non-negative Integer"
 
 #: cdedb/i18n_additional.py:181
 msgid "FieldDatatypes.non_negative_float"
-msgstr "Non-ntgative Decimal"
+msgstr "Non-negative Decimal"
 
 #: cdedb/i18n_additional.py:181 cdedb/i18n_additional.py:184
 msgid "Genders.female"
