@@ -1329,7 +1329,7 @@ class EventRegistrationBackend(EventBaseBackend):
             UPDATE {models.Registration.database_table} AS r
             SET amount_owed = u.amount_owed
             FROM (
-                VALUES {"(%s, %s)," * (len(fees) - 1) + "(%s, %s)"}
+                VALUES {",".join(["(%s, %s)"] * len(fees))}
             ) AS u (id, amount_owed)
             WHERE r.id = u.id
         """
