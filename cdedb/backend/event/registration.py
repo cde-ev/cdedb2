@@ -10,6 +10,7 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
@@ -1319,12 +1320,23 @@ class EventRegistrationBackend(EventBaseBackend):
         """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
+        fees = self.calculate_fees(rs, registration_ids)
 
-        ret = 1
-        for reg_id in registration_ids:
-            ret *= self._update_registration_amount_owed(rs, reg_id)
+        if not fees:
+            return 1
 
-        return ret
+        query = f"""
+            UPDATE {models.Registration.database_table} AS r
+            SET amount_owed = u.amount_owed
+            FROM (
+                VALUES {",".join(["(%s, %s)"] * len(fees))}
+            ) AS u (id, amount_owed)
+            WHERE r.id = u.id
+        """
+        params: list[int | decimal.Decimal] = list(
+            itertools.chain.from_iterable(fees.items()))
+
+        return self.query_exec(rs, query, params)
 
     @access("finance_admin")
     def list_amounts_owed(self, rs: RequestState, persona_id: int,

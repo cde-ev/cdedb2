@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
+import datetime
 import random
 import re
 import urllib.parse
@@ -12,7 +13,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
-    make_persona_name,
+    make_persona_name, now,
 )
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
@@ -1812,6 +1813,32 @@ class TestCoreFrontend(FrontendTest):
 
         _reset()
         _berta_change_profile()
+        with self.switch_user("berta"):
+            # Second edit: Change information which requires no review
+            self.traverse("Meine Daten", "Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['affiliation'] = "Jederfrau"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Die Änderung wartet auf Bestätigung.",
+                                div='notifications')
+            self.assertPresence(self.user['family_name'],
+                                div='personal-information')
+            self.assertPresence("Jedermann", div='additional')
+            self.assertNonPresence("Jederfrau")
+            self.assertNonPresence('Ganondorf')
+            # Third edit: Reset information which require review
+            self.traverse("Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['family_name'] = "Beispiel"
+            self.submit(f)
+            # Result: No review necessary
+            self.assertPresence("Beispiel", div='personal-information')
+            self.assertNonPresence("Jedermann")
+            self.assertPresence("Jederfrau", div='additional')
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        _berta_change_profile()
         _quintus_displace_change("Ganondorf")
         self.assertTitle("Bertå Ganondorf")
         self.assertNonPresence("Beispiel", div='personal-information')
@@ -1847,7 +1874,22 @@ class TestCoreFrontend(FrontendTest):
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.PersonaChangeStati.committed.value,
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': 17,
                     'submitted_by': 2,
                 },
@@ -2276,6 +2318,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
+        self.assertNoLink('/db/core/genesis/attachment/')
         self.assertValidationError('attachment')
         f = self.response.forms['genesisform']
         f['notes'] = ""  # Do not send this to test upload permanance.
@@ -2295,7 +2338,15 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError("birthday", "Darf nicht leer sein.")
-        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
+        f['birthday'] = (now().date() + datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationError("birthday", "muss in der Vergangenheit liegen.")
+        f['birthday'] = (now().date() - datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f = self.response.forms['genesisform']
+        f[IGNORE_WARNINGS_NAME] = True
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2330,6 +2381,10 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
 
         # select a past event

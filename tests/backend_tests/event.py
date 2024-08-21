@@ -79,6 +79,7 @@ class TestEventBackend(BackendTest):
 
             academy! :)""",
             'use_additional_questionnaire': False,
+            "notify_on_registration": const.NotifyOnRegistration.never,
             'notes': None,
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},

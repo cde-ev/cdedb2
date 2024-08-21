@@ -1795,7 +1795,7 @@ GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
 @_add_typed_validator
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, **kwargs: Any,
+    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
 ) -> GenesisCase:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1832,10 +1832,26 @@ def _genesis_case(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, allow_superfluous=True, **kwargs)
 
-    if val.get('postal_code'):
-        postal_code = _german_postal_code(
-            val['postal_code'], 'postal_code', aux=val.get('country', ""), **kwargs)
-        val['postal_code'] = postal_code
+    errs = ValidationSummary()
+
+    with errs:
+        if val.get('postal_code'):
+            postal_code = _german_postal_code(
+                val['postal_code'], 'postal_code', aux=val.get('country', ""),
+                ignore_warnings=ignore_warnings, **kwargs)
+            val['postal_code'] = postal_code
+
+        if birthday := val.get('birthday'):
+            if (now().date() - birthday) < datetime.timedelta(days=365):
+                if not ignore_warnings:
+                    raise ValidationSummary(ValidationWarning(
+                        'birthday',
+                        n_("Birthday was less than a year ago."
+                           " Please check the birth year."),
+                    ))
+
+    if errs:
+        raise errs
 
     return GenesisCase(val)
 
@@ -2379,6 +2395,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
     'website_url': Optional[Url],
+    'notify_on_registration': const.NotifyOnRegistration,
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
