@@ -1101,6 +1101,18 @@ etc;anything else""", f['entries_2'].value)
         f['lodge_field_id'] = ''
         self.submit(f)
 
+        # Change datatype of "lodge" field to phone number and check those are preserved
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['kind_3'] = const.FieldDatatypes.phone
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_lodge'].checked = True
+        self.submit(f)
+        self.assertPresence("+49 1511 2345678")
+
         # Change datatype of "transportation" field to datetime and delete
         # options, delete and recreate "lodge" field with int type.
         self.get("/event/event/1/field/summary")
@@ -3263,7 +3275,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['track3.course_choice_1'] = 5
         self.assertEqual("pedes", f['fields.transportation'].value)
         f['fields.transportation'] = "etc"
-        self.assertEqual("", f['fields.lodge'].value)
+        self.assertEqual("015112345678", f['fields.lodge'].value)
         f['fields.lodge'] = "Om nom nom nom"
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")

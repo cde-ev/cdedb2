@@ -263,6 +263,7 @@
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
+                "lodge": "015112345678",
                 "brings_balls": true,
                 "transportation": "pedes"
             },

@@ -729,9 +729,19 @@ def _float(
 
 
 @_add_typed_validator
+def _non_negative_float(
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
+) -> NonNegativeFloat:
+    val = _float(val, argname, **kwargs)
+    if val < 0:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must not be negative.")))
+    return NonNegativeFloat(val)
+
+
+@_add_typed_validator
 def _decimal(
-    val: Any, argname: Optional[str] = None, *,
-    large: bool = False, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *, large: bool = False, **kwargs: Any,
 ) -> decimal.Decimal:
     """decimal.Decimal fitting into a `numeric` postgres column.
 
@@ -3127,20 +3137,19 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: dict[str, type[Any]] = {}
-    for field in fields.values():
-        if field.association == association:
-            dt = _ALL_TYPED[const.FieldDatatypes](
-                field.kind, field.field_name, **kwargs)
-            datatypes[field.field_name] = cast(type[Any], eval(  # pylint: disable=eval-used
-                f"Optional[{dt.name}]",
-                {
-                    'Optional': Optional,
-                    'date': datetime.date,
-                    'datetime': datetime.datetime,
-                }))
-    optional_fields = {
-        str(field.field_name): datatypes[field.field_name]
+    datatypes = {
+        const.FieldDatatypes.str: Optional[str],
+        const.FieldDatatypes.bool: Optional[bool],
+        const.FieldDatatypes.int: Optional[int],
+        const.FieldDatatypes.float: Optional[float],
+        const.FieldDatatypes.date: Optional[datetime.date],
+        const.FieldDatatypes.datetime: Optional[datetime.datetime],
+        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
+        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
+        const.FieldDatatypes.phone: Optional[str],
+    }
+    optional_fields: TypeMapping = {
+        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
