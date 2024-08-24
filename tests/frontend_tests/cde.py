@@ -461,7 +461,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
 
-        # by given_names and TODO nickname
+        # by given_names
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
@@ -469,6 +469,25 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
+
+        # by nickname
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms['membersearchform']
+        f['qval_given_names,nickname'] = "Bindi"
+        self.submit(f)
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
+
+        # but NOT by legal_given_names
+        # by nickname
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms['membersearchform']
+        # part of Anton's legal_given_names
+        f['qval_given_names,nickname'] = "Armin"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Keine Mitglieder gefunden.")
 
         # by past event
         self.traverse({'description': 'Mitglieder'},
