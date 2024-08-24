@@ -2431,7 +2431,7 @@ class TestCoreFrontend(FrontendTest):
         new_user = {
             'username': "zorro@example.cde",
             'password': new_password,
-            'legalgiven_names': "Zelda",
+            'legal_given_names': "Zelda",
             'given_names': "Zelda",
             'family_name': "Zeruda-Hime",
         }
