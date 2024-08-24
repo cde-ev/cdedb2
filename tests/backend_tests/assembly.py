@@ -108,7 +108,7 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that all users are found.
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan", "Rowena"],
+            ["Kalif", "Rowena"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
@@ -120,7 +120,7 @@ class TestAssemblyBackend(BackendTest):
 
         # Check that they are no longer found.
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan"],
+            ["Kalif"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
@@ -130,7 +130,7 @@ class TestAssemblyBackend(BackendTest):
         # Check that the more inclusive search still finds them.
         query.scope = QueryScope.all_assembly_users
         self.assertEqual(
-            ["Kalif ibn al-Ḥasan", "Rowena"],
+            ["Kalif", "Rowena"],
             [
                 e["given_names"]
                 for e in self.assembly.submit_general_query(self.key, query)
