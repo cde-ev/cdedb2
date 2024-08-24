@@ -391,41 +391,6 @@ class LDAPsqlBackend:
     def is_user_dn(cls, dn: DN) -> bool:
         return cls._is_entry_dn(dn, cls.users_dn, "uid")
 
-    @staticmethod
-    def make_persona_name(persona: "CdEDBObject",
-                          use_legal_name: bool = False,
-                          include_nickname: bool = False,
-                          with_family_name: bool = True,
-                          with_titles: bool = False) -> str:
-        """Mimic the implementation of common.make_persona_name.
-
-        Since we do not want to have cross-dependencies between the web and ldap code
-        base, we need this small logic duplication.
-        """
-        # TODO move into common and use it here
-        if use_legal_name and include_nickname:
-            raise RuntimeError("Invalid use of keyword parameters.")
-        nickname: str = persona.get('nickname', "")
-        given_names: str = persona['given_names']
-        legal_given_names: str = persona['legal_given_names']
-        ret = []
-        if with_titles and persona.get('title'):
-            ret.append(persona['title'])
-        if use_legal_name:
-            ret.append(legal_given_names)
-        elif include_nickname:
-            if not nickname:
-                ret.append(given_names)
-            else:
-                ret.append(f"{given_names} ({nickname})")
-        else:
-            ret.append(given_names)
-        if with_family_name:
-            ret.append(persona['family_name'])
-        if with_titles and persona.get('name_supplement'):
-            ret.append(persona['name_supplement'])
-        return " ".join(ret)
-
     @classmethod
     def list_single_user(cls, persona_id: int) -> DN:
         """Uninlined code from list_users.
@@ -555,7 +520,8 @@ class LDAPsqlBackend:
                 b"objectClass": ["inetOrgPerson"],
                 b"cn": [f"{user['given_names']} {user['family_name']}"],
                 b"sn": [user['family_name']],
-                b"displayName": [self.make_persona_name(user)],
+                # TODO do we want to expose the nickname somewhere?
+                b"displayName": [f"{user['given_names']} {user['family_name']}"],
                 b"givenName": [user['given_names']],
                 b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],
