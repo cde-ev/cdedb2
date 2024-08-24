@@ -42,6 +42,13 @@
             {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
         {% endcall %}
     {% endif %}
+    {% if num_hidden_courses and (ambience['event'].id in user.orga or 'event_orga' in user.admin_views) %}
+        {% call util.notification('info', id='hidden-courses') %}
+            {% trans num=num_hidden_courses, link=util.href(cdedblink('event/course_stats') + '#hidden-courses'|s, gettext("here")) %}
+                {{ num }} courses are currently hidden. For more information see {{ link }}.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
 {% block content %}
     {% if ambience['event']['website_url'] %}

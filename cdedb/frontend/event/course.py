@@ -65,10 +65,19 @@ class EventCourseMixin(EventBaseFrontend):
                 if (course['active_segments'] if active_only and show_course_state
                     else course['segments']).intersection(track_ids)
             }
-        return self.render(rs, "course/course_list",
-                           {'courses': keydictsort_filter(courses, EntitySorter.course),
-                            'show_course_state': show_course_state,
-                            'courses_exist': courses_exist})
+            visible_courses = {
+                course_id: course for course_id, course in courses.items()
+                if course['is_visible']
+            }
+            num_hidden_courses = len(courses) - len(visible_courses)
+        else:
+            num_hidden_courses = 0
+        return self.render(rs, "course/course_list", {
+            'courses': keydictsort_filter(courses, EntitySorter.course),
+            'show_course_state': show_course_state,
+            'courses_exist': courses_exist,
+            'num_hidden_courses': num_hidden_courses,
+        })
 
     @access("event")
     @event_guard()
@@ -178,7 +187,12 @@ class EventCourseMixin(EventBaseFrontend):
             f"fields.{key}": value
             for key, value in rs.ambience['course']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['course'], field_values)
-        return self.render(rs, "course/change_course")
+        return self.render(rs, "course/configure_course", {
+            'has_course_fields': any(
+                field.association == const.FieldAssociations.course
+                for field in rs.ambience['event'].fields.values()
+            ),
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -220,7 +234,12 @@ class EventCourseMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/course_stats')
         if 'segments' not in rs.values:
             rs.values.setlist('segments', tracks)
-        return self.render(rs, "course/create_course")
+        return self.render(rs, "course/configure_course", {
+            'has_course_fields': any(
+                field.association == const.FieldAssociations.course
+                for field in rs.ambience['event'].fields.values()
+            ),
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -670,6 +689,30 @@ class EventCourseMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
+        hidden_courses = {
+            course_id: course
+            for course_id, course in courses.items()
+            if not course['is_visible']
+        }
+        hidden_courses_query = Query(
+            scope=QueryScope.event_course, spec={},
+            fields_of_interest=[
+                "course.course_id", "course.is_visible",
+            ],
+            constraints=[
+                (
+                    "course.is_visible",
+                    QueryOperators.equal,
+                    False,
+                ),
+            ],
+            order=[
+                (
+                    "course.nr_shortname",
+                    True,
+                ),
+            ],
+        )
         # Generate choice counts and helper lists for attendee counts
         choice_counts = {(course_id, track_id): [0] * track.num_choices
                          for track_id, track in tracks.items()
@@ -715,7 +758,10 @@ class EventCourseMixin(EventBaseFrontend):
 
         return self.render(rs, "course/course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
-            'assign_counts': assign_counts, 'include_active': include_active})
+            'assign_counts': assign_counts, 'include_active': include_active,
+            'hidden_courses': hidden_courses,
+            'hidden_courses_query': hidden_courses_query,
+        })
 
     @access("event")
     @event_guard(check_offline=True)

@@ -47,6 +47,11 @@
                 <dd>{{ ambience['course']['max_size'] }}</dd>
                 <dt title="{% trans %}Instructor{% endtrans %}">{% trans %}Minimum Size (excl. instr.){% endtrans %}</dt>
                 <dd>{{ ambience['course']['min_size'] }}</dd>
+                <dt title="{% trans %}Visibility{% endtrans %}">{% trans %}Visibility{% endtrans %}</dt>
+                <dd>
+                    {{ util.deko_checkbox(ambience['course']['is_visible'],
+                                          titles=[gettext("not visible"), gettext("visible")]) }}
+                </dd>
             </dl>
 
             <dl class="dl-horizontal">
@@ -200,7 +205,8 @@
         </div>
     {% endcall %}
     <script nonce="{{ csp_nonce }}">
-        $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
-        $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+        $('#deletecourseform')
+            .cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}")
+            .find('[name="ack_delete"]').prop('checked', true).parent().hide();
     </script>
 {% endblock %}

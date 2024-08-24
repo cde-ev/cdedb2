@@ -19,6 +19,19 @@
                             'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {% if hidden_courses %}
+        {% call util.notification('info', id='hidden-courses') %}
+            {% trans num=hidden_courses|length %}
+                {{ num }} courses are currently hidden.
+            {% endtrans %}
+            {{ util.href(cdedblink(hidden_courses_query.scope.get_target(),
+                                   hidden_courses_query.serialize_to_url()),
+                         gettext("Show in course query.")) }}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='plus',
@@ -96,9 +109,12 @@
         <tbody>
             {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
                 <tr>
-                    <td>{{ course['nr'] }}</td>
-                    <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
-                                     course['shortname']) }}</td>
+                    <td {% if not course['is_visible'] %}class="course-primary" title="{{ gettext("not visible") }}"{% endif %}>
+                        {{ course['nr'] }}
+                    </td>
+                    <td {% if not course['is_visible'] %}class="course-primary" title="{{ gettext("not visible") }}"{% endif %}>
+                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course['shortname']) }}
+                    </td>
                     {% for track in ambience['event']['tracks'].values()|sort %}
                         {% if track.id in course['segments'] %}
                             {% set attendees = assign_counts[(course_id, track.id)].num_involved_learners %}

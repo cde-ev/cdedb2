@@ -2910,6 +2910,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
+    'is_visible': bool,
     'notes': Optional[str],
 }
 
