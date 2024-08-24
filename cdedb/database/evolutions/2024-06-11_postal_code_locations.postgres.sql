@@ -18,7 +18,7 @@ BEGIN;
            name             varchar
     );
     COPY t
-    FROM '/cdedb2/PLZ.tab'
+    FROM '/cdedb2/tests/ancillary_files/PLZ.tab'
     DELIMITER E'\t'
     CSV HEADER;
     INSERT INTO core.postal_code_locations(postal_code, earth_location, lat, long, name)

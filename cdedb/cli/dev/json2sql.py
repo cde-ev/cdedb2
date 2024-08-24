@@ -1,5 +1,6 @@
 """Parse a given json dict into sql statements."""
-
+import csv
+import pathlib
 from collections.abc import Sized
 from itertools import chain
 from typing import Any, Callable, Optional, TypedDict
@@ -192,4 +193,28 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
             cmd = cmd.replace(k, v)
         ret.append(cmd)
 
+    ret += postal_code_locations(aux["conn"])
+
     return ret
+
+
+def postal_code_locations(conn: connection) -> list[str]:
+    data = pathlib.Path(
+        "/cdedb2/tests/ancillary_files/PLZ.tab").read_text().splitlines()
+    reader = csv.DictReader(
+        data[1:], delimiter="\t", fieldnames=("id", "plz", "long", "lat", "name"),
+    )
+    command = f"""
+        INSERT INTO
+            core.postal_code_locations (postal_code, name, earth_location, lat, long)
+        VALUES
+            {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * (len(data) - 1))};
+    """
+    params = list(chain.from_iterable(
+        [e['plz'], e['name'], e['lat'], e['long'], e['lat'], e['long']]
+        for e in reader
+    ))
+
+    with conn as conn:
+        with conn.cursor() as cur:
+            return [cur.mogrify(command, params).decode("utf8")]
