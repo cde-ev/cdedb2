@@ -70,7 +70,7 @@ class SessionBackend:
         with self.connpool["cdb_anonymous"] as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
-                data = dict(cur.fetchone())
+                data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
     def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
@@ -139,6 +139,7 @@ class SessionBackend:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
+                assert data is not None
         if self._is_locked_down() and not (data['is_meta_admin']
                                            or data['is_core_admin']):
             # Short circuit in case of lockdown

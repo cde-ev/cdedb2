@@ -1,9 +1,16 @@
 Hallo,
 
-die Datenbank hat leider einen Transaktionsfehler zur Transaktion
-{{ name }} um {{ now|datetime }} festgestellt. Dies muss nicht bedeuten,
-dass etwas kaputt gegangen ist, sollte aber überprüft werden. Die
-Fehlermeldung war: {{ value }}.
+die Datenbank hat leider um {{ now|datetime }} einen Transaktionsfehler festgestellt.
+Dies muss nicht bedeuten, dass etwas kaputt gegangen ist, sollte aber überprüft werden.
+
+Die betroffene Aktion war: "{{ name }}".
+{%- if description %}
+
+Dazu gab es folgende zusätzliche Beschreibung:
+
+{{ description }}
+{%- endif %}
+
+Die Fehlermeldung war: {{ value }}.
 
 die Datenbank
-

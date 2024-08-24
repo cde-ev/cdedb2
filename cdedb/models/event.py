@@ -118,6 +118,7 @@ class Event(EventDataclass):
     is_participant_list_visible: bool
     is_course_assignment_visible: bool
     use_additional_questionnaire: bool
+    notify_on_registration: const.NotifyOnRegistration
 
     lodge_field_id: Optional[vtypes.ID]
 
@@ -199,15 +200,15 @@ class Event(EventDataclass):
         params = (entities,)
         return query, params
 
-    @property
+    @functools.cached_property
     def begin(self) -> datetime.date:
         return min(p.part_begin for p in self.parts.values())
 
-    @property
+    @functools.cached_property
     def end(self) -> datetime.date:
         return max(p.part_end for p in self.parts.values())
 
-    @property
+    @functools.cached_property
     def is_open(self) -> bool:
         reference_time = now()
         return bool(
@@ -216,11 +217,19 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
-    @property
+    @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
         return self.fields[self.lodge_field_id]
+
+    @functools.cached_property
+    def personalized_fees(self) -> CdEDataclassMap["EventFee"]:
+        return {fee.id: fee for fee in self.fees.values() if fee.is_personalized()}
+
+    @functools.cached_property
+    def conditional_fees(self) -> CdEDataclassMap["EventFee"]:
+        return {fee.id: fee for fee in self.fees.values() if fee.is_conditional()}
 
     def is_visible_for(self, user: User) -> bool:
         return ("event_admin" in user.roles or user.persona_id in self.orgas

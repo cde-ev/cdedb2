@@ -170,6 +170,8 @@ echo "Setting up ldap..."
 echo "--------------------------------------------"
 # copy the systemd service file to the right place
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
+cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
+
 # create a separate service file for the test suite, with the right configpath
 # dPROD not present
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service

@@ -1,0 +1,121 @@
+{% set sidenav_active='event_fees' if ambience['fee'] else 'event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiset.js') }}
+{% endblock %}
+{% set jshint='weak' %}
+
+{% block title %}
+    {% if ambience['fee'] %}
+        {% trans fee_title=ambience['fee'].title, event_title=ambience['event'].title %}
+            Set Personalized Fees for {{ fee_title }} ({{ event_title }})
+        {% endtrans %}
+    {% else %}
+        {% trans event_title=ambience['event'].title %}
+            Select Personalized Fee ({{ event_title }})
+        {% endtrans %}
+    {% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event'].title, icon="chalkboard-teacher") }}
+    {% if ambience['fee'] %}
+        {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
+        {{ util.breadcrumb_link("", ambience['fee'].title, icon="coins", readonly=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("event/personalized_fee_multiset_form"), gettext("Set Personalized Amounts"), icon="edit", active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
+    {% if ambience['fee'] %}
+        {{ util.context_heading(gettext("Set Personalized Fees for %(fee_title)s")|format(fee_title=ambience['fee'].title),
+                                ambience['event'].title, 'chalkboard-teacher') }}
+    {% else %}
+        {{ util.context_heading(gettext("Select Personalized Fee"), ambience['event'].title,
+                                'chalkboard-teacher') }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+    {% if ambience['fee'] %}
+
+        <form action="{{ cdedblink('event/personalized_fee_multiset') }}" method="POST"
+              id="personalizedfeemultisetform" class="form-horizontal">
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}
+                {% trans %}
+                    This form can be used to set the individual amounts of the chosen personalized fee for multiple registrations at once.
+                {% endtrans %}
+            </p>
+            <p class="multiset-explanation text-info" style="display: none;">
+                {{ util.make_icon("info-circle") }}
+                {% trans %}
+                    Changed entries are highlighted in yellow.
+                    Newly added entries are shown in green and deleted entries in red.
+                    You can use the "Restore"-button to restore a changed or deleted entry to its original value.
+                    You can use the "Delete"-button to set an entry to empty, which will delete it.
+                {% endtrans %}
+            </p>
+
+            <hr />
+
+            {{ util.anti_csrf_token('event/personalized_fee_multiset') }}
+            {{ util.input_hidden('registration_ids', registration_ids|join(',')) }}
+            {# Already sorted #}
+            {% for reg in registrations %}
+                {{ util.form_input_text("amount" + reg['id']|string, label=util.persona_name(personas[reg['persona_id']]),
+                                        placeholder="", type="number", aclass="no-number-arrows",
+                                        attributes='style="width:6em;" step="0.01"'|s,
+                                        outerclass='multiset-input') }}
+            {% endfor %}
+
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/fee_summary")) }}
+        </form>
+
+        <script nonce="{{ csp_nonce }}">
+            $('#personalizedfeemultisetform').cdedbProtectChanges().multiset(
+                '{{ util.make_icon("trash-alt") }}', '{{ gettext("Delete") }}',
+                '{{ util.make_icon("redo") }}', '{{ gettext("Restore") }}',
+            );
+        </script>
+    {% else %}
+        <form action="{{ cdedblink('event/personalized_fee_multiset_form') }}" method="GET"
+              id="selectpersonalizedfeeform" class="form-horizontal">
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}
+                {% trans %}
+                    Select a personalized fee to set individual amounts for that fee for the following registrations:
+                {% endtrans %}
+            </p>
+            {{ util.form_input_select("fee_id", label=gettext("Personalized Fee"), nulloption="",
+                                      entries=fee_titles.items()) }}
+            {{ util.input_hidden(name="registration_ids") }}
+            {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("event/fee_summary"),
+                                      icon="chevron-right") }}
+        </form>
+        {% if registrations %}
+            <h4 class="mosp">
+                {% trans %}Registrations{% endtrans %}
+            </h4>
+            <div class="row" id="registrations-list">
+                {% set slices = 1 if registrations|length <= 5 else (2 if registrations|length <= 10 else 3) %}
+                {% for list in registrations|slice(slices) %}
+                    <div class="col-sm-{{ 12 // slices }}">
+                        <ul>
+                            {% for reg in list %}
+                                <li>{{ util.persona_name(personas[reg['persona_id']]) }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}

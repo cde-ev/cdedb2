@@ -10,7 +10,10 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiset.js') }}
+{% endblock %}
 {% set jshint='weak' %}
 
 {% block title %}
@@ -36,19 +39,34 @@
         {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
         {{ util.breadcrumb_link(cdedblink("event/lodgement_query"), gettext("Lodgement Query")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("event/field_set_select", {'kind': kind}), gettext("Set Field")) }}
-    {{ util.breadcrumb_link(cdedblink("event/field_set_form", {'kind': kind}), field_name, active=True, icon="tag") }}
+    {{ util.breadcrumb_link(cdedblink("event/field_multiset_select", {'kind': kind}), gettext("Set Field")) }}
+    {{ util.breadcrumb_link(cdedblink("event/field_multiset_form", {'kind': kind}), field_name, active=True, icon="tag") }}
 {% endblock %}
 
 {% block content %}
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}
+        {% trans %}
+            This form can be used to set the individual value of the chosen custom data field for multiple registrations at once.
+        {% endtrans %}
+    </p>
     {% if ordered %}
-        <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
-            {{ util.anti_csrf_token('event/field_set') }}
+        <form action="{{ cdedblink('event/field_multiset') }}" method="POST" id="fieldform" class="form-horizontal">
+            <p class="multiset-explanation text-info" style="display: none;">
+                {{ util.make_icon("info-circle") }}
+                {% trans %}
+                    Changed entries are highlighted in yellow.
+                    Newly added entries are shown in green and deleted entries in red.
+                    You can use the "Restore"-button to restore a changed or deleted entry to its original value.
+                    You can use the "Delete"-button to set an entry to empty, which will delete it.
+                {% endtrans %}
+            </p>
+            <hr />
+            {{ util.anti_csrf_token('event/field_multiset') }}
             {% for anid in ordered %}
                 {{ generic_event.form_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
-                    label=labels[anid],
-                    force_label=True) }}
+                    label=labels[anid], force_label=True, outerclass='multiset-input') }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}
             {{ util.input_hidden(name="ids") }}
@@ -57,7 +75,7 @@
             {% if kind == enums['FieldAssociations'].registration.value %}
             <div class="panel panel-primary">
                 <div class="panel-body">
-                    {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"),
+                    {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"), anid="changenotes",
                         info=gettext("Summary to be added to the log entries. This is prefixed with \"%s gesetzt: \"")|format(field_name)) }}
                 </div>
             </div>
@@ -71,6 +89,9 @@
         </p>
     {% endif %}
     <script nonce="{{ csp_nonce }}">
-        $('#fieldform').cdedbProtectChanges();
+        $('#fieldform').cdedbProtectChanges().multiset(
+            '{{ util.make_icon("trash-alt") }}', '{{ gettext("Delete") }}',
+            '{{ util.make_icon("redo") }}', '{{ gettext("Restore") }}',
+        );
     </script>
 {% endblock %}

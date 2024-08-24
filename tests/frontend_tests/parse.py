@@ -67,7 +67,7 @@ class TestParseFrontend(FrontendTest):
             "begin": now().date(),
             "end": now().date()}))
         velbert = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "JuniorAkademie NRW - Nachtreffen Velbert 2019",
+            "title": "JuniorAkademie NRW – Nachtreffen Velbert 2019",
             "shortname": "velbert19",
             "begin": datetime.date(2019, 11, 15),
             "end": datetime.date(2019, 11, 17)}))
@@ -106,7 +106,10 @@ class TestParseFrontend(FrontendTest):
         match(naka, "CdE NachhaltigkeitsAkademie(n)", cl.Full)
 
         match(velbert, "velbert19", cl.Medium)
-        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW – Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW   Nachtreffen Velbert 2019", cl.Medium)
+        match(velbert, "JuniorAkademie NRW - Nachtreffen Velbert 2019", None)
         match(velbert, "Velbert 2019", None)
 
     def test_fee_matching(self) -> None:
@@ -162,21 +165,18 @@ class TestParseFrontend(FrontendTest):
         self.submit(f, check_notification=False, verbose=True)
 
         self.assertTitle("Kontoauszug parsen")
-        self.assertPresence("4 Transaktionen mit Fehlern", div="has_error_summary")
-        self.assertPresence("1 Transaktionen mit Warnungen", div="has_warning_summary")
+        self.assertPresence("3 Transaktionen mit Fehlern", div="has_error_summary")
+        self.assertPresence("2 Transaktionen mit Warnungen", div="has_warning_summary")
         self.assertPresence("9 fehlerfreie Transaktionen", div="has_none_summary")
 
         f = self.response.forms["parsedownloadform"]
 
         # Fix Transactions with errors.
 
-        # Fix line 5:
-        self.assertPresence("event: Unsicher über Veranstaltungszuordnung",
-                            div="transaction5_errors")
+        # Check line 5:
         self.assertPresence("event: Veranstaltung Große Testakademie 2222 nur über"
                             " zu zahlenden Betrag zugeordnet.",
                             div="transaction5_warnings")
-        f["event_confirm5"] = True
 
         # Fix line 6:
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",

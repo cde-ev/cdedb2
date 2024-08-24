@@ -47,8 +47,9 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, get_hash, glue, json_serialize, now, unwrap,
+    DeletionBlockers, RequestState, glue, json_serialize, now, unwrap,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import (
     DeletionBlockedError, DeletionImpossibleError, PrivilegeError,
 )
@@ -106,17 +107,18 @@ class AssemblyBackend(AbstractBackend):
 
     def __init__(self) -> None:
         super().__init__()
-        self.attachment_base_path: Path = (
-                self.conf['STORAGE_DIR'] / "assembly_attachment")
+        self._attachment_store = AttachmentStore(
+            self.conf['STORAGE_DIR'] / "assembly_attachment")
         self.ballot_result_base_path: Path = (
-                self.conf['STORAGE_DIR'] / 'ballot_result')
+            self.conf['STORAGE_DIR'] / 'ballot_result')
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def get_attachment_file_path(self, attachment_id: int, version_nr: int) -> Path:
-        return self.attachment_base_path / f"{attachment_id}_v{version_nr}"
+    @access("assembly")
+    def get_attachment_store(self, rs: RequestState) -> AttachmentStore:
+        return self._attachment_store
 
     @access("assembly")
     def get_ballot_file_path(self, rs: RequestState, ballot_id: int) -> Path:
@@ -1680,10 +1682,10 @@ class AssemblyBackend(AbstractBackend):
         return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
-    def add_attachment(self, rs: RequestState, data: CdEDBObject,
-                       content: bytes) -> DefaultReturnCode:
+    def add_attachment(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Add a new attachment.
 
+        The actual file has already been stored by the frontend.
         Note that it is not allowed to add an attachment to an assembly that has been
         concluded.
 
@@ -1699,7 +1701,6 @@ class AssemblyBackend(AbstractBackend):
                    if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
         version['version_nr'] = 1
         version['ctime'] = now()
-        version['file_hash'] = get_hash(content)
         with Atomizer(rs):
             if self.is_assembly_locked(rs, assembly_id):
                 raise ValueError(n_(
@@ -1709,11 +1710,8 @@ class AssemblyBackend(AbstractBackend):
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))  # pragma: no cover
-            path = self.get_attachment_file_path(new_id, 1)
-            if path.exists():
-                raise RuntimeError(n_("File already exists."))  # pragma: no cover
-            with open(path, "wb") as f:
-                f.write(content)
+            if not self.get_attachment_store(rs).is_available(data['file_hash']):
+                raise RuntimeError(n_("File has been lost."))
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id, change_note=version['title'])
         return new_id
@@ -1787,10 +1785,6 @@ class AssemblyBackend(AbstractBackend):
                 if "versions" in cascade:
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
-                    for version_nr in blockers["versions"]:
-                        path = self.get_attachment_file_path(attachment_id, version_nr)
-                        if path.exists():
-                            path.unlink()
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -2073,11 +2067,20 @@ class AssemblyBackend(AbstractBackend):
             return {}
 
     @access("assembly")
+    def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
+        """Is an attachment file still referenced by some version?"""
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
+        query = ("SELECT COUNT(*) FROM assembly.attachment_versions"
+                 " WHERE file_hash = %s AND dtime IS NULL")
+        return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
+
+    @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
-                               content: bytes) -> DefaultReturnCode:
-        """Add a new version of an attachment."""
+                               ) -> DefaultReturnCode:
+        """Add a new version of an attachment.
+
+        The actual file has already been stored by the frontend."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
-        content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
@@ -2096,13 +2099,9 @@ class AssemblyBackend(AbstractBackend):
             version_nr = max_version["max_version_nr"] + 1
             data['version_nr'] = version_nr
             data['ctime'] = now()
-            data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            path = self.get_attachment_file_path(attachment_id, version_nr)
-            if path.exists():  # pragma: no cover
-                raise ValueError(n_("File already exists."))
-            with open(path, "wb") as f:
-                f.write(content)
+            if not self.get_attachment_store(rs).is_available(data['file_hash']):
+                raise RuntimeError(n_("File has been lost."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
                 assembly_id, change_note=f"{data['title']}: Version {version_nr}")
@@ -2180,33 +2179,14 @@ class AssemblyBackend(AbstractBackend):
                      f" WHERE attachment_id = %s AND version_nr = %s")
             params = tuple(deletor[k] for k in keys) + (attachment_id, version_nr)
             ret = self.query_exec(rs, query, params)
-
             if ret:
-                path = self.get_attachment_file_path(attachment_id, version_nr)
-                if path.exists():
-                    path.unlink()
                 change_note = f"{versions[version_nr]['title']}: Version {version_nr}"
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=change_note)
+        self.get_attachment_store(rs).forget_one(rs, self.get_attachment_usage,
+                                                 versions[version_nr]['file_hash'])
         return ret
-
-    @access("assembly")
-    def get_attachment_content(self, rs: RequestState, attachment_id: int,
-                               version_nr: Optional[int] = None) -> Union[bytes, None]:
-        """Get the content of an attachment. Defaults to most recent version."""
-        attachment_id = affirm(vtypes.ID, attachment_id)
-        if not self.may_access_attachments(rs, (attachment_id,)):
-            raise PrivilegeError()
-        version_nr = affirm_optional(vtypes.ID, version_nr)
-        if version_nr is None:
-            latest_version = self.get_latest_attachment_version(rs, attachment_id)
-            version_nr = latest_version["version_nr"]
-        path = self.get_attachment_file_path(attachment_id, version_nr)
-        if path.exists():
-            with open(path, "rb") as f:
-                return f.read()
-        return None
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, *, assembly_id: Optional[int] = None,

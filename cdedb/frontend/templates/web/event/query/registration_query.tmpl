@@ -25,7 +25,7 @@
                 {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Registration"),
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
-                    {{ util.href(cdedblink("event/field_set_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
+                    {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration.value}), gettext("Set Field"),
                                   readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
                 {{ util.href(cdedblink("event/custom_filter_summary", {'scope': enums['QueryScope'].registration}), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
@@ -65,45 +65,24 @@
             {% endif %}
         </div>
 
-        <div class="p pull-right">
-            {% if ambience['event']['tracks'] %}
-                <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
-                    {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
-                </button>
+        <div class="p pull-right query-result-dynamic-actions" style="display: none;">
+            {% if ambience['event'].tracks %}
+                {{ generic.query_result_dynamic_action(
+                        label=gettext("Course Assignments"), icon="crosshairs", aclass="btn-info",
+                        target="event/course_choices_form", params={"include_active": True},
+                        magic_placeholders=["ids"]) }}
             {% endif %}
-            {{ generic.query_button_field_set(enums['FieldAssociations'].registration) }}
-            <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
-                {{ util.make_icon('pen') }} {% trans %}Edit{% endtrans %}
-            </button>
-            <script nonce="{{ csp_nonce }}">
-                $('#btn-course-choices').click(function(){
-                    var list = [];
-                    $('#query-result').find('.ls-selected').each(function(){
-                        list.push($(this).attr('data-id'));
-                    });
-                    if (list.length == 0)
-                        return;
-                    location.href =
-                        "{{ cdedblink('event/course_choices_form', {'include_active': True}, magic_placeholders=['ids'])|safe }}"
-                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                });
-                $('#btn-edit').click(function(){
-                    var list = [];
-                    $('#query-result').find('.ls-selected').each(function(){
-                        list.push($(this).attr('data-id'));
-                    });
-                    if (list.length == 0)
-                        return;
-                    if (list.length == 1)
-                        location.href =
-                            "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
-                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                    else
-                        location.href =
-                            "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
-                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                });
-            </script>
+            {% if ambience['event'].personalized_fees %}
+                {{ generic.query_result_dynamic_action(
+                        label=gettext("Set Personalized Fee Amount"), icon="calculator",
+                        target="event/personalized_fee_multiset_form", magic_placeholders=["registration_ids"]) }}
+            {% endif %}
+            {{ generic.query_result_dynamic_action(
+                    label=gettext("Set Field"), icon="edit", target="event/field_multiset_select",
+                    params={"kind": enums['FieldAssociations'].registration}, magic_placeholders=["ids"]) }}
+            {{ generic.query_result_dynamic_action(
+                    label=gettext("Edit"), icon="pen", target="event/change_registrations_form",
+                    magic_placeholders=["reg_ids"]) }}
         </div>
 
         {{ generic.display_query_result(result, aggregates, query) }}

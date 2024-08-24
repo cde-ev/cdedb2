@@ -43,6 +43,7 @@ ALL_ENUMS: tuple[type[Enum], ...] = (
     const.EventPartGroupType,
     const.CourseTrackGroupType,
     const.EventFeeType,
+    const.NotifyOnRegistration,
     const.PastInstitutions,
     QueryOperators,
     QueryScope,

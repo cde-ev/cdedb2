@@ -568,7 +568,10 @@ class Transaction:
 
     @staticmethod
     def compile_pattern(s: str, strict: bool) -> re.Pattern[str]:
-        s = re.escape(asciificator(s))
+        s = "|".join(map(
+            re.escape,
+            {s, asciificator(s), asciificator(s, normalize_whitespace=True)},
+        ))
         if strict:
             s = rf"\b{s}\b"
         return re.compile(s, flags=re.I)
@@ -587,7 +590,7 @@ class Transaction:
         elif amount_owed is not None and self.amount == amount_owed:
             ret = EventMatch(
                 event=event,
-                confidence=ConfidenceLevel.Medium,
+                confidence=ConfidenceLevel.High,
                 warnings=[(
                     'event',
                     ValueError(
@@ -689,14 +692,13 @@ class Transaction:
                 return
 
             # Look for matched event and minimum amount.
-            elif self.event and self.amount > AMOUNT_MIN_EVENT_FEE:
+            elif self.event:
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
                 return
 
             # Look for event fee without event match.
-            elif ReferencePatterns.event_fee.search(self.reference) and (
-                    self.amount > AMOUNT_MIN_EVENT_FEE):
+            elif ReferencePatterns.event_fee.search(self.reference):
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence.decrease()
                 return
@@ -765,10 +767,6 @@ class Transaction:
                     ("event", ValueError(n_("Needs event match."))))
 
             if self.type == TransactionType.EventFee:
-                if self.amount < AMOUNT_MIN_EVENT_FEE:
-                    self.warnings.append(
-                        ("amount", ValueError(n_(
-                            "Amount lower than expected for event fee."))))
                 if self.event and self.persona:
                     amount_owed = event.get_amount_owed(
                         rs, self.persona['id'], self.event.id)
@@ -782,6 +780,10 @@ class Transaction:
                             'event',
                             ValueError(n_("Amount does not match amount owed.")),
                         ))
+                elif self.amount < AMOUNT_MIN_EVENT_FEE:
+                    self.warnings.append(
+                        ("amount", ValueError(n_(
+                            "Amount lower than expected for event fee."))))
 
         # Third: If the type needs a persona, check the persona.
         if self.type.has_member:

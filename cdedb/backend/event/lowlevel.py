@@ -12,6 +12,8 @@ from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Callable, Optional, Protocol
 
+import phonenumbers
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
@@ -22,7 +24,7 @@ from cdedb.backend.common import (
 )
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
-    PsycoJson, RequestState, now, unwrap,
+    PsycoJson, RequestState, now, parse_date, parse_datetime, parse_phone, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
@@ -31,7 +33,6 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.common.validation.validate import parse_date, parse_datetime
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
 
@@ -376,6 +377,12 @@ class EventLowLevelBackend(AbstractBackend):
             const.FieldDatatypes.date: parse_date,
             const.FieldDatatypes.datetime: parse_datetime,
             const.FieldDatatypes.bool: bool,
+            const.FieldDatatypes.non_negative_int: (
+                lambda x: affirm(vtypes.NonNegativeInt, x)),
+            const.FieldDatatypes.non_negative_float: (
+                lambda x: affirm(vtypes.NonNegativeFloat, x)),
+            # normalized string: normalize on write
+            const.FieldDatatypes.phone: parse_phone,
         }
 
         self.affirm_atomized_context(rs)
@@ -388,7 +395,7 @@ class EventLowLevelBackend(AbstractBackend):
                 continue
             try:
                 new_value = casters[new_kind](value)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, phonenumbers.NumberParseException):
                 new_value = None
             fdata[field_data['field_name']] = new_value
             new = {

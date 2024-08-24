@@ -54,6 +54,49 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.mypy]
+python_version = "3.10"
+show_error_codes = true
+#show_error_context = true
+enable_error_code = "ignore-without-code"
+
+allow_redefinition = true
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_unreachable = true
+warn_unused_ignores = true
+#This has way too many false positives, due to CdEDBObject = Dict[str, Any]
+#warn_return_any = true
+
+local_partial_types = true
+
+[[tool.mypy.overrides]]
+module = [
+    # general
+    "icu",
+    # ldap
+    "ldaptor.*",
+    "zope.*",
+    # validation
+    "phonenumbers",
+    # frontend
+    "cgitb",
+    "dateutil.easter",
+    "magic",
+    "mailmanclient.*",
+    "vobject",
+    "qrcode.*",
+    "graphviz.*",
+    # tests
+    "webtest",
+    "webtest.utils",
+]
+ignore_missing_imports = true
+
 [tool.pylint.main]
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to

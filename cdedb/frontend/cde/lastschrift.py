@@ -21,7 +21,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class, glue,
+    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class,
     lastschrift_reference, merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
@@ -236,8 +236,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids)
             transaction = unwrap(transactions)
-            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
-                           "widerrufen.")
+            subject = "Einzugsermächtigung zu ausstehender Lastschrift widerrufen."
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
@@ -384,12 +383,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
-            transaction['subject'] = asciificator(glue(
-                "{}, {}, {} LSI Mitgliedsbeitrag u. Spende CdE e.V.",
-                "z. Foerderung der Volks- u. Berufsbildung u.",
-                "Studentenhilfe").format(
-                cdedbid_filter(persona['id']), persona['family_name'],
-                persona['given_names']))[:140]  # cut off bc of limit
+            # cut off bc of limit
+            transaction['subject'] = asciificator(
+                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
+                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe")[:140]
 
             new_transactions.append(transaction)
         sepapain_file = self.create_sepapain(rs, new_transactions)
@@ -554,8 +552,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             transactions = self.cdeproxy.get_lastschrift_transactions(
                 rs, transaction_ids)
             transaction = unwrap(transactions)
-            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
-                           "widerrufen.")
+            subject = "Einzugsermächtigung zu ausstehender Lastschrift widerrufen."
             self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},

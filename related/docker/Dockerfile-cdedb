@@ -113,6 +113,12 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     types-bleach \
     types-Markdown \
     types-tabulate \
+    lxml-stubs \
+    types-Pillow \
+    types-ldap3 \
+    types-passlib \
+    types-psycopg2 \
+    types-zxcvbn \
     'playwright>=1.37.0'
 
 # add startup scripts

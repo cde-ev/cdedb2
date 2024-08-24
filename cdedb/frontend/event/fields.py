@@ -120,14 +120,14 @@ class EventFieldMixin(EventBaseFrontend):
         const.FieldAssociations.lodgement: "event/lodgement_query",
     }
 
-    def field_set_aux(
+    def field_multiset_aux(
             self, rs: RequestState, event_id: int, field_id: Optional[int],
             ids: Collection[int], kind: const.FieldAssociations,
     ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
-        a standardized way to be used in the generic field_set_* functions.
+        a standardized way to be used in the generic field_multiset_* functions.
 
         :param ids: ids of the entities where the field should be modified.
         :param kind: specifies the entity: registration, course or lodgement
@@ -193,10 +193,10 @@ class EventFieldMixin(EventBaseFrontend):
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata("field_id", "ids", "kind")
-    def field_set_select(self, rs: RequestState, event_id: int,
-                         field_id: Optional[vtypes.ID],
-                         ids: Optional[vtypes.IntCSVList],
-                         kind: const.FieldAssociations) -> Response:
+    def field_multiset_select(
+            self, rs: RequestState, event_id: int, field_id: Optional[vtypes.ID],
+            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+    ) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
             # If the kind is invalid, we do not know where to redirect to.
@@ -207,16 +207,16 @@ class EventFieldMixin(EventBaseFrontend):
 
         if field_id:
             return self.redirect(
-                rs, "event/field_set_form", {
+                rs, "event/field_multiset_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id, 'kind': kind.value})
-        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
+        _, ordered_ids, labels, _ = self.field_multiset_aux(rs, event_id, field_id, ids,
                                                        kind)
         fields = [(field.id, field.title)
                   for field in xsorted(rs.ambience['event'].fields.values())
                   if field.association == kind]
         return self.render(
-            rs, "fields/field_set_select", {
+            rs, "fields/field_multiset_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
                 'ordered': ordered_ids, 'labels': labels, 'fields': fields,
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
@@ -224,10 +224,11 @@ class EventFieldMixin(EventBaseFrontend):
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
-    def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-                       ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-                       change_note: Optional[str] = None, internal: bool = False,
-                       ) -> Response:
+    def field_multiset_form(
+            self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+            change_note: Optional[str] = None, internal: bool = False,
+    ) -> Response:
         """Render form.
 
         The internal flag is used if the call comes from another frontend
@@ -239,14 +240,14 @@ class EventFieldMixin(EventBaseFrontend):
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
-        entities, ordered_ids, labels, field = self.field_set_aux(
+        entities, ordered_ids, labels, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
         values = {f"input{anid}": entity['fields'].get(field.field_name)
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
-        return self.render(rs, "fields/field_set", {
+        return self.render(rs, "fields/field_multiset", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
             'entities': entities, 'labels': labels, 'ordered': ordered_ids,
             'kind': kind.value, 'change_note': change_note,
@@ -255,18 +256,20 @@ class EventFieldMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
-    def field_set(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-                  ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-                  change_note: Optional[str] = None) -> Response:
+    def field_multiset(
+            self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+            change_note: Optional[str] = None,
+    ) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
-            return self.field_set_form(
+            return self.field_multiset_form(
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
                 change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
-        entities, _, _, field = self.field_set_aux(
+        entities, _, _, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
@@ -284,7 +287,7 @@ class EventFieldMixin(EventBaseFrontend):
         }
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
-            return self.field_set_form(
+            return self.field_multiset_form(
                 rs, event_id, field_id=field_id, ids=ids, kind=kind,
                 change_note=change_note, internal=True)
 
