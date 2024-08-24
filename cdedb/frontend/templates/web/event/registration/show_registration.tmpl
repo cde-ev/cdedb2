@@ -33,8 +33,14 @@
     <dl class="dl-horizontal">
         <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
         <dd>
-            {{ util.persona_name(persona, include_nickname=True, with_titles=True) }}
+            {{ util.persona_name(persona, include_nickname=True) }}
         </dd>
+        {% if persona['legal_given_names'] != persona['given_names'] %}
+            <dt title="{% trans %}Legal Name{% endtrans %}">{% trans %}Legal Name{% endtrans %}</dt>
+            <dd>
+                {{ util.persona_name(persona, use_legal_name=True, with_titles=True) }}
+            </dd>
+        {% endif %}
         <dt title="{% trans %}CdEDB-ID{% endtrans %}">{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
