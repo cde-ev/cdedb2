@@ -109,7 +109,7 @@
             {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}
         {% endif %}
 
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course" if ambience['course'] else "event/course_stats")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#configurecourseform').cdedbProtectChanges();

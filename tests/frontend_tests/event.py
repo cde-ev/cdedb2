@@ -637,7 +637,7 @@ class TestEventFrontend(FrontendTest):
 
         # add a course
         self.traverse("Kurse", "Kurs hinzufügen")
-        f = self.response.forms['createcourseform']
+        f = self.response.forms['configurecourseform']
         f['title'] = "Chillout mit Musik"
         f['nr'] = "1"
         f['shortname'] = "music"
@@ -1496,7 +1496,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Heldentum bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changecourseform']
+        f = self.response.forms['configurecourseform']
         self.assertEqual("1", f.get('segments', index=0).value)
         self.assertEqual(None, f.get('segments', index=1).value)
         self.assertEqual("3", f.get('segments', index=2).value)
@@ -1515,7 +1515,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/change'})
-        f = self.response.forms['changecourseform']
+        f = self.response.forms['configurecourseform']
         self.assertEqual(f['nr'].value, "ω")
         self.assertEqual(None, f.get('segments', index=0).value)
         self.assertEqual("2", f.get('segments', index=1).value)
@@ -1538,7 +1538,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/stats'},
                       {'href': '/event/event/1/course/create'})
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
-        f = self.response.forms['createcourseform']
+        f = self.response.forms['configurecourseform']
         self.assertEqual("1", f.get('segments', index=0).value)
         self.assertEqual("2", f.get('segments', index=1).value)
         self.assertEqual("3", f.get('segments', index=2).value)
@@ -1555,7 +1555,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Alexander Grothendieck")
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("math bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changecourseform']
+        f = self.response.forms['configurecourseform']
         self.assertEqual("1", f.get('segments', index=0).value)
         self.assertEqual(None, f.get('segments', index=1).value)
         self.assertEqual("3", f.get('segments', index=2).value)
@@ -1570,7 +1570,7 @@ etc;anything else""", f['entries_2'].value)
     def test_create_course_with_fields(self) -> None:
         self.get("/event/event/1/course/create")
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
-        f = self.response.forms['createcourseform']
+        f = self.response.forms['configurecourseform']
         f['title'] = "Abstract Nonsense"
         f['nr'] = "ω"
         f['shortname'] = "math"
@@ -6085,7 +6085,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertNonPresence("Kurs fällt aus")
 
         self.traverse("Bearbeiten")
-        f = self.response.forms['changecourseform']
+        f = self.response.forms['configurecourseform']
         # Disabled checkboxes have a `value` of None, but have their `_value` set.
         self.assertEqual(
             f.get('active_segments', index=0).value, "8")

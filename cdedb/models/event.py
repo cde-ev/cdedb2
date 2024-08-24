@@ -709,6 +709,8 @@ class Course(EventDataclass):
     min_size: int
     max_size: int
 
+    is_visible: bool
+
     notes: Optional[str]
 
     fields: Mapping[str, Any] = dataclasses.field(default_factory=dict)
