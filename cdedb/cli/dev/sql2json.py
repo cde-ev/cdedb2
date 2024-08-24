@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
-from cdedb.common import nearly_now
+from cdedb.common import CdEDBObject, nearly_now
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
 
@@ -97,7 +97,7 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
 
     for table in tables:
         if table in ignored_tables:
-            entities = tuple()
+            entities: tuple[CdEDBObject, ...] = ()
         else:
             order = ", ".join(sort_table_by.get(table, []) + ['id'])
             query = f"SELECT * FROM {table} ORDER BY {order}"
