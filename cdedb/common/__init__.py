@@ -546,14 +546,20 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
 
 
 def make_persona_forename(persona: CdEDBObject,
+                          use_legal_name: bool = False,
                           include_nickname: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
+    if use_legal_name and include_nickname:
+        raise RuntimeError(n_("Invalid use of keyword parameters."))
     nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
+    legal_given_names: str = persona['legal_given_names']
+    if use_legal_name:
+        return legal_given_names
     if include_nickname:
         if not nickname:
             return given_names
@@ -563,6 +569,7 @@ def make_persona_forename(persona: CdEDBObject,
 
 
 def make_persona_name(persona: CdEDBObject,
+                      use_legal_name: bool = False,
                       include_nickname: bool = False,
                       with_family_name: bool = True,
                       with_titles: bool = False) -> str:
@@ -572,7 +579,8 @@ def make_persona_name(persona: CdEDBObject,
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
-    forename = make_persona_forename(persona, include_nickname=include_nickname)
+    forename = make_persona_forename(
+        persona, use_legal_name=use_legal_name, include_nickname=include_nickname)
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])

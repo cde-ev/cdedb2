@@ -60,14 +60,20 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
 
 
 def make_persona_forename(persona: CdEDBObject,
+                          use_legal_name: bool = False,
                           include_nickname: bool = False) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
     "User Experience Conventions".
     """
+    if use_legal_name and include_nickname:
+        raise RuntimeError(n_("Invalid use of keyword parameters."))
     nickname: str = persona.get('nickname', "")
     given_names: str = persona['given_names']
+    legal_given_names: str = persona['legal_given_names']
+    if use_legal_name:
+        return legal_given_names
     if include_nickname:
         if not nickname:
             return given_names
