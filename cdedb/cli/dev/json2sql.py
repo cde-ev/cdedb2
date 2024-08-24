@@ -38,6 +38,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     non_seq_id_tables = [
         "cde.org_period",
         "cde.expuls_period",
+        "core.postal_code_locations",
     ]
 
     seq_id_tables = [t for t in data if t not in non_seq_id_tables]

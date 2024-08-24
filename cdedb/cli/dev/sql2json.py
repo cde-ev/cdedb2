@@ -96,13 +96,14 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
             tzinfo=reference_frame.tzinfo)
 
     for table in tables:
-        order = ", ".join(sort_table_by.get(table, []) + ['id'])
-        query = f"SELECT * FROM {table} ORDER BY {order}"
-        entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
-        if not silent:
-            print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        else:
+            order = ", ".join(sort_table_by.get(table, []) + ['id'])
+            query = f"SELECT * FROM {table} ORDER BY {order}"
+            entities = sql.query_all(rs, query, ())
+            if not silent:
+                print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved
