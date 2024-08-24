@@ -215,6 +215,6 @@ def postal_code_locations(conn: connection) -> list[str]:
         for e in reader
     ))
 
-    with conn as conn:
+    with conn:
         with conn.cursor() as cur:
             return [cur.mogrify(command, params).decode("utf8")]

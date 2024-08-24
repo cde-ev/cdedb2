@@ -222,7 +222,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
             near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
             near_radius = rs.values['near_radius'] = request_extractor(
-                rs, {'near_radius': Optional[int]})['near_radius']
+                rs, {'near_radius': Optional[int]})['near_radius']  # type: ignore[dict-item]
             if pl and pu:
                 defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
             elif pl:
@@ -278,7 +278,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(
                 rs, {'phone', 'near_pc', 'near_radius'})
-        elif is_search and not query.constraints:
+        elif is_search and query and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
             assert query is not None

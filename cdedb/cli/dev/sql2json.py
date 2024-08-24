@@ -29,6 +29,7 @@ sort_table_by = {
 ignored_tables = {
     "core.sessions",
     "core.quota",
+    "core.postal_code_locations",
 }
 
 # mark some columns which shall not be filled with information extracted from the
