@@ -614,6 +614,45 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Inga Iota")
 
+    @prepsql("UPDATE core.personas SET postal_code = '47239' WHERE id = 1;"
+             "UPDATE core.personas SET postal_code = '47447' WHERE id = 2;"
+             "UPDATE core.personas SET postal_code = '47802' WHERE id = 3;"
+             "UPDATE core.personas SET is_searchable = True  WHERE id = 3;"
+             "UPDATE core.personas SET postal_code = '45145' WHERE id = 9;"
+             "UPDATE core.personas SET postal_code = '50189' WHERE id = 15;")
+    @as_users("berta")
+    def test_member_search_nearby_postal_codes(self) -> None:
+        self.traverse("Mitglieder", "CdE-Mitglied suchen")
+        f = self.response.forms['membersearchform']
+        f['near_pc'] = "47239"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Darf nicht leer sein.")
+        f['near_pc'] = ""
+        f['near_radius'] = 5_000
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_pc', "Darf nicht leer sein.")
+        f['near_pc'] = "47239"
+        f['near_radius'].force_value(22222)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Unzulässige Auswahl.")
+        f['near_radius'] = 5_000
+        self.submit(f)
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Anton", div='result')
+        self.assertPresence("Bert", div='result')
+        f['near_radius'] = 10_000
+        self.submit(f)
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Charly", div='result')
+        f['near_radius'] = 30_000
+        self.submit(f)
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Inga", div='result')
+        f['near_radius'] = 80_000
+        self.submit(f)
+        self.assertPresence("5 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Olaf", div='result')
+
     @as_users("charly")
     def test_member_search_non_searchable(self) -> None:
         self.traverse({'description': 'Mitglieder'})
