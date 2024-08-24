@@ -9,7 +9,9 @@ BEGIN;
             long            float8
     );
     GRANT SELECT ON core.postal_code_locations TO cdb_persona;
-    GRANT ALL PRIVILEGES ON core.postal_code_locations TO cdb;
+
+    ALTER TABLE core.postal_code_locations OWNER TO cdb;
+
     CREATE TEMPORARY TABLE t (
            loc_id           varchar,
            postal_code      varchar,

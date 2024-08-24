@@ -483,7 +483,6 @@ CREATE TABLE core.postal_code_locations (
         long            float8
 );
 GRANT SELECT ON core.postal_code_locations TO cdb_persona;
-GRANT ALL PRIVILEGES ON core.postal_code_locations TO cdb;
 
 ---
 --- SCHEMA cde
