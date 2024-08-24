@@ -296,8 +296,8 @@ _DEFAULTS = {
     "NEARBY_SEARCH_RADII": {
         5_000: "5 km",
         10_000: "10 km",
-        25_000: "25 km",
-        50_000: "50 km",
+        30_000: "30 km",
+        80_000: "80 km",
     },
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),

@@ -209,7 +209,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
             # our query facility does not allow + signs, thus special-case it here
             phone = rs.values['phone'] = rs.request.values.get('phone')
             if phone:
-                # remove leading zeroes - in database, numbers are stored starting with '+'
+                # remove leading zeroes - in database,
+                #  numbers are stored starting with '+'
                 phone = ("".join(char for char in phone if char in '0123456789')
                          .removeprefix("0").removeprefix("0"))
                 if phone:
@@ -221,7 +222,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
             near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
             near_radius = rs.values['near_radius'] = request_extractor(
-                rs, {'near_radius': int})['near_radius']
+                rs, {'near_radius': Optional[int]})['near_radius']
             if pl and pu:
                 defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
             elif pl:
@@ -229,17 +230,19 @@ class CdEBaseFrontend(AbstractUserFrontend):
             elif pu:
                 defaults['qval_postal_code,postal_code2'] = f"00000 {pu:0<5}"
             if near_pc or near_radius:
+                if (near_radius and
+                      near_radius not in self.conf["NEARBY_SEARCH_RADII"]):
+                    rs.append_validation_error(
+                        ('near_radius', ValueError(n_("Invalid choice."))),
+                    )
                 if pl or pu:
-                    warn = ValidationWarning(n_("Ignored in favor of postal code search."))
+                    warn = ValueError(n_(
+                        "Incompatible with postal code search."))
                     rs.extend_validation_errors([
                         ('near_pc', warn),
                         ('near_radius', warn),
                     ])
-                if near_radius and near_radius not in self.conf["NEARBY_SEARCH_RADII"]:
-                    rs.append_validation_error(
-                        ('near_radius', ValueError(n_("Invalid choice."))),
-                    )
-                if not near_pc:
+                elif not near_pc:
                     rs.append_validation_error(
                         ('near_pc', ValueError(n_("Must not be empty."))),
                     )
@@ -268,7 +271,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
                     pevent_id = int(pevent_id)
                 except ValueError:
                     pass
-            courses: dict[int, str] = {}
             if pevent_id:
                 choices['pcourse_id'] = self.pasteventproxy.list_past_courses(
                     rs, pevent_id)
@@ -276,10 +278,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             self._fix_search_validation_error_references(
                 rs, {'phone', 'near_pc', 'near_radius'})
+        elif is_search and not query.constraints:
+            rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
             assert query is not None
-            if not query.constraints:
-                rs.notify("error", n_("You have to specify some filters."))
 
             def restrict(constraint: QueryConstraint) -> QueryConstraint:
                 field, operation, value = constraint
@@ -309,7 +311,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @staticmethod
     def _fix_search_validation_error_references(
-            rs: RequestState, skip: set[str],
+            rs: RequestState, skip: Collection[str] = (),
     ) -> None:
         """A little hack to fix displaying of errors for course and meber search:
 
