@@ -353,7 +353,6 @@ class CoreGenesisBackend(CoreBaseBackend):
                 update = {
                     k: case[k] for k in update_keys if case[k]
                 }
-                update['legal_given_names'] = update['given_names']
                 update['id'] = persona_id
                 # we grant trial membership by default for cde genesis cases
                 if "cde" in roles and not persona["is_member"]:
@@ -390,6 +389,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                     set(REALM_SPECIFIC_GENESIS_FIELDS[case['realm']])) - {"id"})
 
             data = {k: v for k, v in case.items() if k in allowed_keys}
+            # we only request given_names in genesis cases
             data['legal_given_names'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
