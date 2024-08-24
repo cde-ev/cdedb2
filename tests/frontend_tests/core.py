@@ -274,7 +274,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names'] = "Berta"
+        f['qval_given_names,nickname'] = "Berta"
         self.submit(f)
 
         self.assertTitle(USER_DICT['berta']['default_name_format'])

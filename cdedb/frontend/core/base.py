@@ -848,14 +848,14 @@ class CoreBaseFrontend(AbstractFrontend):
 
         scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
-        key = "username,family_name,given_names"
+        key = "username,family_name,given_names,legal_given_names,nickname"
         spec = scope.get_spec()
         spec[key] = QuerySpecEntry("str", "")
         query = Query(
             scope=scope,
             spec=spec,
             fields_of_interest=("personas.id", "family_name", "given_names",
-                                "username"),
+                                "nickname", "username"),
             constraints=[(key, QueryOperators.match, t) for t in terms],
             order=(("personas.id", True),),
         )
@@ -1024,15 +1024,19 @@ class CoreBaseFrontend(AbstractFrontend):
                 data = tuple()
             else:
                 search: list[tuple[str, QueryOperators, Any]]
-                key = "username,family_name,given_names"
+                key = "username,family_name,given_names,nickname"
+                if kind in {"admin_persona", "admin_all_users"}:
+                    key += ",legal_given_names"
                 search = [(key, QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
                 spec = scope.get_spec()
                 spec[key] = QuerySpecEntry("str", "")
+                fields_of_interest = ("personas.id", "username", "family_name",
+                                      "given_names", "nickname")
+                if kind in {"admin_persona", "admin_all_users"}:
+                    fields_of_interest += ("legal_given_names", )
                 query = Query(
-                    scope, spec,
-                    ("personas.id", "username", "family_name", "given_names",
-                     ), search, (("personas.id", True),))
+                    scope, spec, fields_of_interest, search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
         # Filter result to get only users allowed to be a subscriber of a list,

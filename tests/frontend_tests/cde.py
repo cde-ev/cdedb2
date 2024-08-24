@@ -465,7 +465,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_given_names'] = "Berta"
+        f['qval_given_names,nickname'] = "Berta"
         self.submit(f)
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
@@ -546,7 +546,7 @@ class TestCdEFrontend(FrontendTest):
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
         fields = [
-            "fulltext", "given_names", "family_name,birth_name",
+            "fulltext", "given_names,nickname", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
             "username", "address,address_supplement,address2,address_supplement2",
             "location,location2", "country,country2"]
@@ -572,13 +572,13 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'CdE-Mitglied suchen'})
         # len(entry) <= 3 must equal the column entry in the database
         f = self.response.forms['membersearchform']
-        f['qval_given_names'] = "Ant"
+        f['qval_given_names,nickname'] = "Ant"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
 
         # len(entry) > 3 performs a wildcard search
-        f['qval_given_names'] = "Anton"
+        f['qval_given_names,nickname'] = "Anton"
         self.submit(f)
         self.assertTitle("Anton Administrator")
 

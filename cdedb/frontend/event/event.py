@@ -1292,14 +1292,14 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("warning", n_("Active characters found in search."))
             return self.show_event(rs, event_id)
 
-        key = "username,family_name,given_names"
+        key = "username,family_name,given_names,nickname,legal_given_names"
         search = [(key, QueryOperators.match, t) for t in terms]
         spec = QueryScope.quick_registration.get_spec()
         spec[key] = QuerySpecEntry("str", "")
         query = Query(
             QueryScope.quick_registration, spec,
             ("registrations.id", "username", "family_name",
-             "given_names"),
+             "given_names", "nickname", "legal_given_names"),
             search, (("registrations.id", True),))
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
@@ -1309,6 +1309,8 @@ class EventEventMixin(EventBaseFrontend):
         elif result:
             # TODO make this accessible
             pass
+        # TODO what does the remainder of this function? How should we include nickname
+        #  and legal_given_names here?
         base_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),

@@ -523,7 +523,7 @@ _QUERY_SPECS = {
     QueryScope.cde_member:
         {
             "personas.id": QuerySpecEntry("id", n_("ID")),
-            "given_names": QuerySpecEntry("str", n_("Given Names")),
+            "given_names,nickname": QuerySpecEntry("str", n_("Given Names")),
             "family_name,birth_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
             "address,address_supplement,address2,address_supplement2":
