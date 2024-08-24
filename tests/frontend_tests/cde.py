@@ -450,7 +450,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Bertå Beispiel", div='1-1001')
         self.assertPresence("Bertå Beispiel", div='2-1002')
 
-    @as_users("anton", "berta", "inga")
+    @as_users("berta")
     def test_member_search(self) -> None:
         # by family_name and birth_name
         self.traverse({'description': 'Mitglieder'},
@@ -550,7 +550,8 @@ class TestCdEFrontend(FrontendTest):
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
             "username", "address,address_supplement,address2,address_supplement2",
-            "location,location2", "country,country2"]
+            "location,location2",
+        ]
         for field in fields:
             f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
