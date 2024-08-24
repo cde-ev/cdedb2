@@ -9,15 +9,16 @@ Given Names, Legal Given Names & Nickname
 
 For each person, the CdEDB allows to store three different forename fields: ``given_names``, ``legal_given_names`` and ``nickname``.
 The ``legal_given_names`` contains the person's official forname(s) (which might be a "deadname" which is no longer used by the person),
-whereas the ``given_names`` should be used to give the name, how the person wants to be called by others.
+whereas the ``given_names`` should be used to give the name, how the person wants to be usually called by others.
 At last, the ``nickname`` is the name the person wants to use at CdE events.
 
-The ``legal_given_names`` should only be used for legal documents, like invoices or donation recipies.
+The ``legal_given_names`` should only be used for legal documents, like invoices, donation recipies or direct debit authorization forms.
 The ``nickname`` is only printed on the nametag of CdE events. Additionally, it is visible on the profile and is
 displayed to Orgas in addition to the ``given_names``, to allow better recognition.
 At ever other occasion, the ``given_names`` are used to address or refer to a person.
 
-To apply this logic in the web template and frontend code, there is the :func:`cdedb.frontend.common.make_persona_name` helper function resp. the ``persona_name()`` macro in the ``util.tmpl`` template.
+To apply this logic in the web template and frontend code, there is the :func:`cdedb.frontend.common.make_persona_name` helper function
+resp. the ``persona_name()`` macro in the ``util.tmpl`` template.
 
 
 Buttons

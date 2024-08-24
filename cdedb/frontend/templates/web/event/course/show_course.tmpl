@@ -123,7 +123,8 @@
                                     {% if not registration_part_status.is_involved() %}<s>{% endif -%}
                                     {{ util.href(cdedblink('event/show_registration',
                                                         {'registration_id': registration_id}),
-                                                util.persona_name(personas[registrations[registration_id]['persona_id']], include_nickname=True)) }}
+                                                util.persona_name(personas[registrations[registration_id]['persona_id']],
+                                                                  include_nickname=True)) }}
                                     {%- if registrations[registration_id]['tracks'][track_id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})

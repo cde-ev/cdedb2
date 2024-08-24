@@ -182,10 +182,10 @@
                 {% endif %}
             </dd>
             {% if data['legal_given_names'] %}
-                <dt title="{% trans %}Legal Given Names{% endtrans %}">
-                    {% trans %}Legal Given Names{% endtrans %}
+                <dt title="{% trans %}Legal Name{% endtrans %}">
+                    {% trans %}Legal Name{% endtrans %}
                 </dt>
-                <dd>{{ data['legal_given_names'] }}</dd>
+                <dd>{{ util.persona_name(data, use_legal_name=True, with_titles=True) }}</dd>
             {% endif %}
             {% if data['birth_name'] %}
                 <dt title="{% trans %}Birth Name{% endtrans %}">
