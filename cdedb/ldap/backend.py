@@ -17,10 +17,12 @@ from typing import (
     overload,
 )
 
+import psycopg.abc
+import ldaptor.protocols.pureldap as pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
-from psycopg import AsyncCursor
+from psycopg import AsyncCursor, sql
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 
@@ -122,7 +124,7 @@ class LDAPsqlBackend:
                           for name, pwd in SecretsConfig()["LDAP_DUA_PW"].items()}
 
     @staticmethod
-    async def execute_db_query(cur: AsyncCursor[DictRow], query: str,
+    async def execute_db_query(cur: AsyncCursor[DictRow], query: psycopg.abc.Query,
                                params: Sequence["DatabaseValue_s"]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
@@ -141,14 +143,14 @@ class LDAPsqlBackend:
         #              f" {cur.mogrify(query, sanitized_params)}.")
         await cur.execute(query, sanitized_params)
 
-    async def query_exec(self, query: str, params: Sequence["DatabaseValue_s"]) -> int:
+    async def query_exec(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    async def query_one(self, query: str, params: Sequence["DatabaseValue_s"],
+    async def query_one(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
                         ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -159,7 +161,7 @@ class LDAPsqlBackend:
                 await self.execute_db_query(cur, query, params)
                 return from_db_output(await cur.fetchone())
 
-    async def query_all(self, query: str, params: Sequence["DatabaseValue_s"],
+    async def query_all(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
                         ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -443,11 +445,71 @@ class LDAPsqlBackend:
         """
         return cls.user_dn(persona_id)
 
-    async def list_users(self) -> list[DN]:
-        query = "SELECT id FROM core.personas WHERE NOT is_archived"
+    @classmethod
+    def _lower_ldap_filter_to_sql(
+        cls,
+        filter: pureldap.LDAPFilter | pureldap.LDAPFilterSet | Any,
+        attr_replacements: dict[str, str],
+    ) -> sql.Composable:
+        """Lower the given LDAP filter to a SQL query.
+
+        This is a helper function to convert LDAP filters to SQL queries
+        and can be used to speed up some queries.
+        Lowering is only implemented for LDAP filters
+        which are used by consumers of our LDAP interface
+        in performance critical paths (e.g. user lookup upon login).
+        """
+        if isinstance(filter, pureldap.LDAPFilter_and):
+            return sql.SQL("({})").format(sql.SQL(" AND ").join(
+                cls._lower_ldap_filter_to_sql(f, attr_replacements) for f in filter.data
+            ))
+        elif isinstance(filter, pureldap.LDAPFilter_or):
+            return sql.SQL("({})").format(sql.SQL(" OR ").join(
+                cls._lower_ldap_filter_to_sql(f, attr_replacements) for f in filter.data
+        ))
+        elif isinstance(filter, pureldap.LDAPFilter_not):
+            return sql.SQL("NOT {}").format(
+                cls._lower_ldap_filter_to_sql(filter.value, attr_replacements)
+            )
+        elif isinstance(filter, pureldap.LDAPFilter_present):
+            return (
+                sql.SQL("{} IS NOT NULL").format(sql.Identifier(attr_replacements[filter.value.decode()]))
+                if filter.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named in the SQL query
+                # therefore we have to be defensive and assume that the attribute is present.
+                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                else sql.Literal(True)
+            )
+        elif isinstance(filter, pureldap.LDAPFilter_equalityMatch):
+            return (
+                sql.SQL("{} = {}").format(
+                    sql.Identifier(attr_replacements[filter.attributeDesc.value.decode()]),
+                    sql.Literal(filter.assertionValue.value.decode()),
+                )
+                if filter.attributeDesc.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named in the SQL query
+                # therefore we have to be defensive and assume that the attribute is present.
+                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                else sql.Literal(True)
+            )
+        else:
+            return sql.Literal(True)
+
+    async def list_users(self, filterObject: Optional[pureldap.LDAPFilter | pureldap.LDAPFilterSet | Any] = None) -> list[DN]:
+        query: sql.SQL | sql.Composed = sql.SQL("SELECT id FROM core.personas WHERE NOT is_archived")
+        if filterObject is not None:
+            # We have to replace the attribute names in the LDAP filter with the
+            # corresponding column names in the SQL query.
+            attr_replacements = {
+                "sn": "family_name",
+                "givenName": "given_names",
+                "mail": "username",
+                "uid": "id",
+            }
+            query += sql.SQL(" AND ") + self._lower_ldap_filter_to_sql(filterObject, attr_replacements)
         return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
 
-    async def get_users_groups(self, persona_ids: Collection[int],
+    async def _get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:
         """Collect all groups of each given user.
 
@@ -527,7 +589,7 @@ class LDAPsqlBackend:
 
         return ret
 
-    async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
+    async def _get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = (
             "SELECT id, username, display_name, given_names, family_name, password_hash"
@@ -536,7 +598,7 @@ class LDAPsqlBackend:
             e["id"]: e async for e in self.query_all(query, (user_ids,))
         }
 
-    async def get_users(self, dns: list[DN]) -> LDAPObjectMap:
+    async def get_users(self, dns: list[DN], attributes: Any) -> LDAPObjectMap:
         """Get the users specified by dn.
 
         The relevant RFCs are
@@ -550,10 +612,10 @@ class LDAPsqlBackend:
                 continue
             dn_to_persona_id[dn] = persona_id
 
-        users, groups = await asyncio.gather(
-            self.get_users_data(dn_to_persona_id.values()),
-            self.get_users_groups(dn_to_persona_id.values()),
-        )
+        users = await self._get_users_data(dn_to_persona_id.values())
+        groups = {}
+        if len(attributes) == 0 or b"*" in attributes or b"memberOf" in attributes:
+            groups = await self._get_users_groups(dn_to_persona_id.values())
 
         ret = dict()
         for dn, persona_id in dn_to_persona_id.items():
@@ -569,7 +631,7 @@ class LDAPsqlBackend:
                 b"mail": [user['username']],
                 b"uid": [self.user_uid(persona_id)],
                 b"userPassword": [user['password_hash']],
-                b"memberOf": groups[persona_id],
+                b"memberOf": groups.get(persona_id, []),
                 b"ipaUniqueID": [f"personas/{persona_id}"],
             }
             ret[dn] = self._to_bytes(ldap_user)
