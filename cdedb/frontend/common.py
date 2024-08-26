@@ -11,7 +11,6 @@ import collections.abc
 import copy
 import csv
 import datetime
-import decimal
 import email
 import email.charset
 import email.encoders
@@ -2404,8 +2403,7 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
-                             donation: decimal.Decimal = decimal.Decimal(0)) -> str:
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".

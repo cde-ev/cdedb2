@@ -6881,12 +6881,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.get(f"/event/event/{event_id}/registration/{reg_ids[1]}/show")
         self.assertPresence("Emilia")
         self.assertPresence(
-            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+            "Teilnahmebeitrag CdE-Party 2050")
 
         self.get(f"/event/event/{event_id}/registration/{reg_ids[2]}/show")
         self.assertPresence("Berta")
         self.assertPresence(
-            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+            "Teilnahmebeitrag CdE-Party 2050")
 
         self.traverse("Teilnahmebeiträge")
         self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")
