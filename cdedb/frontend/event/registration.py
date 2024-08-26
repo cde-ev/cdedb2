@@ -790,7 +790,7 @@ class EventRegistrationMixin(EventBaseFrontend):
              'Subject': subject,
              'Reply-To': reply_to},
             {'age': age, 'mail_text': rs.ambience['event'].mail_text,
-             **payment_data})
+             'mgettext': rs.mail_gettext, **payment_data})
         rs.notify_return_code(new_id, success=n_("Registered for event."))
 
         if rs.ambience['event'].notify_on_registration.send_on_register():
