@@ -41,9 +41,6 @@ Alle Teilnahmebeiträge haben einen der folgenden Typen:
 Die Typen dienen der Übersichtlichkeit, sowie der Statistik und haben fast keine
 direkte Auswirkung in ihrer Funktionalität.
 
-Die einzige Ausnahme hiervon ist, dass im vorgeschlagenen Verwendungszweck der Anteil
-vom Typ Spende gesondert ausgewiesen wird.
-
 Teilnehmende, deren zu zahlender Beitrag sich aus mehr als einem Beitragstypen
 zusammensetzt, erhalten bei und nach ihrer Anmeldung eine Übersicht über die
 Zusammensetzung ihres Beitrags, aufgeschlüsselt nach Beitragstyp.
@@ -116,7 +113,7 @@ vor ``and``, ``and`` gilt vor ``or``, ``or`` vor ``xor``, etc.
 Zusätzlich ist es möglich runde Klammern (``()``) zu verwenden um die
 Auswertungsreihenfolge zu verändern.
 
-Die Verwendung solcher Formeln sei im Folgenden anhand von Beispielen erläutert:
+Die Verwendung solcher Formeln ist unten anhand von Beispielen erläutert.
 
 Personalisierte Teilnahmebeiträge
 ---------------------------------

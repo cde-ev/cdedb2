@@ -2410,9 +2410,8 @@ def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
         event=asciificator(event.title),
-        donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id']),
