@@ -16,7 +16,7 @@
 {% block content %}
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
-            {% if event.is_visible_for(user, is_registered, personal_only=False) %}
+            {% if event.is_visible_for(user, is_registered, privileged=True) %}
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
                         icon='chalkboard-teacher') %}
             {% else %}

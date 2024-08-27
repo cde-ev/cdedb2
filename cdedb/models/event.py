@@ -217,12 +217,12 @@ class Event(EventDataclass):
                  or self.registration_hard_limit >= reference_time))
 
     def is_visible_for(self, user: User, is_registered: bool, *,
-                       personal_only: bool) -> bool:
+                       privileged: bool) -> bool:
         """Whether an event is visible dependent on your own registration status.
 
-         :param personal: If only about access in a non-privileged capacity."""
+         :param privileged: If access in a privileged capacity is to be considered."""
 
-        return is_registered or self.is_visible or (not personal_only and (
+        return is_registered or self.is_visible or (privileged and (
             "event_admin" in user.roles or user.persona_id in self.orgas))
 
     @functools.cached_property

@@ -3416,7 +3416,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         self.assertPresence("CdE-Party 2050", div="current-events")
         self.assertPresence("Veranstaltung versteckt", div="current-events")
         self.traverse("CdE-Party 2050")
-        self.assertNonPresence("have a party")
+        self.assertPresence("have a party", div="description")
         self.assertPresence("Übersicht", div="sidebar-navigation")
 
     @event_keeper

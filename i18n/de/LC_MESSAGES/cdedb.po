@@ -13559,8 +13559,8 @@ msgid "Event is past."
 msgstr "Veranstaltung ist vorbei"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:71
-msgid "event hidden,&#32;"
-msgstr "Veranstaltung versteckt,&#32;"
+msgid "event hidden,"
+msgstr "Veranstaltung versteckt,"
 
 #: cdedb/frontend/templates/web/event/event/index.tmpl:96
 #: cdedb/frontend/templates/web/event/event/index.tmpl:109

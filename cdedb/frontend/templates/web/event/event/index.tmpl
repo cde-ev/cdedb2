@@ -33,7 +33,7 @@
     {% if current_events %}
         <ul class="spaced" id="current-events">
             {% for event in current_events.values()|sort if event.is_visible_for(
-                    user, events_registration.get(event.id) is not none, personal_only=True) %}
+                    user, events_registration.get(event.id) is not none, privileged=False) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
@@ -69,9 +69,9 @@
                         {% if events_registration[event.id] %}
                             ({% if not event.is_visible -%}
                                 {% trans %}
-                                    event hidden,&#32;
+                                    event hidden,
                                 {% endtrans %}
-                            {%- endif -%}
+                            {% endif -%}
                             {% trans registered=util.href(link, gettext("registered")) -%}
                                 already {{ registered }}
                             {% endtrans %}
@@ -150,7 +150,7 @@
         {{ util.h(n_("Other Events")) }}
         <ul class="spaced" id="other-events">
             {% for event in other_events.values()|sort if event.is_visible_for(
-                    user, events_registration.get(event.id) is not none, personal_only=True) %}
+                    user, events_registration.get(event.id) is not none, privileged=False) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />

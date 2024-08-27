@@ -124,7 +124,7 @@ class EventEventMixin(EventBaseFrontend):
             params['ccs_violations'] = constraint_violations['ccs_violations']
             params['violation_severity'] = constraint_violations['max_severity']
         elif not rs.ambience['event'].is_visible_for(rs.user, is_registered,
-                                                     personal_only=False):
+                                                     privileged=True):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
@@ -212,7 +212,7 @@ class EventEventMixin(EventBaseFrontend):
         is_registered = bool(self.eventproxy.list_registrations(
             rs, event_id, rs.user.persona_id))
         if not rs.ambience['event'].is_visible_for(rs.user, is_registered,
-                                                   personal_only=False):
+                                                   privileged=True):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         path = self.eventproxy.get_minor_form_path(rs, event_id)
         return self.send_file(

@@ -4,7 +4,7 @@
 
 {% macro one_event_links(data) %}
     <div class="list-group tear-down">
-        {% if data.is_visible_for(user, is_registered, personal_only=True) or data['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
+        {% if data.is_visible_for(user, is_registered, privileged=False) or data['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), gettext("Overview"),
                      aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'event_show')) }}
         {% endif %}
