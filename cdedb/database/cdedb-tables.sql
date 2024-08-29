@@ -1385,8 +1385,12 @@ CREATE TABLE ml.mailinglists (
         event_id                integer REFERENCES event.events(id),
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
-        -- this may be empty, in which case this is an orga list
+        -- If empty, this matches __no__ registrations.
         registration_stati      integer[] NOT NULL DEFAULT array[]::integer[],
+        -- only include registrations of these event parts.
+        -- (REFERENCES event.event_parts(id)
+        -- If empty, this includes registrations from __all__ parts.
+        part_ids                integer[] NOT NULL DEFAULT array[]::integer[],
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)

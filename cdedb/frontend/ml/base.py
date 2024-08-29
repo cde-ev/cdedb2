@@ -394,6 +394,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             events = self.eventproxy.get_events(rs, event_ids)
             event_entries = [(e.id, e.title) for e in xsorted(events.values())]
         else:
+            events = {}
             event_entries = []
         if "assembly_id" in additional_fields:
             assemblies = self.assemblyproxy.list_assemblies(rs)
@@ -409,6 +410,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                                                   allow_restricted=False)
                       and ml.full_moderator_fields)
         return self.render(rs, "change_mailinglist", {
+            'events': events,
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'additional_fields': additional_fields,
@@ -456,7 +458,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
-        rs.notify_return_code(code)
+        rs.notify_return_code(code, info=n_("Nothing changed."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")

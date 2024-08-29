@@ -1,20 +1,19 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import itertools
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 from subman.machine import SubscriptionPolicy
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
@@ -156,10 +155,9 @@ class Mailinglist(CdEDataclass):
         return mandatory, optional
 
     @classmethod
-    def get_additional_fields(cls) -> Mapping[str, Literal["str", "[str]"]]:
+    def get_additional_fields(cls) -> dict[str, dataclasses.Field[Any]]:
         additional_fields = set(fields(cls)) - set(fields(Mailinglist))
-        return {field.name: requestdict_field_spec(field)
-                for field in additional_fields}
+        return {field.name: field for field in additional_fields}
 
     viewer_roles: ClassVar[set[str]] = {"ml"}
 
@@ -480,9 +478,12 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
+    part_ids: list[vtypes.ID] = dataclasses.field(default_factory=list)
 
     # This fields require non-restricted moderator access to be changed.
-    full_moderator_fields: ClassVar[set[str]] = {"registration_stati"}
+    full_moderator_fields: ClassVar[set[str]] = {
+        "registration_stati", "part_ids",
+    }
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
@@ -513,8 +514,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if self.event_id is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
+        # Do not restrict based on part ids on purpose.
+        #  This allows matching registrations of other parts to opt in.
         data = bc.event.check_registrations_status(
-            rs, persona_ids, self.event_id, self.registration_stati)
+            rs, persona_ids, self.event_id, self.registration_stati,
+        )
         return {
             k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
             for k, v in data.items()
@@ -532,15 +536,15 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        spec = QueryScope.registration.get_spec(event=event)
-        target = {f"part{part_id}.status" for part_id in event.parts}
-        for column in spec:
-            if set(column.split(',')) == target:
-                status_column = column
-                break
-        else:
-            status_column = ",".join(
-                f"part{part_id}.status" for part_id in event.parts)
+        part_ids = xsorted(self.part_ids or event.parts)
+        status_column = ",".join(f"part{part_id}.status" for part_id in part_ids)
+
+        spec = {
+            "id": QuerySpecEntry("id", "id"),
+            "persona.id": QuerySpecEntry("persona.id", "persona.id"),
+            status_column: QuerySpecEntry("enum_int", "status"),
+        }
+
         query = Query(
             scope=QueryScope.registration,
             spec=spec,
@@ -794,7 +798,8 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
 
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}
 
-ADDITIONAL_TYPE_FIELDS = dict(itertools.chain.from_iterable(
-    atype.get_additional_fields().items()
-    for atype in ML_TYPE_MAP.values()
-))
+ADDITIONAL_TYPE_FIELDS = dict(
+    (field_name, requestdict_field_spec(field))
+    for ml_type in ML_TYPE_MAP.values()
+    for field_name, field in ml_type.get_additional_fields().items()
+)

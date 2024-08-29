@@ -5,7 +5,7 @@ event and assembly realm in the form of specific mailing lists.
 """
 import itertools
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, overload
+from typing import Any, Optional, Protocol, get_args, get_origin, overload
 
 import subman
 
@@ -31,10 +31,10 @@ from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
     ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
-    BackendContainer, EventAssociatedMailinglist,
-    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
-    get_ml_type,
+    BackendContainer, EventAssociatedMeta as EventAssociatedMetaMailinglist,
+    Mailinglist, MLType, get_ml_type,
 )
+from cdedb.uncommon.intenum import CdEIntEnum
 from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
@@ -406,13 +406,21 @@ class MlBackend(AbstractBackend):
                     additional_footer=e["additional_footer"],
                     notes=e["notes"],
                 )
-                if isinstance(ml, EventAssociatedMetaMailinglist):
-                    ml.event_id = e["event_id"]
-                if isinstance(ml, EventAssociatedMailinglist):
-                    ml.registration_stati = [
-                        const.RegistrationPartStati(v) for v in e['registration_stati']]
-                if isinstance(ml, AssemblyAssociatedMailinglist):
-                    ml.assembly_id = e["assembly_id"]
+                for field_name, field in ml.get_additional_fields().items():
+                    val = e[field_name]
+
+                    # Automatically cast enums.
+                    if isinstance(field.type, type):
+                        if issubclass(field.type, CdEIntEnum):
+                            val = field.type(val)
+                    if get_origin(field.type) is list:
+                        if len(get_args(field.type)) == 1:
+                            inner_type = get_args(field.type)[0]
+                            if isinstance(inner_type, type):
+                                if issubclass(inner_type, CdEIntEnum):
+                                    val = list(inner_type(x) for x in val)
+
+                    setattr(ml, field_name, val)
                 ret[e["id"]] = ml
 
             # add moderators
@@ -633,7 +641,7 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items()
                      if k in current.database_fields()}
-            changed = {k for k, v in mdata.items()
+            changed = {k: v for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             is_moderator = self.is_moderator(rs, current.id)
@@ -645,20 +653,24 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= current.get_moderator_fields():
+                if not changed.keys() <= current.get_moderator_fields():
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not changed <= current.restricted_moderator_fields and is_restricted:
-                    raise PrivilegeError(n_(
-                        "Restricted moderators are not allowed to change this."))
+                if is_restricted:
+                    if not changed.keys() <= current.restricted_moderator_fields:
+                        raise PrivilegeError(n_(
+                            "Restricted moderators are not allowed to change this."))
 
-            if len(mdata) > 1:
-                mdata['address'] = self.validate_address(
+            if changed:
+                changed['id'] = data['id']
+                changed['address'] = self.validate_address(
                     rs, dict(current_data, **mdata))
-                ret *= self.sql_update(rs, "ml.mailinglists", mdata)
+                ret *= self.sql_update(rs, "ml.mailinglists", changed)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
+            else:
+                ret = -1
 
         # only full moderators and admins can make subscription state related changes.
-        if (is_admin or not is_restricted) and len(mdata) > 1:
+        if (is_admin or not is_restricted) and changed:
             ret *= self.write_subscription_states(rs, (data['id'],))
         return ret
 
