@@ -6,14 +6,26 @@ angemeldet.
 {% if fee %}
 
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
+{% if complex_fee.is_complex() -%}
 Dein Beitrag setzt sich wie folgt zusammen:
 
+{# due to jinjas lack of list comprehension, this is a bit lengthy #}
+{%- set lengths = [] -%}
+{%- for kind, amount in complex_fee if amount -%}
+    {%- do lengths.append(gettext(kind|string)|length) -%}
+{%- endfor -%}
+{%- set labellength = lengths|max + 1 %}{# +1 for the colon -#}
+{%- set amountlength = complex_fee.by_kind.values()|map('money')|map('length')|max -%}
+{%- if fee|money|length > amountlength -%}
+    {%- set amountlength = fee|money|length -%}
+{%- endif -%}
+
 {% for kind, amount in complex_fee if amount -%}
-{# our longest fee title "Solidarische Reduktion" is 22 chars long #}
-{{ (gettext(kind|string) + ":").ljust(23) }} {{ (amount|money).rjust(8) }}
-{% endfor %}
-{{ "–"*32 }}
-Gesamt:                 {{ fee|money }}
+{{ (gettext(kind|string) + ":").ljust(labellength) }} {{ (amount|money).rjust(amountlength) }}
+{% endfor -%}
+{{ "–"*(labellength + 1 + amountlength) }}
+{{ "Gesamt:".ljust(labellength) }} {{ (fee|money).rjust(amountlength) }}
+{% endif %}
 
 {% if iban %}
 Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
