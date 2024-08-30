@@ -9,6 +9,7 @@ from typing import Any, Optional
 import werkzeug
 from subman.exceptions import SubscriptionError
 from werkzeug import Response
+from werkzeug.datastructures import MultiDict
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -417,13 +418,50 @@ class MlBaseFrontend(AbstractUserFrontend):
         restricted = (not self.mlproxy.may_manage(rs, mailinglist_id,
                                                   allow_restricted=False)
                       and ml.full_moderator_fields)
+        readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
         return self.render(rs, "change_mailinglist", {
             'events': events,
             'event_entries': event_entries,
+            'event_parts_by_event': {
+                event.id: {part.id: part.title for part in event.parts.values()}
+                for event in events.values()
+            },
             'assembly_entries': assembly_entries,
             'additional_fields': additional_fields,
             'restricted': restricted,
+            'readonly': readonly,
+            'checkboxes_factory':
+                lambda event_id: self.change_mailinglist_form_print_part_id_checkboxes(
+                    rs, event_id=event_id, readonly=restricted, values=rs.values,
+                ),
         })
+
+    @access("ml")
+    @REQUESTdata("event_id")
+    def change_mailinglist_form_print_part_id_checkboxes(
+            self, rs: RequestState, event_id: int, readonly: bool = False,
+            values: MultiDict[str, Any] = None,
+    ) -> Response:
+        if rs.has_validation_errors():
+            return Response("", mimetype="text/html", status=400)
+        event = self.eventproxy.get_event(rs, event_id)
+
+        checkboxes = """
+            {% import "web/util.tmpl" as util with context %}
+            {{ util.form_input_checkboxes(name="part_ids", label=gettext("Event Parts"),
+                    entries=event.parts.values()|entries('id', 'title'),
+                    actualreadonly=readonly, info=info, aclass="event-specific") }}
+        """
+        info = rs.gettext(
+            "Only subscribe participants of these event parts automatically.")
+
+        return Response(
+            self.jinja_env.from_string(checkboxes).render(
+                gettext=rs.gettext, event=event, readonly=readonly, info=info,
+                errors=[], values=MultiDict(values or {}),
+            ),
+            mimetype="text/html",
+        )
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()

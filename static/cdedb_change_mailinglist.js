@@ -1,11 +1,12 @@
 (function($){
-    $.fn.cdedbChangeMailinglist = function() {
+    $.fn.cdedbChangeMailinglist = function(part_checkboxes_url) {
         var names = ['ml_type','event_id','assembly_id'];
         var fields = {};
         for (var i = 0; i < names.length; i++) {
             fields[names[i]] = $(this).find('[name="'+ names[i] +'"]');
         }
-        var boxes = $(this).find('[name="registration_stati"]');
+        var event_specific_inputs = $(this).find('.event-specific');
+        var part_ids_container = $(this).find('#event-part-ids-container');
 
         /**
          * Function to update visibility of selectboxes and event participant checkboxes.
@@ -38,10 +39,12 @@
             // Calculate and change visibility of participant checkboxes
             var box_visibility = fields['event_id'].val() != '' && fields['ml_type'].val() == "MailinglistTypes.event_associated";
             if (box_visibility) {
-                boxes.first().closest('.form-group').show();
+                event_specific_inputs.closest('.form-group').show();
             } else {
-                boxes.first().closest('.form-group').hide();
-                boxes.prop('checked',false);
+                event_specific_inputs.closest('.form-group').hide();
+                if (event_specific_inputs.is(':checkbox')) {
+                    event_specific_inputs.prop('checked',false);
+                }
             }
         }
 
@@ -50,6 +53,15 @@
             fields[i].change(update_view);
         }
         update_view();
+
+        function update_part_checkboxes() {
+            if (fields['event_id'].val() !== '') {
+                $.get(part_checkboxes_url, {'event_id': fields['event_id'].val()}, (response) => {
+                    part_ids_container.html(response);
+                });
+            }
+        }
+        fields['event_id'].change(update_part_checkboxes);
 
         return this;
     }

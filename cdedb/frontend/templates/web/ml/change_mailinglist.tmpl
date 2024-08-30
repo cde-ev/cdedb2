@@ -45,7 +45,7 @@
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
+            $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist('{{ cdedblink('ml/change_mailinglist_form_print_part_id_checkboxes') }}');
         });
     </script>
      <p class="text-info">
@@ -54,7 +54,6 @@
             Note that every change can take up to 15 minutes to take effect.
         {% endtrans %}
     </p>
-    {% set readonly = not ambience['mailinglist'].has_management_view(user) %}
     <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/change_mailinglist') }}
     <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
@@ -101,12 +100,13 @@
         {% endif %}
         {% if 'registration_stati' in additional_fields %}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), actualreadonly=restricted) }}
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), actualreadonly=restricted,
+                    aclass="event-specific") }}
         {% endif %}
         {% if 'part_ids' in additional_fields and ambience['mailinglist'].event_id %}
-            {{ util.form_input_checkboxes(name="part_ids", label=gettext("Event Parts"),
-                    entries=events[ambience['mailinglist'].event_id].parts.values()|entries('id', 'title'), actualreadonly=readonly,
-                    info=gettext("Only subscribe participants of these event parts automatically.")) }}
+            <div id="event-part-ids-container">
+                {{ checkboxes_factory(ambience['mailinglist'].event_id).get_data().decode()|s }}
+            </div>
         {% endif %}
         {% if 'assembly_id' in additional_fields %}
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,
