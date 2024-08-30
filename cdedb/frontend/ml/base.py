@@ -252,6 +252,14 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
 
+        if data.get('event_id') and data.get('part_ids'):
+            event = self.eventproxy.get_event(rs, data['event_id'])
+            if not set(data['part_ids']) <= event.parts.keys():
+                rs.append_validation_error((
+                    'part_ids',
+                    KeyError(n_("Invalid event part.")),
+                ))
+
         ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
@@ -445,6 +453,13 @@ class MlBaseFrontend(AbstractUserFrontend):
             data[key] = current[key]
 
         data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
+        if data and data.get('event_id') and data.get('part_ids'):
+            event = self.eventproxy.get_event(rs, data['event_id'])
+            if not set(data['part_ids']) <= event.parts.keys():
+                rs.append_validation_error((
+                    'part_ids',
+                    KeyError(n_("Invalid event part.")),
+                ))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
