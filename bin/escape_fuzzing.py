@@ -73,6 +73,7 @@ def work(
 
     posted_urls.clear()
     visited_urls.clear()
+    visited_urls.add("/core/genesis/attachment/")
 
     # login as Anton and add the start page
     start_page = wt_app.get('/')

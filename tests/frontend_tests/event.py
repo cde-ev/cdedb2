@@ -41,7 +41,7 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = 6
+    EVENT_LOG_OFFSET = 9
 
     def _set_payment_info(
         self, reg_id: int, event_id: int, amount_paid: decimal.Decimal,
@@ -731,13 +731,10 @@ class TestEventFrontend(FrontendTest):
                                in f['track3.course_choice_0'].options])
 
     @event_keeper
-    @as_users("annika", "garcia")
+    @as_users("garcia")
     def test_part_summary_trivial(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
-
         # check there is no log generation if nothing changes
-        self.traverse("Veranstaltungsteile")
+        self.traverse("Veranstaltungen", "Große Testakademie", "Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         self.traverse({"href": "/event/event/1/part/1/change"})
         f = self.response.forms['changepartform']
@@ -749,9 +746,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['fieldsummaryform']
         self.submit(f)
 
-        # check the that no log entries were added
-        self.traverse("Log")
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
+        self.assertLogEqual([], 'event', event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:
@@ -1100,6 +1095,18 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeeventform']
         f['lodge_field_id'] = ''
         self.submit(f)
+
+        # Change datatype of "lodge" field to phone number and check those are preserved
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['kind_3'] = const.FieldDatatypes.phone
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_lodge'].checked = True
+        self.submit(f)
+        self.assertPresence("+49 1511 2345678")
 
         # Change datatype of "transportation" field to datetime and delete
         # options, delete and recreate "lodge" field with int type.
@@ -1696,12 +1703,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anmeldung durch Teilnehmer bearbeitet.",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
-    @as_users("berta")
+    @as_users("emilia")
     def test_registration_fee_qrcode(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Meine Anmeldung")
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Überweisung")
-        self.assertPresence("Betrag 10,50 €", div="registrationsummary")
+        self.assertPresence("Betrag 466,49 €", div="registrationsummary")
         self.assertPresence("QR", div="show-registration-fee-qr")
         save = self.response
         self.traverse("QR")
@@ -1712,7 +1719,7 @@ etc;anything else""", f['entries_2'].value)
         payment_data = {
             'meta_info': self.core.get_meta_info(self.key),
             'reference': make_event_fee_reference(persona, event),
-            'to_pay': decimal.Decimal("10.50"), 'iban': event.iban,
+            'to_pay': decimal.Decimal("466.49"), 'iban': event.iban,
         }
 
         event_frontend: EventFrontend = self.app.app.event
@@ -1726,10 +1733,10 @@ SCT
 BFSWDE33XXX
 CdE e.V.
 DE26370205000008068900
-EUR10.5
+EUR466.49
 
 
-Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
+Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
     @as_users("anton")
@@ -2665,52 +2672,46 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             self.assertPresence("(3 Teile, wurde abgesagt)")
 
     @as_users("farin")
-    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;"
-             "UPDATE event.registrations SET amount_paid = '684.48',"
-             " payment = '2018-01-04' WHERE persona_id = 100;"
-             "UPDATE event.registrations SET payment = NULL WHERE persona_id = 9;")
+    @prepsql("UPDATE core.personas SET is_event_admin = False WHERE id = 32;")
     def test_batch_fee(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/batchfees'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Überweisungen eintragen")
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
 353.99;DB-1-9;Admin;Anton;01.04.18
-455.99;DB-5-1;Eventis;Emilia;01.04.18
-589.49;DB-9-4;Iota;Inga;30.12.19
-570.99;DB-11-6;K;Kalif;01.04.18
+455.99;DB-5-1;Eventis;Emilia;02.04.18
+999.99;DB-100-7;Abukara;Akira;03.04.18
+570.99;DB-11-6;K;Kalif;04.04.18
 0.0;DB-666-1;Y;Z;77.04.18;stuff
--100.00;DB-100-7;Abukara;Akira;01.04.18
+-116.49;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line1_infos")
-        self.assertPresence("Zu viel Geld.", div="line2_infos")
+        self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
+        self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
+        self.assertPresence("Ungültige Eingabe für ein Datum.", div="line4_problems")
         self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-353.98;DB-1-9;Admin;Anton;01.04.18
-589.49;DB-5-1;Eventis;Emilia;04.01.18
-451.00;DB-9-4;Iota;Inga;30.12.19
--100.00;DB-100-7;Abukara;Akira;01.04.18
+353.99;DB-1-9;Admin;Anton;01.04.18
+455.99;DB-5-1;Eventis;Emilia;02.04.18
+999.99;DB-100-7;Abukara;Akira;03.04.18
+-116.49;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line0_infos")
-        self.assertPresence("Zu viel Geld.", div="line2_infos")
+        self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
+        self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         f = self.response.forms['batchfeesform']
-        f['force'].checked = True
-        f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld", div="line0_infos")
-        self.assertPresence("Zu viel Geld", div="line2_infos")
-        # submit again because of checksum
+        self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
+        self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         f = self.response.forms['batchfeesform']
         self.submit(f)
         for i in range(5):
             text = self.fetch_mail_content(i)
             if i == 1:
-                self.assertIn("589,49", text)
+                self.assertIn("455,99", text)
             if i == 4:
                 self.assertIn("Für Eure Veranstaltung in der CdE-Datenbank wurden"
                               " 4 neue Überweisungen eingetragen.", text)
@@ -2721,62 +2722,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
 
         # Now, test the results. To do so, switch to Garcia (Orga of this event)
         self.login("garcia")
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'})
-        self.traverse({'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/1/show'})
-        self.assertTitle("Anmeldung von Anton Administrator"
-                         " (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 01.04.2018")
-        self.assertPresence("Bereits Bezahlt 553,98 €")
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/2/show'})
+        self.get('/event/event/1/registration/1/show')
+        self.assertTitle("Anmeldung von Anton Administrator (Große Testakademie 2222)")
+        # Previous payment date was kept.
+        self.assertPresence("Bezahlt am 01.01.2014", div="payment-date", exact=True)
+        self.assertPresence("553,99 €", div="amount-paid", exact=True)
+
+        self.get('/event/event/1/registration/2/show')
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 02.02.2014")
-        self.assertPresence("Bereits Bezahlt 589,49 €")
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/4/show'})
+        self.assertPresence("Bezahlt am 02.04.2018", div="payment-date", exact=True)
+        self.assertPresence("455,99 €", div="amount-paid", exact=True)
+
+        self.get('/event/event/1/registration/4/show')
         self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 30.12.2019")
-        self.assertPresence("Bereits Bezahlt 451,00 €")
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/5/show'})
+        self.assertPresence("Bezahlt am 04.04.2014", div="payment-date", exact=True)
+        self.assertPresence("431,99 €", div="amount-paid", exact=True)
+
+        self.get('/event/event/1/registration/5/show')
         self.assertTitle("Anmeldung von Akira Abukara (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 04.01.2018")
-        self.assertNonPresence("Bezahlt am 01.04.2018")
-        self.assertPresence("Bereits Bezahlt 584,48 €")
-        self.assertPresence("Übriger zu zahlender Betrag 0,00 €")
+        self.assertPresence("Bezahlt am 03.04.2018", div="payment-date")
+        self.assertPresence("999,99 €", div="amount-paid", exact=True)
+        self.assertPresence("-415,51 €", div="remaining-owed", exact=True)
         # Check log
         log_expectation = [
             {
                 'persona_id': 1,
                 'code': const.EventLogCodes.registration_payment_received,
-                'change_note': "353,98 € am 01.04.2018 gezahlt.",
+                'change_note': "353,99 € am 01.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
                 'persona_id': 5,
                 'code': const.EventLogCodes.registration_payment_received,
-                'change_note': "589,49 € am 04.01.2018 gezahlt.",
-                'submitted_by': 32,
-            },
-            {
-                'persona_id': 9,
-                'code': const.EventLogCodes.registration_payment_received,
-                'change_note': "451,00 € am 30.12.2019 gezahlt.",
+                'change_note': "455,99 € am 02.04.2018 gezahlt.",
                 'submitted_by': 32,
             },
             {
                 'persona_id': 100,
+                'code': const.EventLogCodes.registration_payment_received,
+                'change_note': "999,99 € am 03.04.2018 gezahlt.",
+                'submitted_by': 32,
+            },
+            {
+                'persona_id': 9,
                 'code': const.EventLogCodes.registration_payment_reimbursed,
-                'change_note': "100,00 € am 01.04.2018 zurückerstattet.",
+                'change_note': "116,49 € am 30.12.2019 zurückerstattet.",
                 'submitted_by': 32,
             },
         ]
@@ -3263,7 +3253,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         f['track3.course_choice_1'] = 5
         self.assertEqual("pedes", f['fields.transportation'].value)
         f['fields.transportation'] = "etc"
-        self.assertEqual("", f['fields.lodge'].value)
+        self.assertEqual("015112345678", f['fields.lodge'].value)
         f['fields.lodge'] = "Om nom nom nom"
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
@@ -4404,7 +4394,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             '//svg:a[.//svg:text[contains(text(),"Garcia")]]',
             namespaces=xml_namespaces,
         )[0]
-        assert isinstance(node_link, lxml.etree._Element)
+        assert isinstance(node_link, lxml.etree._Element)  # pylint: disable=c-extension-no-member
         self.assertEqual("/event/event/1/registration/3/show",
                          node_link.attrib['{http://www.w3.org/1999/xlink}href'])
         parts_text_text = node_link.xpath('./svg:text/text()',
@@ -4414,7 +4404,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
         edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
         assert isinstance(edge_group, list)
         self.assertEqual(1, len(edge_group))
-        assert isinstance(edge_group[0], lxml.etree._Element)
+        assert isinstance(edge_group[0], lxml.etree._Element)  # pylint: disable=c-extension-no-member
         edge_link_title = edge_group[0].xpath(
             './/svg:a/@xlink:title', namespaces=xml_namespaces)
         assert isinstance(edge_link_title, list)
@@ -5150,7 +5140,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Bertalotta Beispiel, DB-2-7"""
             "Sitzung: Kursleiter", div="box-changed-registration-fields")
         self.assertNonPresence("Inga", div="box-changed-registrations")
         self.assertPresence("Charly", div="box-new-registrations")
-        self.assertPresence("Inga", div="box-deleted-registrations")
+        self.assertPresence("Akira", div="box-deleted-registrations")
         # Courses
         self.assertPresence("α.", div="box-changed-courses")
         self.assertPresence("GanzKurz", div="box-changed-courses")

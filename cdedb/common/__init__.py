@@ -24,6 +24,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
 )
 
+import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
@@ -1187,7 +1188,7 @@ UMLAUT_MAP = {
 }
 
 
-def asciificator(s: str) -> str:
+def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
     """Pacify a string.
 
     Replace or omit all characters outside a known good set. This is to
@@ -1204,6 +1205,8 @@ def asciificator(s: str) -> str:
             ret += char
         else:
             ret += ' '
+    if normalize_whitespace:
+        ret = re.sub(r"\s+", " ", ret)
     return ret
 
 
@@ -1456,6 +1459,14 @@ def parse_datetime(
     return ret.astimezone(datetime.timezone.utc)
 
 
+def parse_phone(val: str) -> str:
+    # This kind of duplicates the phone validator, because our needs at error handling
+    # are very different.
+    phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
+    # handle the phone number as normalized string internally
+    return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
+
+
 def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
                 ) -> CdEDBObject:
     """Helper to deserialize json fields.
@@ -1472,6 +1483,10 @@ def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventFi
         const.FieldDatatypes.date: parse_date,
         const.FieldDatatypes.datetime: parse_datetime,
         const.FieldDatatypes.bool: lambda x: x,
+        const.FieldDatatypes.non_negative_int: lambda x: x,
+        const.FieldDatatypes.non_negative_float: lambda x: x,
+        # normalized string: id on read
+        const.FieldDatatypes.phone: lambda x: x,
     }
 
     def _do_cast(key: str, val: Any) -> Any:

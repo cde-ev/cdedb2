@@ -1020,6 +1020,7 @@ class EventEventMixin(EventBaseFrontend):
         # multi part events will have to edit this later on
         data.update({
             'orgas': orga_ids,
+            'notify_on_registration': const.NotifyOnRegistration.never,
             'parts': {
                 -1: {
                     'title': data['title'],

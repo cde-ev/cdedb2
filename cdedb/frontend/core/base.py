@@ -13,7 +13,6 @@ import quopri
 import tempfile
 from typing import Any, Optional
 
-import magic
 import segno
 import segno.helpers
 import werkzeug.exceptions
@@ -1951,13 +1950,13 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde")
-    def get_foto(self, rs: RequestState, foto: str) -> Response:
+    def get_foto(self, rs: RequestState, foto: vtypes.Identifier) -> Response:
         """Retrieve profile picture."""
-        ret = self.coreproxy.get_foto(rs, foto)
-        if ret is None:
+        mimetype = self.coreproxy.get_foto_store(rs).get_mime_type(foto)
+        if mimetype is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
-        mimetype = magic.from_buffer(ret, mime=True)
-        return self.send_file(rs, data=ret, mimetype=mimetype)
+        path = self.coreproxy.get_foto_store(rs).get_path(foto)
+        return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("cde")
     def set_foto_form(self, rs: RequestState, persona_id: int) -> Response:
@@ -1985,10 +1984,18 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
-        code = self.coreproxy.change_foto(rs, persona_id, foto=foto)
+        new_hash = self.coreproxy.get_foto_store(rs).store(foto) if foto else None
+        code = self.coreproxy.change_foto(rs, persona_id, new_hash=new_hash)
         rs.notify_return_code(code, success=n_("Foto updated."),
-                                info=n_("Foto removed."))
+                              info=n_("Foto removed."))
         return self.redirect_show_user(rs, persona_id)
+
+    @periodic("forget_profile_fotos", period=96)
+    def forget_fotos(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Daily delete all fotos no longer referenced."""
+        self.coreproxy.get_foto_store(rs).forget(
+            rs, self.coreproxy.get_foto_usage)
+        return store
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata("confirm_username")

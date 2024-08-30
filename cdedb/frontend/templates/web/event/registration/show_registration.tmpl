@@ -100,7 +100,7 @@
     <div class="row">
     <dl class="dl-horizontal col-md-6">
         <dt title="{% trans %}Participation Fee{% endtrans %}">{% trans %}Participation Fee{% endtrans %}</dt>
-        <dd>
+        <dd id="payment-date">
             {% if ambience['registration']['payment'] %}
                 {% trans date=ambience['registration']['payment']|date(lang=lang) %}
                     Paid on {{ date }}
@@ -110,15 +110,15 @@
             {% endif %}
         </dd>
         <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
-        <dd>
+        <dd id="amount-owed">
             {{ util.href(cdedblink("event/show_registration_fee"), ambience['registration']['amount_owed']|money(lang=lang)) }}
         </dd>
         <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
-        <dd>
+        <dd id="amount-paid">
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
         <dt title="{% trans %}Remaining Owed{% endtrans %}">{% trans %}Remaining Owed{% endtrans %}</dt>
-        <dd>
+        <dd id="remaining-owed">
             {{ to_pay|money(lang=lang) }}
         </dd>
 

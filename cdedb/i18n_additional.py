@@ -177,6 +177,9 @@ I18N_STRINGS = (
     n_("FieldDatatypes.float"),
     n_("FieldDatatypes.date"),
     n_("FieldDatatypes.datetime"),
+    n_("FieldDatatypes.non_negative_int"),
+    n_("FieldDatatypes.non_negative_float"),
+    n_("FieldDatatypes.phone"),
 
     n_("Genders.female"),
     n_("Genders.male"),
@@ -348,6 +351,11 @@ I18N_STRINGS = (
     n_("EventFeeType.instructor_donation"),
     n_("EventFeeType.other_donation"),
 
+    n_("NotifyOnRegistration.everytime"),
+    n_("NotifyOnRegistration.never"),
+    n_("NotifyOnRegistration.hourly"),
+    n_("NotifyOnRegistration.daily"),
+    n_("NotifyOnRegistration.weekly"),
     #
     # Query datatypes
     #

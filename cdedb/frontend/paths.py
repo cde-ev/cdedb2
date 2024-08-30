@@ -786,6 +786,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="add_attachment_form"),
                     rule("/add", methods=_POST,
                          endpoint="add_attachment"),
+                    rule("/cached/<filename:attachment_hash>", methods=_GET,
+                     endpoint="get_cached_attachment"),
                     sub("/<int:attachment_id>", (
                         rule("/latest", methods=_GET,
                              endpoint="get_attachment"),

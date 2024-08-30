@@ -168,7 +168,7 @@
         "1": {
             "notes": null,
             "orga_notes": null,
-            "payment": null,
+            "payment": "2014-01-01",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -255,7 +255,7 @@
         "2": {
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
-            "payment": "2014-02-02",
+            "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -263,6 +263,7 @@
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
+                "lodge": "015112345678",
                 "brings_balls": true,
                 "transportation": "pedes"
             },
@@ -342,7 +343,7 @@
         "3": {
             "notes": null,
             "orga_notes": null,
-            "payment": "2014-03-03",
+            "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -444,7 +445,7 @@
             "personalized_fees": {
             },
             "is_member": true,
-            "amount_paid": "0.00",
+            "amount_paid": "548.48",
             "amount_owed": "431.99",
             "parts": {
                 "1": {
@@ -603,7 +604,7 @@
         "6": {
             "notes": null,
             "orga_notes": null,
-            "payment": null,
+            "payment": "2014-06-06",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -616,7 +617,7 @@
             "personalized_fees": {
             },
             "is_member": true,
-            "amount_paid": "0.00",
+            "amount_paid": "10.50",
             "amount_owed": "10.50",
             "parts": {
                 "1": {
@@ -692,6 +693,7 @@
         "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
         "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
         "use_additional_questionnaire": false,
+        "notify_on_registration": -1,
         "notes": "Todoliste ... just kidding ;)",
         "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
         "offline_lock": false,

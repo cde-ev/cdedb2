@@ -4490,6 +4490,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": 3
         },
         {
@@ -4518,6 +4519,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         },
         {
@@ -4546,6 +4548,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         },
         {
@@ -4574,6 +4577,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         }
     ],
@@ -5873,7 +5877,7 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": null,
+            "payment": "2014-01-01",
             "amount_paid": "200.00",
             "amount_owed": "553.99",
             "parental_agreement": true,
@@ -5894,7 +5898,7 @@
             "notes": "Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "is_member": false,
-            "payment": "2014-02-02",
+            "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "466.49",
             "parental_agreement": true,
@@ -5902,6 +5906,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "lodge": "015112345678",
                 "is_child": false,
                 "brings_balls": true,
                 "transportation": "pedes",
@@ -5916,7 +5921,7 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": "2014-03-03",
+            "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "504.48",
             "parental_agreement": true,
@@ -5938,7 +5943,7 @@
             "orga_notes": null,
             "is_member": true,
             "payment": "2014-04-04",
-            "amount_paid": "0.00",
+            "amount_paid": "548.48",
             "amount_owed": "431.99",
             "parental_agreement": false,
             "mixed_lodging": false,
@@ -5981,8 +5986,8 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": null,
-            "amount_paid": "0.00",
+            "payment": "2014-06-06",
+            "amount_paid": "10.50",
             "amount_owed": "10.50",
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -6942,6 +6947,33 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 1,
+            "change_note": "200,00 € am 01.01.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 9,
+            "change_note": "548,48 € am 04.04.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "10,50 € am 06.06.2014 gezahlt."
         }
     ],
     "assembly.assemblies": [
@@ -8336,7 +8368,7 @@
             "filename": "rechen.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "abc"
+            "file_hash": "72a0e2bdc75fd5a95cae07120e4034ad364786e04b6a9fffeb9c168f3dba11e49d6f422322899a9de6d0a03a2ae81f81e22d2751a405160e6bea06748a91e3d6"
         },
         {
             "id": 2,
@@ -8344,10 +8376,10 @@
             "version_nr": 1,
             "title": "Kassenprüferbericht",
             "authors": "Berta",
-            "filename": "kasse.pdf",
+            "filename": "kassen.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "bcd"
+            "file_hash": "68c602823ad8538ee0bedea06ad9d962a608b55f2a1bd62bacee414d3f3c1bfb3486f1fcc9274d2ff4245ece18b69a9182a7bdcc5329b49ce9ccd04edb7de58e"
         },
         {
             "id": 3,
@@ -8369,7 +8401,7 @@
             "filename": "kasse.pdf",
             "ctime": "---now---",
             "dtime": null,
-            "file_hash": "cde"
+            "file_hash": "2007baadffb25f5fb1756a8cb3f69f833318d3d28a517df2c51350200ec4ece3d4b1d11202fb154d3dc6ce630068c22d2a71658b4ad2be3879d73e05937c5aa1"
         },
         {
             "id": 5,
@@ -8380,7 +8412,7 @@
             "filename": "kandidaten.pdf",
             "ctime": "1990-01-01T00:00:00+00:00",
             "dtime": null,
-            "file_hash": "xyz"
+            "file_hash": "c093aa42d1dd7117fbbbc46e027b35b651400b03e5969f9c6ee875c7b0715d5bf02ad0b3e49d43a97afb49a8f6ca3f0d501fffc35417085c51507dc9d372a425"
         }
     ],
     "assembly.attachment_ballot_links": [

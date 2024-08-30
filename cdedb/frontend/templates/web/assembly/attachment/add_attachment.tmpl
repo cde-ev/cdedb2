@@ -25,7 +25,8 @@
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
-        {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
+        {{ util.form_input_attachment(link=cdedblink("assembly/get_cached_attachment", {'attachment_hash': values.get('attachment_hash')}),
+                                      accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
         {{ util.form_input_submit(label=gettext("Upload"), cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
 {% endblock %}
