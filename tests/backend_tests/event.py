@@ -983,10 +983,20 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self) -> None:
+        rs = self.event.get_rs(self.key)  # type: ignore[attr-defined]
         expectation = {
             1: 'Große Testakademie 2222', 3: 'CyberTestAkademie', 4: 'TripelAkademie'}
-        self.assertEqual(expectation, self.event.list_events(
-            self.key, visible=True, archived=False))
+        event_ids = self.event.list_events(self.key, archived=False)
+        events = self.event.get_events(self.key, event_ids)
+        visible_events = {event.id: event.title for event in events.values()
+                          if event.is_visible}
+        my_visible_events = {event.id: event.title for event in events.values()
+                             if event.is_visible_for(rs.user, False, privileged=False)}
+        self.assertEqual(expectation, visible_events)
+        self.assertEqual(expectation, my_visible_events)
+        total_registration = {event.id: event.title for event in events.values()
+                             if event.is_visible_for(rs.user, True, privileged=False)}
+        self.assertEqual(event_ids, total_registration)
 
     @as_users("annika", "garcia")
     def test_has_registrations(self) -> None:

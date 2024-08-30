@@ -3373,19 +3373,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertEqual("5", f['track1.course_choice_0'].value)
         self.assertEqual("4", f['track1.course_choice_1'].value)
 
-    @as_users("berta")
+    @as_users("emilia")
     def test_add_empty_registration(self) -> None:
-        self.traverse("Veranstaltungen", "CdE-Party 2050", "Anmeldungen",
-                      "Anmeldung hinzufügen")
-        f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-5-1"
-        f['reg.parental_agreement'].checked = True
-        f['part4.status'] = const.RegistrationPartStati.not_applied
-        self.submit(f)
-        self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
-        self.traverse({'description': 'Bearbeiten'})
-        f = self.response.forms['changeregistrationform']
-        self.assertTrue(f['reg.parental_agreement'].checked)
+        self.assertTitle("CdE-Datenbank")
+        self.assertNonPresence("CdE-Party 2050")
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence("CdE-Party 2050")
+        self.assertNonPresence("Veranstaltung versteckt")
+        self.get('/event/event/2/show', status=403)
+        self.assertTitle('403: Forbidden')
+        with self.switch_user("berta"):
+            self.traverse("Veranstaltungen", "CdE-Party 2050", "Anmeldungen",
+                          "Anmeldung hinzufügen")
+            f = self.response.forms['addregistrationform']
+            f['persona.persona_id'] = "DB-5-1"
+            f['reg.parental_agreement'].checked = True
+            f['part4.status'] = const.RegistrationPartStati.not_applied
+            self.submit(f)
+            self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
+            with self.switch_user("emilia"):
+                self.assertTitle("CdE-Datenbank")
+                self.assertNonPresence("CdE-Party 2050")
+            self.traverse({'description': 'Bearbeiten'})
+            f = self.response.forms['changeregistrationform']
+            self.assertTrue(f['reg.parental_agreement'].checked)
+            f['part4.status'] = const.RegistrationPartStati.applied
+            self.submit(f)
+        self.get('/')
+        self.assertTitle("CdE-Datenbank")
+        self.assertPresence("CdE-Party 2050", div="event-box")
+        self.traverse("Veranstaltungen")
+        self.assertPresence("CdE-Party 2050", div="current-events")
+        self.assertPresence("Veranstaltung versteckt", div="current-events")
+        self.traverse("CdE-Party 2050")
+        self.assertPresence("have a party", div="description")
+        self.assertPresence("Übersicht", div="sidebar-navigation")
 
     @event_keeper
     @as_users("garcia")
