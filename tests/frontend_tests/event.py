@@ -1647,14 +1647,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits angemeldet", div='notifications')
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Offen (Bezahlung ausstehend)")
+        mail_surcharge = "Externenbeitrag"
+        complex_fee = "Beitrag setzt sich wie folgt zusammen"
         if self.user_in('charly'):
-            self.assertNotIn(surcharge, text)
+            self.assertNotIn(mail_surcharge, text)
+            self.assertNotIn(complex_fee, text)
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
-            self.assertIn(surcharge, text)
+            self.assertIn(mail_surcharge, text)
+            self.assertIn(complex_fee, text)
             self.assertIn("466,49", text)
         elif self.user_in('rowena'):
-            self.assertIn(surcharge, text)
+            self.assertIn(mail_surcharge, text)
+            self.assertIn(complex_fee, text)
             self.assertIn("466,49", text)
         else:
             self.fail("Please reconfigure the users for the above checks.")

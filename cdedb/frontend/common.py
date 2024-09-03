@@ -526,7 +526,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticlink': _staticlink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'gettext': rs.gettext,
+            'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
             'is_relevant_admin': _make_backend_checker(
@@ -534,7 +534,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'is_warning': _is_warning,
             'lang': rs.lang,
             'n_': n_,
-            'ngettext': rs.ngettext,
+            'ngettext': rs.mail_ngettext if modus == "mail" else rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
             'show_user_link': _show_user_link,
