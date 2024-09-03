@@ -178,8 +178,15 @@
         {% endfor %}
         </div>
     {% endfor %}
-    {% call util.bootstrap_panel(title=gettext("Description") + (" (<i>{}</i>)".format(gettext("not visible")) if not ambience['course']['is_visible'] else "")|s,
-                                 icon="thumbtack", aclass="panel-default panel-condensed") %}
+    {% call util.bootstrap_panel(
+                icon="thumbtack", aclass="panel-default panel-condensed",
+                title=
+                    gettext("Description") + " (<i>{}</i>)".format(gettext("not visible"))|s
+                    if not ambience['course']['is_visible'] else
+                    util.href(
+                        cdedblink("event/course_list") + "#course-{}".format(ambience['course']['id'])|s,
+                        gettext("Description"), title=gettext("Show on Courselist"))
+                ) %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
 
