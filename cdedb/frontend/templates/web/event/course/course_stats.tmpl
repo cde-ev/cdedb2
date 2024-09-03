@@ -26,7 +26,7 @@
                 {{ num }} courses are currently hidden.
             {% endtrans %}
             {{ util.href(cdedblink(hidden_courses_query.scope.get_target(),
-                                   hidden_courses_query.serialize_to_url()),
+                                   hidden_courses_query.serialize_to_url()) + '#query-results'|s,
                          gettext("Show in course query.")) }}
         {% endcall %}
     {% endif %}
