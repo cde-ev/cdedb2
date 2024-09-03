@@ -1,6 +1,8 @@
 #!/bin/bash
 #
-# pre-commit hook to recompile translation catalogues after merging in order to reduce diff size
+# pre-commit hook to help ensure that:
+#   - python files are formatted according to isort.
+#   - translation catalogues are recompiled after a merge to reduce diff size.
 #
 
 # If we are performing a merge commit...
