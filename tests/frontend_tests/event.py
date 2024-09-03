@@ -487,23 +487,26 @@ class TestEventFrontend(FrontendTest):
                             div='timeframe-registration', exact=True)
 
     @as_users("annika", "berta", "emilia")
+    @prepsql("UPDATE event.courses SET is_visible = False WHERE id = 2")
     def test_course_list(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kursliste")
         self.assertTitle("Kursliste Große Testakademie 2222")
-        self.assertPresence("Inhaltsverzeichnis")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
+        self.assertNonPresence("Lustigsein")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [1, 3]
         self.submit(f)
         self.assertTitle("Kursliste Große Testakademie 2222")
-        self.assertNonPresence("Inhaltsverzeichnis")  # less than 6 courses shown
         self.assertNonPresence("Kurzer Kurs")
         f = self.response.forms['coursefilterform']
         f['track_ids'] = [2]
         self.submit(f)
-        self.assertPresence("β. Lustigsein für Fortgeschrittene")
+        self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("γ. Kurzer Kurs")
+        execsql("UPDATE event.courses SET is_visible = True WHERE id = 2")
+        self.submit(f)
+        self.assertPresence("β. Lustigsein für Fortgeschrittene")
         if self.user_in('annika'):
             f = self.response.forms['coursefilterform']
             f['active_only'].checked = True
@@ -1506,12 +1509,14 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("2", f['min_size'].value)
         self.assertEqual("Wald", f['fields.room'].value)
+        self.assertEqual(True, f['is_visible'].checked)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
         f['segments'] = ['2', '3']
         f['active_segments'] = ['2']
         f['fields.room'] = "Canyon"
+        f['is_visible'] = False
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/change'})
@@ -1525,6 +1530,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(None, f.get('active_segments', index=2).value)
         self.assertEqual("21", f['max_size'].value)
         self.assertEqual("Canyon", f['fields.room'].value)
+        self.assertEqual(False, f['is_visible'].checked)
 
     @event_keeper
     @as_users("annika", "garcia")
