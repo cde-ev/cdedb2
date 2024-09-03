@@ -27,9 +27,8 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 GenesisRealmOptionName = collections.namedtuple(
     'GenesisRealmOptionName', ['realm', 'name'])
 GENESIS_REALM_OPTION_NAMES = (
-    GenesisRealmOptionName("event", n_("CdE event")),
-    GenesisRealmOptionName("cde", n_("CdE membership")),
-    GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
+    GenesisRealmOptionName("cde", n_("CdE membership & events")),
+    GenesisRealmOptionName("event", n_("CdE events")),
     GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 

@@ -5435,12 +5435,12 @@ msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
 #: cdedb/frontend/core/genesis.py:30 cdedb/frontend/core/genesis.py:31
-msgid "CdE event"
-msgstr "CdE-Veranstaltung"
+msgid "CdE events"
+msgstr "CdE-Veranstaltungen"
 
 #: cdedb/frontend/core/genesis.py:31 cdedb/frontend/core/genesis.py:32
-msgid "CdE membership"
-msgstr "CdE-Mitgliedschaft"
+msgid "CdE membership & events"
+msgstr "CdE-Mitgliedschaft und Veranstaltungen"
 
 #: cdedb/frontend/core/genesis.py:32 cdedb/frontend/core/genesis.py:33
 msgid "CdE members' assembly"
