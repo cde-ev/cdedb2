@@ -32,6 +32,29 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
+_HIDDEN_COURSES_QUERY = Query(
+    scope=QueryScope.event_course, spec={},
+    fields_of_interest=[
+        "course.course_id",
+        "course.is_visible",
+        "course.instructors",
+        "course.description",
+    ],
+    constraints=[
+        (
+            "course.is_visible",
+            QueryOperators.equal,
+            False,
+        ),
+    ],
+    order=[
+        (
+            "course.nr_shortname",
+            True,
+        ),
+    ],
+)
+
 
 class EventCourseMixin(EventBaseFrontend):
     @access("anonymous")
@@ -71,12 +94,14 @@ class EventCourseMixin(EventBaseFrontend):
             }
             num_hidden_courses = len(courses) - len(visible_courses)
         else:
+            visible_courses = {}
             num_hidden_courses = 0
         return self.render(rs, "course/course_list", {
-            'courses': keydictsort_filter(courses, EntitySorter.course),
+            'courses': keydictsort_filter(visible_courses, EntitySorter.course),
             'show_course_state': show_course_state,
             'courses_exist': courses_exist,
             'num_hidden_courses': num_hidden_courses,
+            'hidden_courses_query': _HIDDEN_COURSES_QUERY,
         })
 
     @access("event")
@@ -694,25 +719,6 @@ class EventCourseMixin(EventBaseFrontend):
             for course_id, course in courses.items()
             if not course['is_visible']
         }
-        hidden_courses_query = Query(
-            scope=QueryScope.event_course, spec={},
-            fields_of_interest=[
-                "course.course_id", "course.is_visible",
-            ],
-            constraints=[
-                (
-                    "course.is_visible",
-                    QueryOperators.equal,
-                    False,
-                ),
-            ],
-            order=[
-                (
-                    "course.nr_shortname",
-                    True,
-                ),
-            ],
-        )
         # Generate choice counts and helper lists for attendee counts
         choice_counts = {(course_id, track_id): [0] * track.num_choices
                          for track_id, track in tracks.items()
@@ -760,7 +766,7 @@ class EventCourseMixin(EventBaseFrontend):
             'courses': courses, 'choice_counts': choice_counts,
             'assign_counts': assign_counts, 'include_active': include_active,
             'hidden_courses': hidden_courses,
-            'hidden_courses_query': hidden_courses_query,
+            'hidden_courses_query': _HIDDEN_COURSES_QUERY,
         })
 
     @access("event")

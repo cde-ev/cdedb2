@@ -45,8 +45,11 @@
     {% if num_hidden_courses and (ambience['event'].id in user.orga or 'event_orga' in user.admin_views) %}
         {% call util.notification('info', id='hidden-courses') %}
             {% trans num=num_hidden_courses, link=util.href(cdedblink('event/course_stats') + '#hidden-courses'|s, gettext("here")) %}
-                {{ num }} courses are currently hidden. For more information see {{ link }}.
+                {{ num }} courses are currently hidden.
             {% endtrans %}
+            {{ util.href(cdedblink(hidden_courses_query.scope.get_target(),
+                                   hidden_courses_query.serialize_to_url()) + '#query-results'|s,
+                         gettext("Show in course query.")) }}
         {% endcall %}
     {% endif %}
 {% endblock %}
