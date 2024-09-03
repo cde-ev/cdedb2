@@ -1118,7 +1118,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
         "course.instructors": QuerySpecEntry("str", n_("course instructors")),
         "course.min_size": QuerySpecEntry("int", n_("course min size")),
         "course.max_size": QuerySpecEntry("int", n_("course max size")),
-        "course.is_visible": QuerySpecEntry("bool", n_("course list visibility")),
+        "course.is_visible": QuerySpecEntry("bool", n_("visibility on courselist")),
         "course.notes": QuerySpecEntry("str", n_("course notes")),
         # This will be augmented with additional fields in the fly.
     }
