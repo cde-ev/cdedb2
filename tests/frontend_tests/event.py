@@ -1653,14 +1653,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits angemeldet", div='notifications')
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Offen (Bezahlung ausstehend)")
+        mail_surcharge = "Externenbeitrag"
+        complex_fee = "Beitrag setzt sich wie folgt zusammen"
         if self.user_in('charly'):
-            self.assertNotIn(surcharge, text)
+            self.assertNotIn(mail_surcharge, text)
+            self.assertNotIn(complex_fee, text)
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
-            self.assertIn(surcharge, text)
+            self.assertIn(mail_surcharge, text)
+            self.assertIn(complex_fee, text)
             self.assertIn("466,49", text)
         elif self.user_in('rowena'):
-            self.assertIn(surcharge, text)
+            self.assertIn(mail_surcharge, text)
+            self.assertIn(complex_fee, text)
             self.assertIn("466,49", text)
         else:
             self.fail("Please reconfigure the users for the above checks.")
@@ -3379,19 +3384,41 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertEqual("5", f['track1.course_choice_0'].value)
         self.assertEqual("4", f['track1.course_choice_1'].value)
 
-    @as_users("berta")
+    @as_users("emilia")
     def test_add_empty_registration(self) -> None:
-        self.traverse("Veranstaltungen", "CdE-Party 2050", "Anmeldungen",
-                      "Anmeldung hinzufügen")
-        f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-5-1"
-        f['reg.parental_agreement'].checked = True
-        f['part4.status'] = const.RegistrationPartStati.not_applied
-        self.submit(f)
-        self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
-        self.traverse({'description': 'Bearbeiten'})
-        f = self.response.forms['changeregistrationform']
-        self.assertTrue(f['reg.parental_agreement'].checked)
+        self.assertTitle("CdE-Datenbank")
+        self.assertNonPresence("CdE-Party 2050")
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence("CdE-Party 2050")
+        self.assertNonPresence("Veranstaltung versteckt")
+        self.get('/event/event/2/show', status=403)
+        self.assertTitle('403: Forbidden')
+        with self.switch_user("berta"):
+            self.traverse("Veranstaltungen", "CdE-Party 2050", "Anmeldungen",
+                          "Anmeldung hinzufügen")
+            f = self.response.forms['addregistrationform']
+            f['persona.persona_id'] = "DB-5-1"
+            f['reg.parental_agreement'].checked = True
+            f['part4.status'] = const.RegistrationPartStati.not_applied
+            self.submit(f)
+            self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
+            with self.switch_user("emilia"):
+                self.assertTitle("CdE-Datenbank")
+                self.assertNonPresence("CdE-Party 2050")
+            self.traverse({'description': 'Bearbeiten'})
+            f = self.response.forms['changeregistrationform']
+            self.assertTrue(f['reg.parental_agreement'].checked)
+            f['part4.status'] = const.RegistrationPartStati.applied
+            self.submit(f)
+        self.get('/')
+        self.assertTitle("CdE-Datenbank")
+        self.assertPresence("CdE-Party 2050", div="event-box")
+        self.traverse("Veranstaltungen")
+        self.assertPresence("CdE-Party 2050", div="current-events")
+        self.assertPresence("Veranstaltung versteckt", div="current-events")
+        self.traverse("CdE-Party 2050")
+        self.assertPresence("have a party", div="description")
+        self.assertPresence("Übersicht", div="sidebar-navigation")
 
     @event_keeper
     @as_users("garcia")
@@ -6886,13 +6913,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
 
         self.get(f"/event/event/{event_id}/registration/{reg_ids[1]}/show")
         self.assertPresence("Emilia")
-        self.assertPresence(
-            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+        self.assertPresence("Teilnahmebeitrag CdE-Party 2050")
 
         self.get(f"/event/event/{event_id}/registration/{reg_ids[2]}/show")
         self.assertPresence("Berta")
-        self.assertPresence(
-            "Teilnahmebeitrag CdE-Party 2050 inkl. 420.00 Euro")
+        self.assertPresence("Teilnahmebeitrag CdE-Party 2050")
 
         self.traverse("Teilnahmebeiträge")
         self.assertPresence("Orgarabatt -10,00 € 2 Zu Zahlen 1 Bezahlt")

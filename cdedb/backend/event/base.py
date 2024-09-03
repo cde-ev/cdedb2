@@ -143,25 +143,20 @@ class EventBaseBackend(EventLowLevelBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
-    def list_events(self, rs: RequestState, visible: Optional[bool] = None,
-                       current: Optional[bool] = None,
-                       archived: Optional[bool] = None) -> dict[int, str]:
+    def list_events(self, rs: RequestState, current: Optional[bool] = None,
+                    archived: Optional[bool] = None) -> dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
         """
-        subquery = glue(
-            "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-            "e.is_archived, e.is_cancelled, MAX(p.part_end) AS event_end",
-            "FROM event.events AS e JOIN event.event_parts AS p",
-            "ON p.event_id = e.id",
-            "GROUP BY e.id")
+        subquery = (
+            "SELECT e.id, e.registration_start, e.title, e.is_archived,"
+            " e.is_cancelled, MAX(p.part_end) AS event_end"
+            " FROM event.events AS e JOIN event.event_parts AS p ON p.event_id = e.id"
+            " GROUP BY e.id")
         query = f"SELECT e.* from ({subquery}) as e"
         constraints = []
         params = []
-        if visible is not None:
-            constraints.append("is_visible = %s")
-            params.append(visible)
         if current is not None:
             if current:
                 constraints.append("e.event_end > now()")
