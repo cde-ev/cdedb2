@@ -13683,9 +13683,9 @@ msgid ""
 "visible if this is checked. Instructors will only be visible to logged in "
 "users."
 msgstr ""
-"Achtung: Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich "
+"Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich "
 "sichtbar sein, sobald die Kursliste in der Konfiguration sichtbar geschaltet "
-"wird. Die Kursleiter sind sichtbar für Veranstaltungsnutzer."
+"wird. Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:108
 #: cdedb/frontend/templates/web/generic.tmpl:151
