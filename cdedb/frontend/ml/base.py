@@ -415,9 +415,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
-        restricted = (not self.mlproxy.may_manage(rs, mailinglist_id,
-                                                  allow_restricted=False)
-                      and ml.full_moderator_fields)
+        restricted = (
+            not self.mlproxy.may_manage(rs, mailinglist_id, allow_restricted=False)
+            and bool(ml.full_moderator_fields)
+        )
         readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
         return self.render(rs, "change_mailinglist", {
             'events': events,
@@ -440,7 +441,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("event_id")
     def change_mailinglist_form_print_part_id_checkboxes(
             self, rs: RequestState, event_id: int, readonly: bool = False,
-            values: MultiDict[str, Any] = None,
+            values: MultiDict[str, Any] | None = None,
     ) -> Response:
         if rs.has_validation_errors():
             return Response("", mimetype="text/html", status=400)
