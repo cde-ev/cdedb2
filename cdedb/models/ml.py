@@ -7,6 +7,7 @@ from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 from subman.machine import SubscriptionPolicy
+from typing_extensions import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -18,6 +19,7 @@ from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
 )
+from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -153,6 +155,48 @@ class Mailinglist(CdEDataclass):
             optional["whitelist"] = mandatory["whitelist"]
             del mandatory["whitelist"]
         return mandatory, optional
+
+    @classmethod
+    def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        simple_fields = cls.database_fields()
+        simple_fields.extend(
+            field_name for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
+            if not (
+                    isinstance(field.type, type)
+                    and issubclass(field.type, CdEDataclass)
+            )
+        )
+        query = f"""
+            SELECT
+                {', '.join(simple_fields)},
+                array(
+                    SELECT persona_id
+                    FROM ml.moderators
+                    WHERE mailinglist_id = {cls.database_table}.id
+                ) AS moderators,
+                array(
+                    SELECT address
+                    FROM ml.whitelist
+                    WHERE mailinglist_id = {cls.database_table}.id
+                ) AS whitelist
+            FROM {cls.database_table}
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+            """
+        params = (entities,)
+        return query, params
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        data['moderators'] = set(data['moderators'])
+        data['whitelist'] = set(data['whitelist'])
+        data['part_ids'] = set(data['part_ids'])
+        fields = cls.get_additional_fields()
+        for key in ADDITIONAL_REQUEST_FIELDS:
+            if key not in fields:
+                del data[key]
+        return super().from_database(data)
 
     @classmethod
     def get_additional_fields(cls) -> dict[str, dataclasses.Field[Any]]:
@@ -478,7 +522,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
-    part_ids: list[vtypes.ID] = dataclasses.field(default_factory=list)
+    part_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
     # This fields require non-restricted moderator access to be changed.
     full_moderator_fields: ClassVar[set[str]] = {

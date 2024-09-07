@@ -5,7 +5,7 @@ event and assembly realm in the form of specific mailing lists.
 """
 import itertools
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, get_args, get_origin, overload
+from typing import Any, Optional, Protocol, overload
 
 import subman
 
@@ -30,11 +30,10 @@ from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
-    BackendContainer, EventAssociatedMeta as EventAssociatedMetaMailinglist,
-    Mailinglist, MLType, get_ml_type,
+    ML_TYPE_MAP, AssemblyAssociatedMailinglist, BackendContainer,
+    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
+    get_ml_type,
 )
-from cdedb.uncommon.intenum import CdEIntEnum
 from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
@@ -378,64 +377,15 @@ class MlBackend(AbstractBackend):
         * whitelist.
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
-        with Atomizer(rs):
+        with (Atomizer(rs)):
             ml_types = self.get_ml_types(rs, mailinglist_ids)
-            fields = Mailinglist.database_fields()
-            fields.extend(ADDITIONAL_TYPE_FIELDS)
-            data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
 
-            ret: dict[int, Mailinglist] = {}
-            for e in data:
-                ml_type = ml_types[e["id"]]
-                ml = ml_type(
-                    id=e["id"],
-                    title=e["title"],
-                    local_part=e["local_part"],
-                    domain=const.MailinglistDomain(e['domain']),
-                    mod_policy=const.ModerationPolicy(e['mod_policy']),
-                    attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
-                    convert_html=e["convert_html"],
-                    roster_visibility=const.MailinglistRosterVisibility(
-                        e["roster_visibility"]),
-                    is_active=e["is_active"],
-                    moderators=set(),
-                    whitelist=set(),
-                    description=e["description"],
-                    subject_prefix=e["subject_prefix"],
-                    maxsize=e["maxsize"],
-                    additional_footer=e["additional_footer"],
-                    notes=e["notes"],
-                )
-                for field_name, field in ml.get_additional_fields().items():
-                    val = e[field_name]
+            data = self.query_all(rs, *Mailinglist.get_select_query(mailinglist_ids))
 
-                    # Automatically cast enums.
-                    if isinstance(field.type, type):
-                        if issubclass(field.type, CdEIntEnum):
-                            val = field.type(val)
-                    if get_origin(field.type) is list:
-                        if len(get_args(field.type)) == 1:
-                            inner_type = get_args(field.type)[0]
-                            if isinstance(inner_type, type):
-                                if issubclass(inner_type, CdEIntEnum):
-                                    val = list(inner_type(x) for x in val)
-
-                    setattr(ml, field_name, val)
-                ret[e["id"]] = ml
-
-            # add moderators
-            data = self.sql_select(
-                rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
-                entity_key="mailinglist_id")
-            for e in data:
-                ret[e['mailinglist_id']].moderators.add(e['persona_id'])
-            # add whitelist entries
-            data = self.sql_select(
-                rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
-                entity_key="mailinglist_id")
-            for e in data:
-                ret[e['mailinglist_id']].whitelist.add(e['address'])
-        return ret
+        return {
+            e["id"]: ml_types[e["id"]].from_database(e)
+            for e in data
+        }
 
     class _GetMailinglistProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int) -> Mailinglist: ...
