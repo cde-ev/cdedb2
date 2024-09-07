@@ -843,7 +843,12 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}
 
 ADDITIONAL_TYPE_FIELDS = dict(
-    (field_name, requestdict_field_spec(field))
+    (field_name, field)
     for ml_type in ML_TYPE_MAP.values()
     for field_name, field in ml_type.get_additional_fields().items()
 )
+
+ADDITIONAL_REQUEST_FIELDS = {
+    field_name: requestdict_field_spec(field)
+    for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
+}

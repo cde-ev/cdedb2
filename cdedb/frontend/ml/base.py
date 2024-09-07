@@ -30,7 +30,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, AssemblyAssociatedMailinglist,
+    ADDITIONAL_REQUEST_FIELDS, AssemblyAssociatedMailinglist,
     EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist,
     MailinglistGroup, get_ml_type,
 )
@@ -231,7 +231,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -245,7 +245,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_(
                 "May not create mailinglist of this type."))
         # silently discard superfluous fields
-        for field in ADDITIONAL_TYPE_FIELDS:
+        for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml_class.get_additional_fields():
                 del data[field]
         data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
@@ -465,7 +465,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_REQUEST_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -481,7 +481,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             allowed = ml.restricted_moderator_fields
 
         # silently discard superfluous fields
-        for field in ADDITIONAL_TYPE_FIELDS:
+        for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml.get_additional_fields():
                 del data[field]
 
@@ -533,7 +533,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "domain")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
