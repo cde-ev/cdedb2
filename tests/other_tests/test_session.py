@@ -264,7 +264,7 @@ class TestSessionFrontend(FrontendTest):
         self.login("anton")
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
                       "Kurs hinzufügen")
-        f = self.response.forms['createcourseform']
+        f = self.response.forms['configurecourseform']
         f['nr'] = "1"
         f['title'] = "Test"
         f['shortname'] = "test"
