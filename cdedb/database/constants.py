@@ -191,7 +191,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
             EventFeeType.crisis_refund: "fire-extinguisher",
-            EventFeeType.other_refund: "diagram-project",
+            EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
     def is_donation(self) -> bool:
