@@ -176,6 +176,8 @@ class EventFeeType(CdEIntEnum):
     solidary_donation = 11
     solidary_increase = 12
     other_donation = 20
+    crisis_refund = 30
+    other_refund = 31
 
     def get_icon(self) -> str:
         return {
@@ -188,7 +190,8 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
-
+            EventFeeType.crisis_refund: "fire-extinguisher",
+            EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
     def is_donation(self) -> bool:
