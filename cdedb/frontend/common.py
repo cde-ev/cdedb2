@@ -11,7 +11,6 @@ import collections.abc
 import copy
 import csv
 import datetime
-import decimal
 import email
 import email.charset
 import email.encoders
@@ -527,7 +526,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticlink': _staticlink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'gettext': rs.gettext,
+            'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
             'is_relevant_admin': _make_backend_checker(
@@ -535,7 +534,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'is_warning': _is_warning,
             'lang': rs.lang,
             'n_': n_,
-            'ngettext': rs.ngettext,
+            'ngettext': rs.mail_ngettext if modus == "mail" else rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
             'show_user_link': _show_user_link,
@@ -2404,15 +2403,13 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
-                             donation: decimal.Decimal = decimal.Decimal(0)) -> str:
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
         event=asciificator(event.title),
-        donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id']),

@@ -414,6 +414,7 @@ class TestEventBackend(BackendTest):
             'min_size': None,
             'notes': "Beware of dragons.",
             'segments': {1002},
+            'is_visible': True,
         }
         new_course_id = self.event.create_course(self.key, new_course)
         new_course['id'] = new_course_id
@@ -833,6 +834,7 @@ class TestEventBackend(BackendTest):
             'active_segments': {2},
             'max_size': 42,
             'min_size': 23,
+            'is_visible': True,
         }
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
@@ -877,6 +879,7 @@ class TestEventBackend(BackendTest):
             'active_segments': {2},
             'max_size': 42,
             'min_size': 23,
+            'is_visible': True,
         }
         new_id = self.event.create_course(self.key, data)
         self.assertEqual(
@@ -983,10 +986,20 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self) -> None:
+        rs = self.event.get_rs(self.key)  # type: ignore[attr-defined]
         expectation = {
             1: 'Große Testakademie 2222', 3: 'CyberTestAkademie', 4: 'TripelAkademie'}
-        self.assertEqual(expectation, self.event.list_events(
-            self.key, visible=True, archived=False))
+        event_ids = self.event.list_events(self.key, archived=False)
+        events = self.event.get_events(self.key, event_ids)
+        visible_events = {event.id: event.title for event in events.values()
+                          if event.is_visible}
+        my_visible_events = {event.id: event.title for event in events.values()
+                             if event.is_visible_for(rs.user, False, privileged=False)}
+        self.assertEqual(expectation, visible_events)
+        self.assertEqual(expectation, my_visible_events)
+        total_registration = {event.id: event.title for event in events.values()
+                             if event.is_visible_for(rs.user, True, privileged=False)}
+        self.assertEqual(event_ids, total_registration)
 
     @as_users("annika", "garcia")
     def test_has_registrations(self) -> None:
@@ -2576,6 +2589,7 @@ class TestEventBackend(BackendTest):
             'fields': {},
             'id': 3000,
             'instructors': 'Alle',
+            'is_visible': False,
             'max_size': 111,
             'min_size': 111,
             'notes': None,
@@ -2815,6 +2829,7 @@ class TestEventBackend(BackendTest):
             'fields': {},
             'id': 1001,
             'instructors': 'Alle',
+            'is_visible': False,
             'max_size': 111,
             'min_size': 111,
             'notes': None,
@@ -3242,7 +3257,9 @@ class TestEventBackend(BackendTest):
                     'nr': 'ζ',
                     'segments': {1: False, 3: True},
                     'shortname': 'Blitz',
-                    'title': 'Blitzkurs'},
+                    'title': 'Blitzkurs',
+                    'is_visible': True,
+                },
                 3: None,
                 4: {
                     'segments': {1: None},
@@ -3835,6 +3852,7 @@ class TestEventBackend(BackendTest):
             'min_size': 5,
             'notes': "Beware of dragons.",
             'segments': {2, 3},
+            'is_visible': True,
         }
         new_id = self.event.create_course(self.key, data)
         data['title'] = "Alternate Universes"

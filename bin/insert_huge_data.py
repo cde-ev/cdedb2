@@ -250,6 +250,7 @@ def event(context: argparse.Namespace) -> int:
                                      'min_size': None,
                                      'notes': '',
                                      'segments': {t},
+                                     'is_visible': True,
                                      })
             for _ in range(1 if context.quick else 10)]
         for t in tracks
