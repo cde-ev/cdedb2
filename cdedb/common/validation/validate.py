@@ -4197,6 +4197,15 @@ def _mailinglist(
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 
+    if not val.get('event_id'):
+        if val.get('event_part_id') or val.get('event_part_group_id'):
+            errs.append(ValueError("event_id", n_(
+                "Cannot have event part or part group without event.")))
+    if val.get('event_part_id') and val.get('event_part_group_id'):
+        err = n_("Cannot have both event part and part group.")
+        errs.append(ValueError('event_part_id', err))
+        errs.append(ValueError('event_part_group_id', err))
+
     if errs:
         raise errs
 

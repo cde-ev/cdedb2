@@ -342,6 +342,12 @@ class RequestState(ConnectionContainer):
         """
         self._errors = list(errors)
 
+    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
+        ret = {}
+        for key, value in self.retrieve_validation_errors():
+            ret.setdefault(key, []).append(value)
+        return ret
+
 
 if TYPE_CHECKING:
     from cdedb.backend.common import AbstractBackend

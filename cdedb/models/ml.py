@@ -191,7 +191,6 @@ class Mailinglist(CdEDataclass):
     def from_database(cls, data: CdEDBObject) -> "Self":
         data['moderators'] = set(data['moderators'])
         data['whitelist'] = set(data['whitelist'])
-        data['part_ids'] = set(data['part_ids'])
         fields = cls.get_additional_fields()
         for key in ADDITIONAL_REQUEST_FIELDS:
             if key not in fields:
@@ -390,6 +389,9 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
     event_id: Optional[vtypes.ID] = None
+    # An additional part id or part groupd id liits the implicit subscribers.
+    event_part_id: Optional[vtypes.ID] = None
+    event_part_group_id: Optional[vtypes.ID] = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -522,11 +524,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
-    part_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
     # This fields require non-restricted moderator access to be changed.
     full_moderator_fields: ClassVar[set[str]] = {
-        "registration_stati", "part_ids",
+        "registration_stati", "event_part_id", "event_part_group_id",
     }
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
@@ -580,7 +581,21 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        part_ids = xsorted(self.part_ids or event.parts)
+        if self.event_part_id and self.event_part_group_id:
+            # Illegal configuration.
+            part_ids = []
+        elif self.event_part_id:
+            part_ids = [self.event_part_id]
+        elif self.event_part_group_id:
+            if part_group := event.part_groups.get(self.event_part_group_id):
+                part_ids = xsorted(part_group.parts)
+            else:
+                # Invalid part group id.
+                part_ids = []
+        else:
+            part_ids = []
+
+        part_ids = part_ids or xsorted(event.parts)
         status_column = ",".join(f"part{part_id}.status" for part_id in part_ids)
 
         spec = {

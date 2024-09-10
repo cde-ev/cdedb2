@@ -45,7 +45,7 @@
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist('{{ cdedblink('ml/change_mailinglist_form_print_part_id_checkboxes') }}');
+            $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist('{{ cdedblink('ml/change_mailinglist_form_print_event_specific_select_input') }}');
         });
     </script>
      <p class="text-info">
@@ -103,10 +103,18 @@
                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext), actualreadonly=restricted,
                     aclass="event-specific") }}
         {% endif %}
-        {% if 'part_ids' in additional_fields and ambience['mailinglist'].event_id %}
-            <div id="event-part-ids-container">
-                {{ checkboxes_factory(ambience['mailinglist'].event_id).get_data().decode()|s }}
-            </div>
+        {% if values['event_id'] or ambience['mailinglist'].event_id %}
+            {% set select_data = select_input_factory((values['event_id'] or ambience['mailinglist'].event_id)|int) %}
+            {% if 'event_part_id' in additional_fields %}
+                <div id="event-part-id-container">
+                    {{ select_data['event_part_id']|s }}
+                </div>
+            {% endif %}
+            {% if 'event_part_group_id' in additional_fields and select_data['event_part_group_id'] %}
+                <div id="event-part-group-id-container">
+                    {{ select_data['event_part_group_id']|s }}
+                </div>
+            {% endif %}
         {% endif %}
         {% if 'assembly_id' in additional_fields %}
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption=nbsp,

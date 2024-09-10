@@ -3,6 +3,7 @@
 """Base class providing fundamental ml services."""
 
 import collections
+import json
 from collections.abc import Collection
 from typing import Any, Optional
 
@@ -14,8 +15,8 @@ from werkzeug.datastructures import MultiDict
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, merge_dicts, now,
-    unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
+    merge_dicts, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
@@ -431,38 +432,65 @@ class MlBaseFrontend(AbstractUserFrontend):
             'additional_fields': additional_fields,
             'restricted': restricted,
             'readonly': readonly,
-            'checkboxes_factory':
-                lambda event_id: self.change_mailinglist_form_print_part_id_checkboxes(
-                    rs, event_id=event_id, readonly=restricted, values=rs.values,
+            'select_input_factory':
+                lambda event_id: json.loads(
+                    self.change_mailinglist_form_print_event_specific_select_input(
+                        rs, event_id=event_id, readonly=restricted,
+                        errors=rs.get_validation_errors_dict(), values=rs.values,
+                    ).get_data(),
                 ),
         })
 
     @access("ml")
     @REQUESTdata("event_id")
-    def change_mailinglist_form_print_part_id_checkboxes(
-            self, rs: RequestState, event_id: int, readonly: bool = False,
+    def change_mailinglist_form_print_event_specific_select_input(
+            self, rs: RequestState, event_id: int,
+            readonly: bool = False,
+            errors: dict[str, list[Exception]] | None = None,
             values: MultiDict[str, Any] | None = None,
     ) -> Response:
-        if rs.has_validation_errors():
-            return Response("", mimetype="text/html", status=400)
+        rs.ignore_validation_errors()
         event = self.eventproxy.get_event(rs, event_id)
 
-        checkboxes = """
+        part_template = """
             {% import "web/util.tmpl" as util with context %}
-            {{ util.form_input_checkboxes(name="part_ids", label=gettext("Event Parts"),
-                    entries=event.parts.values()|entries('id', 'title'),
+            {{ util.form_input_select(name="event_part_id", label=gettext("Event Part"),
+                    entries=event.parts.values()|entries('id', 'title'), nulloption="",
                     actualreadonly=readonly, info=info, aclass="event-specific") }}
         """
-        info = rs.gettext(
-            "Only subscribe participants of these event parts automatically.")
+        part_info = rs.gettext(
+            "Only subscribe participants of this event part automatically.")
 
-        return Response(
-            self.jinja_env.from_string(checkboxes).render(
-                gettext=rs.gettext, event=event, readonly=readonly, info=info,
-                errors=[], values=MultiDict(values or {}),
-            ),
-            mimetype="text/html",
+        part_groups = xsorted(
+            pg for pg in event.part_groups.values()
+            if pg.constraint_type == const.EventPartGroupType.mailinglist_link
         )
+        part_group_template = """
+            {% import "web/util.tmpl" as util with context %}
+            {{ util.form_input_select(name="event_part_group_id",
+                    label=gettext("Part Group"),
+                    entries=part_groups|entries('id', 'title'), nulloption="",
+                    actualreadonly=readonly, info=info, aclass="event-specific") }}
+        """
+        part_group_info = rs.gettext(
+            "Only subscribe participants of this part group automatically.")
+
+        ret = {
+            'event_part_id':
+                self.jinja_env.from_string(part_template).render(
+                    gettext=rs.gettext, event=event, readonly=readonly,
+                    info=part_info, is_warning=lambda s: False,
+                    errors=errors or {}, values=MultiDict(values or {}),
+                ),
+            'event_part_group_id':
+                self.jinja_env.from_string(part_group_template).render(
+                    gettext=rs.gettext, part_groups=part_groups, readonly=readonly,
+                    info=part_group_info, is_warning=lambda s: False,
+                    errors=errors or {}, values=MultiDict(values or {}),
+                ) if part_groups else '',
+        }
+
+        return Response(json_serialize(ret), mimetype="application/json")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
@@ -492,12 +520,19 @@ class MlBaseFrontend(AbstractUserFrontend):
             data[key] = current[key]
 
         data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
-        if data and data.get('event_id') and data.get('part_ids'):
+        if data and data.get('event_id'):
             event = self.eventproxy.get_event(rs, data['event_id'])
-            if not set(data['part_ids']) <= event.parts.keys():
+            if (part_id := data.get('event_part_id')) and part_id not in event.parts:
                 rs.append_validation_error((
-                    'part_ids',
+                    'event_part_id',
                     KeyError(n_("Invalid event part.")),
+                ))
+            if (
+                    part_group_id := data.get('event_part_group_id')
+            ) and part_group_id not in event.part_groups:
+                rs.append_validation_error((
+                    'event_part_group_id',
+                    KeyError(n_("Invalid part group.")),
                 ))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
