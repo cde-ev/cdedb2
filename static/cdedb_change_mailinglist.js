@@ -5,7 +5,6 @@
         for (var i = 0; i < names.length; i++) {
             fields[names[i]] = $(this).find('[name="'+ names[i] +'"]');
         }
-        var event_specific_inputs = $(this).find('.event-specific');
         var part_id_container = $(this).find('#event-part-id-container');
         var part_group_id_container = $(this).find('#event-part-group-id-container');
 
@@ -36,17 +35,6 @@
                     fields[i].val('');
                 }
             }
-
-            // Calculate and change visibility of participant checkboxes
-            var box_visibility = fields['event_id'].val() != '' && fields['ml_type'].val() == "MailinglistTypes.event_associated";
-            if (box_visibility) {
-                event_specific_inputs.closest('.form-group').show();
-            } else {
-                event_specific_inputs.closest('.form-group').hide();
-                if (event_specific_inputs.is(':checkbox')) {
-                    event_specific_inputs.prop('checked',false);
-                }
-            }
         }
 
         // Add event handler and call function once on document load
@@ -55,12 +43,21 @@
         }
         update_view();
 
+        let form = $(this);
+
         function update_part_specific_inputs() {
+            let event_specific_inputs = form.find('.event-specific');
             if (fields['event_id'].val() !== '') {
+                event_specific_inputs.closest('.form-group').show();
                 $.get(part_specific_inputs_url, {'event_id': fields['event_id'].val()}, (response) => {
                     part_id_container.html(response['event_part_id']);
                     part_group_id_container.html(response['event_part_group_id']);
                 });
+            } else {
+                event_specific_inputs.closest('.form-group').hide();
+                if (event_specific_inputs.is(':checkbox')) {
+                    event_specific_inputs.prop('checked',false);
+                }
             }
         }
         fields['event_id'].change(update_part_specific_inputs);
