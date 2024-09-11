@@ -583,7 +583,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         if self.event_part_id and self.event_part_group_id:
             # Illegal configuration.
-            part_ids = []
+            part_ids: list[int] = []
         elif self.event_part_id:
             part_ids = [self.event_part_id]
         elif self.event_part_group_id:

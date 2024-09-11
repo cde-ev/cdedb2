@@ -446,7 +446,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     def change_mailinglist_form_print_event_specific_select_input(
             self, rs: RequestState, event_id: int,
             readonly: bool = False,
-            errors: dict[str, list[Exception]] | None = None,
+            errors: dict[str | None, list[Exception]] | None = None,
             values: MultiDict[str, Any] | None = None,
     ) -> Response:
         rs.ignore_validation_errors()
