@@ -615,12 +615,14 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Inga Iota")
 
-    @prepsql("UPDATE core.personas SET postal_code = '47239' WHERE id = 1;"
-             "UPDATE core.personas SET postal_code = '47447' WHERE id = 2;"
-             "UPDATE core.personas SET postal_code = '47802' WHERE id = 3;"
-             "UPDATE core.personas SET is_searchable = True  WHERE id = 3;"
-             "UPDATE core.personas SET postal_code = '45145' WHERE id = 9;"
-             "UPDATE core.personas SET postal_code = '50189' WHERE id = 15;")
+    @prepsql("""
+        UPDATE core.personas SET postal_code = '47239' WHERE display_name = 'Anton';
+        UPDATE core.personas SET postal_code = '47447' WHERE family_name = 'Beispiel';
+        UPDATE core.personas SET postal_code = '47802' WHERE display_name = 'Charly';
+        UPDATE core.personas SET is_searchable = True  WHERE display_name = 'Charly';
+        UPDATE core.personas SET postal_code = '45145' WHERE display_name = 'Inga';
+        UPDATE core.personas SET postal_code = '50189' WHERE display_name = 'Olaf';
+    """)
     @as_users("berta")
     def test_member_search_nearby_postal_codes(self) -> None:
         self.traverse("Mitglieder", "CdE-Mitglied suchen")
