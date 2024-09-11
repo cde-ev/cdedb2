@@ -1,4 +1,4 @@
-#loc_id	plz	lon	lat	Ort
+#loc_id	plz	lon	lat	Ort # Source: https://github.com/ratopi/opengeodb/blob/master/PLZ.tab
 5078	01067	13.7210676148814	51.0600336463379	Dresden
 5079	01069	13.7389066401609	51.039558876083	Dresden
 5080	01097	13.7439674110642	51.0667452412037	Dresden
