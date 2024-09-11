@@ -255,12 +255,19 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
 
-        if data.get('event_id') and data.get('part_ids'):
+        if data.get('event_id'):
             event = self.eventproxy.get_event(rs, data['event_id'])
-            if not set(data['part_ids']) <= event.parts.keys():
+            if (part_id := data.get('event_part_id')) and part_id not in event.parts:
                 rs.append_validation_error((
-                    'part_ids',
+                    'event_part_id',
                     KeyError(n_("Invalid event part.")),
+                ))
+            if (
+                    part_group_id := data.get('event_part_group_id')
+            ) and part_group_id not in event.part_groups:
+                rs.append_validation_error((
+                    'event_part_group_id',
+                    KeyError(n_("Invalid part group.")),
                 ))
 
         ml = ml_class(**data)
