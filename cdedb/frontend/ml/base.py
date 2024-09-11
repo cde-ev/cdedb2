@@ -232,7 +232,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_REQUEST_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(),
+                     *ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -494,7 +495,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_REQUEST_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(),
+                     *ADDITIONAL_REQUEST_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""

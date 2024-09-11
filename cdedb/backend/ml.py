@@ -377,7 +377,7 @@ class MlBackend(AbstractBackend):
         * whitelist.
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
-        with (Atomizer(rs)):
+        with Atomizer(rs):
             ml_types = self.get_ml_types(rs, mailinglist_ids)
 
             data = self.query_all(rs, *Mailinglist.get_select_query(mailinglist_ids))
