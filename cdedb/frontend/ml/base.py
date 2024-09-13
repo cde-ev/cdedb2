@@ -204,7 +204,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if ml_type is None:
             return self.render(
-                rs, "create_mailinglist", {
+                rs, "configure_mailinglist", {
                     'available_types': available_types,
                     'ml_type': None,
                 })
@@ -220,15 +220,24 @@ class MlBaseFrontend(AbstractUserFrontend):
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
                 events = {}
-            assemblies = (self.assemblyproxy.list_assemblies(rs)
-                          if "assembly_id" in additional_fields else [])
-            return self.render(rs, "create_mailinglist", {
+            assemblies = self.assemblyproxy.list_assemblies(rs)
+            sorted_assemblies = keydictsort_filter(
+                assemblies, EntitySorter.assembly)
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+            return self.render(rs, "configure_mailinglist", {
                 'events': events,
-                'assemblies': assemblies,
+                'assembly_entries': assembly_entries,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
                 'maxsize_default': atype.maxsize_default,
+                'select_input_factory':
+                    lambda event_id: json.loads(
+                        self.change_mailinglist_form_print_event_specific_select_input(
+                            rs, event_id=event_id,
+                            errors=rs.get_validation_errors_dict(), values=rs.values,
+                        ).get_data(),
+                    ),
             })
 
     @access("ml", modi={"POST"})
@@ -410,10 +419,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
-            event_entries = [(e.id, e.title) for e in xsorted(events.values())]
         else:
             events = {}
-            event_entries = []
         if "assembly_id" in additional_fields:
             assemblies = self.assemblyproxy.list_assemblies(rs)
             sorted_assemblies = keydictsort_filter(
@@ -429,9 +436,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             and bool(ml.full_moderator_fields)
         )
         readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
-        return self.render(rs, "change_mailinglist", {
+        return self.render(rs, "configure_mailinglist", {
             'events': events,
-            'event_entries': event_entries,
             'event_parts_by_event': {
                 event.id: {part.id: part.title for part in event.parts.values()}
                 for event in events.values()
@@ -440,6 +446,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'additional_fields': additional_fields,
             'restricted': restricted,
             'readonly': readonly,
+            'available_domains': ml.available_domains,
             'select_input_factory':
                 lambda event_id: json.loads(
                     self.change_mailinglist_form_print_event_specific_select_input(
@@ -452,12 +459,17 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata("event_id")
     def change_mailinglist_form_print_event_specific_select_input(
-            self, rs: RequestState, event_id: int,
+            self, rs: RequestState, event_id: Optional[int],
             readonly: bool = False,
             errors: dict[str | None, list[Exception]] | None = None,
             values: MultiDict[str, Any] | None = None,
     ) -> Response:
         rs.ignore_validation_errors()
+        if not event_id:
+            return Response(json_serialize({
+                'event_part_id': "",
+                'event_part_group_id': "",
+            }), mimetype="application/json")
         event = self.eventproxy.get_event(rs, event_id)
 
         part_template = """
