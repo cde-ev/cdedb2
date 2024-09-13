@@ -201,7 +201,7 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
 
 def _insert_postal_code_locations(conn: connection) -> list[str]:
     """
-    Read geo coordinates of german PLZs and create INSERTs to save them to the database..
+    Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
     data = pathlib.Path(
         "/cdedb2/tests/ancillary_files/PLZ.tab").read_text()
