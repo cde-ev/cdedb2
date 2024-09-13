@@ -97,7 +97,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         courses = self.sql_select(
             rs, models.Course.database_table, ("id",),
-            (event_id,), entity_key=models.Course.entity_key)
+            (event_id,), entity_key="event_id")
         if courses:
             blockers["courses"] = [e["id"] for e in courses]
 
@@ -153,7 +153,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
 
         lodgements = self.sql_select(
             rs, models.Lodgement.database_table, ("id",),
-            (event_id,), entity_key=models.Lodgement.entity_key)
+            (event_id,), entity_key="event_id")
         if lodgements:
             blockers["lodgements"] = [e["id"] for e in lodgements]
 
@@ -187,8 +187,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             ml_blockers.update(e["id"] for e in mailinglists)
 
         mailinglists_part_id = self.sql_select(
-            rs, models_ml.Mailinglist.database_table, ("id"),
-            blockers["event_parts"], entity_key="event_part_id")
+            rs, models_ml.Mailinglist.database_table, ("id",),
+            blockers.get("event_parts", []), entity_key="event_part_id")
         if mailinglists_part_id:
             ml_blockers.update(e["id"] for e in mailinglists_part_id)
 
