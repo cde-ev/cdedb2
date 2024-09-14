@@ -2910,6 +2910,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
+    'is_visible': bool,
     'notes': Optional[str],
 }
 
@@ -3732,6 +3733,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'max_size': Optional[int],
     'min_size': Optional[int],
     'notes': Optional[str],
+    'is_visible': Optional[bool],
 }
 
 PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
