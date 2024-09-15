@@ -129,9 +129,9 @@
                 {{ util.form_input_static(
                     label=gettext("Mailinglist Type"),
                     value=
-                        gettext(enums['MailinglistTypes'](ml_type)|string + ' '
+                        gettext(enums['MailinglistTypes'](ml_type)|string) + ' '
                         + util.href(cdedblink('ml/change_ml_type'), gettext("Change Type"),
-                                    aclass="btn btn-warning btn-xs", icon="pen"))) }}
+                                    aclass="btn btn-warning btn-xs", icon="pen")) }}
             {% endif %}
 
             {{ util.form_input_select(
