@@ -271,13 +271,16 @@ class MlBaseFrontend(AbstractUserFrontend):
                     'event_part_id',
                     KeyError(n_("Invalid event part.")),
                 ))
-            if (
-                    part_group_id := data.get('event_part_group_id')
-            ) and part_group_id not in event.part_groups:
-                rs.append_validation_error((
-                    'event_part_group_id',
-                    KeyError(n_("Invalid part group.")),
-                ))
+            if part_group_id := data.get('event_part_group_id'):
+                if (
+                    part_group_id not in event.part_groups
+                    or event.part_groups[part_group_id].constraint_type
+                        != const.EventPartGroupType.mailinglist_link
+                ):
+                    rs.append_validation_error((
+                        'event_part_group_id',
+                        KeyError(n_("Invalid part group.")),
+                    ))
 
         ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
@@ -548,13 +551,16 @@ class MlBaseFrontend(AbstractUserFrontend):
                     'event_part_id',
                     KeyError(n_("Invalid event part.")),
                 ))
-            if (
-                    part_group_id := data.get('event_part_group_id')
-            ) and part_group_id not in event.part_groups:
-                rs.append_validation_error((
-                    'event_part_group_id',
-                    KeyError(n_("Invalid part group.")),
-                ))
+            if part_group_id := data.get('event_part_group_id'):
+                if (
+                    part_group_id not in event.part_groups
+                    or event.part_groups[part_group_id].constraint_type
+                        != const.EventPartGroupType.mailinglist_link
+                ):
+                    rs.append_validation_error((
+                        'event_part_group_id',
+                        KeyError(n_("Invalid part group.")),
+                    ))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
