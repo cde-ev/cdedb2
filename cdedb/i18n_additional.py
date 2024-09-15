@@ -254,6 +254,7 @@ I18N_STRINGS = (
     n_("EventPartGroupType.mutually_exclusive_participants"),
     n_("EventPartGroupType.mutually_exclusive_courses"),
     n_("EventPartGroupType.Statistic"),
+    n_("EventPartGroupType.mailinglist_link"),
 
     n_("CourseTrackGroupType.course_choice_sync"),
 
