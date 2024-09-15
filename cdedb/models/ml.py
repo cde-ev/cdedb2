@@ -389,9 +389,6 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
     event_id: Optional[vtypes.ID] = None
-    # An additional part id or part groupd id liits the implicit subscribers.
-    event_part_id: Optional[vtypes.ID] = None
-    event_part_group_id: Optional[vtypes.ID] = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -522,6 +519,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
+    # An additional part id or part group id limits the implicit subscribers.
+    event_part_id: Optional[vtypes.ID] = None
+    event_part_group_id: Optional[vtypes.ID] = None
+
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
 
