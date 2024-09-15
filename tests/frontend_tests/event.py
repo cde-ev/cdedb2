@@ -1435,7 +1435,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton", div="moderator-list")
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual('altaka-orga', f['local_part'].value)
         self.assertPresence("Orga (Opt-out)")
         self.assertEqual('AltAka', f['subject_prefix'].value)
@@ -1446,7 +1446,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton", div="moderator-list")
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual('altaka-all', f['local_part'].value)
         self.assertPresence("Teilnehmer/Anmeldungen (Opt-out)")
         # TODO check for correct registration part stati
