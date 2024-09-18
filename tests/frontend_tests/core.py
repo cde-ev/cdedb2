@@ -2131,6 +2131,7 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
+        self.assertEqual(f['realm'].value, "cde")
         f['realm'] = "event"
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"
