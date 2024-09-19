@@ -13,6 +13,7 @@
             "nr": "\u03b1",
             "shortname": "Heldentum",
             "instructors": "ToFi & Co",
+            "is_visible": true,
             "max_size": 10,
             "min_size": 2,
             "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig.",
@@ -30,6 +31,7 @@
             "nr": "\u03b2",
             "shortname": "Kabarett",
             "instructors": "Bernd Lucke",
+            "is_visible": true,
             "max_size": 20,
             "min_size": 10,
             "notes": "Kursleiter hat Sekt angefordert.",
@@ -48,6 +50,7 @@
             "nr": "\u03b3",
             "shortname": "Kurz",
             "instructors": "Heinrich und Thomas Mann",
+            "is_visible": true,
             "max_size": 14,
             "min_size": 5,
             "notes": null,
@@ -64,6 +67,7 @@
             "nr": "\u03b4",
             "shortname": "Lang",
             "instructors": "Stephen Hawking und Richard Feynman",
+            "is_visible": true,
             "max_size": null,
             "min_size": null,
             "notes": null,
@@ -82,6 +86,7 @@
             "nr": "\u03b5",
             "shortname": "Backup",
             "instructors": "TBA",
+            "is_visible": true,
             "max_size": null,
             "min_size": null,
             "notes": null,
@@ -100,6 +105,7 @@
             "nr": "\u03b6",
             "shortname": "Extra",
             "instructors": null,
+            "is_visible": true,
             "min_size": null,
             "max_size": null,
             "notes": null,
@@ -168,7 +174,7 @@
         "1": {
             "notes": null,
             "orga_notes": null,
-            "payment": null,
+            "payment": "2014-01-01",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -255,7 +261,7 @@
         "2": {
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
-            "payment": "2014-02-02",
+            "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -263,6 +269,7 @@
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
+                "lodge": "015112345678",
                 "brings_balls": true,
                 "transportation": "pedes"
             },
@@ -342,7 +349,7 @@
         "3": {
             "notes": null,
             "orga_notes": null,
-            "payment": "2014-03-03",
+            "payment": null,
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -444,7 +451,7 @@
             "personalized_fees": {
             },
             "is_member": true,
-            "amount_paid": "0.00",
+            "amount_paid": "548.48",
             "amount_owed": "431.99",
             "parts": {
                 "1": {
@@ -603,7 +610,7 @@
         "6": {
             "notes": null,
             "orga_notes": null,
-            "payment": null,
+            "payment": "2014-06-06",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
@@ -616,7 +623,7 @@
             "personalized_fees": {
             },
             "is_member": true,
-            "amount_paid": "0.00",
+            "amount_paid": "10.50",
             "amount_owed": "10.50",
             "parts": {
                 "1": {

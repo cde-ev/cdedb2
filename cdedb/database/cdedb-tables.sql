@@ -919,6 +919,8 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
+        -- visibility on course list.
+        is_visible              boolean NOT NULL DEFAULT TRUE,
         -- orga remarks
         notes                   varchar,
         -- additional data, customized by each orga team

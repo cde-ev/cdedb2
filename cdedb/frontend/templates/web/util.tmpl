@@ -437,7 +437,7 @@
         {%- elif type != 'password' %}
             value="{{ values.get(name, defaultvalue) }}"
         {%- endif %}
-        {{ attributes }}/>
+        {{ attributes }} />
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,

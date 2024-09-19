@@ -7,6 +7,7 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import builtins
 import enum
 from typing import Optional
 
@@ -127,6 +128,17 @@ class FieldDatatypes(CdEIntEnum):
     float = 4  #:
     date = 5  #:
     datetime = 6  #:
+    non_negative_int = 10  #:
+    non_negative_float = 12  #:
+    phone = 20  #:
+
+    @property
+    def spec_type(self) -> builtins.str:
+        if self == FieldDatatypes.non_negative_float:
+            return 'float'
+        if self == FieldDatatypes.non_negative_int:
+            return 'int'
+        return self.name
 
 
 @enum.unique
@@ -188,6 +200,8 @@ class EventFeeType(CdEIntEnum):
     solidary_donation = 11
     solidary_increase = 12
     other_donation = 20
+    crisis_refund = 30
+    other_refund = 31
 
     def get_icon(self) -> str:
         return {
@@ -200,7 +214,8 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
-
+            EventFeeType.crisis_refund: "fire-extinguisher",
+            EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
     def is_donation(self) -> bool:

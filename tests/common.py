@@ -251,6 +251,9 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         def __setattr__(self, key: str, value: Any) -> None:
             return setattr(backend, key, value)
 
+        def get_rs(self, key: str) -> RequestState:
+            return setup_requeststate(key)
+
     return cast(B, Proxy())
 
 

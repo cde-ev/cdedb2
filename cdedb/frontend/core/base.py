@@ -154,7 +154,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # visible and open events
             if "event" in rs.user.roles:
                 event_ids = self.eventproxy.list_events(
-                    rs, visible=True, current=True, archived=False)
+                    rs, current=True, archived=False)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final: dict[int, Any] = {}
                 events_registration: dict[int, Optional[bool]] = {}
@@ -162,8 +162,12 @@ class CoreBaseFrontend(AbstractFrontend):
                 for event_id, event in events.items():
                     registration, payment_pending = (
                         self.eventproxy.get_registration_payment_info(rs, event_id))
-                    # Skip event, if the registration begins more than 2 weeks in future
-                    if event.registration_start and \
+                    if not event.is_visible_for(rs.user, registration is True,
+                                                privileged=False):
+                        continue
+                    # Skip event, if not registered and the registration begins
+                    # more than 2 weeks in future
+                    if not registration and event.registration_start and \
                             now() + datetime.timedelta(weeks=2) < \
                             event.registration_start:
                         continue

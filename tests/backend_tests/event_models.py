@@ -664,6 +664,7 @@ class TestEventModels(BackendTest):
             instructors='ToFi & Co',
             min_size=2,
             max_size=10,
+            is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
             fields={'room': 'Wald'},
         )
@@ -691,6 +692,7 @@ class TestEventModels(BackendTest):
                 instructors='Bernd Lucke',
                 min_size=10,
                 max_size=20,
+                is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
                 fields={'room': 'Theater'},
             ),

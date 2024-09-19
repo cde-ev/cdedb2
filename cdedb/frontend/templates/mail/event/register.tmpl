@@ -6,6 +6,26 @@ angemeldet.
 {% if fee %}
 
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.
+{% if complex_fee.is_complex() -%}
+Dein Beitrag setzt sich wie folgt zusammen:
+
+{# due to jinjas lack of list comprehension, this is a bit lengthy #}
+{%- set lengths = [] -%}
+{%- for kind, amount in complex_fee if amount -%}
+    {%- do lengths.append(gettext(kind|string)|length) -%}
+{%- endfor -%}
+{%- set labellength = lengths|max + 1 %}{# +1 for the colon -#}
+{%- set amountlength = complex_fee.by_kind.values()|map('money')|map('length')|max -%}
+{%- if fee|money|length > amountlength -%}
+    {%- set amountlength = fee|money|length -%}
+{%- endif -%}
+
+{% for kind, amount in complex_fee if amount -%}
+{{ (gettext(kind|string) + ":").ljust(labellength) }} {{ (amount|money).rjust(amountlength) }}
+{% endfor -%}
+{{ "–"*(labellength + 1 + amountlength) }}
+{{ "Gesamt:".ljust(labellength) }} {{ (fee|money).rjust(amountlength) }}
+{% endif %}
 
 {% if iban %}
 Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
@@ -18,16 +38,18 @@ BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ reference }}
 
+{# TODO: reformulate and move up to the fee composition when #3354 (becoming member with registration) is implemented
 {% if complex_fee.nonmember_surcharge %}
 Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen Beitrag in Höhe von {{ complex_fee.nonmember_surcharge|money }}
 bezahlen (bereits in der obigen Summe enthalten).
-{#{% if "cde" in user.roles %}#}
-{##}
-{#Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen#}
-{#und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.#}
-{#Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.#}
-{#{% endif %}#}
+{% if "cde" in user.roles %}
+
+Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen
+und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.
+Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.
 {% endif %}
+{% endif %}
+#}
 
 {% else %}
 Wir werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}

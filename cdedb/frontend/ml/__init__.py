@@ -71,6 +71,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                             owner = dblist.address.replace("@", "-owner@")
                             self.do_mail(rs, "reject_message",
                                          {'To': (owner,),
+                                          'Reply-To': owner,
                                           'Subject': "E-Mail zurückgewiesen"},
                                          {'ml': dblist, 'sender': sender,
                                           'subject': subject, 'reason': reason})
