@@ -21,7 +21,7 @@ from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
-    storage,
+    prepsql, storage,
 )
 
 
@@ -139,6 +139,7 @@ class TestCoreFrontend(FrontendTest):
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
+        defect_email = {"Defekte Email-Adressen"}
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
@@ -146,27 +147,27 @@ class TestCoreFrontend(FrontendTest):
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = pending | genesis | core_admin | meta_admin | log
+            out = pending | defect_email | genesis | core_admin | meta_admin | log
         # event admin (genesis, review)
         elif self.user_in('annika'):
             ins = everyone | genesis | pending
-            out = core_admin | meta_admin | log
+            out = core_admin | meta_admin | log | defect_email
         # ml admin (genesis)
         elif self.user_in('nina'):
-            ins = everyone | genesis
+            ins = everyone | genesis | defect_email
             out = pending | core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | pending | genesis | core_admin | log
+            ins = everyone | pending | genesis | core_admin | log | defect_email
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = pending | genesis | core_admin | log
+            out = pending | genesis | core_admin | log | defect_email
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = pending | genesis | core_admin | meta_admin
+            out = pending | genesis | core_admin | meta_admin | defect_email
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -961,7 +962,7 @@ class TestCoreFrontend(FrontendTest):
         for key, val in new_passwords.items():
             for i, u in enumerate(("anton", "berta", "emilia", "ferdinand")):
                 with self.subTest(u=u):
-                    self.setUp()
+                    self.setUp(prepsql="DELETE FROM core.email_states")
                     user = USER_DICT[u]
                     self.get('/')
                     self.traverse({'description': 'Passwort zurücksetzen'})
@@ -998,6 +999,7 @@ class TestCoreFrontend(FrontendTest):
                             "Das ist ähnlich zu einem häufig genutzten Passwort.",
                             notification="Passwort ist zu schwach.")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_repeated_password_reset(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT["berta"]
@@ -1033,6 +1035,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
                             div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_password_reset_username_change(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT['berta']
@@ -1195,6 +1198,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Viktor", div='query-result')
         self.assertPresence("Vera", div='query-result')
 
+    @prepsql("DELETE FROM core.email_states")
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
@@ -1310,6 +1314,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT[other_user_name])
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
@@ -3310,3 +3315,74 @@ LG Emilia
                 log_expectation, realm="core",
                 offset=len(self.get_sample_data('core.log')),
             )
+
+    @as_users("vera", "nina")
+    def test_defect_email_overview(self) -> None:
+        self.traverse({'description': 'Defekte Email-Adressen'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("anton@example.cde")
+        self.assertPresence("berta@example.cde")
+        self.assertPresence("new-berta@example.cde")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+
+        f = self.response.forms['setemailstatusform']
+        f['address'] = 'charly@example.cde'
+        f['notes'] = 'Totale Verstopfung'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertPresence("Totale Verstopfung")
+
+        self.traverse({'description': 'Bearbeiten', 'index': 1})
+        f = self.response.forms['setemailstatusform']
+        f['notes'] = 'Gesperrt wegen Entstehung eines schwarzen Lochs'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+        self.assertPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+        formid = f'deleteemailstatus{get_hash(b"charly@example.cde")}'
+        f = self.response.forms[formid]
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+    @as_users("vera", "nina")
+    def test_defect_email_profile(self) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertNonPresence('defekte Email-Adresse')
+        self.assertPresence('Als defekt markieren')
+
+        self.traverse({'description': 'Als defekt markieren'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("janis@example.cde")
+
+        f = self.response.forms['setemailstatusform']
+        self.submit(f)
+        self.assertPresence("janis@example.cde")
+
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertPresence('defekte Email-Adresse')
+        self.assertNonPresence('Als defekt markieren')
+
+    def test_defect_email_nosend(self) -> None:
+        user = USER_DICT["berta"]
+        self.get('/')
+        self.traverse({'description': 'Passwort zurücksetzen'})
+        f = self.response.forms['passwordresetform']
+        f['email'] = user['username']
+        self.submit(f)
+        with self.assertRaises(IndexError):
+            # no email for Berta
+            self.fetch_mail_content()

@@ -446,6 +446,17 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
+CREATE TABLE core.email_states (
+        id                      serial PRIMARY KEY,
+        address                 varchar NOT NULL UNIQUE,
+        -- see cdedb.database.constants.EmailStatus
+        status                  integer NOT NULL,
+        notes                   varchar
+);
+GRANT SELECT on core.email_states TO cdb_anonymous;
+GRANT SELECT, UPDATE ON core.email_states_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON core.email_states TO cdb_admin;
+
 CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,

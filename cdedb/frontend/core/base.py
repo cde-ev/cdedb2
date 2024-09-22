@@ -654,6 +654,16 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.user.persona_id == persona_id:
             active_session_count = self.coreproxy.count_active_sessions(rs)
 
+        # Check for email trouble
+        email_report = None
+        if (rs.user.persona_id == persona_id
+                or ({"core_admin", "ml_admin"} & rs.user.roles)):
+            # the username may be masked by admin views, but then we also
+            # don't need the email report
+            if 'username' in data:
+                tmp = self.coreproxy.get_email_reports(rs, [persona_id])
+                email_report = tmp.get(data['username'])
+
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me and "cde" not in access_levels
                      and acutally_searchable_to_you)
@@ -666,6 +676,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
+            'email_report': email_report,
         })
 
     @access("member")
@@ -717,18 +728,24 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
+        persona = self.coreproxy.get_ml_user(rs, persona_id)
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
         mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
+        defect_addresses = self.coreproxy.get_defect_address_reports(rs, [persona_id])
 
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, ml in mailinglists.items():
+            is_receiving = (
+                addr not in defect_addresses if (addr := addresses.get(mailinglist_id))
+                else persona['username'] not in defect_addresses)
             grouped[ml.sortkey][mailinglist_id] = {
                 'title': ml.title,
                 'id': mailinglist_id,
                 'address': addresses.get(mailinglist_id),
                 'is_active': ml.is_active,
+                'is_receiving': is_receiving,
             }
 
         return self.render(rs, "show_user_mailinglists", {
@@ -1330,6 +1347,53 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
+
+    @access("core_admin", "ml_admin")
+    @REQUESTdata("address", "notes")
+    def email_status_overview(self, rs: RequestState,
+                              address: Optional[vtypes.Email] = None,
+                              notes: Optional[str] = None) -> Response:
+        """Present overview.
+
+        Take arguments to prefill the input mask.
+        """
+        if rs.has_validation_errors():
+            rs.values['address'] = None
+            rs.values['notes'] = None
+        email_reports = self.coreproxy.get_email_reports(rs)
+        persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
+        personas = (self.coreproxy.get_personas(rs, persona_ids)
+                    if persona_ids else set())
+        ml_ids = set().union(*(e.ml_ids for e in email_reports.values()))
+        mls = self.mlproxy.get_mailinglists(rs, ml_ids) if ml_ids else set()
+        grouped_reports: dict[const.EmailStatus, dict[str, Any]] = (
+            collections.defaultdict(dict))
+        for email, infos in email_reports.items():
+            if infos.status in const.EmailStatus.notable_states():
+                grouped_reports[infos.status][email] = infos
+        return self.render(rs, "email_status_overview", {
+            'grouped_reports': grouped_reports, 'personas': personas, 'mls': mls})
+
+    @access("core_admin", "ml_admin", modi={"POST"})
+    @REQUESTdata("address", "notes", "status")
+    def set_email_status(self, rs: RequestState, address: vtypes.Email,
+                         status: const.EmailStatus, notes: Optional[str]) -> Response:
+        """Insert or update the status of an email address."""
+        if rs.has_validation_errors():
+            return self.email_status_overview(rs)
+        code = self.coreproxy.mark_email_status(rs, address, status, notes)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/email_status_overview")
+
+    @access("core_admin", "ml_admin", modi={"POST"})
+    @REQUESTdata("address")
+    def delete_email_status(self, rs: RequestState, address: vtypes.Email) -> Response:
+        """Remove the status entry of an email address."""
+        if rs.has_validation_errors():
+            return self.email_status_overview(rs)
+        code = self.coreproxy.remove_email_status(rs, address)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/email_status_overview")
 
     @access("persona")
     @REQUESTdata("to")

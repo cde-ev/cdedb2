@@ -42,6 +42,7 @@ ignored_columns = {
 implicit_columns = {
     "core.changelog": {"id"},
     "core.log": {"id"},
+    "core.email_states": {"id"},
     "cde.finance_log": {"id"},
     "cde.log": {"id"},
     "past_event.participants": {"id"},

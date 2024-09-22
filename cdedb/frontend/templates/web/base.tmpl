@@ -204,6 +204,30 @@
                                 {{ gettext(message)|e|format(**params) }}
                             {% endcall %}
                         {% endfor %}
+                        {% if defect_username or mls_with_defect_explicits %}
+                            <div class="alert alert-danger" role="alert">
+                                {% trans %}
+                                    The following email addresses are marked as defect, so you will no longer receive any emails for them.
+                                {% endtrans %}
+                                <ul>
+                                    {% if defect_username %}
+                                        <li>
+                                            {{ defect_username }} ({{ util.href(cdedblink("core/mydata"), gettext("Your username")) }})
+                                        </li>
+                                    {% endif %}
+                                    {% for address, mls in mls_with_defect_explicits.items() %}
+                                        <li>
+                                            {{ address }} (subscribed to
+                                            {% for ml in mls -%}
+                                                {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': ml.id}), ml.title) }}
+                                                {%- if not loop.last %}, {% endif -%}
+                                            {% endfor -%}
+                                            )
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     </div>
 
                     <div role="main">
