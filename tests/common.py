@@ -966,12 +966,18 @@ class FrontendTest(BackendTest):
             for file in folder.iterdir():
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
-    def setUp(self) -> None:
-        """Reset web application."""
+    def setUp(self, *, prepsql: Optional[str] = None) -> None:
+        """Reset web application.
+
+        :param prepsql: Similar to the @prepsql decorator this executes a raw
+                        SQL command on the test database.
+        """
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        if prepsql:
+            execsql(prepsql)
         self.response = None
 
     def basic_validate(self, verbose: bool = False) -> None:
@@ -1986,10 +1992,10 @@ class MultiAppFrontendTest(FrontendTest):
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
-    def setUp(self) -> None:
+    def setUp(self, *args: Optional[str], **kwargs: Optional[str]) -> None:
         """Reset all apps and responses and the current app index."""
         self.responses = [None for _ in range(self.n)]
-        super().setUp()
+        super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
             app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))

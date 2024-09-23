@@ -45,6 +45,7 @@ ALL_ENUMS: tuple[type[Enum], ...] = (
     const.EventFeeType,
     const.NotifyOnRegistration,
     const.PastInstitutions,
+    const.EmailStatus,
     QueryOperators,
     QueryScope,
     AgeClasses,

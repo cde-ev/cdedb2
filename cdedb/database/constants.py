@@ -46,6 +46,30 @@ class PersonaChangeStati(CdEIntEnum):
 
 
 @enum.unique
+class EmailStatus(CdEIntEnum):
+    """Spec for status of core.email_status.
+
+    This is intended to be extended in future revisions. Potential further
+    states are: whitelist, unconfirmed, mailinglists_disabled, all_disabled,
+    removed, unsuccessful_transmission.
+    """
+    normal = 1
+    defect = 10
+
+    @classmethod
+    def defect_states(cls) -> tuple["EmailStatus", ...]:
+        return (cls.defect,)
+
+    @classmethod
+    def notable_states(cls) -> tuple["EmailStatus", ...]:
+        """States which should cause a notification.
+
+        In some locations annotating every state could get really noisy.
+        """
+        return (cls.defect,)
+
+
+@enum.unique
 class RegistrationPartStati(CdEIntEnum):
     """Spec for field status of event.registration_parts."""
     not_applied = -1  #:
@@ -452,6 +476,8 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    modify_email_status = 70  #:
+    delete_email_status = 71  #:
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:

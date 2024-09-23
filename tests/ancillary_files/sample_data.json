@@ -4085,6 +4085,23 @@
             "paper_expuls": true
         }
     ],
+    "core.email_states": [
+        {
+            "address": "anton@example.cde",
+            "status": 1,
+            "notes": null
+        },
+        {
+            "address": "new-berta@example.cde",
+            "status": 10,
+            "notes": null
+        },
+        {
+            "address": "berta@example.cde",
+            "status": 10,
+            "notes": "Einfach kaputt gegangen..."
+        }
+    ],
     "core.cron_store": [],
     "core.locks": [
         {
@@ -10164,6 +10181,11 @@
             "mailinglist_id": 52,
             "persona_id": 9,
             "address": "inga-papierkorb@example.cde"
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 2,
+            "address": "new-berta@example.cde"
         }
     ],
     "ml.whitelist": [
