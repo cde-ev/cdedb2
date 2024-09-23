@@ -28,6 +28,6 @@ BEGIN;
     SELECT
         postal_code, ll_to_earth(lat, long),
         lat, long,
-        TRIM(REPLACE(REPLACE(description, postal_code, ''), '\n', ' ')) FROM t;
+        TRIM(REPLACE(REPLACE(description, postal_code, ''), E'\n', ' ')) FROM t;
     DROP TABLE t;
 COMMIT;
