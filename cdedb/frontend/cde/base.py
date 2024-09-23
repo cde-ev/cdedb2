@@ -24,8 +24,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState,
-    ValidationWarning, deduct_years, get_hash, merge_dicts, now,
+    CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
+    get_hash, merge_dicts, now,
 )
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -256,7 +256,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                         rs, near_pc, near_radius)
                     if not nearby_postal_codes:
                         rs.append_validation_error(
-                            ('near_pc', ValidationWarning(n_("Unknown postal code."))),
+                            ('near_pc', ValueError(n_("Unknown postal code."))),
                         )
                     defaults['qval_postal_code,postal_code2'] = " ".join(
                         nearby_postal_codes)
