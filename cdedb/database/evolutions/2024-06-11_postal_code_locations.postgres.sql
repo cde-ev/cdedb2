@@ -13,17 +13,21 @@ BEGIN;
     ALTER TABLE core.postal_code_locations OWNER TO cdb;
 
     CREATE TEMPORARY TABLE t (
-           loc_id           varchar,
            postal_code      varchar,
-           long             float8,
+           description      varchar,
+           inhabitants      integer,
+           area             float8,
            lat              float8,
-           name             varchar
+           long             float8
     );
     COPY t
-    FROM '/cdedb2/tests/ancillary_files/PLZ.tab'
-    DELIMITER E'\t'
+    FROM '/cdedb2/tests/ancillary_files/plz.csv'
+    DELIMITER ','
     CSV HEADER;
     INSERT INTO core.postal_code_locations(postal_code, earth_location, lat, long, name)
-    SELECT postal_code, ll_to_earth(lat, long), lat, long, name FROM t;
+    SELECT
+        postal_code, ll_to_earth(lat, long),
+        lat, long,
+        TRIM(REPLACE(REPLACE(description, postal_code, ''), '\n', ' ')) FROM t;
     DROP TABLE t;
 COMMIT;

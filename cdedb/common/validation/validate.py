@@ -53,6 +53,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import base64
 import collections
 import copy
+import csv
 import dataclasses
 import datetime
 import decimal
@@ -63,6 +64,7 @@ import itertools
 import json
 import logging
 import math
+import pathlib
 import re
 import string
 import typing
@@ -105,9 +107,7 @@ from cdedb.common.query import (
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation.data import (
-    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
-)
+from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -1720,6 +1720,9 @@ def _phone(
     return Phone(phone_str)
 
 
+_GERMAN_POSTAL_CODES: set[str] = set()
+
+
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: Optional[str] = None, *,
@@ -1737,7 +1740,17 @@ def _german_postal_code(
         msg = n_("Invalid german postal code.")
         if not (len(val) == 5 and val.isdigit()):
             raise ValidationSummary(ValueError(argname, msg))
-        if val not in GERMAN_POSTAL_CODES and not ignore_warnings:
+        if not _GERMAN_POSTAL_CODES:
+            repo_path: pathlib.Path = _CONFIG['REPOSITORY_PATH']
+            _GERMAN_POSTAL_CODES.update(
+                e['plz'] for e in csv.DictReader(
+                    (
+                        repo_path / "tests" / "ancillary_files" / "plz.csv"
+                    ).read_text().splitlines(),
+                    delimiter=',',
+                )
+            )
+        if val not in _GERMAN_POSTAL_CODES and not ignore_warnings:
             raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 

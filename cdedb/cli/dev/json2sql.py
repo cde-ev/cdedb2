@@ -204,20 +204,21 @@ def _insert_postal_code_locations(conn: connection) -> list[str]:
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
     data = pathlib.Path(
-        "/cdedb2/tests/ancillary_files/PLZ.tab").read_text()
+        "/cdedb2/tests/ancillary_files/plz.csv").read_text()
     lines = [line for line in data.splitlines() if not line.strip().startswith("#")]
-    reader = csv.DictReader(
-        lines, delimiter="\t", fieldnames=("id", "plz", "long", "lat", "name"),
-    )
+    entries = list(csv.DictReader(lines, delimiter=','))
     command = f"""
         INSERT INTO
             core.postal_code_locations (postal_code, name, earth_location, lat, long)
         VALUES
-            {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(lines))};
+            {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(entries))};
     """
     params = list(chain.from_iterable(
-        [e['plz'], e['name'], e['lat'], e['long'], e['lat'], e['long']]
-        for e in reader
+        [
+            e['plz'], e['note'].removeprefix(e['plz']).strip(),
+            e['lat'], e['lon'], e['lat'], e['lon'],
+        ]
+        for e in entries
     ))
 
     with conn:
