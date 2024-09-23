@@ -68,7 +68,7 @@ import string
 import typing
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
-from enum import Enum, IntEnum
+from enum import Enum
 from types import TracebackType
 from typing import (
     Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
@@ -113,6 +113,7 @@ from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+from cdedb.uncommon.intenum import CdEIntEnum
 
 NoneType = type(None)
 
@@ -5050,7 +5051,7 @@ def _db_subscription_state(
     return DatabaseSubscriptionState(val)
 
 
-IE = TypeVar("IE", bound=IntEnum)
+IE = TypeVar("IE", bound=CdEIntEnum)
 
 
 def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None,

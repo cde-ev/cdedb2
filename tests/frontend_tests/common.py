@@ -131,9 +131,10 @@ class TestFrontendCommon(FrontendTest):
 
     def test_enum_member_translations(self) -> None:
         ignored_enums = {
+            cdedb.enums.SubscriptionState,
+            cdedb.enums.MailinglistDomain,
+            cdedb.enums.LockType,
             cdedb.enums.TransactionType,
-            cdedb.enums.const.SubscriptionState,
-            cdedb.enums.const.MailinglistDomain,
             cdedb.enums.SubscriptionPolicy,
             cdedb.enums.SubscriptionAction,
             cdedb.enums.LodgementsSortkeys,
