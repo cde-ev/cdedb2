@@ -52,6 +52,17 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="col-sm-4 control-label" for="{{ drow_name('input-text-sort_group', field_id) }}">
+                        {% trans %}Group{% endtrans %}
+                    </label>
+                    <div class="col-sm-8 {{ util.has_errors(drow_name('sort_group', field_id)) }}">
+                        {{ util.input_text(name=drow_name('sort_group', field_id), aclass='drow-input form-control',
+                                           attributes=util.drow_basename('sort_group')|s if newrow else '',
+                                           anid=drow_name('input-text-sort_group', field_id)) }}
+                        {{ util.output_errors(drow_name('sort_group', field_id)) }}
+                    </div>
+                </div>
+                <div class="form-group">
                     <label class="col-sm-4 control-label" for="{{ drow_name('input-text-sortkey', field_id) }}">
                         {% trans %}Sortkey{% endtrans %}
                     </label>
@@ -86,6 +97,9 @@
                 {% else %}
                     {{ util.input_hidden(name=drow_name('association', field_id), value=association) }}
                 {% endif %}
+                {{ util.form_input_text(name=drow_name('description', field_id), label=gettext("Description"),
+                                        aclass='drow-input',
+                                        attributes=util.drow_basename('description')|s if newrow else '') }}
                 {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
                                             aclass='drow-input',
                                             attributes=util.drow_basename('entries')|s if newrow else '') }}

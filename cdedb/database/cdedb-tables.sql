@@ -878,13 +878,17 @@ CREATE TABLE event.field_definitions (
         event_id                integer NOT NULL REFERENCES event.events(id),
         -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
-        -- the title is displayed to the user, may contain any string and can be changed.
-        title                   varchar NOT NULL,
-        sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
+        -- the title is displayed to the user, may contain any string and can be changed.
+        title                   varchar NOT NULL,
+        -- the description is a hovertext shown when hovering over labels.
+        description             varchar DEFAULT NULL,
+        -- fields are grouped by their `sort_group` string, then sorted by sortkey within that group.
+        sort_group              varchar DEFAULT NULL,
+        sortkey                 integer NOT NULL DEFAULT 0,
         -- whether or not to display this field during checkin.
         checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections

@@ -2545,7 +2545,7 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {vtypes.EventTrack, vtypes.BallotCandidate,
-                             vtypes.EventPartGroup}:
+                             vtypes.EventPartGroup, vtypes.EventField}:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation

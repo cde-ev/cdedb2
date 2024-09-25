@@ -281,11 +281,19 @@
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
         <dl class="dl-horizontal">
+            {% set prev_sort_groups = [] %}
             {% for field in ambience['event']['fields'].values()|sort %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
-                    <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
+                    {% if not prev_sort_groups or field.sort_group != prev_sort_groups[-1] %}
+                        {% do prev_sort_groups.append(field.sort_group) %}
+                        <h5 class="heading-underline">
+                            {{ field.sort_group or gettext("Other Fields") }}
+                        </h5>
+                    {% endif %}
+                    <dt title="{{ field.title }}">{{ field['title'] }}</dt>
                     <dd>
                         {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
+                        {{ util.output_info(field.description) }}
                     </dd>
                 {% endif %}
             {% endfor %}
