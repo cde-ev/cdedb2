@@ -2983,6 +2983,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         # The field has been deleted, hence the title is no longer known.
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
+        # Regression test for https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/3342
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qord_0"] = 'course1.id'
+        self.submit(f)
+
     @as_users("annika")
     def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},

@@ -295,7 +295,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
         select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-        select += ', ' + query.scope.get_primary_key()
+        select += f', {query.scope.get_primary_key()} AS "{query.scope.get_primary_key()}"'
         q, params = self._construct_query(
             query, select, distinct=distinct, view=view,
             aggregate_select=aggregate_select,

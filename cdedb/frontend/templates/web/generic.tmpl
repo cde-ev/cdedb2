@@ -502,7 +502,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% set primary_field = query.scope.get_primary_key(short=True) %}
+            {% set primary_field = query.scope.get_primary_key() %}
             {% set QueryScope = enums['QueryScope'] %}
             {% set ResultFormat = query_mod.QueryResultEntryFormat %}
             {% for row in result %}
