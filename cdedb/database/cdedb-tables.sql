@@ -1265,7 +1265,7 @@ CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        secret                  varchar,
+        secret                  varchar UNIQUE,
         UNIQUE (persona_id, assembly_id)
 );
 CREATE INDEX attendees_assembly_id_idx ON assembly.attendees(assembly_id);
