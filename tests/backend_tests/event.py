@@ -1953,7 +1953,6 @@ class TestEventBackend(BackendTest):
              'course2.id': None,
              'persona.family_name': 'Eventis',
              'reg.id': 2,
-             'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
              'lodgement1.id': None,
              'reg.payment': None,
              'is_cde_realm': False,
@@ -1966,7 +1965,6 @@ class TestEventBackend(BackendTest):
              'course2.id': None,
              'persona.family_name': 'Iota',
              'reg.id': 4,
-             'id': 4,  # un-aliased id from QUERY_PRIMARIES / ordering
              'lodgement1.id': None,
              'reg.payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
@@ -1976,7 +1974,6 @@ class TestEventBackend(BackendTest):
             {'birthday': datetime.date(2019, 12, 28),
              'course1.xfield_room': None,
              'course2.id': 2,
-             'id': 5,
              'is_cde_realm': True,
              'lodgement1.id': 4,
              'lodgement2.xfield_contamination': 'high',
@@ -1989,7 +1986,6 @@ class TestEventBackend(BackendTest):
             {'birthday': datetime.date(1981, 2, 11),
              'course1.xfield_room': None,
              'course2.id': None,
-             'id': 6,
              'is_cde_realm': True,
              'lodgement1.id': None,
              'lodgement2.xfield_contamination': None,
@@ -2065,7 +2061,7 @@ class TestEventBackend(BackendTest):
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {
-                'id': 4,
+                'lodgement.id': 4,
                 'lodgement.regular_capacity': 1,
                 'lodgement.group_id': 1,
                 'lodgement.title': "Einzelzelle",
@@ -2082,7 +2078,7 @@ class TestEventBackend(BackendTest):
                 'part1.total_inhabitants': 1,
             },
             {
-                'id': 2,
+                'lodgement.id': 2,
                 'lodgement.regular_capacity': 10,
                 'lodgement.group_id': 1,
                 'lodgement.title': "Kalte Kammer",
@@ -2115,59 +2111,57 @@ class TestEventBackend(BackendTest):
                 "track3.instructors",
                 "course_fields.xfield_room"],
             constraints=[],
-            order=[("course.max_size", True)],
+            order=[
+                ("course.max_size", True),
+                ("course.id", True),
+            ],
         )
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'course.id': 1,
              'course_fields.xfield_room': 'Wald',
-             'id': 1,
-             'max_size': 10,
+             'course.max_size': 10,
              'track1.attendees': 0,
              'track2.is_offered': False,
              'track3.instructors': 1,
              'track3.num_choices1': 0},
             {'course.id': 3,
              'course_fields.xfield_room': 'Seminarraum 42',
-             'id': 3,
-             'max_size': 14,
+             'course.max_size': 14,
              'track1.attendees': 0,
              'track3.instructors': 0,
              'track2.is_offered': True,
              'track3.num_choices1': 0},
             {'course.id': 2,
              'course_fields.xfield_room': 'Theater',
-             'id': 2,
-             'max_size': 20,
+             'course.max_size': 20,
              'track1.attendees': 0,
              'track2.is_offered': True,
              'track3.instructors': 0,
              'track3.num_choices1': 2},
             {'course.id': 4,
              'course_fields.xfield_room': 'Seminarraum 23',
-             'id': 4,
-             'max_size': None,
+             'course.max_size': None,
              'track1.attendees': 0,
              'track2.is_offered': True,
              'track3.instructors': 0,
              'track3.num_choices1': 3},
             {'course.id': 5,
              'course_fields.xfield_room': 'Nirwana',
-             'id': 5,
-             'max_size': None,
+             'course.max_size': None,
              'track1.attendees': 0,
              'track2.is_offered': True,
              'track3.instructors': 0,
              'track3.num_choices1': 0},
             {'course.id': 13,
              'course_fields.xfield_room': None,
-             'id': 13,
-             'max_size': None,
+             'course.max_size': None,
              'track1.attendees': 0,
              'track2.is_offered': True,
              'track3.instructors': 0,
-             'track3.num_choices1': 0})
-        self.assertEqual(result, expectation)
+             'track3.num_choices1': 0},
+        )
+        self.assertEqual(expectation, result)
 
     @as_users("annika")
     def test_is_instructor_query(self) -> None:
@@ -2245,32 +2239,26 @@ class TestEventBackend(BackendTest):
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {
-                "id": 1,
                 "reg.id": 1,
                 "track1.is_course_instructor": True,
             },
             {
-                "id": 2,
                 "reg.id": 2,
                 "track1.is_course_instructor": None,
             },
             {
-                "id": 3,
                 "reg.id": 3,
                 "track1.is_course_instructor": False,
             },
             {
-                "id": 4,
                 "reg.id": 4,
                 "track1.is_course_instructor": None,
             },
             {
-                "id": 5,
                 "reg.id": 5,
                 'track1.is_course_instructor': None,
             },
             {
-                "id": 6,
                 "reg.id": 6,
                 'track1.is_course_instructor': None,
             },
