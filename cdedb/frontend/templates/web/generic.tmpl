@@ -536,11 +536,7 @@
                                     {% set text = query.spec[field].choices.get(row.get(field), row.get(field, "UNDEFINED")) %}
                                     {% if format_spec == ResultFormat.persona %}
                                         <span class="nowrap">
-                                            {% if primary_field == "personas.id" %}
-                                                {{ row[field]|cdedbid }}
-                                            {% else %}
-                                                {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
-                                            {% endif %}
+                                            {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
                                         </span>
                                     {% elif format_spec == ResultFormat.username %}
                                         {{ util.username_mailto(row) }}
