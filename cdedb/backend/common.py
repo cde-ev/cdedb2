@@ -271,7 +271,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         query.fix_custom_columns()
         self.logger.debug(f"Performing general query {query} (aggregate={aggregate}).")
 
-        fields = {column: column.replace('"', '') for field in query.fields_of_interest
+        fields_of_interest = query.fields_of_interest + [query.scope.get_primary_key()]
+        fields = {column: column.replace('"', '') for field in fields_of_interest
                   for column in field.split(",")}
         aggregate_select = ""
         if aggregate:
@@ -295,7 +296,6 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
         select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-        select += f', {query.scope.get_primary_key()} AS "{query.scope.get_primary_key()}"'
         q, params = self._construct_query(
             query, select, distinct=distinct, view=view,
             aggregate_select=aggregate_select,
