@@ -643,12 +643,14 @@ class EventQueryMixin(EventBaseFrontend):
         counter: dict[str, int] = collections.defaultdict(int)
         for entry in data:
             counter[name(entry)] += 1
+            if 'id' not in entry:
+                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
 
         # Generate return JSON list
         ret = []
         for entry in xsorted(data, key=EntitySorter.persona):
             result = {
-                'id': entry[QueryScope.quick_registration.get_primary_key()],
+                'id': entry['id'],
                 'name': name(entry),
                 'display_name': entry['display_name'],
             }
