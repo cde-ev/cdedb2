@@ -256,7 +256,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 result = self.cdeproxy.submit_general_query(rs, query)
                 count = len(result)
                 if count == 1:
-                    return self.redirect_show_user(rs, result[0]['id'], quote_me=True)
+                    return self.redirect_show_user(
+                        rs, result[0][query.scope.get_primary_key()], quote_me=True)
                 if count > cutoff:
                     result = result[:cutoff]
                     rs.notify("info", n_("Too many query results."))
