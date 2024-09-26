@@ -648,7 +648,7 @@ class EventQueryMixin(EventBaseFrontend):
         ret = []
         for entry in xsorted(data, key=EntitySorter.persona):
             result = {
-                'id': entry['id'],
+                'id': entry[QueryScope.quick_registration.get_primary_key()],
                 'name': name(entry),
                 'display_name': entry['display_name'],
             }

@@ -1310,8 +1310,10 @@ class EventEventMixin(EventBaseFrontend):
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
         if len(result) == 1:
-            return self.redirect(rs, "event/show_registration",
-                                 {'registration_id': result[0]['id']})
+            return self.redirect(
+                rs, "event/show_registration",
+                {'registration_id': result[0][query.scope.get_primary_key()]},
+            )
         elif result:
             # TODO make this accessible
             pass
@@ -1337,8 +1339,10 @@ class EventEventMixin(EventBaseFrontend):
             result = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
             if len(result) == 1:
-                return self.redirect(rs, "event/show_registration",
-                                     {'registration_id': result[0]['id']})
+                return self.redirect(
+                    rs, "event/show_registration",
+                    {'registration_id': result[0][query.scope.get_primary_key()]},
+                )
             elif result:
                 params = query.serialize_to_url()
                 return self.redirect(rs, "event/registration_query", params)

@@ -62,7 +62,7 @@ MEMBERSEARCH_DEFAULTS = {
         QueryOperators.match,
     'qop_pevent_id': QueryOperators.equal,
     'qop_pcourse_id': QueryOperators.equal,
-    'qord_0': 'family_name,birth_name',
+    'qord_0': 'family_name',
     'qord_0_ascending': True,
 }
 
@@ -252,7 +252,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
                 query.constraints = [restrict(constrain)
                                      for constrain in query.constraints]
-                query.fields_of_interest.append('personas.id')
                 result = self.cdeproxy.submit_general_query(rs, query)
                 count = len(result)
                 if count == 1:
@@ -261,6 +260,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 if count > cutoff:
                     result = result[:cutoff]
                     rs.notify("info", n_("Too many query results."))
+                for persona in result:
+                    persona['id'] = persona[query.scope.get_primary_key()]
 
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
