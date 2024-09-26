@@ -713,7 +713,7 @@ class Query:
         """Map all columns in the fields of interest to their aliases."""
         return {
             column: self._alias_column(column)
-            for field in self.fields_of_interest
+            for field in (self.fields_of_interest + [self.scope.get_primary_key()])
             for column in field.split(',')
         }
 
@@ -733,11 +733,8 @@ class Query:
         """
         return ', '.join(
             [
-                f'{column} AS "{self._alias_column(column)}"'
-                for column in set(
-                    self.fields_of_interest
-                    + [self.scope.get_primary_key()],
-                )
+                f'{column} AS "{alias}"'
+                for column, alias in self.field_aliases.items()
             ]
             + [
                 order.select_with_alias for order in self._order_entries
