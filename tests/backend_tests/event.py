@@ -2163,6 +2163,24 @@ class TestEventBackend(BackendTest):
         )
         self.assertEqual(expectation, result)
 
+        # Query with one text column as foi, constraint and order to test aliasing.
+        query = Query(
+            scope=QueryScope.event_course,
+            spec=QueryScope.event_course.get_spec(
+                event=self.event.get_event(self.key, 1)),
+            fields_of_interest=[
+                "course.title",
+            ],
+            constraints=[
+                ("course.title", QueryOperators.nonempty, None),
+            ],
+            order=[
+                ("course.title", True),
+            ],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        self.assertEqual({'course.id': 5, 'course.title': "Backup-Kurs"}, result[0])
+
     @as_users("annika")
     def test_is_instructor_query(self) -> None:
         registrations = (

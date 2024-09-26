@@ -612,6 +612,10 @@ class QueryOrderEntry:
         return self.column + f' COLLATE "{LOCALE}"' * (self.type == "str")
 
     @property
+    def select_with_alias(self) -> str:
+        return f'{self.select} AS "{Query._alias_column(self.column)}"'
+
+    @property
     def order_by(self) -> str:
         return f'{self.select} {"ASC" if self.ascending else "DESC"}'
 
@@ -728,12 +732,16 @@ class Query:
         Take special care to not duplicate any columns.
         """
         return ', '.join(
-            f'{column} AS "{self._alias_column(column)}"'
-            for column in set(
-                self.fields_of_interest
-                + [order.select for order in self._order_entries]
-                + [self.scope.get_primary_key()],
-            )
+            [
+                f'{column} AS "{self._alias_column(column)}"'
+                for column in set(
+                    self.fields_of_interest
+                    + [self.scope.get_primary_key()],
+                )
+            ]
+            + [
+                order.select_with_alias for order in self._order_entries
+            ],
         )
 
     @property
