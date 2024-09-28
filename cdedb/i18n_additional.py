@@ -363,6 +363,7 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.hourly"),
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
+
     #
     # Query datatypes
     #
