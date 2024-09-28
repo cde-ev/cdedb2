@@ -327,22 +327,27 @@ class TestCoreFrontend(FrontendTest):
             .find(text=re.compile(r"Admin-Administration"))
         self.assertIsNone(button)
 
+        # user review forms
+        self.assertNoLink('/core/genesis/list')
+        self.assertNoLink('/core/changelog/list')
+        self._click_admin_view_button(re.compile(r"Benutzer-Review"),
+                                      current_state=False)
+        self.traverse({'href': '/core/genesis/list'},
+                      {'href': '/core/changelog/list'})
+
         # user administration
         # No adminshowuserform present
         self.assertNotIn('adminshowuserform', self.response.forms)
-        self.assertNoLink('/core/genesis/list')
-        self.assertNoLink('/core/changelog/list')
         self.assertNoLink('/core/changelog/view')
+
         self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
                                       current_state=False)
-
-        self.traverse({'href': '/core/genesis/list'},
-                      {'href': '/core/changelog/list'},
-                      {'href': '/core/changelog/view'},
+        self.traverse({'href': '/core/changelog/view'},
                       {'href': '/cde/'},
                       {'href': '/cde/search/user'})
         # Now, the adminshowuserform is present, so we can navigate to Berta
         self.admin_view_profile('berta')
+
         # Test some of the admin buttons
         self.response.click(href='/username/adminchange')
         self.response.click(href=re.compile(r'\d+/adminchange'))

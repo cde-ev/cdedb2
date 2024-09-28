@@ -8832,6 +8832,17 @@ msgstr "Versammlungsleitung-Schaltflächen"
 msgid "User Administration"
 msgstr "Benutzer-Administration"
 
+#: cdedb/frontend/templates/web/assembly/base.tmpl:85
+#: cdedb/frontend/templates/web/cde/base.tmpl:80
+#: cdedb/frontend/templates/web/core/base.tmpl:58
+#: cdedb/frontend/templates/web/core/base.tmpl:62
+#: cdedb/frontend/templates/web/core/show_user.tmpl:21
+#: cdedb/frontend/templates/web/event/base.tmpl:181
+#: cdedb/frontend/templates/web/ml/base.tmpl:118
+#: cdedb/frontend/templates/web/ml/base.tmpl:119
+msgid "User Review"
+msgstr "Benutzer-Review"
+
 #: cdedb/frontend/templates/web/assembly/base.tmpl:87
 #: cdedb/frontend/templates/web/cde/base.tmpl:83
 #: cdedb/frontend/templates/web/core/base.tmpl:61
