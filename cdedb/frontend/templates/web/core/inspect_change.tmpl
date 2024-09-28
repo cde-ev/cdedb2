@@ -30,8 +30,8 @@
             {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
         {% elif key in ('is_member', 'pronouns_nametag', 'pronouns_profile', 'show_address', 'show_address2') %}
             {{- util.deko_checkbox(persona[key]) -}}
-        {% elif key == 'balance' %}
-            {{- persona['balance']|money(lang=lang) -}}
+        {% elif key in ('balance', 'donation') %}
+            {{- persona[key]|money(lang=lang) -}}
         {% elif key == 'country' or key == 'country2' %}
             {{- util.gettext_country(persona[key]) -}}
         {% elif key == 'mobile' or key == 'telephone' %}

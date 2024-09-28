@@ -50,6 +50,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
+            notify_on_registration=const.NotifyOnRegistration.everytime,
             lodge_field_id=3,  # type: ignore[arg-type]
             parts={
                 1: models.EventPart(
@@ -414,6 +415,7 @@ class TestEventModels(BackendTest):
             is_participant_list_visible=False,
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
+            notify_on_registration=const.NotifyOnRegistration.everytime,
             lodge_field_id=None,
             parts={
                 6: models.EventPart(
@@ -662,6 +664,7 @@ class TestEventModels(BackendTest):
             instructors='ToFi & Co',
             min_size=2,
             max_size=10,
+            is_visible=True,
             notes='Promotionen in Mathematik und Ethik für Teilnehmer notwendig.',
             fields={'room': 'Wald'},
         )
@@ -689,6 +692,7 @@ class TestEventModels(BackendTest):
                 instructors='Bernd Lucke',
                 min_size=10,
                 max_size=20,
+                is_visible=True,
                 notes='Kursleiter hat Sekt angefordert.',
                 fields={'room': 'Theater'},
             ),

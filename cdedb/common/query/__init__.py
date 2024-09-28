@@ -25,7 +25,7 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import LOCALE, xsorted
 from cdedb.config import LazyConfig
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -99,6 +99,7 @@ VALID_QUERY_OPERATORS: dict[str, tuple[QueryOperators, ...]] = {
 }
 VALID_QUERY_OPERATORS["id"] = VALID_QUERY_OPERATORS["int"]
 VALID_QUERY_OPERATORS["enum_str"] = VALID_QUERY_OPERATORS["enum_int"]
+VALID_QUERY_OPERATORS["phone"] = VALID_QUERY_OPERATORS["str"]
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
@@ -407,8 +408,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "show_address": QuerySpecEntry("bool", n_("Address searchable")),
@@ -447,8 +448,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "show_address": QuerySpecEntry("bool", n_("Address searchable")),
@@ -505,8 +506,8 @@ _QUERY_SPECS = {
             "gender": QuerySpecEntry("enum_int", n_("Gender")),
             "pronouns": QuerySpecEntry("str", n_("Pronouns")),
             "birthday": QuerySpecEntry("date", n_("Birthday")),
-            "telephone": QuerySpecEntry("str", n_("Phone")),
-            "mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+            "telephone": QuerySpecEntry("phone", n_("Phone")),
+            "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
             "show_address": QuerySpecEntry("bool", n_("Address searchable")),
@@ -536,7 +537,7 @@ _QUERY_SPECS = {
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),
             "location,location2": QuerySpecEntry("str", n_("City")),
             "country,country2": QuerySpecEntry("str", n_("Country")),
-            "telephone,mobile": QuerySpecEntry("str", n_("Phone")),
+            "telephone,mobile": QuerySpecEntry("phone", n_("Phone")),
             "weblink,specialisation,affiliation,timeline,interests,free_form":
                 QuerySpecEntry("str", n_("Interests")),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
@@ -596,7 +597,29 @@ class QueryResultEntryFormat(enum.Enum):
     date = 20
     datetime = 21
     bool = 22
+    phone = 27
     enum = 30
+
+
+@dataclasses.dataclass
+class QueryOrderEntry:
+    column: str
+    ascending: bool
+
+    # From spec.
+    type: str
+
+    @property
+    def select(self) -> str:
+        return self.column + f' COLLATE "{LOCALE}"' * (self.type == "str")
+
+    @property
+    def select_with_alias(self) -> str:
+        return f'{self.select} AS "{Query._alias_column(self.column)}"'  # pylint: disable=protected-access
+
+    @property
+    def order_by(self) -> str:
+        return f'{self.select} {"ASC" if self.ascending else "DESC"}'
 
 
 class Query:
@@ -682,6 +705,51 @@ class Query:
             self.spec[field] = self.spec[field.replace('"', '')]
             del self.spec[field.replace('"', '')]
 
+    @staticmethod
+    def _alias_column(column: str) -> str:
+        """Static helper to strip quotes from column names for aliasing."""
+        return column.replace('"', '')
+
+    @property
+    def field_aliases(self) -> dict[str, str]:
+        """Map all columns in the fields of interest to their aliases."""
+        return {
+            column: self._alias_column(column)
+            for field in (self.fields_of_interest + [self.scope.get_primary_key()])
+            for column in field.split(',')
+        }
+
+    @property
+    def _order_entries(self) -> list[QueryOrderEntry]:
+        """Convert the order entries into the dataclass helper."""
+        return [
+            QueryOrderEntry(entry.split(",")[0], ascending, self.spec[entry].type)
+            for entry, ascending in self.order
+        ]
+
+    @property
+    def select(self) -> str:
+        """Return a list of SQL selections including collations and aliases.
+
+        Take special care to not duplicate any columns.
+        """
+        return ', '.join(
+            [
+                f'{column} AS "{alias}"'
+                for column, alias in self.field_aliases.items()
+            ]
+            + [
+                order.select_with_alias for order in self._order_entries
+            ],
+        )
+
+    @property
+    def order_by(self) -> str:
+        """Return an ORDER BY statement to be appended to a query."""
+        if not self.order:
+            return ""
+        return f" ORDER BY {', '.join(order.order_by for order in self._order_entries)}"
+
     def serialize(self, timezone_aware: bool) -> CdEDBObject:
         """
         Serialize a query into a dict.
@@ -744,6 +812,8 @@ class Query:
             return QueryResultEntryFormat.datetime
         if self.spec[field].type == "bool":
             return QueryResultEntryFormat.bool
+        if self.spec[field].type == "phone":
+            return QueryResultEntryFormat.phone
         if self.scope == QueryScope.registration:
             if field == "persona.id":
                 return QueryResultEntryFormat.persona
@@ -881,8 +951,8 @@ def make_registration_query_spec(event: "models.Event",
         "persona.pronouns": QuerySpecEntry("str", n_("Pronouns")),
         "persona.pronouns_nametag": QuerySpecEntry("bool", n_("Pronouns on Nametag")),
         "persona.birthday": QuerySpecEntry("date", n_("Birthday")),
-        "persona.telephone": QuerySpecEntry("str", n_("Phone")),
-        "persona.mobile": QuerySpecEntry("str", n_("Mobile Phone")),
+        "persona.telephone": QuerySpecEntry("phone", n_("Phone")),
+        "persona.mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
         "persona.address": QuerySpecEntry("str", n_("Address")),
         "persona.address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
         "persona.postal_code": QuerySpecEntry("str", n_("ZIP")),
@@ -929,7 +999,7 @@ def make_registration_query_spec(event: "models.Event",
                 "str", n_("lodgement notes"), prefix),
             **{
                 f"lodgement{part.id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("lodgement {field}"), prefix,
+                    f.kind.spec_type, n_("lodgement {field}"), prefix,
                     {'field': f.field_name})
                 for f in sorted_fields[const.FieldAssociations.lodgement]
             },
@@ -961,7 +1031,7 @@ def make_registration_query_spec(event: "models.Event",
                 "str", n_("course notes"), prefix),
             **{
                 f"course{track_id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("course {field}"), prefix,
+                    f.kind.spec_type, n_("course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
@@ -980,7 +1050,7 @@ def make_registration_query_spec(event: "models.Event",
                 "str", n_("instructed course notes"), prefix),
             **{
                 f"course_instructor{track_id}.xfield_{f.field_name}": QuerySpecEntry(
-                    f.kind.name, n_("instructed course {field}"), prefix,
+                    f.kind.spec_type, n_("instructed course {field}"), prefix,
                     {'field': f.field_name}, choices=field_choices[f.field_name],
                 )
                 for f in sorted_fields[const.FieldAssociations.course]
@@ -1075,7 +1145,7 @@ def make_registration_query_spec(event: "models.Event",
 
     spec.update({
         f"reg_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.name, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
         for f in sorted_fields[const.FieldAssociations.registration]
     })
 
@@ -1116,6 +1186,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
         "course.instructors": QuerySpecEntry("str", n_("course instructors")),
         "course.min_size": QuerySpecEntry("int", n_("course min size")),
         "course.max_size": QuerySpecEntry("int", n_("course max size")),
+        "course.is_visible": QuerySpecEntry("bool", n_("visibility on courselist")),
         "course.notes": QuerySpecEntry("str", n_("course notes")),
         # This will be augmented with additional fields in the fly.
     }
@@ -1204,7 +1275,7 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
     spec.update({
         f"course_fields.xfield_{field.field_name}": QuerySpecEntry(
-            field.kind.name, field.title,
+            field.kind.spec_type, field.title,
             choices=field_choices[field.field_name])
         for field in sorted_course_fields
     })
@@ -1294,7 +1365,7 @@ def make_lodgement_query_spec(event: "models.Event",
 
     spec.update({
         f"lodgement_fields.xfield_{f.field_name}": QuerySpecEntry(
-            f.kind.name, f.title, choices=field_choices[f.field_name])
+            f.kind.spec_type, f.title, choices=field_choices[f.field_name])
         for f in sorted_lodgement_fields
     })
 

@@ -9,8 +9,10 @@ import numbers
 import unittest.mock
 from typing import Any, Union, cast
 
+import freezegun
+
 import cdedb.database.constants as const
-from cdedb.common import RequestState, now
+from cdedb.common import CdEDBObject, RequestState, now
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -443,6 +445,79 @@ class TestCron(CronTest):
             {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
             self.core.get_cron_store(RS, cronjob))
 
+    @prepsql(f"UPDATE event.events SET notify_on_registration ="
+             f" {const.NotifyOnRegistration.hourly.value}")
+    def test_notify_on_registration(self) -> None:
+        cronjob = "notify_on_registration"
+
+        base_time = now().replace(microsecond=0) + datetime.timedelta(seconds=5)
+        delta = datetime.timedelta(minutes=5)
+        with freezegun.freeze_time(base_time) as frozen_time:
+
+            self.execute(cronjob)
+            mail_expectation = ["notify_on_registration"]
+            store_expectation: CdEDBObject = {
+                'period': 0,
+                'timestamps': {
+                    "1": now().isoformat(),
+                    "2": now().isoformat(),
+                    "3": now().isoformat(),
+                    "4": now().isoformat(),
+                },
+            }
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+            self.assertEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+
+            frozen_time.tick(delta * 2)
+
+            execsql(f"UPDATE event.log SET ctime = '{base_time + delta}'")
+
+            for _ in range(const.NotifyOnRegistration.hourly - 1):
+                self.execute(cronjob)
+                self.assertEqual(
+                    mail_expectation,
+                    [mail.template for mail in self.mails],
+                )
+                store_expectation['period'] += 1
+                self.assertEqual(
+                    store_expectation,
+                    self.core.get_cron_store(RS, cronjob),
+                )
+
+                frozen_time.tick(delta)
+
+            self.execute(cronjob)
+
+            mail_expectation *= 2
+            store_expectation['period'] += 1
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+            self.assertNotEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+            store_expectation = {
+                'period': 4,
+                'timestamps': {
+                    "1": now().isoformat(),
+                    "2": now().isoformat(),
+                    "3": now().isoformat(),
+                    "4": now().isoformat(),
+                },
+            }
+            self.assertEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+
     @storage
     def test_forget_assembly_attachments(self) -> None:
         self.execute('forget_assembly_attachments')
@@ -633,7 +708,7 @@ class TestCron(CronTest):
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,
             [umcall('undead@example.cde', pre_confirmed=True, pre_approved=True)])
-        self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
+        self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 3)
         # Moderator update
         self.assertEqual(
             mm_lists['aka'].add_moderator.call_args_list,
@@ -648,3 +723,59 @@ class TestCron(CronTest):
         # Deletion
         self.assertEqual(client.delete_list.call_args_list,
                          [umcall('zombie@lists.cde-ev.de')])
+
+    @storage
+    @prepsql("DELETE FROM core.email_states")
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    def test_defect_email_mailman(self, client_class: unittest.mock.Mock) -> None:
+        #
+        # Prepare
+        #
+        mm_lists = {
+            'zombie': unittest.mock.MagicMock(),
+            'announce': unittest.mock.MagicMock(),
+            'witz': unittest.mock.MagicMock(),
+            'klatsch': unittest.mock.MagicMock(),
+            'aktivenforum2000': unittest.mock.MagicMock(),
+            'aktivenforum': unittest.mock.MagicMock(),
+            'wait': unittest.mock.MagicMock(),
+            'participants': unittest.mock.MagicMock(),
+            'kongress': unittest.mock.MagicMock(),
+            'kongress-leitung': unittest.mock.MagicMock(),
+            'werbung': unittest.mock.MagicMock(),
+            'aka': unittest.mock.MagicMock(),
+            'opt': unittest.mock.MagicMock(),
+            'party50-all': unittest.mock.MagicMock(),
+            'party50': unittest.mock.MagicMock(),
+            'info': unittest.mock.MagicMock(),
+            'mitgestaltung': unittest.mock.MagicMock(),
+            'moderatoren': unittest.mock.MagicMock(),
+            'everyone': unittest.mock.MagicMock(),
+            'lokalgruppen': unittest.mock.MagicMock(),
+            'all': unittest.mock.MagicMock(),
+            'gutscheine': unittest.mock.MagicMock(),
+            'bau': unittest.mock.MagicMock(),
+            'wal': unittest.mock.MagicMock(),
+            'test-gast': unittest.mock.MagicMock(),
+            'kanonisch': unittest.mock.MagicMock(),
+            '42': unittest.mock.MagicMock(),
+            'dsa': unittest.mock.MagicMock(),
+            'platin': unittest.mock.MagicMock(),
+            'geheim': unittest.mock.MagicMock(),
+            'hogwarts': unittest.mock.MagicMock(),
+            'gu': unittest.mock.MagicMock(),
+            'migration': unittest.mock.MagicMock(),
+        }
+
+        client = client_class.return_value
+        client.get_domain.return_value.create_list.side_effect = mm_lists.get
+
+        #
+        # Run
+        #
+        self.execute('sync_subscriptions')
+
+        #
+        # Check
+        #
+        self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)

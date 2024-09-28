@@ -35,11 +35,15 @@
                                          gettext("URL of the corresponding page of this event at the CdE website."
                                                  " This is cross linked on the overview.")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"),
+                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
                                              "Event” is set.")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"),
-                                  entries=enums['PastInstitutions']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="notify_on_registration",
+                                  entries=enums['NotifyOnRegistration']|enum_entries(processing=gettext),
+                                  label=gettext("Receive Notifications about New Registrations"),
+                                  info=gettext("Notifications will be sent to the orga address configured above.")) }}
 
         <h4 class="heading-underline">{% trans %}Visibility and Registration Dates{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-module-docstring
+import datetime
 import random
 import re
 import urllib.parse
@@ -12,7 +13,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
     IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
-    make_persona_name,
+    make_persona_name, now,
 )
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
@@ -20,7 +21,7 @@ from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
     USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
-    storage,
+    prepsql, storage,
 )
 
 
@@ -96,6 +97,7 @@ class TestCoreFrontend(FrontendTest):
                                'description': "1 Abonnement-Anfrage"})
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
+                self.assertPresence("bereits angemeldet", div='event-box')
             else:
                 self.assertPresence("Account-Log", div='sidebar')
                 self.assertPresence("Admin-Änderungen", div='sidebar')
@@ -108,12 +110,12 @@ class TestCoreFrontend(FrontendTest):
                                'description': "3 E-Mails"})
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
+                self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
+                                    div='event-box')
             self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
             self.assertPresence("Orga-Veranstaltungen", div='orga-box')
             self.assertPresence("CdE-Party 2050", div='orga-box')
             self.assertNonPresence("Große Testakademie 2222", div='orga-box')
-            self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
-                                div='event-box')
             self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
             self.assertPresence("Internationaler Kongress", div='assembly-box')
         else:
@@ -137,6 +139,7 @@ class TestCoreFrontend(FrontendTest):
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
+        defect_email = {"Defekte Email-Adressen"}
         core_admin = {"Nutzer verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
         log = {"Account-Log", "Nutzerdaten-Log"}
@@ -144,27 +147,27 @@ class TestCoreFrontend(FrontendTest):
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = pending | genesis | core_admin | meta_admin | log
+            out = pending | defect_email | genesis | core_admin | meta_admin | log
         # event admin (genesis, review)
         elif self.user_in('annika'):
             ins = everyone | genesis | pending
-            out = core_admin | meta_admin | log
+            out = core_admin | meta_admin | log | defect_email
         # ml admin (genesis)
         elif self.user_in('nina'):
-            ins = everyone | genesis
+            ins = everyone | genesis | defect_email
             out = pending | core_admin | meta_admin | log
         # core admin
         elif self.user_in('vera'):
-            ins = everyone | pending | genesis | core_admin | log
+            ins = everyone | pending | genesis | core_admin | log | defect_email
             out = meta_admin
         # meta admin
         elif self.user_in('martin'):
             ins = everyone | meta_admin
-            out = pending | genesis | core_admin | log
+            out = pending | genesis | core_admin | log | defect_email
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | log
-            out = pending | genesis | core_admin | meta_admin
+            out = pending | genesis | core_admin | meta_admin | defect_email
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -967,7 +970,7 @@ class TestCoreFrontend(FrontendTest):
         for key, val in new_passwords.items():
             for i, u in enumerate(("anton", "berta", "emilia", "ferdinand")):
                 with self.subTest(u=u):
-                    self.setUp()
+                    self.setUp(prepsql="DELETE FROM core.email_states")
                     user = USER_DICT[u]
                     self.get('/')
                     self.traverse({'description': 'Passwort zurücksetzen'})
@@ -1004,6 +1007,7 @@ class TestCoreFrontend(FrontendTest):
                             "Das ist ähnlich zu einem häufig genutzten Passwort.",
                             notification="Passwort ist zu schwach.")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_repeated_password_reset(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT["berta"]
@@ -1039,6 +1043,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
                             div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_password_reset_username_change(self) -> None:
         new_password = "krce63koLe#$e"
         user = USER_DICT['berta']
@@ -1201,6 +1206,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Viktor", div='query-result')
         self.assertPresence("Vera", div='query-result')
 
+    @prepsql("DELETE FROM core.email_states")
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
@@ -1316,6 +1322,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT[other_user_name])
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
 
+    @prepsql("DELETE FROM core.email_states")
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
@@ -1820,6 +1827,32 @@ class TestCoreFrontend(FrontendTest):
 
         _reset()
         _berta_change_profile()
+        with self.switch_user("berta"):
+            # Second edit: Change information which requires no review
+            self.traverse("Meine Daten", "Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['affiliation'] = "Jederfrau"
+            self.submit(f, check_notification=False)
+            self.assertPresence("Die Änderung wartet auf Bestätigung.",
+                                div='notifications')
+            self.assertPresence(self.user['family_name'],
+                                div='personal-information')
+            self.assertPresence("Jedermann", div='additional')
+            self.assertNonPresence("Jederfrau")
+            self.assertNonPresence('Ganondorf')
+            # Third edit: Reset information which require review
+            self.traverse("Bearbeiten")
+            f = self.response.forms['changedataform']
+            f['family_name'] = "Beispiel"
+            self.submit(f)
+            # Result: No review necessary
+            self.assertPresence("Beispiel", div='personal-information')
+            self.assertNonPresence("Jedermann")
+            self.assertPresence("Jederfrau", div='additional')
+
+        self.traverse({'description': 'Änderungen prüfen'})
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
+        _berta_change_profile()
         _quintus_displace_change("Ganondorf")
         self.assertTitle("Bertå Ganondorf")
         self.assertNonPresence("Beispiel", div='personal-information')
@@ -1855,7 +1888,22 @@ class TestCoreFrontend(FrontendTest):
                     'submitted_by': 17,
                 },
                 {
-                    'code': const.PersonaChangeStati.committed.value,
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.superseded,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
+                    'reviewed_by': None,
+                    'submitted_by': 2,
+                },
+                {
+                    'code': const.PersonaChangeStati.committed,
                     'reviewed_by': 17,
                     'submitted_by': 2,
                 },
@@ -2098,6 +2146,8 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
+        self.assertEqual(f['realm'].value, "cde")
+        f['realm'] = "event"
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
@@ -2286,6 +2336,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f, check_notification=False)
+        self.assertNoLink('/db/core/genesis/attachment/')
         self.assertValidationError('attachment')
         f = self.response.forms['genesisform']
         f['notes'] = ""  # Do not send this to test upload permanance.
@@ -2305,7 +2356,15 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError("birthday", "Darf nicht leer sein.")
-        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
+        f['birthday'] = (now().date() + datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationError("birthday", "muss in der Vergangenheit liegen.")
+        f['birthday'] = (now().date() - datetime.timedelta(days=5)).isoformat()
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f = self.response.forms['genesisform']
+        f[IGNORE_WARNINGS_NAME] = True
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2340,6 +2399,10 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
         f['pevent_id'] = 1
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning(
+            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
 
         # select a past event
@@ -2994,7 +3057,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
             "is_member": True,
-            "id": 2,
+            "personas.id": 2,
             "username": "berta@example.cde",
         })
         self.get(
@@ -3004,7 +3067,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
             "is_member": True,
-            "id": 1,
+            "personas.id": 1,
             "username": "anton@example.cde",
         })
         self.get(
@@ -3262,3 +3325,74 @@ LG Emilia
                 log_expectation, realm="core",
                 offset=len(self.get_sample_data('core.log')),
             )
+
+    @as_users("vera", "nina")
+    def test_defect_email_overview(self) -> None:
+        self.traverse({'description': 'Defekte Email-Adressen'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("anton@example.cde")
+        self.assertPresence("berta@example.cde")
+        self.assertPresence("new-berta@example.cde")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+
+        f = self.response.forms['setemailstatusform']
+        f['address'] = 'charly@example.cde'
+        f['notes'] = 'Totale Verstopfung'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertPresence("Totale Verstopfung")
+
+        self.traverse({'description': 'Bearbeiten', 'index': 1})
+        f = self.response.forms['setemailstatusform']
+        f['notes'] = 'Gesperrt wegen Entstehung eines schwarzen Lochs'
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertPresence("charly@example.cde")
+        self.assertNonPresence("Totale Verstopfung")
+        self.assertPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+        formid = f'deleteemailstatus{get_hash(b"charly@example.cde")}'
+        f = self.response.forms[formid]
+        self.submit(f)
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("charly@example.cde")
+        self.assertNonPresence("Gesperrt wegen Entstehung eines schwarzen Lochs")
+
+    @as_users("vera", "nina")
+    def test_defect_email_profile(self) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertNonPresence('defekte Email-Adresse')
+        self.assertPresence('Als defekt markieren')
+
+        self.traverse({'description': 'Als defekt markieren'})
+        self.assertTitle("Defekte Email-Adressen")
+        self.assertNonPresence("janis@example.cde")
+
+        f = self.response.forms['setemailstatusform']
+        self.submit(f)
+        self.assertPresence("janis@example.cde")
+
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+                      {'description': 'DB-10-8'})
+        self.assertTitle('Janis Jalapeño')
+        self.assertPresence('defekte Email-Adresse')
+        self.assertNonPresence('Als defekt markieren')
+
+    def test_defect_email_nosend(self) -> None:
+        user = USER_DICT["berta"]
+        self.get('/')
+        self.traverse({'description': 'Passwort zurücksetzen'})
+        f = self.response.forms['passwordresetform']
+        f['email'] = user['username']
+        self.submit(f)
+        with self.assertRaises(IndexError):
+            # no email for Berta
+            self.fetch_mail_content()

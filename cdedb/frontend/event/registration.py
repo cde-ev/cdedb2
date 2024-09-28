@@ -34,7 +34,8 @@ from cdedb.frontend.common import (
     CustomCSVDialect, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
     TransactionObserver, access, cdedbid_filter, check_validation as check,
     check_validation_optional as check_optional, event_guard,
-    inspect_validation as inspect, make_event_fee_reference, request_extractor,
+    inspect_validation as inspect, make_event_fee_reference, periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 
@@ -791,7 +792,124 @@ class EventRegistrationMixin(EventBaseFrontend):
             {'age': age, 'mail_text': rs.ambience['event'].mail_text,
              **payment_data})
         rs.notify_return_code(new_id, success=n_("Registered for event."))
+
+        if rs.ambience['event'].notify_on_registration.send_on_register():
+            self._notify_on_registration(rs, rs.ambience['event'], new_id)
+
         return self.redirect(rs, "event/registration_status")
+
+    def _notify_on_registration(self, rs: RequestState, event: models.Event,
+                                registration_id: Optional[int] = None,
+                                prev_timestamp: Optional[datetime.datetime] = None,
+                                ) -> tuple[int, datetime.datetime]:
+        """Retrieve recent registrations and if any, send notification.
+
+        :returns: The number of new registrations and the current timestamp.
+        """
+        ref_timestamp = now().replace(microsecond=0)
+        td = datetime.timedelta(minutes=15)
+        prev_timestamp = \
+            prev_timestamp or ref_timestamp - td * event.notify_on_registration.value
+
+        if not event.orga_address:
+            return 0, ref_timestamp
+
+        if event.notify_on_registration.send_on_register() and registration_id:
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
+            registrations = [
+                {
+                    'persona.given_names': persona['given_names'],
+                    'persona.family_name': persona['family_name'],
+                    'id': registration_id,
+                },
+            ]
+            query: Query | None = None
+        elif event.notify_on_registration.send_periodically():
+            query = Query(
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=event),
+                [
+                    "persona.given_names",
+                    "persona.family_name",
+                    "persona.username",
+                    "ctime.creation_time",
+                ],
+                [
+                    (
+                        "ctime.creation_time",
+                        QueryOperators.between,
+                        (
+                            prev_timestamp,
+                            ref_timestamp,
+                        ),
+                    ),
+                ],
+                [
+                    ("ctime.creation_time", False),
+                ],
+            )
+            registrations = list(
+                self.eventproxy.submit_general_query(rs, query, event.id))
+        else:
+            return 0, ref_timestamp
+
+        if not registrations:
+            return 0, ref_timestamp
+
+        self.do_mail(
+            rs, "notify_on_registration",
+            {
+                "Subject": "Neue Anmeldung(en) für eure Veranstaltung",
+                "To": (event.orga_address,),
+            },
+            {
+                'event': event,
+                'registrations': registrations,
+                'query': query,
+                'serialized_query': {
+                    **query.serialize_to_url(),
+                    'event_id': event.id,
+                } if query else None,
+                'NotifyOnRegistration': const.NotifyOnRegistration,
+                'persona_name':
+                    lambda r:
+                        f"{r['persona.given_names']} {r['persona.family_name']}",
+            },
+        )
+        return len(registrations), ref_timestamp
+
+    @periodic("notify_on_registration")
+    def notify_on_registration(self, rs: RequestState, store: CdEDBObject,
+                               ) -> CdEDBObject:
+        """Periodic for notifying orgas about recent new registrations."""
+        store['period'] = store.get('period', -1) + 1
+        event_ids = self.eventproxy.list_events(rs, archived=False)
+        events = self.eventproxy.get_events(rs, event_ids)
+
+        for event in events.values():
+            timestamps = store.setdefault('timestamps', {})
+
+            if event.notify_on_registration.send_periodically():
+                if (store['period'] % event.notify_on_registration.value) == 0:
+                    # Key needs to be string, because we store this as JSON:
+                    prev_timestamp = (
+                        datetime.datetime.fromisoformat(prev_str)
+                        if (prev_str := timestamps.get(str(event.id)))
+                        else None
+                    )
+
+                    num, new_timestamp = self._notify_on_registration(
+                        rs, event, prev_timestamp=prev_timestamp,
+                    )
+
+                    store['timestamps'][event.id] = new_timestamp
+                    if num:
+                        self.logger.info(
+                            f"Sent notification to orgas of {event.title}"
+                            f" about {num} new registrations.")
+
+        return store
 
     @access("event")
     def registration_status(self, rs: RequestState, event_id: int) -> Response:
@@ -1016,7 +1134,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id'])
-        return self.render(rs, "event/fee/configure_fee", {'persona': persona})
+        return self.render(rs, "event/fee/configure_fee",
+                           {'persona': persona, 'personalized': True})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -1582,10 +1701,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         complex_fee = self.eventproxy.calculate_complex_fee(
             rs, registration_id, visual_debug=True)
-        reference = make_event_fee_reference(
-            persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount
         to_pay = fee - registration['amount_paid']
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
 
         return {
             'registration': registration, 'persona': persona,

@@ -22,10 +22,10 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_dataclass, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    encrypt_password, inspect_validation as inspect, internal, singularize,
-    verify_password,
+    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, encrypt_password,
+    inspect_validation as inspect, internal, singularize, verify_password,
 )
 from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
@@ -51,6 +51,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
+from cdedb.models.core import EmailAddressReport
 
 
 class CoreBaseBackend(AbstractBackend):
@@ -476,12 +477,23 @@ class CoreBaseBackend(AbstractBackend):
                 "gender", "address_supplement", "address", "postal_code",
                 "location", "country", "donation",
             }
-            all_changed_fields = {key for key, value in data.items()
+            # Special care is necessary in case of an existing pending
+            # change. In this case we blend the new changes with the existing
+            # pending change and then try to apply this fused change
+            # superseeding the previous pending change. In most cases this
+            # will result in a new pending change, however it's also possible
+            # to revert all pending changes requiring review and thus the
+            # fused change may directly apply.
+            #
+            # This way the history is somewhat sane and pretty much linear. We
+            # don't want multiple pending changes or changes that apply by
+            # half -- this should devolve into an overly complex resolution
+            # tool for arbitrary conflicts (use git for that).
+            new_state = current_state | data
+            all_changed_fields = {key for key, value in new_state.items()
                                   if value != committed_state[key]}
             requires_review = (
-                    (all_changed_fields & fields_requiring_review
-                     or (current_state['code']
-                         == const.PersonaChangeStati.pending and not diff))
+                    all_changed_fields & fields_requiring_review
                     and current_state['is_event_realm']
                     and not self.is_relative_admin(rs, data['id']))
 
@@ -2885,3 +2897,129 @@ class CoreBaseBackend(AbstractBackend):
         """
         query = affirm(Query, query)
         return self.general_query(rs, query)
+
+    @access("anonymous")
+    def list_email_states(
+            self, rs: RequestState,
+            states: Optional[Collection[const.EmailStatus]] = None,
+    ) -> dict[str, const.EmailStatus]:
+        """List all explicit email states known to the CdEDB.
+
+        This is mainly used for handling defect addresses.
+
+        .. note:: This has anonymous access as we send emails in anonymous
+                  context (e.g. password reset links). So to be able to do
+                  checks during email dispatch this is world-readable (between
+                  frontend and backend).
+
+        :param states: Restrict to addresses with one of these states.
+
+        """
+        states = affirm_array(const.EmailStatus, states or [])
+        query = "SELECT address, status FROM core.email_states"
+        params: tuple[Collection[const.EmailStatus], ...] = tuple()
+        if states:
+            query += " WHERE status = ANY(%s)"
+            params += (states,)
+        data = self.query_all(rs, query, params)
+        return {e['address']: e['status'] for e in data}
+
+    @access("ml")
+    def get_defect_address_reports(
+            self, rs: RequestState, persona_ids: Optional[Collection[int]] = None,
+    ) -> dict[str, EmailAddressReport]:
+        # Input validation and permission checks are delegated
+        return self.get_email_reports(rs, persona_ids,
+                                      const.EmailStatus.defect_states())
+
+    @access("ml")
+    def get_email_reports(
+            self, rs: RequestState, persona_ids: Optional[Collection[int]] = None,
+            stati: Optional[Collection[const.EmailStatus]] = None,
+    ) -> dict[str, EmailAddressReport]:
+        """Get defect mail addresses and map them to users and mls, if possible.
+
+        :param persona_ids: Retrieve only defect addresses of those users.
+        """
+        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
+        if stati is None:
+            stati = tuple(const.EmailStatus)
+        stati = affirm_array(const.EmailStatus, stati or [])
+
+        if (not {"ml_admin", "core_admin"} & rs.user.roles
+                and persona_ids != {rs.user.persona_id}):
+            relative_admin = False
+            if len(persona_ids) == 1:
+                relative_admin = self.is_relative_admin(rs, unwrap(persona_ids))
+            if not relative_admin:
+                raise PrivilegeError
+
+        # first, query core.personas
+        query = """
+            SELECT
+                estat.id, estat.address, estat.status, estat.notes,
+                core.personas.id AS user_id
+            FROM core.email_states AS estat
+                LEFT JOIN core.personas ON estat.address = core.personas.username
+            WHERE estat.status = ANY(%s)
+        """
+        params: tuple[Collection[int], ...] = (stati,)
+        if persona_ids:
+            query += "AND core.personas.id = ANY(%s)"
+            params += (persona_ids, )
+        data: dict[str, dict[str, Any]] = collections.defaultdict(dict)
+        for e in self.query_all(rs, query, params):
+            data[e['address']] = e
+
+        # second, query ml.subscription_addresses
+        query = """
+            SELECT
+                estat.id, estat.address, estat.status, estat.notes,
+                array_remove(array_agg(sa.mailinglist_id), NULL) AS ml_ids,
+                sa.persona_id AS subscriber_id
+            FROM core.email_states AS estat
+                LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
+            WHERE estat.status = ANY(%s)
+        """
+        params: tuple[Collection[int], ...] = (stati,)
+        if persona_ids:
+            query += " AND sa.persona_id = ANY(%s)"
+            params += (persona_ids,)
+        query += (" GROUP BY estat.id, estat.address, estat.status, estat.notes,"
+                  " subscriber_id")
+        for e in self.query_all(rs, query, params):
+            data[e['address']].update(e)
+
+        ret = EmailAddressReport.many_from_database(data.values())
+        return {val.address: val for val in ret.values()}
+
+    @access("core_admin", "ml_admin")
+    def mark_email_status(
+            self, rs: RequestState, address: str, status: const.EmailStatus,
+            notes: Optional[str] = None,
+    ) -> DefaultReturnCode:
+        address = affirm(vtypes.Email, address)
+        status = affirm(const.EmailStatus, status)
+        notes = affirm_optional(str, notes)
+
+        with Atomizer(rs):
+            code = self.sql_insert(
+                rs, EmailAddressReport.database_table,
+                {"address": address, "status": status, "notes": notes},
+                update_on_conflict=True, conflict_target='address')
+            change_note = f"'{address}' als '{status.name}' markiert"
+            self.core_log(rs, const.CoreLogCodes.modify_email_status,
+                          change_note=change_note)
+            return code
+
+    @access("core_admin", "ml_admin")
+    def remove_email_status(
+            self, rs: RequestState, address: str,
+    ) -> DefaultReturnCode:
+        address = affirm(vtypes.Email, address)
+        with Atomizer(rs):
+            change_note = f"'{address}' entfernt"
+            self.core_log(rs, const.CoreLogCodes.delete_email_status,
+                          change_note=change_note)
+            return self.sql_delete_one(rs, EmailAddressReport.database_table,
+                                       address, "address")

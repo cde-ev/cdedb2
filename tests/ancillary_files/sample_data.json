@@ -4207,6 +4207,23 @@
             "paper_expuls": true
         }
     ],
+    "core.email_states": [
+        {
+            "address": "anton@example.cde",
+            "status": 1,
+            "notes": null
+        },
+        {
+            "address": "new-berta@example.cde",
+            "status": 10,
+            "notes": null
+        },
+        {
+            "address": "berta@example.cde",
+            "status": 10,
+            "notes": "Einfach kaputt gegangen..."
+        }
+    ],
     "core.cron_store": [],
     "core.locks": [
         {
@@ -4612,6 +4629,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": 3
         },
         {
@@ -4640,6 +4658,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         },
         {
@@ -4668,6 +4687,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         },
         {
@@ -4696,6 +4716,7 @@
             "is_course_assignment_visible": false,
             "is_archived": false,
             "is_cancelled": false,
+            "notify_on_registration": -1,
             "lodge_field_id": null
         }
     ],
@@ -5502,6 +5523,7 @@
             "instructors": "ToFi & Co",
             "min_size": 2,
             "max_size": 10,
+            "is_visible": true,
             "notes": "Promotionen in Mathematik und Ethik für Teilnehmer notwendig.",
             "fields": {
                 "room": "Wald"
@@ -5517,6 +5539,7 @@
             "instructors": "Bernd Lucke",
             "min_size": 10,
             "max_size": 20,
+            "is_visible": true,
             "notes": "Kursleiter hat Sekt angefordert.",
             "fields": {
                 "room": "Theater"
@@ -5532,6 +5555,7 @@
             "instructors": "Heinrich und Thomas Mann",
             "min_size": 5,
             "max_size": 14,
+            "is_visible": true,
             "notes": null,
             "fields": {
                 "room": "Seminarraum 42"
@@ -5547,6 +5571,7 @@
             "instructors": "Stephen Hawking und Richard Feynman",
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {
                 "room": "Seminarraum 23"
@@ -5562,6 +5587,7 @@
             "instructors": "TBA",
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {
                 "room": "Nirwana"
@@ -5577,6 +5603,7 @@
             "instructors": "L. Euler",
             "min_size": 3,
             "max_size": 31,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5590,6 +5617,7 @@
             "instructors": "Deep Thought",
             "min_size": 0,
             "max_size": 42,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5603,6 +5631,7 @@
             "instructors": "–",
             "min_size": 1,
             "max_size": 1,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5616,6 +5645,7 @@
             "instructors": "T. N.",
             "min_size": 3,
             "max_size": 11,
+            "is_visible": true,
             "notes": "Alle Teilnehmenden müssen mit dem Kurs nach Windischleuba umziehen.",
             "fields": {}
         },
@@ -5629,6 +5659,7 @@
             "instructors": null,
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5642,6 +5673,7 @@
             "instructors": null,
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5655,6 +5687,7 @@
             "instructors": null,
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         },
@@ -5668,6 +5701,7 @@
             "instructors": null,
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         }
@@ -5995,7 +6029,7 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": null,
+            "payment": "2014-01-01",
             "amount_paid": "200.00",
             "amount_owed": "553.99",
             "parental_agreement": true,
@@ -6016,7 +6050,7 @@
             "notes": "Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "is_member": false,
-            "payment": "2014-02-02",
+            "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "466.49",
             "parental_agreement": true,
@@ -6024,6 +6058,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "lodge": "015112345678",
                 "is_child": false,
                 "brings_balls": true,
                 "transportation": "pedes",
@@ -6038,7 +6073,7 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": "2014-03-03",
+            "payment": null,
             "amount_paid": "0.00",
             "amount_owed": "504.48",
             "parental_agreement": true,
@@ -6060,7 +6095,7 @@
             "orga_notes": null,
             "is_member": true,
             "payment": "2014-04-04",
-            "amount_paid": "0.00",
+            "amount_paid": "548.48",
             "amount_owed": "431.99",
             "parental_agreement": false,
             "mixed_lodging": false,
@@ -6103,8 +6138,8 @@
             "notes": null,
             "orga_notes": null,
             "is_member": true,
-            "payment": null,
-            "amount_paid": "0.00",
+            "payment": "2014-06-06",
+            "amount_paid": "10.50",
             "amount_owed": "10.50",
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -7064,6 +7099,33 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 1,
+            "change_note": "200,00 € am 01.01.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 9,
+            "change_note": "548,48 € am 04.04.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 55,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "10,50 € am 06.06.2014 gezahlt."
         }
     ],
     "assembly.assemblies": [
@@ -10240,6 +10302,11 @@
             "mailinglist_id": 52,
             "persona_id": 9,
             "address": "inga-papierkorb@example.cde"
+        },
+        {
+            "mailinglist_id": 67,
+            "persona_id": 2,
+            "address": "new-berta@example.cde"
         }
     ],
     "ml.whitelist": [

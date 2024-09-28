@@ -118,6 +118,7 @@ class Event(EventDataclass):
     is_participant_list_visible: bool
     is_course_assignment_visible: bool
     use_additional_questionnaire: bool
+    notify_on_registration: const.NotifyOnRegistration
 
     lodge_field_id: Optional[vtypes.ID]
 
@@ -216,6 +217,15 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
+    def is_visible_for(self, user: User, is_registered: bool, *,
+                       privileged: bool) -> bool:
+        """Whether an event is visible dependent on your own registration status.
+
+         :param privileged: If access in a privileged capacity is to be considered."""
+
+        return is_registered or self.is_visible or (privileged and (
+            "event_admin" in user.roles or user.persona_id in self.orgas))
+
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
@@ -229,10 +239,6 @@ class Event(EventDataclass):
     @functools.cached_property
     def conditional_fees(self) -> CdEDataclassMap["EventFee"]:
         return {fee.id: fee for fee in self.fees.values() if fee.is_conditional()}
-
-    def is_visible_for(self, user: User) -> bool:
-        return ("event_admin" in user.roles or user.persona_id in self.orgas
-                or self.is_visible)
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title
@@ -707,6 +713,8 @@ class Course(EventDataclass):
 
     min_size: int
     max_size: int
+
+    is_visible: bool
 
     notes: Optional[str]
 

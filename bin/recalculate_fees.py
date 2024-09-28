@@ -19,4 +19,3 @@ with script:
     for event_id, event_name in xsorted(event.list_events(rs).items()):
         print(f"Recalculating Fees for {event_name} with id {event_id}.")
         event._update_registrations_amount_owed(rs, event_id)  # pylint: disable=protected-access
-

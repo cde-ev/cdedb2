@@ -452,6 +452,17 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
+CREATE TABLE core.email_states (
+        id                      serial PRIMARY KEY,
+        address                 varchar NOT NULL UNIQUE,
+        -- see cdedb.database.constants.EmailStatus
+        status                  integer NOT NULL,
+        notes                   varchar
+);
+GRANT SELECT on core.email_states TO cdb_anonymous;
+GRANT SELECT, UPDATE ON core.email_states_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON core.email_states TO cdb_admin;
+
 CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
@@ -751,6 +762,8 @@ CREATE TABLE event.events (
         is_course_assignment_visible boolean NOT NULL DEFAULT False,
         is_archived                  boolean NOT NULL DEFAULT False,
         is_cancelled                 boolean NOT NULL DEFAULT False,
+        -- `const.NotifyOnRegistration`:
+        notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
         lodge_field_id               integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
@@ -912,6 +925,8 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
+        -- visibility on course list.
+        is_visible              boolean NOT NULL DEFAULT TRUE,
         -- orga remarks
         notes                   varchar,
         -- additional data, customized by each orga team
@@ -1256,7 +1271,7 @@ CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        secret                  varchar,
+        secret                  varchar UNIQUE,
         UNIQUE (persona_id, assembly_id)
 );
 CREATE INDEX attendees_assembly_id_idx ON assembly.attendees(assembly_id);

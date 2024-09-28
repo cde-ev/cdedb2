@@ -729,9 +729,19 @@ def _float(
 
 
 @_add_typed_validator
+def _non_negative_float(
+    val: Any, argname: Optional[str] = None, **kwargs: Any,
+) -> NonNegativeFloat:
+    val = _float(val, argname, **kwargs)
+    if val < 0:
+        raise ValidationSummary(ValueError(
+            argname, n_("Must not be negative.")))
+    return NonNegativeFloat(val)
+
+
+@_add_typed_validator
 def _decimal(
-    val: Any, argname: Optional[str] = None, *,
-    large: bool = False, **kwargs: Any,
+    val: Any, argname: Optional[str] = None, *, large: bool = False, **kwargs: Any,
 ) -> decimal.Decimal:
     """decimal.Decimal fitting into a `numeric` postgres column.
 
@@ -1791,7 +1801,7 @@ GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
 @_add_typed_validator
 def _genesis_case(
     val: Any, argname: str = "genesis_case", *,
-    creation: bool = False, **kwargs: Any,
+    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any,
 ) -> GenesisCase:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -1828,10 +1838,26 @@ def _genesis_case(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, allow_superfluous=True, **kwargs)
 
-    if val.get('postal_code'):
-        postal_code = _german_postal_code(
-            val['postal_code'], 'postal_code', aux=val.get('country', ""), **kwargs)
-        val['postal_code'] = postal_code
+    errs = ValidationSummary()
+
+    with errs:
+        if val.get('postal_code'):
+            postal_code = _german_postal_code(
+                val['postal_code'], 'postal_code', aux=val.get('country', ""),
+                ignore_warnings=ignore_warnings, **kwargs)
+            val['postal_code'] = postal_code
+
+        if birthday := val.get('birthday'):
+            if (now().date() - birthday) < datetime.timedelta(days=365):
+                if not ignore_warnings:
+                    raise ValidationSummary(ValidationWarning(
+                        'birthday',
+                        n_("Birthday was less than a year ago."
+                           " Please check the birth year."),
+                    ))
+
+    if errs:
+        raise errs
 
     return GenesisCase(val)
 
@@ -2375,6 +2401,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
     'website_url': Optional[Url],
+    'notify_on_registration': const.NotifyOnRegistration,
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
@@ -2889,6 +2916,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
+    'is_visible': bool,
     'notes': Optional[str],
 }
 
@@ -3116,20 +3144,19 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes: dict[str, type[Any]] = {}
-    for field in fields.values():
-        if field.association == association:
-            dt = _ALL_TYPED[const.FieldDatatypes](
-                field.kind, field.field_name, **kwargs)
-            datatypes[field.field_name] = cast(type[Any], eval(  # pylint: disable=eval-used
-                f"Optional[{dt.name}]",
-                {
-                    'Optional': Optional,
-                    'date': datetime.date,
-                    'datetime': datetime.datetime,
-                }))
-    optional_fields = {
-        str(field.field_name): datatypes[field.field_name]
+    datatypes = {
+        const.FieldDatatypes.str: Optional[str],
+        const.FieldDatatypes.bool: Optional[bool],
+        const.FieldDatatypes.int: Optional[int],
+        const.FieldDatatypes.float: Optional[float],
+        const.FieldDatatypes.date: Optional[datetime.date],
+        const.FieldDatatypes.datetime: Optional[datetime.datetime],
+        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
+        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
+        const.FieldDatatypes.phone: Optional[str],
+    }
+    optional_fields: TypeMapping = {
+        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
@@ -3712,6 +3739,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'max_size': Optional[int],
     'min_size': Optional[int],
     'notes': Optional[str],
+    'is_visible': Optional[bool],
 }
 
 PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {

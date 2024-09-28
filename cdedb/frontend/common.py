@@ -11,7 +11,6 @@ import collections.abc
 import copy
 import csv
 import datetime
-import decimal
 import email
 import email.charset
 import email.encoders
@@ -79,8 +78,8 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
     NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
-    decode_parameter, encode_parameter, glue, json_serialize, make_persona_name,
-    make_proxy, merge_dicts, now, setup_logger, unwrap,
+    decode_parameter, encode_parameter, get_hash, glue, json_serialize,
+    make_persona_name, make_proxy, merge_dicts, now, setup_logger, unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
@@ -103,6 +102,7 @@ from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
     JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
 )
+from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
 
 
@@ -343,6 +343,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'now': now,
             'nbsp': "\u00A0",
             'query_mod': query_mod,
+            'get_hash': get_hash,
             'glue': glue,
             'enums': ENUMS_DICT,
             'raise': raise_jinja,
@@ -527,7 +528,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticlink': _staticlink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'gettext': rs.gettext,
+            'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
             'is_relevant_admin': _make_backend_checker(
@@ -535,7 +536,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'is_warning': _is_warning,
             'lang': rs.lang,
             'n_': n_,
-            'ngettext': rs.ngettext,
+            'ngettext': rs.mail_ngettext if modus == "mail" else rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
             'show_user_link': _show_user_link,
@@ -581,13 +582,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param attachment_hash: Hash to locate file uploaded within earlier request
         :param attachment_filename: Filename of file uploaded in earlier request
         """
-        attachment_data = None
+        attachment_data = new_filename = None
         if attachment:
             assert attachment.filename is not None
-            attachment_filename = pathlib.Path(attachment.filename).parts[-1]
+            new_filename = pathlib.Path(attachment.filename).parts[-1]
             attachment_data = check_validation(rs, store.type, attachment, 'attachment')
         if attachment_data:
             attachment_hash = store.store(attachment_data)
+            attachment_filename = new_filename
         elif attachment_hash:
             # We also end up here and keep the cached attachment if someone tried to
             # replace the cached attachment with an invalid attachment. In this case,
@@ -753,6 +755,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 rs.notify("info", n_("The CdE database is currently under"
                                      " maintenance and is unavailable."))
+
+        defect_addresses = {}
+        if rs.user.persona_id:
+            defect_addresses = self.coreproxy.get_defect_address_reports(
+                rs, [rs.user.persona_id])
+        params['defect_username'], params['mls_with_defect_explicits'] = (
+            self.transform_defect_addresses(rs, defect_addresses))
+
         # A nonce to mark safe <script> tags in context of the CSP header
         csp_nonce = token_hex(12)
         params['csp_nonce'] = csp_nonce
@@ -769,6 +779,27 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         response.headers.add('Content-Security-Policy',
                              csp_header_template.format(csp_nonce))
         return response
+
+    def transform_defect_addresses(
+            self, rs: RequestState, defect_addresses: dict[str, EmailAddressReport],
+    ) -> tuple[Optional[str],
+               Optional[dict[vtypes.Email, list[models_ml.Mailinglist]]]]:
+        """Uninlined code to get the data in the required shape."""
+        defect_username = None
+        mls_with_defect_explicits = None
+        # protect against execution in anonymous / no login setting
+        if defect_addresses:
+            if rs.user.username in defect_addresses:
+                defect_username = rs.user.username
+            mls_with_defect_explicit_ids = {
+                e.address: e.ml_ids for e in defect_addresses.values()
+                if e.subscriber_id == rs.user.persona_id}
+            mls = self.mlproxy.get_mailinglists(
+                rs, set().union(*mls_with_defect_explicit_ids.values()))
+            mls_with_defect_explicits = {
+                address: [mls[ml_id] for ml_id in ml_ids]
+                for address, ml_ids in mls_with_defect_explicit_ids.items()}
+        return defect_username, mls_with_defect_explicits
 
     def do_mail(self, rs: RequestState, templatename: str,
                 headers: Headers, params: Optional[CdEDBObject] = None,
@@ -795,7 +826,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        msg = self._create_mail(text, headers, attachments)
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, const.EmailStatus.defect_states())
+        msg = self._create_mail(text, headers, attachments, defect_addresses)
         ret = self._send_mail(
             msg, suppress_subject_logging=suppress_subject_logging,
             suppress_recipient_logging=suppress_recipient_logging,
@@ -808,6 +841,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def _create_mail(self, text: str,
                      headers: Headers, attachments: Optional[Collection[Attachment]],
+                     defect_addresses: dict[str, const.EmailStatus],
                      ) -> Union[email.message.Message,
                                 email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
@@ -847,8 +881,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             nonempty = {x for x in value if x}
             if nonempty != set(value):
                 self.logger.warning("Empty values zapped in email recipients.")
-            if nonempty:
-                msg[header] = ", ".join(nonempty)
+            effective = {x for x in nonempty if x not in defect_addresses}
+            if effective != nonempty:
+                diff = nonempty - effective
+                self.logger.warning(
+                    f"Dropped the following recipients from email: {diff}")
+            if effective:
+                msg[header] = ", ".join(effective)
         for header in ("From", "Reply-To", "Return-Path"):
             if value := headers.get(header):
                 msg[header] = value
@@ -2403,15 +2442,13 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event,
-                             donation: decimal.Decimal = decimal.Decimal(0)) -> str:
+def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}{donation}, {gn} {fn}, {cdedbid}".format(
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
         event=asciificator(event.title),
-        donation=f" inkl. {donation} Euro Spende" if donation else "",
         gn=asciificator(persona['given_names']),
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id']),
