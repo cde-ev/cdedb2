@@ -39,8 +39,7 @@ werden können:
 * Verschiedenes,
 * Vergangene Veranstaltungen
 
-Diese lassen sich in die Folgenden Kategorien einteilen (Mehrfachnennung
-möglich):
+Diese lassen sich in die folgenden Kategorien einteilen (Mehrfachnennung möglich):
 
 * Grundlegend
     * Name,
@@ -59,16 +58,20 @@ möglich):
     * E-Mail
     * Telefon,
     * Mobiltelefon,
-    * Adresse
+    * Genaue Adresse
+    * Wohnort
 * Mitglieder
-    * Geburtsname,
+    * Pronomen (Opt-in),
+    * Geburtsname ("Ledigname"),
     * Geburtsdatum,
     * E-Mail
     * Telefon,
     * Mobiltelefon,
     * WWW,
-    * Adresse,
-    * Zweitadresse,
+    * Genaue Adresse (Opt-out),
+    * Wohnort,
+    * Genaue Zweitadresse (Opt-out),
+    * Zweitwohnort
     * Fachgebiet,
     * Schule, Uni, …,
     * Jahrgang, Matrikel, …,
@@ -114,15 +117,15 @@ unterscheiden:
   * Bereiche, in denen der Benutzer Admin-Rechte besitzt
   * ist der Benutzer Orga einer Veranstaltung?
   * ist der Benutzer Moderator einer Mailingliste?
-  * ist der Benutzer Mitglied *und* Suchbar?
+  * ist der Benutzer Mitglied *und* suchbar?
   * ist der Benutzer nicht deaktiviert?
 
 * Kriterien, die **andere Nutzer** berechtigen können, Daten des Benutzers einzusehen:
 
   * Bereiche, die dieser Benutzer besitzt
   * ist der Benutzer Teilnehmer einer Veranstaltung?
-  * ist der Benutzer Abonent einer Mailingliste?
-  * ist der Benutzer Mitglied *und* Suchbar?
+  * ist der Benutzer Abonnent einer Mailingliste?
+  * ist der Benutzer Mitglied *und* suchbar?
   * ist der Benutzer nicht archiviert?
 
 
@@ -217,14 +220,16 @@ auf den Profilen anderer Benutzer sehen darf.
     Mitglieder sind Benutzer, die den CdE-Bereich besitzen und darüber hinaus
     das Attribut "Mitglied" haben (≙ ihren Mitgliedsbeitrag für das laufende
     Semester bezahlt haben). Darüber hinaus können sie der Datenschutzerklärung
-    zustimmen. Tun Sie dies, erhalten sie weiterhin das Attribut "Suchbar".
+    zustimmen. Tun Sie dies, erhalten sie weiterhin das Attribut "suchbar".
     Mitglieder, die diese beiden Attribute besitzen, erhalten erweiterten
     Zugriff auf andere Mitglieder, die ebenfalls diese beiden Attribute besitzen.
     Der Zugriff ist durch ein tägliches Limit von maximal 64 Zugriffen auf
     fremde Profile beschränkt.
 
-      * Mitglied *und* Suchbar: "Mitglieder", zudem Pronomen,
-        sofern "Pronomen auf Profil" ausgewählt ist.
+      * Mitglied *und* suchbar: "Mitglieder".
+        Für Datenfelder, bei denen "Opt-in" oder "Opt-out" vermerkt ist,
+        können suchbare Mitglieder fewi wählen, ob diese Daten für andere
+        suchbare Mitglieder sichtbar sind.
 
 * Man selbst
     Jeder aktive Benutzer hat fast vollständigen Zugriff auf sein eigenes Profil.
