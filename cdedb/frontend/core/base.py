@@ -880,14 +880,14 @@ class CoreBaseFrontend(AbstractFrontend):
         )
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
-            return self.redirect_show_user(rs, result[0]["id"])
+            return self.redirect_show_user(rs, result[0][query.scope.get_primary_key()])
 
         # Precise search didn't uniquely match, hence a fulltext search now. Results
         # will be a superset of the above, since all relevant fields are in fulltext.
         query.constraints = [('fulltext', QueryOperators.containsall, terms)]
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
-            return self.redirect_show_user(rs, result[0]["id"])
+            return self.redirect_show_user(rs, result[0][query.scope.get_primary_key()])
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
@@ -1063,12 +1063,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             data = tuple(xsorted(
-                data, key=lambda e: e['id'])[:num_preview_personas])
+                data, key=lambda e: e[scope.get_primary_key()])[:num_preview_personas])
 
         # Check if name occurs multiple times to add email address in this case
         counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
             counter[make_persona_name(entry)] += 1
+            if 'id' not in entry:
+                entry['id'] = entry[scope.get_primary_key()]
 
         # Generate return JSON list
         ret = []

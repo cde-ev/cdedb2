@@ -3047,7 +3047,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
             "is_member": True,
-            "id": 2,
+            "personas.id": 2,
             "username": "berta@example.cde",
         })
         self.get(
@@ -3057,7 +3057,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
             "is_member": True,
-            "id": 1,
+            "personas.id": 1,
             "username": "anton@example.cde",
         })
         self.get(
