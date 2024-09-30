@@ -36,7 +36,7 @@ from typing import (
 import PIL.Image
 import webtest
 import webtest.utils
-from psycopg2.extensions import cursor
+from psycopg2.extras import RealDictCursor
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -53,7 +53,7 @@ from cdedb.cli.storage import (
 from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
+    CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
@@ -384,12 +384,12 @@ class CdEDBTest(BasicTest):
             cls._sample_data = json2sql_join(cur, json2sql(data))
 
             cur.execute('SELECT COUNT(*) FROM core.postal_code_locations')
-            if not cur.fetchone()['count']:
+            if not unwrap(cur.fetchone()):
                 cur.execute(*insert_postal_code_locations())
 
     @classmethod
     @contextlib.contextmanager
-    def database_cursor(cls) -> Generator[cursor, None, None]:
+    def database_cursor(cls) -> Generator[RealDictCursor, None, None]:
         with Script(
             persona_id=-1,
             dbuser="cdb",
