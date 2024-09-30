@@ -15,7 +15,7 @@ from cdedb.cli.database import (
     create_database, create_database_users, populate_database,
     remove_prepared_transactions,
 )
-from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2sql_join
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
@@ -23,7 +23,7 @@ from cdedb.cli.storage import (
     populate_storage, reset_config,
 )
 from cdedb.cli.util import (
-    execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
+    connect, execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
     switch_user,
 )
 from cdedb.common import CustomJSONEncoder
@@ -234,11 +234,12 @@ def compile_sample_data_sql(
         data: dict[str, list[Any]] = json.load(f)
 
     xss_payload = config.get("XSS_PAYLOAD", "") if xss else ""
-    commands = json2sql(config, secrets, data, xss_payload=xss_payload)
+    cmds = json2sql(data, xss_payload=xss_payload) + [insert_postal_code_locations()]
 
-    with open(outfile, "w") as f:
-        for cmd in commands:
-            print(cmd, file=f)
+    with connect(config, secrets) as conn:
+        with conn.cursor() as cur:
+            with open(outfile, "w") as f:
+                print(json2sql_join(cur, cmds), file=f)
 
 
 @development.command(name="apply-sample-data")

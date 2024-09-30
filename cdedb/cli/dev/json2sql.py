@@ -5,18 +5,17 @@ from collections.abc import Sized
 from itertools import chain
 from typing import Any, Callable, Optional, TypedDict
 
-from psycopg2.extensions import connection
+from psycopg2.extensions import cursor
 
 from cdedb.backend.core import CoreBackend
-from cdedb.cli.util import connect
 from cdedb.common import CdEDBObject, PsycoJson
-from cdedb.config import Config, SecretsConfig
 from cdedb.database.conversions import to_db_input
 from cdedb.database.query import DatabaseValue_s
 
+SQLCommand = tuple[str, list[DatabaseValue_s]]
+
 
 class AuxData(TypedDict):
-    conn: connection
     core: type[CoreBackend]
     seq_id_tables: list[str]
     cyclic_references: dict[str, tuple[str, ...]]
@@ -26,10 +25,7 @@ class AuxData(TypedDict):
     xss_table_excludes: set[str]
 
 
-def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> AuxData:
-    # Set up a connection to the database
-    conn = connect(config, secrets, as_nobody=True)
-
+def prepare_aux(data: CdEDBObject) -> AuxData:
     core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
@@ -58,7 +54,7 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     # SQL-syntax. We use it to alway produce a current timestamp, because a
     # fixed timestamp from the start of a test suite won't do.
     constant_replacements = {
-        "'---now---'": "now()",
+        "---now---": "now()",
     }
 
     # For every table we may map one of it's columns to a function which
@@ -89,7 +85,6 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
     }
 
     return AuxData(
-        conn=conn,
         core=core,
         seq_id_tables=seq_id_tables,
         cyclic_references=cyclic_references,
@@ -101,24 +96,16 @@ def prepare_aux(data: CdEDBObject, config: Config, secrets: SecretsConfig) -> Au
 
 
 def format_inserts(table_name: str, table_data: Sized, keys: tuple[str, ...],
-                   params: list[DatabaseValue_s], aux: AuxData) -> list[str]:
-    ret = []
+                   params: list[DatabaseValue_s], aux: AuxData) -> SQLCommand:
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
-    query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list};"
-    params = tuple(to_db_input(p) for p in params)
+    query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list}"
+    params: list[DatabaseValue_s] = [to_db_input(p) for p in params]
 
-    # This is a bit hacky, but it gives us access to a psycopg2.cursor
-    # object so we can let psycopg2 take care of the heavy lifting
-    # regarding correctly inserting the parameters into the SQL query.
-    with aux["conn"] as conn:
-        with conn.cursor() as cur:
-            ret.append(cur.mogrify(query, params).decode("utf8"))
-    return ret
+    return query, params
 
 
-def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
-             xss_payload: Optional[str] = None) -> list[str]:
+def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCommand]:
     """Convert a dict loaded from a json file into sql statements.
 
     The dict contains tables, mapped to columns, mapped to values. The table and column
@@ -128,12 +115,14 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
     :param xss_payload: If not None, it will be used as xss payload for the database.
     :returns: A list of sql statements, inserting the given data.
     """
-    aux = prepare_aux(data, config, secrets)
-    commands: list[str] = []
+    aux = prepare_aux(data)
+    commands: list[SQLCommand] = []
 
     # Start off by resetting the sequential ids to 1.
-    commands.extend(f"ALTER SEQUENCE IF EXISTS {table}_id_seq RESTART WITH 1;"
-                    for table in aux["seq_id_tables"])
+    commands.extend(
+        (f"ALTER SEQUENCE IF EXISTS {table}_id_seq RESTART WITH 1", [])
+        for table in aux["seq_id_tables"]
+    )
 
     # Prepare insert statements for the tables in the source file.
     for table, table_data in data.items():
@@ -152,7 +141,6 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
 
         # Convert the keys to a tuple to ensure consistent ordering.
         keys = tuple(key_set)
-        # FIXME more precise type
         params_list: list[DatabaseValue_s] = []
         for entry in table_data:
             for k in keys:
@@ -168,38 +156,34 @@ def json2sql(config: Config, secrets: SecretsConfig, data: CdEDBObject,
                 entry[k] = f(entry)
             params_list.extend(entry[k] for k in keys)
 
-        commands.extend(format_inserts(table, table_data, keys, params_list, aux))
+        params = [aux["constant_replacements"].get(str(p), p) for p in params_list]
+
+        commands.append(format_inserts(table, table_data, keys, params, aux))
 
     # Now we update the tables to fix the cyclic references we skipped earlier.
     for table, refs in aux["cyclic_references"].items():
         for entry in data[table]:
             for ref in refs:
                 if entry.get(ref):
-                    query = f"UPDATE {table} SET {ref} = %s WHERE id = %s;"
-                    params = (entry[ref], entry["id"])
-                    with aux["conn"] as conn:
-                        with conn.cursor() as cur:
-                            commands.append(
-                                cur.mogrify(query, params).decode("utf8"))
+                    query = f"UPDATE {table} SET {ref} = %s WHERE id = %s"
+                    params = [entry[ref], entry["id"]]
+                    commands.append((query, params))
 
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
-    commands.extend(f"SELECT setval('{table}_id_seq', 1000);"
-                    for table in aux["seq_id_tables"])
+    commands.extend(
+        (f"SELECT setval('{table}_id_seq', 1000)", [])
+        for table in aux["seq_id_tables"]
+    )
 
-    # Lastly we do some string replacements to cheat in SQL-syntax like `now()`:
-    ret = []
-    for cmd in commands:
-        for k, v in aux["constant_replacements"].items():
-            cmd = cmd.replace(k, v)
-        ret.append(cmd)
-
-    ret += _insert_postal_code_locations(aux["conn"])
-
-    return ret
+    return commands
 
 
-def _insert_postal_code_locations(conn: connection) -> list[str]:
+def json2sql_join(cur: cursor, commands: list[SQLCommand]) -> str:
+    return ";\n".join(cur.mogrify(cmd, params).decode() for cmd, params in commands)
+
+
+def insert_postal_code_locations() -> SQLCommand:
     """
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
@@ -209,7 +193,7 @@ def _insert_postal_code_locations(conn: connection) -> list[str]:
         INSERT INTO
             core.postal_code_locations (postal_code, name, earth_location, lat, long)
         VALUES
-            {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(entries))};
+            {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(entries))}
     """
     params = list(chain.from_iterable(
         [
@@ -219,6 +203,4 @@ def _insert_postal_code_locations(conn: connection) -> list[str]:
         for e in entries
     ))
 
-    with conn:
-        with conn.cursor() as cur:
-            return [cur.mogrify(command, params).decode("utf8")]
+    return command, params
