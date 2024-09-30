@@ -342,6 +342,19 @@
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
                             {% trans %}Data is visible for other Members.{% endtrans %}
+                            {% if not data['show_address'] and not data['show_address2'] %}
+                                {% trans %}
+                                    (except for precise address and secondary address)
+                                {% endtrans %}
+                            {% elif not data['show_address'] %}
+                                {% trans %}
+                                    (except for precise address)
+                                {% endtrans %}
+                            {% elif not data['show_address2'] %}
+                                {% trans %}
+                                    (except for precise secondary address)
+                                {% endtrans %}
+                            {% endif %}
                         {% else %}
                             {% if not data['decided_search'] %}
                                 {% trans %}Not yet decided. (Data is not visible){% endtrans %}
@@ -498,8 +511,16 @@
                         {% trans %}Address{% endtrans %}
                     </dt>
                     <dd id="address">
-                        {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
-                        {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
+                        {% if not data['show_address'] %}
+                            <span id="hidden-address" class="text-muted" title="{{ gettext("Address hidden for member search") }}">
+                        {% endif %}
+                        {% if data['address'] %}
+                            {{ data['address'] }}<br />
+                        {% endif %}
+                        {% if data['address_supplement'] %}
+                            {{ data['address_supplement'] }}<br />
+                        {% endif %}
+                        {% if not data['show_address'] %}</span>{% endif %}
                         {{ data['postal_code'] }} {{ data['location'] }}{% if data['postal_code'] or data['location'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country']) }}
                     </dd>
@@ -512,8 +533,16 @@
                         {% trans %}Second Address{% endtrans %}
                     </dt>
                     <dd id="address2">
-                        {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
-                        {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
+                        {% if not data['show_address2'] %}
+                            <span id="hidden-address2" class="text-muted" title="{{ gettext("Address hidden for member search") }}">
+                        {% endif %}
+                        {% if data['address2'] %}
+                            {{ data['address2'] }}<br />
+                        {% endif %}
+                        {% if data['address_supplement2'] %}
+                            {{ data['address_supplement2'] }}<br />{
+                        {% endif %}
+                        {% if not data['show_address2'] %}</span>{% endif %}
                         {{ data['postal_code2'] }} {{ data['location2'] }}
                         {% if data['location2'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country2']) }}

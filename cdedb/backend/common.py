@@ -26,13 +26,12 @@ from passlib.hash import sha512_crypt
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
     CdEDBLog, CdEDBObject, DefaultReturnCode, Error, RequestState, Role,
-    diacritic_patterns, glue, make_proxy, setup_logger, unwrap,
+    diacritic_patterns, make_proxy, setup_logger, unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators
 from cdedb.common.query.log_filter import GenericLogFilter
-from cdedb.common.sorting import LOCALE
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -271,12 +270,10 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         query.fix_custom_columns()
         self.logger.debug(f"Performing general query {query} (aggregate={aggregate}).")
 
-        fields = {column: column.replace('"', '') for field in query.fields_of_interest
-                  for column in field.split(",")}
         aggregate_select = ""
         if aggregate:
             agg = {}
-            for field, field_as in fields.items():
+            for field, field_as in query.field_aliases.items():
                 agg[
                     f'COUNT(*) FILTER (WHERE "{field_as}" IS NULL)'
                 ] = f"null.{field_as}"
@@ -294,11 +291,8 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                     # TODO add avg for dates
             aggregate_select = ", ".join(f'{k} AS "{v}"' for k, v in agg.items())
             query.order = []
-        select = ", ".join(f'{k} AS "{v}"' for k, v in fields.items())
-        select += ', ' + query.scope.get_primary_key()
-        q, params = self._construct_query(
-            query, select, distinct=distinct, view=view,
-            aggregate_select=aggregate_select,
+        q, params = self._construct_query(query, distinct=distinct, view=view,
+                                          aggregate_select=aggregate_select,
         )
         data = self.query_all(rs, q, params)
 
@@ -308,26 +302,15 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
             # store if the respective aggregation function has an interesting value
             datum.update(
                 {agg: any(datum.get(f"{agg}.{field_as}") is not None
-                          for field_as in fields.values())
+                          for field_as in query.field_aliases.values())
                  for agg in ['null', 'sum', 'min', 'max', 'avg', 'stddev']})
             data = (datum, )
 
         return data
 
     @staticmethod
-    def _construct_query(query: Query, select: str, distinct: bool,
-                         view: Optional[str], aggregate_select: str,
-                         ) -> tuple[str, list[DatabaseValue]]:
-        if query.order:
-            # Collate compatible to COLLATOR in python
-            orders = []
-            for entry, _ in query.order:
-                if query.spec[entry].type == 'str':
-                    orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
-                else:
-                    orders.append(entry.split(',')[0])
-            select += ", " + ", ".join(orders)
-        view = view or query.scope.get_view()
+    def _construct_query(query: Query, distinct: bool, view: Optional[str],
+                         aggregate_select: str) -> tuple[str, list[DatabaseValue]]:
         params: list[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
@@ -434,22 +417,14 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         where = ""
         if constraints:
             where = f'WHERE ({") AND (".join(constraints)})'
-        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view} {where}"
+        q = f"""
+            SELECT {'DISTINCT' if distinct else ''} {query.select}
+            FROM {view or query.scope.get_view()}
+            {where}
+            {query.order_by}
+        """
         if aggregate_select:
             q = f"SELECT {aggregate_select} FROM ({q}) AS tmp"
-        if query.order:
-            # Collate compatible to COLLATOR in python
-            orders = []
-            for entry, ascending in query.order:
-                if query.spec[entry].type == 'str':
-                    orders.append(
-                        f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
-                        f'{"ASC" if ascending else "DESC"}')
-                else:
-                    orders.append(
-                        f'{entry.split(",")[0]} '
-                        f'{"ASC" if ascending else "DESC"}')
-            q = glue(q, "ORDER BY", ", ".join(orders))
         return q, params
 
     def generic_retrieve_log(self, rs: RequestState, log_filter: GenericLogFilter,

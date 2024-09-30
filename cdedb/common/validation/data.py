@@ -36,7 +36,7 @@ COUNTRY_CODES = [
 # We only include Country Codes of Countries that fully support SEPA,
 # since we can only issue direct debits to these countries anyways.
 #
-# source: www.iban.com/structure
+# source: https://www.iban.com/structure
 IBAN_LENGTHS = {
     "DE": 22, "AT": 20, "BE": 16, "BG": 22, "HR": 21, "CY": 28, "CZ": 24,
     "FO": 18, "GL": 18, "DK": 18, "EE": 20, "FI": 18, "FR": 27, "GI": 23,

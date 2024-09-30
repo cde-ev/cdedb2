@@ -220,6 +220,33 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
+        # Make sure hiding functionality works as extended
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['show_address'] = False
+        self.submit(f)
+        self.assertPresence("(außer genaue Adresse)", div='searchability')
+        self.assertPresence("Im Garten 77", div='hidden-address')
+        self.assertIn("Adresse für Mitgliedersuche versteckt", self.response.text)
+        with self.switch_user("inga"):
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "Bert"
+            self.submit(f)
+            self.assertNonPresence("Garten")
+            self.assertPresence("Strange Road 9 3/4", div='address2')
+        with self.switch_user("garcia"):
+            self.traverse("Index", "Große Testakademie")
+            f = self.response.forms['quickregistrationform']
+            f['phrase'] = "Bert"
+            self.submit(f)
+            self.assertTitle(
+                "Anmeldung von Bertålotta Beispiel (Große Testakademie 2222)")
+            self.assertPresence("Im Garten 77")
+            self.traverse("DB-2-7")
+            self.assertPresence("Im Garten 77", div='hidden-address')
+            self.assertIn("Adresse für Mitgliedersuche versteckt", self.response.text)
+            self.assertNonPresence("Strange Road 9 3/4")
 
     @as_users("quintus", "vera")
     def test_adminchangedata(self) -> None:
@@ -549,8 +576,7 @@ class TestCdEFrontend(FrontendTest):
         fields = [
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "address,address_supplement,address2,address_supplement2",
-            "location,location2",
+            "username", "location,location2",
         ]
         for field in fields:
             f['qval_' + field].force_value("[a]")

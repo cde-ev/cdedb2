@@ -289,6 +289,9 @@
                     {{ util.gettext_country(entry['country']) }}
                 {% endcall %}
             {% endcall %}
+            {% call history_field(gettext("Address searchable")) %}
+                {{ print_history('show_address') }}
+            {% endcall %}
         {% endif %}
 
         {% if current['is_cde_realm'] %}
@@ -300,6 +303,9 @@
                     {{ entry['postal_code2'] }} {{ entry['location2'] }}
                     {% if entry['location2'] %}<br />{% endif %}
                     {{ util.gettext_country(entry['country2']) }}
+                {% endcall %}
+                {% call history_field(gettext("Second Address searchable")) %}
+                    {{ print_history('show_address2') }}
                 {% endcall %}
             {% endcall %}
         {% endif %}
