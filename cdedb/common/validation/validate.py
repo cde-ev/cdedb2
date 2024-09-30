@@ -69,7 +69,7 @@ import typing
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum, IntEnum
-from types import TracebackType
+from types import TracebackType, UnionType
 from typing import (
     Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
     get_type_hints, overload,
@@ -167,7 +167,8 @@ class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: type[T]) -> Callable[..., T]:
-        if typing.get_origin(type_) is Union:
+        origin = typing.get_origin(type_)
+        if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
