@@ -36,6 +36,7 @@ from typing import (
 import PIL.Image
 import webtest
 import webtest.utils
+from psycopg2.extensions import cursor
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -45,7 +46,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2sql_join
 from cdedb.cli.storage import (
     create_storage, populate_sample_event_keepers, populate_storage,
 )
@@ -378,18 +379,30 @@ class CdEDBTest(BasicTest):
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
         with open(json_file, encoding="utf8") as f:
             data: dict[str, list[CdEDBObject]] = json.load(f)
-        cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
-    def setUp(self) -> None:
+        with cls.database_cursor() as cur:
+            cls._sample_data = json2sql_join(cur, json2sql(cls.conf, cls.secrets, data))
+
+            cur.execute('SELECT COUNT(*) FROM core.postal_code_locations')
+            if not cur.fetchone()['count']:
+                cur.execute(*insert_postal_code_locations())
+
+    @classmethod
+    @contextlib.contextmanager
+    def database_cursor(cls) -> Generator[cursor, None, None]:
         with Script(
             persona_id=-1,
             dbuser="cdb",
             check_system_user=False,
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
-            with conn.cursor() as curr:
-                curr.execute(self._clean_data)
-                curr.execute(self._sample_data)
+            with conn.cursor() as cur:
+                yield cur
+
+    def setUp(self) -> None:
+        with self.database_cursor() as cur:
+            cur.execute(self._clean_data)
+            cur.execute(self._sample_data)
 
         super().setUp()
 
