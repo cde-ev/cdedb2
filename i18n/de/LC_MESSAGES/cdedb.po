@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-08-20 14:37+0200\n"
-"PO-Revision-Date: 2024-08-18 18:16+0200\n"
+"POT-Creation-Date: 2024-08-19 03:55+0200\n"
+"PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
@@ -13252,7 +13252,7 @@ msgstr "Daten sind für andere Mitglieder sichtbar."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:346
 msgid "(except for precise address and secondary address)"
-msgstr "(Außer genaue Adresse und Zweitadresse)"
+msgstr "(außer genaue Adresse und Zweitadresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:347
 #: cdedb/frontend/templates/web/core/show_user.tmpl:360
@@ -13266,7 +13266,7 @@ msgstr "Entscheiden"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:350
 msgid "(except for precise address)"
-msgstr "(Außer genaue Adresse)"
+msgstr "(außer genaue Adresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:353
 #: cdedb/frontend/templates/web/core/show_user.tmpl:366
@@ -13275,7 +13275,7 @@ msgstr "Daten sind nicht sichtbar."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:354
 msgid "(except for precise secondary address)"
-msgstr "(Außer genaue Zweitadresse)"
+msgstr "(außer genaue Zweitadresse)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:382
 #: cdedb/frontend/templates/web/core/show_user.tmpl:383

@@ -218,7 +218,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
                       allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
-        pevent_id = None
         if pevent_id := rs.values.get('qval_pevent_id'):
             try:
                 pevent_id = int(pevent_id)
