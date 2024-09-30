@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from cdedb.cli.util import connect, fake_rs
-from cdedb.common import nearly_now
+from cdedb.common import CdEDBObject, nearly_now
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
 
@@ -29,6 +29,7 @@ sort_table_by = {
 ignored_tables = {
     "core.sessions",
     "core.quota",
+    "core.postal_code_locations",
 }
 
 # mark some columns which shall not be filled with information extracted from the
@@ -96,13 +97,14 @@ def sql2json(config: Config, secrets: SecretsConfig, silent: bool = False,
             tzinfo=reference_frame.tzinfo)
 
     for table in tables:
-        order = ", ".join(sort_table_by.get(table, []) + ['id'])
-        query = f"SELECT * FROM {table} ORDER BY {order}"
-        entities = sql.query_all(rs, query, ())
         if table in ignored_tables:
-            entities = tuple()
-        if not silent:
-            print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+            entities: tuple[CdEDBObject, ...] = ()
+        else:
+            order = ", ".join(sort_table_by.get(table, []) + ['id'])
+            query = f"SELECT * FROM {table} ORDER BY {order}"
+            entities = sql.query_all(rs, query, ())
+            if not silent:
+                print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved

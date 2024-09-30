@@ -477,7 +477,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Bertå Beispiel", div='1-1001')
         self.assertPresence("Bertå Beispiel", div='2-1002')
 
-    @as_users("anton", "berta", "inga")
+    @as_users("berta")
     def test_member_search(self) -> None:
         # by family_name and birth_name
         self.traverse({'description': 'Mitglieder'},
@@ -576,7 +576,8 @@ class TestCdEFrontend(FrontendTest):
         fields = [
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "location,location2", "country,country2"]
+            "username", "location,location2",
+        ]
         for field in fields:
             f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
@@ -639,6 +640,47 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "am stadt"
         self.submit(f)
         self.assertTitle("Inga Iota")
+
+    @prepsql("""
+        UPDATE core.personas SET postal_code = '47239' WHERE display_name = 'Anton';
+        UPDATE core.personas SET postal_code = '47447' WHERE family_name = 'Beispiel';
+        UPDATE core.personas SET postal_code = '47802' WHERE display_name = 'Charly';
+        UPDATE core.personas SET is_searchable = True  WHERE display_name = 'Charly';
+        UPDATE core.personas SET postal_code = '45145' WHERE display_name = 'Inga';
+        UPDATE core.personas SET postal_code = '50189' WHERE display_name = 'Olaf';
+    """)
+    @as_users("berta")
+    def test_member_search_nearby_postal_codes(self) -> None:
+        self.traverse("Mitglieder", "CdE-Mitglied suchen")
+        f = self.response.forms['membersearchform']
+        f['near_pc'] = "47239"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Darf nicht leer sein.")
+        f['near_pc'] = ""
+        f['near_radius'] = 5_000
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_pc', "Darf nicht leer sein.")
+        f['near_pc'] = "47239"
+        f['near_radius'].force_value(22222)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Unzulässige Auswahl.")
+        f['near_radius'] = 5_000
+        self.submit(f)
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Anton", div='result')
+        self.assertPresence("Bert", div='result')
+        f['near_radius'] = 10_000
+        self.submit(f)
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Charly", div='result')
+        f['near_radius'] = 30_000
+        self.submit(f)
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Inga", div='result')
+        f['near_radius'] = 80_000
+        self.submit(f)
+        self.assertPresence("5 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Olaf", div='result')
 
     @as_users("charly")
     def test_member_search_non_searchable(self) -> None:

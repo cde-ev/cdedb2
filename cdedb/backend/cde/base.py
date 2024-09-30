@@ -596,3 +596,36 @@ class CdEBaseBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
+
+    @access("searchable")
+    def get_nearby_postal_codes(
+            self, rs: RequestState, postal_code: str, radius: int,
+    ) -> list[str]:
+        """Returns a list of german postal codes in the radius of the given postal code.
+
+        :param radius: The maximum distance in meters.
+        """
+        postal_code = affirm(str, postal_code)
+        radius = affirm(vtypes.NonNegativeInt, radius)
+
+        q = """
+            SELECT earth_location
+            FROM core.postal_code_locations
+            WHERE postal_code = %s
+        """
+        data = self.query_all(rs, q, (postal_code,))
+
+        if not data:
+            return []
+        earth_pos = data[0]['earth_location']
+
+        q = """
+            SELECT postal_code
+            FROM core.postal_code_locations
+            WHERE earth_distance(earth_location, %s) < %s
+        """
+        return [
+            e['postal_code'] for e in self.query_all(
+                rs, q, (earth_pos, radius),
+            )
+        ]
