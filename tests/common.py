@@ -381,7 +381,7 @@ class CdEDBTest(BasicTest):
             data: dict[str, list[CdEDBObject]] = json.load(f)
 
         with cls.database_cursor() as cur:
-            cls._sample_data = json2sql_join(cur, json2sql(cls.conf, cls.secrets, data))
+            cls._sample_data = json2sql_join(cur, json2sql(data))
 
             cur.execute('SELECT COUNT(*) FROM core.postal_code_locations')
             if not cur.fetchone()['count']:
