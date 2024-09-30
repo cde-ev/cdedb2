@@ -12,7 +12,7 @@ import datetime
 import re
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
+from typing import Optional, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -109,7 +109,7 @@ class EventEventMixin(EventBaseFrontend):
                         rs, rs.ambience['event'].orgas).values(),
                     key=EntitySorter.persona))
         if "ml" in rs.user.roles:
-            ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'].as_dict())
+            ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address)
         if event_id in rs.user.orga or self.is_admin(rs):
@@ -278,9 +278,11 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("orgalist")
-    def create_event_mailinglist(self, rs: RequestState, event_id: int,
-                                 orgalist: bool = False) -> Response:
+    @REQUESTdata("orgalist", "part_id", "part_group_id")
+    def create_event_mailinglist(
+            self, rs: RequestState, event_id: int, orgalist: bool = False,
+            part_id: int | None = None, part_group_id: int | None = None,
+    ) -> Response:
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
@@ -290,7 +292,9 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(
-            rs, rs.ambience['event'].as_dict(), orgalist)
+            rs, rs.ambience['event'], orgalist=orgalist, part_id=part_id,
+            part_group_id=part_group_id,
+        )
         if not self.mlproxy.verify_existence(rs, ml_data.address):
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
@@ -302,6 +306,10 @@ class EventEventMixin(EventBaseFrontend):
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_data.address})
+        if part_id:
+            return self.redirect(rs, "event/part_summary")
+        elif part_group_id:
+            return self.redirect(rs, "event/group_summary")
         return self.redirect(rs, "event/show_event")
 
     def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> set[int]:
@@ -351,9 +359,21 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
+        non_existing_mailinglists = {
+            part.id
+            for part in rs.ambience['event'].parts.values()
+            if not self.mlproxy.verify_existence(
+                rs, self._get_mailinglist_setter(
+                    rs, rs.ambience['event'], part_id=part.id,
+                ).address,
+            )
+        }
+
         return self.render(rs, "event/part_summary", {
             'referenced_parts': referenced_parts,
-            'has_registrations': has_registrations})
+            'has_registrations': has_registrations,
+            'non_existing_mailinglists': non_existing_mailinglists,
+        })
 
     @access("event", modi={"POST"})
     @event_guard()
@@ -698,7 +718,19 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
     def group_summary(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "event/group_summary")
+        non_existing_mailinglists = {
+            part_group.id
+            for part_group in rs.ambience['event'].part_groups.values()
+            if part_group.constraint_type == const.EventPartGroupType.mailinglist_link
+               and not self.mlproxy.verify_existence(
+                rs, self._get_mailinglist_setter(
+                    rs, rs.ambience['event'], part_group_id=part_group.id,
+                ).address,
+            )
+        }
+        return self.render(rs, "event/group_summary", {
+            'non_existing_mailinglists': non_existing_mailinglists,
+        })
 
     @access("event")
     @event_guard()
@@ -938,34 +970,66 @@ class EventEventMixin(EventBaseFrontend):
         return store
 
     @staticmethod
-    def _get_mailinglist_setter(rs: RequestState, event: CdEDBObject,
-                                orgalist: bool = False) -> Mailinglist:
+    def _get_mailinglist_setter(
+            rs: RequestState, event: models.Event, *,
+            orgalist: bool = False,
+            part_id: int | None = None,
+            part_group_id: int | None = None,
+    ) -> Mailinglist:
+        """
+        Return a dataclass object to create a mailinglist for this event.
+
+        Exactly one of orgalist, part_id and part_group_id may be given.
+
+        If orgalist is True, the created list will be an EventOrgaMailinglist.
+        Otherwise it will be an EventAssociatedMailinglist (participant mailinglist).
+        If part_id or part_group_id is given, the list will be limited to that
+        part/part group.
+        """
         if orgalist:
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
             orga_ml_data = EventOrgaMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
-                title=f"{event['title']} Orgateam",
-                local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-orga"),
+                title=f"{event.title} Orgateam",
+                local_part=vtypes.EmailLocalPart(f"{event.shortname.lower()}-orga"),
                 domain=const.MailinglistDomain.aka,
                 description=descr,
                 mod_policy=const.ModerationPolicy.unmoderated,
                 attachment_policy=const.AttachmentPolicy.allow,
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
-                subject_prefix=event['shortname'],
+                subject_prefix=event.shortname,
                 maxsize=EventOrgaMailinglist.maxsize_default,
                 additional_footer=None,
                 is_active=True,
-                event_id=event['id'],
+                event_id=vtypes.ID(event.id),
                 notes=None,
-                moderators=event['orgas'],
+                moderators=event.orgas,
                 whitelist=set(),
             )
             return orga_ml_data
         else:
-            link = cdedburl(rs, "event/register", {'event_id': event["id"]})
+            if part_id:
+                title = f"{event.title} Teilnehmer ({event.parts[part_id].title})"
+                local_part = (f"{event.shortname.lower()}"
+                              f"-{event.parts[part_id].shortname.lower()}"
+                              f"-all")
+                subject_prefix = f"{event.shortname}-{event.parts[part_id].shortname}"
+            elif part_group_id:
+                title = (f"{event.title} Teilnehmer"
+                         f" ({event.part_groups[part_group_id].title})")
+                local_part = (f"{event.shortname.lower()}"
+                              f"-{event.part_groups[part_group_id].shortname.lower()}"
+                              f"-all")
+                subject_prefix = (f"{event.shortname}"
+                                  f"-{event.part_groups[part_group_id].shortname}")
+            else:
+                title = f"{event.title} Teilnehmer"
+                local_part = f"{event.shortname.lower()}"
+                subject_prefix = event.shortname
+            link = cdedburl(rs, "event/register", {'event_id': event.id})
             descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                      f"unserer [Veranstaltung anmeldest]({link}) und den Status "
                      f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
@@ -973,22 +1037,24 @@ class EventEventMixin(EventBaseFrontend):
                      f"zum Austausch untereinander genutzt werden.")
             participant_ml_data = EventAssociatedMailinglist(
                 id=vtypes.CreationID(vtypes.ProtoID(-1)),
-                title=f"{event['title']} Teilnehmer",
-                local_part=vtypes.EmailLocalPart(f"{event['shortname'].lower()}-all"),
+                title=title,
+                local_part=vtypes.EmailLocalPart(local_part.replace(" ", "")),
                 domain=const.MailinglistDomain.aka,
                 description=descr,
                 mod_policy=const.ModerationPolicy.non_subscribers,
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
-                subject_prefix=event['shortname'],
+                subject_prefix=subject_prefix,
                 maxsize=EventAssociatedMailinglist.maxsize_default,
                 additional_footer=None,
                 is_active=True,
-                event_id=event["id"],
+                event_id=cast(vtypes.ID, event.id),
+                event_part_id=cast(vtypes.ID | None, part_id),
+                event_part_group_id=cast(vtypes.ID | None, part_group_id),
                 registration_stati=[const.RegistrationPartStati.participant],
                 notes=None,
-                moderators=event['orgas'],
+                moderators=event.orgas,
                 whitelist=set(),
             )
             return participant_ml_data
@@ -1090,9 +1156,10 @@ class EventEventMixin(EventBaseFrontend):
 
         new_id = self.eventproxy.create_event(rs, data)
         data["id"] = new_id
+        event = self.eventproxy.get_event(rs, new_id)
 
         if create_orga_list:
-            orga_ml_data = self._get_mailinglist_setter(rs, data, orgalist=True)
+            orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
             if self.mlproxy.verify_existence(rs, orga_ml_data.address):
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
                           {'address': orga_ml_data.address})
@@ -1104,7 +1171,7 @@ class EventEventMixin(EventBaseFrontend):
                 change_note="Mailadresse der Orgas gesetzt.")
             rs.notify_return_code(code)
         if create_participant_list:
-            participant_ml_data = self._get_mailinglist_setter(rs, data)
+            participant_ml_data = self._get_mailinglist_setter(rs, event)
             if not self.mlproxy.verify_existence(rs, participant_ml_data.address):
                 code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
                 rs.notify_return_code(code,
