@@ -255,6 +255,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                     nearby_postal_codes = self.cdeproxy.get_nearby_postal_codes(
                         rs, near_pc, near_radius)
                     if not nearby_postal_codes:
+                        # Whenever near_pc is known, near_pc will be contained in
+                        # nearby_postal_codes.
                         rs.append_validation_error(
                             ('near_pc', ValueError(n_("Unknown postal code."))),
                         )
