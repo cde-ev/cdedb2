@@ -9,7 +9,6 @@ import decimal
 import email.message
 import email.parser
 import email.policy
-import enum
 import functools
 import gettext
 import io
@@ -75,6 +74,7 @@ from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken, resolve_droid_name
 from cdedb.script import Script
+from cdedb.uncommon.intenum import CdEIntEnum
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -1712,7 +1712,7 @@ class FrontendTest(BackendTest):
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: tuple[tuple[int, enum.IntEnum], ...],
+    def log_pagination(self, title: str, logs: tuple[tuple[int, CdEIntEnum], ...],
                        ) -> None:
         """Helper function to test the logic of the log pagination.
 
@@ -1817,7 +1817,7 @@ class FrontendTest(BackendTest):
         self.response = save
 
     def _log_subroutine(self, title: str,
-                        all_logs: tuple[tuple[int, enum.IntEnum], ...],
+                        all_logs: tuple[tuple[int, CdEIntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
