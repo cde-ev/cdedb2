@@ -6984,3 +6984,50 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertLogEqual(
             log_expectation, "event", event_id=event_id, offset=self.EVENT_LOG_OFFSET,
         )
+
+    @as_users('garcia')
+    def test_limited_event_mailinglists(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile")
+        self.assertIn("createeventmailinglistform1", self.response.forms)
+        self.assertIn("createeventmailinglistform2", self.response.forms)
+        self.assertIn("createeventmailinglistform3", self.response.forms)
+
+        f = self.response.forms["createeventmailinglistform1"]
+        self.submit(f)
+        self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+        self.assertNotIn("createeventmailinglistform1", self.response.forms)
+
+        self.traverse("Gruppen", "Veranstaltungsteilgruppe hinzufügen")
+        f = self.response.forms["configurepartgroupform"]
+        f['title'] = f['shortname'] = "Beide"
+        f['part_ids'] = [2, 3]
+        f['constraint_type'] = const.EventPartGroupType.mailinglist_link
+        self.submit(f)
+
+        f = self.response.forms["createeventmailinglistform1001"]
+        self.submit(f)
+        self.assertTitle("Gruppen (Große Testakademie 2222)")
+        self.assertNotIn("createeventmailinglistform1001", self.response.forms)
+
+        ml_log_expectation = (
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1001,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'mailinglist_id': 1001,
+                'persona_id': self.user['id'],
+            },
+            {
+                'code': const.MlLogCodes.list_created,
+                'mailinglist_id': 1002,
+            },
+            {
+                'code': const.MlLogCodes.moderator_added,
+                'mailinglist_id': 1002,
+                'persona_id': self.user['id'],
+            },
+        )
+        self.assertLogEqual(ml_log_expectation, "ml", _mailinglist_ids=[1001, 1002])
