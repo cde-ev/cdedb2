@@ -115,7 +115,7 @@
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["ml_user"]),
                 (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS, None),
                 (gettext("Auditor"), ["auditor"], None),
             )) }}

@@ -108,7 +108,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
+            if "user_review" in rs.user.admin_views:
                 data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
