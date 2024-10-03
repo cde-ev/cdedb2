@@ -63,6 +63,10 @@ class classproperty:
     def __get__(self, instance: Any, owner: type[Any]) -> Any:
         return self.getter(owner)
 
+# TODO We are the only consumer but maybe this should be moved into cdedb.database.conversions?
+def escape_sql_like_pattern(pattern: str) -> str:
+    return pattern.replace("\\", r"\\").replace("%", r"\%").replace("_", r"\_")
+
 
 @overload
 def _to_bytes(data: dict[Any, Any]) -> dict[bytes, Any]: ...
@@ -485,6 +489,23 @@ class LDAPsqlBackend:
                 sql.SQL("{} = {}").format(
                     sql.Identifier(attr_replacements[filter.attributeDesc.value.decode()]),
                     sql.Literal(filter.assertionValue.value.decode()),
+                )
+                if filter.attributeDesc.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named in the SQL query
+                # therefore we have to be defensive and assume that the attribute is present.
+                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                else sql.Literal(True)
+            )
+        elif isinstance(filter, pureldap.LDAPFilter_substrings):
+            pattern = "%".join(escape_sql_like_pattern(s.value.decode()) for s in filter.substrings)
+            if not isinstance(filter.substrings[0], pureldap.LDAPFilter_substrings_initial):
+                pattern = f"%{pattern}"
+            if not isinstance(filter.substrings[0], pureldap.LDAPFilter_substrings_final):
+                pattern = f"{pattern}%"
+            return (
+                sql.SQL("{} LIKEs {}").format(
+                    sql.Identifier(attr_replacements[filter.attributeDesc.value.decode()]),
+                    sql.Literal(pattern),
                 )
                 if filter.attributeDesc.value.decode() in attr_replacements
                 # We are not given any information how the attribute is named in the SQL query
