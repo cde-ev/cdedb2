@@ -172,7 +172,14 @@ class CdEDBBaseLDAPEntry(
         if derefAliases is None:
             derefAliases = pureldap.LDAP_DEREF_neverDerefAliases
 
-        # choose iterator: base/children/subtree
+        # Choose iterator: base/children/subtree
+        # The filterObject and attributes passed to the subtree/children method
+        # are used to try improve performance by avoiding fetching unused data
+        # and applying coarse filtering at the database level
+        # by lowering the LDAP filters to SQL WHERE clauses.
+        # This is, however, only implemented for the most important filters.
+        # The remaining filters and checks are applied at the end of this method
+        # and higher up in the stack (e.g. access control).
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
             entries = await self.subtree(bound_dn, filterObject=filterObject, attributes=attributes)
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
