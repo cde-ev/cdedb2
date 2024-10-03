@@ -612,10 +612,16 @@ class LDAPsqlBackend:
                 continue
             dn_to_persona_id[dn] = persona_id
 
-        users = await self._get_users_data(dn_to_persona_id.values())
-        groups = {}
-        if len(attributes) == 0 or b"*" in attributes or b"memberOf" in attributes:
-            groups = await self._get_users_groups(dn_to_persona_id.values())
+        users, groups = (
+            await asyncio.gather(
+                self._get_users_data(dn_to_persona_id.values()),
+                self._get_users_groups(dn_to_persona_id.values()),
+            )
+            # Skip fetching groups if they are not requested
+            # and would be filtered out higher up in the stack anyways.
+            if len(attributes) == 0 or b"*" in attributes or b"memberOf" in attributes
+            else (await self._get_users_data(dn_to_persona_id.values()), {})
+        )
 
         ret = dict()
         for dn, persona_id in dn_to_persona_id.items():
