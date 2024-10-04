@@ -80,6 +80,8 @@ def persona(context: argparse.Namespace) -> int:
         'foto': None,
         'paper_expuls': False,
         'donation': decimal.Decimal(0),
+        'show_address': True,
+        'show_address2': True,
     }
     core = context.script.make_backend('core', proxy=False)
     ret = core.create_persona(rs, data)
@@ -250,6 +252,7 @@ def event(context: argparse.Namespace) -> int:
                                      'min_size': None,
                                      'notes': '',
                                      'segments': {t},
+                                     'is_visible': True,
                                      })
             for _ in range(1 if context.quick else 10)]
         for t in tracks

@@ -79,6 +79,8 @@ I18N_STRINGS = (
     n_("CoreLogCodes.send_anonymous_message"),
     n_("CoreLogCodes.reply_to_anonymous_message"),
     n_("CoreLogCodes.rotate_anonymous_message"),
+    n_("CoreLogCodes.modify_email_status"),
+    n_("CoreLogCodes.delete_email_status"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
@@ -192,6 +194,9 @@ I18N_STRINGS = (
     n_("GenesisStati.successful"),
     n_("GenesisStati.existing_updated"),
     n_("GenesisStati.rejected"),
+
+    n_("EmailStatus.normal"),
+    n_("EmailStatus.defect"),
 
     n_("LineResolutions.none"),
     n_("LineResolutions.create"),
@@ -351,12 +356,15 @@ I18N_STRINGS = (
     n_("EventFeeType.instructor_refund"),
     n_("EventFeeType.instructor_donation"),
     n_("EventFeeType.other_donation"),
+    n_("EventFeeType.crisis_refund"),
+    n_("EventFeeType.other_refund"),
 
     n_("NotifyOnRegistration.everytime"),
     n_("NotifyOnRegistration.never"),
     n_("NotifyOnRegistration.hourly"),
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
+
     #
     # Query datatypes
     #

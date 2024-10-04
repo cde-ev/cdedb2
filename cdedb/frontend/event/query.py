@@ -262,10 +262,13 @@ class EventQueryMixin(EventBaseFrontend):
         if data:
             pdata = pprint.pformat(data)
             self.logger.warning(f"Invalid stored event queries: {pdata}")
-            msg = self._create_mail(f"{text}\n{pdata}",
-                                    {"To": ("cdedb@lists.cde-ev.de",),
-                                     "Subject": "Ungültige Event-Queries"},
-                                    attachments=None)
+            defect_addresses = self.coreproxy.list_email_states(
+                rs, const.EmailStatus.defect_states())
+            msg = self._create_mail(
+                f"{text}\n{pdata}",
+                {"To": ("cdedb@lists.cde-ev.de",),
+                 "Subject": "Ungültige Event-Queries"},
+                attachments=None, defect_addresses=defect_addresses)
             self._send_mail(msg)
         return state
 
@@ -640,6 +643,8 @@ class EventQueryMixin(EventBaseFrontend):
         counter: dict[str, int] = collections.defaultdict(int)
         for entry in data:
             counter[name(entry)] += 1
+            if 'id' not in entry:
+                entry['id'] = entry[QueryScope.quick_registration.get_primary_key()]
 
         # Generate return JSON list
         ret = []

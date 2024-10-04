@@ -53,22 +53,24 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import base64
 import collections
 import copy
+import csv
 import dataclasses
 import datetime
 import decimal
 import distutils.util
+import enum
 import functools
 import io
 import itertools
 import json
 import logging
 import math
+import pathlib
 import re
 import string
 import typing
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
-from enum import Enum, IntEnum
 from types import TracebackType, UnionType
 from typing import (
     Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
@@ -105,14 +107,13 @@ from cdedb.common.query import (
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation.data import (
-    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
-)
+from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+from cdedb.uncommon.intenum import CdEIntEnum
 
 NoneType = type(None)
 
@@ -1372,12 +1373,14 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'mobile': NoneType,
     'address_supplement': NoneType,
     'address': NoneType,
+    'show_address': bool,
     'postal_code': NoneType,
     'location': NoneType,
     'country': NoneType,
     'birth_name': NoneType,
     'address_supplement2': NoneType,
     'address2': NoneType,
+    'show_address2': bool,
     'postal_code2': NoneType,
     'location2': NoneType,
     'country2': NoneType,
@@ -1408,12 +1411,14 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'mobile': Optional[Phone],
     'address_supplement': Optional[str],
     'address': Optional[str],
+    'show_address': bool,
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
     'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
+    'show_address2': bool,
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
     'country2': Optional[Country],
@@ -1492,12 +1497,14 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'mobile': Optional[Phone],
     'address_supplement': Optional[str],
     'address': Optional[str],
+    'show_address': bool,
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
     'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
+    'show_address2': bool,
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
     'country2': Optional[Country],
@@ -1721,6 +1728,9 @@ def _phone(
     return Phone(phone_str)
 
 
+_GERMAN_POSTAL_CODES: set[str] = set()
+
+
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: Optional[str] = None, *,
@@ -1738,7 +1748,17 @@ def _german_postal_code(
         msg = n_("Invalid german postal code.")
         if not (len(val) == 5 and val.isdigit()):
             raise ValidationSummary(ValueError(argname, msg))
-        if val not in GERMAN_POSTAL_CODES and not ignore_warnings:
+        if not _GERMAN_POSTAL_CODES:
+            repo_path: pathlib.Path = _CONFIG['REPOSITORY_PATH']
+            _GERMAN_POSTAL_CODES.update(
+                e['plz'] for e in csv.DictReader(
+                    (
+                        repo_path / "tests" / "ancillary_files" / "plz.csv"
+                    ).read_text().splitlines(),
+                    delimiter=',',
+                )
+            )
+        if val not in _GERMAN_POSTAL_CODES and not ignore_warnings:
             raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
@@ -2911,6 +2931,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
+    'is_visible': bool,
     'notes': Optional[str],
 }
 
@@ -3733,6 +3754,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'max_size': Optional[int],
     'min_size': Optional[int],
     'notes': Optional[str],
+    'is_visible': Optional[bool],
 }
 
 PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
@@ -4990,7 +5012,7 @@ def _log_filter(
     return LogFilter(val)
 
 
-E = TypeVar('E', bound=Enum)
+E = TypeVar('E', bound=enum.Enum)
 
 
 def _enum_validator_maker(
@@ -5054,7 +5076,7 @@ def _db_subscription_state(
     return DatabaseSubscriptionState(val)
 
 
-IE = TypeVar("IE", bound=IntEnum)
+IE = TypeVar("IE", bound=CdEIntEnum)
 
 
 def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None,

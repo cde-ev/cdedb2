@@ -195,11 +195,11 @@ class MlBackend(AbstractBackend):
         affirm_set(SubscriptionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
-        persona_ids = tuple(e['id'] for e in data)
+        persona_ids = tuple(e['personas.id'] for e in data)
         persona_policies = ml.get_subscription_policies(
             rs, self.backends, persona_ids)
         return tuple(e for e in data
-                     if persona_policies[e['id']] in allowed_pols)
+                     if persona_policies[e['personas.id']] in allowed_pols)
 
     @access("ml")
     def may_view(self, rs: RequestState, ml: Mailinglist) -> bool:

@@ -157,6 +157,7 @@ class RequestState(ConnectionContainer):
     """
     default_lang = "en"
     log_lang = "de"
+    mail_lang = "de"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -230,6 +231,14 @@ class RequestState(ConnectionContainer):
     @property
     def log_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.log_lang].ngettext
+
+    @property
+    def mail_gettext(self) -> Callable[[str], str]:
+        return self.translations[self.mail_lang].gettext
+
+    @property
+    def mail_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.mail_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: Optional[CdEDBObject] = None) -> None:
@@ -942,7 +951,8 @@ INFINITE_ENUM_MAGIC_NUMBER = 0
 def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
-    This does nothing and is only for documentation purposes.
+    This only sets a flag on the class for documentation and
+    introspection purposes.
 
     Infinite enums are sadly not directly supported by python which
     means, that we have to emulate them on our own.
@@ -957,10 +967,11 @@ def infinite_enum(aclass: T) -> T:
     None.
 
     In the code they are stored as an :py:data:`InfiniteEnum`."""
+    setattr(aclass, "infinite_enum", True)
     return aclass
 
 
-E = TypeVar("E", bound=enum.IntEnum)
+E = TypeVar("E", bound=CdEIntEnum)
 
 
 @functools.total_ordering

@@ -9,7 +9,7 @@ from typing import Any
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject
+from cdedb.common import CdEDBObject, get_hash
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
@@ -1694,3 +1694,33 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailinglisten-Log [0–0 von 0]")
         self.assertNonPresence("Aktivenforum")
         self.assertPresence("CdE-Party")
+
+    @as_users("nina", "janis")
+    def test_defect_email_roster(self) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Verwaltung'})
+        self.assertTitle('Werbung – Verwaltung')
+        self.assertPresence("Bertå Beispiel")
+        self.assertPresence("Abonnement mit defekter Email-Adresse;"
+                            " Email-Zustellung unterbrochen")
+
+        backup = self.user
+        vera = USER_DICT['vera']
+        self.logout()
+        self.login(vera)
+        self.traverse({'description': 'Index'},
+                      {'description': 'Defekte Email-Adressen'})
+        formid = f'deleteemailstatus{get_hash(b"berta@example.cde")}'
+        f = self.response.forms[formid]
+        self.submit(f)
+        self.logout()
+        self.login(backup)
+
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Verwaltung'})
+        self.assertTitle('Werbung – Verwaltung')
+        self.assertPresence("Bertå Beispiel")
+        self.assertNonPresence("Abonnement mit defekter Email-Adresse;"
+                               " Email-Zustellung unterbrochen")

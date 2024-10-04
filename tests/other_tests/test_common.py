@@ -242,10 +242,11 @@ class TestCommon(BasicTest):
     def test_enum_str_conversion(self) -> None:
         for enum_ in ALL_ENUMS:
             for member in enum_:
-                enum_name, member_name = str(member).split('.', 1)
-                self.assertEqual(enum_.__name__, enum_name)
-                self.assertEqual(member.name, member_name)
-                self.assertEqual(member, enum_[member_name])
+                with self.subTest(enum=enum_, member=member):
+                    enum_name, member_name = str(member).split('.', 1)
+                    self.assertEqual(enum_.__name__, enum_name)
+                    self.assertEqual(member.name, member_name)
+                    self.assertEqual(member, enum_[member_name])
 
     def test_ml_type_uniqueness(self) -> None:
         self.assertEqual(len(ML_TYPE_MAP), len(ML_TYPE_MAP_INV))

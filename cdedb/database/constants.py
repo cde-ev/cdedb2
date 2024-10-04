@@ -46,6 +46,30 @@ class PersonaChangeStati(CdEIntEnum):
 
 
 @enum.unique
+class EmailStatus(CdEIntEnum):
+    """Spec for status of core.email_status.
+
+    This is intended to be extended in future revisions. Potential further
+    states are: whitelist, unconfirmed, mailinglists_disabled, all_disabled,
+    removed, unsuccessful_transmission.
+    """
+    normal = 1
+    defect = 10
+
+    @classmethod
+    def defect_states(cls) -> tuple["EmailStatus", ...]:
+        return (cls.defect,)
+
+    @classmethod
+    def notable_states(cls) -> tuple["EmailStatus", ...]:
+        """States which should cause a notification.
+
+        In some locations annotating every state could get really noisy.
+        """
+        return (cls.defect,)
+
+
+@enum.unique
 class RegistrationPartStati(CdEIntEnum):
     """Spec for field status of event.registration_parts."""
     not_applied = -1  #:
@@ -179,6 +203,8 @@ class EventFeeType(CdEIntEnum):
     solidary_donation = 11
     solidary_increase = 12
     other_donation = 20
+    crisis_refund = 30
+    other_refund = 31
 
     def get_icon(self) -> str:
         return {
@@ -191,7 +217,8 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
-
+            EventFeeType.crisis_refund: "fire-extinguisher",
+            EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
     def is_donation(self) -> bool:
@@ -452,6 +479,8 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    modify_email_status = 70  #:
+    delete_email_status = 71  #:
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:

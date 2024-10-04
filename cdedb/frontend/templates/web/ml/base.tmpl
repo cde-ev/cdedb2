@@ -3,30 +3,29 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/ml/generic.tmpl" as generic_ml with context %}
 
-{% macro ml_inner_navigation(data) %}
+{% macro ml_inner_navigation(ml) %}
         <div class="list-group tear-down">
-            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
+            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': ml['id']}), gettext("Overview"),
                     icon="caret-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
             {% if may_view_roster %}
-                {{ util.href(cdedblink("ml/show_roster", {'mailinglist_id': data['id']}), gettext("Roster"),
+                {{ util.href(cdedblink("ml/show_roster", {'mailinglist_id': ml['id']}), gettext("Roster"),
                         aclass="list-group-item", icon="users", active=(sidenav_active == 'ml_roster')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user) %}
-                {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
+            {% if ml['id'] in user.moderator or ml.has_moderator_view(user) %}
+                {{ util.href(cdedblink("ml/management", {'mailinglist_id': ml['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
-                {{ util.href(cdedblink("ml/advanced_management", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
+                {{ util.href(cdedblink("ml/advanced_management", {'mailinglist_id': ml['id']}), gettext("Advanced Management"),
                         aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
-                {{ util.href(cdedblink("ml/message_moderation", {'mailinglist_id': data['id']}), gettext("Message Moderation"),
+                {{ util.href(cdedblink("ml/message_moderation", {'mailinglist_id': ml['id']}), gettext("Message Moderation"),
                         aclass="list-group-item", icon="envelope", active=(sidenav_active == 'ml_moderation')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user)
-                                               or ambience['mailinglist'].has_management_view(user) %}
-                {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
+            {% if ml['id'] in user.moderator or ml.has_moderator_view(user) or ml.has_management_view(user) %}
+                {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': ml['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
             {% endif %}
-            {% if data['id'] in user.moderator or ambience['mailinglist'].has_moderator_view(user) %}
-                {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
+            {% if ml['id'] in user.moderator or ml.has_moderator_view(user) %}
+                {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': ml['id']}), gettext("Log"),
                              aclass="list-group-item", icon="far fa-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
@@ -116,7 +115,7 @@
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["ml_user"]),
                 (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS, None),
                 (gettext("Auditor"), ["auditor"], None),
             )) }}

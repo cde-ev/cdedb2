@@ -384,9 +384,12 @@ class MlBaseFrontend(AbstractUserFrontend):
             sub_address = self.mlproxy.get_subscription_address(
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
-        event = None
+        event = is_registered = None
         if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
+            if 'event' in rs.user.roles:
+                is_registered = bool(self.eventproxy.list_registrations(
+                    rs, ml.event_id, rs.user.persona_id))
 
         assembly = None
         if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
@@ -402,10 +405,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             personas[anid] for anid in xsorted(
                 personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
 
+        email_report = None
+        if state and state.is_subscribed():
+            tmp = self.coreproxy.get_email_reports(rs, [rs.user.persona_id])
+            email_report = tmp.get(sub_address or rs.user.username)
+
         return self.render(rs, "show_mailinglist", {
-            'sub_address': sub_address, 'state': state,
-            'subscription_policy': subscription_policy,
-            'event': event, 'assembly': assembly, 'moderators': moderators})
+            'sub_address': sub_address, 'state': state, 'moderators': moderators,
+            'subscription_policy': subscription_policy, 'assembly': assembly,
+            'event': event, 'is_registered': is_registered,
+            'email_report': email_report})
 
     @access("ml")
     @mailinglist_guard()
@@ -646,10 +655,17 @@ class MlBaseFrontend(AbstractUserFrontend):
         explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, const.EmailStatus.defect_states())
         requests = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(const.SubscriptionState.pending,))
         persona_ids = (set(ml.moderators) | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        # determine which subscribers use a defect address for this mailinglist
+        defects = {
+            anid for anid in subscribers
+            if anid not in explicits and personas[anid]["username"] in defect_addresses
+            or anid in explicits and explicits[anid] in defect_addresses}
         subscribers = collections.OrderedDict(
             (anid, personas[anid]) for anid in xsorted(
                 subscribers,
@@ -667,7 +683,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted, 'allow_unsub': allow_unsub})
+            'restricted': restricted, 'allow_unsub': allow_unsub,
+            'defects': defects})
 
     @access("ml")
     @mailinglist_guard()
@@ -703,12 +720,19 @@ class MlBaseFrontend(AbstractUserFrontend):
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
+        # determine defect addresses used as subscription_override
+        defect_addresses = self.coreproxy.list_email_states(
+            rs, const.EmailStatus.defect_states())
+        subscription_addresses = self.mlproxy.get_subscription_addresses(
+            rs, mailinglist_id, subscription_overrides)
+        defects = {anid for anid in subscription_overrides
+                   if subscription_addresses[anid] in defect_addresses}
         return self.render(rs, "advanced_management", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
             'all_unsubscriptions': all_unsubscriptions,
             'redundant_unsubscriptions': redundant_unsubscriptions,
-            'restricted': restricted})
+            'restricted': restricted, 'defects': defects})
 
     @access("ml")
     @mailinglist_guard()

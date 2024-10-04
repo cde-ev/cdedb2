@@ -46,12 +46,14 @@ PERSONA_TEMPLATE = {
     'mobile': None,
     'address_supplement': None,
     'address': None,
+    'show_address': True,
     'postal_code': None,
     'location': None,
     'country': None,
     'birth_name': None,
     'address_supplement2': None,
     'address2': None,
+    'show_address2': True,
     'postal_code2': None,
     'location2': None,
     'country2': None,
@@ -980,6 +982,8 @@ class TestCoreBackend(BackendTest):
             'specialisation': None,
             'timeline': None,
             'paper_expuls': True,
+            'show_address': True,
+            'show_address2': True,
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
@@ -1102,6 +1106,8 @@ class TestCoreBackend(BackendTest):
             'location2': 'Foreign City',
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
+            'show_address': True,
+            'show_address2': True,
             'specialisation': 'Alles\nUnd noch mehr',
             'telephone': '+495432987654321',
             'timeline': 'Überall',

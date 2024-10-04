@@ -220,6 +220,33 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
+        # Make sure hiding functionality works as extended
+        self.traverse("Bearbeiten")
+        f = self.response.forms['changedataform']
+        f['show_address'] = False
+        self.submit(f)
+        self.assertPresence("(außer genaue Adresse)", div='searchability')
+        self.assertPresence("Im Garten 77", div='hidden-address')
+        self.assertIn("Adresse für Mitgliedersuche versteckt", self.response.text)
+        with self.switch_user("inga"):
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "Bert"
+            self.submit(f)
+            self.assertNonPresence("Garten")
+            self.assertPresence("Strange Road 9 3/4", div='address2')
+        with self.switch_user("garcia"):
+            self.traverse("Index", "Große Testakademie")
+            f = self.response.forms['quickregistrationform']
+            f['phrase'] = "Bert"
+            self.submit(f)
+            self.assertTitle(
+                "Anmeldung von Bertålotta Beispiel (Große Testakademie 2222)")
+            self.assertPresence("Im Garten 77")
+            self.traverse("DB-2-7")
+            self.assertPresence("Im Garten 77", div='hidden-address')
+            self.assertIn("Adresse für Mitgliedersuche versteckt", self.response.text)
+            self.assertNonPresence("Strange Road 9 3/4")
 
     @as_users("quintus", "vera")
     def test_adminchangedata(self) -> None:
@@ -450,7 +477,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Bertå Beispiel", div='1-1001')
         self.assertPresence("Bertå Beispiel", div='2-1002')
 
-    @as_users("anton", "berta", "inga")
+    @as_users("berta")
     def test_member_search(self) -> None:
         # by family_name and birth_name
         self.traverse({'description': 'Mitglieder'},
@@ -549,8 +576,8 @@ class TestCdEFrontend(FrontendTest):
         fields = [
             "fulltext", "given_names,display_name", "family_name,birth_name",
             "weblink,specialisation,affiliation,timeline,interests,free_form",
-            "username", "address,address_supplement,address2,address_supplement2",
-            "location,location2", "country,country2"]
+            "username", "location,location2",
+        ]
         for field in fields:
             f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
@@ -613,6 +640,47 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "am stadt"
         self.submit(f)
         self.assertTitle("Inga Iota")
+
+    @prepsql("""
+        UPDATE core.personas SET postal_code = '47239' WHERE display_name = 'Anton';
+        UPDATE core.personas SET postal_code = '47447' WHERE family_name = 'Beispiel';
+        UPDATE core.personas SET postal_code = '47802' WHERE display_name = 'Charly';
+        UPDATE core.personas SET is_searchable = True  WHERE display_name = 'Charly';
+        UPDATE core.personas SET postal_code = '45145' WHERE display_name = 'Inga';
+        UPDATE core.personas SET postal_code = '50189' WHERE display_name = 'Olaf';
+    """)
+    @as_users("berta")
+    def test_member_search_nearby_postal_codes(self) -> None:
+        self.traverse("Mitglieder", "CdE-Mitglied suchen")
+        f = self.response.forms['membersearchform']
+        f['near_pc'] = "47239"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Darf nicht leer sein.")
+        f['near_pc'] = ""
+        f['near_radius'] = 5_000
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_pc', "Darf nicht leer sein.")
+        f['near_pc'] = "47239"
+        f['near_radius'].force_value(22222)
+        self.submit(f, check_notification=False)
+        self.assertValidationError('near_radius', "Unzulässige Auswahl.")
+        f['near_radius'] = 5_000
+        self.submit(f)
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Anton", div='result')
+        self.assertPresence("Bert", div='result')
+        f['near_radius'] = 10_000
+        self.submit(f)
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Charly", div='result')
+        f['near_radius'] = 30_000
+        self.submit(f)
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Inga", div='result')
+        f['near_radius'] = 80_000
+        self.submit(f)
+        self.assertPresence("5 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Olaf", div='result')
 
     @as_users("charly")
     def test_member_search_non_searchable(self) -> None:
@@ -933,6 +1001,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ehrenmitglied", div='membership', exact=True)
 
     @as_users("farin")
+    @prepsql("DELETE FROM core.email_states")
     def test_iban_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},

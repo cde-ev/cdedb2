@@ -342,6 +342,19 @@
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
                             {% trans %}Data is visible for other Members.{% endtrans %}
+                            {% if not data['show_address'] and not data['show_address2'] %}
+                                {% trans %}
+                                    (except for precise address and secondary address)
+                                {% endtrans %}
+                            {% elif not data['show_address'] %}
+                                {% trans %}
+                                    (except for precise address)
+                                {% endtrans %}
+                            {% elif not data['show_address2'] %}
+                                {% trans %}
+                                    (except for precise secondary address)
+                                {% endtrans %}
+                            {% endif %}
                         {% else %}
                             {% if not data['decided_search'] %}
                                 {% trans %}Not yet decided. (Data is not visible){% endtrans %}
@@ -435,6 +448,25 @@
                     {% else %}
                         —
                     {% endif %}
+                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views or data['id'] == user.persona_id %}
+                        {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
+                            <span class="text-danger">({{gettext(email_report.status|string)}})
+                        {% endif %}
+                    {% endif %}
+                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views %}
+                        {% if email_report %}
+                            {{ util.href(cdedblink('core/email_status_overview') + "#emailstatus-"
+                                         + get_hash(data['username'].encode('utf-8')), gettext("Manage"),
+                                         aclass="btn btn-xs btn-warning", icon="at") }}
+                            </span>
+                        {% else %}
+                            {% if data['username'] %}
+                                {{ util.href(cdedblink('core/email_status_overview',
+                                                       params={"address": data['username']}),
+                                             gettext("Mark defect"), aclass="btn btn-xs btn-danger", icon="at") }}
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}
@@ -479,8 +511,16 @@
                         {% trans %}Address{% endtrans %}
                     </dt>
                     <dd id="address">
-                        {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
-                        {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
+                        {% if not data['show_address'] %}
+                            <span id="hidden-address" class="text-muted" title="{{ gettext("Address hidden for member search") }}">
+                        {% endif %}
+                        {% if data['address'] %}
+                            {{ data['address'] }}<br />
+                        {% endif %}
+                        {% if data['address_supplement'] %}
+                            {{ data['address_supplement'] }}<br />
+                        {% endif %}
+                        {% if not data['show_address'] %}</span>{% endif %}
                         {{ data['postal_code'] }} {{ data['location'] }}{% if data['postal_code'] or data['location'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country']) }}
                     </dd>
@@ -493,8 +533,16 @@
                         {% trans %}Second Address{% endtrans %}
                     </dt>
                     <dd id="address2">
-                        {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
-                        {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
+                        {% if not data['show_address2'] %}
+                            <span id="hidden-address2" class="text-muted" title="{{ gettext("Address hidden for member search") }}">
+                        {% endif %}
+                        {% if data['address2'] %}
+                            {{ data['address2'] }}<br />
+                        {% endif %}
+                        {% if data['address_supplement2'] %}
+                            {{ data['address_supplement2'] }}<br />{
+                        {% endif %}
+                        {% if not data['show_address2'] %}</span>{% endif %}
                         {{ data['postal_code2'] }} {{ data['location2'] }}
                         {% if data['location2'] %}<br />{% endif %}
                         {{ util.gettext_country(data['country2']) }}
