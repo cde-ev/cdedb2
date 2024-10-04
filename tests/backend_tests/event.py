@@ -19,15 +19,28 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    RequestState, cast_fields, nearly_now, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    CourseFilterPositions,
+    InfiniteEnum,
+    RequestState,
+    cast_fields,
+    nearly_now,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
+    ANONYMOUS,
+    USER_DICT,
+    BackendTest,
+    as_users,
+    event_keeper,
+    json_keys_to_int,
     storage,
 )
 

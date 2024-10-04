@@ -14,7 +14,11 @@ from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTfile, access, assembly_guard, check_validation as check,
+    REQUESTdata,
+    REQUESTfile,
+    access,
+    assembly_guard,
+    check_validation as check,
     periodic,
 )
 

@@ -41,20 +41,39 @@ from schulze_condorcet import schulze_evaluate
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, Silencer, access, affirm_dataclass,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, internal, singularize,
+    AbstractBackend,
+    Silencer,
+    access,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    internal,
+    singularize,
 )
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, RequestState, glue, json_serialize, now, unwrap,
+    ASSEMBLY_BAR_SHORTNAME,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    glue,
+    json_serialize,
+    now,
+    unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import (
-    DeletionBlockedError, DeletionImpossibleError, PrivilegeError,
+    DeletionBlockedError,
+    DeletionImpossibleError,
+    PrivilegeError,
 )
 from cdedb.common.fields import (
-    ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS, ASSEMBLY_FIELDS,
+    ASSEMBLY_ATTACHMENT_FIELDS,
+    ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+    ASSEMBLY_FIELDS,
     BALLOT_FIELDS,
 )
 from cdedb.common.n_ import n_

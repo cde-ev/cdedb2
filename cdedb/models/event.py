@@ -31,7 +31,14 @@ import functools
 import logging
 from collections.abc import Collection, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, ForwardRef, Optional, get_args, get_origin,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    ForwardRef,
+    Optional,
+    get_args,
+    get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
@@ -40,7 +47,10 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
 from cdedb.common.query import (
-    QueryScope, QuerySpec, QuerySpecEntry, make_course_query_spec,
+    QueryScope,
+    QuerySpec,
+    QuerySpecEntry,
+    make_course_query_spec,
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted

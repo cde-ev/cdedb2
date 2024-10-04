@@ -12,16 +12,28 @@ import cdedb.database.constants as const
 import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
-    IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
-    make_persona_name, now,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    GenesisDecision,
+    PrivilegeError,
+    get_hash,
+    make_persona_name,
+    now,
 )
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
-    prepsql, storage,
+    USER_DICT,
+    FrontendTest,
+    UserIdentifier,
+    UserObject,
+    as_users,
+    execsql,
+    get_user,
+    prepsql,
+    storage,
 )
 
 

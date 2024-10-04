@@ -5,7 +5,8 @@ test of functionality at one place.
 """
 from tests.frontend_tests.application import TestApplication
 from tests.frontend_tests.assembly import (
-    TestAssemblyFrontend, TestMultiAssemblyFrontend,
+    TestAssemblyFrontend,
+    TestMultiAssemblyFrontend,
 )
 from tests.frontend_tests.cde import TestCdEFrontend
 from tests.frontend_tests.common import TestFrontendCommon

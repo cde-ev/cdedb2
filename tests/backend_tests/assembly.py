@@ -11,13 +11,24 @@ import freezegun
 import cdedb.database.constants as const
 from cdedb.backend.assembly import BallotConfiguration
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, PrivilegeError, RequestState, get_hash, nearly_now,
+    CdEDBObject,
+    CdEDBObjectMap,
+    PrivilegeError,
+    RequestState,
+    get_hash,
+    nearly_now,
     now,
 )
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from tests.common import (
-    USER_DICT, BackendTest, UserIdentifier, as_users, execsql, get_user, prepsql,
+    USER_DICT,
+    BackendTest,
+    UserIdentifier,
+    as_users,
+    execsql,
+    get_user,
+    prepsql,
     storage,
 )
 
