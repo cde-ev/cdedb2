@@ -1010,7 +1010,7 @@ class EventEventMixin(EventBaseFrontend):
                                   f"-{event.part_groups[part_group_id].shortname}")
             else:
                 title = f"{event.title} Teilnehmer"
-                local_part = f"{event.shortname.lower()}"
+                local_part = f"{event.shortname.lower()}-all"
                 subject_prefix = event.shortname
             link = cdedburl(rs, "event/register", {'event_id': event.id})
             descr = (f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
