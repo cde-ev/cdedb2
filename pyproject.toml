@@ -1,19 +1,13 @@
 [project]
 name = "cdedb2"
 
-[tool.isort]
-profile = "black"
-known_third_party = ["subman"]
-src_paths = ["cdedb", "tests"]
-multi_line_output = 5
-combine_as_imports = true
-
 [tool.ruff]
 target-version = "py39"
 line-length = 88
 preview = true
 output-format = "grouped"
 src = ["cdedb", "tests"]
+
 [tool.ruff.lint]
 select = [
     "F",  # pyflakes
@@ -53,6 +47,11 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.isort]
+known-third-party = ["subman"]
+known-first-party = ["cdedb", "tests"]
+combine-as-imports = true
 
 [tool.mypy]
 python_version = "3.10"

@@ -35,9 +35,9 @@ help:
 ###############
 
 PYTHONBIN ?= python3
-ISORT ?= $(PYTHONBIN) -m isort --settings pyproject.toml
 PYLINT ?= $(PYTHONBIN) -m pylint
 RUFF ?= sudo -u cdedb $(PYTHONBIN) -m ruff check --config /cdedb2/pyproject.toml
+ISORT ?= $(RUFF) --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 
@@ -119,7 +119,7 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 
 .PHONY: format
 format:
-	$(ISORT) bin/*.py cdedb tests
+	$(ISORT) --fix bin/*.py cdedb tests
 
 .PHONY: mypy
 mypy:
@@ -132,7 +132,7 @@ isort:
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	$(ISORT) --check-only bin/*.py cdedb tests
+	$(ISORT) bin/*.py cdedb tests
 	@echo ""
 
 .PHONY: pylint

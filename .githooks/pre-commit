@@ -20,5 +20,3 @@ if [ -f .git/MERGE_MSG ]; then
     fi
 
 fi
-
-python3 -c "import sys; from isort.hooks import git_hook; sys.exit(git_hook(strict=False, modify=True, lazy=True))"
