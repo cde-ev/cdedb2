@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-10-04 21:17+0200\n"
+"POT-Creation-Date: 2024-10-04 22:06+0200\n"
 "PO-Revision-Date: 2023-05-03 18:06+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3325,11 +3325,9 @@ msgid "Invalid domain for this mailinglist type."
 msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
 #: cdedb/common/validation/validate.py:4225
-#, fuzzy
 msgid "Cannot have event part group without event."
 msgstr ""
-"Kann keinen Veranstaltungsteil oder Teilgruppe haben ohne eine Veranstaltung "
-"zu haben."
+"Kann keine Veranstaltungsteilgruppe haben ohne eine Veranstaltung zu haben."
 
 #: cdedb/common/validation/validate.py:4397
 msgid "Mustn’t be in the past."
