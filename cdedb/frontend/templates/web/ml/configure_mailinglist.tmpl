@@ -155,11 +155,6 @@
             {% endif %}
 
             {% set event_specific_selects = select_input_factory(values.get('event_id')|int) %}
-            {% if 'event_part_id' in additional_fields %}
-                <div class="event-specific" id="event-part-id-container">
-                    {{ event_specific_selects['event_part_id']|s }}
-                </div>
-            {% endif %}
             {% if 'event_part_group_id' in additional_fields %}
                 <div class="event-specific" id="event-part-group-id-container">
                     {{ event_specific_selects['event_part_group_id']|s }}

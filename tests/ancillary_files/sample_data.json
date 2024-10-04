@@ -8513,7 +8513,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8537,7 +8536,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8561,7 +8559,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8585,7 +8582,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8609,7 +8605,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 1
@@ -8633,7 +8628,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8657,7 +8651,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8681,7 +8674,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8705,7 +8697,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [
                 2,
@@ -8732,7 +8723,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [
                 3
@@ -8758,7 +8748,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8782,7 +8771,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8806,7 +8794,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8830,7 +8817,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8854,7 +8840,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8878,7 +8863,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8902,7 +8886,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8926,7 +8909,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8950,7 +8932,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8974,7 +8955,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -8998,7 +8978,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9022,7 +9001,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [
                 4
@@ -9048,7 +9026,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 2,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9072,7 +9049,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 2,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [
                 2
@@ -9098,7 +9074,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 2
@@ -9122,7 +9097,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9146,7 +9120,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9170,7 +9143,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9194,7 +9166,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9218,7 +9189,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 1
@@ -9242,7 +9212,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
@@ -9266,7 +9235,6 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
-            "event_part_id": null,
             "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null

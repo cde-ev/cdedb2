@@ -1383,16 +1383,13 @@ CREATE TABLE ml.mailinglists (
         -- event awareness
         -- event_id is not NULL if associated to an event
         event_id                integer REFERENCES event.events(id),
-        -- only include registrations of these event part (group).
+        -- only include registrations of this event part group.
         -- If empty, this includes registrations from __all__ parts.
-        -- May only be set if event id is set. May not both be set.
-        -- part group id should refer to a part group of type `mailinglist_link`.
-        event_part_id           integer DEFAULT NULL REFERENCES event.event_parts(id),
+        -- May only be set if event id is set.
+        -- Should only refer to a part group of type `mailinglist_link`.
         event_part_group_id     integer DEFAULT NULL REFERENCES event.part_groups(id),
         CONSTRAINT mailinglists_no_event_specific_without_event
-            CHECK (event_id IS NOT NULL OR (event_part_id IS NULL AND event_part_group_id IS NULL)),
-        CONSTRAINT mailinglists_no_double_event_specific
-            CHECK (event_part_id IS NULL OR event_part_group_id IS NULL),
+            CHECK (event_id IS NOT NULL OR event_part_group_id IS NULL),
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
         -- If empty, this matches __no__ registrations.

@@ -186,12 +186,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if mailinglists:
             ml_blockers.update(e["id"] for e in mailinglists)
 
-        mailinglists_part_id = self.sql_select(
-            rs, models_ml.Mailinglist.database_table, ("id",),
-            blockers.get("event_parts", []), entity_key="event_part_id")
-        if mailinglists_part_id:
-            ml_blockers.update(e["id"] for e in mailinglists_part_id)
-
         mailinglists_part_group_id = self.sql_select(
             rs, models_ml.Mailinglist.database_table, ("id",),
             blockers.get("event_part_groups", []), entity_key="event_part_group_id")
@@ -305,7 +299,6 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             'id': anid,
                             'is_active': False,
                             'event_id': None,
-                            'event_part_id': None,
                             'event_part_group_id': None,
                         }
                         ret *= self.sql_update(

@@ -70,17 +70,6 @@
                     {% endif %}
                     {{ util.href(cdedblink('event/change_part_form', {'part_id' : part.id}), gettext("Change Part"),
                                            icon='pen', aclass='btn btn-sm btn-warning') }}
-                    {% if part.id in non_existing_mailinglists %}
-                        <form action="{{ cdedblink("event/create_event_mailinglist") }}"
-                              method="POST" id="createeventmailinglistform{{ part.id }}"
-                              class="display-inline">
-                            {{ util.anti_csrf_token("event/create_event_mailinglist") }}
-                            {{ util.input_hidden("part_id", part.id) }}
-                            {{ util.input_submit(
-                                    label=gettext("Create Mailinglist"), icon="envelope", aclass="btn btn-sm btn-success",
-                                    title=gettext("Create Mailinglist for this Part")) }}
-                        </form>
-                    {% endif %}
                 </div>
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">

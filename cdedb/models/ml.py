@@ -519,8 +519,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    # An additional part id or part group id limits the implicit subscribers.
-    event_part_id: Optional[vtypes.ID] = None
+    # An additional part group id limits the implicit subscribers.
     event_part_group_id: Optional[vtypes.ID] = None
 
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
@@ -528,7 +527,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
     # This fields require non-restricted moderator access to be changed.
     full_moderator_fields: ClassVar[set[str]] = {
-        "registration_stati", "event_part_id", "event_part_group_id",
+        "registration_stati", "event_part_group_id",
     }
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
@@ -582,19 +581,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        if self.event_part_id and self.event_part_group_id:
-            # Illegal configuration.
-            part_ids: list[int] = []
-        elif self.event_part_id:
-            part_ids = [self.event_part_id]
-        elif self.event_part_group_id:
+        part_ids = []
+        if self.event_part_group_id:
             if part_group := event.part_groups.get(self.event_part_group_id):
                 part_ids = xsorted(part_group.parts)
-            else:
-                # Invalid part group id.
-                part_ids = []
-        else:
-            part_ids = []
 
         part_ids = part_ids or xsorted(event.parts)
         status_column = ",".join(f"part{part_id}.status" for part_id in part_ids)

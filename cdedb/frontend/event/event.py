@@ -278,10 +278,10 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("orgalist", "part_id", "part_group_id")
+    @REQUESTdata("orgalist", "part_group_id")
     def create_event_mailinglist(
             self, rs: RequestState, event_id: int, orgalist: bool = False,
-            part_id: int | None = None, part_group_id: int | None = None,
+            part_group_id: int | None = None,
     ) -> Response:
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
@@ -292,8 +292,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(
-            rs, rs.ambience['event'], orgalist=orgalist, part_id=part_id,
-            part_group_id=part_group_id,
+            rs, rs.ambience['event'], orgalist=orgalist, part_group_id=part_group_id,
         )
         if not self.mlproxy.verify_existence(rs, ml_data.address):
             code = self.mlproxy.create_mailinglist(rs, ml_data)
@@ -306,9 +305,7 @@ class EventEventMixin(EventBaseFrontend):
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
                       {'address': ml_data.address})
-        if part_id:
-            return self.redirect(rs, "event/part_summary")
-        elif part_group_id:
+        if part_group_id:
             return self.redirect(rs, "event/group_summary")
         return self.redirect(rs, "event/show_event")
 
@@ -359,20 +356,9 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
-        non_existing_mailinglists = {
-            part.id
-            for part in rs.ambience['event'].parts.values()
-            if not self.mlproxy.verify_existence(
-                rs, self._get_mailinglist_setter(
-                    rs, rs.ambience['event'], part_id=part.id,
-                ).address,
-            )
-        }
-
         return self.render(rs, "event/part_summary", {
             'referenced_parts': referenced_parts,
             'has_registrations': has_registrations,
-            'non_existing_mailinglists': non_existing_mailinglists,
         })
 
     @access("event", modi={"POST"})
@@ -973,7 +959,6 @@ class EventEventMixin(EventBaseFrontend):
     def _get_mailinglist_setter(
             rs: RequestState, event: models.Event, *,
             orgalist: bool = False,
-            part_id: int | None = None,
             part_group_id: int | None = None,
     ) -> Mailinglist:
         """
@@ -983,8 +968,7 @@ class EventEventMixin(EventBaseFrontend):
 
         If orgalist is True, the created list will be an EventOrgaMailinglist.
         Otherwise it will be an EventAssociatedMailinglist (participant mailinglist).
-        If part_id or part_group_id is given, the list will be limited to that
-        part/part group.
+        If part_group_id is given, the list will be limited to that part group.
         """
         if orgalist:
             descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit"
@@ -1011,13 +995,7 @@ class EventEventMixin(EventBaseFrontend):
             )
             return orga_ml_data
         else:
-            if part_id:
-                title = f"{event.title} Teilnehmer ({event.parts[part_id].title})"
-                local_part = (f"{event.shortname.lower()}"
-                              f"-{event.parts[part_id].shortname.lower()}"
-                              f"-all")
-                subject_prefix = f"{event.shortname}-{event.parts[part_id].shortname}"
-            elif part_group_id:
+            if part_group_id:
                 title = (f"{event.title} Teilnehmer"
                          f" ({event.part_groups[part_group_id].title})")
                 local_part = (f"{event.shortname.lower()}"
@@ -1050,7 +1028,6 @@ class EventEventMixin(EventBaseFrontend):
                 additional_footer=None,
                 is_active=True,
                 event_id=cast(vtypes.ID, event.id),
-                event_part_id=cast(vtypes.ID | None, part_id),
                 event_part_group_id=cast(vtypes.ID | None, part_group_id),
                 registration_stati=[const.RegistrationPartStati.participant],
                 notes=None,

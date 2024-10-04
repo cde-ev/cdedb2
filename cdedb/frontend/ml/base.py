@@ -266,11 +266,6 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         if data.get('event_id'):
             event = self.eventproxy.get_event(rs, data['event_id'])
-            if (part_id := data.get('event_part_id')) and part_id not in event.parts:
-                rs.append_validation_error((
-                    'event_part_id',
-                    KeyError(n_("Invalid event part.")),
-                ))
             if part_group_id := data.get('event_part_group_id'):
                 if (
                     part_group_id not in event.part_groups
@@ -470,19 +465,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         if not event_id:
             return Response(json_serialize({
-                'event_part_id': "",
                 'event_part_group_id': "",
             }), mimetype="application/json")
         event = self.eventproxy.get_event(rs, event_id)
-
-        part_template = """
-            {% import "web/util.tmpl" as util with context %}
-            {{ util.form_input_select(name="event_part_id", label=gettext("Event Part"),
-                    entries=event.parts.values()|entries('id', 'title'), nulloption="",
-                    actualreadonly=readonly, info=info, aclass="event-specific") }}
-        """
-        part_info = rs.gettext(
-            "Only subscribe participants of this event part automatically.")
 
         part_groups = xsorted(
             pg for pg in event.part_groups.values()
@@ -499,12 +484,6 @@ class MlBaseFrontend(AbstractUserFrontend):
             "Only subscribe participants of this part group automatically.")
 
         ret = {
-            'event_part_id':
-                self.jinja_env.from_string(part_template).render(
-                    gettext=rs.gettext, event=event, readonly=readonly,
-                    info=part_info, is_warning=lambda s: False,
-                    errors=errors or {}, values=MultiDict(values or {}),
-                ),
             'event_part_group_id':
                 self.jinja_env.from_string(part_group_template).render(
                     gettext=rs.gettext, part_groups=part_groups, readonly=readonly,
@@ -546,11 +525,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
         if data and data.get('event_id'):
             event = self.eventproxy.get_event(rs, data['event_id'])
-            if (part_id := data.get('event_part_id')) and part_id not in event.parts:
-                rs.append_validation_error((
-                    'event_part_id',
-                    KeyError(n_("Invalid event part.")),
-                ))
             if part_group_id := data.get('event_part_group_id'):
                 if (
                     part_group_id not in event.part_groups
