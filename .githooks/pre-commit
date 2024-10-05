@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # pre-commit hook to help ensure that:
-#   - python files are formatted according to isort.
+#   - python files are formatted according to ruff isort.
 #   - translation catalogues are recompiled after a merge to reduce diff size.
 #
 

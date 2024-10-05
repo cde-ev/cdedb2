@@ -14,7 +14,7 @@ select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
 #    "C90",  # mccabe  # Reports a couple of places of over complex code.
-#    "I",  # isort  # Incompatible with our isort configuration.
+#    "I",  # isort  # Run separately.
 #    "N",  # pep8-naming  # Reports a few things most of which make sense to ignore.
 #    "D",  # pydocstyle  # A whole bunch of complaints. Should be tackled per file if at all.
     "UP",  # pyupgrade  # Upgrades to new syntax. Mostly autofixable.
@@ -184,4 +184,5 @@ disable = [
     "fixme",
     "cyclic-import",
     "possibly-used-before-assignment",
+    "wrong-import-order",
 ]

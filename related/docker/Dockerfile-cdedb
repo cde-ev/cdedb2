@@ -71,7 +71,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-click \
     python3-freezegun \
     python3-coverage \
-    isort \
     wget \
     unzip \
     \
