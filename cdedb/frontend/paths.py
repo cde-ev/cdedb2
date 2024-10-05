@@ -916,8 +916,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_mailinglist_form"),
             rule("/mailinglist/create", methods=_POST,
                  endpoint="create_mailinglist"),
-            rule("/mailinglist/preview/event/inputs", methods=_GET,
-                 endpoint="change_mailinglist_form_print_event_specific_select_input"),
             rule("/log", methods=_GET,
                  endpoint="view_log"),
             sub('/mailinglist/<int:mailinglist_id>', (
