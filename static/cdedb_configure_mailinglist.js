@@ -1,5 +1,5 @@
 (function($){
-    $.fn.cdedbConfigureMailinglist = function(part_specific_inputs_url, subject_prefix_preview_text) {
+    $.fn.cdedbConfigureMailinglist = function(subject_prefix_preview_text) {
         /**
          * Function to update visibility of event id and assembly id inputs,
          * depending on mailinglist type.
@@ -54,27 +54,13 @@
             if (fields['event_id'].val() !== '') {
                 // If an event is selected, show and replace the event specific inputs.
                 event_specific_input_groups.show();
-                $.get(
-                    part_specific_inputs_url,
-                    {'event_id': fields['event_id'].val()},
-                    (response) => {
-                        for (let key in response) {
-                            let container_id = '#' + key.replaceAll('_', '-') + '-container';
-                            container = event_specific_input_groups.filter(container_id);
-                            if (container) {
-                                container.html(response[key]);
-                            }
-                        }
-                });
             } else {
-                // If no event is selected, hide the
+                // If no event is selected, hide them.
                 event_specific_input_groups.hide();
-                let event_specific_inputs = event_specific_input_groups.find('input select');
-                if (event_specific_inputs.is(':checkbox')) {
-                    event_specific_inputs.prop('checked',false);
-                } else {
-                    event_specific_inputs.val('');
-                }
+                console.log(event_specific_input_groups);
+                let event_specific_inputs = event_specific_input_groups.find('input, select');
+                event_specific_inputs.prop('checked', false);
+                event_specific_inputs.val('');
             }
         }
         fields['event_id'].on('change', update_event_specific_inputs);

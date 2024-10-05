@@ -3,20 +3,18 @@
 """Base class providing fundamental ml services."""
 
 import collections
-import json
 from collections.abc import Collection
 from typing import Any, Optional
 
 import werkzeug
 from subman.exceptions import SubscriptionError
 from werkzeug import Response
-from werkzeug.datastructures import MultiDict
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
-    merge_dicts, now, unwrap,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, merge_dicts, now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
@@ -226,18 +224,12 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
             return self.render(rs, "configure_mailinglist", {
                 'events': events,
+                'part_groups': [],
                 'assembly_entries': assembly_entries,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
                 'maxsize_default': atype.maxsize_default,
-                'select_input_factory':
-                    lambda event_id: json.loads(
-                        self.change_mailinglist_form_print_event_specific_select_input(
-                            rs, event_id=event_id,
-                            errors=rs.get_validation_errors_dict(), values=rs.values,
-                        ).get_data(),
-                    ),
             })
 
     @access("ml", modi={"POST"})
@@ -428,6 +420,14 @@ class MlBaseFrontend(AbstractUserFrontend):
             events = self.eventproxy.get_events(rs, event_ids)
         else:
             events = {}
+        part_groups = []
+        if isinstance(ml, EventAssociatedMetaMailinglist):
+            event_id = rs.values.get("event_id", ml.event_id)
+            if event_id:
+                part_groups = xsorted(
+                    pg for pg in events[int(event_id)].part_groups.values()
+                    if pg.constraint_type == const.EventPartGroupType.mailinglist_link
+                )
         if "assembly_id" in additional_fields:
             assemblies = self.assemblyproxy.list_assemblies(rs)
             sorted_assemblies = keydictsort_filter(
@@ -449,59 +449,13 @@ class MlBaseFrontend(AbstractUserFrontend):
                 event.id: {part.id: part.title for part in event.parts.values()}
                 for event in events.values()
             },
+            'part_groups': part_groups,
             'assembly_entries': assembly_entries,
             'additional_fields': additional_fields,
             'restricted': restricted,
             'readonly': readonly,
             'available_domains': ml.available_domains,
-            'select_input_factory':
-                lambda event_id: json.loads(
-                    self.change_mailinglist_form_print_event_specific_select_input(
-                        rs, event_id=event_id, readonly=restricted,
-                        errors=rs.get_validation_errors_dict(), values=rs.values,
-                    ).get_data(),
-                ),
         })
-
-    @access("ml")
-    @REQUESTdata("event_id")
-    def change_mailinglist_form_print_event_specific_select_input(
-            self, rs: RequestState, event_id: Optional[int],
-            readonly: bool = False,
-            errors: dict[str | None, list[Exception]] | None = None,
-            values: MultiDict[str, Any] | None = None,
-    ) -> Response:
-        rs.ignore_validation_errors()
-        if not event_id:
-            return Response(json_serialize({
-                'event_part_group_id': "",
-            }), mimetype="application/json")
-        event = self.eventproxy.get_event(rs, event_id)
-
-        part_groups = xsorted(
-            pg for pg in event.part_groups.values()
-            if pg.constraint_type == const.EventPartGroupType.mailinglist_link
-        )
-        part_group_template = """
-            {% import "web/util.tmpl" as util with context %}
-            {{ util.form_input_select(name="event_part_group_id",
-                    label=gettext("Part Group"),
-                    entries=part_groups|entries('id', 'title'), nulloption="",
-                    actualreadonly=readonly, info=info, aclass="event-specific") }}
-        """
-        part_group_info = rs.gettext(
-            "Only subscribe participants of this part group automatically.")
-
-        ret = {
-            'event_part_group_id':
-                self.jinja_env.from_string(part_group_template).render(
-                    gettext=rs.gettext, part_groups=part_groups, readonly=readonly,
-                    info=part_group_info, is_warning=lambda s: False,
-                    errors=errors or {}, values=MultiDict(values or {}),
-                ) if part_groups else '',
-        }
-
-        return Response(json_serialize(ret), mimetype="application/json")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
