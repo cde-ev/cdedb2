@@ -26,10 +26,6 @@ services:
     extends:
       file: docker-compose-base.yaml
       service: ldap
-  adminer:
-    image: adminer
-    ports:
-      - 127.0.0.1:8080:8080
 
 volumes:
   database:
