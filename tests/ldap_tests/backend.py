@@ -8,7 +8,7 @@ computed value, that the tested function should return,
 e.g. `self.assertEqual("123", str(123))`.
 """
 import asyncio
-from typing import Any
+from typing import Any, cast
 
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import ber2int, int2ber
@@ -16,6 +16,7 @@ from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
+from cdedb.ldap.types import AttributeDescriptionList
 from tests.common import AsyncBasicTest, BasicTest
 
 
@@ -247,10 +248,12 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         user_dns = await self.ldap.list_users()
         for user in user_dns:
             self.assertIsInstance(user, DN)
-        _users = await self.ldap.get_users(user_dns)
-        users_data = await self.ldap.get_users_data(persona_ids)
+        # empty list means all attributes
+        attributes = cast(AttributeDescriptionList, [])
+        _users = await self.ldap.get_users(user_dns, attributes)
+        users_data = await self.ldap._get_users_data(persona_ids)
         self.assertIn(1, users_data)
-        user_groups = await self.ldap.get_users_groups(persona_ids)
+        user_groups = await self.ldap._get_users_groups(persona_ids)
         self.assertIn(1, user_groups)
 
     async def test_get_status_groups(self) -> None:
