@@ -86,6 +86,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges, may_manage_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -2186,7 +2187,7 @@ def REQUESTfile(*args: str) -> Callable[[F], F]:
     return wrap
 
 
-def event_guard(argname: str = "event_id",
+def event_guard(required_privilege: Optional[EventPrivileges] = None,
                 check_offline: bool = False) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific event. The
     event is specified by id which has either to be a keyword
@@ -2204,15 +2205,12 @@ def event_guard(argname: str = "event_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if argname in kwargs:  # pylint: disable=consider-using-get
-                arg = kwargs[argname]
-            else:
-                arg = args[0]
-            if arg not in rs.user.orga and not obj.is_admin(rs):
+            if not may_manage_event(rs, required_privilege):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
             if check_offline:
-                is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
+                is_locked = obj.eventproxy.is_offline_locked(
+                    rs, event_id=rs.ambience['event'].id)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                     raise werkzeug.exceptions.Forbidden(
                         n_("This event is locked for offline usage."))

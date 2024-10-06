@@ -34,6 +34,7 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import may_manage_event as may_manage
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
@@ -172,7 +173,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         Note that this includes admins who are not orgas.
         If necessary, this distinction should get a keyword argument.
         """
-        return event_id in rs.user.orga or self.is_admin(rs)
+        return may_manage(rs, sufficient_privilege=None, event_id=event_id)
 
     def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""

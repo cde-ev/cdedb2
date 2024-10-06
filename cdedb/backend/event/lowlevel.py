@@ -32,6 +32,7 @@ from cdedb.common.fields import (
     PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import may_manage_event as may_manage
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
@@ -65,21 +66,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
         """
-        if self.is_admin(rs):
-            return True
-        num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
-                         if anid is not None)
-        if num_inputs < 1:
-            raise ValueError(n_("No input specified."))
-        if num_inputs > 1:
-            raise ValueError(n_("Too many inputs specified."))
-        if course_id is not None:
-            event_id = unwrap(self.sql_select_one(
-                rs, "event.courses", ("event_id",), course_id))
-        elif registration_id is not None:
-            event_id = unwrap(self.sql_select_one(
-                rs, "event.registrations", ("event_id",), registration_id))
-        return event_id in rs.user.orga
+        return may_manage(rs, sufficient_privilege=None, event_id=event_id)
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
