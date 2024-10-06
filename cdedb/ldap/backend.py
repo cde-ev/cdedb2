@@ -30,6 +30,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
+from cdedb.ldap.types import AttributeDescriptionList
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
@@ -619,7 +620,7 @@ class LDAPsqlBackend:
             e["id"]: e async for e in self.query_all(query, (user_ids,))
         }
 
-    async def get_users(self, dns: list[DN], attributes: Any) -> LDAPObjectMap:
+    async def get_users(self, dns: list[DN], attributes: Optional[AttributeDescriptionList]) -> LDAPObjectMap:
         """Get the users specified by dn.
 
         The relevant RFCs are
