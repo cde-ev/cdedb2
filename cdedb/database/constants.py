@@ -308,6 +308,7 @@ class MailinglistTypes(CdEIntEnum):
     # The following types used to exist. To avoid conflicts, do not reuse:
     # event_associated_legacy = 22
     # event_orga_legacy = 23
+    event_associated_exclusive = 25
 
     assembly_associated = 30
     assembly_opt_in = 31

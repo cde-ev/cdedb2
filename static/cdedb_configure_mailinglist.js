@@ -18,6 +18,7 @@
             let visible = {
                 'event_id':     (
                     fields['ml_type'].val() === "MailinglistTypes.event_associated" ||
+                    fields['ml_type'].val() === "MailinglistTypes.event_associated_exclusive" ||
                     fields['ml_type'].val() === "MailinglistTypes.event_orga"),
                 'assembly_id':  (
                     fields['ml_type'].val() === "MailinglistTypes.assembly_associated" ||

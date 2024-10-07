@@ -609,6 +609,36 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 
 @dataclass
+class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
+    """
+    Same as `EventAssociatedMailinglist` but stricly limited by event_part_group_id.
+    """
+
+    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
+                                  persona_ids: Collection[int],
+                                  ) -> SubscriptionPolicyMap:
+        """Determine the SubscriptionPolicy for each given persona with the mailinglist.
+
+        In contrast to `EventAssociatedMailinglist` this list is only subscribable for
+        registrations with the appropriate status in the linked part group.
+        """
+        if self.event_id is None or self.event_part_group_id is None:
+            return super().get_subscription_policies(rs, bc, persona_ids)
+
+        # Restrict by part group.
+        event = bc.event.get_event(rs, self.event_id)
+        part_ids = list(event.part_groups[self.event_part_group_id].parts)
+        data = bc.event.check_registrations_status(
+            rs, persona_ids, self.event_id, self.registration_stati,
+            part_ids=part_ids,
+        )
+        return {
+            k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
+            for k, v in data.items()
+        }
+
+
+@dataclass
 class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
                            EventMailinglist):
     maxsize_default: ClassVar = vtypes.PositiveInt(8192)
@@ -832,6 +862,7 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.restricted_team: RestrictedTeamMailinglist,
     MailinglistTypes.event_associated: EventAssociatedMailinglist,
     MailinglistTypes.event_orga: EventOrgaMailinglist,
+    MailinglistTypes.event_associated_exclusive: EventAssociatedExclusiveMailinglist,
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,

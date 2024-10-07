@@ -330,6 +330,7 @@ I18N_STRINGS = (
     n_("MailinglistTypes.restricted_team"),
     n_("MailinglistTypes.event_associated"),
     n_("MailinglistTypes.event_orga"),
+    n_("MailinglistTypes.event_associated_exclusive"),
     n_("MailinglistTypes.assembly_associated"),
     n_("MailinglistTypes.assembly_opt_in"),
     n_("MailinglistTypes.assembly_presider"),
