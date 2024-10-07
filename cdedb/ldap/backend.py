@@ -17,8 +17,8 @@ from typing import (
     overload,
 )
 
-import psycopg.abc
 import ldaptor.protocols.pureldap as pureldap
+import psycopg.abc
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
@@ -30,7 +30,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.ldap.schema import SchemaDescription
-from cdedb.ldap.types import AttributeDescriptionList
+from cdedb.ldap.types import AttributeDescriptionList, FilterLike
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone mode
@@ -64,7 +64,9 @@ class classproperty:
     def __get__(self, instance: Any, owner: type[Any]) -> Any:
         return self.getter(owner)
 
-# TODO We are the only consumer but maybe this should be moved into cdedb.database.conversions?
+
+# TODO We are the only consumer but maybe this should be
+# moved into cdedb.database.conversions?
 def escape_sql_like_pattern(pattern: str) -> str:
     return pattern.replace("\\", r"\\").replace("%", r"\%").replace("_", r"\_")
 
@@ -148,15 +150,18 @@ class LDAPsqlBackend:
         #              f" {cur.mogrify(query, sanitized_params)}.")
         await cur.execute(query, sanitized_params)
 
-    async def query_exec(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"]) -> int:
+    async def query_exec(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         async with self.pool.connection() as conn:
             async with conn.cursor() as cur:
                 await self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    async def query_one(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
-                        ) -> Optional["CdEDBObject"]:
+    async def query_one(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> Optional["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -166,8 +171,9 @@ class LDAPsqlBackend:
                 await self.execute_db_query(cur, query, params)
                 return from_db_output(await cur.fetchone())
 
-    async def query_all(self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
-                        ) -> AsyncIterator["CdEDBObject"]:
+    async def query_all(
+        self, query: psycopg.abc.Query, params: Sequence["DatabaseValue_s"],
+    ) -> AsyncIterator["CdEDBObject"]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -451,9 +457,9 @@ class LDAPsqlBackend:
         return cls.user_dn(persona_id)
 
     @classmethod
-    def _lower_ldap_filter_to_sql(
+    def lower_ldap_filter_to_sql(
         cls,
-        filter: pureldap.LDAPFilter | pureldap.LDAPFilterSet | Any,
+        filter_: FilterLike,
         attr_replacements: dict[str, str],
     ) -> sql.Composable:
         """Lower the given LDAP filter to a SQL query.
@@ -464,61 +470,84 @@ class LDAPsqlBackend:
         which are used by consumers of our LDAP interface
         in performance critical paths (e.g. user lookup upon login).
         """
-        if isinstance(filter, pureldap.LDAPFilter_and):
+        if isinstance(filter_, pureldap.LDAPFilter_and):
             return sql.SQL("({})").format(sql.SQL(" AND ").join(
-                cls._lower_ldap_filter_to_sql(f, attr_replacements) for f in filter.data
+                cls.lower_ldap_filter_to_sql(f, attr_replacements) for f in filter_.data
             ))
-        elif isinstance(filter, pureldap.LDAPFilter_or):
+        elif isinstance(filter_, pureldap.LDAPFilter_or):
             return sql.SQL("({})").format(sql.SQL(" OR ").join(
-                cls._lower_ldap_filter_to_sql(f, attr_replacements) for f in filter.data
+                cls.lower_ldap_filter_to_sql(f, attr_replacements) for f in filter_.data
         ))
-        elif isinstance(filter, pureldap.LDAPFilter_not):
+        elif isinstance(filter_, pureldap.LDAPFilter_not):
             return sql.SQL("NOT {}").format(
-                cls._lower_ldap_filter_to_sql(filter.value, attr_replacements)
+                cls.lower_ldap_filter_to_sql(filter_.value, attr_replacements),
             )
-        elif isinstance(filter, pureldap.LDAPFilter_present):
+        elif isinstance(filter_, pureldap.LDAPFilter_present):
             return (
-                sql.SQL("{} IS NOT NULL").format(sql.Identifier(attr_replacements[filter.value.decode()]))
-                if filter.value.decode() in attr_replacements
-                # We are not given any information how the attribute is named in the SQL query
-                # therefore we have to be defensive and assume that the attribute is present.
-                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                sql.SQL("{} IS NOT NULL").format(
+                    sql.Identifier(attr_replacements[filter_.value.decode()]),
+                )
+                if filter_.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that the attribute is present.
+                # This will still be checked later in
+                # handle_LDAPSearchRequest.filter_entry.
                 else sql.Literal(True)
             )
-        elif isinstance(filter, pureldap.LDAPFilter_equalityMatch):
+        elif isinstance(filter_, pureldap.LDAPFilter_equalityMatch):
             return (
                 sql.SQL("{} = {}").format(
-                    sql.Identifier(attr_replacements[filter.attributeDesc.value.decode()]),
-                    sql.Literal(filter.assertionValue.value.decode()),
+                    sql.Identifier(
+                        attr_replacements[filter_.attributeDesc.value.decode()],
+                    ),
+                    sql.Literal(filter_.assertionValue.value.decode()),
                 )
-                if filter.attributeDesc.value.decode() in attr_replacements
-                # We are not given any information how the attribute is named in the SQL query
-                # therefore we have to be defensive and assume that the attribute is present.
-                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                if filter_.attributeDesc.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that the attribute is present.
+                # This will still be checked later in
+                # handle_LDAPSearchRequest.filter_entry.
                 else sql.Literal(True)
             )
-        elif isinstance(filter, pureldap.LDAPFilter_substrings):
-            pattern = "%".join(escape_sql_like_pattern(s.value.decode()) for s in filter.substrings)
-            if not isinstance(filter.substrings[0], pureldap.LDAPFilter_substrings_initial):
+        elif isinstance(filter_, pureldap.LDAPFilter_substrings):
+            pattern = "%".join(
+                escape_sql_like_pattern(s.value.decode()) for s in filter_.substrings
+            )
+            if not isinstance(
+                filter_.substrings[0], pureldap.LDAPFilter_substrings_initial,
+            ):
                 pattern = f"%{pattern}"
-            if not isinstance(filter.substrings[0], pureldap.LDAPFilter_substrings_final):
+            if not isinstance(
+                filter_.substrings[-1], pureldap.LDAPFilter_substrings_final,
+            ):
                 pattern = f"{pattern}%"
             return (
                 sql.SQL("{} LIKEs {}").format(
-                    sql.Identifier(attr_replacements[filter.attributeDesc.value.decode()]),
+                    sql.Identifier(
+                        attr_replacements[filter_.attributeDesc.value.decode()],
+                    ),
                     sql.Literal(pattern),
                 )
-                if filter.attributeDesc.value.decode() in attr_replacements
-                # We are not given any information how the attribute is named in the SQL query
-                # therefore we have to be defensive and assume that the attribute is present.
-                # This will still be checked later in handle_LDAPSearchRequest.filter_entry.
+                if filter_.attributeDesc.value.decode() in attr_replacements
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that the attribute is present.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
                 else sql.Literal(True)
             )
         else:
             return sql.Literal(True)
 
-    async def list_users(self, filterObject: Optional[pureldap.LDAPFilter | pureldap.LDAPFilterSet | Any] = None) -> list[DN]:
-        query: sql.SQL | sql.Composed = sql.SQL("SELECT id FROM core.personas WHERE NOT is_archived")
+    async def list_users(
+        self,
+        filterObject: Optional[FilterLike] = None,
+    ) -> list[DN]:
+        query: sql.SQL | sql.Composed = sql.SQL(
+            "SELECT id FROM core.personas WHERE NOT is_archived",
+        )
         if filterObject is not None:
             # We have to replace the attribute names in the LDAP filter with the
             # corresponding column names in the SQL query.
@@ -528,10 +557,13 @@ class LDAPsqlBackend:
                 "mail": "username",
                 "uid": "id",
             }
-            query += sql.SQL(" AND ") + self._lower_ldap_filter_to_sql(filterObject, attr_replacements)
+            query += (
+                sql.SQL(" AND ")
+                + self.lower_ldap_filter_to_sql(filterObject, attr_replacements)
+            )
         return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
 
-    async def _get_users_groups(self, persona_ids: Collection[int],
+    async def get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:
         """Collect all groups of each given user.
 
@@ -611,7 +643,7 @@ class LDAPsqlBackend:
 
         return ret
 
-    async def _get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
+    async def get_users_data(self, user_ids: Collection[int]) -> "CdEDBObjectMap":
         """Helper function to get basic data about users from core.personas."""
         query = (
             "SELECT id, username, display_name, given_names, family_name, password_hash"
@@ -620,7 +652,9 @@ class LDAPsqlBackend:
             e["id"]: e async for e in self.query_all(query, (user_ids,))
         }
 
-    async def get_users(self, dns: list[DN], attributes: Optional[AttributeDescriptionList]) -> LDAPObjectMap:
+    async def get_users(
+        self, dns: list[DN], attributes: Optional[AttributeDescriptionList],
+    ) -> LDAPObjectMap:
         """Get the users specified by dn.
 
         The relevant RFCs are
@@ -636,13 +670,17 @@ class LDAPsqlBackend:
 
         users, groups = (
             await asyncio.gather(
-                self._get_users_data(dn_to_persona_id.values()),
-                self._get_users_groups(dn_to_persona_id.values()),
+                self.get_users_data(dn_to_persona_id.values()),
+                self.get_users_groups(dn_to_persona_id.values()),
             )
             # Skip fetching groups if they are not requested
             # and would be filtered out higher up in the stack anyways.
-            if len(attributes) == 0 or b"*" in attributes or b"memberOf" in attributes
-            else (await self._get_users_data(dn_to_persona_id.values()), {})
+            if (
+                attributes is None
+                or len(attributes) == 0
+                or b"*" in attributes
+                or b"memberOf" in attributes
+            ) else (await self.get_users_data(dn_to_persona_id.values()), {})
         )
 
         ret = dict()
