@@ -182,9 +182,13 @@ class CdEDBBaseLDAPEntry(
         # The remaining filters and checks are applied at the end of this method
         # and higher up in the stack (e.g. access control).
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
-            entries = await self.subtree(bound_dn, filterObject=filterObject, attributes=attributes)
+            entries = await self.subtree(
+                bound_dn, filterObject=filterObject, attributes=attributes,
+            )
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
-            entries = await self.children(bound_dn, filterObject=filterObject, attributes=attributes)
+            entries = await self.children(
+                bound_dn, filterObject=filterObject, attributes=attributes,
+            )
         elif scope == pureldap.LDAP_SCOPE_baseObject:
             entries = [self]
         else:
@@ -199,7 +203,7 @@ class CdEDBBaseLDAPEntry(
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         """List children entries of this entry.
 
@@ -215,13 +219,20 @@ class CdEDBBaseLDAPEntry(
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> list["CdEDBBaseLDAPEntry"]:
         """List the subtree rooted at this entry, including this entry."""
         result = [self]
-        children = await self.children(bound_dn=bound_dn, filterObject=filterObject, attributes=attributes)
+        children = await self.children(
+            bound_dn=bound_dn, filterObject=filterObject, attributes=attributes,
+        )
         subtrees = await asyncio.gather(
-            *[child.subtree(bound_dn=bound_dn, filterObject=filterObject, attributes=attributes) for child in children])
+            *[
+                child.subtree(
+                    bound_dn=bound_dn, filterObject=filterObject, attributes=attributes,
+                )
+                for child in children
+            ])
         for tree in subtrees:
             result.extend(tree)
         return result
@@ -308,7 +319,10 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def children_lister(
-            self, bound_dn: Optional[BoundDn] = None, *, filterObject: Optional[pureldap.LDAPFilter] = None
+            self,
+            bound_dn: Optional[BoundDn] = None,
+            *,
+            filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         """List all children of this entry.
 
@@ -322,7 +336,10 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         """Get the attributes of those DNs which are children of this entry.
 
@@ -345,7 +362,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         dns = await self.children_lister(bound_dn=bound_dn, filterObject=filterObject)
         children = await self.children_getter(dns, attributes=attributes)
@@ -386,7 +403,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         """All dynamic entries do not have any children by design."""
         return []
@@ -416,7 +433,7 @@ class RootEntry(CdEDBStaticEntry):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         de = DeEntry(self.backend)
         subschema = SubschemaEntry(self.backend)
@@ -465,7 +482,7 @@ class SubschemaEntry(CdEDBStaticEntry):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         return []
 
@@ -494,7 +511,7 @@ class DeEntry(CdEDBStaticEntry):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         cde = CdeEvEntry(self.backend)
         return [cde]
@@ -528,7 +545,7 @@ class CdeEvEntry(CdEDBStaticEntry):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         duas = DuasEntry(self.backend)
         users = UsersEntry(self.backend)
@@ -576,7 +593,9 @@ class DuasEntry(CdEPreLeafEntry):
         return CdeEvEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access duas
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -584,7 +603,10 @@ class DuasEntry(CdEPreLeafEntry):
         return await self.backend.list_duas()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_duas(dns)
 
@@ -614,7 +636,9 @@ class UsersEntry(CdEPreLeafEntry):
         return CdeEvEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests may access no user
         if bound_dn is None:
@@ -627,7 +651,10 @@ class UsersEntry(CdEPreLeafEntry):
         return await self.backend.list_users(filterObject)
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_users(dns, attributes)
 
@@ -651,7 +678,7 @@ class GroupsEntry(CdEDBStaticEntry):
         bound_dn: Optional[BoundDn] = None,
         *,
         filterObject: Optional[pureldap.LDAPFilter] = None,
-        attributes: Optional[AttributeDescriptionList] = None
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         status = StatusGroupsEntry(self.backend)
         presiders = PresiderGroupsEntry(self.backend)
@@ -707,7 +734,9 @@ class StatusGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -715,7 +744,10 @@ class StatusGroupsEntry(CdEPreLeafEntry):
         return await self.backend.list_status_groups()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_status_groups(dns)
 
@@ -745,7 +777,9 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -753,7 +787,10 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
         return await self.backend.list_assembly_presider_groups()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_assembly_presider_groups(dns)
 
@@ -783,7 +820,9 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -791,7 +830,10 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
         return await self.backend.list_event_orga_groups()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_event_orga_groups(dns)
 
@@ -821,7 +863,9 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -829,7 +873,10 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
         return await self.backend.list_ml_moderator_groups()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_ml_moderator_groups(dns)
 
@@ -859,7 +906,9 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
         return GroupsEntry(self.backend)
 
     async def children_lister(
-        self, bound_dn: Optional[BoundDn] = None, filterObject: Optional[pureldap.LDAPFilter] = None
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
         if bound_dn is None or self.backend.is_user_dn(bound_dn):
@@ -867,7 +916,10 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
         return await self.backend.list_ml_subscriber_groups()
 
     async def children_getter(
-        self, dns: list[DistinguishedName], *, attributes: Optional[AttributeDescriptionList] = None
+        self,
+        dns: list[DistinguishedName],
+        *,
+        attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
         return await self.backend.get_ml_subscriber_groups(dns)
 

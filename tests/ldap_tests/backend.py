@@ -251,9 +251,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         # empty list means all attributes
         attributes = cast(AttributeDescriptionList, [])
         _users = await self.ldap.get_users(user_dns, attributes)
-        users_data = await self.ldap._get_users_data(persona_ids)
+        users_data = await self.ldap.get_users_data(persona_ids)
         self.assertIn(1, users_data)
-        user_groups = await self.ldap._get_users_groups(persona_ids)
+        user_groups = await self.ldap.get_users_groups(persona_ids)
         self.assertIn(1, user_groups)
 
     async def test_get_status_groups(self) -> None:
