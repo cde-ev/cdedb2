@@ -969,7 +969,7 @@ class EventEventMixin(EventBaseFrontend):
         """
         Return a dataclass object to create a mailinglist for this event.
 
-        Exactly one of orgalist, part_id and part_group_id may be given.
+        Exactly one of orgalist and part_group_id may be given.
 
         If orgalist is True, the created list will be an EventOrgaMailinglist.
         Otherwise it will be an EventAssociatedMailinglist (participant mailinglist).

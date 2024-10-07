@@ -224,7 +224,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
             return self.render(rs, "configure_mailinglist", {
                 'events': events,
-                'part_groups': [],
+                'part_groups': [],  # Can be configured later if necessary.
                 'assembly_entries': assembly_entries,
                 'ml_type': ml_type,
                 'available_domains': available_domains,

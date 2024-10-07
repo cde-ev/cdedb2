@@ -91,7 +91,6 @@
         <form action="{{ cdedblink(target) }}" method="POST" id="configuremailinglistform" class="form-horizontal">
             {{ util.anti_csrf_token(target) }}
 
-
             <h3 class="heading-underline">{% trans %}Meta{% endtrans %}</h3>
             {{ util.form_input_checkbox(
                  name="is_active", label=gettext("Active"), actualreadonly=readonly, defaultvalue='True') }}
@@ -110,7 +109,6 @@
 
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
             {{ util.form_input_textarea(name="notes", label=gettext("Admin Notes"), rows="5", markdown=True) }}
-
 
             <h3 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h3>
             {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
@@ -184,7 +182,7 @@
                         true,
                         "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                     );
-        </script>
+                </script>
             {% endif %}
 
             <h3 class="heading-underline">{% trans %}Mails{% endtrans %}</h3>
