@@ -884,7 +884,7 @@ CREATE TABLE event.field_definitions (
         association             integer NOT NULL,
         -- the title is displayed to the user, may contain any string and can be changed.
         title                   varchar NOT NULL,
-        -- the description is a hovertext shown when hovering over labels.
+        -- the description is shown as info text near field inputs and values.
         description             varchar DEFAULT NULL,
         -- fields are grouped by their `sort_group` string, then sorted by sortkey within that group.
         sort_group              varchar DEFAULT NULL,
