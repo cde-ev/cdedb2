@@ -62,6 +62,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False,
                 ret.add("searchable")
         if session.get("is_auditor"):
             ret.add("auditor")
+    if "event" in ret:
+        if session.get("is_event_helper"):
+            ret.add("event_helper")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -275,6 +278,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("assembly", "cdb_member"),
     ("auditor", "cdb_member"),
 
+    ("event_helper", "cdb_persona"),
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
@@ -339,6 +343,8 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "event_admin" in roles:
         result |= {"event_user", "user_review", "event_mgmt", "event_orga",
                    "ml_mgmt_event", "ml_mod_event"}
+    if "event_helper" in roles:
+        result |= {"event_orga"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:

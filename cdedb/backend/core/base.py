@@ -1630,6 +1630,7 @@ class CoreBaseBackend(AbstractBackend):
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
                 'is_auditor': False,
+                'is_event_helper': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
                 # 'is_cde_realm'

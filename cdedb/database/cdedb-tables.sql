@@ -65,6 +65,10 @@ CREATE TABLE core.personas (
         is_auditor              boolean NOT NULL DEFAULT False,
         CONSTRAINT personas_cde_auditor
             CHECK (NOT is_auditor OR is_cde_realm),
+        -- allows read only view of non-sensitive event information. Is no admin role!
+        is_event_helper         boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_event_helper
+            CHECK (NOT is_event_helper OR is_event_realm),
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
         CONSTRAINT personas_realm_cde_implicits
@@ -394,6 +398,7 @@ CREATE TABLE core.changelog (
         is_assembly_admin       boolean,
         is_cdelokal_admin       boolean,
         is_auditor              boolean,
+        is_event_helper         boolean,
         is_cde_realm            boolean,
         is_event_realm          boolean,
         is_ml_realm             boolean,

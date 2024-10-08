@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional
+from typing import AbstractSet, Optional
 
 from cdedb.common import RequestState
 
@@ -18,20 +18,20 @@ class EventPrivileges(Enum):
     # lifecycle = auto()  #: create, archive, delete. Admin only.
 
 
-ComplexEventPrivileges = EventPrivileges | None | set[EventPrivileges | None]
+ComplexEventPrivileges = EventPrivileges | None | AbstractSet[EventPrivileges | None]
 
 # This has only all support, no any support, for the privileges to avoid mistakes.
 def may_manage_event(rs: RequestState,
-                     sufficient_privilege: ComplexEventPrivileges = None,
+                     necessary_privilege: ComplexEventPrivileges,
                      event_id: Optional[int] = None) -> bool:
     ep = EventPrivileges
-    if not isinstance(sufficient_privilege, set):
-        sufficient_privilege = {sufficient_privilege}
+    if not isinstance(necessary_privilege, AbstractSet):
+        necessary_privilege = {necessary_privilege}
 
     return ("event_admin" in rs.user.roles
             or event_id in rs.user.orga
             or ("event_helper" in rs.user.roles
-                and sufficient_privilege <= {
+                and necessary_privilege <= {
                     ep.basic_read, ep.courses_read, ep.registrations_stats}))
             # or ("droid_orga" in rs.user.roles
-            #     and sufficient_privilege <= OrgaTokenGrants.implied_privileges()))
+            #     and necessary_privilege <= OrgaTokenGrants.implied_privileges()))
