@@ -32,9 +32,7 @@ from cdedb.common.fields import (
     PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import (
-    ComplexEventPrivileges, may_manage_event as may_manage, EventPrivileges,
-)
+from cdedb.common.privileges import EventPrivileges, may_manage_event as may_manage
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names

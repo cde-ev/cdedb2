@@ -1,10 +1,10 @@
-from enum import Enum, auto
-from typing import AbstractSet, Optional
+from enum import Flag, auto
+from typing import Optional
 
 from cdedb.common import RequestState
 
 
-class EventPrivileges(Enum):
+class EventPrivileges(Flag):
     basic_read = auto()
     basic_write = auto()
     courses_read = auto()
@@ -15,23 +15,26 @@ class EventPrivileges(Enum):
     registrations_read = auto()
     registrations_write = auto()
     # send_email = auto()  #: api only? tool suggested recently
-    # lifecycle = auto()  #: create, archive, delete. Admin only.
+    create = auto()
+    archive = auto()
+    delete = auto()
+    admin_only = create | archive | delete
+    event_helper = basic_read | courses_read | registrations_stats
 
 
-ComplexEventPrivileges = EventPrivileges | None | AbstractSet[EventPrivileges | None]
-
-# This has only all support, no any support, for the privileges to avoid mistakes.
 def may_manage_event(rs: RequestState,
-                     necessary_privilege: ComplexEventPrivileges,
+                     necessary_privilege: Optional[EventPrivileges] = None,
                      event_id: Optional[int] = None) -> bool:
-    ep = EventPrivileges
-    if not isinstance(necessary_privilege, AbstractSet):
-        necessary_privilege = {necessary_privilege}
-
-    return ("event_admin" in rs.user.roles
-            or event_id in rs.user.orga
-            or ("event_helper" in rs.user.roles
-                and necessary_privilege <= {
-                    ep.basic_read, ep.courses_read, ep.registrations_stats}))
-            # or ("droid_orga" in rs.user.roles
-            #     and necessary_privilege <= OrgaTokenGrants.implied_privileges()))
+    return (
+            "event_admin" in rs.user.roles
+            or event_id in rs.user.orga and (
+                not necessary_privilege & EventPrivileges.admin_only
+            )
+            or "event_helper" in rs.user.roles and (
+                necessary_privilege is not None
+                and necessary_privilege in EventPrivileges.event_helper
+            )
+            # or "droid_orga" in rs.user.roles and (
+            #         sufficient_privilege in OrgaTokenGrants.implied_privileges()
+            # )
+    )

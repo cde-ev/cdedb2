@@ -34,7 +34,7 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import ComplexEventPrivileges, may_manage_event
+from cdedb.common.privileges import EventPrivileges, may_manage_event
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
@@ -168,7 +168,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def may_manage(self, rs: RequestState,
-                   necessary_privilege: ComplexEventPrivileges,
+                   necessary_privilege: EventPrivileges = None,
                    *, event_id: Optional[int] = None) -> bool:
         if not event_id:
             if not rs.ambience.get('event'):
