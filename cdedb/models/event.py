@@ -503,7 +503,8 @@ class EventField(EventDataclass):
     )
 
     # Internal metadata.
-    field_name: vtypes.Identifier = dataclasses.field(metadata={'update_exclude': True})
+    field_name: vtypes.RestrictiveIdentifier = dataclasses.field(
+        metadata={'update_exclude': True})
     kind: const.FieldDatatypes
     association: const.FieldAssociations = dataclasses.field(
         metadata={'update_exclude': True})

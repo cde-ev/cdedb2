@@ -680,8 +680,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     @staticmethod
     def _get_camping_mat_field_names(
             event: models.Event,
-    ) -> dict[int, Optional[vtypes.Identifier]]:
-        field_names: dict[int, Optional[vtypes.Identifier]] = {}
+    ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
+        field_names: dict[int, Optional[vtypes.RestrictiveIdentifier]] = {}
         for part_id, part in event.parts.items():
             if f := part.camping_mat_field:
                 field_names[part_id] = f.field_name
