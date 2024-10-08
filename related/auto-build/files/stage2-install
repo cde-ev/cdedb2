@@ -80,7 +80,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-tabulate python3-mailmanclient python3-pyparsing        \
     python3-psycopg python3-psycopg-pool                            \
     \
-    python3-pip python3-click isort python3-freezegun               \
+    python3-pip python3-click python3-freezegun                     \
     python3-coverage                                                \
     \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \

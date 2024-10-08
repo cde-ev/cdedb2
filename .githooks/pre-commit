@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # pre-commit hook to help ensure that:
-#   - python files are formatted according to isort.
+#   - python files are formatted according to ruff isort.
 #   - translation catalogues are recompiled after a merge to reduce diff size.
 #
 
@@ -20,5 +20,3 @@ if [ -f .git/MERGE_MSG ]; then
     fi
 
 fi
-
-python3 -c "import sys; from isort.hooks import git_hook; sys.exit(git_hook(strict=False, modify=True, lazy=True))"

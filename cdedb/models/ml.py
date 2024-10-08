@@ -17,7 +17,9 @@ from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
-    MailinglistDomain, MailinglistRosterVisibility, MailinglistTypes,
+    MailinglistDomain,
+    MailinglistRosterVisibility,
+    MailinglistTypes,
 )
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum

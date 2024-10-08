@@ -24,8 +24,15 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, Error, LineResolutions, RequestState, deduct_years,
-    get_hash, merge_dicts, now,
+    CdEDBObject,
+    CdEDBObjectMap,
+    Error,
+    LineResolutions,
+    RequestState,
+    deduct_years,
+    get_hash,
+    merge_dicts,
+    now,
 )
 from cdedb.common.i18n import get_country_code_from_country, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -34,14 +41,25 @@ from cdedb.common.query.log_filter import FinanceLogFilter
 from cdedb.common.roles import PERSONA_DEFAULTS
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
-    PERSONA_FULL_CREATION, filter_none, get_errors, get_warnings,
+    PERSONA_FULL_CREATION,
+    filter_none,
+    get_errors,
+    get_warnings,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, check_validation as check,
-    check_validation_optional as check_optional, inspect_validation as inspect,
-    make_membership_fee_reference, request_extractor,
+    AbstractUserFrontend,
+    CustomCSVDialect,
+    REQUESTdata,
+    REQUESTdatadict,
+    REQUESTfile,
+    TransactionObserver,
+    access,
+    check_validation as check,
+    check_validation_optional as check_optional,
+    inspect_validation as inspect,
+    make_membership_fee_reference,
+    request_extractor,
 )
 
 MEMBERSEARCH_DEFAULTS = {

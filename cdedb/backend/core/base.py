@@ -22,30 +22,64 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, encrypt_password,
-    inspect_validation as inspect, internal, singularize, verify_password,
+    AbstractBackend,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    encrypt_password,
+    inspect_validation as inspect,
+    internal,
+    singularize,
+    verify_password,
 )
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
-    RequestState, Role, User, decode_parameter, encode_parameter, get_hash, glue, now,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    Error,
+    PsycoJson,
+    RequestState,
+    Role,
+    User,
+    decode_parameter,
+    encode_parameter,
+    get_hash,
+    glue,
+    now,
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
-    META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    META_INFO_FIELDS,
+    PERSONA_ALL_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS,
+    PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS,
+    PERSONA_ML_FIELDS,
+    PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import (
-    ALL_LOG_FILTERS, ChangelogLogFilter, CoreLogFilter,
+    ALL_LOG_FILTERS,
+    ChangelogLogFilter,
+    CoreLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
+    ADMIN_KEYS,
+    ALL_ROLES,
+    REALM_ADMINS,
+    extract_roles,
+    implying_realms,
+    privilege_tier,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig

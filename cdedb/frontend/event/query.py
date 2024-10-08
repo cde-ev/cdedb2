@@ -16,26 +16,44 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, RequestState, determine_age_class, merge_dicts, unwrap,
+    CdEDBObject,
+    RequestState,
+    determine_age_class,
+    merge_dicts,
+    unwrap,
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpec,
+    QuerySpecEntry,
 )
 from cdedb.common.query.defaults import (
-    generate_event_course_default_queries, generate_event_registration_default_queries,
+    generate_event_course_default_queries,
+    generate_event_registration_default_queries,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
-    inspect_validation as inspect, periodic, request_extractor,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    check_validation as check,
+    event_guard,
+    inspect_validation as inspect,
+    periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.query_stats import (
-    EventCourseStatistic, EventRegistrationInXChoiceGrouper,
-    EventRegistrationPartStatistic, EventRegistrationTrackStatistic,
+    EventCourseStatistic,
+    EventRegistrationInXChoiceGrouper,
+    EventRegistrationPartStatistic,
+    EventRegistrationTrackStatistic,
 )
 
 

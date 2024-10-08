@@ -11,7 +11,10 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.frontend.common import (
-    REQUESTdatadict, access, check_validation as check, event_guard,
+    REQUESTdatadict,
+    access,
+    check_validation as check,
+    event_guard,
 )
 from cdedb.frontend.event import EventBaseFrontend
 from cdedb.models.droid import OrgaToken

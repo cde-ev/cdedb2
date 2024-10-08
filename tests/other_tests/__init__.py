@@ -12,7 +12,9 @@ from tests.other_tests.test_huge_data import TestHugeData
 from tests.other_tests.test_offline import TestOffline
 from tests.other_tests.test_script import TestScript
 from tests.other_tests.test_session import (
-    TestMultiSessionFrontend, TestSessionBackend, TestSessionFrontend,
+    TestMultiSessionFrontend,
+    TestSessionBackend,
+    TestSessionFrontend,
 )
 from tests.other_tests.test_validation import TestValidation
 from tests.other_tests.test_vote_verification_script import TestVerificationScript

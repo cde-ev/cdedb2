@@ -10,23 +10,41 @@ from typing import Any, Optional, Protocol
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, internal, singularize,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    internal,
+    singularize,
 )
 from cdedb.backend.core.base import CoreBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, GenesisDecision,
-    RequestState, glue, merge_dicts, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    GenesisDecision,
+    RequestState,
+    glue,
+    merge_dicts,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    GENESIS_CASE_FIELDS, PERSONA_CORE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    GENESIS_CASE_FIELDS,
+    PERSONA_CORE_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS,
     REALMS_TO_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
-    GENESIS_REALM_OVERRIDE, PERSONA_DEFAULTS, REALM_ADMINS, extract_realms,
-    extract_roles, implied_realms,
+    GENESIS_REALM_OVERRIDE,
+    PERSONA_DEFAULTS,
+    REALM_ADMINS,
+    extract_realms,
+    extract_roles,
+    implied_realms,
 )
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.database.connection import Atomizer

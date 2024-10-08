@@ -10,7 +10,10 @@ from cdedb.backend.common import DatabaseLock, Silencer, _affirm_atomized_contex
 from cdedb.common import RequestState
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import (
-    Atomizer, ConnectionContainer, IrradiatedConnection, connection_pool_factory,
+    Atomizer,
+    ConnectionContainer,
+    IrradiatedConnection,
+    connection_pool_factory,
 )
 
 
