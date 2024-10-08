@@ -4,10 +4,8 @@
 
 import collections
 import collections.abc
-import datetime
-import decimal
 from collections.abc import Collection, Generator, Iterable, KeysView
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable, Protocol, TypeVar, Union
 
 import icu
 
@@ -86,7 +84,11 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-Sortkey = tuple[Union[str, int, datetime.datetime, datetime.date, decimal.Decimal], ...]
+class Comparable(Protocol):
+    def __lt__(self, other: Any) -> bool: ...
+
+
+Sortkey = tuple[Comparable, ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
