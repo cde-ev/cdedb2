@@ -948,6 +948,7 @@ class TestMlFrontend(FrontendTest):
         event_types = {
             const.MailinglistTypes.event_associated,
             const.MailinglistTypes.event_orga,
+            const.MailinglistTypes.event_associated_exclusive,
         }
         general_types = {
             t for t in const.MailinglistTypes if t not in (
