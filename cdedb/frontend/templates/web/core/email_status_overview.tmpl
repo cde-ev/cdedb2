@@ -30,7 +30,7 @@
     </div>
     <div class="col-md-12">
         {% for status, email_reports in grouped_reports.items() | sort %}
-            <h2>{{ gettext(status|string) }} ({{email_reports | length }})</h2>
+            <h2>{{ gettext(status|string) }} [{{email_reports | length }}]</h2>
             {% if email_reports %}
                 {% for alist in email_reports.items() | sort | slice(
                         3 if email_reports|length > 5 else (2 if email_reports|length > 3 else 1)) %}
