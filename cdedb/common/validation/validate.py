@@ -2728,7 +2728,7 @@ def _event_field(
         creation=creation)
 
     if 'entries' in optional_fields:
-        optional_fields['entries'] = Any
+        optional_fields['entries'] = Any  # type: ignore[assignment]
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 

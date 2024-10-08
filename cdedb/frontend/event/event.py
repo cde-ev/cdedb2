@@ -386,7 +386,7 @@ class EventEventMixin(EventBaseFrontend):
     @staticmethod
     def _valid_event_part_fields(
             fields: models.CdEDataclassMap[models.EventField],
-    ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.RestrictiveIdentifier]]]:
+    ) -> dict[str, list[tuple[vtypes.ProtoID, vtypes.Identifier]]]:
         sorted_fields = xsorted(fields.values())
         fields = {}
         for field in ('waitlist', 'camping_mat', 'course_room'):
