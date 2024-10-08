@@ -259,7 +259,7 @@ class Event(EventDataclass):
     ]:
         ret: dict[const.FieldAssociations, dict[str, list[EventField]]]
         ret = collections.defaultdict(dict)
-        for field in sorted(self.fields.values()):
+        for field in xsorted(self.fields.values()):
             ret[field.association].setdefault(field.sort_group or "", []).append(field)
         return ret
 
