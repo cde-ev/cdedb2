@@ -246,7 +246,9 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     )
                 if "part_groups" in cascade:
                     with Silencer(rs):
-                        part_group_cascade = {"part_group_parts"} & cascade
+                        part_group_cascade = {
+                             "part_group_parts", "mailinglists",
+                        } & cascade
                         for anid in blockers["part_groups"]:
                             self._delete_part_group(rs, anid, part_group_cascade)
                 if "event_fees" in cascade:
