@@ -27,8 +27,8 @@ def may_manage_event(rs: RequestState,
                      event_id: Optional[int] = None) -> bool:
     return (
             "event_admin" in rs.user.roles
-            or event_id in rs.user.orga and (
-                not necessary_privilege & EventPrivileges.admin_only
+            or event_id in rs.user.orga and not (
+                necessary_privilege & EventPrivileges.admin_only
             )
             or "event_helper" in rs.user.roles and (
                 necessary_privilege is not None

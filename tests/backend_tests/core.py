@@ -282,6 +282,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
         })
         self.assertEqual(data, new_data)
         expectation = {
@@ -356,6 +357,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
         })
         self.assertEqual(data, new_data)
 
@@ -394,6 +396,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
         })
         self.assertEqual(data, new_data)
 
@@ -419,6 +422,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
         })
         self.assertEqual(data, new_data)
 
@@ -458,6 +462,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
         })
         self.assertEqual(data, new_data)
 
@@ -779,6 +784,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -863,6 +869,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -950,6 +957,7 @@ class TestCoreBackend(BackendTest):
             'is_purged': False,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -1066,6 +1074,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
             'is_auditor': False,
+            'is_event_helper': False,
             'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}

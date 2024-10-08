@@ -1179,6 +1179,7 @@
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
+            "is_event_helper": false,
             "id": 7,
             "is_cde_realm": true,
             "title": null
@@ -1218,6 +1219,7 @@
             "is_ml_admin": true,
             "is_cdelokal_admin": true,
             "is_auditor": true,
+            "is_event_helper": false,
             "id": 1,
             "is_cde_realm": true,
             "title": null
@@ -1257,6 +1259,7 @@
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
+            "is_event_helper": false,
             "id": 9,
             "is_cde_realm": true,
             "title": null
@@ -1296,6 +1299,7 @@
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
             "is_auditor": false,
+            "is_event_helper": false,
             "id": 5,
             "is_cde_realm": false,
             "title": null
@@ -1330,6 +1334,7 @@
             "is_ml_realm": true,
             "is_cdelokal_admin": true,
             "is_auditor": true,
+            "is_event_helper": false,
             "is_searchable": true,
             "location": "Tokyo",
             "mobile": null,
@@ -1369,6 +1374,7 @@
             "is_ml_realm": true,
             "is_cdelokal_admin": false,
             "is_auditor": false,
+            "is_event_helper": false,
             "is_searchable": true,
             "location": "Utopia",
             "mobile": "+4916312345678",
