@@ -837,7 +837,9 @@
                 "kind": 3,
                 "checkin": true,
                 "title": "Anzahl Großbuchstaben",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "brings_balls": {
                 "kind": 2,
@@ -845,7 +847,9 @@
                 "entries": null,
                 "checkin": true,
                 "title": "Bringt Bälle mit",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "transportation": {
                 "kind": 1,
@@ -857,7 +861,9 @@
                 },
                 "checkin": false,
                 "title": "Reist an mit",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "lodge": {
                 "kind": 1,
@@ -865,7 +871,9 @@
                 "entries": null,
                 "checkin": false,
                 "title": "Zimmerwünsche",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "may_reserve": {
                 "kind": 2,
@@ -873,7 +881,9 @@
                 "entries": null,
                 "checkin": false,
                 "title": "Würde auf Isomatte schlafen",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "room": {
                 "kind": 1,
@@ -881,7 +891,9 @@
                 "entries": null,
                 "checkin": false,
                 "title": "Kursraum",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "contamination": {
                 "kind": 1,
@@ -894,7 +906,9 @@
                 },
                 "checkin": false,
                 "title": "Verseuchung",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             },
             "is_child": {
                 "kind": 2,
@@ -902,7 +916,9 @@
                 "entries": null,
                 "checkin": false,
                 "title": "Ist U12",
-                "sortkey": 0
+                "sortkey": 0,
+                "sort_group": null,
+                "description": null
             }
         },
         "questionnaire": {

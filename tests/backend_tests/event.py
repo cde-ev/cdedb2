@@ -2860,6 +2860,8 @@ class TestEventBackend(BackendTest):
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
             1002: {
                 'association': const.FieldAssociations.registration,
@@ -2871,6 +2873,8 @@ class TestEventBackend(BackendTest):
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
         })
         stored_data['event.event_fees'][1001] = {
