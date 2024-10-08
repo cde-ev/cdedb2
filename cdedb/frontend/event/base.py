@@ -168,7 +168,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def may_manage(self, rs: RequestState,
-                   necessary_privilege: EventPrivileges = None,
+                   necessary_privilege: EventPrivileges,
                    *, event_id: Optional[int] = None) -> bool:
         if not event_id:
             if not rs.ambience.get('event'):

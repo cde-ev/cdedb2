@@ -2205,7 +2205,10 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if not may_manage_event(rs, required_privilege):
+            # Drop this after universal adaption
+            processed_required_privilege = (
+                required_privilege or ~EventPrivileges.admin_only)
+            if not may_manage_event(rs, processed_required_privilege):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
             if check_offline:

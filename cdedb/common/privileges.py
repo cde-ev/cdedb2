@@ -23,7 +23,7 @@ class EventPrivileges(Flag):
 
 
 def may_manage_event(rs: RequestState,
-                     necessary_privilege: Optional[EventPrivileges] = None,
+                     necessary_privilege: EventPrivileges,
                      event_id: Optional[int] = None) -> bool:
     return (
             "event_admin" in rs.user.roles

@@ -64,7 +64,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
         """
-        return may_manage(rs, necessary_privilege=frozenset(EventPrivileges),
+        return may_manage(rs, necessary_privilege=~EventPrivileges.admin_only,
                           event_id=event_id)
 
 
