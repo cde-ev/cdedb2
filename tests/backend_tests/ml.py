@@ -209,6 +209,9 @@ class TestMlBackend(BackendTest):
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
             67: 'Globaler Unsinn',
+            68: 'Windischleuba-Mailingliste für Hexerei und Zauberei',
+            69: 'Windischleuba-Mailingliste für Hexerei und Zauberei'
+                ' (muggelfreie Zone)',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -630,6 +633,8 @@ class TestMlBackend(BackendTest):
             13: SS.implicit,
             14: SS.implicit,
             58: SS.implicit,
+            68: SS.implicit,
+            69: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=5))
