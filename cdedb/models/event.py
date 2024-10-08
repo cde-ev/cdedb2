@@ -488,14 +488,14 @@ class EventField(EventDataclass):
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
-    sort_group: Optional[str]  # Used to group multiple fields together.
-    sortkey: int  # Sortkey of the field (within it's group).
-    description: Optional[str]  # Shown as hovertext of the label.
+    sort_group: Optional[str] = None  # Used to group multiple fields together.
+    sortkey: int = 0  # Sortkey of the field (within it's group).
+    description: Optional[str] = None  # Shown as hovertext of the label.
 
     # Usage configuration, i.e. where is this field used.
-    checkin: bool
+    checkin: bool = False
 
-    entries: Optional[dict[str, str]]
+    entries: Optional[dict[str, str]] = None
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":

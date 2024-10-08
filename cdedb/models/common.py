@@ -150,9 +150,14 @@ class CdEDataclass:
                     continue
                 if field.name == 'id':
                     mandatory[field.name] = vtypes.CreationID
-                # Fields with init=False are optional, so that objects retrieved from
-                #  the database can pass validation.
-                elif is_optional_type(field.type) or not field.init:
+                elif (
+                        is_optional_type(field.type)
+                        # Fields with init=False are optional, so that objects
+                        #  retrieved from the database can pass validation.
+                        or not field.init
+                        # Fields with a default are optional at creation.
+                        or field.default or field.default_factory
+                ):
                     optional[field.name] = field.type
                 else:
                     mandatory[field.name] = field.type
