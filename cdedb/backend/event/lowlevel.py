@@ -18,6 +18,8 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.event as models
+import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
     AbstractBackend,
     access,
@@ -704,6 +706,7 @@ class EventLowLevelBackend(AbstractBackend):
         Possible blockers:
 
         * part_group_parts: A link between an event part and the part group.
+        * mailinglists: A mailinglist limited by this part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -716,6 +719,13 @@ class EventLowLevelBackend(AbstractBackend):
             entity_key="part_group_id")
         if part_group_parts:
             blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
+        mailinglists = self.sql_select(
+            rs, models_ml.Mailinglist.database_table, ("id",), (part_group_id,),
+            entity_key="event_part_group_id",
+        )
+        if mailinglists:
+            blockers["mailinglists"] = [e["id"] for e in mailinglists]
 
         return blockers
 
@@ -746,19 +756,34 @@ class EventLowLevelBackend(AbstractBackend):
             if "part_group_parts" in cascade:
                 ret *= self.sql_delete(
                     rs, "event.part_group_parts", blockers["part_group_parts"])
+            if "mailinglists" in cascade:
+                for anid in blockers["mailinglists"]:
+                    deletor = {
+                        'id': anid,
+                        'is_active': False,
+                        'event_part_group_id': None,
+                    }
+                    ret *= self.sql_update(
+                        rs, models_ml.Mailinglist.database_table, deletor,
+                    )
 
             blockers = self._delete_part_group_blockers(rs, part_group_id)
 
         if not blockers:
-            part_group = self.sql_select_one(
-                rs, "event.part_groups", PART_GROUP_FIELDS, part_group_id)
-            if part_group is None:  # pragma: no cover
+            data = self.query_one(
+                rs, *models.PartGroup.get_select_query(
+                    (part_group_id,), entity_key="id"),
+            )
+            if data is None:  # pragma: no cover
                 return 0
-            type_ = const.EventPartGroupType(part_group['constraint_type'])
-            ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
-            self.event_log(rs, const.EventLogCodes.part_group_deleted,
-                           event_id=part_group["event_id"],
-                           change_note=f"{part_group['title']} ({type_.name})")
+            part_group = models.PartGroup.from_database(data)
+            ret *= self.sql_delete_one(
+                rs, models.PartGroup.database_table, part_group_id)
+            self.event_log(
+                rs, const.EventLogCodes.part_group_deleted,
+                event_id=part_group.event_id,
+                change_note=f"{part_group.title} ({part_group.constraint_type.name})",
+            )
         else:
             raise ValueError(  # pragma: no cover
                 n_("Deletion of %(type)s blocked by %(block)s."),

@@ -40,11 +40,9 @@ from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS,
     ML_TYPE_MAP,
     AssemblyAssociatedMailinglist,
     BackendContainer,
-    EventAssociatedMailinglist,
     EventAssociatedMeta as EventAssociatedMetaMailinglist,
     Mailinglist,
     MLType,
@@ -395,54 +393,13 @@ class MlBackend(AbstractBackend):
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         with Atomizer(rs):
             ml_types = self.get_ml_types(rs, mailinglist_ids)
-            fields = Mailinglist.database_fields()
-            fields.extend(ADDITIONAL_TYPE_FIELDS)
-            data = self.sql_select(rs, "ml.mailinglists", fields, mailinglist_ids)
 
-            ret: dict[int, Mailinglist] = {}
-            for e in data:
-                ml_type = ml_types[e["id"]]
-                ml = ml_type(
-                    id=e["id"],
-                    title=e["title"],
-                    local_part=e["local_part"],
-                    domain=const.MailinglistDomain(e['domain']),
-                    mod_policy=const.ModerationPolicy(e['mod_policy']),
-                    attachment_policy=const.AttachmentPolicy(e['attachment_policy']),
-                    convert_html=e["convert_html"],
-                    roster_visibility=const.MailinglistRosterVisibility(
-                        e["roster_visibility"]),
-                    is_active=e["is_active"],
-                    moderators=set(),
-                    whitelist=set(),
-                    description=e["description"],
-                    subject_prefix=e["subject_prefix"],
-                    maxsize=e["maxsize"],
-                    additional_footer=e["additional_footer"],
-                    notes=e["notes"],
-                )
-                if isinstance(ml, EventAssociatedMetaMailinglist):
-                    ml.event_id = e["event_id"]
-                if isinstance(ml, EventAssociatedMailinglist):
-                    ml.registration_stati = [
-                        const.RegistrationPartStati(v) for v in e['registration_stati']]
-                if isinstance(ml, AssemblyAssociatedMailinglist):
-                    ml.assembly_id = e["assembly_id"]
-                ret[e["id"]] = ml
+            data = self.query_all(rs, *Mailinglist.get_select_query(mailinglist_ids))
 
-            # add moderators
-            data = self.sql_select(
-                rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
-                entity_key="mailinglist_id")
-            for e in data:
-                ret[e['mailinglist_id']].moderators.add(e['persona_id'])
-            # add whitelist entries
-            data = self.sql_select(
-                rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
-                entity_key="mailinglist_id")
-            for e in data:
-                ret[e['mailinglist_id']].whitelist.add(e['address'])
-        return ret
+        return {
+            e["id"]: ml_types[e["id"]].from_database(e)
+            for e in data
+        }
 
     class _GetMailinglistProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int) -> Mailinglist: ...
@@ -648,7 +605,7 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items()
                      if k in current.database_fields()}
-            changed = {k for k, v in mdata.items()
+            changed = {k: v for k, v in mdata.items()
                        if k not in current_data or v != current_data[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             is_moderator = self.is_moderator(rs, current.id)
@@ -660,20 +617,24 @@ class MlBackend(AbstractBackend):
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= current.get_moderator_fields():
+                if not changed.keys() <= current.get_moderator_fields():
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not changed <= current.restricted_moderator_fields and is_restricted:
-                    raise PrivilegeError(n_(
-                        "Restricted moderators are not allowed to change this."))
+                if is_restricted:
+                    if not changed.keys() <= current.restricted_moderator_fields:
+                        raise PrivilegeError(n_(
+                            "Restricted moderators are not allowed to change this."))
 
-            if len(mdata) > 1:
-                mdata['address'] = self.validate_address(
+            if changed:
+                changed['id'] = data['id']
+                changed['address'] = self.validate_address(
                     rs, dict(current_data, **mdata))
-                ret *= self.sql_update(rs, "ml.mailinglists", mdata)
+                ret *= self.sql_update(rs, "ml.mailinglists", changed)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
+            else:
+                ret = -1
 
         # only full moderators and admins can make subscription state related changes.
-        if (is_admin or not is_restricted) and len(mdata) > 1:
+        if (is_admin or not is_restricted) and changed:
             ret *= self.write_subscription_states(rs, (data['id'],))
         return ret
 

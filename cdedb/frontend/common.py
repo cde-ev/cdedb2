@@ -555,10 +555,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 raise AttributeError(n_("Given method is not callable."))
 
-        errorsdict: dict[Optional[str], list[Exception]] = {}
-        for key, value in rs.retrieve_validation_errors():
-            errorsdict.setdefault(key, []).append(value)
-
         # here come the always accessible things promised above
         data = {
             'COUNTRY_CODES': get_localized_country_codes(rs),
@@ -566,7 +562,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'cdedblink': _cdedblink,
             'doclink': _doclink,
             'staticlink': _staticlink,
-            'errors': errorsdict,
+            'errors': rs.get_validation_errors_dict(),
             'generation_time': lambda: (now() - rs.begin),
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,

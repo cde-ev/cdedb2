@@ -164,12 +164,15 @@ class EventPartGroupType(CdEIntEnum):
     mutually_exclusive_courses = 2
     # Special type that imposes no constraints:
     Statistic = 100
+    # Special type for link to mailinglist with limited scope.
+    mailinglist_link = 200
 
     def get_icon(self) -> str:
         return {
             EventPartGroupType.Statistic: "chart-bar",
             EventPartGroupType.mutually_exclusive_participants: "user-lock",
             EventPartGroupType.mutually_exclusive_courses: "comment-slash",
+            EventPartGroupType.mailinglist_link: "envelope",
         }[self]
 
     def is_stats(self) -> bool:
@@ -306,6 +309,7 @@ class MailinglistTypes(CdEIntEnum):
     # The following types used to exist. To avoid conflicts, do not reuse:
     # event_associated_legacy = 22
     # event_orga_legacy = 23
+    event_associated_exclusive = 25
 
     assembly_associated = 30
     assembly_opt_in = 31

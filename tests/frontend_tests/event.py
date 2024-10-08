@@ -16,6 +16,7 @@ from typing import Optional
 import lxml.etree
 import segno.helpers
 import webtest
+from subman import SubscriptionError
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -43,6 +44,10 @@ from cdedb.frontend.event.query_stats import (
     get_id_constraint,
 )
 from cdedb.models.droid import OrgaToken
+from cdedb.models.ml import (
+    EventAssociatedExclusiveMailinglist,
+    EventAssociatedMailinglist,
+)
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -1453,7 +1458,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton", div="moderator-list")
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual('altaka-orga', f['local_part'].value)
         self.assertPresence("Orga (Opt-out)")
         self.assertEqual('AltAka', f['subject_prefix'].value)
@@ -1464,7 +1469,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton", div="moderator-list")
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual('altaka-all', f['local_part'].value)
         self.assertPresence("Teilnehmer/Anmeldungen (Opt-out)")
         # TODO check for correct registration part stati
@@ -7036,3 +7041,126 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertLogEqual(
             log_expectation, "event", event_id=event_id, offset=self.EVENT_LOG_OFFSET,
         )
+
+    def test_limited_event_mailinglists(self) -> None:
+        # Test creation of part group linked lists by orga.
+        with self.switch_user("garcia"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                          "Veranstaltungsteile", "Gruppen",
+                          "Veranstaltungsteilgruppe hinzufügen")
+            f = self.response.forms["configurepartgroupform"]
+            f['title'] = f['shortname'] = "Beide"
+            f['part_ids'] = [2, 3]
+            f['constraint_type'] = const.EventPartGroupType.mailinglist_link
+            self.submit(f)
+
+            f = self.response.forms["createeventmailinglistform1001"]
+            self.submit(f)
+            self.assertTitle("Gruppen (Große Testakademie 2222)")
+            self.assertNotIn("createeventmailinglistform1001", self.response.forms)
+
+            ml_log_expectation = (
+                {
+                    'code': const.MlLogCodes.list_created,
+                    'mailinglist_id': 1001,
+                },
+                {
+                    'code': const.MlLogCodes.moderator_added,
+                    'mailinglist_id': 1001,
+                    'persona_id': self.user['id'],
+                },
+            )
+            self.assertLogEqual(ml_log_expectation, "ml", _mailinglist_ids=[1001])
+
+        # Test subscribability of limited and limited exclusive lists.
+        with self.switch_user("emilia"):
+            persona_id = self.user['id']
+            event_id = 4
+            part_group_id = 10
+            limited_ml = self.ml.get_mailinglist(self.key, 68)
+            exclusive_ml = self.ml.get_mailinglist(self.key, 69)
+            registration_id = unwrap(
+                self.event.list_registrations(self.key, event_id, persona_id).keys())
+
+            event = self.event.get_event(self.key, event_id)
+            self.assertEqual(
+                "Mailingliste Windischleuba",
+                event.part_groups[part_group_id].title,
+            )
+            self.assertEqual(
+                {7, 10},
+                set(event.part_groups[part_group_id].parts),
+            )
+
+            assert isinstance(limited_ml, EventAssociatedMailinglist)
+            assert not isinstance(limited_ml, EventAssociatedExclusiveMailinglist)
+            self.assertEqual(
+                event_id,
+                limited_ml.event_id,
+            )
+            self.assertEqual(
+                part_group_id,
+                limited_ml.event_part_group_id,
+            )
+
+            assert isinstance(exclusive_ml, EventAssociatedExclusiveMailinglist)
+            self.assertEqual(
+                event_id,
+                exclusive_ml.event_id,
+            )
+            self.assertEqual(
+                part_group_id,
+                exclusive_ml.event_part_group_id,
+            )
+
+            self.assertEqual(
+                {
+                    persona_id: const.SubscriptionState.implicit,
+                },
+                self.ml.get_subscription_states(self.key, limited_ml.id),
+            )
+            self.assertEqual(
+                {
+                    persona_id: const.SubscriptionState.implicit,
+                },
+                self.ml.get_subscription_states(self.key, exclusive_ml.id),
+            )
+
+            self.event.set_registration(
+                self.key,
+                {
+                    'id': registration_id,
+                    'parts': {
+                        7: {  # W1
+                            'status': const.RegistrationPartStati.cancelled,
+                        },
+                        10: {  # W2
+                            'status': const.RegistrationPartStati.not_applied,
+                        },
+                    },
+                },
+            )
+
+            self.ml.write_subscription_states(
+                self.key, [limited_ml.id, exclusive_ml.id])
+
+            self.assertEqual(
+                {},
+                self.ml.get_subscription_states(self.key, limited_ml.id),
+            )
+            self.assertEqual(
+                {},
+                self.ml.get_subscription_states(self.key, exclusive_ml.id),
+            )
+
+            self.assertTrue(
+                self.ml.do_subscription_action(
+                    self.key, const.SubscriptionAction.add_subscriber,
+                    limited_ml.id, persona_id,
+                ),
+            )
+            with self.assertRaises(SubscriptionError):
+                self.ml.do_subscription_action(
+                    self.key, const.SubscriptionAction.add_subscriber,
+                    exclusive_ml.id, persona_id,
+                )

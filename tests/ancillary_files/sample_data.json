@@ -5053,6 +5053,14 @@
             "shortname": "Kurs 2H",
             "notes": null,
             "constraint_type": 2
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "title": "Mailingliste Windischleuba",
+            "shortname": "ML W",
+            "notes": null,
+            "constraint_type": 200
         }
     ],
     "event.part_group_parts": [
@@ -5151,6 +5159,14 @@
         {
             "part_group_id": 9,
             "part_id": 11
+        },
+        {
+            "part_group_id": 10,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 10,
+            "part_id": 10
         }
     ],
     "event.course_tracks": [
@@ -8666,6 +8682,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8688,6 +8705,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8710,6 +8728,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8732,6 +8751,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8754,6 +8774,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 1
         },
@@ -8776,6 +8797,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8798,6 +8820,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8820,6 +8843,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8842,6 +8866,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
+            "event_part_group_id": null,
             "registration_stati": [
                 2,
                 4
@@ -8867,6 +8892,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
+            "event_part_group_id": null,
             "registration_stati": [
                 3
             ],
@@ -8891,6 +8917,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8913,6 +8940,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8935,6 +8963,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8957,6 +8986,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -8979,6 +9009,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9001,6 +9032,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9023,6 +9055,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9045,6 +9078,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9067,6 +9101,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9089,6 +9124,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9111,6 +9147,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9133,6 +9170,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 1,
+            "event_part_group_id": null,
             "registration_stati": [
                 4
             ],
@@ -9157,6 +9195,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 2,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9179,6 +9218,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": 2,
+            "event_part_group_id": null,
             "registration_stati": [
                 2
             ],
@@ -9203,6 +9243,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 2
         },
@@ -9225,6 +9266,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9247,6 +9289,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9269,6 +9312,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9291,6 +9335,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         },
@@ -9313,6 +9358,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": 1
         },
@@ -9335,7 +9381,60 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
+            "assembly_id": null
+        },
+        {
+            "id": 68,
+            "title": "Windischleuba-Mailingliste für Hexerei und Zauberei",
+            "address": "whz@aka.cde-ev.de",
+            "local_part": "whz",
+            "domain": 2,
+            "description": null,
+            "mod_policy": 2,
+            "attachment_policy": 2,
+            "convert_html": true,
+            "ml_type": 20,
+            "roster_visibility": 1,
+            "subject_prefix": null,
+            "maxsize": 2048,
+            "is_active": true,
+            "notes": null,
+            "additional_footer": null,
+            "gateway": null,
+            "event_id": 4,
+            "event_part_group_id": 10,
+            "registration_stati": [
+                2,
+                4
+            ],
+            "assembly_id": null
+        },
+        {
+            "id": 69,
+            "title": "Windischleuba-Mailingliste für Hexerei und Zauberei (muggelfreie Zone)",
+            "address": "whzmfz@aka.cde-ev.de",
+            "local_part": "whzmfz",
+            "domain": 2,
+            "description": null,
+            "mod_policy": 2,
+            "attachment_policy": 2,
+            "convert_html": true,
+            "ml_type": 25,
+            "roster_visibility": 1,
+            "subject_prefix": null,
+            "maxsize": 2048,
+            "is_active": true,
+            "notes": null,
+            "additional_footer": null,
+            "gateway": null,
+            "event_id": 4,
+            "event_part_group_id": 10,
+            "registration_stati": [
+                2,
+                4
+            ],
             "assembly_id": null
         },
         {
@@ -9357,6 +9456,7 @@
             "additional_footer": null,
             "gateway": null,
             "event_id": null,
+            "event_part_group_id": null,
             "registration_stati": [],
             "assembly_id": null
         }
@@ -10281,6 +10381,16 @@
             "mailinglist_id": 67,
             "persona_id": 100,
             "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 68,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 69,
+            "persona_id": 5,
+            "subscription_state": 30
         }
     ],
     "ml.subscription_addresses": [
@@ -10544,6 +10654,14 @@
         {
             "mailinglist_id": 67,
             "persona_id": 14
+        },
+        {
+            "mailinglist_id": 68,
+            "persona_id": 5
+        },
+        {
+            "mailinglist_id": 69,
+            "persona_id": 5
         },
         {
             "mailinglist_id": 99,

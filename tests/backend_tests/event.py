@@ -4406,6 +4406,11 @@ class TestEventBackend(BackendTest):
                 'part_ids': [9, 10, 11],
                 'shortname': 'Kurs 2H',
                 'title': 'Kurse 2. Hälfte'},
+            10: {'constraint_type': const.EventPartGroupType.mailinglist_link,
+                'notes': None,
+                'part_ids': [7, 10],
+                'shortname': 'ML W',
+                'title': 'Mailingliste Windischleuba'},
             1005: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
@@ -4424,10 +4429,12 @@ class TestEventBackend(BackendTest):
         with self.switch_user("annika"):
             blockers = self.event.delete_event_blockers(self.key, event_id)
             self.assertEqual(
+                {
+                    "orgas", "event_parts", "course_tracks", "part_groups",
+                    "part_group_parts", "track_groups", "track_group_tracks",
+                    "courses", "log", "lodgement_groups", "event_fees", "mailinglists",
+                },
                 set(blockers),
-                {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "track_groups", "track_group_tracks",
-                 "courses", "log", "lodgement_groups", "event_fees"},
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 

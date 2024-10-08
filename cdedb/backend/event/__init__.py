@@ -12,6 +12,8 @@ from typing import Any, Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.event as models
+import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
     Silencer,
     access,
@@ -41,11 +43,9 @@ from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
+from cdedb.models.droid import OrgaToken
 
 __all__ = ['EventBackend']
-
-from cdedb.models.droid import OrgaToken
-from cdedb.models.event import CustomQueryFilter
 
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
@@ -95,38 +95,43 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             blockers["orga_tokens"] = [e["id"] for e in orga_tokens]
 
         field_definitions = self.sql_select(
-            rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")
+            rs, models.EventField.database_table, ("id",),
+            (event_id,), entity_key=models.EventField.entity_key)
         if field_definitions:
             blockers["field_definitions"] = [e["id"] for e in field_definitions]
 
         custom_query_filters = self.sql_select(
-            rs, CustomQueryFilter.database_table, ("id",), (event_id,),
-            entity_key="event_id")
+            rs, models.CustomQueryFilter.database_table, ("id",),
+            (event_id,), entity_key=models.CustomQueryFilter.entity_key)
         if custom_query_filters:
             blockers["custom_query_filters"] = [e["id"] for e in custom_query_filters]
 
         courses = self.sql_select(
-            rs, "event.courses", ("id",), (event_id,), entity_key="event_id")
+            rs, models.Course.database_table, ("id",),
+            (event_id,), entity_key="event_id")
         if courses:
             blockers["courses"] = [e["id"] for e in courses]
 
         event_fees = self.sql_select(
-            rs, "event.event_fees", ("id",), (event_id,), entity_key="event_id")
+            rs, models.EventFee.database_table, ("id",),
+            (event_id,), entity_key=models.EventFee.entity_key)
         if event_fees:
             blockers["event_fees"] = [e["id"] for e in event_fees]
 
         event_parts = self.sql_select(
-            rs, "event.event_parts", ("id",), (event_id,), entity_key="event_id")
+            rs, models.EventPart.database_table, ("id",),
+            (event_id,), entity_key=models.EventPart.entity_key)
         if event_parts:
             blockers["event_parts"] = [e["id"] for e in event_parts]
             course_tracks = self.sql_select(
-                rs, "event.course_tracks", ("id",), blockers["event_parts"],
-                entity_key="part_id")
+                rs, models.CourseTrack.database_table, ("id",),
+                blockers["event_parts"], entity_key=models.CourseTrack.entity_key)
             if course_tracks:
                 blockers["course_tracks"] = [e["id"] for e in course_tracks]
 
         part_groups = self.sql_select(
-            rs, "event.part_groups", ("id",), (event_id,), entity_key="event_id")
+            rs, models.PartGroup.database_table, ("id",),
+            (event_id,), entity_key=models.PartGroup.entity_key)
         if part_groups:
             blockers["part_groups"] = [e["id"] for e in part_groups]
             part_group_parts = self.sql_select(
@@ -136,7 +141,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
 
         track_groups = self.sql_select(
-            rs, "event.track_groups", ("id",), (event_id,), entity_key="event_id")
+            rs, models.TrackGroup.database_table, ("id",),
+            (event_id,), entity_key=models.TrackGroup.entity_key)
         if track_groups:
             blockers["track_groups"] = [e["id"] for e in track_groups]
             track_group_tracks = self.sql_select(
@@ -151,25 +157,26 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
             blockers["orgas"] = [e["id"] for e in orgas]
 
         lodgement_groups = self.sql_select(
-            rs, "event.lodgement_groups", ("id",), (event_id,),
-            entity_key="event_id")
+            rs, models.LodgementGroup.database_table, ("id",),
+            (event_id,), entity_key=models.LodgementGroup.entity_key)
         if lodgement_groups:
             blockers["lodgement_groups"] = [e["id"] for e in lodgement_groups]
 
         lodgements = self.sql_select(
-            rs, "event.lodgements", ("id",), (event_id,), entity_key="event_id")
+            rs, models.Lodgement.database_table, ("id",),
+            (event_id,), entity_key="event_id")
         if lodgements:
             blockers["lodgements"] = [e["id"] for e in lodgements]
 
         registrations = self.sql_select(
-            rs, "event.registrations", ("id",), (event_id,),
-            entity_key="event_id")
+            rs, models.Registration.database_table, ("id",),
+            (event_id,), entity_key=models.Registration.entity_key)
         if registrations:
             blockers["registrations"] = [e["id"] for e in registrations]
 
         questionnaire_rows = self.sql_select(
-            rs, "event.questionnaire_rows", ("id",), (event_id,),
-            entity_key="event_id")
+            rs, models.QuestionnaireRow.database_table, ("id",),
+            (event_id,), entity_key=models.QuestionnaireRow.entity_key)
         if questionnaire_rows:
             blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
 
@@ -183,10 +190,21 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         if log:
             blockers["log"] = [e["id"] for e in log]
 
+        ml_blockers: set[int] = set()
         mailinglists = self.sql_select(
-            rs, "ml.mailinglists", ("id",), (event_id,), entity_key="event_id")
+            rs, models_ml.Mailinglist.database_table, ("id",),
+            (event_id,), entity_key="event_id")
         if mailinglists:
-            blockers["mailinglists"] = [e["id"] for e in mailinglists]
+            ml_blockers.update(e["id"] for e in mailinglists)
+
+        mailinglists_part_group_id = self.sql_select(
+            rs, models_ml.Mailinglist.database_table, ("id",),
+            blockers.get("event_part_groups", []), entity_key="event_part_group_id")
+        if mailinglists_part_group_id:
+            ml_blockers.update(e["id"] for e in mailinglists_part_group_id)
+
+        if ml_blockers:
+            blockers["mailinglists"] = list(ml_blockers)
 
         return blockers
 
@@ -230,19 +248,23 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                                 ("attendees", "course_choices",
                                  "course_segments", "instructors"))
                 if "lodgements" in cascade:
-                    ret *= self.sql_delete(rs, "event.lodgements",
-                                           blockers["lodgements"])
+                    ret *= self.sql_delete(
+                        rs, models.Lodgement.database_table, blockers["lodgements"])
                 if "lodgement_groups" in cascade:
-                    ret *= self.sql_delete(rs, "event.lodgement_groups",
-                                           blockers["lodgement_groups"])
+                    ret *= self.sql_delete(
+                        rs, models.LodgementGroup.database_table,
+                        blockers["lodgement_groups"],
+                    )
                 if "part_groups" in cascade:
                     with Silencer(rs):
-                        part_group_cascade = {"part_group_parts"} & cascade
+                        part_group_cascade = {
+                             "part_group_parts", "mailinglists",
+                        } & cascade
                         for anid in blockers["part_groups"]:
                             self._delete_part_group(rs, anid, part_group_cascade)
                 if "event_fees" in cascade:
-                    ret *= self.sql_delete(rs, "event.event_fees",
-                                           blockers["event_fees"])
+                    ret *= self.sql_delete(
+                        rs, models.EventFee.database_table, blockers["event_fees"])
                 if "event_parts" in cascade:
                     part_cascade = {"course_tracks"} & cascade
                     with Silencer(rs):
@@ -255,14 +277,15 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                             self._delete_track_group(rs, anid, track_group_cascade)
                 if "questionnaire" in cascade:
                     ret *= self.sql_delete(
-                        rs, "event.questionnaire_rows",
-                        blockers["questionnaire"])
+                        rs, models.QuestionnaireRow.database_table,
+                        blockers["questionnaire"],
+                    )
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
                         'id': event_id,
                         'lodge_field_id': None,
                     }
-                    ret *= self.sql_update(rs, "event.events", deletor)
+                    ret *= self.sql_update(rs, models.Event.database_table, deletor)
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
                             ret *= self._delete_event_field(rs, anid)
@@ -286,11 +309,14 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                 if "mailinglists" in cascade:
                     for anid in blockers["mailinglists"]:
                         deletor = {
-                            'event_id': None,
                             'id': anid,
                             'is_active': False,
+                            'event_id': None,
+                            'event_part_group_id': None,
                         }
-                        ret *= self.sql_update(rs, "ml.mailinglists", deletor)
+                        ret *= self.sql_update(
+                            rs, models_ml.Mailinglist.database_table, deletor,
+                        )
 
                 blockers = self.delete_event_blockers(rs, event_id)
 

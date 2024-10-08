@@ -108,9 +108,18 @@ class CdEDataclass:
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         for field in dataclasses.fields(cls):
+            # Convert enum fields into enum members.
             if isinstance(field.type, type) and issubclass(field.type, CdEIntEnum):
                 if field.name in data:
                     data[field.name] = field.type(data[field.name])
+            # Convert list[enum] fields into enum members.
+            if get_origin(field.type) is list:
+                if len(get_args(field.type)) == 1:
+                    inner_type = get_args(field.type)[0]
+                    if isinstance(inner_type, type):
+                        if issubclass(inner_type, CdEIntEnum):
+                            data[field.name] = list(
+                                inner_type(x) for x in data[field.name])
         return cls(**data)
 
     @classmethod
