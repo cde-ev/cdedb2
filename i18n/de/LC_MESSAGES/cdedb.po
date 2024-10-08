@@ -22500,3 +22500,6 @@ msgstr "Simbabwe"
 #: cdedb/models/droid.py:194
 msgid "Wrong format for api token."
 msgstr "Falsches formatiertes API-Token."
+
+msgid "Group[[EventDatafield]]"
+msgstr "Gruppierung"

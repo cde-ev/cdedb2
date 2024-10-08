@@ -56,7 +56,7 @@
                         </div>
                         <div class="form-group">
                             <label class="col-sm-4 control-label" for="{{ drow_name('input-text-sort_group', field_id) }}">
-                                {% trans %}Group{% endtrans %}
+                                {% trans %}Group[[EventDatafield]]{% endtrans %}
                             </label>
                             <div class="col-sm-8 {{ util.has_errors(drow_name('sort_group', field_id)) }}">
                                 {{ util.input_text(name=drow_name('sort_group', field_id), aclass='drow-input form-control',
