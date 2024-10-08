@@ -600,7 +600,7 @@ class TestEventModels(BackendTest):
                     shortname="ML W",
                     notes=None,
                     constraint_type=const.EventPartGroupType.mailinglist_link,
-                    parts=(7, 10),
+                    parts=(7, 10),  # type: ignore[arg-type]
                 ),
             },
             track_groups={

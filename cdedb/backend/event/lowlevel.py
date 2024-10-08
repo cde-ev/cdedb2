@@ -703,7 +703,7 @@ class EventLowLevelBackend(AbstractBackend):
             blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
 
         mailinglists = self.sql_select(
-            rs, models_ml.Mailinglist.database_table, ("id",), entities=(part_group_id,),
+            rs, models_ml.Mailinglist.database_table, ("id",), (part_group_id,),
             entity_key="event_part_group_id",
         )
         if mailinglists:
@@ -752,13 +752,13 @@ class EventLowLevelBackend(AbstractBackend):
             blockers = self._delete_part_group_blockers(rs, part_group_id)
 
         if not blockers:
-            part_group = models.PartGroup.from_database(
-                self.query_one(
-                    rs,
-                    *models.PartGroup.get_select_query(
-                        (part_group_id,), entity_key="id"),
-                ),
+            data = self.query_one(
+                rs, *models.PartGroup.get_select_query(
+                    (part_group_id,), entity_key="id"),
             )
+            if data is None:  # pragma: no cover
+                return 0
+            part_group = models.PartGroup.from_database(data)
             ret *= self.sql_delete_one(
                 rs, models.PartGroup.database_table, part_group_id)
             self.event_log(
