@@ -9405,7 +9405,10 @@
             "gateway": null,
             "event_id": 4,
             "event_part_group_id": 10,
-            "registration_stati": [2, 4],
+            "registration_stati": [
+                2,
+                4
+            ],
             "assembly_id": null
         },
         {
@@ -9428,7 +9431,10 @@
             "gateway": null,
             "event_id": 4,
             "event_part_group_id": 10,
-            "registration_stati": [2, 4],
+            "registration_stati": [
+                2,
+                4
+            ],
             "assembly_id": null
         },
         {

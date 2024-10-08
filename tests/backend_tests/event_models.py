@@ -593,6 +593,15 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.mutually_exclusive_courses,
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
+                10: models.PartGroup(
+                    id=10,  # type: ignore[arg-type]
+                    event_id=event_id,
+                    title="Mailingliste Windischleuba",
+                    shortname="ML W",
+                    notes=None,
+                    constraint_type=const.EventPartGroupType.mailinglist_link,
+                    parts=(7, 10),
+                ),
             },
             track_groups={
                 1: models.SyncTrackGroup(
