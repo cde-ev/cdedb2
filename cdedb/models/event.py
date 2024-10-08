@@ -24,6 +24,7 @@ event realm tables:
   * event.log
 """
 import abc
+import collections
 import dataclasses
 import datetime
 import decimal
@@ -240,6 +241,17 @@ class Event(EventDataclass):
     @functools.cached_property
     def conditional_fees(self) -> CdEDataclassMap["EventFee"]:
         return {fee.id: fee for fee in self.fees.values() if fee.is_conditional()}
+
+    @functools.cached_property
+    def grouped_fields(self) -> dict[
+        const.FieldAssociations,
+        dict[str, list["EventField"]],
+    ]:
+        ret: dict[const.FieldAssociations, dict[str, list[EventField]]]
+        ret = collections.defaultdict(dict)
+        for field in sorted(self.fields.values()):
+            ret[field.association].setdefault(field.sort_group or "", []).append(field)
+        return ret
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title

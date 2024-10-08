@@ -231,18 +231,15 @@
 {% macro print_field_inputs(association) %}
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-        {% set prev_sort_groups = [] %}
-        {% for field in ambience['event']['fields'].values()|sort
-                if field['association'] == association %}
-            {% if not prev_sort_groups or field.sort_group != prev_sort_groups[-1] %}
-                {% do prev_sort_groups.append(field.sort_group) %}
-                {% if field.sort_group or (prev_sort_groups|length) > 1 %}
-                    <h4 class="heading-underline">
-                        {{ field.sort_group or gettext("Other Fields") }}
-                    </h4>
-                {% endif %}
+        {% for title, fields in ambience['event'].grouped_fields[association].items() %}
+            {% if ambience['event'].grouped_fields[association]|length > 1 %}
+                <h4 class="heading-underline">
+                    {{ title or gettext("Other Fields") }}
+                </h4>
             {% endif %}
-            {{ form_field_input(field, info=field.description) }}
+            {% for field in fields %}
+                {{ form_field_input(field, info=field.description) }}
+            {% endfor %}
         {% else %}
             <p class="text-muted">
                 {% if association == enums['FieldAssociations'].lodgement %}

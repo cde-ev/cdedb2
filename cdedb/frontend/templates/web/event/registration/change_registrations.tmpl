@@ -203,22 +203,19 @@
 
         {% if ambience['event']['fields']|length > 0 %}
             <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-            {% set prev_sort_groups = [] %}
-            {% for field in ambience['event']['fields'].values()|sort
-                    if field['association'] == enums['FieldAssociations'].registration %}
-                {% if not prev_sort_groups or field.sort_group != prev_sort_groups[-1] %}
-                    {% do prev_sort_groups.append(field.sort_group) %}
-                    {% if field.sort_group or (prev_sort_groups|length) > 1 %}
-                        <h4 class="heading-underline">
-                            {{ field.sort_group or gettext("Other Fields") }}
-                        </h4>
-                    {% endif %}
+            {% for title, fields in ambience['event'].grouped_fields[enums['FieldAssociations'].registration].items() %}
+                {% if ambience['event'].grouped_fields[enums['FieldAssociations'].registration]|length > 1 %}
+                    <h4 class="heading-underline">
+                        {{ title or gettext("Other Fields") }}
+                    </h4>
                 {% endif %}
-                {% call form_input_optional("fields.{}".format(field['field_name']),
-                                            anid="input_fields_{}".format(field['field_name']),
-                                            label=field['title'] if field['kind'] != enums['FieldDatatypes'].bool else '') %}
-                    {{ generic_event.field_input(field, anid="input_fields_{}".format(field['field_name'])) }}
-                {% endcall %}
+                {% for field in fields %}
+                    {% call form_input_optional("fields.{}".format(field['field_name']),
+                                                anid="input_fields_{}".format(field['field_name']),
+                                                label=field['title'] if field['kind'] != enums['FieldDatatypes'].bool else '') %}
+                        {{ generic_event.field_input(field, anid="input_fields_{}".format(field['field_name'])) }}
+                    {% endcall %}
+                {% endfor %}
             {% endfor %}
         {% endif %}
 
