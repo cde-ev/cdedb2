@@ -141,9 +141,7 @@ class EventLowLevelBackend(AbstractBackend):
         :param field_ids: If given, only include fields with these ids.
         :return: A dict mapping each event id to the dict of its fields
         """
-        data = self.sql_select(
-            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-            event_ids, entity_key="event_id")
+        data = self.query_all(rs, *models.EventField.get_select_query(event_ids))
         ret: dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
         for field in data:
             field['association'] = const.FieldAssociations(field['association'])
@@ -1268,8 +1266,15 @@ class EventLowLevelBackend(AbstractBackend):
                            change_note=new_field['field_name'])
 
         if updated_fields:
-            current_field_data = {e['id']: e for e in self.sql_select(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
+            current_field_data = {
+                e['id']: e
+                for e in self.query_all(
+                    rs,
+                    *models.EventField.get_select_query(
+                        updated_fields, entity_key="id",
+                    ),
+                )
+            }
             for x in mixed_existence_sorter(updated_fields):
                 updated_field = copy.deepcopy(fields[x])
                 assert updated_field is not None

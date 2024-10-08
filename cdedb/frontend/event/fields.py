@@ -27,7 +27,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.common.validation.validate import EVENT_FIELD_ALL_FIELDS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -87,8 +86,11 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
                       ) -> Response:
         """Manipulate the fields of an event."""
-        spec = EVENT_FIELD_ALL_FIELDS
-        creation_spec: vtypes.TypeMapping = {**spec, 'field_name': str}
+        mandatory, optional = models.EventField.validation_fields(creation=False)
+        spec = dict(mandatory) | dict(optional)
+        creation_mandatory, creation_optional = models.EventField.validation_fields(
+            creation=True)
+        creation_spec = dict(creation_mandatory) | dict(creation_optional)
         existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
             rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)

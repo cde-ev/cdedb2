@@ -2751,25 +2751,6 @@ def _event_track_group(
 _create_optional_mapping_validator(EventTrackGroup, EventTrackGroupSetter)
 
 
-EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
-    'kind': const.FieldDatatypes,
-    'association': const.FieldAssociations,
-    'entries': Any,  # type: ignore[dict-item]
-}
-
-
-EVENT_FIELD_OPTIONAL_FIELDS: TypeMapping = {
-    'title': str,
-    'sortkey': int,
-    'checkin': bool,
-}
-
-
-EVENT_FIELD_ALL_FIELDS: TypeMapping = {
-    **EVENT_FIELD_COMMON_FIELDS, **EVENT_FIELD_OPTIONAL_FIELDS,
-}
-
-
 @_add_typed_validator
 def _event_field(
     val: Any, argname: str = "event_field", *, field_name: Optional[str] = None,
@@ -2790,12 +2771,12 @@ def _event_field(
     if creation:
         if not val.get("title"):
             val["title"] = val.get("field_name")
-        mandatory_fields = {**EVENT_FIELD_COMMON_FIELDS,
-                            "field_name": RestrictiveIdentifier}
-        optional_fields = EVENT_FIELD_OPTIONAL_FIELDS
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_FIELD_ALL_FIELDS, 'id': ID}
+
+    mandatory_fields, optional_fields = models_event.EventField.validation_fields(
+        creation=creation)
+
+    if 'entries' in optional_fields:
+        optional_fields['entries'] = Any  # type: ignore[assignment]
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -3586,7 +3567,8 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': ID, 'event_id': ID, 'title': str,
-                           'field_name': RestrictiveIdentifier}),
+                           'field_name': RestrictiveIdentifier,
+                           'association': const.FieldAssociations}),
         'event.lodgement_groups': _augment_dict_validator(
             _lodgement_group, {'event_id': ID}),
         'event.lodgements': _augment_dict_validator(

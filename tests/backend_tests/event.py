@@ -162,34 +162,40 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "instrument",
                     'title': "Instrument",
-                    'sortkey': 0,
+                    'description': None,
                     'kind': const.FieldDatatypes.str,
-                    'entries': None,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 0,
                     'checkin': False,
+                    'entries': None,
                 },
                 -2: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "preferred_excursion_date",
                     'title': "Bevorzugtes Ausflugsdatum",
-                    'sortkey': 0,
+                    'description': None,
                     'kind': const.FieldDatatypes.date,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 0,
+                    'checkin': True,
                     'entries': {
                         "2109-08-16": "In the first coming",
                         "2110-08-16": "During the second coming",
                     },
-                    'checkin': True,
                 },
                 -3: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
                     'title': "Ist Kind",
-                    'sortkey': 5,
+                    'description': None,
                     'kind': const.FieldDatatypes.bool,
-                    'entries': None,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 5,
                     'checkin': False,
+                    'entries': None,
                 },
             },
         }
@@ -310,16 +316,17 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
             'title': "KäA",
-            'sortkey': -7,
+            'description': None,
             'kind': const.FieldDatatypes.str,
-            'entries': None,
+            'association': const.FieldAssociations.lodgement,
+            'sort_group': None,
+            'sortkey': -7,
             'checkin': False,
+            'entries': None,
         }
         changed_field = {
-            'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
             'entries': {
                 "2110-08-15": "early second coming",
@@ -2403,6 +2410,7 @@ class TestEventBackend(BackendTest):
         # Now change the datatype of that field.
         field_data["kind"] = const.FieldDatatypes.date
         del field_data["field_name"]
+        del field_data["association"]
         event_data["fields"] = {1001: field_data}
         self.event.set_event(self.key, event_id, event_data)
 
@@ -2879,6 +2887,8 @@ class TestEventBackend(BackendTest):
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
             1002: {
                 'association': const.FieldAssociations.registration,
@@ -2890,6 +2900,8 @@ class TestEventBackend(BackendTest):
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
         })
         stored_data['event.event_fees'][1001] = {
@@ -3835,7 +3847,6 @@ class TestEventBackend(BackendTest):
             'checkin': False,
         }
         changed_field = {
-            'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-8-15", "early second coming"],

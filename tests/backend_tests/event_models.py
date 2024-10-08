@@ -123,24 +123,28 @@ class TestEventModels(BackendTest):
             fields={
                 1: models.EventField(
                     id=1,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="brings_balls",  # type: ignore[arg-type]
-                    title="Bringt Bälle mit",
                     kind=const.FieldDatatypes.bool,
                     association=const.FieldAssociations.registration,
-                    checkin=True,
+                    title="Bringt Bälle mit",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=True,
                     entries=None,
                 ),
                 2: models.EventField(
                     id=2,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="transportation",  # type: ignore[arg-type]
-                    title="Reist an mit",
                     kind=const.FieldDatatypes.str,
                     association=const.FieldAssociations.registration,
-                    checkin=False,
+                    title="Reist an mit",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=dict([
                         ["pedes", "by feet"],
                         ["car", "own car available"],
@@ -149,46 +153,54 @@ class TestEventModels(BackendTest):
                 ),
                 3: models.EventField(
                     id=3,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="lodge",  # type: ignore[arg-type]
-                    title="Zimmerwünsche",
                     kind=const.FieldDatatypes.str,
                     association=const.FieldAssociations.registration,
-                    checkin=False,
+                    title="Zimmerwünsche",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=None,
                 ),
                 4: models.EventField(
                     id=4,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="may_reserve",  # type: ignore[arg-type]
-                    title="Würde auf Isomatte schlafen",
                     kind=const.FieldDatatypes.bool,
                     association=const.FieldAssociations.registration,
-                    checkin=False,
+                    title="Würde auf Isomatte schlafen",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=None,
                 ),
                 5: models.EventField(
                     id=5,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="room",  # type: ignore[arg-type]
-                    title="Kursraum",
                     kind=const.FieldDatatypes.str,
                     association=const.FieldAssociations.course,
-                    checkin=False,
+                    title="Kursraum",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=None,
                 ),
                 6: models.EventField(
                     id=6,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="contamination",  # type: ignore[arg-type]
-                    title="Verseuchung",
                     kind=const.FieldDatatypes.str,
                     association=const.FieldAssociations.lodgement,
-                    checkin=False,
+                    title="Verseuchung",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=dict([
                         ["high", "lots of radiation"],
                         ["medium", "elevated level of radiation"],
@@ -198,24 +210,28 @@ class TestEventModels(BackendTest):
                 ),
                 7: models.EventField(
                     id=7,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="is_child",  # type: ignore[arg-type]
-                    title="Ist U12",
                     kind=const.FieldDatatypes.bool,
                     association=const.FieldAssociations.registration,
-                    checkin=False,
+                    title="Ist U12",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=False,
                     entries=None,
                 ),
                 8: models.EventField(
                     id=8,  # type: ignore[arg-type]
-                    event_id=vtypes.ProtoID(1),
+                    event_id=1,  # type: ignore[arg-type]
                     field_name="anzahl_GROSSBUCHSTABEN",  # type: ignore[arg-type]
-                    title="Anzahl Großbuchstaben",
                     kind=const.FieldDatatypes.int,
                     association=const.FieldAssociations.registration,
-                    checkin=True,
+                    title="Anzahl Großbuchstaben",
+                    sort_group=None,
                     sortkey=0,
+                    description=None,
+                    checkin=True,
                     entries=None,
                 ),
             },
