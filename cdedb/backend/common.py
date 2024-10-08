@@ -15,7 +15,15 @@ import uuid
 from collections.abc import Iterable, Mapping
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Literal, Optional, TypeVar, Union, cast, overload,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import psycopg2.errors
@@ -25,8 +33,16 @@ from passlib.hash import sha512_crypt
 
 import cdedb.common.validation.validate as validate
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, DefaultReturnCode, Error, RequestState, Role,
-    diacritic_patterns, make_proxy, setup_logger, unwrap,
+    CdEDBLog,
+    CdEDBObject,
+    DefaultReturnCode,
+    Error,
+    RequestState,
+    Role,
+    diacritic_patterns,
+    make_proxy,
+    setup_logger,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_

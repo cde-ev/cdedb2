@@ -21,7 +21,11 @@ from subman import SubscriptionError
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+    ANTI_CSRF_TOKEN_NAME,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    now,
+    unwrap,
 )
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
@@ -31,15 +35,27 @@ from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.event.query_stats import (
-    PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
-    StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
+    PART_STATISTICS,
+    TRACK_STATISTICS,
+    EventRegistrationInXChoiceGrouper,
+    StatisticMixin,
+    StatisticPartMixin,
+    StatisticTrackMixin,
+    get_id_constraint,
 )
 from cdedb.models.droid import OrgaToken
 from cdedb.models.ml import (
-    EventAssociatedExclusiveMailinglist, EventAssociatedMailinglist,
+    EventAssociatedExclusiveMailinglist,
+    EventAssociatedMailinglist,
 )
 from tests.common import (
-    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
+    USER_DICT,
+    FrontendTest,
+    UserObject,
+    as_users,
+    event_keeper,
+    execsql,
+    prepsql,
     storage,
 )
 

@@ -7,7 +7,14 @@ import re
 from collections import defaultdict
 from collections.abc import AsyncIterator, Collection, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Optional, TypedDict, Union, cast, overload,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+    overload,
 )
 
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN

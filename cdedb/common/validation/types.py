@@ -11,7 +11,8 @@ from cdedb.common.query import Query as _Query
 
 if TYPE_CHECKING:
     from cdedb.common import (
-        CdEDBObject as _CdEDBObject, CdEDBOptionalMap as _CdEDBOptionalMap,
+        CdEDBObject as _CdEDBObject,
+        CdEDBOptionalMap as _CdEDBOptionalMap,
     )
 else:
     _CdEDBObject = _CdEDBOptionalMap = None

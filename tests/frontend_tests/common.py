@@ -9,7 +9,10 @@ import zoneinfo
 import cdedb.database.constants as const
 import cdedb.enums
 from cdedb.filter import (
-    date_filter, datetime_filter, enum_entries_filter, tex_escape_filter,
+    date_filter,
+    datetime_filter,
+    enum_entries_filter,
+    tex_escape_filter,
 )
 from cdedb.frontend.common import cdedbid_filter, decode_parameter, encode_parameter
 from cdedb.models.ml import ML_TYPE_MAP

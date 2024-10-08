@@ -13,8 +13,12 @@ import freezegun
 import webtest
 
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ASSEMBLY_BAR_SHORTNAME, IGNORE_WARNINGS_NAME, CdEDBObject,
-    NearlyNow, now,
+    ANTI_CSRF_TOKEN_NAME,
+    ASSEMBLY_BAR_SHORTNAME,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    NearlyNow,
+    now,
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
@@ -22,8 +26,14 @@ from cdedb.common.validation.validate import parse_datetime
 from cdedb.database.constants import AssemblyLogCodes
 from cdedb.filter import datetime_filter
 from tests.common import (
-    USER_DICT, FrontendTest, MultiAppFrontendTest, UserIdentifier, as_users, get_user,
-    prepsql, storage,
+    USER_DICT,
+    FrontendTest,
+    MultiAppFrontendTest,
+    UserIdentifier,
+    as_users,
+    get_user,
+    prepsql,
+    storage,
 )
 
 

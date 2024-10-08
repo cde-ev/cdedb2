@@ -73,8 +73,17 @@ import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
-    Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
-    get_type_hints, overload,
+    Any,
+    Callable,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
 )
 
 import magic
@@ -93,16 +102,34 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    CdEDBObject, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, now, parse_date, parse_datetime,
+    ASSEMBLY_BAR_SHORTNAME,
+    EPSILON,
+    EVENT_SCHEMA_VERSION,
+    INFINITE_ENUM_MAGIC_NUMBER,
+    CdEDBObject,
+    CdEDBObjectMap,
+    Error,
+    InfiniteEnum,
+    LineResolutions,
+    asciificator,
+    compute_checkdigit,
+    now,
+    parse_date,
+    parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    MAX_QUERY_ORDERS, MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS,
-    Query, QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    MAX_QUERY_ORDERS,
+    MULTI_VALUE_OPERATORS,
+    NO_VALUE_OPERATORS,
+    VALID_QUERY_OPERATORS,
+    Query,
+    QueryOperators,
+    QueryOrder,
+    QueryScope,
+    QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles

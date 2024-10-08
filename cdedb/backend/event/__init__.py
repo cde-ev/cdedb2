@@ -15,7 +15,10 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
+    Silencer,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.backend.event.course import EventCourseBackend
@@ -24,9 +27,17 @@ from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.backend.event.query import EventQueryBackend
 from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, build_msg, get_hash,
-    json_serialize, unwrap,
+    EVENT_SCHEMA_VERSION,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    build_msg,
+    get_hash,
+    json_serialize,
+    unwrap,
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.n_ import n_

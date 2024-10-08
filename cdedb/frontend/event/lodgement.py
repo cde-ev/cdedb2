@@ -16,8 +16,13 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, LodgementsSortkeys, RequestState, make_persona_name,
-    merge_dicts, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    LodgementsSortkeys,
+    RequestState,
+    make_persona_name,
+    merge_dicts,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -26,12 +31,19 @@ from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.common.validation.validate import LODGEMENT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, drow_name,
-    event_guard, process_dynamic_input, request_extractor,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    check_validation as check,
+    drow_name,
+    event_guard,
+    process_dynamic_input,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.lodgement_wishes import (
-    create_lodgement_wishes_graph, detect_lodgement_wishes,
+    create_lodgement_wishes_graph,
+    detect_lodgement_wishes,
 )
 
 

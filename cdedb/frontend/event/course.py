@@ -17,8 +17,14 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CourseChoiceToolActions, CourseFilterPositions, InfiniteEnum,
-    RequestState, make_persona_name, merge_dicts, unwrap,
+    CdEDBObject,
+    CourseChoiceToolActions,
+    CourseFilterPositions,
+    InfiniteEnum,
+    RequestState,
+    make_persona_name,
+    merge_dicts,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -27,7 +33,11 @@ from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.common.validation.validate import COURSE_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    check_validation as check,
+    event_guard,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend

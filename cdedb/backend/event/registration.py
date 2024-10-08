@@ -25,19 +25,33 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, internal, singularize,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    internal,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
-    DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
-    cast_fields, unwrap,
+    PARSE_OUTPUT_DATEFORMAT,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CourseFilterPositions,
+    DefaultReturnCode,
+    DeletionBlockers,
+    InfiniteEnum,
+    PsycoJson,
+    RequestState,
+    cast_fields,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted

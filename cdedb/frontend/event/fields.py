@@ -16,7 +16,11 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, make_persona_name,
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    build_msg,
+    make_persona_name,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -26,7 +30,11 @@ from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.common.validation.validate import EVENT_FIELD_ALL_FIELDS
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, access, drow_name, event_guard, process_dynamic_input,
+    REQUESTdata,
+    access,
+    drow_name,
+    event_guard,
+    process_dynamic_input,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend

@@ -26,24 +26,53 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    encrypt_password, internal, singularize,
+    Silencer,
+    access,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    encrypt_password,
+    internal,
+    singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, cast_fields, glue,
-    json_serialize, make_persona_name, now, unwrap,
+    EVENT_SCHEMA_VERSION,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    cast_fields,
+    glue,
+    json_serialize,
+    make_persona_name,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
+    COURSE_FIELDS,
+    COURSE_SEGMENT_FIELDS,
+    COURSE_TRACK_FIELDS,
+    EVENT_FEE_FIELDS,
+    EVENT_FIELDS,
+    EVENT_PART_FIELDS,
+    LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS,
+    PART_GROUP_FIELDS,
+    PERSONA_EVENT_FIELDS,
+    PERSONA_STATUS_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS,
+    STORED_EVENT_QUERY_FIELDS,
+    TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import EventLogFilter

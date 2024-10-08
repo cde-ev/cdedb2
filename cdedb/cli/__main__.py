@@ -12,18 +12,29 @@ from typing import Any, Optional
 import click
 
 from cdedb.cli.database import (
-    create_database, create_database_users, populate_database,
+    create_database,
+    create_database_users,
+    populate_database,
     remove_prepared_transactions,
 )
 from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2sql_join
 from cdedb.cli.dev.serve import serve_debugger
 from cdedb.cli.dev.sql2json import sql2json
 from cdedb.cli.storage import (
-    create_log, create_storage, populate_event_keeper, populate_sample_event_keepers,
-    populate_storage, reset_config,
+    create_log,
+    create_storage,
+    populate_event_keeper,
+    populate_sample_event_keepers,
+    populate_storage,
+    reset_config,
 )
 from cdedb.cli.util import (
-    connect, execute_sql_script, get_user, pass_config, pass_secrets, redirect_to_file,
+    connect,
+    execute_sql_script,
+    get_user,
+    pass_config,
+    pass_secrets,
+    redirect_to_file,
     switch_user,
 )
 from cdedb.common import CustomJSONEncoder

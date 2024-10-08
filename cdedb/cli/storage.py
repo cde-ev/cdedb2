@@ -7,7 +7,10 @@ from collections.abc import Collection
 
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.cli.util import (
-    SAMPLE_DATA_JSON, sanity_check, sanity_check_production, switch_user,
+    SAMPLE_DATA_JSON,
+    sanity_check,
+    sanity_check_production,
+    switch_user,
 )
 from cdedb.common import get_hash
 from cdedb.config import Config, SecretsConfig, get_configpath

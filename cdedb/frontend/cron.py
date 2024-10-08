@@ -20,7 +20,10 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
-    AbstractFrontend, BaseApp, PeriodicJob, setup_translations,
+    AbstractFrontend,
+    BaseApp,
+    PeriodicJob,
+    setup_translations,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend

@@ -15,11 +15,19 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
-    access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, singularize,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    singularize,
 )
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, RequestState, now,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    now,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError

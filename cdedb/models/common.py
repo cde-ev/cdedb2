@@ -5,7 +5,14 @@ import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Optional, TypeVar, Union, get_args,
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
     get_origin,
 )
 

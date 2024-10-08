@@ -14,15 +14,25 @@ import werkzeug.exceptions
 from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
 from schulze_condorcet.types import Candidate, DetailedResultLevel, VoteString
 from schulze_condorcet.util import (
-    as_vote_string, as_vote_strings, as_vote_tuple, as_vote_tuples,
+    as_vote_string,
+    as_vote_strings,
+    as_vote_tuple,
+    as_vote_tuples,
 )
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.assembly import GroupedBallots
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, DefaultReturnCode, RequestState,
-    abbreviation_mapper, get_hash, merge_dicts, now, unwrap,
+    ASSEMBLY_BAR_SHORTNAME,
+    CdEDBObject,
+    DefaultReturnCode,
+    RequestState,
+    abbreviation_mapper,
+    get_hash,
+    merge_dicts,
+    now,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -30,9 +40,17 @@ from cdedb.common.validation.validate import BALLOT_EXPOSED_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
-    Attachment, REQUESTdata, REQUESTdatadict, access, assembly_guard,
-    check_validation as check, drow_name, inspect_validation, periodic,
-    process_dynamic_input, request_extractor,
+    Attachment,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    assembly_guard,
+    check_validation as check,
+    drow_name,
+    inspect_validation,
+    periodic,
+    process_dynamic_input,
+    request_extractor,
 )
 
 #: Magic value to signal abstention during _classical_ voting.
