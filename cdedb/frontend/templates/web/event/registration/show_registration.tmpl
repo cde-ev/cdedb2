@@ -286,9 +286,11 @@
                 {% if field['association'] == enums['FieldAssociations'].registration %}
                     {% if not prev_sort_groups or field.sort_group != prev_sort_groups[-1] %}
                         {% do prev_sort_groups.append(field.sort_group) %}
-                        <h5 class="heading-underline">
-                            {{ field.sort_group or gettext("Other Fields") }}
-                        </h5>
+                        {% if field.sort_group or (prev_sort_groups|length) > 1 %}
+                            <h5 class="heading-underline">
+                                {{ field.sort_group or gettext("Other Fields") }}
+                            </h5>
+                        {% endif %}
                     {% endif %}
                     <dt title="{{ field.title }}">{{ field['title'] }}</dt>
                     <dd>

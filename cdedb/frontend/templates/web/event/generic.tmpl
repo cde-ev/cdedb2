@@ -236,9 +236,11 @@
                 if field['association'] == association %}
             {% if not prev_sort_groups or field.sort_group != prev_sort_groups[-1] %}
                 {% do prev_sort_groups.append(field.sort_group) %}
-                <h4 class="heading-underline">
-                    {{ field.sort_group or gettext("Other Fields") }}
-                </h4>
+                {% if field.sort_group or (prev_sort_groups|length) > 1 %}
+                    <h4 class="heading-underline">
+                        {{ field.sort_group or gettext("Other Fields") }}
+                    </h4>
+                {% endif %}
             {% endif %}
             {{ form_field_input(field, info=field.description) }}
         {% else %}
