@@ -514,7 +514,9 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("persona")
     def check_registrations_status(
             self, rs: RequestState, persona_ids: Collection[int], event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> dict[int, bool]:
+            stati: Collection[const.RegistrationPartStati],
+            part_ids: Collection[int] = (),
+    ) -> dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -546,10 +548,17 @@ class EventRegistrationBackend(EventBaseBackend):
         if not registration_ids:
             return {anid: False for anid in persona_ids}
 
+        event = self.get_event(rs, event_id)
+        part_ids = list(part_ids or event.parts)
         registrations = self.get_registrations(rs, registration_ids)
-        ret.update({reg['persona_id']:
-                        any(part['status'] in stati for part in reg['parts'].values())
-                    for reg in registrations.values()})
+        ret.update({
+            reg['persona_id']:
+                any(
+                    reg['parts'][part_id]['status'] in stati
+                    for part_id in part_ids
+                )
+            for reg in registrations.values()
+        })
         return ret
 
     class _GetRegistrationStatusProtocol(Protocol):

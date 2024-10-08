@@ -1,26 +1,27 @@
 """Dataclass definitions of mailinglist realm."""
 
 import dataclasses
-import itertools
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 from subman.machine import SubscriptionPolicy
+from typing_extensions import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.types import TypeMapping
 from cdedb.database.constants import (
     MailinglistDomain,
     MailinglistRosterVisibility,
     MailinglistTypes,
 )
+from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, requestdict_field_spec
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -158,10 +159,50 @@ class Mailinglist(CdEDataclass):
         return mandatory, optional
 
     @classmethod
-    def get_additional_fields(cls) -> Mapping[str, Literal["str", "[str]"]]:
+    def get_select_query(cls, entities: Collection[int],
+                         entity_key: Optional[str] = None,
+                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+        simple_fields = cls.database_fields()
+        simple_fields.extend(
+            field_name for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
+            if not (
+                    isinstance(field.type, type)
+                    and issubclass(field.type, CdEDataclass)
+            )
+        )
+        query = f"""
+            SELECT
+                {', '.join(simple_fields)},
+                array(
+                    SELECT persona_id
+                    FROM ml.moderators
+                    WHERE mailinglist_id = {cls.database_table}.id
+                ) AS moderators,
+                array(
+                    SELECT address
+                    FROM ml.whitelist
+                    WHERE mailinglist_id = {cls.database_table}.id
+                ) AS whitelist
+            FROM {cls.database_table}
+            WHERE {entity_key or cls.entity_key} = ANY(%s)
+            """
+        params = (entities,)
+        return query, params
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        data['moderators'] = set(data['moderators'])
+        data['whitelist'] = set(data['whitelist'])
+        fields = cls.get_additional_fields()
+        for key in ADDITIONAL_REQUEST_FIELDS:
+            if key not in fields:
+                del data[key]
+        return super().from_database(data)
+
+    @classmethod
+    def get_additional_fields(cls) -> dict[str, dataclasses.Field[Any]]:
         additional_fields = set(fields(cls)) - set(fields(Mailinglist))
-        return {field.name: requestdict_field_spec(field)
-                for field in additional_fields}
+        return {field.name: field for field in additional_fields}
 
     viewer_roles: ClassVar[set[str]] = {"ml"}
 
@@ -480,11 +521,16 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
+    # An additional part group id limits the implicit subscribers.
+    event_part_group_id: Optional[vtypes.ID] = None
+
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list)
 
     # This fields require non-restricted moderator access to be changed.
-    full_moderator_fields: ClassVar[set[str]] = {"registration_stati"}
+    full_moderator_fields: ClassVar[set[str]] = {
+        "registration_stati", "event_part_group_id",
+    }
 
     def is_restricted_moderator(self, rs: RequestState, bc: BackendContainer) -> bool:
         """Check if the user is a restricted moderator.
@@ -515,8 +561,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if self.event_id is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
+        # Do not restrict based on part ids on purpose.
+        #  This allows matching registrations of other parts to opt in.
         data = bc.event.check_registrations_status(
-            rs, persona_ids, self.event_id, self.registration_stati)
+            rs, persona_ids, self.event_id, self.registration_stati,
+        )
         return {
             k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
             for k, v in data.items()
@@ -534,15 +583,20 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        spec = QueryScope.registration.get_spec(event=event)
-        target = {f"part{part_id}.status" for part_id in event.parts}
-        for column in spec:
-            if set(column.split(',')) == target:
-                status_column = column
-                break
-        else:
-            status_column = ",".join(
-                f"part{part_id}.status" for part_id in event.parts)
+        part_ids = []
+        if self.event_part_group_id:
+            if part_group := event.part_groups.get(self.event_part_group_id):
+                part_ids = xsorted(part_group.parts)
+
+        part_ids = part_ids or xsorted(event.parts)
+        status_column = ",".join(f"part{part_id}.status" for part_id in part_ids)
+
+        spec = {
+            "id": QuerySpecEntry("id", "id"),
+            "persona.id": QuerySpecEntry("persona.id", "persona.id"),
+            status_column: QuerySpecEntry("enum_int", "status"),
+        }
+
         query = Query(
             scope=QueryScope.registration,
             spec=spec,
@@ -554,6 +608,36 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         data = bc.event.submit_general_query(rs, query, event_id=event.id)
 
         return {e["persona.id"] for e in data}
+
+
+@dataclass
+class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
+    """
+    Same as `EventAssociatedMailinglist` but stricly limited by event_part_group_id.
+    """
+
+    def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,
+                                  persona_ids: Collection[int],
+                                  ) -> SubscriptionPolicyMap:
+        """Determine the SubscriptionPolicy for each given persona with the mailinglist.
+
+        In contrast to `EventAssociatedMailinglist` this list is only subscribable for
+        registrations with the appropriate status in the linked part group.
+        """
+        if self.event_id is None or self.event_part_group_id is None:
+            return super().get_subscription_policies(rs, bc, persona_ids)
+
+        # Restrict by part group.
+        event = bc.event.get_event(rs, self.event_id)
+        part_ids = list(event.part_groups[self.event_part_group_id].parts)
+        data = bc.event.check_registrations_status(
+            rs, persona_ids, self.event_id, self.registration_stati,
+            part_ids=part_ids,
+        )
+        return {
+            k: SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
+            for k, v in data.items()
+        }
 
 
 @dataclass
@@ -780,6 +864,7 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.restricted_team: RestrictedTeamMailinglist,
     MailinglistTypes.event_associated: EventAssociatedMailinglist,
     MailinglistTypes.event_orga: EventOrgaMailinglist,
+    MailinglistTypes.event_associated_exclusive: EventAssociatedExclusiveMailinglist,
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
@@ -796,7 +881,13 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
 
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}
 
-ADDITIONAL_TYPE_FIELDS = dict(itertools.chain.from_iterable(
-    atype.get_additional_fields().items()
-    for atype in ML_TYPE_MAP.values()
-))
+ADDITIONAL_TYPE_FIELDS = dict(
+    (field_name, field)
+    for ml_type in ML_TYPE_MAP.values()
+    for field_name, field in ml_type.get_additional_fields().items()
+)
+
+ADDITIONAL_REQUEST_FIELDS = {
+    field_name: requestdict_field_spec(field)
+    for field_name, field in ADDITIONAL_TYPE_FIELDS.items()
+}

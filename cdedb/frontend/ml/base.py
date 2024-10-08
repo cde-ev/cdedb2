@@ -40,7 +40,7 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS,
+    ADDITIONAL_REQUEST_FIELDS,
     AssemblyAssociatedMailinglist,
     EventAssociatedMeta as EventAssociatedMetaMailinglist,
     Mailinglist,
@@ -216,7 +216,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if ml_type is None:
             return self.render(
-                rs, "create_mailinglist", {
+                rs, "configure_mailinglist", {
                     'available_types': available_types,
                     'ml_type': None,
                 })
@@ -232,11 +232,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                 events = self.eventproxy.get_events(rs, event_ids)
             else:
                 events = {}
-            assemblies = (self.assemblyproxy.list_assemblies(rs)
-                          if "assembly_id" in additional_fields else [])
-            return self.render(rs, "create_mailinglist", {
+            assemblies = self.assemblyproxy.list_assemblies(rs)
+            sorted_assemblies = keydictsort_filter(
+                assemblies, EntitySorter.assembly)
+            assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
+            return self.render(rs, "configure_mailinglist", {
                 'events': events,
-                'assemblies': assemblies,
+                'part_groups': [],  # Can be configured later if necessary.
+                'assembly_entries': assembly_entries,
                 'ml_type': ml_type,
                 'available_domains': available_domains,
                 'additional_fields': additional_fields,
@@ -244,7 +247,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(),
+                     *ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -258,13 +262,26 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_(
                 "May not create mailinglist of this type."))
         # silently discard superfluous fields
-        for field in ADDITIONAL_TYPE_FIELDS:
+        for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml_class.get_additional_fields():
                 del data[field]
         data = check(rs, vtypes.Mailinglist, data, creation=True, subtype=ml_class)
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert data is not None
+
+        if data.get('event_id'):
+            event = self.eventproxy.get_event(rs, data['event_id'])
+            if part_group_id := data.get('event_part_group_id'):
+                if (
+                    part_group_id not in event.part_groups
+                    or event.part_groups[part_group_id].constraint_type
+                        != const.EventPartGroupType.mailinglist_link
+                ):
+                    rs.append_validation_error((
+                        'event_part_group_id',
+                        KeyError(n_("Invalid part group.")),
+                    ))
 
         ml = ml_class(**data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
@@ -415,9 +432,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
-            event_entries = [(e.id, e.title) for e in xsorted(events.values())]
         else:
-            event_entries = []
+            events = {}
+        part_groups = []
+        if isinstance(ml, EventAssociatedMetaMailinglist):
+            event_id = rs.values.get("event_id", ml.event_id)
+            if event_id:
+                part_groups = xsorted(
+                    pg for pg in events[int(event_id)].part_groups.values()
+                    if pg.constraint_type == const.EventPartGroupType.mailinglist_link
+                )
         if "assembly_id" in additional_fields:
             assemblies = self.assemblyproxy.list_assemblies(rs)
             sorted_assemblies = keydictsort_filter(
@@ -428,19 +452,29 @@ class MlBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
-        restricted = (not self.mlproxy.may_manage(rs, mailinglist_id,
-                                                  allow_restricted=False)
-                      and ml.full_moderator_fields)
-        return self.render(rs, "change_mailinglist", {
-            'event_entries': event_entries,
+        restricted = (
+            not self.mlproxy.may_manage(rs, mailinglist_id, allow_restricted=False)
+            and bool(ml.full_moderator_fields)
+        )
+        readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
+        return self.render(rs, "configure_mailinglist", {
+            'events': events,
+            'event_parts_by_event': {
+                event.id: {part.id: part.title for part in event.parts.values()}
+                for event in events.values()
+            },
+            'part_groups': part_groups,
             'assembly_entries': assembly_entries,
             'additional_fields': additional_fields,
             'restricted': restricted,
+            'readonly': readonly,
+            'available_domains': ml.available_domains,
         })
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(), *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*Mailinglist.requestdict_fields(),
+                     *ADDITIONAL_REQUEST_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -456,7 +490,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             allowed = ml.restricted_moderator_fields
 
         # silently discard superfluous fields
-        for field in ADDITIONAL_TYPE_FIELDS:
+        for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml.get_additional_fields():
                 del data[field]
 
@@ -466,6 +500,18 @@ class MlBaseFrontend(AbstractUserFrontend):
             data[key] = current[key]
 
         data = check(rs, vtypes.Mailinglist, data, subtype=get_ml_type(ml.ml_type))
+        if data and data.get('event_id'):
+            event = self.eventproxy.get_event(rs, data['event_id'])
+            if part_group_id := data.get('event_part_group_id'):
+                if (
+                    part_group_id not in event.part_groups
+                    or event.part_groups[part_group_id].constraint_type
+                        != const.EventPartGroupType.mailinglist_link
+                ):
+                    rs.append_validation_error((
+                        'event_part_group_id',
+                        KeyError(n_("Invalid part group.")),
+                    ))
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         assert data is not None
@@ -479,7 +525,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
-        rs.notify_return_code(code)
+        rs.notify_return_code(code, info=n_("Nothing changed."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
@@ -501,7 +547,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "domain")
     def change_ml_type(
         self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,

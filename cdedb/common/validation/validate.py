@@ -58,6 +58,7 @@ import dataclasses
 import datetime
 import decimal
 import distutils.util
+import enum
 import functools
 import io
 import itertools
@@ -70,8 +71,7 @@ import string
 import typing
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
-from enum import Enum
-from types import TracebackType
+from types import TracebackType, UnionType
 from typing import (
     Any,
     Callable,
@@ -195,7 +195,8 @@ class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: type[T]) -> Callable[..., T]:
-        if typing.get_origin(type_) is Union:
+        origin = typing.get_origin(type_)
+        if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
@@ -4228,6 +4229,11 @@ def _mailinglist(
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
 
+    if not val.get('event_id'):
+        if val.get('event_part_group_id'):
+            errs.append(ValueError("event_id", n_(
+                "Cannot have event part group without event.")))
+
     if errs:
         raise errs
 
@@ -5015,7 +5021,7 @@ def _log_filter(
     return LogFilter(val)
 
 
-E = TypeVar('E', bound=Enum)
+E = TypeVar('E', bound=enum.Enum)
 
 
 def _enum_validator_maker(
