@@ -153,11 +153,19 @@
             {% endif %}
 
             {% if 'event_part_group_id' in additional_fields %}
-                {{ util.form_input_select(
-                        name="event_part_group_id", label=gettext("Part Group"),
-                        entries=part_groups|entries('id', 'title'), nulloption="",
-                        actualreadonly=readonly, outerclass="event-specific",
-                        info=gettext("Only subscribe participants of this part group automatically.")) }}
+                {% if ambience['mailinglist'] %}
+                    {{ util.form_input_select(
+                            name="event_part_group_id", label=gettext("Part Group"),
+                            entries=part_groups|entries('id', 'title'), nulloption="",
+                            actualreadonly=readonly, outerclass="event-specific",
+                            info=gettext("Only subscribe participants of this part group automatically.")) }}
+                {% else %}
+                    {{ util.form_input_static(
+                            name="event_part_group_id", label=gettext("Part Group"),
+                            value='<div class="text-muted">%s%s%s</div>'|format(
+                                util.make_icon('info-circle'), nbsp, gettext("Available after creation."))|s,
+                            outerclass="event-specific") }}
+                {% endif %}
             {% endif %}
 
             {% if 'assembly_id' in additional_fields %}
