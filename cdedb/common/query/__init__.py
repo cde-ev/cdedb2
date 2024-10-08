@@ -25,7 +25,7 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
 from cdedb.common.roles import ADMIN_KEYS
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import LOCALE, xsorted
 from cdedb.config import LazyConfig
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -412,6 +412,7 @@ _QUERY_SPECS = {
             "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
+            "show_address": QuerySpecEntry("bool", n_("Address searchable")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
@@ -451,11 +452,13 @@ _QUERY_SPECS = {
             "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
+            "show_address": QuerySpecEntry("bool", n_("Address searchable")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
             "address2": QuerySpecEntry("str", n_("Address (2)")),
             "address_supplement2": QuerySpecEntry("str", n_("Address Supplement (2)")),
+            "show_address2": QuerySpecEntry("bool", n_("Address (2) searchable")),
             "postal_code2": QuerySpecEntry("str", n_("ZIP (2)")),
             "location2": QuerySpecEntry("str", n_("City (2)")),
             "country2": QuerySpecEntry("enum_str", n_("Country (2)")),
@@ -507,6 +510,7 @@ _QUERY_SPECS = {
             "mobile": QuerySpecEntry("phone", n_("Mobile Phone")),
             "address": QuerySpecEntry("str", n_("Address")),
             "address_supplement": QuerySpecEntry("str", n_("Address Supplement")),
+            "show_address": QuerySpecEntry("bool", n_("Address searchable")),
             "postal_code": QuerySpecEntry("str", n_("ZIP")),
             "location": QuerySpecEntry("str", n_("City")),
             "country": QuerySpecEntry("enum_str", n_("Country")),
@@ -530,8 +534,6 @@ _QUERY_SPECS = {
             "given_names,display_name": QuerySpecEntry("str", n_("Given Names")),
             "family_name,birth_name": QuerySpecEntry("str", n_("Family Name")),
             "username": QuerySpecEntry("str", n_("E-Mail")),
-            "address,address_supplement,address2,address_supplement2":
-                QuerySpecEntry("str", n_("Address")),
             "postal_code,postal_code2": QuerySpecEntry("str", n_("ZIP")),
             "location,location2": QuerySpecEntry("str", n_("City")),
             "country,country2": QuerySpecEntry("str", n_("Country")),
@@ -597,6 +599,27 @@ class QueryResultEntryFormat(enum.Enum):
     bool = 22
     phone = 27
     enum = 30
+
+
+@dataclasses.dataclass
+class QueryOrderEntry:
+    column: str
+    ascending: bool
+
+    # From spec.
+    type: str
+
+    @property
+    def select(self) -> str:
+        return self.column + f' COLLATE "{LOCALE}"' * (self.type == "str")
+
+    @property
+    def select_with_alias(self) -> str:
+        return f'{self.select} AS "{Query._alias_column(self.column)}"'  # pylint: disable=protected-access
+
+    @property
+    def order_by(self) -> str:
+        return f'{self.select} {"ASC" if self.ascending else "DESC"}'
 
 
 class Query:
@@ -681,6 +704,51 @@ class Query:
         for field in changed_fields:
             self.spec[field] = self.spec[field.replace('"', '')]
             del self.spec[field.replace('"', '')]
+
+    @staticmethod
+    def _alias_column(column: str) -> str:
+        """Static helper to strip quotes from column names for aliasing."""
+        return column.replace('"', '')
+
+    @property
+    def field_aliases(self) -> dict[str, str]:
+        """Map all columns in the fields of interest to their aliases."""
+        return {
+            column: self._alias_column(column)
+            for field in (self.fields_of_interest + [self.scope.get_primary_key()])
+            for column in field.split(',')
+        }
+
+    @property
+    def _order_entries(self) -> list[QueryOrderEntry]:
+        """Convert the order entries into the dataclass helper."""
+        return [
+            QueryOrderEntry(entry.split(",")[0], ascending, self.spec[entry].type)
+            for entry, ascending in self.order
+        ]
+
+    @property
+    def select(self) -> str:
+        """Return a list of SQL selections including collations and aliases.
+
+        Take special care to not duplicate any columns.
+        """
+        return ', '.join(
+            [
+                f'{column} AS "{alias}"'
+                for column, alias in self.field_aliases.items()
+            ]
+            + [
+                order.select_with_alias for order in self._order_entries
+            ],
+        )
+
+    @property
+    def order_by(self) -> str:
+        """Return an ORDER BY statement to be appended to a query."""
+        if not self.order:
+            return ""
+        return f" ORDER BY {', '.join(order.order_by for order in self._order_entries)}"
 
     def serialize(self, timezone_aware: bool) -> CdEDBObject:
         """

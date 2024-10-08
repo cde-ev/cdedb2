@@ -20,17 +20,35 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, internal, singularize,
+    AbstractBackend,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    internal,
+    singularize,
 )
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
-    PsycoJson, RequestState, now, parse_date, parse_datetime, parse_phone, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    PsycoJson,
+    RequestState,
+    now,
+    parse_date,
+    parse_datetime,
+    parse_phone,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS,
-    PART_GROUP_FIELDS, REGISTRATION_FIELDS,
+    COURSE_TRACK_FIELDS,
+    EVENT_FIELD_SPEC,
+    EVENT_PART_FIELDS,
+    FIELD_DEFINITION_FIELDS,
+    PART_GROUP_FIELDS,
+    REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter

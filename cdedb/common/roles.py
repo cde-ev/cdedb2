@@ -205,12 +205,14 @@ PERSONA_DEFAULTS = {
     'mobile': None,
     'address_supplement': None,
     'address': None,
+    'show_address': True,
     'postal_code': None,
     'location': None,
     'country': None,
     'birth_name': None,
     'address_supplement2': None,
     'address2': None,
+    'show_address2': True,
     'postal_code2': None,
     'location2': None,
     'country2': None,
@@ -301,7 +303,7 @@ ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 #: every admin view with one admin role per row (except of genesis)
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
-    "core_user", "core",
+    "core_user", "core", "user_review",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
     "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
@@ -329,14 +331,14 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
         result |= {"meta_admin"}
     if "core_admin" in roles:
         result |= {"core", "core_user", "cde_user", "event_user",
-                   "assembly_user", "ml_user"}
+                   "assembly_user", "ml_user", "user_review"}
     if "cde_admin" in roles:
-        result |= {"cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
+        result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "event_mgmt", "event_orga", "ml_mgmt_event",
-                   "ml_mod_event"}
+        result |= {"event_user", "user_review", "event_mgmt", "event_orga",
+                   "ml_mgmt_event", "ml_mod_event"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:

@@ -9,7 +9,6 @@ import decimal
 import email.message
 import email.parser
 import email.policy
-import enum
 import functools
 import gettext
 import io
@@ -30,12 +29,21 @@ import urllib.request
 from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
 from re import Pattern
 from typing import (
-    Any, Callable, ClassVar, NamedTuple, Optional, TypeVar, Union, cast, no_type_check,
+    Any,
+    Callable,
+    ClassVar,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    no_type_check,
 )
 
 import PIL.Image
 import webtest
 import webtest.utils
+from psycopg2.extras import RealDictCursor
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
@@ -45,35 +53,59 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2sql_join
 from cdedb.cli.storage import (
-    create_storage, populate_sample_event_keepers, populate_storage,
+    create_storage,
+    populate_sample_event_keepers,
+    populate_storage,
 )
 from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now,
+    ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    PathLike,
+    RequestState,
+    merge_dicts,
+    nearly_now,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import (
-    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
-    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
+    AssemblyLogFilter,
+    CdELogFilter,
+    ChangelogLogFilter,
+    CoreLogFilter,
+    EventLogFilter,
+    FinanceLogFilter,
+    GenericLogFilter,
+    MlLogFilter,
+    PastEventLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME,
+    ALL_ADMIN_VIEWS,
+    roles_to_db_role,
 )
 from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
-    AbstractFrontend, Worker, make_persona_name, setup_translations,
+    AbstractFrontend,
+    Worker,
+    make_persona_name,
+    setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken, resolve_droid_name
 from cdedb.script import Script
+from cdedb.uncommon.intenum import CdEIntEnum
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -378,18 +410,30 @@ class CdEDBTest(BasicTest):
         json_file = "/cdedb2/tests/ancillary_files/sample_data.json"
         with open(json_file, encoding="utf8") as f:
             data: dict[str, list[CdEDBObject]] = json.load(f)
-        cls._sample_data = "\n".join(json2sql(cls.conf, cls.secrets, data))
 
-    def setUp(self) -> None:
+        with cls.database_cursor() as cur:
+            cls._sample_data = json2sql_join(cur, json2sql(data))
+
+            cur.execute('SELECT COUNT(*) FROM core.postal_code_locations')
+            if not unwrap(cur.fetchone()):
+                cur.execute(*insert_postal_code_locations())
+
+    @classmethod
+    @contextlib.contextmanager
+    def database_cursor(cls) -> Generator[RealDictCursor, None, None]:
         with Script(
             persona_id=-1,
             dbuser="cdb",
             check_system_user=False,
         ).rs().conn as conn:
             conn.set_session(autocommit=True)
-            with conn.cursor() as curr:
-                curr.execute(self._clean_data)
-                curr.execute(self._sample_data)
+            with conn.cursor() as cur:
+                yield cur
+
+    def setUp(self) -> None:
+        with self.database_cursor() as cur:
+            cur.execute(self._clean_data)
+            cur.execute(self._sample_data)
 
         super().setUp()
 
@@ -1699,7 +1743,7 @@ class FrontendTest(BackendTest):
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: tuple[tuple[int, enum.IntEnum], ...],
+    def log_pagination(self, title: str, logs: tuple[tuple[int, CdEIntEnum], ...],
                        ) -> None:
         """Helper function to test the logic of the log pagination.
 
@@ -1804,7 +1848,7 @@ class FrontendTest(BackendTest):
         self.response = save
 
     def _log_subroutine(self, title: str,
-                        all_logs: tuple[tuple[int, enum.IntEnum], ...],
+                        all_logs: tuple[tuple[int, CdEIntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")

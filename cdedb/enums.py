@@ -5,63 +5,42 @@ is needed for creation of validators and serializers and thus we keep
 one list instead of two.
 """
 
-from enum import Enum, IntEnum
+# pylint: disable=wildcard-import, unused-import, unused-wildcard-import
 
-import cdedb.database.constants as const
-from cdedb.common import (
-    Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
-    CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
+import enum
+
+from cdedb.common import (  # noqa: F401
+    Accounts,
+    AgeClasses,
+    ConfidenceLevel,
+    CourseChoiceToolActions,
+    CourseFilterPositions,
+    GenesisDecision,
+    LineResolutions,
+    LodgementsSortkeys,
     TransactionType,
 )
-from cdedb.common.query import QueryOperators, QueryScope
-from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
-
-#: The list of normal enums
-ALL_ENUMS: tuple[type[Enum], ...] = (
-    const.Genders,
-    const.PersonaChangeStati,
-    const.RegistrationPartStati,
-    const.PrivilegeChangeStati,
-    const.GenesisStati,
-    const.SubscriptionState,
-    const.ModerationPolicy,
-    const.AttachmentPolicy,
-    const.LastschriftTransactionStati,
-    const.CoreLogCodes,
-    const.CdeLogCodes,
-    const.FinanceLogCodes,
-    const.EventLogCodes,
-    const.PastEventLogCodes,
-    const.AssemblyLogCodes,
-    const.MlLogCodes,
-    const.FieldAssociations,
-    const.FieldDatatypes,
-    const.MailinglistTypes,
-    const.MailinglistDomain,
-    const.MailinglistRosterVisibility,
-    const.QuestionnaireUsages,
-    const.EventPartGroupType,
-    const.CourseTrackGroupType,
-    const.EventFeeType,
-    const.NotifyOnRegistration,
-    const.PastInstitutions,
-    const.EmailStatus,
-    QueryOperators,
-    QueryScope,
-    AgeClasses,
-    LineResolutions,
-    GenesisDecision,
+from cdedb.common.query import QueryOperators, QueryScope  # noqa: F401
+from cdedb.database.constants import *  # noqa: F403
+from cdedb.uncommon.intenum import CdEIntEnum
+from cdedb.uncommon.submanshim import (  # noqa: F401
     SubscriptionAction,
     SubscriptionPolicy,
-    LodgementsSortkeys,
-    Accounts,
-    TransactionType,
-    ConfidenceLevel,
 )
 
-#: The list of infinite enums
-ALL_INFINITE_ENUMS: tuple[type[IntEnum], ...] = (
-    CourseFilterPositions, CourseChoiceToolActions)
+ALL_ENUMS: tuple[type[enum.Enum], ...] = tuple(
+    enum_ for enum_ in locals().values()
+    if isinstance(enum_, type)
+       and issubclass(enum_, enum.Enum)
+       and not getattr(enum_, "infinite_enum", False)
+)
+
+ALL_INFINITE_ENUMS: tuple[type[CdEIntEnum], ...] = tuple(
+    enum_ for enum_ in locals().values()
+    if isinstance(enum_, type)
+       and issubclass(enum_, CdEIntEnum)
+       and getattr(enum_, "infinite_enum", False)
+)
 
 #: A dict for enum lookup in the templates.
 ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}

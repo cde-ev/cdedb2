@@ -12,13 +12,22 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    access, affirm_set_validation as affirm_set, affirm_validation as affirm,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
     singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, cast_fields, glue, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    PsycoJson,
+    RequestState,
+    cast_fields,
+    glue,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS

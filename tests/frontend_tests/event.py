@@ -20,7 +20,11 @@ import webtest
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
+    ANTI_CSRF_TOKEN_NAME,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    now,
+    unwrap,
 )
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
@@ -30,12 +34,23 @@ from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.event.query_stats import (
-    PART_STATISTICS, TRACK_STATISTICS, EventRegistrationInXChoiceGrouper,
-    StatisticMixin, StatisticPartMixin, StatisticTrackMixin, get_id_constraint,
+    PART_STATISTICS,
+    TRACK_STATISTICS,
+    EventRegistrationInXChoiceGrouper,
+    StatisticMixin,
+    StatisticPartMixin,
+    StatisticTrackMixin,
+    get_id_constraint,
 )
 from cdedb.models.droid import OrgaToken
 from tests.common import (
-    USER_DICT, FrontendTest, UserObject, as_users, event_keeper, execsql, prepsql,
+    USER_DICT,
+    FrontendTest,
+    UserObject,
+    as_users,
+    event_keeper,
+    execsql,
+    prepsql,
     storage,
 )
 
@@ -2982,6 +2997,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.submit(f)
         # The field has been deleted, hence the title is no longer known.
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+
+        # Regression test for https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/3342
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qord_0"] = 'course1.id'
+        self.submit(f)
 
     @as_users("annika")
     def test_course_query(self) -> None:

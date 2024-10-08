@@ -21,28 +21,52 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, CdEDBObject, RequestState, merge_dicts, now, unwrap,
+    DEFAULT_NUM_COURSE_CHOICES,
+    CdEDBObject,
+    RequestState,
+    merge_dicts,
+    now,
+    unwrap,
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpecEntry,
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpecEntry,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
-    EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
-    EVENT_PART_CREATION_MANDATORY_FIELDS, EVENT_PART_CREATION_OPTIONAL_FIELDS,
-    EVENT_PART_GROUP_COMMON_FIELDS, EVENT_TRACK_COMMON_FIELDS,
+    EVENT_EXPOSED_FIELDS,
+    EVENT_PART_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS,
+    EVENT_PART_CREATION_OPTIONAL_FIELDS,
+    EVENT_PART_GROUP_COMMON_FIELDS,
+    EVENT_TRACK_COMMON_FIELDS,
     EVENT_TRACK_GROUP_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
-    Headers, REQUESTdata, REQUESTdatadict, REQUESTfile, access, cdedburl,
-    check_validation as check, check_validation_optional as check_optional, drow_name,
-    event_guard, inspect_validation as inspect, periodic, process_dynamic_input,
+    Headers,
+    REQUESTdata,
+    REQUESTdatadict,
+    REQUESTfile,
+    access,
+    cdedburl,
+    check_validation as check,
+    check_validation_optional as check_optional,
+    drow_name,
+    event_guard,
+    inspect_validation as inspect,
+    periodic,
+    process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.models.ml import (
-    EventAssociatedMailinglist, EventOrgaMailinglist, Mailinglist,
+    EventAssociatedMailinglist,
+    EventOrgaMailinglist,
+    Mailinglist,
 )
 
 
@@ -1310,8 +1334,10 @@ class EventEventMixin(EventBaseFrontend):
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
         if len(result) == 1:
-            return self.redirect(rs, "event/show_registration",
-                                 {'registration_id': result[0]['id']})
+            return self.redirect(
+                rs, "event/show_registration",
+                {'registration_id': result[0][query.scope.get_primary_key()]},
+            )
         elif result:
             # TODO make this accessible
             pass
@@ -1337,8 +1363,10 @@ class EventEventMixin(EventBaseFrontend):
             result = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
             if len(result) == 1:
-                return self.redirect(rs, "event/show_registration",
-                                     {'registration_id': result[0]['id']})
+                return self.redirect(
+                    rs, "event/show_registration",
+                    {'registration_id': result[0][query.scope.get_primary_key()]},
+                )
             elif result:
                 params = query.serialize_to_url()
                 return self.redirect(rs, "event/registration_query", params)

@@ -3,9 +3,13 @@ import json
 import pathlib
 import subprocess
 
-from cdedb.cli.dev.json2sql import json2sql
+from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql
 from cdedb.cli.util import (
-    SAMPLE_DATA_JSON, connect, has_systemd, is_docker, sanity_check,
+    SAMPLE_DATA_JSON,
+    connect,
+    has_systemd,
+    is_docker,
+    sanity_check,
 )
 from cdedb.config import Config, SecretsConfig, TestConfig
 
@@ -84,11 +88,12 @@ def populate_database(conf: TestConfig, secrets: SecretsConfig,
     with open(infile) as f:
         data = json.load(f)
     xss_payload = conf.get("XSS_PAYLOAD", "") if xss else ""
-    sql_commands = "\n".join(json2sql(conf, secrets, data, xss_payload=xss_payload))
+    cmds = json2sql(data, xss_payload=xss_payload) + [insert_postal_code_locations()]
 
     with connect(conf, secrets) as conn:
         with conn.cursor() as cur:
-            cur.execute(sql_commands)
+            for cmd, params in cmds:
+                cur.execute(cmd, params)
 
 
 def remove_prepared_transactions(conf: Config, secrets: SecretsConfig) -> None:

@@ -14,8 +14,13 @@ from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import CdELogFilter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, TransactionObserver, Worker, access,
-    make_membership_fee_reference, make_postal_address,
+    REQUESTdata,
+    REQUESTdatadict,
+    TransactionObserver,
+    Worker,
+    access,
+    make_membership_fee_reference,
+    make_postal_address,
 )
 
 

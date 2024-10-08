@@ -13,14 +13,24 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
-    affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
+    AbstractBackend,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    internal,
     singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, DefaultReturnCode, DeletionBlockers, RequestState,
-    make_proxy, unwrap,
+    CdEDBLog,
+    CdEDBObject,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    make_proxy,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
@@ -30,9 +40,14 @@ from cdedb.common.roles import ADMIN_KEYS, implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.models.ml import (
-    ADDITIONAL_TYPE_FIELDS, ML_TYPE_MAP, AssemblyAssociatedMailinglist,
-    BackendContainer, EventAssociatedMailinglist,
-    EventAssociatedMeta as EventAssociatedMetaMailinglist, Mailinglist, MLType,
+    ADDITIONAL_TYPE_FIELDS,
+    ML_TYPE_MAP,
+    AssemblyAssociatedMailinglist,
+    BackendContainer,
+    EventAssociatedMailinglist,
+    EventAssociatedMeta as EventAssociatedMetaMailinglist,
+    Mailinglist,
+    MLType,
     get_ml_type,
 )
 from cdedb.uncommon.submanshim import SubscriptionAction, SubscriptionPolicy
@@ -196,11 +211,11 @@ class MlBackend(AbstractBackend):
         affirm_set(SubscriptionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
-        persona_ids = tuple(e['id'] for e in data)
+        persona_ids = tuple(e['personas.id'] for e in data)
         persona_policies = ml.get_subscription_policies(
             rs, self.backends, persona_ids)
         return tuple(e for e in data
-                     if persona_policies[e['id']] in allowed_pols)
+                     if persona_policies[e['personas.id']] in allowed_pols)
 
     @access("ml")
     def may_view(self, rs: RequestState, ml: Mailinglist) -> bool:

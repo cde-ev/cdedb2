@@ -22,30 +22,64 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, encrypt_password,
-    inspect_validation as inspect, internal, singularize, verify_password,
+    AbstractBackend,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    encrypt_password,
+    inspect_validation as inspect,
+    internal,
+    singularize,
+    verify_password,
 )
 from cdedb.common import (
-    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PsycoJson,
-    RequestState, Role, User, decode_parameter, encode_parameter, get_hash, glue, now,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    Error,
+    PsycoJson,
+    RequestState,
+    Role,
+    User,
+    decode_parameter,
+    encode_parameter,
+    get_hash,
+    glue,
+    now,
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
 from cdedb.common.fields import (
-    META_INFO_FIELDS, PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, REALM_SPECIFIC_GENESIS_FIELDS,
+    META_INFO_FIELDS,
+    PERSONA_ALL_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS,
+    PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS,
+    PERSONA_ML_FIELDS,
+    PERSONA_STATUS_FIELDS,
+    PRIVILEGE_CHANGE_FIELDS,
+    REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import (
-    ALL_LOG_FILTERS, ChangelogLogFilter, CoreLogFilter,
+    ALL_LOG_FILTERS,
+    ChangelogLogFilter,
+    CoreLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_ROLES, REALM_ADMINS, extract_roles, implying_realms, privilege_tier,
+    ADMIN_KEYS,
+    ALL_ROLES,
+    REALM_ADMINS,
+    extract_roles,
+    implying_realms,
+    privilege_tier,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
@@ -164,14 +198,15 @@ class CoreBaseBackend(AbstractBackend):
         :param persona: one persona data set to convert into a string for
           fulltext search
         """
-        attributes = (
-            "title", "username", "display_name", "given_names",
-            "family_name", "birth_name", "name_supplement", "birthday",
-            "telephone", "mobile", "address_supplement", "address",
-            "postal_code", "location", "address_supplement2",
-            "address2", "postal_code2", "location2", "weblink",
-            "specialisation", "affiliation", "timeline", "interests",
-            "free_form")
+        attributes = [
+            "title", "username", "display_name", "given_names", "family_name",
+            "birth_name", "name_supplement", "birthday", "telephone", "mobile",
+            "postal_code", "location", "postal_code2", "location2", "weblink",
+            "specialisation", "affiliation", "timeline", "interests", "free_form"]
+        if persona["show_address"]:
+            attributes += ("address_supplement", "address")
+        if persona["show_address2"]:
+            attributes += ("address_supplement2", "address2")
         values = (str(persona[a]) for a in attributes if persona[a] is not None)
         return " ".join(values)
 

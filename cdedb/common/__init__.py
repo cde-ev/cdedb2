@@ -21,7 +21,15 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import phonenumbers
@@ -945,7 +953,8 @@ INFINITE_ENUM_MAGIC_NUMBER = 0
 def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
-    This does nothing and is only for documentation purposes.
+    This only sets a flag on the class for documentation and
+    introspection purposes.
 
     Infinite enums are sadly not directly supported by python which
     means, that we have to emulate them on our own.
@@ -960,10 +969,11 @@ def infinite_enum(aclass: T) -> T:
     None.
 
     In the code they are stored as an :py:data:`InfiniteEnum`."""
+    setattr(aclass, "infinite_enum", True)
     return aclass
 
 
-E = TypeVar("E", bound=enum.IntEnum)
+E = TypeVar("E", bound=CdEIntEnum)
 
 
 @functools.total_ordering

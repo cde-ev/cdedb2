@@ -22,15 +22,33 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Realm, RequestState, User,
-    make_persona_name, merge_dicts, now, pairwise, sanitize_filename, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    Realm,
+    RequestState,
+    User,
+    make_persona_name,
+    merge_dicts,
+    now,
+    pairwise,
+    sanitize_filename,
+    unwrap,
 )
 from cdedb.common.exceptions import (
-    ArchiveError, CryptographyError, PrivilegeError, ValidationWarning,
+    ArchiveError,
+    CryptographyError,
+    PrivilegeError,
+    ValidationWarning,
 )
 from cdedb.common.fields import (
-    META_INFO_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
+    META_INFO_FIELDS,
+    PERSONA_ASSEMBLY_FIELDS,
+    PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS,
+    PERSONA_ML_FIELDS,
+    PERSONA_STATUS_FIELDS,
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
@@ -38,8 +56,13 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_ADMINS,
-    REALM_INHERITANCE, extract_roles, implied_realms,
+    ADMIN_KEYS,
+    ADMIN_VIEWS_COOKIE_NAME,
+    ALL_ADMIN_VIEWS,
+    REALM_ADMINS,
+    REALM_INHERITANCE,
+    extract_roles,
+    implied_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -48,10 +71,21 @@ from cdedb.common.validation.validate import (
 )
 from cdedb.filter import enum_entries_filter, markdown_parse_safe, money_filter
 from cdedb.frontend.common import (
-    AbstractFrontend, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, basic_redirect, check_validation as check,
-    check_validation_optional as check_optional, inspect_validation as inspect,
-    make_membership_fee_reference, periodic, request_dict_extractor, request_extractor,
+    AbstractFrontend,
+    Headers,
+    REQUESTdata,
+    REQUESTdatadict,
+    REQUESTfile,
+    TransactionObserver,
+    access,
+    basic_redirect,
+    check_validation as check,
+    check_validation_optional as check_optional,
+    inspect_validation as inspect,
+    make_membership_fee_reference,
+    periodic,
+    request_dict_extractor,
+    request_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
@@ -108,7 +142,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if {"core_user", "cde_user", "event_user"} & rs.user.admin_views:
+            if "user_review" in rs.user.admin_views:
                 data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
@@ -640,6 +674,12 @@ class CoreBaseFrontend(AbstractFrontend):
                     "notes"])
             if "orga" not in access_levels:
                 masks.extend(["is_member", "gender", "pronouns_nametag"])
+                # Primary address may be hidden from member search,
+                # but not from orga view.
+                if not data.get('show_address', True):
+                    masks.extend(["address", "address_supplement"])
+            if not data.get('show_address2', True):
+                masks.extend(["address2", "address_supplement2"])
             for key in masks:
                 if key in data:
                     del data[key]
@@ -880,14 +920,14 @@ class CoreBaseFrontend(AbstractFrontend):
         )
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
-            return self.redirect_show_user(rs, result[0]["id"])
+            return self.redirect_show_user(rs, result[0][query.scope.get_primary_key()])
 
         # Precise search didn't uniquely match, hence a fulltext search now. Results
         # will be a superset of the above, since all relevant fields are in fulltext.
         query.constraints = [('fulltext', QueryOperators.containsall, terms)]
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
-            return self.redirect_show_user(rs, result[0]["id"])
+            return self.redirect_show_user(rs, result[0][query.scope.get_primary_key()])
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
@@ -1063,12 +1103,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             data = tuple(xsorted(
-                data, key=lambda e: e['id'])[:num_preview_personas])
+                data, key=lambda e: e[scope.get_primary_key()])[:num_preview_personas])
 
         # Check if name occurs multiple times to add email address in this case
         counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
             counter[make_persona_name(entry)] += 1
+            if 'id' not in entry:
+                entry['id'] = entry[scope.get_primary_key()]
 
         # Generate return JSON list
         ret = []
@@ -1166,8 +1208,11 @@ class CoreBaseFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
+        if not data:
+            rs.ignore_validation_errors()
+            return self.change_user_form(rs)
         # take special care for annual donations in combination with lastschrift
-        if (data and "donation" in data
+        if ("donation" in data
                 and (lastschrift_ids := self.cdeproxy.list_lastschrift(
                         rs, [rs.user.persona_id], active=True))):
             current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
@@ -1190,11 +1235,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 msg = n_("You are not the owner of the linked bank account. Make sure"
                          " the owner agreed to the change before submitting it here.")
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
-        if data and data.get('gender') == const.Genders.not_specified:
+        # Gender and primary address may not be unset
+        if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
+        e = ValueError(n_("Specifying an address is mandatory."))
+        for address_row in ('address', 'location'):
+            if address_row in data.keys():
+                if not data[address_row]:
+                    rs.append_validation_error((address_row, e))
         if rs.has_validation_errors():
             return self.change_user_form(rs)
-        assert data is not None
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note)

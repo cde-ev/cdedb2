@@ -45,8 +45,19 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from types import TracebackType
 from typing import (
-    IO, Any, AnyStr, Callable, ClassVar, Literal, NamedTuple, Optional, Protocol,
-    TypeVar, Union, cast, overload,
+    IO,
+    Any,
+    AnyStr,
+    Callable,
+    ClassVar,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import jinja2
@@ -75,11 +86,33 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, CdEDBLog,
-    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, Error, Notification,
-    NotificationType, PathLike, RequestState, Role, User, _tdelta, asciificator,
-    decode_parameter, encode_parameter, get_hash, glue, json_serialize,
-    make_persona_name, make_proxy, merge_dicts, now, setup_logger, unwrap,
+    ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD,
+    IGNORE_WARNINGS_NAME,
+    CdEDBLog,
+    CdEDBMultiDict,
+    CdEDBObject,
+    CustomJSONEncoder,
+    Error,
+    Notification,
+    NotificationType,
+    PathLike,
+    RequestState,
+    Role,
+    User,
+    _tdelta,
+    asciificator,
+    decode_parameter,
+    encode_parameter,
+    get_hash,
+    glue,
+    json_serialize,
+    make_persona_name,
+    make_proxy,
+    merge_dicts,
+    now,
+    setup_logger,
+    unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
@@ -90,7 +123,10 @@ from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, PERSONA_DEFAULTS,
+    ADMIN_KEYS,
+    ALL_MGMT_ADMIN_VIEWS,
+    ALL_MOD_ADMIN_VIEWS,
+    PERSONA_DEFAULTS,
     roles_to_db_role,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -100,7 +136,11 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import (
-    JINJA_FILTERS, cdedbid_filter, enum_entries_filter, safe_filter, sanitize_None,
+    JINJA_FILTERS,
+    cdedbid_filter,
+    enum_entries_filter,
+    safe_filter,
+    sanitize_None,
 )
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter

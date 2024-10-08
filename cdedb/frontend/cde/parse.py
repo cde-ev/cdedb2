@@ -21,7 +21,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models_event
 from cdedb.common import (
-    Accounts, CdEDBObject, Error, RequestState, TransactionType, get_hash, merge_dicts,
+    Accounts,
+    CdEDBObject,
+    Error,
+    RequestState,
+    TransactionType,
+    get_hash,
+    merge_dicts,
     unwrap,
 )
 from cdedb.common.n_ import n_
@@ -29,9 +35,18 @@ from cdedb.common.sorting import xsorted
 from cdedb.filter import money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    CustomCSVDialect, Headers, REQUESTdata, REQUESTfile, TransactionObserver, access,
-    check_validation as check, check_validation_optional as check_optional, csv_output,
-    inspect_validation as inspect, make_postal_address, request_extractor,
+    CustomCSVDialect,
+    Headers,
+    REQUESTdata,
+    REQUESTfile,
+    TransactionObserver,
+    access,
+    check_validation as check,
+    check_validation_optional as check_optional,
+    csv_output,
+    inspect_validation as inspect,
+    make_postal_address,
+    request_extractor,
 )
 
 

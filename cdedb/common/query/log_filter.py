@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import decimal
-import enum  # pylint: disable=unused-import
 from collections.abc import Collection
 from typing import ClassVar, Optional
 
@@ -15,6 +14,7 @@ from cdedb.config import LazyConfig
 from cdedb.database.query import DatabaseValue_s
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import requestdict_field_spec
+from cdedb.uncommon.intenum import CdEIntEnum
 
 __all__ = [
     'GenericLogFilter', 'CoreLogFilter', 'CdELogFilter', 'ChangelogLogFilter',
@@ -41,7 +41,7 @@ class GenericLogFilter:
     annotations to validate the parameters.
     """
     log_table: ClassVar[str]
-    log_code_class: ClassVar["type[enum.IntEnum]"]
+    log_code_class: ClassVar["type[CdEIntEnum]"]
     additional_columns: ClassVar[tuple[str, ...]] = ()
     additional_persona_columns: ClassVar[tuple[str, ...]] = ()
 

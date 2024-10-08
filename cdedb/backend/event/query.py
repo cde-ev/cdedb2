@@ -11,21 +11,36 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    PYTHON_TO_SQL_MAP, access, affirm_dataclass, affirm_set_validation as affirm_set,
+    PYTHON_TO_SQL_MAP,
+    access,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    RequestState,
+    json_serialize,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
+    COURSE_FIELDS,
+    LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    Query, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
+    Query,
+    QueryOperators,
+    QueryScope,
+    QuerySpec,
+    QuerySpecEntry,
 )
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer

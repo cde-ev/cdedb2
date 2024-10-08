@@ -12,16 +12,28 @@ import cdedb.database.constants as const
 import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
 from cdedb.common import (
-    IGNORE_WARNINGS_NAME, CdEDBObject, GenesisDecision, PrivilegeError, get_hash,
-    make_persona_name, now,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    GenesisDecision,
+    PrivilegeError,
+    get_hash,
+    make_persona_name,
+    now,
 )
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, execsql, get_user,
-    prepsql, storage,
+    USER_DICT,
+    FrontendTest,
+    UserIdentifier,
+    UserObject,
+    as_users,
+    execsql,
+    get_user,
+    prepsql,
+    storage,
 )
 
 
@@ -327,22 +339,27 @@ class TestCoreFrontend(FrontendTest):
             .find(text=re.compile(r"Admin-Administration"))
         self.assertIsNone(button)
 
+        # user review forms
+        self.assertNoLink('/core/genesis/list')
+        self.assertNoLink('/core/changelog/list')
+        self._click_admin_view_button(re.compile(r"Benutzer-Review"),
+                                      current_state=False)
+        self.traverse({'href': '/core/genesis/list'},
+                      {'href': '/core/changelog/list'})
+
         # user administration
         # No adminshowuserform present
         self.assertNotIn('adminshowuserform', self.response.forms)
-        self.assertNoLink('/core/genesis/list')
-        self.assertNoLink('/core/changelog/list')
         self.assertNoLink('/core/changelog/view')
+
         self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
                                       current_state=False)
-
-        self.traverse({'href': '/core/genesis/list'},
-                      {'href': '/core/changelog/list'},
-                      {'href': '/core/changelog/view'},
+        self.traverse({'href': '/core/changelog/view'},
                       {'href': '/cde/'},
                       {'href': '/cde/search/user'})
         # Now, the adminshowuserform is present, so we can navigate to Berta
         self.admin_view_profile('berta')
+
         # Test some of the admin buttons
         self.response.click(href='/username/adminchange')
         self.response.click(href=re.compile(r'\d+/adminchange'))
@@ -719,13 +736,21 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
-        f['country2'] = "AR"
+        f['country2'] = "HY"
         f['specialisation'] = "Okarinas"
         if self.user_in("daniel"):
             self.submit(f, check_notification=False)
             # Invalid postal code
             f = self.response.forms['changedataform']
             f[IGNORE_WARNINGS_NAME].checked = True
+        if self.user_in("vera"):
+            self.submit(f, check_notification=False)
+            msg = "Die Angabe einer Adresse ist verpflichtend."
+            self.assertValidationError('address', msg)
+            self.assertValidationError('location', msg)
+            f['address'] = "Hinter der Geheimtür 3"
+            f['location'] = "Ganondorfs Versteck"
+            f['country'] = "HY"
         self.submit(f)
         self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         self.assertPresence("Hyrule", div='address2')
@@ -2113,6 +2138,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "11111"
+        f['address'] = "Hinter der Geheimtür 3"
+        f['location'] = "Ganondorfs Versteck"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -3047,7 +3074,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": USER_DICT["berta"]["given_names"],
             "family_name": "Beispiel",
             "is_member": True,
-            "id": 2,
+            "personas.id": 2,
             "username": "berta@example.cde",
         })
         self.get(
@@ -3057,7 +3084,7 @@ class TestCoreFrontend(FrontendTest):
             "given_names": "Anton Armin A.",
             "family_name": "Administrator",
             "is_member": True,
-            "id": 1,
+            "personas.id": 1,
             "username": "anton@example.cde",
         })
         self.get(
