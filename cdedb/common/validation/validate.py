@@ -3519,7 +3519,8 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': ID, 'event_id': ID, 'title': str,
-                           'field_name': RestrictiveIdentifier}),
+                           'field_name': RestrictiveIdentifier,
+                           'association': const.FieldAssociations}),
         'event.lodgement_groups': _augment_dict_validator(
             _lodgement_group, {'event_id': ID}),
         'event.lodgements': _augment_dict_validator(
