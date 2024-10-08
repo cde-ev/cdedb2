@@ -32,7 +32,9 @@ from cdedb.common.fields import (
     PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import may_manage_event as may_manage
+from cdedb.common.privileges import (
+    ComplexEventPrivileges, may_manage_event as may_manage,
+)
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
@@ -59,14 +61,22 @@ class EventLowLevelBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None,
-                course_id: Optional[int] = None, registration_id: Optional[int] = None,
-                ) -> bool:
+    def may_manage(self, rs: RequestState,
+                     sufficient_privilege: ComplexEventPrivileges = None,
+                     *, event_id: Optional[int] = None) -> bool:
+        if not event_id:
+            if not rs.ambience.get('event'):
+                raise RuntimeError(n_("No event context given"))
+            event_id = rs.ambience['event'].id
+        return may_manage(rs, sufficient_privilege=sufficient_privilege, event_id=event_id)
+
+    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None) -> bool:
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
         """
         return may_manage(rs, sufficient_privilege=None, event_id=event_id)
+
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,

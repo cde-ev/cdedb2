@@ -26,6 +26,7 @@ from cdedb.common import (
     diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
@@ -439,7 +440,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         :returns: A dict with localized text to be used in the preview.
         """
 
-        if self.is_orga(rs, event_id):
+        if self.may_manage(rs, EventPrivileges.basic_read):
             pass
         elif persona_id == rs.user.persona_id and (
                 rs.ambience['event'].is_open
