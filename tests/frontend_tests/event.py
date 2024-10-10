@@ -6319,6 +6319,18 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
     @event_keeper
     @as_users("anton")
     def test_course_choice_sync(self) -> None:
+
+        with self.switch_user("emilia"):
+            # Emilia is only involved with O2 and K2, not W2 and should not be able to
+            #  choose a W2 course when amending her registration.
+            self.traverse("Veranstaltungen", "TripelAkademie", "Meine Anmeldung",
+                          "Ändern")
+            f = self.response.forms['amendregistrationform']
+            self.assertNotIn(
+                "12",
+                [value for value, _, _ in f['group3.course_choice_0'].options],
+            )
+
         self.traverse("Veranstaltungen", "TripelAkademie", "Anmelden")
 
         # Register for TripelAkademie and choose some courses.

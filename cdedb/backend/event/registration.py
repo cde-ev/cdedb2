@@ -334,15 +334,15 @@ class EventRegistrationBackend(EventBaseBackend):
             FROM event.track_groups AS tg
                 LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
                 LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {is_active}
-                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id {involved_parts}
-            WHERE tg.event_id = %s AND tg.constraint_type = %s
+                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id
+            WHERE tg.event_id = %s AND tg.constraint_type = %s {involved_parts}
             GROUP BY tg.id
         """
 
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
 
-        params: list[Any] = []
+        params: list[Any] = [event_id, const.CourseTrackGroupType.course_choice_sync]
 
         if involved_parts is not None:
             involved_parts = affirm_set(vtypes.ID, involved_parts)
@@ -353,7 +353,6 @@ class EventRegistrationBackend(EventBaseBackend):
             involved_parts=(
                 "AND ct.part_id = ANY(%s)" if involved_parts is not None else ""),
         )
-        params.extend((event_id, const.CourseTrackGroupType.course_choice_sync))
 
         return {
             e['id']: set(e['courses'])
