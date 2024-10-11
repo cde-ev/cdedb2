@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-10-08 22:12+0200\n"
+"POT-Creation-Date: 2024-10-11 22:06+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -53,17 +53,17 @@ msgstr ""
 #: cdedb/backend/event/lowlevel.py:1331 cdedb/backend/event/query.py:82
 #: cdedb/backend/event/query.py:297 cdedb/backend/event/query.py:323
 #: cdedb/backend/event/query.py:497 cdedb/backend/event/query.py:790
-#: cdedb/backend/event/query.py:804 cdedb/backend/event/registration.py:419
-#: cdedb/backend/event/registration.py:458
-#: cdedb/backend/event/registration.py:511
-#: cdedb/backend/event/registration.py:545
-#: cdedb/backend/event/registration.py:577
-#: cdedb/backend/event/registration.py:695
-#: cdedb/backend/event/registration.py:863
-#: cdedb/backend/event/registration.py:1025
-#: cdedb/backend/event/registration.py:1142
-#: cdedb/backend/event/registration.py:1250
-#: cdedb/backend/event/registration.py:1575 cdedb/backend/ml.py:188
+#: cdedb/backend/event/query.py:804 cdedb/backend/event/registration.py:418
+#: cdedb/backend/event/registration.py:457
+#: cdedb/backend/event/registration.py:510
+#: cdedb/backend/event/registration.py:544
+#: cdedb/backend/event/registration.py:576
+#: cdedb/backend/event/registration.py:694
+#: cdedb/backend/event/registration.py:862
+#: cdedb/backend/event/registration.py:1024
+#: cdedb/backend/event/registration.py:1141
+#: cdedb/backend/event/registration.py:1249
+#: cdedb/backend/event/registration.py:1574 cdedb/backend/ml.py:188
 #: cdedb/backend/ml.py:297 cdedb/backend/ml.py:421 cdedb/backend/ml.py:459
 #: cdedb/backend/ml.py:491 cdedb/backend/ml.py:514 cdedb/backend/ml.py:712
 #: cdedb/backend/ml.py:758 cdedb/backend/ml.py:839 cdedb/backend/ml.py:875
@@ -510,8 +510,8 @@ msgstr ""
 #: cdedb/backend/event/lowlevel.py:745 cdedb/backend/event/lowlevel.py:787
 #: cdedb/backend/event/lowlevel.py:860 cdedb/backend/event/lowlevel.py:887
 #: cdedb/backend/event/lowlevel.py:1163 cdedb/backend/event/lowlevel.py:1223
-#: cdedb/backend/event/registration.py:1260
-#: cdedb/backend/event/registration.py:1311 cdedb/backend/ml.py:765
+#: cdedb/backend/event/registration.py:1259
+#: cdedb/backend/event/registration.py:1310 cdedb/backend/ml.py:765
 #: cdedb/backend/ml.py:801 cdedb/backend/past_event.py:285
 #: cdedb/backend/past_event.py:323 cdedb/backend/past_event.py:434
 #, python-format
@@ -1049,7 +1049,7 @@ msgid "Unknown part group."
 msgstr ""
 
 #: cdedb/backend/event/base.py:776 cdedb/backend/event/base.py:805
-#: cdedb/backend/event/registration.py:606
+#: cdedb/backend/event/registration.py:605
 msgid "Unknown part for the given event."
 msgstr ""
 
@@ -1107,7 +1107,7 @@ msgstr ""
 msgid "Lodgement does not exist."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:287 cdedb/backend/event/registration.py:1083
+#: cdedb/backend/event/lowlevel.py:287 cdedb/backend/event/registration.py:1082
 msgid "Non-existing tracks specified."
 msgstr ""
 
@@ -1190,70 +1190,70 @@ msgstr ""
 msgid "Unknown custom filter."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/backend/event/registration.py:385
+#: cdedb/backend/event/registration.py:384
 msgid "Wrong track for course."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:405
+#: cdedb/backend/event/registration.py:404
 msgid "Registration does not exist."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:636
-#: cdedb/backend/event/registration.py:655
+#: cdedb/backend/event/registration.py:635
+#: cdedb/backend/event/registration.py:654
 msgid "Must be orga to access full waitlist."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:658
+#: cdedb/backend/event/registration.py:657
 msgid "Not registered for this event."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:849
-#: cdedb/backend/event/registration.py:967
-#: cdedb/backend/event/registration.py:1564
-#: cdedb/backend/event/registration.py:1779
+#: cdedb/backend/event/registration.py:848
+#: cdedb/backend/event/registration.py:966
+#: cdedb/backend/event/registration.py:1563
+#: cdedb/backend/event/registration.py:1778
 msgid "Only registrations from exactly one event allowed."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:884 cdedb/frontend/event/base.py:245
+#: cdedb/backend/event/registration.py:883 cdedb/frontend/event/base.py:245
 #: cdedb/frontend/event/base.py:401
 msgid "No participant of event."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1052
+#: cdedb/backend/event/registration.py:1051
 msgid "Non-existing parts specified."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1079
-#: cdedb/backend/event/registration.py:1112
+#: cdedb/backend/event/registration.py:1078
+#: cdedb/backend/event/registration.py:1111
 msgid "This is not useful."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1145 cdedb/frontend/assembly/base.py:473
+#: cdedb/backend/event/registration.py:1144 cdedb/frontend/assembly/base.py:473
 #: cdedb/frontend/event/event.py:283 cdedb/frontend/event/registration.py:1454
 msgid "This user does not exist or is archived."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1147 cdedb/frontend/event/event.py:286
+#: cdedb/backend/event/registration.py:1146 cdedb/frontend/event/event.py:286
 #: cdedb/frontend/event/registration.py:1458
 msgid "This user is not an event user."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1149
+#: cdedb/backend/event/registration.py:1148
 #: cdedb/frontend/event/registration.py:404
 #: cdedb/frontend/event/registration.py:780
 #: cdedb/frontend/event/registration.py:1463
 msgid "Already registered."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1161
+#: cdedb/backend/event/registration.py:1160
 msgid "Missing part dataset."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1165
+#: cdedb/backend/event/registration.py:1164
 msgid "Missing track dataset."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1746
+#: cdedb/backend/event/registration.py:1745
 msgid "Cannot book fee with amount of zero."
 msgstr ""
 
@@ -7251,7 +7251,8 @@ msgstr "hic ades:"
 #: cdedb/frontend/templates/web/base.tmpl:209
 msgid ""
 "The following email addresses are marked as defect, so you will no longer "
-"receive any emails for them."
+"receive any emails for them. To remedy this, please contact the "
+"administrators."
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:215
