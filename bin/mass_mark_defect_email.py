@@ -18,6 +18,7 @@ default_notes = "Massenimport defekter Emailadressen."  # explicate
 email_addresses: list[tuple[str, str]] = [
     # fill in
 ]
+skip_active = True
 
 # work
 
@@ -60,7 +61,7 @@ with script:
                 do_mark = False
         else:
             print(f'No account for `{address}` -- proceeding.')
-        if do_mark:
+        if do_mark or not skip_active:
             code = core.mark_email_status(rs, address, target_state, notes)
             if code:
                 print(f'Marked as defect: `{address}`.')
