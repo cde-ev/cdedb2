@@ -177,7 +177,13 @@ class EventBaseFrontend(AbstractUserFrontend):
                     privilege = getattr(
                         getattr(self, endpoint), "event_required_privilege",
                     )
-                return self.is_privileged(rs, privilege)
+
+                if (
+                    rs.user.persona_id in rs.ambience['event'].orgas
+                    or 'event_orga' not in rs.user.available_admin_views
+                ):
+                    return self.is_privileged(rs, privilege)
+                return 'event_orga' in rs.user.admin_views
 
             params['show_navigation_item'] = show_navigation_item
 
