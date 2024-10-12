@@ -33,7 +33,8 @@
                          gettext("Participant info"), aclass='list-group-item', icon='info',
                          active=(sidenav_active == 'participant_info')) }}
         {% endif %}
-        {% if (event['is_participant_list_visible'] and is_participant) or event['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {% if (event['is_participant_list_visible'] and is_participant) or (event['id'] in user.orga
+               or 'event_orga' in user.admin_views) and is_privileged(enums['EventPrivileges'].registrations_read) %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": event['id']}), gettext("Participant list"),
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}

@@ -28,7 +28,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.types import VALIDATOR_LOOKUP, Event
 from cdedb.common.validation.validate import LODGEMENT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -124,7 +124,8 @@ class EventLodgementMixin(EventBaseFrontend):
         return ret
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_write)
+    # TODO Be more lenient here
+    @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("sort_part_id", "sortkey", "reverse")
     def lodgements(self, rs: RequestState, event_id: int,
                    sort_part_id: Optional[vtypes.ID] = None,

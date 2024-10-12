@@ -706,7 +706,7 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     @access("event")
-    @event_guard(EventPrivileges.courses_read)
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("include_active")
     def course_stats(self, rs: RequestState, event_id: int, include_active: bool,
                      ) -> Response:

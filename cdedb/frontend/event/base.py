@@ -170,6 +170,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 for tg in rs.ambience['event'].track_groups.values()
             )
 
+            def is_privileged(required_privilege: EventPrivileges):
+                return self.is_privileged(rs, required_privilege)
+
             def is_privileged_for(endpoint: str | None = None) -> bool:
                 if endpoint is None:
                     privilege = EventPrivileges.basic_read
@@ -178,13 +181,15 @@ class EventBaseFrontend(AbstractUserFrontend):
                         getattr(self, endpoint), "event_required_privilege",
                     )
 
+                is_privileged = self.is_privileged(rs, privilege)
                 if (
                     rs.user.persona_id in rs.ambience['event'].orgas
                     or 'event_orga' not in rs.user.available_admin_views
                 ):
-                    return self.is_privileged(rs, privilege)
-                return 'event_orga' in rs.user.admin_views
+                    return is_privileged
+                return is_privileged and 'event_orga' in rs.user.admin_views
 
+            params['is_privileged'] = is_privileged
             params['is_privileged_for'] = is_privileged_for
 
         return super().render(rs, templatename, params=params)

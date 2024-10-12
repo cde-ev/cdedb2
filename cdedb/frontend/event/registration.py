@@ -418,7 +418,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                                      "Please contact the Orgateam."))
                 return self.redirect(rs, "event/show_event")
         else:
-            if self.is_privileged(rs, EventPrivileges.basic_read):
+            if not self.is_privileged(rs, EventPrivileges.basic_read):
                 raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
