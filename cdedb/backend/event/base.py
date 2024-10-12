@@ -76,7 +76,8 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
-    EventPrivileges, is_privileged_event as is_privileged,
+    EventPrivileges,
+    is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted

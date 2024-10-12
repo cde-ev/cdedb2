@@ -53,7 +53,8 @@ from cdedb.common.fields import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
-    EventPrivileges, is_privileged_event as is_privileged,
+    EventPrivileges,
+    is_privileged_event as is_privileged,
 )
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
@@ -80,7 +81,6 @@ class EventLowLevelBackend(AbstractBackend):
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
-
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,

@@ -35,7 +35,8 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
-    EventPrivileges, is_privileged_event as is_privileged,
+    EventPrivileges,
+    is_privileged_event as is_privileged,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
