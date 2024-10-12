@@ -170,7 +170,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 for tg in rs.ambience['event'].track_groups.values()
             )
 
-            def is_privileged(required_privilege: EventPrivileges):
+            def is_privileged(required_privilege: EventPrivileges) -> bool:
                 return self.is_privileged(rs, required_privilege)
 
             def is_privileged_for(endpoint: str | None = None) -> bool:

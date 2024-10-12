@@ -30,7 +30,6 @@ from cdedb.frontend.common import (
     event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event
 
 
 class EventImportMixin(EventBaseFrontend):

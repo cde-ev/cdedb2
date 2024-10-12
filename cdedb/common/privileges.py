@@ -30,41 +30,32 @@ class EventPrivileges(Flag):
     entities_write = courses_write | registrations_write | lodgements_write
     all_write = basic_write | entities_write
 
-    # Shorthands for certain roles
-    admin_only = conclude
-    event_helper = basic_read | courses_read | registrations_stats | registrations_read_internal
-    auditor = basic_read | log_read
-    finance_admin = basic_read | registrations_read_internal
-
 
 def is_privileged_event(rs: RequestState,
                      required_privilege: EventPrivileges,
                      event_id: Optional[int] = None) -> bool:
+    EP = EventPrivileges
+    orga_privileges = ~EP.conclude
+    event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read |
+                               EP.registrations_stats | EP.registrations_read_internal)
+    auditor_privileges = EP.basic_read | EP.log_read
+    finance_admin_privileges = EP.basic_read | EP.registrations_read_internal
+
     return (
-            "event_admin" in rs.user.roles
-            or event_id in rs.user.orga and not (
-                required_privilege & EventPrivileges.admin_only
-            )
-            or "event_helper" in rs.user.roles and (
-                required_privilege is not None
-                and required_privilege in EventPrivileges.event_helper
-            )
-            # finance_admins are allowed here to book event fees.
-            or "finance_admin" in rs.user.roles and (
-                required_privilege is not None
-                and required_privilege in EventPrivileges.finance_admin
-            )
-            or "auditor" in rs.user.roles and (
-                required_privilege is not None
-                and required_privilege in EventPrivileges.auditor
-            )
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            or "ml_admin" in rs.user.roles and (
-                required_privilege is not None
-                and required_privilege == EventPrivileges.registrations_read_internal
-            )
-            # or "droid_orga" in rs.user.roles and (
-            #         sufficient_privilege in OrgaTokenGrants.implied_privileges()
-            # )
+        "event_admin" in rs.user.roles
+        or event_id in rs.user.orga and required_privilege in orga_privileges
+        or ("event_helper" in rs.user.roles
+            and required_privilege in event_helper_privileges)
+        # finance_admins are allowed here to book event fees.
+        or ("finance_admin" in rs.user.roles
+            and required_privilege in finance_admin_privileges)
+        or "auditor" in rs.user.roles and required_privilege in auditor_privileges
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
+        or ("ml_admin" in rs.user.roles
+            and required_privilege == EventPrivileges.registrations_read_internal
+        )
+        # or ("droid_orga" in rs.user.roles
+        #     and required_privilege in OrgaTokenGrants.implied_privileges())
+        # )
     )

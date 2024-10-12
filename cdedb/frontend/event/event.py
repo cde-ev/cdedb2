@@ -64,7 +64,6 @@ from cdedb.frontend.common import (
     process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
-from cdedb.models.event import Event
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,

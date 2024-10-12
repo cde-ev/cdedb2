@@ -2240,14 +2240,10 @@ def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            # Drop this after universal adaption
-            processed_required_privilege = (
-                required_privilege or ~EventPrivileges.admin_only)
-            if not is_privileged_event(rs, processed_required_privilege,
-                                       rs.ambience['event'].id):
+            if not is_privileged_event(rs, required_privilege, rs.ambience['event'].id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
-            if (processed_required_privilege & EventPrivileges.all_write):
+            if required_privilege & EventPrivileges.all_write:
                 is_locked = obj.eventproxy.is_offline_locked(
                     rs, event_id=rs.ambience['event'].id)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
