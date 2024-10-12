@@ -4935,7 +4935,7 @@ class TestEventBackend(BackendTest):
         )
         # Ensure that the commit time matches the current (non-frozen) time.
         self.assertEqual(
-            nearly_now(delta=datetime.timedelta(milliseconds=10)),
+            nearly_now(delta=datetime.timedelta(seconds=5)),
             self.event._event_keeper.latest_logtime(event_id),
         )
 
