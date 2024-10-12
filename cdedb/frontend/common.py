@@ -2245,7 +2245,7 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
             processed_required_privilege = (
                 required_privilege or ~EventPrivileges.admin_only)
             if not is_privileged_event(rs, processed_required_privilege,
-                                    rs.ambience['event'].id):
+                                       rs.ambience['event'].id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
             if check_offline:

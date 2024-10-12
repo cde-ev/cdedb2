@@ -176,9 +176,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def may_manage(self, rs: RequestState,
-                   necessary_privilege: EventPrivileges,
-                   *, event_id: Optional[int] = None) -> bool:
+    def is_privileged(self, rs: RequestState,
+                      necessary_privilege: EventPrivileges,
+                      *, event_id: Optional[int] = None) -> bool:
         if not event_id:
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
@@ -239,7 +239,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
-        if not (event_id in rs.user.orga or self.is_admin(rs)):
+        if not self.is_privileged(rs, EventPrivileges.registrations_read):
             assert rs.user.persona_id is not None
             if not self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
@@ -295,7 +295,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event'].parts.keys()
         if any(anid not in rs.ambience['event'].parts for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-        if orga_list and event_id not in rs.user.orga and not self.is_admin(rs):
+        if orga_list and not self.is_privileged(rs, EventPrivileges.registrations_read):
             raise PermissionError
         parts = {anid: rs.ambience['event'].parts[anid] for anid in part_ids}
 
@@ -395,7 +395,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     def participant_info(self, rs: RequestState, event_id: int) -> Response:
         """Display the `participant_info`, accessible only to participants."""
-        if not (event_id in rs.user.orga or self.is_admin(rs)):
+        if not self.is_privileged(rs, EventPrivileges.basic_read):
             assert rs.user.persona_id is not None
             if not self.eventproxy.check_registration_status(
                     rs, rs.user.persona_id, event_id,
@@ -666,7 +666,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.log_read)
     def view_event_log(self, rs: RequestState, event_id: int, data: CdEDBObject,
                        download: bool) -> Response:
         """View activities concerning one event organized via DB."""

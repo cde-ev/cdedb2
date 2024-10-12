@@ -12,6 +12,7 @@ from typing_extensions import Self
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import Sortkey, xsorted
@@ -541,8 +542,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         basic_restriction = super().is_restricted_moderator(rs, bc)
         if self.event_id is None:
             return basic_restriction
-        additional_restriction = (self.event_id not in rs.user.orga
-                                  and "event_admin" not in rs.user.roles)
+        additional_restriction = is_privileged_event(
+            rs, EventPrivileges.registrations_read_internal, event_id=self.event_id)
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(self, rs: RequestState, bc: BackendContainer,

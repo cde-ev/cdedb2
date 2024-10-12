@@ -27,6 +27,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
@@ -74,7 +75,7 @@ class EventCourseMixin(EventBaseFrontend):
                     active_only: bool = False) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event'].is_course_list_visible
-                and not (event_id in rs.user.orga or self.is_admin(rs))):
+                and not self.is_privileged(rs, EventPrivileges.courses_read)):
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
@@ -85,6 +86,7 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event'].tracks.keys()
 
+        # TODO Handle the admin view in a smart way
         show_course_state = (rs.ambience['event'].is_course_state_visible
                              or event_id in rs.user.orga
                              or 'event_orga' in rs.user.admin_views)
@@ -115,12 +117,13 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_read)
     def show_course(self, rs: RequestState, event_id: int, course_id: int,
                     ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
-        if event_id in rs.user.orga or self.is_admin(rs):
+        # TODO Differentiate by EventPrivileges.registrations_read and _stats
+        if True:
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             all_registrations = self.eventproxy.get_registrations(
                 rs, registration_ids)
@@ -209,7 +212,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.render(rs, "course/show_course", params)
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.course_write, check_offline=True)
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
@@ -230,7 +233,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write, check_offline=True)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
@@ -259,7 +262,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course")
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write, check_offline=True)
     def create_course_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         # by default select all tracks
@@ -277,7 +280,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write, check_offline=True)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
@@ -305,7 +308,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.courses_write, check_offline=True)
     @REQUESTdata("ack_delete")
     def delete_course(self, rs: RequestState, event_id: int, course_id: int,
                       ack_delete: bool) -> Response:
@@ -332,7 +335,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def course_assignment_checks(self, rs: RequestState, event_id: int,
                                  ) -> Response:
         """Provide some consistency checks for course assignment."""
@@ -463,7 +466,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active")
     def course_choices_form(
             self, rs: RequestState, event_id: int, course_id: Optional[vtypes.ID],
@@ -570,7 +573,7 @@ class EventCourseMixin(EventBaseFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_read, check_offline=True)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active",
                  "registration_ids", "assign_track_ids", "assign_action",
                  "assign_course_id")
@@ -702,7 +705,7 @@ class EventCourseMixin(EventBaseFrontend):
              'include_active': include_active})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read)
     @REQUESTdata("include_active")
     def course_stats(self, rs: RequestState, event_id: int, include_active: bool,
                      ) -> Response:
@@ -780,7 +783,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write, check_offline=True)
     def manage_attendees_form(self, rs: RequestState, event_id: int,
                               course_id: int) -> Response:
         """Render form."""
@@ -859,7 +862,7 @@ class EventCourseMixin(EventBaseFrontend):
             'selectize_data': selectize_data, 'course_names': course_names})
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.registrations_write, check_offline=True)
     def manage_attendees(self, rs: RequestState, event_id: int, course_id: int,
                          ) -> Response:
         """Alter who is assigned to this course."""

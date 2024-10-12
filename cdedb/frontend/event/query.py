@@ -24,6 +24,7 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import (
     Query,
     QueryConstraint,
@@ -59,7 +60,7 @@ from cdedb.frontend.event.query_stats import (
 
 class EventQueryMixin(EventBaseFrontend):
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_stats | EventPrivileges.courses_read)
     def stats(self, rs: RequestState, event_id: int) -> Response:
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event'].parts
@@ -169,7 +170,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("download", "is_search")
     def registration_query(self, rs: RequestState, event_id: int,
                            download: Optional[str], is_search: bool,
@@ -224,7 +225,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.render(rs, "query/registration_query", params)
 
     @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_name", "query_scope")
     def store_event_query(self, rs: RequestState, event_id: int, query_name: str,
                           query_scope: QueryScope) -> Response:
@@ -249,7 +250,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(self, rs: RequestState, event_id: int,
                            query_id: int, query_scope: QueryScope) -> Response:
@@ -300,7 +301,7 @@ class EventQueryMixin(EventBaseFrontend):
         ))
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("scope")
     def custom_filter_summary(self, rs: RequestState, event_id: int,
                               scope: Optional[QueryScope] = None) -> Response:
@@ -317,17 +318,17 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_registration_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_course_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def create_lodgement_filter(self, rs: RequestState, event_id: int) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.lodgement)
 
@@ -356,7 +357,7 @@ class EventQueryMixin(EventBaseFrontend):
                     "A filter with this selection of fields already exists."))))
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
     def create_custom_filter(self, rs: RequestState, event_id: int, data: CdEDBObject,
                              ) -> Response:
@@ -383,7 +384,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def change_custom_filter_form(self, rs: RequestState, event_id: int,
                                   custom_filter_id: int) -> Response:
         custom_filter = rs.ambience['custom_filter']
@@ -398,7 +399,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.configure_custom_filter_form(rs, event_id, custom_filter.scope)
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields())
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
@@ -423,7 +424,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def delete_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int) -> Response:
         code = self.eventproxy.delete_custom_query_filter(rs, custom_filter_id)
@@ -433,7 +434,7 @@ class EventQueryMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read)
     @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool,
@@ -483,7 +484,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.render(rs, "query/course_query", params)
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.lodgements_read)
     @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
                         download: Optional[str], is_search: bool,

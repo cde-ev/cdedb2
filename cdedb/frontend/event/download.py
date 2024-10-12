@@ -29,6 +29,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import REQUESTdata, access, event_guard
@@ -46,7 +47,7 @@ class EventDownloadMixin(EventBaseFrontend):
                            {'lodgements_exist': lodgements_exist})
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_nametags(self, rs: RequestState, event_id: int,
                           runs: vtypes.SingleDigitInt) -> Response:
@@ -109,7 +110,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_course_puzzle(self, rs: RequestState, event_id: int,
                                runs: vtypes.SingleDigitInt) -> Response:
@@ -160,7 +161,7 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_lodgement_puzzle(self, rs: RequestState, event_id: int,
                                   runs: vtypes.SingleDigitInt) -> Response:
@@ -221,7 +222,7 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_course_lists(self, rs: RequestState, event_id: int,
                               runs: vtypes.SingleDigitInt) -> Response:
@@ -293,7 +294,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_lodgement_lists(self, rs: RequestState, event_id: int,
                                  runs: vtypes.SingleDigitInt) -> Response:
@@ -333,7 +334,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs", "landscape", "orgas_only", "part_ids")
     def download_participant_list(self, rs: RequestState, event_id: int,
                                   runs: vtypes.SingleDigitInt, landscape: bool,
@@ -360,7 +361,7 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read)
     def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
         """A pipe-seperated courselist for the dokuteam aca-generator script."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -378,7 +379,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_dokuteam_courselist.txt")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def download_dokuteam_participant_list(self, rs: RequestState,
                                            event_id: int) -> Response:
         """Create participant list per track for dokuteam."""
@@ -429,7 +430,7 @@ class EventDownloadMixin(EventBaseFrontend):
                                   filename=f"{zipname}.zip")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.courses_read)
     def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -449,10 +450,10 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_courses")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.lodgements_read)
     def download_csv_lodgements(self, rs: RequestState, event_id: int,
                                 ) -> Response:
-        """Create CSV file with all courses"""
+        """Create CSV file with all lodgements"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
@@ -471,7 +472,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_lodgements")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.registrations_read)
     def download_csv_registrations(self, rs: RequestState, event_id: int,
                                    ) -> Response:
         """Create CSV file with all registrations"""
@@ -497,7 +498,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_registrations")
 
     @access("event", modi={"GET"})
-    @event_guard()
+    @event_guard(EventPrivileges.all_read)
     @REQUESTdata("agree_unlocked_download")
     def download_export(self, rs: RequestState, event_id: int,
                         agree_unlocked_download: Optional[bool]) -> Response:
@@ -521,7 +522,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_export_event.json")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.all_read)
     def download_partial_export(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Retrieve data for third-party applications."""
@@ -536,7 +537,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 rs.ambience['event'].shortname))
 
     @access("droid_orga")
-    @event_guard()
+    @event_guard(EventPrivileges.all_read)
     def droid_partial_export(self, rs: RequestState, event_id: int) -> Response:
         data = self.eventproxy.partial_export_event(rs, event_id)
         if not data:
