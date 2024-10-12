@@ -23,14 +23,23 @@ from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
-    ASSEMBLY_COMMON_FIELDS, PERSONA_FULL_CREATION, filter_none,
+    ASSEMBLY_COMMON_FIELDS,
+    PERSONA_FULL_CREATION,
+    filter_none,
 )
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, assembly_guard,
-    cdedburl, check_validation as check,
+    AbstractUserFrontend,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    assembly_guard,
+    cdedburl,
+    check_validation as check,
 )
 from cdedb.models.ml import (
-    AssemblyAssociatedMailinglist, AssemblyPresiderMailinglist, Mailinglist,
+    AssemblyAssociatedMailinglist,
+    AssemblyPresiderMailinglist,
+    Mailinglist,
 )
 
 #: Magic value to signal abstention during _classical_ voting.

@@ -281,14 +281,20 @@
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
         <dl class="dl-horizontal">
-            {% for field in ambience['event']['fields'].values()|sort %}
-                {% if field['association'] == enums['FieldAssociations'].registration %}
-                    <dt title="{{ field['title'] }}">{{ field['title'] }}</dt>
-                    <dd>
-                        {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
-                    </dd>
-                {% endif %}
+        {% for title, fields in ambience['event'].grouped_fields[enums['FieldAssociations'].registration].items() %}
+            {% if ambience['event'].grouped_fields[enums['FieldAssociations'].registration]|length > 1 %}
+                <h4 class="heading-underline">
+                    {{ title or gettext("Other Fields") }}
+                </h4>
+            {% endif %}
+            {% for field in fields %}
+                <dt title="{{ field.title }}">{{ field['title'] }}</dt>
+                <dd>
+                    {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
+                    {{ util.output_info(field.description) }}
+                </dd>
             {% endfor %}
+        {% endfor %}
         </dl>
     {% endif %}
 

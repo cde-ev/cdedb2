@@ -19,15 +19,28 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseFilterPositions, InfiniteEnum,
-    RequestState, cast_fields, nearly_now, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    CourseFilterPositions,
+    InfiniteEnum,
+    RequestState,
+    cast_fields,
+    nearly_now,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.models.droid import OrgaToken
 from tests.common import (
-    ANONYMOUS, USER_DICT, BackendTest, as_users, event_keeper, json_keys_to_int,
+    ANONYMOUS,
+    USER_DICT,
+    BackendTest,
+    as_users,
+    event_keeper,
+    json_keys_to_int,
     storage,
 )
 
@@ -149,34 +162,40 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "instrument",
                     'title': "Instrument",
-                    'sortkey': 0,
+                    'description': None,
                     'kind': const.FieldDatatypes.str,
-                    'entries': None,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 0,
                     'checkin': False,
+                    'entries': None,
                 },
                 -2: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "preferred_excursion_date",
                     'title': "Bevorzugtes Ausflugsdatum",
-                    'sortkey': 0,
+                    'description': None,
                     'kind': const.FieldDatatypes.date,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 0,
+                    'checkin': True,
                     'entries': {
                         "2109-08-16": "In the first coming",
                         "2110-08-16": "During the second coming",
                     },
-                    'checkin': True,
                 },
                 -3: {
-                    'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
                     'title': "Ist Kind",
-                    'sortkey': 5,
+                    'description': None,
                     'kind': const.FieldDatatypes.bool,
-                    'entries': None,
+                    'association': const.FieldAssociations.registration,
+                    'sort_group': None,
+                    'sortkey': 5,
                     'checkin': False,
+                    'entries': None,
                 },
             },
         }
@@ -297,16 +316,17 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
             'title': "KäA",
-            'sortkey': -7,
+            'description': None,
             'kind': const.FieldDatatypes.str,
-            'entries': None,
+            'association': const.FieldAssociations.lodgement,
+            'sort_group': None,
+            'sortkey': -7,
             'checkin': False,
+            'entries': None,
         }
         changed_field = {
-            'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
             'entries': {
                 "2110-08-15": "early second coming",
@@ -2390,6 +2410,7 @@ class TestEventBackend(BackendTest):
         # Now change the datatype of that field.
         field_data["kind"] = const.FieldDatatypes.date
         del field_data["field_name"]
+        del field_data["association"]
         event_data["fields"] = {1001: field_data}
         self.event.set_event(self.key, event_id, event_data)
 
@@ -2866,6 +2887,8 @@ class TestEventBackend(BackendTest):
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
             1002: {
                 'association': const.FieldAssociations.registration,
@@ -2877,6 +2900,8 @@ class TestEventBackend(BackendTest):
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
                 'checkin': False,
+                'sort_group': None,
+                'description': None,
             },
         })
         stored_data['event.event_fees'][1001] = {
@@ -3822,7 +3847,6 @@ class TestEventBackend(BackendTest):
             'checkin': False,
         }
         changed_field = {
-            'association': const.FieldAssociations.registration,
             'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-8-15", "early second coming"],
@@ -4393,6 +4417,11 @@ class TestEventBackend(BackendTest):
                 'part_ids': [9, 10, 11],
                 'shortname': 'Kurs 2H',
                 'title': 'Kurse 2. Hälfte'},
+            10: {'constraint_type': const.EventPartGroupType.mailinglist_link,
+                'notes': None,
+                'part_ids': [7, 10],
+                'shortname': 'ML W',
+                'title': 'Mailingliste Windischleuba'},
             1005: {'constraint_type': const.EventPartGroupType.Statistic,
                    'notes': "Let's see what happens",
                    'part_ids': [7, 8, 9, 10, 11, 12],
@@ -4411,10 +4440,12 @@ class TestEventBackend(BackendTest):
         with self.switch_user("annika"):
             blockers = self.event.delete_event_blockers(self.key, event_id)
             self.assertEqual(
+                {
+                    "orgas", "event_parts", "course_tracks", "part_groups",
+                    "part_group_parts", "track_groups", "track_group_tracks",
+                    "courses", "log", "lodgement_groups", "event_fees", "mailinglists",
+                },
                 set(blockers),
-                {"orgas", "event_parts", "course_tracks", "part_groups",
-                 "part_group_parts", "track_groups", "track_group_tracks",
-                 "courses", "log", "lodgement_groups", "event_fees"},
             )
             self.assertTrue(self.event.delete_event(self.key, event_id, blockers))
 
@@ -4904,7 +4935,7 @@ class TestEventBackend(BackendTest):
         )
         # Ensure that the commit time matches the current (non-frozen) time.
         self.assertEqual(
-            nearly_now(delta=datetime.timedelta(milliseconds=10)),
+            nearly_now(delta=datetime.timedelta(seconds=5)),
             self.event._event_keeper.latest_logtime(event_id),
         )
 

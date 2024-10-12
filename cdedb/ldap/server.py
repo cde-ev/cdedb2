@@ -11,11 +11,17 @@ from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import (
-    LDAPException, LDAPProtocolError, LDAPUnwillingToPerform,
+    LDAPException,
+    LDAPProtocolError,
+    LDAPUnwillingToPerform,
 )
 from ldaptor.protocols.pureldap import (
-    LDAPCompareRequest, LDAPControls, LDAPMessage, LDAPProtocolRequest,
-    LDAPProtocolResponse, LDAPSearchRequest,
+    LDAPCompareRequest,
+    LDAPControls,
+    LDAPMessage,
+    LDAPProtocolRequest,
+    LDAPProtocolResponse,
+    LDAPSearchRequest,
 )
 
 from cdedb.ldap.entry import CdEDBBaseLDAPEntry

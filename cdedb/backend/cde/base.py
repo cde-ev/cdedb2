@@ -23,14 +23,23 @@ import psycopg2.extensions
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
+    AbstractBackend,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    RequestState, make_proxy, unwrap,
+    PARSE_OUTPUT_DATEFORMAT,
+    CdEDBLog,
+    CdEDBObject,
+    DefaultReturnCode,
+    LineResolutions,
+    RequestState,
+    make_proxy,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
@@ -38,7 +47,8 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation.validate import (
-    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    is_optional,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter

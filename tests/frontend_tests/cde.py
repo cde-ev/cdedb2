@@ -13,16 +13,29 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    IGNORE_WARNINGS_NAME, CdEDBObject, LineResolutions, RequestState, Role, now,
+    IGNORE_WARNINGS_NAME,
+    CdEDBObject,
+    LineResolutions,
+    RequestState,
+    Role,
+    now,
 )
 from cdedb.common.i18n import (
-    format_country_code, get_country_code_from_country, get_localized_country_codes,
+    format_country_code,
+    get_country_code_from_country,
+    get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
 from cdedb.frontend.common import Worker, make_postal_address
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, as_users, get_user, prepsql, storage,
+    USER_DICT,
+    FrontendTest,
+    UserIdentifier,
+    as_users,
+    get_user,
+    prepsql,
+    storage,
 )
 
 PERSONA_TEMPLATE = {

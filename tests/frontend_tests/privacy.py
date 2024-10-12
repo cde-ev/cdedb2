@@ -6,7 +6,12 @@ import urllib.parse
 
 from cdedb.common import CdEDBObject
 from tests.common import (
-    USER_DICT, FrontendTest, UserIdentifier, UserObject, admin_views, as_users,
+    USER_DICT,
+    FrontendTest,
+    UserIdentifier,
+    UserObject,
+    admin_views,
+    as_users,
 )
 
 # TODO Profilfoto

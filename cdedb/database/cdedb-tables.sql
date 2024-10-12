@@ -900,13 +900,17 @@ CREATE TABLE event.field_definitions (
         event_id                integer NOT NULL REFERENCES event.events(id),
         -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
-        -- the title is displayed to the user, may contain any string and can be changed.
-        title                   varchar NOT NULL,
-        sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
+        -- the title is displayed to the user, may contain any string and can be changed.
+        title                   varchar NOT NULL,
+        -- the description is shown as info text near field inputs and values.
+        description             varchar DEFAULT NULL,
+        -- fields are grouped by their `sort_group` string, then sorted by sortkey within that group.
+        sort_group              varchar DEFAULT NULL,
+        sortkey                 integer NOT NULL DEFAULT 0,
         -- whether or not to display this field during checkin.
         checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
@@ -1418,9 +1422,16 @@ CREATE TABLE ml.mailinglists (
         -- event awareness
         -- event_id is not NULL if associated to an event
         event_id                integer REFERENCES event.events(id),
+        -- only include registrations of this event part group.
+        -- If empty, this includes registrations from __all__ parts.
+        -- May only be set if event id is set.
+        -- Should only refer to a part group of type `mailinglist_link`.
+        event_part_group_id     integer DEFAULT NULL REFERENCES event.part_groups(id),
+        CONSTRAINT mailinglists_no_event_specific_without_event
+            CHECK (event_id IS NOT NULL OR event_part_group_id IS NULL),
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
-        -- this may be empty, in which case this is an orga list
+        -- If empty, this matches __no__ registrations.
         registration_stati      integer[] NOT NULL DEFAULT array[]::integer[],
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly

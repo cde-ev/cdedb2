@@ -16,26 +16,44 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, RequestState, determine_age_class, merge_dicts, unwrap,
+    CdEDBObject,
+    RequestState,
+    determine_age_class,
+    merge_dicts,
+    unwrap,
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    Query, QueryConstraint, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpec,
+    QuerySpecEntry,
 )
 from cdedb.common.query.defaults import (
-    generate_event_course_default_queries, generate_event_registration_default_queries,
+    generate_event_course_default_queries,
+    generate_event_registration_default_queries,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, check_validation as check, event_guard,
-    inspect_validation as inspect, periodic, request_extractor,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    check_validation as check,
+    event_guard,
+    inspect_validation as inspect,
+    periodic,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 from cdedb.frontend.event.query_stats import (
-    EventCourseStatistic, EventRegistrationInXChoiceGrouper,
-    EventRegistrationPartStatistic, EventRegistrationTrackStatistic,
+    EventCourseStatistic,
+    EventRegistrationInXChoiceGrouper,
+    EventRegistrationPartStatistic,
+    EventRegistrationTrackStatistic,
 )
 
 
@@ -288,16 +306,8 @@ class EventQueryMixin(EventBaseFrontend):
                               scope: Optional[QueryScope] = None) -> Response:
         rs.ignore_validation_errors()
 
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.new_get_courses(rs, course_ids)
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
-
         query_specs = {
-            scope: scope.get_spec(
-                event=rs.ambience['event'], courses=courses,
-                lodgements=lodgements, lodgement_groups=lodgement_groups)
+            scope: scope.get_spec(event=rs.ambience['event'])
             for scope in [
                 QueryScope.registration, QueryScope.event_course, QueryScope.lodgement,
             ]
@@ -323,7 +333,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     def configure_custom_filter_form(self, rs: RequestState, event_id: int,
                                      scope: QueryScope) -> Response:
-        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
+        spec = scope.get_spec(event=rs.ambience['event'])
         fields_by_kind = collections.defaultdict(list)
         for field, field_spec in spec.items():
             fields_by_kind[field_spec.type].append(field)
@@ -354,7 +364,7 @@ class EventQueryMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not scope:
             rs.notify("error", "Invalid Scope.")
             return self.redirect(rs, "event/custom_filter_summary")
-        spec = self.eventproxy.get_query_spec(rs, event_id, scope)
+        spec = scope.get_spec(event=rs.ambience['event'])
 
         data.update({
             'fields': self.retrieve_custom_filter_fields(rs, spec),
@@ -393,7 +403,7 @@ class EventQueryMixin(EventBaseFrontend):
     def change_custom_filter(self, rs: RequestState, event_id: int,
                              custom_filter_id: int, data: CdEDBObject) -> Response:
         custom_filter = rs.ambience['custom_filter']
-        spec = self.eventproxy.get_query_spec(rs, event_id, custom_filter.scope)
+        spec = custom_filter.scope.get_spec(event=rs.ambience['event'])
 
         data['fields'] = self.retrieve_custom_filter_fields(rs, spec)
         data['id'] = custom_filter_id

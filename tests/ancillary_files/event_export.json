@@ -312,6 +312,8 @@
             "field_name": "transportation",
             "title": "Reist an mit",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -340,6 +342,8 @@
             "field_name": "contamination",
             "title": "Verseuchung",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 3,
             "checkin": false
         },
@@ -351,6 +355,8 @@
             "field_name": "may_reserve",
             "title": "Würde auf Isomatte schlafen",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -362,6 +368,8 @@
             "field_name": "brings_balls",
             "title": "Bringt Bälle mit",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": true
         },
@@ -373,6 +381,8 @@
             "field_name": "lodge",
             "title": "Zimmerwünsche",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -384,6 +394,8 @@
             "field_name": "room",
             "title": "Kursraum",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 2,
             "checkin": false
         },
@@ -395,6 +407,8 @@
             "field_name": "is_child",
             "title": "Ist U12",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -405,6 +419,8 @@
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "title": "Anzahl Großbuchstaben",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "id": 8,
             "kind": 3,
             "checkin": true

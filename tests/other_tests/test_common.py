@@ -10,7 +10,12 @@ import subprocess
 import tempfile
 
 from cdedb.common import (
-    NearlyNow, int_to_words, inverse_diacritic_patterns, nearly_now, now, unwrap,
+    NearlyNow,
+    int_to_words,
+    inverse_diacritic_patterns,
+    nearly_now,
+    now,
+    unwrap,
 )
 from cdedb.common.roles import extract_roles
 from cdedb.common.sorting import mixed_existence_sorter, xsorted

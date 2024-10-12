@@ -263,13 +263,13 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/1/management/advanced'},
                       {'href': '/ml/mailinglist/1/log'},
                       {'href': '/ml/mailinglist/1/change'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         f['notes'] = "I can change this!"
         f['subject_prefix'] = "Spaß"
         self.submit(f)
 
         self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual("I can change this!", f['notes'].value)
         self.assertEqual("Spaß", f['subject_prefix'].value)
 
@@ -791,7 +791,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Abonnenten", div="sidebar-navigation")
         with self.switch_user("anton"):
             self.traverse("Mailinglisten", "Gutscheine", "Konfiguration")
-            f = self.response.forms['changelistform']
+            f = self.response.forms['configuremailinglistform']
             self.assertEqual(f['roster_visibility'].value,
                              str(const.MailinglistRosterVisibility.subscribable))
             f['roster_visibility'] = const.MailinglistRosterVisibility.viewers
@@ -807,7 +807,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Abonnenten", div="sidebar-navigation")
         with self.switch_user("anton"):
             self.traverse("Mailinglisten", "Allumfassende Liste", "Konfiguration")
-            f = self.response.forms['changelistform']
+            f = self.response.forms['configuremailinglistform']
             self.assertEqual(f['roster_visibility'].value,
                              str(const.MailinglistRosterVisibility.none))
             # but Anton can see the roster, since he is an admin
@@ -827,7 +827,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['selectmltypeform']
         f['ml_type'] = const.MailinglistTypes.member_mandatory
         self.submit(f)
-        f = self.response.forms['createlistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual(f['maxsize'].value, '64')
         f['title'] = "Munkelwand"
         f['mod_policy'] = const.ModerationPolicy.unmoderated
@@ -892,12 +892,12 @@ class TestMlFrontend(FrontendTest):
                       {'description': 'Konfiguration'})
         self.assertTitle("Werbung – Konfiguration")
 
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         f['domain'] = const.MailinglistDomain.testmail
         f['maxsize'] = "intentionally no valid maxsize"
         self.submit(f, check_notification=False)
         self.assertValidationError("maxsize", "Ungültige Eingabe für eine Ganzzahl.")
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         f['maxsize'] = 12
         self.submit(f)
         self.assertTitle("Werbung")
@@ -908,7 +908,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/2/change'})
 
         # Test list deactivation
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual("Werbung", f['title'].value)
         f['title'] = "Munkelwand"
         self.assertEqual("werbung", f['local_part'].value)
@@ -929,7 +929,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/2/change'})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual("Munkelwand", f['title'].value)
         self.assertEqual("munkelwand", f['local_part'].value)
         self.assertFalse(f['is_active'].checked)
@@ -948,6 +948,7 @@ class TestMlFrontend(FrontendTest):
         event_types = {
             const.MailinglistTypes.event_associated,
             const.MailinglistTypes.event_orga,
+            const.MailinglistTypes.event_associated_exclusive,
         }
         general_types = {
             t for t in const.MailinglistTypes if t not in (
@@ -1007,7 +1008,7 @@ class TestMlFrontend(FrontendTest):
     def test_change_mailinglist_registration_stati(self) -> None:
         self.get("/ml/mailinglist/9/change")
         self.assertTitle("Teilnehmer-Liste – Konfiguration")
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
         expectation = {str(const.RegistrationPartStati.participant),
                        str(const.RegistrationPartStati.guest)}
@@ -1091,7 +1092,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['selectmltypeform']
         f['ml_type'] = mdata['ml_type']
         self.submit(f)
-        f = self.response.forms['createlistform']
+        f = self.response.forms['configuremailinglistform']
         for k, v in mdata.items():
             if k == 'ml_type':
                 continue
@@ -1223,7 +1224,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Verwaltung")
         self.traverse({"href": "/ml/mailinglist/3/change"})
         self.assertTitle("Witz des Tages – Konfiguration")
-        self.assertIn('changelistform', self.response.forms)
+        self.assertIn('configuremailinglistform', self.response.forms)
         # TODO check that some form elements are readonly
 
         self.traverse({"href": "ml/mailinglist/3/log"})
@@ -1237,7 +1238,7 @@ class TestMlFrontend(FrontendTest):
                       {"description": "Konfiguration"})
 
         old_ml = self.get_sample_datum('ml.mailinglists', 60)
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
 
         # these properties are not allowed to be changed by moderators
         f['title'].force_value("Party-Time")
@@ -1259,7 +1260,7 @@ class TestMlFrontend(FrontendTest):
 
         # Check that these have not changed ...
         self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         self.assertEqual('True', f['is_active'].value)
         self.assertEqual(old_ml['title'], f['title'].value)
         self.assertEqual(old_ml['local_part'], f['local_part'].value)
@@ -1374,7 +1375,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertNonPresence(self.user['given_names'], div="moderator-list")
         self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         new_notes = "Free Butterbeer for everyone!"
         f['notes'] = new_notes
         self.submit(f)
@@ -1385,7 +1386,7 @@ class TestMlFrontend(FrontendTest):
         f['ml_type'] = const.MailinglistTypes.cdelokal
         self.assertEqual(len(f['ml_type'].options), 2)
         self.submit(f)
-        f = self.response.forms['createlistform']
+        f = self.response.forms['configuremailinglistform']
         f['title'] = "Little Whinging"
         f['notes'] = "Only one wizard lives here, but he insisted on a" \
                      " Lokalgruppen-Mailinglist."
@@ -1404,7 +1405,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton")
     def test_1342(self) -> None:
         self.get("/ml/mailinglist/60/change")
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
         sample_data_stati = set(
             str(const.RegistrationPartStati(x)) for x in self.get_sample_data(
@@ -1416,7 +1417,7 @@ class TestMlFrontend(FrontendTest):
         f['registration_stati'] = stati
         self.submit(f)
         self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
         self.assertEqual({str(x) for x in stati}, reality)
 
@@ -1424,7 +1425,7 @@ class TestMlFrontend(FrontendTest):
         f['registration_stati'] = stati
         self.submit(f)
         self.traverse({"description": "Konfiguration"})
-        f = self.response.forms['changelistform']
+        f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
         self.assertEqual({str(x) for x in stati}, reality)
 
@@ -1437,7 +1438,7 @@ class TestMlFrontend(FrontendTest):
             with self.subTest(str(ml_type)):
                 select_type_form['ml_type'] = ml_type
                 self.submit(select_type_form)
-                create_ml_form = self.response.forms['createlistform']
+                create_ml_form = self.response.forms['configuremailinglistform']
                 create_ml_form['title'] = str(ml_type)
                 create_ml_form['local_part'] = str(ml_type)
                 create_ml_form['moderators'] = self.user['DB-ID']

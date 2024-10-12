@@ -20,18 +20,23 @@ sys.path.append(str(root))
 # this is necessary for calling make as subprocess
 os.chdir(root)
 
-from bin.check_utils import MyTextTestResult, MyTextTestRunner
-from bin.escape_fuzzing import work as xss_check
-
 import tests.backend_tests as backend_tests
 import tests.frontend_tests as frontend_tests
 import tests.ldap_tests as ldap_tests
 import tests.other_tests as other_tests
+from bin.check_utils import MyTextTestResult, MyTextTestRunner
+from bin.escape_fuzzing import work as xss_check
 from cdedb.cli.database import (
-    create_database, populate_database, restart_services, stop_services,
+    create_database,
+    populate_database,
+    restart_services,
+    stop_services,
 )
 from cdedb.cli.storage import (
-    create_log, create_storage, populate_sample_event_keepers, populate_storage,
+    create_log,
+    create_storage,
+    populate_sample_event_keepers,
+    populate_storage,
 )
 from cdedb.cli.util import is_docker
 from cdedb.config import SecretsConfig, TestConfig, set_configpath

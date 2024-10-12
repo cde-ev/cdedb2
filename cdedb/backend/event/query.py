@@ -11,24 +11,38 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    PYTHON_TO_SQL_MAP, access, affirm_dataclass, affirm_set_validation as affirm_set,
+    PYTHON_TO_SQL_MAP,
+    access,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, json_serialize,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    RequestState,
+    json_serialize,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, STORED_EVENT_QUERY_FIELDS,
+    COURSE_FIELDS,
+    LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges, is_privileged_event as is_privileged,
 )
 from cdedb.common.query import (
-    Query, QueryOperators, QueryScope, QuerySpec, QuerySpecEntry,
+    Query,
+    QueryOperators,
+    QueryScope,
+    QuerySpecEntry,
 )
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
@@ -794,27 +808,6 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
 
     @access("event")
-    def get_query_spec(self, rs: RequestState, event_id: int, scope: QueryScope,
-                       ) -> QuerySpec:
-        event_id = affirm(vtypes.ID, event_id)
-        scope = affirm(QueryScope, scope)
-        # TODO This function design is a problem. Where do we use queries for what?
-        with Atomizer(rs):
-            # if not self.is_orga(rs, event_id=event_id):
-            #    raise PrivilegeError
-
-            event = self.get_event(rs, event_id)
-            course_ids = self.list_courses(rs, event_id)  # type: ignore[attr-defined]
-            courses = self.new_get_courses(rs, course_ids)  # type: ignore[attr-defined]
-            lodgement_ids = self.list_lodgements(rs, event_id)  # type: ignore[attr-defined]
-            lodgements = self.new_get_lodgements(rs, lodgement_ids)  # type: ignore[attr-defined]
-            lodgement_groups = self.new_get_lodgement_groups(rs, event_id)  # type: ignore[attr-defined]
-
-        return scope.get_spec(
-            event=event, courses=courses, lodgements=lodgements,
-            lodgement_groups=lodgement_groups)
-
-    @access("event")
     def add_custom_query_filter(self, rs: RequestState, data: CustomQueryFilter,
                                 ) -> DefaultReturnCode:
         if not isinstance(data, CustomQueryFilter):
@@ -824,7 +817,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         scope = affirm(QueryScope, data.scope)
 
         with Atomizer(rs):
-            spec = self.get_query_spec(rs, event_id, scope)
+            event = self.get_event(rs, event_id)
+            spec = scope.get_spec(event=event)
 
             custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
                                              creation=True)
@@ -852,7 +846,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                                  event_id=current.event_id):
                 raise PrivilegeError
 
-            spec = self.get_query_spec(rs, event_id, current.scope)
+            event = self.get_event(rs, event_id)
+            spec = current.scope.get_spec(event=event)
 
             affirm(vtypes.CustomQueryFilter, data, query_spec=spec)
 

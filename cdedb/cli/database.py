@@ -5,7 +5,11 @@ import subprocess
 
 from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql
 from cdedb.cli.util import (
-    SAMPLE_DATA_JSON, connect, has_systemd, is_docker, sanity_check,
+    SAMPLE_DATA_JSON,
+    connect,
+    has_systemd,
+    is_docker,
+    sanity_check,
 )
 from cdedb.config import Config, SecretsConfig, TestConfig
 

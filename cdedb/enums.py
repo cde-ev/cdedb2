@@ -10,15 +10,22 @@ one list instead of two.
 import enum
 
 from cdedb.common import (  # noqa: F401
-    Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
-    CourseFilterPositions, GenesisDecision, LineResolutions, LodgementsSortkeys,
+    Accounts,
+    AgeClasses,
+    ConfidenceLevel,
+    CourseChoiceToolActions,
+    CourseFilterPositions,
+    GenesisDecision,
+    LineResolutions,
+    LodgementsSortkeys,
     TransactionType,
 )
 from cdedb.common.query import QueryOperators, QueryScope  # noqa: F401
 from cdedb.database.constants import *  # noqa: F403
 from cdedb.uncommon.intenum import CdEIntEnum
 from cdedb.uncommon.submanshim import (  # noqa: F401
-    SubscriptionAction, SubscriptionPolicy,
+    SubscriptionAction,
+    SubscriptionPolicy,
 )
 
 ALL_ENUMS: tuple[type[enum.Enum], ...] = tuple(

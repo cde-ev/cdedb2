@@ -5,7 +5,14 @@ import dataclasses
 from collections.abc import Collection
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, Optional, TypeVar, Union, get_args,
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
     get_origin,
 )
 
@@ -101,9 +108,18 @@ class CdEDataclass:
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         for field in dataclasses.fields(cls):
+            # Convert enum fields into enum members.
             if isinstance(field.type, type) and issubclass(field.type, CdEIntEnum):
                 if field.name in data:
                     data[field.name] = field.type(data[field.name])
+            # Convert list[enum] fields into enum members.
+            if get_origin(field.type) is list:
+                if len(get_args(field.type)) == 1:
+                    inner_type = get_args(field.type)[0]
+                    if isinstance(inner_type, type):
+                        if issubclass(inner_type, CdEIntEnum):
+                            data[field.name] = list(
+                                inner_type(x) for x in data[field.name])
         return cls(**data)
 
     @classmethod
@@ -150,9 +166,14 @@ class CdEDataclass:
                     continue
                 if field.name == 'id':
                     mandatory[field.name] = vtypes.CreationID
-                # Fields with init=False are optional, so that objects retrieved from
-                #  the database can pass validation.
-                elif is_optional_type(field.type) or not field.init:
+                elif (
+                        is_optional_type(field.type)
+                        # Fields with init=False are optional, so that objects
+                        #  retrieved from the database can pass validation.
+                        or not field.init
+                        # Fields with a default are optional at creation.
+                        or field.default or field.default_factory
+                ):
                     optional[field.name] = field.type
                 else:
                     mandatory[field.name] = field.type

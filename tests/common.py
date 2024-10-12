@@ -29,7 +29,15 @@ import urllib.request
 from collections.abc import Generator, Iterable, Mapping, MutableMapping, Sequence
 from re import Pattern
 from typing import (
-    Any, Callable, ClassVar, NamedTuple, Optional, TypeVar, Union, cast, no_type_check,
+    Any,
+    Callable,
+    ClassVar,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    no_type_check,
 )
 
 import PIL.Image
@@ -47,28 +55,51 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.cli.dev.json2sql import insert_postal_code_locations, json2sql, json2sql_join
 from cdedb.cli.storage import (
-    create_storage, populate_sample_event_keepers, populate_storage,
+    create_storage,
+    populate_sample_event_keepers,
+    populate_storage,
 )
 from cdedb.cli.util import execute_sql_script
 from cdedb.common import (
-    ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, PathLike, RequestState, merge_dicts, nearly_now, now, unwrap,
+    ANTI_CSRF_TOKEN_NAME,
+    ANTI_CSRF_TOKEN_PAYLOAD,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    PathLike,
+    RequestState,
+    merge_dicts,
+    nearly_now,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import (
-    AssemblyLogFilter, CdELogFilter, ChangelogLogFilter, CoreLogFilter, EventLogFilter,
-    FinanceLogFilter, GenericLogFilter, MlLogFilter, PastEventLogFilter,
+    AssemblyLogFilter,
+    CdELogFilter,
+    ChangelogLogFilter,
+    CoreLogFilter,
+    EventLogFilter,
+    FinanceLogFilter,
+    GenericLogFilter,
+    MlLogFilter,
+    PastEventLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME,
+    ALL_ADMIN_VIEWS,
+    roles_to_db_role,
 )
 from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
 from cdedb.frontend.common import (
-    AbstractFrontend, Worker, make_persona_name, setup_translations,
+    AbstractFrontend,
+    Worker,
+    make_persona_name,
+    setup_translations,
 )
 from cdedb.frontend.cron import CronFrontend
 from cdedb.frontend.paths import CDEDB_PATHS

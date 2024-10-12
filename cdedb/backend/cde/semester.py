@@ -22,7 +22,12 @@ import cdedb.database.constants as const
 from cdedb.backend.cde import CdELastschriftBackend
 from cdedb.backend.common import access, affirm_validation as affirm
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, RequestState, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    RequestState,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import ArchiveError
 from cdedb.common.fields import EXPULS_PERIOD_FIELDS, ORG_PERIOD_FIELDS

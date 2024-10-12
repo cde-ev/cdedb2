@@ -15,7 +15,11 @@ import graphviz
 
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, Notification, RequestState, inverse_diacritic_patterns,
+    CdEDBObject,
+    CdEDBObjectMap,
+    Notification,
+    RequestState,
+    inverse_diacritic_patterns,
     make_persona_name,
 )
 from cdedb.common.n_ import n_

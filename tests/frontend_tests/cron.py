@@ -631,6 +631,8 @@ class TestCron(CronTest):
             'geheim': unittest.mock.MagicMock(),
             'hogwarts': unittest.mock.MagicMock(),
             'gu': unittest.mock.MagicMock(),
+            'whz': unittest.mock.MagicMock(),
+            'whzmfz': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 
@@ -684,6 +686,8 @@ class TestCron(CronTest):
                           umcall('geheim'),
                           umcall('hogwarts'),
                           umcall('gu'),
+                          umcall('whz'),
+                          umcall('whzmfz'),
                           umcall('migration'),
                           ])))
         # Meta update
@@ -764,6 +768,8 @@ class TestCron(CronTest):
             'geheim': unittest.mock.MagicMock(),
             'hogwarts': unittest.mock.MagicMock(),
             'gu': unittest.mock.MagicMock(),
+            'whz': unittest.mock.MagicMock(),
+            'whzmfz': unittest.mock.MagicMock(),
             'migration': unittest.mock.MagicMock(),
         }
 

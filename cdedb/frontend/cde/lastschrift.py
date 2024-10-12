@@ -21,8 +21,15 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, asciificator, determine_age_class,
-    lastschrift_reference, merge_dicts, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    asciificator,
+    determine_age_class,
+    lastschrift_reference,
+    merge_dicts,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
@@ -31,7 +38,11 @@ from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    cdedbid_filter,
+    check_validation as check,
     periodic,
 )
 

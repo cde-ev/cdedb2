@@ -2,6 +2,7 @@
 # pylint: disable=protected-access,missing-module-docstring
 
 from collections.abc import Collection
+from dataclasses import fields
 from typing import Optional, cast
 
 from subman.exceptions import SubscriptionError
@@ -208,6 +209,9 @@ class TestMlBackend(BackendTest):
             65: 'Hogwarts',
             66: 'Versammlungsleitung Internationaler Kongress',
             67: 'Globaler Unsinn',
+            68: 'Windischleuba-Mailingliste für Hexerei und Zauberei',
+            69: 'Windischleuba-Mailingliste für Hexerei und Zauberei'
+                ' (muggelfreie Zone)',
             99: 'Mailman-Migration',
         }
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
@@ -370,8 +374,10 @@ class TestMlBackend(BackendTest):
         data.event_id = self.as_id(1)
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
-        data = models_ml.EventOrgaMailinglist(**{k: v for k, v in data.as_dict().items()
-                                                 if k != 'registration_stati'})
+        data = models_ml.EventOrgaMailinglist(**{
+            k: v for k, v in data.as_dict().items()
+            if k in {f.name for f in fields(models_ml.EventOrgaMailinglist)}
+        })
         data.local_part = vtypes.EmailLocalPart('test-orga')
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
@@ -568,7 +574,11 @@ class TestMlBackend(BackendTest):
                 self.ml.set_mailinglist(self.key, full_mod_mdata)
         else:
             expectation.update(full_mod_mdata)
-            self.assertLess(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
+            if self.user_in('nina'):
+                # For nina, this is a noop.
+                self.assertGreater(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
+            else:
+                self.assertLess(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
 
         # we need the moderators and whitelist to construct the dataclass
         expectation["moderators"] = original.moderators
@@ -623,6 +633,8 @@ class TestMlBackend(BackendTest):
             13: SS.implicit,
             14: SS.implicit,
             58: SS.implicit,
+            68: SS.implicit,
+            69: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=5))

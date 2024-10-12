@@ -304,9 +304,9 @@
                     {% if entry['location2'] %}<br />{% endif %}
                     {{ util.gettext_country(entry['country2']) }}
                 {% endcall %}
-                {% call history_field(gettext("Second Address searchable")) %}
-                    {{ print_history('show_address2') }}
-                {% endcall %}
+            {% endcall %}
+            {% call history_field(gettext("Second Address searchable")) %}
+                {{ print_history('show_address2') }}
             {% endcall %}
         {% endif %}
 

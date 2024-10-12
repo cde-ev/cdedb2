@@ -18,18 +18,38 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.event as models
+import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, internal, singularize,
+    AbstractBackend,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    internal,
+    singularize,
 )
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, DefaultReturnCode, DeletionBlockers,
-    PsycoJson, RequestState, now, parse_date, parse_datetime, parse_phone, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    PsycoJson,
+    RequestState,
+    now,
+    parse_date,
+    parse_datetime,
+    parse_phone,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FIELD_DEFINITION_FIELDS,
-    PART_GROUP_FIELDS, REGISTRATION_FIELDS,
+    COURSE_TRACK_FIELDS,
+    EVENT_FIELD_SPEC,
+    EVENT_PART_FIELDS,
+    FIELD_DEFINITION_FIELDS,
+    PART_GROUP_FIELDS,
+    REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
@@ -102,9 +122,7 @@ class EventLowLevelBackend(AbstractBackend):
         :param field_ids: If given, only include fields with these ids.
         :return: A dict mapping each event id to the dict of its fields
         """
-        data = self.sql_select(
-            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-            event_ids, entity_key="event_id")
+        data = self.query_all(rs, *models.EventField.get_select_query(event_ids))
         ret: dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
         for field in data:
             field['association'] = const.FieldAssociations(field['association'])
@@ -667,6 +685,7 @@ class EventLowLevelBackend(AbstractBackend):
         Possible blockers:
 
         * part_group_parts: A link between an event part and the part group.
+        * mailinglists: A mailinglist limited by this part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -679,6 +698,13 @@ class EventLowLevelBackend(AbstractBackend):
             entity_key="part_group_id")
         if part_group_parts:
             blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
+        mailinglists = self.sql_select(
+            rs, models_ml.Mailinglist.database_table, ("id",), (part_group_id,),
+            entity_key="event_part_group_id",
+        )
+        if mailinglists:
+            blockers["mailinglists"] = [e["id"] for e in mailinglists]
 
         return blockers
 
@@ -709,19 +735,34 @@ class EventLowLevelBackend(AbstractBackend):
             if "part_group_parts" in cascade:
                 ret *= self.sql_delete(
                     rs, "event.part_group_parts", blockers["part_group_parts"])
+            if "mailinglists" in cascade:
+                for anid in blockers["mailinglists"]:
+                    deletor = {
+                        'id': anid,
+                        'is_active': False,
+                        'event_part_group_id': None,
+                    }
+                    ret *= self.sql_update(
+                        rs, models_ml.Mailinglist.database_table, deletor,
+                    )
 
             blockers = self._delete_part_group_blockers(rs, part_group_id)
 
         if not blockers:
-            part_group = self.sql_select_one(
-                rs, "event.part_groups", PART_GROUP_FIELDS, part_group_id)
-            if part_group is None:  # pragma: no cover
+            data = self.query_one(
+                rs, *models.PartGroup.get_select_query(
+                    (part_group_id,), entity_key="id"),
+            )
+            if data is None:  # pragma: no cover
                 return 0
-            type_ = const.EventPartGroupType(part_group['constraint_type'])
-            ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
-            self.event_log(rs, const.EventLogCodes.part_group_deleted,
-                           event_id=part_group["event_id"],
-                           change_note=f"{part_group['title']} ({type_.name})")
+            part_group = models.PartGroup.from_database(data)
+            ret *= self.sql_delete_one(
+                rs, models.PartGroup.database_table, part_group_id)
+            self.event_log(
+                rs, const.EventLogCodes.part_group_deleted,
+                event_id=part_group.event_id,
+                change_note=f"{part_group.title} ({part_group.constraint_type.name})",
+            )
         else:
             raise ValueError(  # pragma: no cover
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1180,8 +1221,15 @@ class EventLowLevelBackend(AbstractBackend):
                            change_note=new_field['field_name'])
 
         if updated_fields:
-            current_field_data = {e['id']: e for e in self.sql_select(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
+            current_field_data = {
+                e['id']: e
+                for e in self.query_all(
+                    rs,
+                    *models.EventField.get_select_query(
+                        updated_fields, entity_key="id",
+                    ),
+                )
+            }
             for x in mixed_existence_sorter(updated_fields):
                 updated_field = copy.deepcopy(fields[x])
                 assert updated_field is not None

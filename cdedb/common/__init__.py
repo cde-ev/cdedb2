@@ -21,7 +21,15 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import phonenumbers
@@ -350,6 +358,12 @@ class RequestState(ConnectionContainer):
         successful check.
         """
         self._errors = list(errors)
+
+    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
+        ret: dict[Optional[str], list[Exception]] = {}
+        for key, value in self.retrieve_validation_errors():
+            ret.setdefault(key, []).append(value)
+        return ret
 
 
 if TYPE_CHECKING:
