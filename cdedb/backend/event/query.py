@@ -837,7 +837,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         scope = affirm(QueryScope, data.scope)
 
         with Atomizer(rs):
-            spec = self.get_query_spec(rs, event_id, scope)
+            event = self.get_event(rs, event_id)
+            spec = scope.get_spec(event=event)
 
             custom_filter = affirm_dataclass(CustomQueryFilter, data, query_spec=spec,
                                              creation=True)
@@ -864,7 +865,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
             if not self.is_orga(rs, event_id=current.event_id):
                 raise PrivilegeError
 
-            spec = self.get_query_spec(rs, event_id, current.scope)
+            event = self.get_event(rs, event_id)
+            spec = current.scope.get_spec(event=event)
 
             affirm(vtypes.CustomQueryFilter, data, query_spec=spec)
 
