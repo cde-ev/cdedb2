@@ -40,6 +40,9 @@ from cdedb.common.fields import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges, is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
@@ -437,6 +440,8 @@ class EventRegistrationBackend(EventBaseBackend):
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
         # finance_admins are allowed here to book event fees.
+        # TODO Urgh… How do we want to handle this privileges?
+        # Special EventPrivileges.registrations_read_restricted role?
         if (persona_ids != {rs.user.persona_id}
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)
@@ -492,8 +497,8 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = {e['id']: e['persona_id'] for e in data}
 
         if not (rs.user.persona_id in ret.values()
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)):
+                or is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
@@ -522,6 +527,8 @@ class EventRegistrationBackend(EventBaseBackend):
             return ret
 
         # Check if eligible to check registration status for other users.
+        # TODO Urgh… How do we want to handle this privileges?
+        # Special EventPrivileges.registrations_read_restricted role?
         if not (persona_ids == {rs.user.persona_id}
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
@@ -549,8 +556,8 @@ class EventRegistrationBackend(EventBaseBackend):
                              ) -> dict[tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
         event_ids = affirm_set(vtypes.ID, event_ids)
-        if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
-                not self.is_admin(rs)):
+        if not all(is_privileged(rs, EventPrivileges.registrations_read, event_id=anid)
+                   for anid in event_ids):
             raise PrivilegeError(n_("Not privileged."))
 
         data = self.sql_select(
@@ -609,7 +616,7 @@ class EventRegistrationBackend(EventBaseBackend):
                      part_ids: Optional[Collection[int]] = None,
                      ) -> dict[int, Optional[list[int]]]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
         return self._get_waitlist(rs, event_id, part_ids)
 
@@ -627,7 +634,8 @@ class EventRegistrationBackend(EventBaseBackend):
         if persona_id is None:
             persona_id = rs.user.persona_id
         if persona_id != rs.user.persona_id:
-            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            if not is_privileged(rs, EventPrivileges.registrations_read,
+                                 event_id=event_id):
                 raise PrivilegeError(
                     n_("Must be orga to access full waitlist."))
         reg_ids = self.list_registrations(rs, event_id, persona_id)
@@ -667,8 +675,8 @@ class EventRegistrationBackend(EventBaseBackend):
         reg_ids = reg_ids or set()
         reg_ids = affirm_set(vtypes.ID, reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)
-        if (not self.is_admin(rs)
-                and not self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.registrations_read,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         query = """SELECT DISTINCT
             regs.id, regs.persona_id
@@ -832,6 +840,8 @@ class EventRegistrationBackend(EventBaseBackend):
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
             # finance_admins are allowed here to book event fees.
+            # TODO Urgh… How do we want to handle this privileges?
+            # Special EventPrivileges.registrations_read_restricted role?
             is_privileged = (
                 self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
                 or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
@@ -944,7 +954,8 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(event_ids)
-            if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.registrations_write,
+                                 event_id=event_id):
                 raise PrivilegeError
 
             ret = 1
@@ -997,8 +1008,8 @@ class EventRegistrationBackend(EventBaseBackend):
             persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
-                    and not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+                    and not is_privileged(rs, EventPrivileges.registrations_write,
+                                          event_id=event_id)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             if "amount_owed" in data:
@@ -1114,8 +1125,8 @@ class EventRegistrationBackend(EventBaseBackend):
             vtypes.EventAssociatedFields, fdata, fields=event.fields,
             association=const.FieldAssociations.registration)
         if (data['persona_id'] != rs.user.persona_id
-                and not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+                and not is_privileged(rs, EventPrivileges.registrations_write,
+                                      event_id=data['event_id'])):
             raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
             if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
@@ -1223,7 +1234,8 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         registration_id = affirm(vtypes.ID, registration_id)
         reg = self.get_registration(rs, registration_id)
-        if not self.is_orga(rs, event_id=reg['event_id']):
+        if not is_privileged(rs, EventPrivileges.registrations_write,
+                             event_id=reg['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         event = self.get_event(rs, reg['event_id'])
         self.assert_offline_lock(rs, event_id=reg['event_id'])
@@ -1479,7 +1491,7 @@ class EventRegistrationBackend(EventBaseBackend):
             registration_id = unwrap(
                 self.list_registrations(rs, event_id, persona_id).keys() or None)
 
-        if self.is_orga(rs, event_id=event_id):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             pass
         elif persona_id and persona_id == rs.user.persona_id and (
                 event.is_open or registration_id):
@@ -1544,10 +1556,7 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
-            # finance_admins are allowed here to book event fees.
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)
-                    and "finance_admin" not in rs.user.roles
+            if (not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id)
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
@@ -1632,7 +1641,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             persona_id, event_id = self._get_registration_info(rs, registration_id)
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
             if fee_id not in event.fees:

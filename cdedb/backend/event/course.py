@@ -23,7 +23,9 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event as is_privileged
+from cdedb.common.privileges import (
+    EventPrivileges, is_privileged_event as is_privileged,
+)
 from cdedb.database.connection import Atomizer
 
 
@@ -234,8 +236,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
                 vtypes.EventAssociatedFields, data.get('fields') or {},
                 fields=event.fields, association=const.FieldAssociations.course)
             data['fields'] = PsycoJson(fdata)
-            if (not self.is_orga(rs, event_id=data['event_id'])
-                    and not self.is_admin(rs)):
+            if not is_privileged(rs, EventPrivileges.courses_write, data['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}

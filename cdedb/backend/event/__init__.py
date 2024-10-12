@@ -28,6 +28,9 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PartialImportError, PrivilegeError
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges, is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 
@@ -306,7 +309,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         This is a combined action so that we stay consistent.
         """
         data = affirm(vtypes.SerializedEvent, data)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
+        required_priv = EventPrivileges.entities_write | EventPrivileges.basic_write
+        if not is_privileged(rs, required_priv, event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Imports into an offline instance must"
@@ -417,8 +421,8 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         """
         data = affirm(vtypes.SerializedPartialEvent, data)
         dryrun = affirm(bool, dryrun)
-        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
+        if not is_privileged(rs, EventPrivileges.entities_write, event_id=data['id']):
+            raise PrivilegeError
         self.assert_offline_lock(rs, event_id=data['id'])
         if not ((EVENT_SCHEMA_VERSION[0], 0) <= data["EVENT_SCHEMA_VERSION"]
                 <= EVENT_SCHEMA_VERSION):

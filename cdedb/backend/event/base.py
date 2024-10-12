@@ -46,6 +46,9 @@ from cdedb.common.fields import (
     REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import (
+    EventPrivileges, is_privileged_event as is_privileged,
+)
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
@@ -131,13 +134,8 @@ class EventBaseBackend(EventLowLevelBackend):
         log_filter = affirm_dataclass(EventLogFilter, log_filter)
         event_ids = log_filter.event_ids()
 
-        if self.is_admin(rs) or "auditor" in rs.user.roles:
-            pass
-        elif not event_ids:
-            raise PrivilegeError(n_("Must be admin to access global log."))
-        elif all(self.is_orga(rs, event_id=event_id) for event_id in event_ids):
-            pass
-        else:
+        if not all(is_privileged(rs, EventPrivileges.log_read, event_id=event_id)
+                   for event_id in event_ids):
             raise PrivilegeError(n_("Not privileged."))
 
         return self.generic_retrieve_log(rs, log_filter)
@@ -253,7 +251,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         minor_form = affirm_optional(
             vtypes.PDFFile, minor_form, file_storage=False)
-        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
         path = self.get_minor_form_path(rs, event_id)
@@ -361,7 +359,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: Mapping of token ids to titles.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id):
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError
         data = self.sql_select(rs, OrgaToken.database_table, ("id", "title"),
                                (event_id,), entity_key="event_id")
@@ -385,7 +383,8 @@ class EventBaseBackend(EventLowLevelBackend):
             event_ids = {token.event_id for token in ret.values()}
             if not len(event_ids) == 1:
                 raise ValueError(n_("Only orga tokens from one event allowed."))
-            if not self.is_orga(rs, event_id=unwrap(event_ids)):
+            if not is_privileged(rs, EventPrivileges.basic_read,
+                                 event_id=unwrap(event_ids)):
                 raise PrivilegeError
 
         return ret
@@ -406,7 +405,8 @@ class EventBaseBackend(EventLowLevelBackend):
         data = affirm_dataclass(OrgaToken, data, creation=True)
 
         with Atomizer(rs):
-            if not self.is_orga(rs, event_id=data.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=data.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -437,7 +437,8 @@ class EventBaseBackend(EventLowLevelBackend):
             current = self.get_orga_token(rs, data['id'])
             current_data = current.to_database()
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -466,7 +467,8 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             current = self.get_orga_token(rs, orga_token_id)
 
-            if not self.is_orga(rs, event_id=current.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=current.event_id):
                 raise PrivilegeError
 
             if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
@@ -545,7 +547,8 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             orga_token = self.get_orga_token(rs, orga_token_id)
 
-            if not self.is_orga(rs, event_id=orga_token.event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write,
+                                 event_id=orga_token.event_id):
                 raise PrivilegeError
 
             if cascade:
@@ -611,7 +614,7 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Event, data, current=current)
             data['id'] = event_id
 
-            if not self.is_orga(rs, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
 
@@ -684,8 +687,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Make a new lodgement group."""
         data = affirm(vtypes.LodgementGroup, data, creation=True)
 
-        if (not self.is_orga(rs, event_id=data['event_id'])
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.lodgements_write,
+                             event_id=data['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
@@ -702,7 +705,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         part_groups = affirm(vtypes.EventPartGroupSetter, part_groups)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         ret = 1
         if not part_groups:
@@ -792,7 +795,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         track_groups = affirm(vtypes.EventTrackGroupSetter, track_groups)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
@@ -893,7 +896,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """Create, delete and/or update fees for one event."""
         event_id = affirm(vtypes.ID, event_id)
 
-        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         ret = 1
@@ -993,8 +996,8 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: True if limit has not been reached.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if (not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not is_privileged(rs, EventPrivileges.registrations_write,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         if self.is_admin(rs):
             # Admins are exempt
@@ -1057,7 +1060,7 @@ class EventBaseBackend(EventLowLevelBackend):
             data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
                           field_definitions=field_defitions,
                           fees_by_field=fees_by_field)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
@@ -1088,7 +1091,7 @@ class EventBaseBackend(EventLowLevelBackend):
     def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
         """Lock an event for offline usage."""
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         # An event in the main instance is considered as locked if offline_lock
@@ -1113,7 +1116,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: dict holding all data of the exported event
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.all_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist: Iterable[CdEDBObject]) -> CdEDBObjectMap:
@@ -1201,12 +1204,7 @@ class EventBaseBackend(EventLowLevelBackend):
         later on be reintegrated with the partial import facility.
         """
         event_id = affirm(vtypes.ID, event_id)
-        access_ok = (
-            (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
-             and "droid_quick_partial_export" in rs.user.roles)  # the droid
-            or self.is_orga(rs, event_id=event_id)
-            or self.is_admin(rs))
-        if not access_ok:
+        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist: Collection[CdEDBObject]) -> CdEDBObjectMap:
@@ -1442,7 +1440,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if questionnaire is None:
             raise ValueError(n_(
                 "Cannot use questionnaire import to delete questionnaire."))
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
 

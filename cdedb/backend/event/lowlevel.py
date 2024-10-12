@@ -32,7 +32,9 @@ from cdedb.common.fields import (
     PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event as is_privileged
+from cdedb.common.privileges import (
+    EventPrivileges, is_privileged_event as is_privileged,
+)
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
@@ -992,32 +994,6 @@ class EventLowLevelBackend(AbstractBackend):
 
         return True
 
-    @access("event")
-    def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int],
-                                ) -> bool:
-        """Determine whether any course choices exist for the given tracks."""
-        track_ids = affirm_set(vtypes.ID, track_ids)
-
-        query = """
-            SELECT DISTINCT ep.event_id
-            FROM event.event_parts AS ep
-                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
-            WHERE ct.id = ANY(%s)
-        """
-        params = (track_ids,)
-        data = self.query_all(rs, query, params)
-        if not data:
-            return False
-        if len(data) != 1:
-            raise ValueError(n_("Only tracks from one event allowed."))
-        event_id = unwrap(unwrap(data))
-        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
-
-        query = "SELECT * FROM event.course_choices WHERE track_id = ANY(%s)"
-        params = (track_ids,)
-        return bool(self.query_all(rs, query, params))
-
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
@@ -1265,7 +1241,8 @@ class EventLowLevelBackend(AbstractBackend):
         the other methods in this class which are mostly internal.
         """
         event_id = affirm(vtypes.ID, event_id)
-        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        if not is_privileged(rs, EventPrivileges.registrations_stats,
+                             event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
         return bool(unwrap(self.query_one(rs, query, (event_id,))))
