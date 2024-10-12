@@ -1047,32 +1047,6 @@ class EventLowLevelBackend(AbstractBackend):
 
         return True
 
-    @access("event")
-    def do_course_choices_exist(self, rs: RequestState, track_ids: Collection[int],
-                                ) -> bool:
-        """Determine whether any course choices exist for the given tracks."""
-        track_ids = affirm_set(vtypes.ID, track_ids)
-
-        query = """
-            SELECT DISTINCT ep.event_id
-            FROM event.event_parts AS ep
-                LEFT JOIN event.course_tracks AS ct on ep.id = ct.part_id
-            WHERE ct.id = ANY(%s)
-        """
-        params = (track_ids,)
-        data = self.query_all(rs, query, params)
-        if not data:
-            return False
-        if len(data) != 1:
-            raise ValueError(n_("Only tracks from one event allowed."))
-        event_id = unwrap(unwrap(data))
-        if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
-
-        query = "SELECT * FROM event.course_choices WHERE track_id = ANY(%s)"
-        params = (track_ids,)
-        return bool(self.query_all(rs, query, params))
-
     def _delete_event_field_blockers(self, rs: RequestState,
                                      field_id: int) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
