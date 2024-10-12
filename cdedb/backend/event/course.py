@@ -319,8 +319,8 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             or ignore. If None or empty, cascade none.
         """
         course_id = affirm(vtypes.ID, course_id)
-        event_id = unwrap(self.sql_select_one(
-            rs, "event.courses", ("event_id",), course_id))
+        event_id: int = unwrap(self.sql_select_one(
+            rs, "event.courses", ("event_id",), course_id))  # type: ignore[assignment]
         if not is_privileged(rs, EventPrivileges.courses_write, event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=course_id)

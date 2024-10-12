@@ -538,10 +538,9 @@ class EventRegistrationBackend(EventBaseBackend):
             return ret
 
         # Check if eligible to check registration status for other users.
-        # TODO Urgh… How do we want to handle this privileges?
-        # Special EventPrivileges.registrations_read_restricted role?
         if not (persona_ids == {rs.user.persona_id}
-                or is_privileged(rs, EventPrivileges.registrations_read_internal)):
+                or is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                 event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
 
         registration_ids = self.list_registrations_personas(rs, event_id, persona_ids)

@@ -33,9 +33,8 @@ class EventPrivileges(Flag):
     all_write = basic_write | entities_write
 
 
-def is_privileged_event(rs: RequestState,
-                     required_privilege: EventPrivileges,
-                     event_id: Optional[int] = None) -> bool:
+def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
+                        event_id: int) -> bool:
     EP = EventPrivileges
     orga_privileges = ~EP.conclude
     event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read |

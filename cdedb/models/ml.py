@@ -542,7 +542,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         basic_restriction = super().is_restricted_moderator(rs, bc)
         if self.event_id is None:
             return basic_restriction
-        additional_restriction = is_privileged_event(
+        additional_restriction = not is_privileged_event(
             rs, EventPrivileges.registrations_read_internal, event_id=self.event_id)
         return basic_restriction or additional_restriction
 

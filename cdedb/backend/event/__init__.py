@@ -348,7 +348,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
         """
         data = affirm(vtypes.SerializedEvent, data)
         required_priv = EventPrivileges.entities_write | EventPrivileges.basic_write
-        if not is_privileged(rs, required_priv, event_id=data['event_id']):
+        if not is_privileged(rs, required_priv, event_id=data['id']):
             raise PrivilegeError(n_("Not privileged."))
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
             raise RuntimeError(n_("Imports into an offline instance must"

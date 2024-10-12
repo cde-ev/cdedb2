@@ -30,7 +30,7 @@ from cdedb.common import (
 )
 from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import (
     Query,
     QueryConstraint,
@@ -1200,12 +1200,16 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.all_write)
+    @event_guard(EventPrivileges.all_read)
     @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
                      json: werkzeug.datastructures.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
+        # This check is postponed to trick the event guard into allowing access here
+        if not is_privileged_event(rs, EventPrivileges.all_write, event_id):
+            raise werkzeug.exceptions.Forbidden(
+                n_("This page can only be accessed by orgas."))
         # for the sake of simplicity, we ignore all ValidationWarnings here.
         # Since the data is incorporated from an offline instance, they were already
         # considered to be reasonable.
