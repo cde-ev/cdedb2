@@ -39,7 +39,6 @@ from cdedb.common.query import (
     Query,
     QueryOperators,
     QueryScope,
-    QuerySpec,
     QuerySpecEntry,
 )
 from cdedb.common.roles import implying_realms
