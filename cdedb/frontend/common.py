@@ -2256,6 +2256,8 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
                         n_("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
+        new_fun.event_required_privilege = required_privilege
+
         return cast(F, new_fun)
 
     return wrap

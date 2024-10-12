@@ -170,6 +170,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                 for tg in rs.ambience['event'].track_groups.values()
             )
 
+            def show_navigation_item(endpoint: str | None = None) -> bool:
+                if endpoint is None:
+                    privilege = EventPrivileges.basic_read
+                else:
+                    privilege = getattr(
+                        getattr(self, endpoint), "event_required_privilege",
+                    )
+                return self.is_privileged(rs, privilege)
+
+            params['show_navigation_item'] = show_navigation_item
+
         return super().render(rs, templatename, params=params)
 
     @classmethod
