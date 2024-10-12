@@ -61,13 +61,6 @@ class EventLowLevelBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def is_orga(self, rs: RequestState, *, event_id: Optional[int] = None) -> bool:
-        """Check for orga privileges as specified in the event.orgas table.
-
-        Exactly one of the inputs has to be provided.
-        """
-        return is_privileged(rs, ~EventPrivileges.admin_only, event_id=event_id)
-
 
     @internal
     def event_log(self, rs: RequestState, code: const.EventLogCodes,

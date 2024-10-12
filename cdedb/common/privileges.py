@@ -15,23 +15,26 @@ class EventPrivileges(Flag):
     lodgements_write = auto()
     # Aggregated registration data
     registrations_stats = auto()
-    # Who is registered for which parts with which status?
-    registrations_read_restricted = auto()
-    registrations_read_extended = auto()
-    registrations_read = registrations_read_restricted
+    # Backend only
+    registrations_read_internal = auto()
+    # Reading registrations includes reading the associated data (in the frontend)
+    registrations_read = courses_read | lodgements_read | registrations_read_internal
     registrations_write = auto()
     log_read = auto()
     # send_email = auto()  #: api only? tool suggested recently
     create = auto()
     archive = auto()
     delete = auto()
-    # Grouped by privilege
-    admin_only = create | archive | delete
-    event_helper = basic_read | courses_read | registrations_stats
-    auditor = basic_read | log_read
+
     # Shorthands for import / export
-    all_read = basic_read | courses_read | registrations_read | lodgements_read | log_read
+    all_read = basic_read | registrations_read | log_read
     entities_write = courses_write | registrations_write | lodgements_write
+
+    # Shorthands for certain roles
+    admin_only = create | archive | delete
+    event_helper = basic_read | courses_read | registrations_stats | registrations_read_internal
+    auditor = basic_read | log_read
+    finance_admin = basic_read | registrations_read_internal
 
 
 def is_privileged_event(rs: RequestState,
@@ -46,13 +49,20 @@ def is_privileged_event(rs: RequestState,
                 necessary_privilege is not None
                 and necessary_privilege in EventPrivileges.event_helper
             )
+            # finance_admins are allowed here to book event fees.
             or "finance_admin" in rs.user.roles and (
                 necessary_privilege is not None
-                and necessary_privilege == EventPrivileges.basic_read
+                and necessary_privilege in EventPrivileges.finance_admin
             )
             or "auditor" in rs.user.roles and (
                 necessary_privilege is not None
                 and necessary_privilege in EventPrivileges.auditor
+            )
+            # ml_admins are allowed to do this to be able to manage
+            # subscribers of event mailinglists.
+            or "ml_admin" in rs.user.roles and (
+                necessary_privilege is not None
+                and necessary_privilege == EventPrivileges.registrations_read_internal
             )
             # or "droid_orga" in rs.user.roles and (
             #         sufficient_privilege in OrgaTokenGrants.implied_privileges()

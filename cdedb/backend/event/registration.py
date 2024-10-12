@@ -423,6 +423,7 @@ class EventRegistrationBackend(EventBaseBackend):
             )[e['part_id']] = const.RegistrationPartStati(e['status'])
         return ret
 
+    @internal
     @access("event", "ml_admin")
     def list_registrations_personas(self, rs: RequestState, event_id: int,
                                     persona_ids: Optional[Collection[int]] = None,
@@ -437,15 +438,9 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of event mailinglists.
-        # finance_admins are allowed here to book event fees.
-        # TODO Urgh… How do we want to handle this privileges?
-        # Special EventPrivileges.registrations_read_restricted role?
         if (persona_ids != {rs.user.persona_id}
-                and not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)
-                and {"ml_admin", "finance_admin"}.isdisjoint(rs.user.roles)):
+                and not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                      event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = "SELECT id, persona_id FROM event.registrations"
@@ -530,9 +525,7 @@ class EventRegistrationBackend(EventBaseBackend):
         # TODO Urgh… How do we want to handle this privileges?
         # Special EventPrivileges.registrations_read_restricted role?
         if not (persona_ids == {rs.user.persona_id}
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
+                or is_privileged(rs, EventPrivileges.registrations_read_internal)):
             raise PrivilegeError(n_("Not privileged."))
 
         registration_ids = self.list_registrations_personas(rs, event_id, persona_ids)
@@ -836,16 +829,9 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             # Select appropriate stati filter.
             stati = set(m for m in const.RegistrationPartStati)
-            # orgas and admins have full access to all data
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            # finance_admins are allowed here to book event fees.
-            # TODO Urgh… How do we want to handle this privileges?
-            # Special EventPrivileges.registrations_read_restricted role?
-            is_privileged = (
-                self.is_orga(rs, event_id=event_id) or self.is_admin(rs)
-                or {"ml_admin", "finance_admin"}.intersection(rs.user.roles))
-            if not is_privileged:
+            is_privileged_ = is_privileged(
+                rs, EventPrivileges.registrations_read_internal, event_id=event_id)
+            if not is_privileged_:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
                 elif not personas <= {rs.user.persona_id}:
@@ -866,8 +852,8 @@ class EventRegistrationBackend(EventBaseBackend):
                     del ret[anid]
 
             # Here comes the promised permission check
-            if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
-                                         for reg in ret.values()):
+            if not is_privileged_ and all(reg['persona_id'] != rs.user.persona_id
+                                          for reg in ret.values()):
                 raise PrivilegeError(n_("No participant of event."))
 
             tdata = self.sql_select(

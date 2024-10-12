@@ -62,11 +62,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
-            # ml_admins are allowed to do this to be able to manage
-            # subscribers of event mailinglists.
-            if not (self.is_orga(rs, event_id=event_id)
-                    or self.is_admin(rs)
-                    or "ml_admin" in rs.user.roles):
+            if not is_privileged(rs, EventPrivileges.registrations_read_internal,
+                                 event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
@@ -803,8 +800,8 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
         scope = affirm(QueryScope, scope)
         # TODO This function design is a problem. Where do we use queries for what?
         with Atomizer(rs):
-            if not self.is_orga(rs, event_id=event_id):
-                raise PrivilegeError
+            # if not self.is_orga(rs, event_id=event_id):
+            #    raise PrivilegeError
 
             event = self.get_event(rs, event_id)
             course_ids = self.list_courses(rs, event_id)  # type: ignore[attr-defined]
