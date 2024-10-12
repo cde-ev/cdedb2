@@ -64,6 +64,7 @@ from cdedb.frontend.common import (
     process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.models.event import Event
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,
@@ -193,7 +194,7 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write)
+    @event_guard(EventPrivileges.basic_read)
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['event'].as_dict())
@@ -209,7 +210,7 @@ class EventEventMixin(EventBaseFrontend):
             'lodge_fields': lodge_fields})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject,
                      ) -> Response:
@@ -245,7 +246,7 @@ class EventEventMixin(EventBaseFrontend):
             filename=f"Elternbrief CdE {rs.ambience['event'].shortname}.pdf")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
@@ -270,7 +271,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
     def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
                  ) -> Response:
@@ -292,7 +293,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ) -> Response:
@@ -307,7 +308,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orgalist", "part_group_id")
     def create_event_mailinglist(
             self, rs: RequestState, event_id: int, orgalist: bool = False,
@@ -383,16 +384,17 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     def part_summary(self, rs: RequestState, event_id: int) -> Response:
         """Display a comprehensive overview of all parts of a given event."""
-        has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
+        may_change_part_ids = (self.is_privileged(rs, EventPrivileges.basic_write)
+                               and not self.eventproxy.has_registrations(rs, event_id))
 
         return self.render(rs, "event/part_summary", {
             'referenced_parts': referenced_parts,
-            'has_registrations': has_registrations,
+            'may_change_part_ids': may_change_part_ids,
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("ack_delete")
     def delete_part(self, rs: RequestState, event_id: int, part_id: int,
                     ack_delete: bool) -> Response:
@@ -430,7 +432,7 @@ class EventEventMixin(EventBaseFrontend):
         return fields
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def add_part_form(self, rs: RequestState, event_id: int) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
@@ -440,7 +442,7 @@ class EventEventMixin(EventBaseFrontend):
             'fields': fields, 'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("fee")
     @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS,
                      *(set(EVENT_PART_CREATION_OPTIONAL_FIELDS) - {'tracks'}))
@@ -479,7 +481,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/part_summary")
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def change_part_form(self, rs: RequestState, event_id: int, part_id: int,
                          ) -> Response:
         part = rs.ambience['event'].parts[part_id]
@@ -521,7 +523,7 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
     def change_part(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBObject) -> Response:
@@ -681,7 +683,7 @@ class EventEventMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("personalized")
     def configure_fee_form(self, rs: RequestState, event_id: int, personalized: bool,
                            fee_id: Optional[int] = None) -> Response:
@@ -702,7 +704,7 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata("personalized")
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def configure_fee(self, rs: RequestState, event_id: int, data: CdEDBObject,
@@ -721,7 +723,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/fee_summary")
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
         """Delete one event fee."""
         if fee_id not in rs.ambience['event'].fees:
@@ -754,7 +756,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata(*EVENT_PART_GROUP_COMMON_FIELDS)
     def add_part_group(self, rs: RequestState, event_id: int, title: str,
                        shortname: str, notes: Optional[str],
@@ -794,7 +796,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/configure_part_group")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("title", "shortname", "notes")
     def change_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int, title: str, shortname: str,
@@ -820,7 +822,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/group_summary")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def delete_part_group(self, rs: RequestState, event_id: int,
                           part_group_id: int) -> Response:
         if rs.has_validation_errors():
@@ -835,7 +837,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/configure_track_group")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata(*EVENT_TRACK_GROUP_COMMON_FIELDS)
     def add_track_group(self, rs: RequestState, event_id: int, title: str,
                        shortname: str, notes: Optional[str], sortkey: int,
@@ -900,7 +902,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/configure_track_group")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("title", "shortname", "notes", "sortkey")
     def change_track_group(self, rs: RequestState, event_id: int,
                           track_group_id: int, title: str, shortname: str,
@@ -927,7 +929,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/group_summary")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("ack_delete")
     def delete_track_group(self, rs: RequestState, event_id: int, track_group_id: int,
                            ack_delete: bool) -> Response:
@@ -1190,7 +1192,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def lock_event(self, rs: RequestState, event_id: int) -> Response:
         """Lock an event for offline usage."""
         if not rs.has_validation_errors():
@@ -1199,7 +1201,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard()
+    @event_guard(EventPrivileges.all_write)
     @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
                      json: werkzeug.datastructures.FileStorage) -> Response:
@@ -1230,7 +1232,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.conclude)
     @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(self, rs: RequestState, event_id: int, ack_archive: bool,
                       create_past_event: bool) -> Response:
@@ -1295,7 +1297,7 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @event_guard(check_offline=True)
+    @event_guard(EventPrivileges.conclude)
     @REQUESTdata("ack_delete")
     def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool,
                      ) -> Response:

@@ -28,9 +28,10 @@
         {{ util.href(cdedblink('event/additional_questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
                      aclass="btn btn-info btn-sm", icon='eye') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].additional.value}),
-                     gettext("Reorder Questionnaire"), readonly=is_locked,
+                     gettext("Reorder Questionnaire"), readonly=not is_privileged_for("reorder_questionnaire"),
                      aclass="btn btn-warning btn-sm", icon='sort') }}
-        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
+        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"),
+                     readonly=not is_privileged_for("questionnaire_import"),
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
     </div>
     <form action="{{ cdedblink('event/configure_additional_questionnaire') }}" method="POST" id="configurequestionnaireform">

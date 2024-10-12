@@ -30,17 +30,18 @@ from cdedb.frontend.common import (
     event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
+from cdedb.models.event import Event
 
 
 class EventImportMixin(EventBaseFrontend):
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
         return self.render(rs, "import/questionnaire_import")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("json_file")
     @REQUESTdata("extend_questionnaire", "skip_existing_fields", "token")
     def questionnaire_import(
@@ -78,13 +79,13 @@ class EventImportMixin(EventBaseFrontend):
         return self.redirect(rs, "event/configure_additional_questionnaire")
 
     @access("event")
-    @event_guard()
+    @event_guard(EventPrivileges.entities_write)
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
         return self.render(rs, "import/partial_import")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.entities_write, check_offline=True)
+    @event_guard(EventPrivileges.entities_write)
     @REQUESTfile("json_file")
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,

@@ -170,7 +170,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 for tg in rs.ambience['event'].track_groups.values()
             )
 
-            def show_navigation_item(endpoint: str | None = None) -> bool:
+            def is_privileged_for(endpoint: str | None = None) -> bool:
                 if endpoint is None:
                     privilege = EventPrivileges.basic_read
                 else:
@@ -185,7 +185,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     return self.is_privileged(rs, privilege)
                 return 'event_orga' in rs.user.admin_views
 
-            params['show_navigation_item'] = show_navigation_item
+            params['is_privileged_for'] = is_privileged_for
 
         return super().render(rs, templatename, params=params)
 
@@ -194,13 +194,16 @@ class EventBaseFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def is_privileged(self, rs: RequestState,
-                      necessary_privilege: EventPrivileges,
+                      required_privilege: EventPrivileges,
                       *, event_id: Optional[int] = None) -> bool:
         if not event_id:
             if not rs.ambience.get('event'):
                 raise RuntimeError(n_("No event context given"))
             event_id = rs.ambience['event'].id
-        return is_privileged_event(rs, necessary_privilege, event_id)
+        if (self.is_locked(rs.ambience['event']) and
+                required_privilege & EventPrivileges.all_write):
+            return False
+        return is_privileged_event(rs, required_privilege, event_id)
 
     def is_locked(self, event: models.Event) -> bool:
         """Shorthand to determine locking state of an event."""
@@ -656,7 +659,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
     @access("event")
-    @event_guard()
+    # TODO Be more lenient here
+    @event_guard(EventPrivileges.all_read)
     def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
         params = self.get_constraint_violations(
             rs, event_id, registration_id=None, course_id=None)

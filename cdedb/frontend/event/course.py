@@ -117,6 +117,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
+    # TODO Be more lenient here
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_read)
     def show_course(self, rs: RequestState, event_id: int, course_id: int,
                     ) -> Response:
@@ -212,7 +213,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.render(rs, "course/show_course", params)
 
     @access("event")
-    @event_guard(EventPrivileges.courses_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""
@@ -233,7 +234,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.courses_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
@@ -262,7 +263,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course")
 
     @access("event")
-    @event_guard(EventPrivileges.courses_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     def create_course_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         # by default select all tracks
@@ -280,7 +281,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.courses_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
@@ -308,7 +309,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.courses_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write)
     @REQUESTdata("ack_delete")
     def delete_course(self, rs: RequestState, event_id: int, course_id: int,
                       ack_delete: bool) -> Response:
@@ -573,7 +574,7 @@ class EventCourseMixin(EventBaseFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_read, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active",
                  "registration_ids", "assign_track_ids", "assign_action",
                  "assign_course_id")
@@ -783,7 +784,7 @@ class EventCourseMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_attendees_form(self, rs: RequestState, event_id: int,
                               course_id: int) -> Response:
         """Render form."""
@@ -862,7 +863,7 @@ class EventCourseMixin(EventBaseFrontend):
             'selectize_data': selectize_data, 'course_names': course_names})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_attendees(self, rs: RequestState, event_id: int, course_id: int,
                          ) -> Response:
         """Alter who is assigned to this course."""

@@ -1144,7 +1144,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_new_personalized_fee_form(
             self, rs: RequestState, event_id: int, registration_id: int,
     ) -> Response:
@@ -1158,7 +1158,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                            {'persona': persona, 'personalized': True})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata('amount')
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def add_new_personalized_fee(
@@ -1185,7 +1185,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
     ) -> Response:
@@ -1207,7 +1207,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def delete_personalized_fee(
             self, rs: RequestState, event_id: int, registration_id: int, fee_id: int,
     ) -> Response:
@@ -1224,7 +1224,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration_fee")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset_form(
             self, rs: RequestState, event_id: int, fee_id: int | None = None,
@@ -1298,7 +1298,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset(
             self, rs: RequestState, event_id: int, fee_id: int,
@@ -1359,7 +1359,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/fee_summary")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("skip", "change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
@@ -1396,7 +1396,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("skip", "change_note")
     def change_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, skip: Collection[str],
@@ -1420,7 +1420,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_registration")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_registration_form(self, rs: RequestState, event_id: int,
                               ) -> Response:
         """Render form."""
@@ -1440,7 +1440,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def add_registration(self, rs: RequestState, event_id: int) -> Response:
         """Register a participant by an orga.
 
@@ -1478,7 +1478,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                              {'registration_id': new_id})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("ack_delete")
     def delete_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, ack_delete: bool) -> Response:
@@ -1502,7 +1502,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/registration_query")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations_form(self, rs: RequestState, event_id: int,
                                   reg_ids: vtypes.IntCSVList,
@@ -1601,7 +1601,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations(self, rs: RequestState, event_id: int,
                              reg_ids: vtypes.IntCSVList,
@@ -1641,7 +1641,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
                      part_ids: Optional[Collection[int]] = None) -> Response:
@@ -1684,7 +1684,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
                 part_ids: Optional[Collection[int]] = None) -> Response:

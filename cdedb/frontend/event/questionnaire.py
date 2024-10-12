@@ -41,7 +41,7 @@ from cdedb.frontend.event.base import EventBaseFrontend
 
 class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_read)
     def configure_registration_form(self, rs: RequestState, event_id: int,
                                     ) -> Response:
         """Render form."""
@@ -52,7 +52,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                             'registration_fields': reg_fields})
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_read)
     def configure_additional_questionnaire_form(self, rs: RequestState,
                                                 event_id: int) -> Response:
         """Render form."""
@@ -82,7 +82,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return questionnaire, registration_fields
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def configure_registration(self, rs: RequestState, event_id: int,
                                ) -> Response:
         """Manipulate the questionnaire form.
@@ -98,7 +98,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return self.redirect(rs, "event/configure_registration_form")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     def configure_additional_questionnaire(self, rs: RequestState,
                                            event_id: int) -> Response:
         """Manipulate the additional questionnaire form.
@@ -306,7 +306,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return questionnaire
 
     @access("event")
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("kind")
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
@@ -334,7 +334,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("order", "kind")
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
                               kind: const.QuestionnaireUsages,

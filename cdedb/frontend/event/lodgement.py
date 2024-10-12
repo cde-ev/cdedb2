@@ -251,7 +251,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_read, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary_form(self, rs: RequestState, event_id: int,
                                      ) -> Response:
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -270,7 +270,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.lodgements_read, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary(self, rs: RequestState, event_id: int,
                                 ) -> Response:
         """Manipulate groups of lodgements."""
@@ -295,6 +295,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/lodgement_group_summary")
 
     @access("event")
+    # TODO Be more lenient here
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_read)
     def show_lodgement(self, rs: RequestState, event_id: int,
                        lodgement_id: int) -> Response:
@@ -453,7 +454,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.send_file(rs, "image/svg+xml", data=data)
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("group_id")
     def create_lodgement_form(self, rs: RequestState, event_id: int,
                               group_id: Optional[int] = None) -> Response:
@@ -467,7 +468,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("new_group_title")
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def create_lodgement(self, rs: RequestState, event_id: int, data: CdEDBObject,
@@ -512,7 +513,7 @@ class EventLodgementMixin(EventBaseFrontend):
                              {'lodgement_id': new_id})
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def change_lodgement_form(self, rs: RequestState, event_id: int,
                               lodgement_id: int) -> Response:
         """Render form."""
@@ -524,7 +525,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.render(rs, "lodgement/change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
@@ -552,7 +553,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("ack_delete")
     def delete_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, ack_delete: bool) -> Response:
@@ -574,7 +575,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/lodgements")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants_form(self, rs: RequestState, event_id: int,
                                 lodgement_id: int) -> Response:
         """Render form."""
@@ -654,7 +655,7 @@ class EventLodgementMixin(EventBaseFrontend):
             'other_lodgements': other_lodgements})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants(self, rs: RequestState, event_id: int,
                            lodgement_id: int) -> Response:
         """Alter who is assigned to a lodgement.
@@ -726,7 +727,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     def swap_inhabitants(self, rs: RequestState, event_id: int,
                          lodgement_id: int) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
@@ -773,7 +774,7 @@ class EventLodgementMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event")
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     def move_lodgements_form(self, rs: RequestState, event_id: int, group_id: int,
                              ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
@@ -784,7 +785,7 @@ class EventLodgementMixin(EventBaseFrontend):
         })
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.lodgements_write, check_offline=True)
+    @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
     def move_lodgements(self, rs: RequestState, event_id: int, group_id: int,
                         lodgement_ids: Collection[int], target_group_id: Optional[int],

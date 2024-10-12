@@ -82,7 +82,7 @@ class EventFieldMixin(EventBaseFrontend):
             'referenced': referenced, 'locked': locked})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_write, check_offline=True)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str],
                       ) -> Response:
@@ -202,7 +202,7 @@ class EventFieldMixin(EventBaseFrontend):
         return entities, ordered_ids, labels, field
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind")
     def field_multiset_select(
             self, rs: RequestState, event_id: int, field_id: Optional[vtypes.ID],
@@ -233,7 +233,7 @@ class EventFieldMixin(EventBaseFrontend):
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset_form(
             self, rs: RequestState, event_id: int, field_id: vtypes.ID,
@@ -265,7 +265,7 @@ class EventFieldMixin(EventBaseFrontend):
             'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write, check_offline=True)
+    @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset(
             self, rs: RequestState, event_id: int, field_id: vtypes.ID,

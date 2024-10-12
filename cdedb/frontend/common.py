@@ -2223,8 +2223,7 @@ def REQUESTfile(*args: str) -> Callable[[F], F]:
     return wrap
 
 
-def event_guard(required_privilege: Optional[EventPrivileges] = None,
-                check_offline: bool = False) -> Callable[[F], F]:
+def event_guard(required_privilege: EventPrivileges) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific event. The
     event is specified by id which has either to be a keyword
     parameter or the first positional parameter after the request state.
@@ -2248,7 +2247,7 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
                                        rs.ambience['event'].id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))
-            if check_offline:
+            if (processed_required_privilege & EventPrivileges.all_write):
                 is_locked = obj.eventproxy.is_offline_locked(
                     rs, event_id=rs.ambience['event'].id)
                 if is_locked != obj.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
@@ -2256,7 +2255,7 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
                         n_("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
-        new_fun.event_required_privilege = required_privilege
+        new_fun.event_required_privilege = required_privilege  # type: ignore[attr-defined]
 
         return cast(F, new_fun)
 

@@ -23,7 +23,7 @@
 
 {% block content %}
     <div class="p button-par">
-        {% if not has_registrations %}
+        {% if may_change_part_ids %}
             {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
                                    icon='plus', aclass='btn btn-success btn-sm') }}
         {% endif %}
@@ -53,7 +53,7 @@
 
             <div class="panel-body">
                 <div class="p button-par">
-                    {% if not has_registrations and part.id not in referenced_parts %}
+                    {% if may_change_part_ids and part.id not in referenced_parts %}
                         <form action="{{ cdedblink('event/delete_part', {'part_id' : part.id}) }}"
                               method="POST"
                               id="deletepartform{{ part.id }}"
@@ -68,8 +68,10 @@
                             $('#deletepartform{{ part.id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                         </script>
                     {% endif %}
-                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part.id}), gettext("Change Part"),
-                                           icon='pen', aclass='btn btn-sm btn-warning') }}
+                    {% if is_privileged_for('change_part') %}
+                        {{ util.href(cdedblink('event/change_part_form', {'part_id' : part.id}), gettext("Change Part"),
+                                               icon='pen', aclass='btn btn-sm btn-warning') }}
+                    {% endif %}
                 </div>
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">

@@ -39,7 +39,8 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 class EventDownloadMixin(EventBaseFrontend):
     @access("event")
-    @event_guard()
+    # TODO Be more lenient here
+    @event_guard(EventPrivileges.all_read)
     def downloads(self, rs: RequestState, event_id: int) -> Response:
         """Offer documents like nametags for download."""
         lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
