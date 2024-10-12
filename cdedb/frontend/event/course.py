@@ -212,7 +212,7 @@ class EventCourseMixin(EventBaseFrontend):
         return self.render(rs, "course/show_course", params)
 
     @access("event")
-    @event_guard(EventPrivileges.course_write, check_offline=True)
+    @event_guard(EventPrivileges.courses_write, check_offline=True)
     def change_course_form(self, rs: RequestState, event_id: int, course_id: int,
                            ) -> Response:
         """Render form."""

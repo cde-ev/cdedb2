@@ -20,7 +20,6 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.backend.event.lowlevel import EventFeesPerEntity
 from cdedb.common import (
     DEFAULT_NUM_COURSE_CHOICES,
     CdEDBObject,

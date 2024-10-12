@@ -459,7 +459,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         :returns: A dict with localized text to be used in the preview.
         """
 
-        if self.may_manage(rs, EventPrivileges.basic_read):
+        if self.is_privileged(rs, EventPrivileges.basic_read):
             pass
         elif persona_id == rs.user.persona_id and (
                 rs.ambience['event'].is_open
