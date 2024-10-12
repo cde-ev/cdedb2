@@ -22,7 +22,7 @@ class EventPrivileges(Flag):
     event_helper = basic_read | courses_read | registrations_stats
 
 
-def may_manage_event(rs: RequestState,
+def is_privileged_event(rs: RequestState,
                      necessary_privilege: EventPrivileges,
                      event_id: Optional[int] = None) -> bool:
     return (

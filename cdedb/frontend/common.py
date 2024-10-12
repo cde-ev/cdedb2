@@ -86,7 +86,7 @@ from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, may_manage_event
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -2208,7 +2208,7 @@ def event_guard(required_privilege: Optional[EventPrivileges] = None,
             # Drop this after universal adaption
             processed_required_privilege = (
                 required_privilege or ~EventPrivileges.admin_only)
-            if not may_manage_event(rs, processed_required_privilege,
+            if not is_privileged_event(rs, processed_required_privilege,
                                     rs.ambience['event'].id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("This page can only be accessed by orgas."))

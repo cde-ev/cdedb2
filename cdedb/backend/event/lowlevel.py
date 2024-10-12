@@ -32,7 +32,7 @@ from cdedb.common.fields import (
     PART_GROUP_FIELDS, REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, may_manage_event as may_manage
+from cdedb.common.privileges import EventPrivileges, is_privileged_event as is_privileged
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s
 from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
@@ -64,8 +64,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
         """
-        return may_manage(rs, necessary_privilege=~EventPrivileges.admin_only,
-                          event_id=event_id)
+        return is_privileged(rs, ~EventPrivileges.admin_only, event_id=event_id)
 
 
     @internal

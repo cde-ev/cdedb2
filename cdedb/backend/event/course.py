@@ -23,7 +23,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import COURSE_FIELDS, COURSE_SEGMENT_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, may_manage_event as may_manage
+from cdedb.common.privileges import EventPrivileges, is_privileged_event as is_privileged
 from cdedb.database.connection import Atomizer
 
 
@@ -124,7 +124,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
             assert current is not None
-            if not may_manage(rs, EventPrivileges.courses_write, current['event_id']):
+            if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
                 raise PrivilegeError(n_("Not privileged."))
 
             cdata = {k: v for k, v in data.items()
@@ -310,7 +310,7 @@ class EventCourseBackend(EventBaseBackend):  # pylint: disable=abstract-method
         course_id = affirm(vtypes.ID, course_id)
         event_id = unwrap(self.sql_select_one(
             rs, "event.courses", ("event_id",), course_id))
-        if not may_manage(rs, EventPrivileges.courses_write, event_id):
+        if not is_privileged(rs, EventPrivileges.courses_write, event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=course_id)
 
