@@ -18,7 +18,9 @@ class EventPrivileges(Flag):
     # Backend only
     registrations_read_internal = auto()
     # Reading registrations includes reading the associated data (in the frontend)
-    registrations_read = courses_read | lodgements_read | registrations_read_internal
+    _registrations_read_dummy = auto()
+    registrations_read = (_registrations_read_dummy | courses_read | lodgements_read
+                          | registrations_read_internal)
     registrations_write = auto()
     log_read = auto()
     # send_email = auto()  #: api only? tool suggested recently

@@ -177,6 +177,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 if endpoint is None:
                     privilege = EventPrivileges.basic_read
                 else:
+                    endpoint = endpoint.removeprefix(f"{self.realm}/")
                     privilege = getattr(
                         getattr(self, endpoint), "event_required_privilege",
                     )
