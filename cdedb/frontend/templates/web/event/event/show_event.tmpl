@@ -405,7 +405,7 @@
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
-                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary",
+                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary btn-wrap",
                                         icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
@@ -431,7 +431,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-primary", icon="far fa-plus-square", readonly=not orgas,
+                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
