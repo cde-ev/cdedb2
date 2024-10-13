@@ -40,7 +40,7 @@
         {% endif %}
     </div>
 
-    {% if is_privileged_for() or 'event_orga' in user.admin_views %}
+    {% if is_privileged() or 'event_orga' in user.admin_views %}
         <div class="list-group tear-down">
             {% if is_privileged_for("registration_query") %}
                 {{ util.href(cdedblink("event/registration_query", {"event_id": event['id']}), gettext("Registrations"),

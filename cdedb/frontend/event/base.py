@@ -170,17 +170,16 @@ class EventBaseFrontend(AbstractUserFrontend):
                 for tg in rs.ambience['event'].track_groups.values()
             )
 
-            def is_privileged(required_privilege: EventPrivileges) -> bool:
+            def is_privileged(
+                    required_privilege: EventPrivileges = EventPrivileges.basic_read,
+            ) -> bool:
                 return self.is_privileged(rs, required_privilege)
 
-            def is_privileged_for(endpoint: str | None = None) -> bool:
-                if endpoint is None:
-                    privilege = EventPrivileges.basic_read
-                else:
-                    endpoint = endpoint.removeprefix(f"{self.realm}/")
-                    privilege = getattr(
-                        getattr(self, endpoint), "event_required_privilege",
-                    )
+            def is_privileged_for(endpoint: str) -> bool:
+                endpoint = endpoint.removeprefix(f"{self.realm}/")
+                privilege = getattr(
+                    getattr(self, endpoint), "event_required_privilege",
+                )
 
                 is_privileged = self.is_privileged(rs, privilege)
                 if (
