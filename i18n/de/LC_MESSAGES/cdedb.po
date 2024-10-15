@@ -3188,6 +3188,8 @@ msgstr "Muss später als Beginn sein."
 msgid "Must be less or equal than total Course Choices."
 msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 
+msgid "Value not well-formed."
+msgstr "Falsch formatierte Eingabe."
 #: cdedb/common/validation/validate.py:2797
 msgid "Could not convert to mapping."
 msgstr "Konnte nicht zu einer Map konvertieren."

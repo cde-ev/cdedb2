@@ -2785,9 +2785,14 @@ def _event_field(
         val["entries"] = None
     if "entries" in val and val["entries"] is not None:
         if isinstance(val["entries"], str):
-            val["entries"] = dict(
-                [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
-            )
+            try:
+                val["entries"] = dict(
+                    [y.strip() for y in x.split(';', 1)]
+                     for x in val["entries"].split('\n')
+                )
+            except ValueError as e:
+                raise ValidationSummary(ValueError(
+                    'entries', n_("Value not well-formed."))) from e
         elif isinstance(val['entries'], list):
             with errs:
                 try:

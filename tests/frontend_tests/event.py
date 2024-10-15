@@ -1018,9 +1018,14 @@ class TestEventFrontend(FrontendTest):
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'] = const.FieldDatatypes.str
-        f['entries_-1'] = """all;everything goes
+        f['entries_-1'] = """everything goes!
         vegetarian;no meat
         vegan;plants only"""
+        self.submit(f, check_notification=False)
+        self.assertValidationError('entries_-1', "Falsch formatierte Eingabe.")
+        f['entries_-1'] = """all;everything goes
+                vegetarian;no meat
+                vegan;plants only"""
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
