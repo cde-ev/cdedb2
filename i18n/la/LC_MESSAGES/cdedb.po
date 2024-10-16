@@ -8573,7 +8573,7 @@ msgid "Statement"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
-msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft here."
+msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:173

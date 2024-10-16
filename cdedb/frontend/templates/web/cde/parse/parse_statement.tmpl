@@ -168,7 +168,7 @@
         <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
             {{ util.anti_csrf_token('cde/parse_statement') }}
             {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
-                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
+                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here.")) }}
 
             {{ util.form_input_submit(label=gettext("Parse"), icon="chevron-right", horizontal=False) }}
         </form>
