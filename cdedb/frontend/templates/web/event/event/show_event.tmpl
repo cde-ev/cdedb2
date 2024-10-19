@@ -73,9 +73,9 @@
                     {% endtrans %}
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
-                    {{- hard_limit if soft_limit is none else soft_limit|datetime(lang=lang) }}
+                    {{- (hard_limit if soft_limit is none else soft_limit)|datetime(lang=lang) }}
                     {% if ((values['event_id'] in user.orga or 'event_orga' in user.admin_views)
-                        or now() > soft_limit) and soft_limit != hard_limit %}
+                        or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
                         {% if hard_limit %}
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})

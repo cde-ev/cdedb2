@@ -481,6 +481,21 @@ class TestEventFrontend(FrontendTest):
         self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
+    def test_no_soft_limit(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertTitle("Große Testakademie 2222")
+        with self.switch_user('garcia'):
+            self.traverse("Veranstaltungen", "Große Testakademie", "Konfiguration")
+            f = self.response.forms['changeeventform']
+            f['registration_soft_limit'] = ""
+            f['registration_hard_limit'] = "2222-05-01T00:00:00"
+            self.submit(f)
+            self.assertTitle("Große Testakademie 2222")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("30.10.2000, 01:00:00 – 01.05.2222, 00:00:00")
+
+    @as_users("anton", "berta")
     def test_no_hard_limit(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
