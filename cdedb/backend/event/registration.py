@@ -1499,10 +1499,12 @@ class EventRegistrationBackend(EventBaseBackend):
             registration_id = unwrap(
                 self.list_registrations(rs, event_id, persona_id).keys() or None)
 
-        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
+        if is_privileged(rs, EventPrivileges.registrations_read_internal,
+                         event_id=event_id):
             pass
         elif persona_id and persona_id == rs.user.persona_id and (
-                event.is_open or registration_id):
+                event.is_open or registration_id
+                or is_privileged(rs, EventPrivileges.basic_read, event_id=event_id)):
             pass
         else:
             raise PrivilegeError
@@ -1564,7 +1566,7 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id = unwrap(events)
             regs = self.get_registrations(rs, registration_ids)
             persona_ids = {e['persona_id'] for e in regs.values()}
-            if (not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id)
+            if (not is_privileged(rs, EventPrivileges.registrations_write, event_id=event_id)
                     and persona_ids != {rs.user.persona_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
@@ -1649,7 +1651,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             persona_id, event_id = self._get_registration_info(rs, registration_id)
-            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+            if not is_privileged(rs, EventPrivileges.registrations_write, event_id=event_id):
                 raise PrivilegeError
             event = self.get_event(rs, event_id)
             if fee_id not in event.fees:

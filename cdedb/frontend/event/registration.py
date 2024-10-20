@@ -459,7 +459,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         :returns: A dict with localized text to be used in the preview.
         """
 
-        if self.is_privileged(rs, EventPrivileges.basic_read):
+        if self.is_privileged(rs, EventPrivileges.registrations_read):
+            pass
+        # Preview access for event helpers
+        elif not persona_id and self.is_privileged(rs, EventPrivileges.basic_read):
             pass
         elif persona_id == rs.user.persona_id and (
                 rs.ambience['event'].is_open
@@ -1158,7 +1161,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                            {'persona': persona, 'personalized': True})
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata('amount')
     @REQUESTdatadict(*models.EventFee.requestdict_fields())
     def add_new_personalized_fee(
