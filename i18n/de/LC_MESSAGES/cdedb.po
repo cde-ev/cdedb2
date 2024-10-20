@@ -50,10 +50,14 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/event/lodgement.py:138 cdedb/backend/event/lodgement.py:233
 #: cdedb/backend/event/lodgement.py:269 cdedb/backend/event/lodgement.py:297
 #: cdedb/backend/event/lodgement.py:331 cdedb/backend/event/lodgement.py:376
-#: cdedb/backend/event/lodgement.py:423 cdedb/backend/event/lowlevel.py:1305
-#: cdedb/backend/event/query.py:81 cdedb/backend/event/query.py:296
-#: cdedb/backend/event/query.py:322 cdedb/backend/event/query.py:496
-#: cdedb/backend/event/query.py:789 cdedb/backend/event/query.py:803
+#: cdedb/backend/event/lodgement.py:423 cdedb/backend/event/lowlevel.py:1070
+#: cdedb/backend/event/lowlevel.py:1305 cdedb/backend/event/lowlevel.py:1331
+#: cdedb/backend/event/query.py:81 cdedb/backend/event/query.py:82
+#: cdedb/backend/event/query.py:296 cdedb/backend/event/query.py:297
+#: cdedb/backend/event/query.py:322 cdedb/backend/event/query.py:323
+#: cdedb/backend/event/query.py:496 cdedb/backend/event/query.py:497
+#: cdedb/backend/event/query.py:789 cdedb/backend/event/query.py:790
+#: cdedb/backend/event/query.py:803 cdedb/backend/event/query.py:804
 #: cdedb/backend/event/registration.py:418
 #: cdedb/backend/event/registration.py:457
 #: cdedb/backend/event/registration.py:510
@@ -87,13 +91,15 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/frontend/core/base.py:2507 cdedb/frontend/core/base.py:2528
 #: cdedb/frontend/core/genesis.py:286 cdedb/frontend/core/genesis.py:327
 #: cdedb/frontend/core/genesis.py:377 cdedb/frontend/core/genesis.py:404
-#: cdedb/frontend/event/query.py:602 cdedb/frontend/ml/base.py:216
+#: cdedb/frontend/event/query.py:602 cdedb/frontend/event/query.py:610
+#: cdedb/frontend/ml/base.py:216
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
 #: cdedb/backend/assembly.py:351 cdedb/backend/cde/base.py:607
 #: cdedb/backend/core/base.py:2908 cdedb/backend/event/query.py:667
-#: cdedb/backend/ml.py:323 cdedb/backend/past_event.py:774
+#: cdedb/backend/event/query.py:668 cdedb/backend/ml.py:323
+#: cdedb/backend/past_event.py:774
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
@@ -504,6 +510,7 @@ msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
 #: cdedb/backend/cde/base.py:587 cdedb/backend/event/query.py:301
+#: cdedb/backend/event/query.py:302
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -530,7 +537,8 @@ msgstr "Invalider Benutzer."
 #: cdedb/backend/event/lowlevel.py:536 cdedb/backend/event/lowlevel.py:575
 #: cdedb/backend/event/lowlevel.py:745 cdedb/backend/event/lowlevel.py:787
 #: cdedb/backend/event/lowlevel.py:860 cdedb/backend/event/lowlevel.py:887
-#: cdedb/backend/event/lowlevel.py:1137 cdedb/backend/event/lowlevel.py:1197
+#: cdedb/backend/event/lowlevel.py:1137 cdedb/backend/event/lowlevel.py:1163
+#: cdedb/backend/event/lowlevel.py:1197 cdedb/backend/event/lowlevel.py:1223
 #: cdedb/backend/event/registration.py:1259
 #: cdedb/backend/event/registration.py:1310 cdedb/backend/ml.py:765
 #: cdedb/backend/ml.py:801 cdedb/backend/past_event.py:285
@@ -1158,55 +1166,60 @@ msgstr "Kursschiene in mehr als einer Kurswahlsynchronisierung."
 msgid "Incompatible course choices present."
 msgstr "Inkompatible Kurswahlen."
 
-#: cdedb/backend/event/lowlevel.py:1222
+#: cdedb/backend/event/lowlevel.py:1067
+msgid "Only tracks from one event allowed."
+msgstr "Alle Kursschienen müssen zur gleichen Veranstaltung gehören."
+
+#: cdedb/backend/event/lowlevel.py:1222 cdedb/backend/event/lowlevel.py:1248
 msgid "Non-existing fields specified."
 msgstr "Angegebene Felder existieren nicht."
 
-#: cdedb/backend/event/lowlevel.py:1267
+#: cdedb/backend/event/lowlevel.py:1267 cdedb/backend/event/lowlevel.py:1293
 msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 "Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
 "werden, falls es in einem Teilnahmbebeitrag referenziert wird."
 
-#: cdedb/backend/event/lowlevel.py:1294
+#: cdedb/backend/event/lowlevel.py:1294 cdedb/backend/event/lowlevel.py:1320
 #, python-format
 msgid "Unfit field for %(field)s."
 msgstr "Feld ist nicht geeignet für %(field)s."
 
-#: cdedb/backend/event/query.py:687
+#: cdedb/backend/event/query.py:687 cdedb/backend/event/query.py:688
 msgid "Must be orga to retrieve stored queries."
 msgstr "Du musst Orga sein, um gespeicherte Suchabfragen zu nutzen."
 
-#: cdedb/backend/event/query.py:729
+#: cdedb/backend/event/query.py:729 cdedb/backend/event/query.py:730
 #, python-format
 msgid "%(count)s stored queries could not be retrieved."
 msgstr "%(count)s gespeicherte Suchen konnten nicht geladen werden."
 
-#: cdedb/backend/event/query.py:743
+#: cdedb/backend/event/query.py:743 cdedb/backend/event/query.py:744
 msgid "Must be orga to delete queries for an event."
 msgstr "Du musst Orga sein, um Suchabfragen zu löschen."
 
-#: cdedb/backend/event/query.py:760
+#: cdedb/backend/event/query.py:760 cdedb/backend/event/query.py:761
 msgid "Must be orga to store queries for an event."
 msgstr "Du musst Orga sein, um Suchabfragen zu speichern."
 
-#: cdedb/backend/event/query.py:763
+#: cdedb/backend/event/query.py:763 cdedb/backend/event/query.py:764
 msgid "Cannot store this kind of query."
 msgstr "Diese Art von Suchabfrage kann nciht gespeichert werden."
 
-#: cdedb/backend/event/query.py:765
+#: cdedb/backend/event/query.py:765 cdedb/backend/event/query.py:766
 msgid "Query must have a name"
 msgstr "Suchabfage muss einen Name besitzen"
 
-#: cdedb/backend/event/query.py:777
+#: cdedb/backend/event/query.py:777 cdedb/backend/event/query.py:778
 #, python-format
 msgid "Query with name '%(query)s' already exists for this event."
 msgstr ""
 "Suchabfrage mit dem Namen '%(query)s' existiert bereits für diese "
 "Veranstaltung."
 
-#: cdedb/backend/event/query.py:840 cdedb/backend/event/query.py:874
+#: cdedb/backend/event/query.py:840 cdedb/backend/event/query.py:860
+#: cdedb/backend/event/query.py:874 cdedb/backend/event/query.py:893
 msgid "Unknown custom filter."
 msgstr "Unbekannter eigener Filter."
 
@@ -2845,7 +2858,9 @@ msgstr "Darf nicht null sein."
 #: cdedb/common/validation/validate.py:1063
 #: cdedb/common/validation/validate.py:1181
 #: cdedb/common/validation/validate.py:2746
+#: cdedb/common/validation/validate.py:4223
 #: cdedb/common/validation/validate.py:4228
+#: cdedb/common/validation/validate.py:4896
 #: cdedb/common/validation/validate.py:4901 cdedb/frontend/cde/base.py:265
 #: cdedb/frontend/cde/base.py:269 cdedb/frontend/core/base.py:1240
 #: cdedb/frontend/core/genesis.py:103 cdedb/frontend/event/event.py:262
@@ -3113,6 +3128,7 @@ msgid "Only pdf allowed."
 msgstr "Nur pdf erlaubt."
 
 #: cdedb/common/validation/validate.py:2056
+#: cdedb/common/validation/validate.py:4989
 #: cdedb/common/validation/validate.py:4994
 msgid "Must contain exactly two elements."
 msgstr "Muss genau zwei Elemente enthalten."
@@ -3188,201 +3204,250 @@ msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 msgid "Value not well-formed."
 msgstr "Falsch formatierte Eingabe."
 
+#: cdedb/common/validation/validate.py:2797
 #: cdedb/common/validation/validate.py:2802
 msgid "Could not convert to mapping."
 msgstr "Konnte nicht zu einer Map konvertieren."
 
+#: cdedb/common/validation/validate.py:2816
 #: cdedb/common/validation/validate.py:2821
 msgid "Duplicate value."
 msgstr "Doppelter Eintrag."
 
+#: cdedb/common/validation/validate.py:2847
 #: cdedb/common/validation/validate.py:2852
 msgid "Cannot set amount for personalized fee."
 msgstr ""
 "Für personalisierte Teilnahmebeiträge kann kein Betrag festgelegt werden."
 
+#: cdedb/common/validation/validate.py:2850
 #: cdedb/common/validation/validate.py:2855
 msgid "Cannot set condition for personalized fee."
 msgstr ""
 "Für personalisierte Teilnahmebeiträge kann keine Bedingung festgelegt werden."
 
+#: cdedb/common/validation/validate.py:2854
 #: cdedb/common/validation/validate.py:2859
 msgid "Cannot unset amount for conditional fee."
 msgstr "Bedingte Teilnahmebeiträge müssen einen Betrag haben."
 
+#: cdedb/common/validation/validate.py:2857
 #: cdedb/common/validation/validate.py:2862
 msgid "Cannot unset condition for conditional fee."
 msgstr "Bedingte Teilnahmebeiträge müssen eine Bedingung haben."
 
+#: cdedb/common/validation/validate.py:2862
 #: cdedb/common/validation/validate.py:2867
 msgid "Cannot have amount without condition or vice versa."
 msgstr "Muss entweder Betrag und Bedingung haben oder weder noch."
 
+#: cdedb/common/validation/validate.py:3003
 #: cdedb/common/validation/validate.py:3008
 msgid "Must be a superset of active segments."
 msgstr "Muss alle aktiven Segmente enthalten."
 
+#: cdedb/common/validation/validate.py:3197
 #: cdedb/common/validation/validate.py:3202
 msgid "Entry not in definition list."
 msgstr "Eintrag nicht in Referenzliste."
 
+#: cdedb/common/validation/validate.py:3344
 #: cdedb/common/validation/validate.py:3349
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr "Ungültige Art für diesen Teil des Fragebogens."
 
+#: cdedb/common/validation/validate.py:3351
 #: cdedb/common/validation/validate.py:3356
 msgid "No kind specified."
 msgstr "Kein Datentyp angegeben."
 
+#: cdedb/common/validation/validate.py:3365
 #: cdedb/common/validation/validate.py:3370
 msgid "Cannot specify both field id and field name."
 msgstr ""
 "Es dürfen nicht gleichzeitig Name und ID eines Feldes angegeben werden."
 
+#: cdedb/common/validation/validate.py:3372
 #: cdedb/common/validation/validate.py:3377
 #, python-format
 msgid "No field with name '%(name)s' exists."
 msgstr "Es gibt kein Feld mit dem Namen '%(name)s'."
 
+#: cdedb/common/validation/validate.py:3385
 #: cdedb/common/validation/validate.py:3390
+#: cdedb/common/validation/validate.py:4911
 #: cdedb/common/validation/validate.py:4916
+#: cdedb/common/validation/validate.py:4969
 #: cdedb/common/validation/validate.py:4974
 #: cdedb/frontend/event/questionnaire.py:265
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
+#: cdedb/common/validation/validate.py:3394
 #: cdedb/common/validation/validate.py:3399
 #: cdedb/frontend/event/questionnaire.py:269
 msgid "Registration questionnaire rows may not be readonly."
 msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 
+#: cdedb/common/validation/validate.py:3439
 #: cdedb/common/validation/validate.py:3444
 #, python-format
 msgid "Must not duplicate field ('%(field_name)s')."
 msgstr "Felder dürfen nicht doppelt auftreten ('%(field_name)s')."
 
+#: cdedb/common/validation/validate.py:3463
 #: cdedb/common/validation/validate.py:3468
 msgid "Invalid UTF-8 sequence."
 msgstr "Ungültige UTF-8-Sequenz."
 
+#: cdedb/common/validation/validate.py:3468
 #: cdedb/common/validation/validate.py:3473
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr "Ungültige JSON-Syntax (Zeile %(line)s, Spalte %(col)s)."
 
+#: cdedb/common/validation/validate.py:3500
 #: cdedb/common/validation/validate.py:3505
 msgid "Only full exports are supported."
 msgstr "Nur vollständige Exporte sind unterstützt."
 
+#: cdedb/common/validation/validate.py:3542
 #: cdedb/common/validation/validate.py:3547
+#: cdedb/common/validation/validate.py:3719
 #: cdedb/common/validation/validate.py:3724
 msgid "Schema version mismatch."
 msgstr "Schemaversion weicht ab."
 
+#: cdedb/common/validation/validate.py:3654
 #: cdedb/common/validation/validate.py:3659
 msgid "Only a single event is supported."
 msgstr "Nur eine einzelne Veranstaltung unterstützt."
 
+#: cdedb/common/validation/validate.py:3658
 #: cdedb/common/validation/validate.py:3663
 msgid "Wrong event specified."
 msgstr "Falsche Veranstaltung referenziert."
 
+#: cdedb/common/validation/validate.py:3664
 #: cdedb/common/validation/validate.py:3669
 msgid "Mismatched event."
 msgstr "Falsche Veranstaltung referenziert."
 
+#: cdedb/common/validation/validate.py:3696
 #: cdedb/common/validation/validate.py:3701
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
+#: cdedb/common/validation/validate.py:4078
 #: cdedb/common/validation/validate.py:4083
 #, python-format
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr "Es gibt bereits ein Feld mit diesem Namen ('%(field_name)s')."
 
+#: cdedb/common/validation/validate.py:4153
 #: cdedb/common/validation/validate.py:4158
 msgid "Must be a registered event IBAN."
 msgstr "Muss eine registrierte Veranstaltungs-IBAN sein."
 
+#: cdedb/common/validation/validate.py:4166
 #: cdedb/common/validation/validate.py:4171
 msgid "Must be before hard and soft limit."
 msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
+#: cdedb/common/validation/validate.py:4178
 #: cdedb/common/validation/validate.py:4183
 msgid "Unknown lodge field."
 msgstr "Unbekanntes Hauswunschfeld."
 
+#: cdedb/common/validation/validate.py:4186
 #: cdedb/common/validation/validate.py:4191
 msgid "Lodge field must be a registration field."
 msgstr "Hauswunschfeld muss ein Anmeldungsfeld sein."
 
+#: cdedb/common/validation/validate.py:4191
 #: cdedb/common/validation/validate.py:4196
 msgid "Lodge field must have type 'string'."
 msgstr "Hauswunschfeld muss vom Typ 'Text' sein."
 
+#: cdedb/common/validation/validate.py:4229
 #: cdedb/common/validation/validate.py:4234
 msgid "Invalid domain for this mailinglist type."
 msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
+#: cdedb/common/validation/validate.py:4234
 #: cdedb/common/validation/validate.py:4239
 msgid "Cannot have event part group without event."
 msgstr ""
 "Kann keine Veranstaltungsteilgruppe haben ohne eine Veranstaltung zu haben."
 
+#: cdedb/common/validation/validate.py:4406
 #: cdedb/common/validation/validate.py:4411
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
+#: cdedb/common/validation/validate.py:4409
 #: cdedb/common/validation/validate.py:4414
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
+#: cdedb/common/validation/validate.py:4413
 #: cdedb/common/validation/validate.py:4418
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
+#: cdedb/common/validation/validate.py:4435
 #: cdedb/common/validation/validate.py:4440
 msgid "Must not specify both absolute and relative quorum."
 msgstr "Darf nicht gleichzeitig absolutes und relatives Quorum angeben."
 
+#: cdedb/common/validation/validate.py:4445
 #: cdedb/common/validation/validate.py:4450
 msgid "Relative quorum must be between 0 and 100."
 msgstr "Relatives Quorum muss zwischen 0 und 100 liegen."
 
+#: cdedb/common/validation/validate.py:4448
 #: cdedb/common/validation/validate.py:4453
 msgid "Must be specified if quorum is given."
 msgstr "Muss angegeben werden falls das Quorum benutzt wird."
 
+#: cdedb/common/validation/validate.py:4451
 #: cdedb/common/validation/validate.py:4456
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 "Ein Quorum muss angegeben werden, wenn eine Verlängerung angegeben ist."
 
+#: cdedb/common/validation/validate.py:4506
 #: cdedb/common/validation/validate.py:4511
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
+#: cdedb/common/validation/validate.py:4576
 #: cdedb/common/validation/validate.py:4581
 msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
+#: cdedb/common/validation/validate.py:4594
 #: cdedb/common/validation/validate.py:4599
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
+#: cdedb/common/validation/validate.py:4597
 #: cdedb/common/validation/validate.py:4602
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
+#: cdedb/common/validation/validate.py:4599
 #: cdedb/common/validation/validate.py:4604
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
+#: cdedb/common/validation/validate.py:4618
 #: cdedb/common/validation/validate.py:4623
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 
+#: cdedb/common/validation/validate.py:4630
 #: cdedb/common/validation/validate.py:4635
 #, python-format
 msgid ""
@@ -3392,56 +3457,69 @@ msgstr ""
 "Darf keine verbotenen Zeichen enthalten (diese sind %(forbidden_chars)s) "
 "wohingegen .^$ erlaubt sind."
 
+#: cdedb/common/validation/validate.py:4657
 #: cdedb/common/validation/validate.py:4662
 msgid "Combine a minimum of two fields."
 msgstr "Kombiniere mindestens zwei Felder."
 
+#: cdedb/common/validation/validate.py:4661
 #: cdedb/common/validation/validate.py:4666
 #, python-format
 msgid "Unknown field(s): %(fields)s."
 msgstr "Unbekannte(s) Feld(er): %(fields)s."
 
+#: cdedb/common/validation/validate.py:4667
 #: cdedb/common/validation/validate.py:4672
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:91
 msgid "Incompatible field types."
 msgstr "Inkompatible Feldtypen."
 
+#: cdedb/common/validation/validate.py:4745
 #: cdedb/common/validation/validate.py:4750
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
+#: cdedb/common/validation/validate.py:4793
 #: cdedb/common/validation/validate.py:4798
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
+#: cdedb/common/validation/validate.py:4827
 #: cdedb/common/validation/validate.py:4832
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
+#: cdedb/common/validation/validate.py:4874
 #: cdedb/common/validation/validate.py:4879
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
+#: cdedb/common/validation/validate.py:4903
 #: cdedb/common/validation/validate.py:4908
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
+#: cdedb/common/validation/validate.py:4922
 #: cdedb/common/validation/validate.py:4927
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
+#: cdedb/common/validation/validate.py:4958
 #: cdedb/common/validation/validate.py:4963
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
+#: cdedb/common/validation/validate.py:5038
 #: cdedb/common/validation/validate.py:5043
+#: cdedb/common/validation/validate.py:5104
 #: cdedb/common/validation/validate.py:5109
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
+#: cdedb/common/validation/validate.py:5084
 #: cdedb/common/validation/validate.py:5089
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
@@ -5124,11 +5202,11 @@ msgstr "Betrag für %(personalized_fee_title)s"
 msgid "Invalid query name."
 msgstr "Ungültiger Name für eine Suchabfrage."
 
-#: cdedb/frontend/event/query.py:351
+#: cdedb/frontend/event/query.py:351 cdedb/frontend/event/query.py:359
 msgid "A filter with this title already exists."
 msgstr "Es existiert bereits ein Filter mit diesem Titel."
 
-#: cdedb/frontend/event/query.py:355
+#: cdedb/frontend/event/query.py:355 cdedb/frontend/event/query.py:363
 msgid "A filter with this selection of fields already exists."
 msgstr "Es existiert bereits ein Filter mit diesen Feldern."
 
@@ -7502,6 +7580,16 @@ msgid ""
 msgstr ""
 "Die folgenden Email-Adressen wurden als defekt markiert. Du wirst keinerlei "
 "Emails über diese mehr bekommen."
+
+#: cdedb/frontend/templates/web/base.tmpl:209
+msgid ""
+"The following email addresses are marked as defect, so you will no longer "
+"receive any emails for them. To remedy this, please contact the "
+"administrators."
+msgstr ""
+"Die folgenden Email-Adressen wurden als defekt markiert. Du wirst keinerlei "
+"Emails über diese mehr bekommen. Zur Behebung kontaktiere bitte die "
+"Verwaltung."
 
 #: cdedb/frontend/templates/web/base.tmpl:215
 msgid "Your username"
@@ -11114,6 +11202,7 @@ msgstr "(Unentschieden)"
 msgid "Searchable for BuB"
 msgstr "Zugriff für BuB"
 
+#: cdedb/frontend/templates/web/core/show_history.tmpl:307
 #: cdedb/frontend/templates/web/core/show_history.tmpl:308
 msgid "Second Address searchable"
 msgstr "Zweitadresse sichtbar"
@@ -11587,10 +11676,12 @@ msgstr ""
 "angezeigt werden."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:58
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:60
 msgid "Finance-Admins"
 msgstr "Finanz-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:60
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:62
 msgid ""
 "Finance-Admins may manage direct debit authorizations and membership fee "
 "transactions. They also handle semester management, i.e. the sending of "
@@ -11603,10 +11694,12 @@ msgstr ""
 "Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:72
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:74
 msgid "Event-Admins"
 msgstr "Veranstaltungs-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:74
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:76
 msgid ""
 "Event-Admins may create DB-organized events and add and remove orgas to "
 "these events. They can also access the configuration as well as all "
@@ -11623,10 +11716,12 @@ msgstr ""
 "Veranstaltungsbezogene Mailinglisten anlegen und verwalten."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:90
 msgid "Mailinglist-Admins"
 msgstr "Mailinglisten-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:90
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:92
 msgid ""
 "Mailinglist-Admins may manage and create all types of mailinglists. They may "
 "create, manage and approve requests for Mailinglist-Users, i.e. users that "
@@ -11637,10 +11732,12 @@ msgstr ""
 "verwalten, sowie entsprechende Accountanfragen bearbeiten."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:99
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:101
 msgid "CdElokal-Admins"
 msgstr "CdElokal-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:101
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:103
 msgid ""
 "CdElokal-Admins may manage and create CdElokal mailinglists. They do not "
 "automatically have access to any user management, like creating and managing "
@@ -11651,10 +11748,12 @@ msgstr ""
 "Bearbeiten von Accounts."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:112
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:114
 msgid "Assembly-Admins"
 msgstr "Versammlungs-Admins"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:114
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:116
 msgid ""
 "Assembly-Admins may create and manage assemblies and ballots. They may "
 "create and manage Assembly-Users, i.e. users with access to assemblies, that "
@@ -11666,10 +11765,12 @@ msgstr ""
 "sowie diese zu Versammlungen hinzufügen."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:126
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:128
 msgid "Auditors"
 msgstr "Kassenprüfer"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:130
 msgid ""
 "Auditors may view all logs, in particular those related to finance "
 "administration, i.e. the documentation of membership fees."
