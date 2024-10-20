@@ -67,6 +67,7 @@ from cdedb.common.fields import (
     REALM_SPECIFIC_GENESIS_FIELDS,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import (
     ALL_LOG_FILTERS,
@@ -1998,6 +1999,9 @@ class CoreBaseBackend(AbstractBackend):
                     {conditions}"""
             conditions = ["regs.event_id = %s"]
             params: list[Any] = [event_id]
+            # TODO: This code path is kind of horrible, considering how the meaning of
+            #  the event_id parameter changes dependent on permissions.
+            #  Should we really make this distinction in the backend?
             if not is_orga:
                 conditions.append("rparts.status = %s")
                 params.append(const.RegistrationPartStati.participant)
@@ -2005,8 +2009,9 @@ class CoreBaseBackend(AbstractBackend):
             data = self.query_all(rs, query, params)
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
-            if not (same_event and (is_orga or
-                                    rs.user.persona_id in all_users_inscope)):
+            if not (same_event and (rs.user.persona_id in all_users_inscope or
+                    is_privileged_event(rs, EventPrivileges.registrations_read_internal,
+                                        event_id=event_id))):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))

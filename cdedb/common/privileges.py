@@ -1,5 +1,4 @@
 from enum import Flag, auto
-from typing import Optional
 
 from cdedb.common import RequestState
 
