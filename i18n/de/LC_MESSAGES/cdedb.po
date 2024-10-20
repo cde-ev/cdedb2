@@ -822,6 +822,10 @@ msgstr "Entfernen des Fotos fehlgeschlagen."
 msgid "Involved in unfinished event."
 msgstr "Ist in eine nicht-abgeschlossene Veranstaltung involviert."
 
+#: cdedb/backend/core/base.py:1736
+msgid "Unbalanced event balance."
+msgstr "Unausgeglichener Veranstaltungs-Kontostand."
+
 #: cdedb/backend/core/base.py:1765
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."

@@ -1514,7 +1514,8 @@ class CoreBaseBackend(AbstractBackend):
 
             # Check event involvement.
             # TODO use 'is_archived' instead of 'event_end'?
-            query = """SELECT MAX(part_end) AS event_end
+            query = """SELECT MAX(part_end) AS event_end,
+            SUM(ABS(amount_owed - amount_paid)) AS remaining_owed
             FROM (
                 (
                     SELECT event_id
@@ -1528,8 +1529,9 @@ class CoreBaseBackend(AbstractBackend):
                 JOIN event.event_parts ON ids.event_id = event_parts.event_id
             )
             """
-            event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
-            if event_end and event_end > cutoff:
+            ret = self.query_one(rs, query, (persona_id, persona_id))
+            if ret and (ret['remaining_owed'] or
+                    ret['event_end'] and ret['event_end'] > cutoff):
                 return False
 
             # Check assembly involvement
@@ -1724,16 +1726,20 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 6. Handle event realm
             #
-            query = glue(
-                "SELECT reg.persona_id, MAX(part_end) AS m",
-                "FROM event.registrations as reg ",
-                "JOIN event.events as event ON reg.event_id = event.id",
-                "JOIN event.event_parts as parts ON parts.event_id = event.id",
-                "WHERE reg.persona_id = %s",
-                "GROUP BY persona_id")
-            max_end = self.query_one(rs, query, (persona_id,))
-            if max_end and max_end['m'] and max_end['m'] >= now().date():
-                raise ArchiveError(n_("Involved in unfinished event."))
+            query = (
+                "SELECT reg.persona_id, MAX(part_end) AS max_event_end,"
+                " SUM(ABS(amount_owed - amount_paid)) AS remaining_owed"
+                " FROM event.registrations as reg"
+                " JOIN event.events as event ON reg.event_id = event.id"
+                " JOIN event.event_parts as parts ON parts.event_id = event.id"
+                " WHERE reg.persona_id = %s GROUP BY persona_id")
+            regs = self.query_all(rs, query, (persona_id,))
+            for reg in regs:
+                if reg:
+                    if reg['max_event_end'] and reg['max_event_end'] >= now().date():
+                        raise ArchiveError(n_("Involved in unfinished event."))
+                    if reg['remaining_owed']:
+                        raise ArchiveError(n_("Unbalanced event balance."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
             # 7. Assembly realm is handled via assembly archival.
