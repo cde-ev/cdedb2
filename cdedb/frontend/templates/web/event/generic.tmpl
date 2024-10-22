@@ -147,13 +147,13 @@
         {% if field['kind'] == datatypes.bool %}
             {{ util.deko_checkbox(checked=entry) }}
         {% elif field['kind'] == datatypes.date %}
-            {{ entry|date(lang=lang, passthrough=True) }}
+            {{ entry|date(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] == datatypes.datetime %}
-            {{ entry|datetime(lang=lang, passthrough=True) }}
+            {{ entry|datetime(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] in (datatypes.float, datatypes.non_negative_float) %}
-            {{ entry|decimal(lang=lang) }}
+            {{ entry|decimal(lang=lang) or otherwise }}
         {% elif field['kind'] == datatypes.phone %}
-            {{ util.tel_link(entry|phone) }}
+            {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
