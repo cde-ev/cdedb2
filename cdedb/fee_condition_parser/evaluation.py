@@ -3,6 +3,7 @@ import dataclasses
 from collections.abc import Set as AbstractSet
 from functools import partial
 from typing import Callable
+from datetime import date
 
 import pyparsing as pp
 
@@ -45,7 +46,7 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
 
 
 def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values: dict[str, bool],
-             other_values: dict[str, bool]) -> bool:
+             other_values: dict[str, bool], reference_date: date, birthday: date) -> bool:
     functions = {
         'and': lambda x: evaluate(x[0], field_values, part_values, other_values) and evaluate(x[1], field_values, part_values, other_values),
         'or': lambda x: evaluate(x[0], field_values, part_values, other_values) or evaluate(x[1], field_values, part_values, other_values),
@@ -54,6 +55,7 @@ def evaluate(result: pp.ParseResults, field_values: dict[str, bool], part_values
         'true': lambda x_: True,
         'false': lambda x_: False,
         'field': lambda x: field_values[x[0]],
+        'age': lambda x: (reference_date - birthday).days // 365 < int(x[0].removeprefix('U')), 
         'part': lambda x: part_values[x[0]],
         'bool': lambda x: other_values[x[0]],
     }
