@@ -3172,19 +3172,8 @@ def _event_associated_fields(
 
     # TODO why is deepcopy used here
     raw = copy.deepcopy(val)
-    datatypes = {
-        const.FieldDatatypes.str: Optional[str],
-        const.FieldDatatypes.bool: Optional[bool],
-        const.FieldDatatypes.int: Optional[int],
-        const.FieldDatatypes.float: Optional[float],
-        const.FieldDatatypes.date: Optional[datetime.date],
-        const.FieldDatatypes.datetime: Optional[datetime.datetime],
-        const.FieldDatatypes.non_negative_int: Optional[NonNegativeInt],
-        const.FieldDatatypes.non_negative_float: Optional[NonNegativeFloat],
-        const.FieldDatatypes.phone: Optional[str],
-    }
     optional_fields: TypeMapping = {
-        str(field.field_name): datatypes[field.kind]  # type: ignore[misc]
+        str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
         for field in fields.values() if field.association == association
     }
 
@@ -3291,16 +3280,27 @@ def _lodgement(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-# TODO is kind optional?
-# TODO make argname non-optional
+FIELD_DATATYPE_VALIDATORS = {
+    const.FieldDatatypes.str: str,
+    const.FieldDatatypes.bool: bool,
+    const.FieldDatatypes.int: int,
+    const.FieldDatatypes.float: float,
+    const.FieldDatatypes.date: datetime.date,
+    const.FieldDatatypes.datetime: datetime.datetime,
+    const.FieldDatatypes.non_negative_int: NonNegativeInt,
+    const.FieldDatatypes.non_negative_float: NonNegativeFloat,
+    const.FieldDatatypes.phone: Phone,
+    const.FieldDatatypes.iban: IBAN,
+}
+
+
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: Optional[str] = None, *, kind: FieldDatatypes, **kwargs: Any,
+    val: Any, argname: str, *, kind: FieldDatatypes, **kwargs: Any,
 ) -> ByFieldDatatype:
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[
-        Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore[index]
+    val: Any = _ALL_TYPED[Optional[FIELD_DATATYPE_VALIDATORS[kind]]  # type: ignore[index]
     ](val, argname, **kwargs)
 
     if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
@@ -4771,7 +4771,7 @@ def _query_input(
                 # TODO do not allow None
                 try:
                     vv: Any = _ALL_TYPED[
-                        Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                        Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                     ](
                         v, field, **kwargs)
                 except ValidationSummary as e:
@@ -4816,7 +4816,7 @@ def _query_input(
         else:
             try:
                 value = _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[validator]]  # type: ignore[index]
                 ](
                     value, field, **kwargs)
             except ValidationSummary as e:
@@ -4932,14 +4932,14 @@ def _query(
 
         elif operator in MULTI_VALUE_OPERATORS:
             validator: Callable[..., Any] = _ALL_TYPED[
-                Optional[VALIDATOR_LOOKUP[val.spec[field].type]]]  # type: ignore[index]
+                Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]]  # type: ignore[index]
             for v in value:
                 with errs:
                     validator(v, f"constraints/{field}", **kwargs)
         else:
             try:
                 _ALL_TYPED[
-                    Optional[VALIDATOR_LOOKUP[val.spec[field].type]]  # type: ignore[index]
+                    Optional[QUERY_INPUT_VALIDATORS[val.spec[field].type]]  # type: ignore[index]
                 ](
                     value,
                     f"constraints/{field}",

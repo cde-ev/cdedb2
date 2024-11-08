@@ -29,8 +29,10 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.common.validation.validate import COURSE_COMMON_FIELDS
+from cdedb.common.validation.validate import (
+    COURSE_COMMON_FIELDS,
+    FIELD_DATATYPE_VALIDATORS,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -243,7 +245,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['active_segments'] = active_segments
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.course
         }
@@ -287,7 +289,7 @@ class EventCourseMixin(EventBaseFrontend):
         data['segments'] = segments
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.course
         }

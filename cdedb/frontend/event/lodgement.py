@@ -27,8 +27,10 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
-from cdedb.common.validation.validate import LODGEMENT_COMMON_FIELDS
+from cdedb.common.validation.validate import (
+    FIELD_DATATYPE_VALIDATORS,
+    LODGEMENT_COMMON_FIELDS,
+)
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -474,7 +476,7 @@ class EventLodgementMixin(EventBaseFrontend):
         data['event_id'] = event_id
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.lodgement
         }
@@ -533,7 +535,7 @@ class EventLodgementMixin(EventBaseFrontend):
         data['id'] = lodgement_id
         field_params: vtypes.TypeMapping = {
             f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field.kind).name]]  # noqa: F821
+                FIELD_DATATYPE_VALIDATORS[field.kind]]
             for field in rs.ambience['event'].fields.values()
             if field.association == const.FieldAssociations.lodgement
         }

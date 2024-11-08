@@ -132,6 +132,7 @@ class FieldDatatypes(CdEIntEnum):
     non_negative_int = 10  #:
     non_negative_float = 12  #:
     phone = 20  #:
+    iban = 30  #:
 
     @property
     def spec_type(self) -> builtins.str:

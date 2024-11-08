@@ -41,7 +41,11 @@ from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
+from cdedb.common.validation.validate import (
+    FIELD_DATATYPE_VALIDATORS,
+    PERSONA_FULL_CREATION,
+    filter_none,
+)
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend,
@@ -410,7 +414,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         def get_validator(row: CdEDBObject) -> tuple[str, type[Any]]:
             field = rs.ambience['event'].fields[row['field_id']]
-            type_ = vtypes.VALIDATOR_LOOKUP[field.kind.name]
+            type_ = FIELD_DATATYPE_VALIDATORS[field.kind]
             if kind == const.QuestionnaireUsages.additional:
                 type_ = Optional[type_]  # type: ignore[assignment]
             elif kind == const.QuestionnaireUsages.registration:
