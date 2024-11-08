@@ -1408,17 +1408,24 @@ msgstr ""
 msgid "Unknown %(droid_name)s token."
 msgstr ""
 
-#: cdedb/backend/session.py:233
+#: cdedb/backend/session.py:233 cdedb/backend/session.py:234
 #, python-format
 msgid "This %(droid_name)s token has been revoked."
 msgstr ""
 
-#: cdedb/backend/session.py:240
+#: cdedb/backend/session.py:239
+#, python-format
+msgid ""
+"Could not validate %(droid_name)s token. This could be the result of a "
+"misconfigured offline instance."
+msgstr ""
+
+#: cdedb/backend/session.py:240 cdedb/backend/session.py:247
 #, python-format
 msgid "Invalid %(droid_name)s token."
 msgstr ""
 
-#: cdedb/backend/session.py:247
+#: cdedb/backend/session.py:247 cdedb/backend/session.py:254
 #, python-format
 msgid "This %(droid_name)s token has expired."
 msgstr ""
@@ -3491,15 +3498,16 @@ msgstr ""
 msgid "Dict keys do not match."
 msgstr ""
 
-#: cdedb/frontend/application.py:120 cdedb/frontend/cron.py:51
+#: cdedb/frontend/application.py:120 cdedb/frontend/application.py:125
+#: cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr ""
 
-#: cdedb/frontend/application.py:236
+#: cdedb/frontend/application.py:236 cdedb/frontend/application.py:241
 msgid "Session expired."
 msgstr ""
 
-#: cdedb/frontend/application.py:331
+#: cdedb/frontend/application.py:331 cdedb/frontend/application.py:336
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -3507,7 +3515,7 @@ msgid ""
 "reset in the next days."
 msgstr ""
 
-#: cdedb/frontend/application.py:350
+#: cdedb/frontend/application.py:350 cdedb/frontend/application.py:355
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -8614,7 +8622,13 @@ msgid "Statement"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
-msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here."
+msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft here."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
+msgid ""
+"Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank "
+"here."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:173
