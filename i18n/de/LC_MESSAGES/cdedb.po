@@ -9014,8 +9014,8 @@ msgid "Statement"
 msgstr "Kontoauszug"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
-msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft here."
-msgstr "Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft ein."
+msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here."
+msgstr "Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft oder der Skatbank ein."
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:173
 msgid "Parse"

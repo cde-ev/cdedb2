@@ -1055,6 +1055,9 @@ class Accounts(enum.Enum):
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
     Festgeld = "DE45370205000010042605"
+    Festgeld2 = "DE05370205000010047205"
+    Skatbank = "DE23830654080005374499"
+    Tagesgeld = "DE96830654087005374499"
     # Fallback if Account is none of the above
     Unknown = "Unknown"
 
@@ -1063,6 +1066,9 @@ class Accounts(enum.Enum):
             Accounts.Account0: "8068900",
             Accounts.Account1: "8068901",
             Accounts.Festgeld: "Festgeld",
+            Accounts.Festgeld2: "Festgeld2",
+            Accounts.Skatbank: "Skatbank",
+            Accounts.Tagesgeld: "Tagesgeld",
             Accounts.Unknown: "Unknown",
         }[self]
 
