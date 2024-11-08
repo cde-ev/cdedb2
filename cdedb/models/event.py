@@ -133,6 +133,7 @@ class Event(EventDataclass):
     notify_on_registration: const.NotifyOnRegistration
 
     lodge_field_id: Optional[vtypes.ID]
+    reimbursement_iban_field_id: Optional[vtypes.ID]
 
     parts: CdEDataclassMap["EventPart"]
     tracks: CdEDataclassMap["CourseTrack"]
@@ -243,6 +244,12 @@ class Event(EventDataclass):
         if self.lodge_field_id is None:
             return None
         return self.fields[self.lodge_field_id]
+
+    @functools.cached_property
+    def reimbursement_iban_field(self) -> Optional["EventField"]:
+        if self.reimbursement_iban_field_id is None:
+            return None
+        return self.fields[self.reimbursement_iban_field_id]
 
     @functools.cached_property
     def personalized_fees(self) -> CdEDataclassMap["EventFee"]:

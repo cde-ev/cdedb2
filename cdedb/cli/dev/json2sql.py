@@ -44,7 +44,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # require special care, because they contain cycliy references.
     # They will be removed from the initial INSERT and UPDATEd later.
     cyclic_references: dict[str, tuple[str, ...]] = {
-        "event.events": ("lodge_field_id",),
+        "event.events": ("lodge_field_id", "reimbursement_iban_field_id"),
         "event.event_parts": ("camping_mat_field_id",),
         "event.course_tracks": ("course_room_field_id",),
     }

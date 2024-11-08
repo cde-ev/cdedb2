@@ -1488,6 +1488,7 @@
             "description": "Everybody come!",
             "website_url": "https://www.cde-ev.de/",
             "institution": 1,
+            "reimbursement_iban_field_id": null,
             "lodge_field_id": 3,
             "offline_lock": false,
             "orga_address": "aka@example.cde",

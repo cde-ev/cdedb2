@@ -69,6 +69,8 @@ class EventFieldMixin(EventBaseFrontend):
                     referenced.add(row['field_id'])
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
+        if rs.ambience['event'].reimbursement_iban_field:
+            referenced.add(rs.ambience['event'].reimbursement_iban_field.id)
         for part in rs.ambience['event'].parts.values():
             if part.waitlist_field:
                 referenced.add(part.waitlist_field.id)

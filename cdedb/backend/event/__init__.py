@@ -284,6 +284,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                     deletor: CdEDBObject = {
                         'id': event_id,
                         'lodge_field_id': None,
+                        'reimbursement_iban_field_id': None,
                     }
                     ret *= self.sql_update(rs, models.Event.database_table, deletor)
                     with Silencer(rs):

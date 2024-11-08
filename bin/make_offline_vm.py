@@ -136,8 +136,11 @@ def shift_existing_ids(tables: list[str], shift_amount: int) -> None:
 
 
 def update_event(cur: RealDictCursor, event: CdEDBObject) -> None:
-    query = """UPDATE event.events SET lodge_field_id = %s"""
-    cur.execute(query, [event['lodge_field_id']])
+    query = """
+        UPDATE event.events
+        SET lodge_field_id = %s, reimbursement_iban_field_id = %s
+    """
+    cur.execute(query, [event['lodge_field_id'], event['reimbursement_iban_field_id']])
 
 
 def update_parts(cur: RealDictCursor, parts: Collection[CdEDBObject]) -> None:
@@ -279,7 +282,7 @@ def work(
                 values = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
-                    for key in ('lodge_field_id',):
+                    for key in ('lodge_field_id', 'reimbursement_iban_field_id'):
                         values[str(data['id'])][key] = None
                 if table == 'event.event_parts':
                     for part_id in data[table]:

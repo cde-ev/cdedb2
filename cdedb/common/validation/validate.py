@@ -2442,6 +2442,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orga_address': Optional[Email],
     'participant_info': Optional[str],
     'lodge_field_id': Optional[ID],
+    'reimbursement_iban_field_id': Optional[ID],
     'website_url': Optional[Url],
     'notify_on_registration': const.NotifyOnRegistration,
 }
@@ -4183,7 +4184,7 @@ def _serialized_event_configuration(
                         "lodge_field_id", n_("Unknown lodge field.")))
             else:
                 field = current.fields[lodge_field]
-                legal_associations, legal_kinds = EVENT_FIELD_SPEC['lodge_field']
+                legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge_field']
                 if field.association not in legal_associations:
                     with errs:
                         raise ValidationSummary(ValueError(
@@ -4194,6 +4195,31 @@ def _serialized_event_configuration(
                         raise ValidationSummary(ValueError(
                             "lodge_field_id",
                             n_("Lodge field must have type 'string'.")))
+        if reimbursement_field := val.get('reimbursement_iban_field_id'):
+            if reimbursement_field not in current.fields:
+                with errs:
+                    raise ValidationSummary(KeyError(
+                        "reimbursement_iban_field_id",
+                        n_("Unknown reimbursement IBAN field."),
+                    ))
+            else:
+                field = current.fields[reimbursement_field]
+                legal_kinds, legal_associations = \
+                    EVENT_FIELD_SPEC['reimbursement_field']
+                if field.association not in legal_associations:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_(
+                                "Reimbursement IBAN field must be a registration"
+                                " field.",
+                            ),
+                        ))
+                if field.kind not in legal_kinds:
+                    with errs:
+                        raise ValidationSummary(ValueError(
+                            "reimbursement_iban_field_id",
+                            n_("Reimbursement IBAN field must have type 'IBAN'.")))
 
     if errs:
         raise errs
