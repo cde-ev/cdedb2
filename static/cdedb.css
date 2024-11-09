@@ -931,6 +931,10 @@ tr.drow-delete>td, tr.drow-delete1>td {
     color: #fff;
 }
 
+[draggable] {
+    cursor: move;
+}
+
 /* Fancy row sorting with JavaScript
    Quite similar to preferential voting. */
 .orderrow-container {
