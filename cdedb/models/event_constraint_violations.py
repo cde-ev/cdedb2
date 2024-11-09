@@ -18,8 +18,18 @@ class ConstraintViolation:
     event: models.Event
     severity: int
 
+    # Primary entities.
     registration: CdEDBObject | None = None
+    persona: CdEDBObject | None = None
+    course: CdEDBObject | None = None
 
+    # Secondary entities.
+    part: models.EventPart | None = None
+    track: models.CourseTrack | None = None
+    part_group: models.PartGroup | None = None
+    track_group: models.TrackGroup | None = None
+
+    # Helper properties.
     @cached_property
     def registration_part(self) -> CdEDBObject | None:
         return (
@@ -34,18 +44,7 @@ class ConstraintViolation:
             if self.registration and self.track else None
         )
 
-    persona: CdEDBObject | None = None
-
-    course: CdEDBObject | None = None
-
-    part: models.EventPart | None = None
-
-    track: models.CourseTrack | None = None
-
-    part_group: models.PartGroup | None = None
-
-    track_group: models.TrackGroup | None = None
-
+    # Display interface.
     def get_translation(self) -> tuple[str, CdEDBObject]:
         """
         Must return a string template for translation and a dict of translation params.
