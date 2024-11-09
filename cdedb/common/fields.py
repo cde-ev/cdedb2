@@ -25,11 +25,10 @@ META_INFO_FIELDS = (
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
-    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
-    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_auditor", "is_event_helper", "is_member",
-    "is_searchable", "is_archived", "is_purged",
+    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin", "is_finance_admin",
+    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
+    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_cdelokal_admin",
+    "is_auditor", "is_member", "is_searchable", "is_archived", "is_purged",
 )
 
 #: Names of all columns associated to an abstract persona.

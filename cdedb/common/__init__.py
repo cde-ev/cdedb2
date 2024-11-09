@@ -20,6 +20,7 @@ import string
 import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -43,6 +44,7 @@ from schulze_condorcet.types import Candidate
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
+from cdedb.common.fields import Realm, Role
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer
@@ -94,12 +96,6 @@ Error = tuple[Optional[str], Exception]
 NotificationType = str
 Notification = tuple[NotificationType, str, CdEDBObject]
 
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
-
 # Admin views a user may activate/deactivate.
 AdminView = str
 
@@ -117,8 +113,9 @@ class User:
     def __init__(self, *, persona_id: Optional[int] = None,
                  droid_class: Optional[type["APIToken"]] = None,
                  droid_token_id: Optional[int] = None,
-                 roles: Optional[set[Role]] = None, display_name: str = "",
-                 given_names: str = "", family_name: str = "",
+                 roles: Optional[set[Role]] = None,
+                 realm_roles: Optional[dict[Realm, set[str]]] = None,
+                 display_name: str = "", given_names: str = "", family_name: str = "",
                  username: str = "", orga: Optional[Collection[int]] = None,
                  moderator: Optional[Collection[int]] = None,
                  presider: Optional[Collection[int]] = None) -> None:
@@ -128,6 +125,7 @@ class User:
         if self.persona_id and (self.droid_class or self.droid_token_id):
             raise ValueError("Cannot be both droid and persona.")
         self.roles = roles or {"anonymous"}
+        self.realm_roles = realm_roles or {}
         self.username = username
         self.display_name = display_name
         self.given_names = given_names
@@ -139,7 +137,7 @@ class User:
 
     @property
     def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.roles)
+        return roles_to_admin_views(self.roles | set(chain(*self.realm_roles.values())))
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
         enabled_views = enabled_views_cookie.split(',')

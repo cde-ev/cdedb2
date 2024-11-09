@@ -6,7 +6,7 @@ import collections
 import decimal
 from typing import TYPE_CHECKING, Any
 
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Role, Realm
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig
 
@@ -14,12 +14,6 @@ _CONF = LazyConfig()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
-
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
 
 # Admin views a user may activate/deactivate.
 AdminView = str
@@ -62,9 +56,6 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False,
                 ret.add("searchable")
         if session.get("is_auditor"):
             ret.add("auditor")
-    if "event" in ret:
-        if session.get("is_event_helper"):
-            ret.add("event_helper")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -278,7 +269,6 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("assembly", "cdb_member"),
     ("auditor", "cdb_member"),
 
-    ("event_helper", "cdb_persona"),
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),

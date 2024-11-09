@@ -1501,7 +1501,6 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'is_assembly_admin': bool,
     'is_cdelokal_admin': bool,
     'is_auditor': bool,
-    'is_event_helper': bool,
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,

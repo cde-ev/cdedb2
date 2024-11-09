@@ -150,6 +150,12 @@ class EventBaseBackend(EventLowLevelBackend):
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
+    @access("persona")
+    def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
+        """List all event helpers."""
+        data = self.query_all(rs, "SELECT persona_id FROM event.helpers", [])
+        return {e['persona_id'] for e in data}
+
     class _OrgaInfoProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")

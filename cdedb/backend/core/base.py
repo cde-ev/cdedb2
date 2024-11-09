@@ -1665,7 +1665,6 @@ class CoreBaseBackend(AbstractBackend):
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
                 'is_auditor': False,
-                'is_event_helper': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
                 # 'is_cde_realm'
@@ -1737,6 +1736,7 @@ class CoreBaseBackend(AbstractBackend):
             if max_end and max_end['m'] and max_end['m'] >= now().date():
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
+            self.sql_delete(rs, "event.helpers", (persona_id,), "persona_id")
             #
             # 7. Assembly realm is handled via assembly archival.
             #
