@@ -1775,6 +1775,22 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, 'event/show_registration',
                              {'registration_id': registration_id})
 
+    @access('event', modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdata("tid1", "tid2")
+    def delete_checkin_transitions(self, rs: RequestState, event_id: int,
+                                   registration_id: vtypes.ID, tid1: vtypes.ID,
+                                   tid2: Optional[vtypes.ID] = None) -> Response:
+        if rs.has_validation_errors():
+            return self.show_registration(rs, event_id, registration_id)
+        # no validation errors can be caused by the user. Errors are a bug in code,
+        # let them be raised by the backend.
+        ret = self.eventproxy.delete_checkin_transitions(
+            rs, registration_id, tid1, tid2)
+        rs.notify_return_code(ret, error=n_("Action failed."))
+        return self.redirect(rs, 'event/show_registration',
+                             {'registration_id': registration_id})
+
     def _get_payment_data(self, rs: RequestState, event_id: int,
                           registration_id: Optional[int] = None) -> CdEDBObject:
         if not registration_id:
