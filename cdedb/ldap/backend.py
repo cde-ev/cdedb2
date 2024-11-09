@@ -65,12 +65,6 @@ class classproperty:
         return self.getter(owner)
 
 
-# TODO We are the only consumer but maybe this should be
-# moved into cdedb.database.conversions?
-def escape_sql_like_pattern(pattern: str) -> str:
-    return pattern.replace("\\", r"\\").replace("%", r"\%").replace("_", r"\_")
-
-
 @overload
 def _to_bytes(data: dict[Any, Any]) -> dict[bytes, Any]: ...
 
@@ -461,7 +455,7 @@ class LDAPsqlBackend:
         cls,
         filter_: FilterLike,
         attr_replacements: dict[str, str],
-    ) -> sql.Composable:
+    ) -> tuple[sql.Composable, list["DatabaseValue_s"]]:
         """Lower the given LDAP filter to a SQL query.
 
         This is a helper function to convert LDAP filters to SQL queries
@@ -470,76 +464,77 @@ class LDAPsqlBackend:
         which are used by consumers of our LDAP interface
         in performance critical paths (e.g. user lookup upon login).
         """
-        if isinstance(filter_, pureldap.LDAPFilter_and):
-            return sql.SQL("({})").format(sql.SQL(" AND ").join(
-                cls.lower_ldap_filter_to_sql(f, attr_replacements) for f in filter_.data
-            ))
-        elif isinstance(filter_, pureldap.LDAPFilter_or):
-            return sql.SQL("({})").format(sql.SQL(" OR ").join(
-                cls.lower_ldap_filter_to_sql(f, attr_replacements) for f in filter_.data
-        ))
-        elif isinstance(filter_, pureldap.LDAPFilter_not):
-            return sql.SQL("NOT {}").format(
-                cls.lower_ldap_filter_to_sql(filter_.value, attr_replacements),
+        if isinstance(filter_, (pureldap.LDAPFilter_and, pureldap.LDAPFilter_or)):
+            subqueries: list[sql.Composable] = []
+            params: list["DatabaseValue_s"] = []
+            for f in filter_.data:
+                q, p = cls.lower_ldap_filter_to_sql(f, attr_replacements)
+                subqueries += [q]
+                params += p
+            return (
+                sql.SQL(
+                    " AND " if isinstance(filter_, pureldap.LDAPFilter_and) else " OR ",
+                ).join(sql.SQL("({})").format(query) for query in subqueries),
+                params,
             )
+        elif isinstance(filter_, pureldap.LDAPFilter_not):
+            subquery, params = cls.lower_ldap_filter_to_sql(filter_.value, attr_replacements)
+            return (sql.SQL("NOT ({})").format(subquery), params)
         elif isinstance(filter_, pureldap.LDAPFilter_present):
+            if filter_.value.decode() not in attr_replacements:
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
             return (
                 sql.SQL("{} IS NOT NULL").format(
                     sql.Identifier(attr_replacements[filter_.value.decode()]),
-                )
-                if filter_.value.decode() in attr_replacements
-                # We are not given any information how the attribute is named
-                # in the SQL query therefore we have to be defensive
-                # and assume that the attribute is present.
-                # This will still be checked later in
-                # handle_LDAPSearchRequest.filter_entry.
-                else sql.Literal(True)
+                ),
+                []
             )
         elif isinstance(filter_, pureldap.LDAPFilter_equalityMatch):
-            return (
-                sql.SQL("{} = {}").format(
-                    sql.Identifier(
-                        attr_replacements[filter_.attributeDesc.value.decode()],
-                    ),
-                    sql.Literal(filter_.assertionValue.value.decode()),
-                )
-                if filter_.attributeDesc.value.decode() in attr_replacements
+            if filter_.attributeDesc.value.decode() not in attr_replacements:
                 # We are not given any information how the attribute is named
                 # in the SQL query therefore we have to be defensive
-                # and assume that the attribute is present.
-                # This will still be checked later in
-                # handle_LDAPSearchRequest.filter_entry.
-                else sql.Literal(True)
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
+            return (
+                sql.SQL("{} = %s").format(sql.Identifier(
+                    attr_replacements[filter_.attributeDesc.value.decode()],
+                )),
+                [filter_.assertionValue.value.decode()],
             )
         elif isinstance(filter_, pureldap.LDAPFilter_substrings):
-            pattern = "%".join(
-                escape_sql_like_pattern(s.value.decode()) for s in filter_.substrings
-            )
+            if filter_.type.decode() not in attr_replacements:
+                # We are not given any information how the attribute is named
+                # in the SQL query therefore we have to be defensive
+                # and assume that it passes the filter.
+                # This will still be checked later
+                # in handle_LDAPSearchRequest.filter_entry.
+                return (sql.Literal(True), [])
+            pattern: sql.Composable = sql.SQL("")
             if not isinstance(
                 filter_.substrings[0], pureldap.LDAPFilter_substrings_initial,
             ):
-                pattern = f"%{pattern}"
+                pattern += sql.SQL("'%', ")
+            pattern += sql.SQL(", '%', ").join(sql.Placeholder() for _ in filter_.substrings)
             if not isinstance(
                 filter_.substrings[-1], pureldap.LDAPFilter_substrings_final,
             ):
-                pattern = f"{pattern}%"
+                pattern += sql.SQL(", '%'")
             return (
-                sql.SQL("{} LIKEs {}").format(
-                    sql.Identifier(
-                        attr_replacements[filter_.attributeDesc.value.decode()],
-                    ),
-                    sql.Literal(pattern),
-                )
-                if filter_.attributeDesc.value.decode() in attr_replacements
-                # We are not given any information how the attribute is named
-                # in the SQL query therefore we have to be defensive
-                # and assume that the attribute is present.
-                # This will still be checked later
-                # in handle_LDAPSearchRequest.filter_entry.
-                else sql.Literal(True)
+                sql.SQL("{} LIKE CONCAT({})").format(
+                    sql.Identifier(attr_replacements[filter_.type.decode()]),
+                    pattern,
+                ),
+                [(s.value.decode()) for s in filter_.substrings],
             )
         else:
-            return sql.Literal(True)
+            return (sql.Literal(True), [])
 
     async def list_users(
         self,
@@ -548,6 +543,7 @@ class LDAPsqlBackend:
         query: sql.SQL | sql.Composed = sql.SQL(
             "SELECT id FROM core.personas WHERE NOT is_archived",
         )
+        params: list["DatabaseValue_s"] = []
         if filterObject is not None:
             # We have to replace the attribute names in the LDAP filter with the
             # corresponding column names in the SQL query.
@@ -557,11 +553,12 @@ class LDAPsqlBackend:
                 "mail": "username",
                 "uid": "id",
             }
-            query += (
-                sql.SQL(" AND ")
-                + self.lower_ldap_filter_to_sql(filterObject, attr_replacements)
-            )
-        return [self.list_single_user(e["id"]) async for e in self.query_all(query, [])]
+            filter_query, filter_params = self.lower_ldap_filter_to_sql(filterObject, attr_replacements)
+            query += sql.SQL(" AND ") + filter_query
+            params += filter_params
+            async with self.pool.connection() as conn:
+                logger.info("Query, params, and filter: %s, %s, %s", query.as_string(conn), params, repr(filterObject))
+        return [self.list_single_user(e["id"]) async for e in self.query_all(query, params)]
 
     async def get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:

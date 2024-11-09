@@ -138,7 +138,6 @@ class CdEDBBaseLDAPEntry(
 
     async def search(
         self,
-        filterText: Optional[Any] = None,
         filterObject: Optional[Any] = None,
         attributes: Optional[AttributeDescriptionList] = None,
         scope: Optional[Any] = None,
@@ -158,15 +157,8 @@ class CdEDBBaseLDAPEntry(
         :param bound_dn: Either the DN of the user performing the search, or None if
             an anonymous search is performed.
         """
-        if filterObject is None and filterText is None:
-            filterObject = pureldap.LDAPFilterMatchAll
-        elif filterObject is None and filterText is not None:
-            filterObject = ldapfilter.parseFilter(filterText)
-        elif filterObject is not None and filterText is None:
-            pass
-        elif filterObject is not None and filterText is not None:
-            f = ldapfilter.parseFilter(filterText)
-            filterObject = pureldap.LDAPFilter_and((f, filterObject))
+        if filterObject is None:
+            filterObject = pureldap.LDAPFilterMatchAll()
 
         if scope is None:
             scope = pureldap.LDAP_SCOPE_wholeSubtree
