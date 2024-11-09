@@ -15,7 +15,7 @@ At last, the ``nickname`` is the name the person wants to use at CdE events.
 The ``legal_given_names`` should only be used for legal documents, like invoices, donation recipies or direct debit authorization forms.
 The ``nickname`` is only printed on the nametag of CdE events. Additionally, it is visible on the profile and is
 displayed to Orgas in addition to the ``given_names``, to allow better recognition.
-At ever other occasion, the ``given_names`` are used to address or refer to a person.
+At every other occasion, the ``given_names`` are used to address or refer to a person.
 
 To apply this logic in the web template and frontend code, there is the :func:`cdedb.frontend.common.make_persona_name` helper function
 resp. the ``persona_name()`` macro in the ``util.tmpl`` template.
