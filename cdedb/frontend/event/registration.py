@@ -1125,8 +1125,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'lodgements': lodgements,
             'waitlist_position': waitlist_position,
-            'mep_violations': constraint_violations['mep_violations'],
-            'ccs_violations': constraint_violations['ccs_violations'],
+            'violations': constraint_violations['all'],
             'violation_severity': constraint_violations['max_severity'],
             **payment_data,
             **course_choice_parameters,

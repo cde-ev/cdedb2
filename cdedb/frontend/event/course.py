@@ -205,7 +205,7 @@ class EventCourseMixin(EventBaseFrontend):
 
             constraint_violations = self.get_constraint_violations(
                 rs, event_id, registration_id=-1, course_id=course_id)
-            params['mec_violations'] = constraint_violations['mec_violations']
+            params['violations'] = constraint_violations['all']
             params['violation_severity'] = constraint_violations['max_severity']
 
         return self.render(rs, "course/show_course", params)
@@ -453,15 +453,10 @@ class EventCourseMixin(EventBaseFrontend):
                     EntitySorter.persona(
                         personas[registrations[problem[0]]['persona_id']]))
 
-        constraint_violations = self.get_constraint_violations(
-            rs, event_id, registration_id=-1, course_id=None)
-
         return self.render(rs, "course/course_assignment_checks", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_problems': course_problems,
             'reg_problems': reg_problems,
-            'mec_violations': constraint_violations['mec_violations'],
-            'mec_severity': constraint_violations['max_severity'],
         })
 
     @access("event")

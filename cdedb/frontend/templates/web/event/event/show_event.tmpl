@@ -356,33 +356,19 @@
             {% if has_constraints %}
             <div class="col-md-6" id="constraint-violations">
                 {% call generic.constraint_violations_panel(violation_severity, link_title=True) %}
-                    {% if not mep_violations and not mec_violations and not ccs_violations %}
+                    {% if not violations_by_class %}
                         {% trans %}
                             There are currently no constraints being violated.
                         {% endtrans %}
                     {% else %}
                         <ul>
-                            {% if mep_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mep-violations">
-                                    {% trans count=mep_violations|length %}
-                                        There are {{ count }} violations of mutually exclusive participation constraints.
+                            {% for class_name, violations in violations_by_class.items()|sort %}
+                                <li><a href="{{ cdedblink("event/constraint_violations") }}#{{ class_name }}">
+                                    {% trans count=violations|length, class_name=gettext(class_name) %}
+                                        There are {{ count }} {{ class_name }} violations.
                                     {% endtrans %}
                                 </a></li>
-                            {% endif %}
-                            {% if mec_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#mec-violations">
-                                    {% trans count=mec_violations|length %}
-                                        There are {{ count }} violations of mutually exclusive course constraints.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endif %}
-                            {% if ccs_violations %}
-                                <li><a href="{{ cdedblink("event/constraint_violations") }}#ccs-violations">
-                                    {% trans count=ccs_violations|length %}
-                                        There are {{ count }} violations of course choice sync constraints.
-                                    {% endtrans %}
-                                </a></li>
-                            {% endif %}
+                            {% endfor %}
                         </ul>
                     {% endif %}
                 {% endcall %}

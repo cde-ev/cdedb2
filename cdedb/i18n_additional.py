@@ -368,6 +368,10 @@ I18N_STRINGS = (
     n_("NotifyOnRegistration.daily"),
     n_("NotifyOnRegistration.weekly"),
 
+    n_("MEPConstraintViolation"),
+    n_("CCSConstraintViolation"),
+    n_("MECConstraintViolation"),
+
     #
     # Query datatypes
     #

@@ -6077,42 +6077,36 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.assertEqual("Test", f['fields.lodge'].value)
 
     @as_users("emilia")
-    def test_part_group_constraints(self) -> None:
+    def test_constraint_violations(self) -> None:
         # pylint: disable=protected-access
         self.traverse("TripelAkademie")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 1 Verstöße gegen"
-                            " Teilnahmeausschließlichkeitsbeschränkungen.",
+        self.assertPresence("Es gibt 1 Teilnahmeausschließlichkeits-Verstöße.",
                             div="constraint-violations")
-        self.assertPresence("Es gibt 5 Verstöße gegen"
-                            " Kursausschließlichkeitsbeschränkungen.",
+        self.assertPresence("Es gibt 5 Kursausschließlichkeits-Verstöße.",
                             div="constraint-violations")
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertTitle("TripelAkademie – Verstöße gegen Beschränkungen")
-        self.assertPresence("Teilnahmeausschließlichkeitsbeschränkungen")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
-                            " (Anwesend in K1, W1).", div="mep-violations-list")
-        self.assertNonPresence("TN 2H", div="mep-violations-list")
-        self.assertPresence("Kursausschließlichkeitsbeschränkungen")
-        self.assertPresence("4. Akrobatik verstößt gegen die"
-                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in KK1, OK1).",
-                            div="mec-violations-list")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die"
-                               " Kursausschließlichkeitsbeschränkung Kurs 2H."
-                               " (Findet statt in WK2m, WK2n).",
-                               div="mec-violations-list")
+        self.assertPresence("Teilnahmeausschließlichkeit")
+        self.assertPresence("Emilia E. Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="MEPConstraintViolation-list")
+        self.assertPresence("Kursausschließlichkeit")
+        self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
+                            " Kursschienen statt (KK1, OK1).",
+                            div="MECConstraintViolation-list")
+        self.assertNonPresence("4. Akrobatik findet in sich gegenseitig"
+                               " ausschließenden Kursschienen statt (WK2m, WK2n).",
+                               div="MECConstraintViolation-list")
 
         # Change Emilia's registration.
         self.traverse("Emilia E. Eventis")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 1H."
-                            " (Anwesend in K1, W1).", div="mep-violations-list")
-        self.assertNonPresence("TN 2H", div="mep-violations-list")
+        self.assertPresence("Emilia E. Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K1, W1).",
+                            div="constraint-violations-list")
         self.traverse("Bearbeiten")
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
@@ -6133,18 +6127,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
 
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertNonPresence("TN 1H", div="mep-violations-list")
-        self.assertPresence("Emilia E. Eventis verstößt gegen die"
-                            " Teilnahmeausschließlichkeitsbeschränkung TN 2H."
-                            " (Anwesend in K2, O2).", div="mep-violations-list")
+        self.assertPresence("Emilia E. Eventis ist an sich gegenseitig"
+                            " ausschließenden Veranstaltungsteilen anwesend (K2, O2).",
+                            div="constraint-violations-list")
 
         f['part9.status'] = const.RegistrationPartStati.cancelled
         self.submit(f)
         self.assertNonPresence("Verstöße gegen Beschränkungen",
                                div="constraint-violations", check_div=False)
-        self.assertNonPresence(
-            "Emilia E. Eventis verstößt gegen die"
-            " Teilnahmeausschließlichkeitsbeschränkung")
+        self.assertNonPresence("sich gegenseitig ausschließenden")
 
         self.traverse("Verstöße gegen Beschränkungen")
         self.assertNonPresence("Teilnahmebeschränkungen")
@@ -6153,14 +6144,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         self.traverse("4. Akrobatik")
         self.assertPresence("Verstöße gegen Beschränkungen",
                             div="constraint-violations")
-        self.assertPresence("4. Akrobatik verstößt gegen die"
-                            " Kursausschließlichkeitsbeschränkung Kurs 1H."
-                            " (Findet statt in KK1, OK1).",
-                            div="mec-violations-list")
-        self.assertNonPresence("4. Akrobatik verstößt gegen die"
-                               " Kursausschließlichtkeitsbeschränkung Kurs 2H."
-                               " (Findet statt in WK2m, WK2n).",
-                               div="mec-violations-list")
+        self.assertPresence("4. Akrobatik findet in sich gegenseitig ausschließenden"
+                            " Kursschienen statt (KK1, OK1).",
+                            div="constraint-violations-list")
         self.assertNonPresence("Kurs fällt aus")
 
         self.traverse("Bearbeiten")

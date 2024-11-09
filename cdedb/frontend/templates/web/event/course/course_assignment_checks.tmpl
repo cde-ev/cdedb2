@@ -70,14 +70,6 @@
             </div>
         {% endfor %}
 
-        {% if mec_violations %}
-            <div class="col-md-6">
-                {% call generic.constraint_violations_panel(mec_severity, title=gettext("Mutually Exclusive Courses")) %}
-                    {{ generic.list_mec_violations(mec_violations, courses, link_course=True) }}
-                {% endcall %}
-            </div>
-        {% endif %}
-
         {% for key, heading, icon, panelclass in (
                 ('no_course', gettext("Participants without course"), 'question-circle', 'danger'),
                 ('instructor_wrong_course', gettext("Instructors not in their own course"), 'briefcase', 'danger'),
