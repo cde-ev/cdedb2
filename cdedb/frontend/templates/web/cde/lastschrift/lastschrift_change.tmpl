@@ -30,6 +30,10 @@
         {{ util.anti_csrf_token('cde/lastschrift_change') }}
         {{ util.form_input_static(label=gettext("Member"),
                                   value=util.persona_name(persona, with_titles=True)) }}
+        {% if persona['legal_given_names'] != persona['given_names'] %}
+            {{ util.form_input_static(label=gettext("Legal Name"),
+                                  value=util.persona_name(persona, use_legal_name=True, with_titles=True)) }}
+        {% endif %}
         {{ util.form_input_static(label=gettext("Donation"), value=persona["donation"]|money(lang=lang),
                                   info=gettext("Taken from the profile of the user."), aclass="form-control-nosp") }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
