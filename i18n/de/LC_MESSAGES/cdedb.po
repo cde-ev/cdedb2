@@ -1448,17 +1448,26 @@ msgstr "Diese API ist in der Offline-Instanz nicht verfügbar."
 msgid "Unknown %(droid_name)s token."
 msgstr "Unbekanntes %(droid_name)s-Token."
 
-#: cdedb/backend/session.py:233
+#: cdedb/backend/session.py:233 cdedb/backend/session.py:234
 #, python-format
 msgid "This %(droid_name)s token has been revoked."
 msgstr "Dieses %(droid_name)s-Token wurde widerrufen."
 
-#: cdedb/backend/session.py:240
+#: cdedb/backend/session.py:239
+#, python-format
+msgid ""
+"Could not verify %(droid_name)s token. This could be the result of a "
+"misconfigured offline instance."
+msgstr ""
+"Konnte %(droid_name)s-Token nicht verifizieren.  Das könnte das Resultat "
+"einer fehlerhaft konfigurierten Offlineinstanz sein."
+
+#: cdedb/backend/session.py:240 cdedb/backend/session.py:247
 #, python-format
 msgid "Invalid %(droid_name)s token."
 msgstr "Ungültiges %(droid_name)s-Token."
 
-#: cdedb/backend/session.py:247
+#: cdedb/backend/session.py:247 cdedb/backend/session.py:254
 #, python-format
 msgid "This %(droid_name)s token has expired."
 msgstr "Dieses %(droid_name)s-Token ist abgelaufen."
@@ -3550,15 +3559,16 @@ msgstr "Diese Domain wird nicht unterstützt."
 msgid "Dict keys do not match."
 msgstr "Zueinander unpassende Datensätze."
 
-#: cdedb/frontend/application.py:120 cdedb/frontend/cron.py:51
+#: cdedb/frontend/application.py:120 cdedb/frontend/application.py:125
+#: cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr "Start im Entwicklungs- oder Offlinemodus ist unzulässig."
 
-#: cdedb/frontend/application.py:236
+#: cdedb/frontend/application.py:236 cdedb/frontend/application.py:241
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
-#: cdedb/frontend/application.py:331
+#: cdedb/frontend/application.py:331 cdedb/frontend/application.py:336
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -3570,7 +3580,7 @@ msgstr ""
 "es leider auch zu ungewollten Beschränkungen kommen. Deine Limitierung wird "
 "im Laufe der nächsten Tage automatisch zurückgesetzt."
 
-#: cdedb/frontend/application.py:350
+#: cdedb/frontend/application.py:350 cdedb/frontend/application.py:355
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -9014,8 +9024,16 @@ msgid "Statement"
 msgstr "Kontoauszug"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
-msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here."
-msgstr "Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft oder der Skatbank ein."
+msgid "Directly paste the Bank Statement from Bank für Sozialwirtschaft here."
+msgstr "Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft ein."
+
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:171
+msgid ""
+"Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank "
+"here."
+msgstr ""
+"Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft oder der "
+"Skatbank ein."
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:173
 msgid "Parse"
