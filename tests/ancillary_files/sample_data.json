@@ -7167,6 +7167,24 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": "10,50 € am 06.06.2014 gezahlt."
+        },
+        {
+            "ctime": "---now---",
+            "code": 350,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "Checkin: 22.02.2022, 18:00:00"
+        },
+        {
+            "ctime": "---now---",
+            "code": 350,
+            "submitted_by": 1,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 2,
+            "change_note": "Checkout: 23.02.2022, 10:00:00"
         }
     ],
     "assembly.assemblies": [

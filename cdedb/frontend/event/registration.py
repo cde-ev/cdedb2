@@ -1706,7 +1706,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             elif ttype == const.CheckinTransitionType.checked_out:
                 msg = n_("Already checked out.")
             else:
-                raise NotImplementedError  # pragma: no cover
+                raise RuntimeError(n_("Not implemented"))  # pragma: no cover
             rs.notify("error", msg)
             if from_checkin_page:
                 return self.checkin_form(rs, event_id, part_ids)

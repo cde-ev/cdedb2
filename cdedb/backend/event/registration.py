@@ -1810,6 +1810,14 @@ class EventRegistrationBackend(EventBaseBackend):
             return False, index
         return True, len(data)
 
+    def _make_ct_log_message(self, rs: RequestState,
+                             transition: models.CheckinTransition | CdEDBObject) -> str:
+        if isinstance(transition, models.CheckinTransition):
+            return (f"{rs.log_gettext(str(transition.transition_type))}:"
+                    f" {datetime_filter(transition.ttime, lang=rs.log_lang)}")
+        return (f"{rs.log_gettext(str(transition['transition_type']))}:"
+                f" {datetime_filter(transition['ttime'], lang=rs.log_lang)}")
+
     @access("event")
     def add_checkin_transition(self, rs: RequestState, registration_id: int,
                                ttype: const.CheckinTransitionType,
@@ -1836,9 +1844,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 'ttime': ttime or now(),
             }
             ret = self.sql_insert(rs, models.CheckinTransition.database_table, data)
-            msg = datetime_filter(data['ttime'], lang=rs.log_lang)
             self.event_log(rs, const.EventLogCodes.checkin_transition_added,
-                           reg['event_id'], reg['persona_id'], msg)
+                           reg['event_id'], reg['persona_id'],
+                           self._make_ct_log_message(rs, data))
         return ret
 
     @access("event")
@@ -1861,7 +1869,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if (tid2 and ttime2 is None) or (ttime2 and tid2 is None):
             raise ValueError(n_("Must give both or none."))
         elif ttime1 > reftime or ttime2 and ttime2 > reftime:
-            raise ValueError(n_("Must be in the past"))
+            raise ValueError(n_("Must be in the past."))
         elif ttime2 and ttime1 > ttime2:
             raise ValueError(n_("Checkout must be after checkin."))
 
@@ -1878,8 +1886,8 @@ class EventRegistrationBackend(EventBaseBackend):
                     elif prev_ct and prev_ct.ttime > ttime1:
                         raise ValueError(n_("Must be after previous checkout."))
                     if transition.ttime != ttime1:
-                        msg = (f"{datetime_filter(transition.ttime, lang=rs.log_lang)}"
-                               f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
+                        msg = (self._make_ct_log_message(rs, transition)
+                               + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
                         transition.ttime = ttime1
                         ret *= self.sql_update(rs, models.CheckinTransition.database_table,
                                               transition.to_database())
@@ -1892,15 +1900,15 @@ class EventRegistrationBackend(EventBaseBackend):
                     # the checkout must be directly after the checkin
                     transition = next(iterator, None)
                     if transition is None or transition.id != tid2:
-                        raise KeyError(n_("Invalid checkout transition."))
+                        raise KeyError(n_("Invalid checkout."))
                     if transition.transition_type != CheckinTransitionType.checked_out:
                         raise RuntimeError(n_("Inconsistent state."))
                     if ((next_ct := next(iterator, None))
                             and transition.ttime > next_ct.ttime):
                         raise ValueError(n_("Must be before next checkin."))
                     if transition.ttime != ttime2:
-                        msg = (f"{datetime_filter(transition.ttime, lang=rs.log_lang)}"
-                               f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
+                        msg = (self._make_ct_log_message(rs, transition)
+                               + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
                         transition.ttime = ttime2
                         ret *= self.sql_update(rs, models.CheckinTransition.database_table,
                                                transition.to_database())
@@ -1936,25 +1944,24 @@ class EventRegistrationBackend(EventBaseBackend):
                 self.event_log(
                     rs, const.EventLogCodes.checkin_transition_deleted,
                     reg['event_id'], reg['persona_id'],
-                    change_note=datetime_filter(last_ct.ttime, lang=rs.log_lang))
+                    change_note=self._make_ct_log_message(rs, last_ct))
             else:
-                idx1 = transitions.index(id_to_trans[tid1])
-                if not transitions[idx1 + 1].id == tid2:
+                ct1 = id_to_trans[tid1]
+                idx1 = transitions.index(ct1)
+                ct2 = transitions[idx1 + 1]
+                if not ct2.id == tid2:
                     raise ValueError(n_("Can only delete consecutive transitions."))
-                if (id_to_trans[tid1].transition_type != CheckinTransitionType.checked_in
-                    or (id_to_trans[tid2].transition_type
-                        != CheckinTransitionType.checked_out)):
+                if (ct1.transition_type != CheckinTransitionType.checked_in
+                    or (ct2.transition_type != CheckinTransitionType.checked_out)):
                     raise ValueError(n_("Can only delete checkin and following checkout."))
                 ret = self.sql_delete(
                     rs, models.CheckinTransition.database_table, (tid1, tid2))
                 self.event_log(
                     rs, const.EventLogCodes.checkin_transition_deleted,
                     reg['event_id'], reg['persona_id'],
-                    change_note=datetime_filter(
-                        id_to_trans[tid1].ttime, lang=rs.log_lang))
+                    change_note=self._make_ct_log_message(rs, ct1))
                 self.event_log(
                     rs, const.EventLogCodes.checkin_transition_deleted,
                     reg['event_id'], reg['persona_id'],
-                    change_note=datetime_filter(
-                        id_to_trans[tid2].ttime, lang=rs.log_lang))
+                    change_note=self._make_ct_log_message(rs, ct2))
             return ret
