@@ -311,16 +311,16 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         mls = await self.ldap.get_mailinglists(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", mls)
 
-
     async def test_ldap_filter_lowering(self) -> None:
         # TODO move into LDAPBackendTest when upgrading to psycopg 3.2
         # This test is only in this class because query.as_string requires a context,
-        # i.e. a database connection, to be passed in, for which we need the connection pool.
+        # i.e. a database connection, to be passed in,
+        # for which we need the connection pool.
         # Once upgrading to psycopg 3.2 we can use query.as_string() without a context.
         async def parse_and_lower(
             filter_string: str,
             attr_replacements: dict[str, str],
-        ) -> tuple[str, list["DatabaseValue_s"]]:
+        ) -> tuple[str, list[DatabaseValue_s]]:
             filterdecoder = pureldap.LDAPBERDecoderContext_Filter(
                 fallback=pureldap.LDAPBERDecoderContext(
                     fallback=pureber.BERDecoderContext(),
@@ -330,7 +330,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
                 ),
             )
             parsed_filter = parseFilter(filter_string)
-            roundtripped_filter, _ = pureber.berDecodeObject(filterdecoder, parsed_filter.toWire())
+            roundtripped_filter, _ = pureber.berDecodeObject(
+                filterdecoder, parsed_filter.toWire(),
+            )
             query, params = self.ldap.lower_ldap_filter_to_sql(
                 roundtripped_filter, attr_replacements,
             )

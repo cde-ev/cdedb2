@@ -466,7 +466,7 @@ class LDAPsqlBackend:
         """
         if isinstance(filter_, (pureldap.LDAPFilter_and, pureldap.LDAPFilter_or)):
             subqueries: list[sql.Composable] = []
-            params: list["DatabaseValue_s"] = []
+            params: list[DatabaseValue_s] = []
             for f in filter_.data:
                 q, p = cls.lower_ldap_filter_to_sql(f, attr_replacements)
                 subqueries += [q]
@@ -478,7 +478,9 @@ class LDAPsqlBackend:
                 params,
             )
         elif isinstance(filter_, pureldap.LDAPFilter_not):
-            subquery, params = cls.lower_ldap_filter_to_sql(filter_.value, attr_replacements)
+            subquery, params = cls.lower_ldap_filter_to_sql(
+                filter_.value, attr_replacements,
+            )
             return (sql.SQL("NOT ({})").format(subquery), params)
         elif isinstance(filter_, pureldap.LDAPFilter_present):
             if filter_.value.decode() not in attr_replacements:
@@ -492,7 +494,7 @@ class LDAPsqlBackend:
                 sql.SQL("{} IS NOT NULL").format(
                     sql.Identifier(attr_replacements[filter_.value.decode()]),
                 ),
-                []
+                [],
             )
         elif isinstance(filter_, pureldap.LDAPFilter_equalityMatch):
             if filter_.attributeDesc.value.decode() not in attr_replacements:
@@ -521,7 +523,9 @@ class LDAPsqlBackend:
                 filter_.substrings[0], pureldap.LDAPFilter_substrings_initial,
             ):
                 pattern += sql.SQL("'%', ")
-            pattern += sql.SQL(", '%', ").join(sql.Placeholder() for _ in filter_.substrings)
+            pattern += sql.SQL(", '%', ").join(
+                sql.Placeholder() for _ in filter_.substrings
+            )
             if not isinstance(
                 filter_.substrings[-1], pureldap.LDAPFilter_substrings_final,
             ):
@@ -543,7 +547,7 @@ class LDAPsqlBackend:
         query: sql.SQL | sql.Composed = sql.SQL(
             "SELECT id FROM core.personas WHERE NOT is_archived",
         )
-        params: list["DatabaseValue_s"] = []
+        params: list[DatabaseValue_s] = []
         if filterObject is not None:
             # We have to replace the attribute names in the LDAP filter with the
             # corresponding column names in the SQL query.
@@ -553,12 +557,15 @@ class LDAPsqlBackend:
                 "mail": "username",
                 "uid": "id",
             }
-            filter_query, filter_params = self.lower_ldap_filter_to_sql(filterObject, attr_replacements)
+            filter_query, filter_params = self.lower_ldap_filter_to_sql(
+                filterObject, attr_replacements,
+            )
             query += sql.SQL(" AND ") + filter_query
             params += filter_params
-            async with self.pool.connection() as conn:
-                logger.info("Query, params, and filter: %s, %s, %s", query.as_string(conn), params, repr(filterObject))
-        return [self.list_single_user(e["id"]) async for e in self.query_all(query, params)]
+        return [
+            self.list_single_user(e["id"])
+            async for e in self.query_all(query, params)
+        ]
 
     async def get_users_groups(self, persona_ids: Collection[int],
                                ) -> dict[int, list[str]]:
