@@ -1734,10 +1734,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         ttime1 = unwrap(request_extractor(rs, {f'ttime1_{tid1}': datetime.datetime}))
         ttime2 = None
         if tid2 is not None:
-            ttime2 = unwrap(request_extractor(rs, {f'ttime2_{tid2}': datetime.datetime}))
-
-        print(f"Form called with {event_id=}, {registration_id=}, {tid1=},"
-              f" {ttime1=}, {tid2=}, {ttime2=}")
+            ttime2 = unwrap(request_extractor(
+                rs, {f'ttime2_{tid2}': datetime.datetime}))
 
         chronologic = xsorted(registration['checkin_transitions'])
         # check positive timespan in past

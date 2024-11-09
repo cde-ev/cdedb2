@@ -1810,7 +1810,8 @@ class EventRegistrationBackend(EventBaseBackend):
             return False, index
         return True, len(data)
 
-    def _make_ct_log_message(self, rs: RequestState,
+    @staticmethod
+    def _make_ct_log_message(rs: RequestState,
                              transition: models.CheckinTransition | CdEDBObject) -> str:
         if isinstance(transition, models.CheckinTransition):
             return (f"{rs.log_gettext(str(transition.transition_type))}:"
@@ -1877,7 +1878,8 @@ class EventRegistrationBackend(EventBaseBackend):
             ret = 1
             reg = self.get_registration(rs, registration_id)
 
-            iterator: Iterator[models.CheckinTransition] = iter(xsorted(reg['checkin_transitions']))
+            iterator: Iterator[models.CheckinTransition] =\
+                iter(xsorted(reg['checkin_transitions']))
             prev_ct: Optional[models.CheckinTransition] = None
             while transition := next(iterator, None):
                 if transition.id == tid1:
@@ -1889,10 +1891,12 @@ class EventRegistrationBackend(EventBaseBackend):
                         msg = (self._make_ct_log_message(rs, transition)
                                + f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
                         transition.ttime = ttime1
-                        ret *= self.sql_update(rs, models.CheckinTransition.database_table,
-                                              transition.to_database())
-                        self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
-                                       reg['event_id'], reg['persona_id'], msg)
+                        ret *= self.sql_update(
+                            rs, models.CheckinTransition.database_table,
+                            transition.to_database())
+                        self.event_log(
+                            rs, const.EventLogCodes.checkin_transition_changed,
+                            reg['event_id'], reg['persona_id'], msg)
                     if tid2 is None:
                         break
                     assert ttime2 is not None
@@ -1910,10 +1914,12 @@ class EventRegistrationBackend(EventBaseBackend):
                         msg = (self._make_ct_log_message(rs, transition)
                                + f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
                         transition.ttime = ttime2
-                        ret *= self.sql_update(rs, models.CheckinTransition.database_table,
-                                               transition.to_database())
-                        self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
-                                       reg['event_id'], reg['persona_id'], msg)
+                        ret *= self.sql_update(
+                            rs, models.CheckinTransition.database_table,
+                            transition.to_database())
+                        self.event_log(
+                            rs, const.EventLogCodes.checkin_transition_changed,
+                            reg['event_id'], reg['persona_id'], msg)
                     break
                 prev_ct = transition
             return ret
@@ -1930,7 +1936,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not self.is_orga(rs, registration_id=registration_id):
             raise PrivilegeError(n_("Not privileged."))
 
-        with (Atomizer(rs)):
+        with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             transitions: list[models.CheckinTransition] =\
                 xsorted(reg['checkin_transitions'])
@@ -1953,7 +1959,8 @@ class EventRegistrationBackend(EventBaseBackend):
                     raise ValueError(n_("Can only delete consecutive transitions."))
                 if (ct1.transition_type != CheckinTransitionType.checked_in
                     or (ct2.transition_type != CheckinTransitionType.checked_out)):
-                    raise ValueError(n_("Can only delete checkin and following checkout."))
+                    raise ValueError(
+                        n_("Can only delete checkin and following checkout."))
                 ret = self.sql_delete(
                     rs, models.CheckinTransition.database_table, (tid1, tid2))
                 self.event_log(
