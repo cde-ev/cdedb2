@@ -10,11 +10,14 @@ e.g. `self.assertEqual("123", str(123))`.
 import asyncio
 from typing import Any, cast
 
+from ldaptor.ldapfilter import parseFilter
+from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import ber2int, int2ber
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from cdedb.database.query import DatabaseValue_s
 from cdedb.ldap.backend import LDAPsqlBackend, classproperty
 from cdedb.ldap.types import AttributeDescriptionList
 from tests.common import AsyncBasicTest, BasicTest
@@ -307,3 +310,53 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertIn("42@lists.cde-ev.de", subscribers)
         mls = await self.ldap.get_mailinglists(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", mls)
+
+
+    async def test_ldap_filter_lowering(self) -> None:
+        # TODO move into LDAPBackendTest when upgrading to psycopg 3.2
+        # This test is only in this class because query.as_string requires a context,
+        # i.e. a database connection, to be passed in, for which we need the connection pool.
+        # Once upgrading to psycopg 3.2 we can use query.as_string() without a context.
+        async def parse_and_lower(
+            filter_string: str,
+            attr_replacements: dict[str, str],
+        ) -> tuple[str, list["DatabaseValue_s"]]:
+            filterdecoder = pureldap.LDAPBERDecoderContext_Filter(
+                fallback=pureldap.LDAPBERDecoderContext(
+                    fallback=pureber.BERDecoderContext(),
+                ),
+                inherit=pureldap.LDAPBERDecoderContext(
+                    fallback=pureber.BERDecoderContext(),
+                ),
+            )
+            parsed_filter = parseFilter(filter_string)
+            roundtripped_filter, _ = pureber.berDecodeObject(filterdecoder, parsed_filter.toWire())
+            query, params = self.ldap.lower_ldap_filter_to_sql(
+                roundtripped_filter, attr_replacements,
+            )
+            async with self.ldap.pool.connection() as conn:
+                return (query.as_string(conn), params)
+
+        self.assertEqual(
+            await parse_and_lower("(s=a)", {}),
+            ("true", []),
+        )
+        self.assertEqual(
+            await parse_and_lower("(!(a=*))", {"a": "a"}),
+            ('NOT ("a" IS NOT NULL)', []),
+        )
+        self.assertEqual(
+            await parse_and_lower("(s=a*b)", {"s": "s"}),
+            ('''"s" LIKE CONCAT(%s, '%', %s)''', ["a", "b"]),
+        )
+        self.assertEqual(
+            await parse_and_lower("(s=*c*)", {"s": "s"}),
+            ('''"s" LIKE CONCAT('%', %s, '%')''', ["c"]),
+        )
+        self.assertEqual(
+            await parse_and_lower("(&(a=1)(|(b=2)(b=3)))", {"a": "x", "b": "y"}),
+            (
+                '("x" = %s) AND (("y" = %s) OR ("y" = %s))',
+                ["1", "2", "3"],
+            ),
+        )

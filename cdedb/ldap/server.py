@@ -187,10 +187,10 @@ class LdapHandler:
         try:
             await handler(msg.value, msg.controls, reply)
         except LDAPException as e:
-            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
             reply(error_handler(e.resultCode, e.message))
         except Exception as e:
-            logger.error(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
+            logger.exception(f"During handling of {name} (msg.id {msg.id}): {repr(e)}")
             reply(error_handler(LDAPProtocolError.resultCode, str(e)))
         return
 
