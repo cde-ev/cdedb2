@@ -182,7 +182,7 @@
     {%- set nickname = persona['nickname'] or "" %}
     {%- set given_names = persona['given_names'] %}
     {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
-    {%- if use_legal_name %}
+    {%- if use_legal_name -%}
         {{ persona['legal_given_names'] }}
     {%- elif include_nickname %}
         {%- if nickname in given_names %}
@@ -193,10 +193,10 @@
             {%- endif %}
         {%- else -%}
             {{ given_names }} ({{ nickname }})
-        {%- endif -%}
-    {% else %}
+        {%- endif %}
+    {%- else -%}
         {{ given_names }}
-    {% endif %}
+    {%- endif %}
     {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
     {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
