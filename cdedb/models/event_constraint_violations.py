@@ -4,8 +4,9 @@ Classes for constraint violations in the event realm.
 
 import dataclasses
 import itertools
+from abc import abstractmethod
 from functools import cached_property
-from typing import Self
+from typing import Any, Self
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -44,6 +45,18 @@ class ConstraintViolation:
             if self.registration and self.track else None
         )
 
+    # Constructor interface.
+    # Inheritance does not work very nicely with typing, due to different signatures.
+    @classmethod
+    @abstractmethod
+    def check(cls, event: models.Event, *, kwargs: Any) -> Self | None:
+        """
+        Takes the event and some entites and determines whether there is a violation.
+
+        If so this constructor returns a new instance with the appropriate severity.
+        """
+        raise NotImplementedError
+
     # Display interface.
     def get_translation(self) -> tuple[str, CdEDBObject]:
         """
@@ -70,13 +83,18 @@ class MEPConstraintViolation(ConstraintViolation):
     part_group: models.PartGroup
 
     @classmethod
-    def check(
+    def check(  # type: ignore[override]
             cls, event: models.Event,
             *,
             registration: CdEDBObject,
             persona: CdEDBObject,
             mep_group: models.PartGroup,
     ) -> Self | None:
+        """
+        If the given registration is present at competing parts, return a violation.
+
+        Depending on the exact status, the violation can have a different severity.
+        """
         participant_parts = {
             part_id for part_id in mep_group.parts
             if registration['parts'][part_id]['status']
@@ -142,13 +160,19 @@ class CCSConstraintViolation(ConstraintViolation):
     track_group: models.TrackGroup
 
     @classmethod
-    def check(
+    def check(  # type: ignore[override]
             cls, event: models.Event,
             *,
             registration: CdEDBObject,
             persona: CdEDBObject,
             ccs_group: models.TrackGroup,
     ) -> Self | None:
+        """
+        If the registration has unyncen course choices, return a violation.
+
+        The backend should always ensure, that this cannot occur, so such a
+        violation has a very high severity if it does occur.
+        """
         if any(
                 registration['tracks'][t1]['choices']
                 != registration['tracks'][t2]['choices']
@@ -188,12 +212,13 @@ class MECConstraintViolation(ConstraintViolation):
     track_group: models.TrackGroup
 
     @classmethod
-    def check(
+    def check(  # type: ignore[override]
             cls, event: models.Event,
             *,
             course: CdEDBObject,
             mec_group: models.TrackGroup,
     ) -> Self | None:
+        """If the given course takes place in competing tracks, return a violation."""
         if len(set(course['active_segments']) & set(mec_group.tracks)) > 1:
             return cls(
                 event=event,
