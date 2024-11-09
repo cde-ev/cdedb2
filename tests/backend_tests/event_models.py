@@ -1,4 +1,4 @@
-# pylint: disable=missing-module-docstring
+
 import datetime
 import decimal
 
@@ -581,7 +581,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 1. Hälfte",
                     shortname="TN 1H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(6, 7, 8),  # type: ignore[arg-type]
                 ),
                 7: models.PartGroup(
@@ -590,7 +590,7 @@ class TestEventModels(BackendTest):
                     title="Teilnehmer 2. Hälfte",
                     shortname="TN 2H",
                     notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
+                    constraint_type=const.EventPartGroupType.mutually_exclusive_participants,
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
                 10: models.PartGroup(

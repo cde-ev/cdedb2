@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import decimal
@@ -1273,7 +1272,7 @@ class TestCdEFrontend(FrontendTest):
         f['transaction_ids'] = [1001, 1002]
         self.submit(f, button="success")
 
-        payment_date = self.app.app.cde._calculate_payment_date()  # pylint: disable=protected-access
+        payment_date = self.app.app.cde._calculate_payment_date()
         log_expectation = [
             {
                 'code': const.FinanceLogCodes.lastschrift_transaction_issue,
@@ -1836,8 +1835,8 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'  # pylint: disable=line-too-long
-            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'  # pylint: disable=line-too-long
+            '"pa14";"1a";"Dino";"Daniel";"";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'
+            '"pa14";"1a";"Jalapeño";"Janis";"Jens";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'
         )
 
         self.traverse({'description': 'Mitglieder'},

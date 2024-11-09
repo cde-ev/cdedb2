@@ -623,7 +623,7 @@ class QueryOrderEntry:
 
     @property
     def select_with_alias(self) -> str:
-        return f'{self.select} AS "{Query._alias_column(self.column)}"'  # pylint: disable=protected-access
+        return f'{self.select} AS "{Query._alias_column(self.column)}"'
 
     @property
     def order_by(self) -> str:

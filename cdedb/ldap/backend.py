@@ -289,12 +289,12 @@ class LDAPsqlBackend:
     ###############
 
     @classproperty
-    def root_dn(self) -> DN:  # pylint: disable=no-self-use
+    def root_dn(self) -> DN:
         """The root entry of the ldap tree."""
         return DN("")
 
     @classproperty
-    def subschema_dn(self) -> DN:  # pylint: disable=no-self-use
+    def subschema_dn(self) -> DN:
         """The DN containing information about the supported schemas.
 
         This is needed by f.e. Apache Directory Studio to determine which
@@ -303,7 +303,7 @@ class LDAPsqlBackend:
         return DN("cn=subschema")
 
     @classproperty
-    def de_dn(self) -> DN:  # pylint: disable=no-self-use
+    def de_dn(self) -> DN:
         return DN("dc=de")
 
     @classproperty

@@ -5,7 +5,6 @@ is needed for creation of validators and serializers and thus we keep
 one list instead of two.
 """
 
-# pylint: disable=wildcard-import, unused-import, unused-wildcard-import
 
 import enum
 

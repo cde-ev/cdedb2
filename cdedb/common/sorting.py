@@ -53,7 +53,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
     For users, the interface of this function should be identical
     to sorted().
     """
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
+    return sorted(iterable, key=lambda x: collate(key(x)),
                   reverse=reverse)
 
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=protected-access,missing-module-docstring
 
 from collections.abc import Collection
 from dataclasses import fields

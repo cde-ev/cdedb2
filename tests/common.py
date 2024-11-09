@@ -192,7 +192,6 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
-    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend()
     secrets = SecretsConfig()
@@ -465,9 +464,9 @@ class BackendTest(CdEDBTest):
         cls.ml = cls.initialize_backend(MlBackend)
         cls.assembly = cls.initialize_backend(AssemblyBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
-        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
+        cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
-        cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined] # pylint: disable=attribute-defined-outside-init
+        cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined]
             rs.sessionkey, persona_id)
         cls.translations = setup_translations(cls.conf)
 
@@ -1837,7 +1836,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
+        codes = [field._value for field in f.fields['codes']]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)

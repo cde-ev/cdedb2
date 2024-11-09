@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-module-docstring
 
 import datetime
 import json
@@ -1533,7 +1532,7 @@ class TestAssemblyBackend(BackendTest):
             # Advance time and add new versions.
             for i in range(n):
                 frozen_time.tick(delta=2*delta)
-                # pylint: disable=line-too-long
+
                 pdf_content = "%PDF-1.0\r\n1 0 obj<</Pages 2 0 R>>endobj 2 0 obj<</Kids[3 0 R]/Count 1>>endobj 3 0 obj<</MediaBox[0 0 3 3]>>endobj\r\ntrailer<</Root 1 0 R>>"
                 pdf = (pdf_content + "\r\n" * i).encode('ascii')
                 hashes[i+1] = self.assembly.get_attachment_store(self.key).store(pdf)

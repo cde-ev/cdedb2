@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long,bad-builtin,missing-module-docstring
+
 import dataclasses
 from collections.abc import Set as AbstractSet
 from functools import partial

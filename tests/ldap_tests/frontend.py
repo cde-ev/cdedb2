@@ -211,7 +211,7 @@ class TestLDAP(BasicTest):
         attributes = ["memberOf"]
         expectation = {
             'memberOf': [
-                # pylint: disable=line-too-long
+
                 'cn=42-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -476,7 +476,7 @@ class TestLDAP(BasicTest):
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-            # pylint: disable=line-too-long
+
             'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -490,7 +490,7 @@ class TestLDAP(BasicTest):
             'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
-            # pylint: disable=line-too-long
+
             'cn=aka-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=test-gast-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=participants-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
@@ -534,7 +534,7 @@ class TestLDAP(BasicTest):
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-            # pylint: disable=line-too-long
+
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -543,7 +543,7 @@ class TestLDAP(BasicTest):
             'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
-            # pylint: disable=line-too-long
+
             'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
