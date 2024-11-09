@@ -37,7 +37,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.types import VALIDATOR_LOOKUP
+from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -731,7 +731,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if orga_input:
             field_params: vtypes.TypeMapping = {
                 f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                    VALIDATOR_LOOKUP[field.kind.name]]  # noqa: F821  # seems like a bug.
+                    FIELD_DATATYPE_VALIDATORS[field.kind]]
                 for field in event.fields.values()
                 if field.association == const.FieldAssociations.registration
             }

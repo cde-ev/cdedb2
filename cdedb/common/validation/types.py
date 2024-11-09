@@ -164,9 +164,8 @@ QueryInput = _NewType("QueryInput", _Query)
 LogFilter = _NewType("LogFilter", _CdEDBObject)
 CustomQueryFilter = _NewType("CustomQueryFilter", _CdEDBObject)
 
-# This is used for places where transitioning to the new API is not yet feasible
-# e.g. query specifications
-VALIDATOR_LOOKUP: dict[str, type[_Any]] = {
+
+QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "str": str,
     "id": ID,
     "int": int,
@@ -178,6 +177,7 @@ VALIDATOR_LOOKUP: dict[str, type[_Any]] = {
     "non_negtative_float": NonNegativeFloat,
     "phone": Phone,
     # This is not strictly accurate, but an acceptable fallback.
+    "iban": str,
     "enum_int": int,
     "enum_str": str,
 }

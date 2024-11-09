@@ -51,6 +51,7 @@ class TestEventModels(BackendTest):
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
             notify_on_registration=const.NotifyOnRegistration.everytime,
+            reimbursement_iban_field_id=None,
             lodge_field_id=3,  # type: ignore[arg-type]
             parts={
                 1: models.EventPart(
@@ -432,6 +433,7 @@ class TestEventModels(BackendTest):
             is_course_assignment_visible=False,
             use_additional_questionnaire=False,
             notify_on_registration=const.NotifyOnRegistration.everytime,
+            reimbursement_iban_field_id=None,
             lodge_field_id=None,
             parts={
                 6: models.EventPart(

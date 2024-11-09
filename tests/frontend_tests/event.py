@@ -7196,3 +7196,79 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
                     self.key, const.SubscriptionAction.add_subscriber,
                     exclusive_ml.id, persona_id,
                 )
+
+    @event_keeper
+    @as_users("garcia")
+    def test_reimbursement_iban_field(self) -> None:
+        # Create a new string datafield.
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f["create_-1"] = True
+        f["field_name_-1"] = "iban"
+        f["association_-1"] = const.FieldAssociations.registration
+        f["kind_-1"] = const.FieldDatatypes.str
+        self.submit(f)
+
+        # Enter a valid IBAN.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Inga"
+        self.submit(f)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        f["fields.iban"] = iban = "DE26 3702 0500 0008 0689 00"
+        self.submit(f)
+        self.assertPresence(iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual(iban, f["fields.iban"].value)
+
+        # Enter an invalid IBAN.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Anton"
+        self.submit(f)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        f["fields.iban"] = non_iban = "random bullshit"
+        self.submit(f)
+        self.assertPresence(non_iban)
+
+        # Change datatype to IBAN.
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f['kind_1001'] = const.FieldDatatypes.iban
+        self.submit(f)
+
+        # Check conversions.
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Inga"
+        self.submit(f)
+        self.assertPresence(iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual(iban.replace(" ", ""), f["fields.iban"].value)
+
+        self.traverse("Übersicht")
+        f = self.response.forms["quickregistrationform"]
+        f["phrase"] = "Anton"
+        self.submit(f)
+        self.assertNonPresence(non_iban)
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        self.assertEqual("", f["fields.iban"].value)
+
+        # Configure reimbursement field.
+        self.traverse("Konfiguration")
+        f = self.response.forms["changeeventform"]
+        f["reimbursement_iban_field_id"] = 1001
+        self.submit(f)
+        self.assertNonPresence(non_iban)
+        self.traverse(
+            "Teilnahmebeiträge", "Beitrags-Statistik",
+            {"linkid": "surplus_query"},
+        )
+        self.assertPresence("Inga", div="result-container")
+        self.assertPresence(iban, div="result-container")

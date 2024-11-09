@@ -182,6 +182,7 @@ I18N_STRINGS = (
     n_("FieldDatatypes.non_negative_int"),
     n_("FieldDatatypes.non_negative_float"),
     n_("FieldDatatypes.phone"),
+    n_("FieldDatatypes.iban"),
 
     n_("Genders.female"),
     n_("Genders.male"),
