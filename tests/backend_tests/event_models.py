@@ -593,24 +593,6 @@ class TestEventModels(BackendTest):
                     constraint_type=const.EventPartGroupType.mutually_exclusive_participants,  # pylint: disable=line-too-long
                     parts=(9, 10, 11),  # type: ignore[arg-type]
                 ),
-                8: models.PartGroup(
-                    id=8,  # type: ignore[arg-type]
-                    event_id=event_id,
-                    title="Kurse 1. Hälfte",
-                    shortname="Kurs 1H",
-                    notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_courses,
-                    parts=(6, 7, 8),  # type: ignore[arg-type]
-                ),
-                9: models.PartGroup(
-                    id=9,  # type: ignore[arg-type]
-                    event_id=event_id,
-                    title="Kurse 2. Hälfte",
-                    shortname="Kurs 2H",
-                    notes=None,
-                    constraint_type=const.EventPartGroupType.mutually_exclusive_courses,
-                    parts=(9, 10, 11),  # type: ignore[arg-type]
-                ),
                 10: models.PartGroup(
                     id=10,  # type: ignore[arg-type]
                     event_id=event_id,
@@ -650,6 +632,42 @@ class TestEventModels(BackendTest):
                     notes=None,
                     constraint_type=const.CourseTrackGroupType.course_choice_sync,
                     sortkey=3,
+                    tracks=(9, 11, 13),  # type: ignore[arg-type]
+                ),
+                4: models.TrackGroup(
+                    id=4,  # type: ignore[arg-type]
+                    event_id=event_id,
+                    title="Kurse 1. Hälfte",
+                    shortname="Kurs 1H",
+                    notes=None,
+                    sortkey=1,
+                    constraint_type=(
+                        const.CourseTrackGroupType.mutually_exclusive_courses
+                    ),
+                    tracks=(6, 7, 8),  # type: ignore[arg-type]
+                ),
+                5: models.TrackGroup(
+                    id=5,  # type: ignore[arg-type]
+                    event_id=event_id,
+                    title="Kurse 2. Hälfte nachmittags",
+                    shortname="Kurs 2Hn",
+                    notes=None,
+                    sortkey=4,
+                    constraint_type=(
+                        const.CourseTrackGroupType.mutually_exclusive_courses
+                    ),
+                    tracks=(10, 12, 14),  # type: ignore[arg-type]
+                ),
+                6: models.TrackGroup(
+                    id=6,  # type: ignore[arg-type]
+                    event_id=event_id,
+                    title="Kurse 2. Hälfte morgens",
+                    shortname="Kurs 2Hm",
+                    notes=None,
+                    sortkey=3,
+                    constraint_type=(
+                        const.CourseTrackGroupType.mutually_exclusive_courses
+                    ),
                     tracks=(9, 11, 13),  # type: ignore[arg-type]
                 ),
             },

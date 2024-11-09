@@ -120,10 +120,17 @@ RUN python3 -m pip --no-cache-dir install --break-system-packages \
     types-zxcvbn \
     'playwright>=1.37.0'
 
+# Retrieve browser engines, but only do so for root (which runs the tests in
+# the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
+# want to save some disk space.
+RUN /usr/local/bin/playwright install
+# RUN sudo -u cdedb /usr/local/bin/playwright install
+
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
 COPY ./related/docker/run-all.sh /run-all.sh
 COPY ./related/docker/run-gunicorn.sh /run-gunicorn.sh
+
 # get the configuration files from the autobuild
 COPY ./related/auto-build/files/stage3 /tmp/autobuild/
 
@@ -165,12 +172,6 @@ RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     && echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers \
     \
     && touch /CONTAINER
-
-# Retrieve browser engines, but only do so for root (which runs the tests in
-# the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
-# want to save some disk space.
-RUN /usr/local/bin/playwright install
-# RUN sudo -u cdedb /usr/local/bin/playwright install
 
 # make config persistent
 VOLUME /etc/cdedb

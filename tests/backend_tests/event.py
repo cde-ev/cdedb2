@@ -28,7 +28,6 @@ from cdedb.common import (
     cast_fields,
     nearly_now,
     now,
-    unwrap,
 )
 from cdedb.common.exceptions import APITokenError, PartialImportError, PrivilegeError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -563,10 +562,10 @@ class TestEventBackend(BackendTest):
                     'min_choices': 2,
                     'sortkey': 1,
                     'course_room_field_id': None,
-                    'track_group_ids': {1},
+                    'track_group_ids': {1, 4},
                 },
             },
-            'part_group_ids': {1, 3, 6, 8},
+            'part_group_ids': {1, 3, 6},
         }
         self.assertEqual(
             expectation_part,
@@ -654,10 +653,8 @@ class TestEventBackend(BackendTest):
         track_id = 6
         event = self.event.get_event(self.key, event_id)
         self.assertTrue(event.tracks[track_id].track_groups)
-        self.assertTrue(unwrap(
-            event.tracks[track_id].track_groups).constraint_type.is_sync())
-        self.assertGreater(
-            len(unwrap(event.tracks[track_id].track_groups).tracks), 1)
+        self.assertTrue(event.track_groups[1].constraint_type.is_sync())
+        self.assertGreater(len(event.track_groups[1].tracks), 1)
         reg_data = {
             'id': registration_id,
             'tracks': {
@@ -4408,16 +4405,6 @@ class TestEventBackend(BackendTest):
                 'part_ids': [9, 10, 11],
                 'shortname': 'TN 2H',
                 'title': 'Teilnehmer 2. Hälfte'},
-            8: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
-                'notes': None,
-                'part_ids': [7, 8],
-                'shortname': 'Kurs 1H',
-                'title': 'Kurse 1. Hälfte'},
-            9: {'constraint_type': const.EventPartGroupType.mutually_exclusive_courses,
-                'notes': None,
-                'part_ids': [9, 10, 11],
-                'shortname': 'Kurs 2H',
-                'title': 'Kurse 2. Hälfte'},
             10: {'constraint_type': const.EventPartGroupType.mailinglist_link,
                 'notes': None,
                 'part_ids': [7, 10],

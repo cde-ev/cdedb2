@@ -75,7 +75,7 @@ reload: i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
 	kill $$(pidof -x gunicorn) || true
-	/run-gunicorn.sh
+	sudo /run-gunicorn.sh
 else
 	sudo systemctl restart apache2.service cdedb-app.service
 endif

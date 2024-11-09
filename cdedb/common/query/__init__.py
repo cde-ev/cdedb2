@@ -1142,7 +1142,7 @@ def make_registration_query_spec(event: "models.Event",
     # Add entries for track groups.
     for track_group in xsorted(event.track_groups.values()):
         if track_group.constraint_type != const.CourseTrackGroupType.course_choice_sync:
-            continue  # type: ignore[unreachable]
+            continue
 
         spec.update(get_course_choice_spec(
             cast("models.SyncTrackGroup", track_group)))

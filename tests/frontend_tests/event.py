@@ -6455,7 +6455,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         f['track_min_choices_8'] = 9
         self.submit(f)
         event = self.event.get_event(self.key, 4)
-        for track in unwrap(event.tracks[8].track_groups).tracks.values():
+        for track in event.track_groups[1].tracks.values():
             self.assertEqual(track.num_choices, 10)
             self.assertEqual(track.min_choices, 9)
 

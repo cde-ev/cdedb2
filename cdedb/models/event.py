@@ -637,8 +637,7 @@ class PartGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        # TODO maybe sort by constraint_type first?
-        return (self.title, )
+        return (self.constraint_type, self.title)
 
 
 @dataclasses.dataclass
@@ -683,7 +682,7 @@ class TrackGroup(EventDataclass):
         return query, params
 
     def get_sortkey(self) -> Sortkey:
-        return self.sortkey, self.constraint_type, self.title
+        return self.constraint_type, self.sortkey, self.title
 
 
 class SyncTrackGroup(TrackGroup, CourseChoiceObject):
@@ -717,7 +716,9 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, CourseChoiceObject):
             return CourseChoiceObject.__lt__(self, other)
-        return super().__lt__(other)
+        if isinstance(other, self.__class__):
+            return super().__lt__(other)
+        return not other < self
 
 
 #
