@@ -7,7 +7,6 @@ from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from typing import Any, Callable, Optional, Union
 
 import ldaptor.entryhelpers
-import ldaptor.ldapfilter as ldapfilter
 import ldaptor.ldiftree
 import ldaptor.protocols.pureldap as pureldap
 from ldaptor.attributeset import LDAPAttributeSet
@@ -158,7 +157,7 @@ class CdEDBBaseLDAPEntry(
             an anonymous search is performed.
         """
         if filterObject is None:
-            filterObject = pureldap.LDAPFilterMatchAll()
+            filterObject = pureldap.LDAPFilterMatchAll
 
         if scope is None:
             scope = pureldap.LDAP_SCOPE_wholeSubtree
