@@ -17,13 +17,17 @@
             {{ util.href(cdedblink("core/contact"), gettext("Contact"), aclass="list-group-item",
                     icon="at", active=(sidenav_active=='core_contact')) }}
         </div>
-        {% if user.admin_views.intersection(("core_user", "cde_user", "event_user", "genesis", "meta_admin", "auditor")) %}
+        {% if user.admin_views.intersection(("core_user", "user_review", "genesis", "meta_admin", "auditor")) %}
             <div class="list-group tear-down">
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
                         icon="users", active=(sidenav_active=='core_manage_users')) }}
             {% endif %}
-            {% if user.admin_views.intersection(('core_user', 'cde_user', 'event_user')) %}
+            {% if "ml_user" in user.admin_views or "core_user" in user.admin_views %}
+                {{ util.href(cdedblink("core/email_status_overview"), gettext("Defect Addresses"),
+                        icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'defect_addresses')) }}
+            {% endif %}
+            {% if 'user_review' in user.admin_views %}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
@@ -55,7 +59,8 @@
 
 {% block adminviews %}
     {{ util.admin_views_toggle((
-            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["core_user", "genesis"]),
+            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["core_user"]),
+            (gettext("User Review"), ["user_review", "genesis"], None),
             (gettext("Admin Administration"), ["meta_admin"], None),
             (gettext("Core Administration"), ["core"], None),
             (gettext("Auditor"), ["auditor"], None),

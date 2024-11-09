@@ -26,24 +26,53 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    Silencer, access, affirm_dataclass, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
-    encrypt_password, internal, singularize,
+    Silencer,
+    access,
+    affirm_dataclass,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    encrypt_password,
+    internal,
+    singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, RequestState, cast_fields, glue,
-    json_serialize, make_persona_name, now, unwrap,
+    EVENT_SCHEMA_VERSION,
+    CdEDBLog,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CdEDBOptionalMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    RequestState,
+    cast_fields,
+    glue,
+    json_serialize,
+    make_persona_name,
+    now,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, EVENT_FEE_FIELDS,
-    EVENT_FIELDS, EVENT_PART_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
-    PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_STATUS_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, STORED_EVENT_QUERY_FIELDS, TRACK_GROUP_FIELDS,
+    COURSE_FIELDS,
+    COURSE_SEGMENT_FIELDS,
+    COURSE_TRACK_FIELDS,
+    EVENT_FEE_FIELDS,
+    EVENT_FIELDS,
+    EVENT_PART_FIELDS,
+    LODGEMENT_FIELDS,
+    LODGEMENT_GROUP_FIELDS,
+    PART_GROUP_FIELDS,
+    PERSONA_EVENT_FIELDS,
+    PERSONA_STATUS_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS,
+    STORED_EVENT_QUERY_FIELDS,
+    TRACK_GROUP_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import EventLogFilter
@@ -143,25 +172,20 @@ class EventBaseBackend(EventLowLevelBackend):
         return self.generic_retrieve_log(rs, log_filter)
 
     @access("anonymous")
-    def list_events(self, rs: RequestState, visible: Optional[bool] = None,
-                       current: Optional[bool] = None,
-                       archived: Optional[bool] = None) -> dict[int, str]:
+    def list_events(self, rs: RequestState, current: Optional[bool] = None,
+                    archived: Optional[bool] = None) -> dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
         """
-        subquery = glue(
-            "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-            "e.is_archived, e.is_cancelled, MAX(p.part_end) AS event_end",
-            "FROM event.events AS e JOIN event.event_parts AS p",
-            "ON p.event_id = e.id",
-            "GROUP BY e.id")
+        subquery = (
+            "SELECT e.id, e.registration_start, e.title, e.is_archived,"
+            " e.is_cancelled, MAX(p.part_end) AS event_end"
+            " FROM event.events AS e JOIN event.event_parts AS p ON p.event_id = e.id"
+            " GROUP BY e.id")
         query = f"SELECT e.* from ({subquery}) as e"
         constraints = []
         params = []
-        if visible is not None:
-            constraints.append("is_visible = %s")
-            params.append(visible)
         if current is not None:
             if current:
                 constraints.append("e.event_end > now()")

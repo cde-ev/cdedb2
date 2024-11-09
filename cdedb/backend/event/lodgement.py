@@ -13,13 +13,23 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    read_conditional_write_composer, singularize,
+    Silencer,
+    access,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    read_conditional_write_composer,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PsycoJson,
-    RequestState, cast_fields, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    DefaultReturnCode,
+    DeletionBlockers,
+    PsycoJson,
+    RequestState,
+    cast_fields,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LODGEMENT_FIELDS

@@ -133,6 +133,8 @@ CREATE TABLE core.personas (
         mobile                  varchar,
         address_supplement      varchar,
         address                 varchar,
+        -- whether to show precise address in member search
+        show_address            boolean NOT NULL DEFAULT TRUE,
         postal_code             varchar,
         -- probably a city
         location                varchar,
@@ -144,6 +146,8 @@ CREATE TABLE core.personas (
         birth_name              varchar DEFAULT NULL,
         address_supplement2     varchar,
         address2                varchar,
+        -- whether to show precise address in member search
+        show_address2            boolean NOT NULL DEFAULT TRUE,
         postal_code2            varchar,
         -- probably a city
         location2               varchar,
@@ -206,8 +210,8 @@ GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_adm
 GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
-GRANT UPDATE (nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
-GRANT UPDATE (birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
+GRANT UPDATE (nickname, given_names, legal_given_names, family_name, title, name_supplement, pronouns, pronouns_nametag, pronouns_profile, gender, birthday, telephone, mobile, address_supplement, address, show_address, postal_code, location, country, fulltext, username, password_hash) ON core.personas TO cdb_persona;
+GRANT UPDATE (birth_name, address_supplement2, address2, show_address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, decided_search, bub_search, foto, paper_expuls, is_searchable, donation) ON core.personas TO cdb_member;
 -- includes notes in addition to cdb_member
 GRANT UPDATE, INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
@@ -414,12 +418,14 @@ CREATE TABLE core.changelog (
         mobile                  varchar,
         address_supplement      varchar,
         address                 varchar,
+        show_address            boolean NOT NULL DEFAULT TRUE,
         postal_code             varchar,
         location                varchar,
         country                 varchar,
         birth_name              varchar,
         address_supplement2     varchar,
         address2                varchar,
+        show_address2           boolean NOT NULL DEFAULT TRUE,
         postal_code2            varchar,
         location2               varchar,
         country2                varchar,
@@ -448,6 +454,17 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
+CREATE TABLE core.email_states (
+        id                      serial PRIMARY KEY,
+        address                 varchar NOT NULL UNIQUE,
+        -- see cdedb.database.constants.EmailStatus
+        status                  integer NOT NULL,
+        notes                   varchar
+);
+GRANT SELECT on core.email_states TO cdb_anonymous;
+GRANT SELECT, UPDATE ON core.email_states_id_seq TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON core.email_states TO cdb_admin;
+
 CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
@@ -475,6 +492,17 @@ CREATE TABLE core.anonymous_messages (
 CREATE INDEX anonymous_messages_message_id_idx ON core.anonymous_messages(message_id);
 GRANT SELECT, UPDATE(message_id, encrypted_data), INSERT ON core.anonymous_messages TO cdb_persona;
 GRANT SELECT, UPDATE ON core.anonymous_messages_id_seq TO cdb_persona;
+
+-- Read-Only table translating german postal codes into coordinates for nearby search.
+DROP TABLE IF EXISTS core.postal_code_locations;
+CREATE TABLE core.postal_code_locations (
+        postal_code     varchar PRIMARY KEY,
+        name            varchar,
+        earth_location  earth,
+        lat             float8,
+        long            float8
+);
+GRANT SELECT ON core.postal_code_locations TO cdb_persona;
 
 ---
 --- SCHEMA cde
@@ -869,13 +897,17 @@ CREATE TABLE event.field_definitions (
         event_id                integer NOT NULL REFERENCES event.events(id),
         -- the field_name is an identifier and may not be changed.
         field_name              varchar NOT NULL,
-        -- the title is displayed to the user, may contain any string and can be changed.
-        title                   varchar NOT NULL,
-        sortkey                 integer NOT NULL DEFAULT 0,
         -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
+        -- the title is displayed to the user, may contain any string and can be changed.
+        title                   varchar NOT NULL,
+        -- the description is shown as info text near field inputs and values.
+        description             varchar DEFAULT NULL,
+        -- fields are grouped by their `sort_group` string, then sorted by sortkey within that group.
+        sort_group              varchar DEFAULT NULL,
+        sortkey                 integer NOT NULL DEFAULT 0,
         -- whether or not to display this field during checkin.
         checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
@@ -910,6 +942,8 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
+        -- visibility on course list.
+        is_visible              boolean NOT NULL DEFAULT TRUE,
         -- orga remarks
         notes                   varchar,
         -- additional data, customized by each orga team
@@ -1254,7 +1288,7 @@ CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        secret                  varchar,
+        secret                  varchar UNIQUE,
         UNIQUE (persona_id, assembly_id)
 );
 CREATE INDEX attendees_assembly_id_idx ON assembly.attendees(assembly_id);
@@ -1385,9 +1419,16 @@ CREATE TABLE ml.mailinglists (
         -- event awareness
         -- event_id is not NULL if associated to an event
         event_id                integer REFERENCES event.events(id),
+        -- only include registrations of this event part group.
+        -- If empty, this includes registrations from __all__ parts.
+        -- May only be set if event id is set.
+        -- Should only refer to a part group of type `mailinglist_link`.
+        event_part_group_id     integer DEFAULT NULL REFERENCES event.part_groups(id),
+        CONSTRAINT mailinglists_no_event_specific_without_event
+            CHECK (event_id IS NOT NULL OR event_part_group_id IS NULL),
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
-        -- this may be empty, in which case this is an orga list
+        -- If empty, this matches __no__ registrations.
         registration_stati      integer[] NOT NULL DEFAULT array[]::integer[],
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly

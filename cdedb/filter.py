@@ -8,10 +8,22 @@ import re
 import threading
 from collections import Counter
 from collections.abc import (
-    Collection, Container, ItemsView, Iterable, Mapping, Sequence,
+    Collection,
+    Container,
+    ItemsView,
+    Iterable,
+    Mapping,
+    Sequence,
 )
 from typing import (
-    TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
 )
 
 import bleach

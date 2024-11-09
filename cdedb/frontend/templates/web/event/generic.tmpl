@@ -147,13 +147,13 @@
         {% if field['kind'] == datatypes.bool %}
             {{ util.deko_checkbox(checked=entry) }}
         {% elif field['kind'] == datatypes.date %}
-            {{ entry|date(lang=lang, passthrough=True) }}
+            {{ entry|date(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] == datatypes.datetime %}
-            {{ entry|datetime(lang=lang, passthrough=True) }}
+            {{ entry|datetime(lang=lang, passthrough=True) or otherwise }}
         {% elif field['kind'] in (datatypes.float, datatypes.non_negative_float) %}
-            {{ entry|decimal(lang=lang) }}
+            {{ entry|decimal(lang=lang) or otherwise }}
         {% elif field['kind'] == datatypes.phone %}
-            {{ util.tel_link(entry|phone) }}
+            {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
@@ -231,9 +231,15 @@
 {% macro print_field_inputs(association) %}
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
-        {% for field in ambience['event']['fields'].values()|sort
-                if field['association'] == association %}
-            {{ form_field_input(field) }}
+        {% for title, fields in ambience['event'].grouped_fields[association].items() %}
+            {% if ambience['event'].grouped_fields[association]|length > 1 %}
+                <h4 class="heading-underline">
+                    {{ title or gettext("Other Fields") }}
+                </h4>
+            {% endif %}
+            {% for field in fields %}
+                {{ form_field_input(field, info=field.description) }}
+            {% endfor %}
         {% else %}
             <p class="text-muted">
                 {% if association == enums['FieldAssociations'].lodgement %}

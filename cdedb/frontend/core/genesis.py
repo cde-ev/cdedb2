@@ -15,10 +15,15 @@ from cdedb.common import CdEDBObject, GenesisDecision, RequestState, merge_dicts
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.validation.validate import (
-    GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS,
+    GENESIS_CASE_EXPOSED_FIELDS,
+    PERSONA_COMMON_FIELDS,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
+    REQUESTdata,
+    REQUESTdatadict,
+    REQUESTfile,
+    access,
+    check_validation as check,
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
@@ -27,9 +32,8 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 GenesisRealmOptionName = collections.namedtuple(
     'GenesisRealmOptionName', ['realm', 'name'])
 GENESIS_REALM_OPTION_NAMES = (
-    GenesisRealmOptionName("event", n_("CdE event")),
-    GenesisRealmOptionName("cde", n_("CdE membership")),
-    GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
+    GenesisRealmOptionName("cde", n_("CdE membership & events")),
+    GenesisRealmOptionName("event", n_("CdE events")),
     GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 

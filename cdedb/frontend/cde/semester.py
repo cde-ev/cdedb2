@@ -8,13 +8,19 @@ which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin
 
 from werkzeug import Response
 
+import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import CdELogFilter
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, TransactionObserver, Worker, access,
-    make_membership_fee_reference, make_postal_address,
+    REQUESTdata,
+    REQUESTdatadict,
+    TransactionObserver,
+    Worker,
+    access,
+    make_membership_fee_reference,
+    make_postal_address,
 )
 
 
@@ -217,11 +223,13 @@ class CdESemesterMixin(CdEBaseFrontend):
                 if persona:
                     # TODO: somehow combine all failures into a single mail.
                     # This requires storing the ids somehow.
+                    defect_addresses = self.coreproxy.list_email_states(
+                        rrs, const.EmailStatus.defect_states())
                     mail = self._create_mail(
                         text=f"Automated archival of persona {persona['id']} failed",
                         headers={'Subject': "Automated Archival failure",
                                  'To': (rrs.user.username,)},
-                        attachments=None)
+                        attachments=None, defect_addresses=defect_addresses)
                     self._send_mail(mail)
             return proceed
 

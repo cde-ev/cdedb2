@@ -10,7 +10,12 @@ import cdedb.models.droid as model_droid
 from cdedb.common import RequestState, User, nearly_now, now
 from cdedb.common.exceptions import APITokenError
 from tests.common import (
-    USER_DICT, BackendTest, FrontendTest, MultiAppFrontendTest, UserIdentifier, execsql,
+    USER_DICT,
+    BackendTest,
+    FrontendTest,
+    MultiAppFrontendTest,
+    UserIdentifier,
+    execsql,
     get_user,
 )
 
@@ -264,7 +269,7 @@ class TestSessionFrontend(FrontendTest):
         self.login("anton")
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
                       "Kurs hinzufügen")
-        f = self.response.forms['createcourseform']
+        f = self.response.forms['configurecourseform']
         f['nr'] = "1"
         f['title'] = "Test"
         f['shortname'] = "test"

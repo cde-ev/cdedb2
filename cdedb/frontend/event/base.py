@@ -29,7 +29,11 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBObjectMap, RequestState, merge_dicts,
+    EVENT_SCHEMA_VERSION,
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    merge_dicts,
     unwrap,
 )
 from cdedb.common.i18n import get_localized_country_codes
@@ -40,7 +44,12 @@ from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
-    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, event_guard, periodic,
+    AbstractUserFrontend,
+    REQUESTdata,
+    REQUESTdatadict,
+    access,
+    event_guard,
+    periodic,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 

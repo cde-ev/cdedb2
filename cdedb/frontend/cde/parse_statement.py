@@ -10,8 +10,17 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
-    Error, RequestState, TransactionType, asciificator, diacritic_patterns, now,
+    PARSE_OUTPUT_DATEFORMAT,
+    Accounts,
+    CdEDBObject,
+    CdEDBObjectMap,
+    ConfidenceLevel,
+    Error,
+    RequestState,
+    TransactionType,
+    asciificator,
+    diacritic_patterns,
+    now,
 )
 from cdedb.common.n_ import n_
 from cdedb.config import LazyConfig

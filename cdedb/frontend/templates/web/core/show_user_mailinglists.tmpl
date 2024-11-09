@@ -54,13 +54,18 @@
                     <ul class="styleless col-md-6">
                         {% for ml in list %}
                             {% set state = subscriptions[ml.id] %}
+                            {% set trouble = state in enums["SubscriptionState"].subscribing_states() and not ml['is_receiving'] %}
                             {% if is_relevant_admin(mailinglist_id=ml.id) or ml.id in user.moderator %}
                                 {% set link = "ml/management" %}
                             {% else %}
                                 {% set link = "ml/show_mailinglist" %}
                             {% endif %}
-                            <li class="hide-hover-container clearfix-after{% if not ml['is_active'] %} text-muted{% endif %}">
+                            <li class="hide-hover-container clearfix-after{% if not ml['is_active'] or trouble %} text-muted{% endif %}">
                                 {{ util.state_checkbox(state) }}
+                                {% if trouble %}
+                                    {{ util.make_icon('exclamation-triangle', aclass="text-danger",
+                                            title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                                {% endif %}
                                 {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"]) }}
                             {% if state == enums["SubscriptionState"].subscription_override %}
                                 {{ gettext("(override)") }}

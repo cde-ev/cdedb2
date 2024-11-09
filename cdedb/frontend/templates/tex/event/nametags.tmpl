@@ -87,7 +87,7 @@
                 <<# jinja does not support list comprehension ... -#>>
                 <<% set mycourses = [] -%>>
                 <<% for track_id, track in registration['tracks'].items()
-                        if ambience['event']['tracks'][track_id]['part.id'] == part.id and track['course_id'] -%>>
+                        if ambience['event']['tracks'][track_id]['part_id'] == part.id and track['course_id'] -%>>
                     <<% do mycourses.append((track_id, track['course_id']))|te -%>>
                 <<% endfor -%>>
                 <<% set persona = personas[registration['persona_id']] -%>>

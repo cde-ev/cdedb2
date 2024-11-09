@@ -13,7 +13,10 @@ import ldaptor.protocols.pureldap as pureldap
 from ldaptor.attributeset import LDAPAttributeSet
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import (
-    LDAPInvalidCredentials, LDAPNoSuchObject, LDAPProtocolError, LDAPUnwillingToPerform,
+    LDAPInvalidCredentials,
+    LDAPNoSuchObject,
+    LDAPProtocolError,
+    LDAPUnwillingToPerform,
 )
 from twisted.python.util import InsensitiveDict
 

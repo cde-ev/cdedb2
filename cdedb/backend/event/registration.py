@@ -25,19 +25,33 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 import cdedb.models.event as models
 from cdedb.backend.common import (
-    access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, internal, singularize,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_set_validation as affirm_set,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
+    internal,
+    singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, CdEDBObject, CdEDBObjectMap, CourseFilterPositions,
-    DefaultReturnCode, DeletionBlockers, InfiniteEnum, PsycoJson, RequestState,
-    cast_fields, unwrap,
+    PARSE_OUTPUT_DATEFORMAT,
+    CdEDBObject,
+    CdEDBObjectMap,
+    CourseFilterPositions,
+    DefaultReturnCode,
+    DeletionBlockers,
+    InfiniteEnum,
+    PsycoJson,
+    RequestState,
+    cast_fields,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
+    REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
@@ -130,15 +144,6 @@ class ComplexRegistrationFee:
         return any(
             amount for kind, amount in self.by_kind.items()
             if kind != const.EventFeeType.common
-        )
-
-    @property
-    def donation(self) -> decimal.Decimal:
-        return sum(
-            (
-                self.by_kind[kind] for kind in const.EventFeeType if kind.is_donation()
-            ),
-            start=decimal.Decimal(0),
         )
 
     @property
@@ -329,15 +334,15 @@ class EventRegistrationBackend(EventBaseBackend):
             FROM event.track_groups AS tg
                 LEFT JOIN event.track_group_tracks AS tgt ON tg.id = tgt.track_group_id
                 LEFT JOIN event.course_segments AS cs ON tgt.track_id = cs.track_id {is_active}
-                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id {involved_parts}
-            WHERE tg.event_id = %s AND tg.constraint_type = %s
+                LEFT JOIN event.course_tracks AS ct ON cs.track_id = ct.id
+            WHERE tg.event_id = %s AND tg.constraint_type = %s {involved_parts}
             GROUP BY tg.id
         """
 
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
 
-        params: list[Any] = []
+        params: list[Any] = [event_id, const.CourseTrackGroupType.course_choice_sync]
 
         if involved_parts is not None:
             involved_parts = affirm_set(vtypes.ID, involved_parts)
@@ -348,7 +353,6 @@ class EventRegistrationBackend(EventBaseBackend):
             involved_parts=(
                 "AND ct.part_id = ANY(%s)" if involved_parts is not None else ""),
         )
-        params.extend((event_id, const.CourseTrackGroupType.course_choice_sync))
 
         return {
             e['id']: set(e['courses'])
@@ -509,7 +513,9 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("persona")
     def check_registrations_status(
             self, rs: RequestState, persona_ids: Collection[int], event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> dict[int, bool]:
+            stati: Collection[const.RegistrationPartStati],
+            part_ids: Collection[int] = (),
+    ) -> dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -541,10 +547,17 @@ class EventRegistrationBackend(EventBaseBackend):
         if not registration_ids:
             return {anid: False for anid in persona_ids}
 
+        event = self.get_event(rs, event_id)
+        part_ids = list(part_ids or event.parts)
         registrations = self.get_registrations(rs, registration_ids)
-        ret.update({reg['persona_id']:
-                        any(part['status'] in stati for part in reg['parts'].values())
-                    for reg in registrations.values()})
+        ret.update({
+            reg['persona_id']:
+                any(
+                    reg['parts'][part_id]['status'] in stati
+                    for part_id in part_ids
+                )
+            for reg in registrations.values()
+        })
         return ret
 
     class _GetRegistrationStatusProtocol(Protocol):

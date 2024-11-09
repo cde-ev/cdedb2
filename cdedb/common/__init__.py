@@ -21,7 +21,15 @@ import sys
 import zoneinfo
 from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
 from typing import (
-    TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar, Union, cast, overload,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import phonenumbers
@@ -155,6 +163,7 @@ class RequestState(ConnectionContainer):
     """
     default_lang = "en"
     log_lang = "de"
+    mail_lang = "de"
 
     def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
                  request: werkzeug.Request, notifications: Collection[Notification],
@@ -228,6 +237,14 @@ class RequestState(ConnectionContainer):
     @property
     def log_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.log_lang].ngettext
+
+    @property
+    def mail_gettext(self) -> Callable[[str], str]:
+        return self.translations[self.mail_lang].gettext
+
+    @property
+    def mail_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.mail_lang].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: Optional[CdEDBObject] = None) -> None:
@@ -339,6 +356,12 @@ class RequestState(ConnectionContainer):
         successful check.
         """
         self._errors = list(errors)
+
+    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
+        ret: dict[Optional[str], list[Exception]] = {}
+        for key, value in self.retrieve_validation_errors():
+            ret.setdefault(key, []).append(value)
+        return ret
 
 
 if TYPE_CHECKING:
@@ -928,7 +951,8 @@ INFINITE_ENUM_MAGIC_NUMBER = 0
 def infinite_enum(aclass: T) -> T:
     """Decorator to document infinite enums.
 
-    This does nothing and is only for documentation purposes.
+    This only sets a flag on the class for documentation and
+    introspection purposes.
 
     Infinite enums are sadly not directly supported by python which
     means, that we have to emulate them on our own.
@@ -943,10 +967,11 @@ def infinite_enum(aclass: T) -> T:
     None.
 
     In the code they are stored as an :py:data:`InfiniteEnum`."""
+    setattr(aclass, "infinite_enum", True)
     return aclass
 
 
-E = TypeVar("E", bound=enum.IntEnum)
+E = TypeVar("E", bound=CdEIntEnum)
 
 
 @functools.total_ordering
@@ -1022,6 +1047,9 @@ class Accounts(enum.Enum):
     Account0 = "DE26370205000008068900"
     Account1 = "DE96370205000008068901"
     Festgeld = "DE45370205000010042605"
+    Festgeld2 = "DE05370205000010047205"
+    Skatbank = "DE23830654080005374499"
+    Tagesgeld = "DE96830654087005374499"
     # Fallback if Account is none of the above
     Unknown = "Unknown"
 
@@ -1030,6 +1058,9 @@ class Accounts(enum.Enum):
             Accounts.Account0: "8068900",
             Accounts.Account1: "8068901",
             Accounts.Festgeld: "Festgeld",
+            Accounts.Festgeld2: "Festgeld2",
+            Accounts.Skatbank: "Skatbank",
+            Accounts.Tagesgeld: "Tagesgeld",
             Accounts.Unknown: "Unknown",
         }[self]
 

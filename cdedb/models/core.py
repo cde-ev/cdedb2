@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Optional
 from cryptography.fernet import Fernet
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import now
+import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.sorting import Sortkey
 from cdedb.models.common import CdEDataclass
@@ -19,6 +20,40 @@ __all__ = ["AnonymousMessageData"]
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+
+@dataclasses.dataclass
+class EmailAddressReport(CdEDataclass):
+    address: vtypes.Email
+    status: const.EmailStatus
+    notes: Optional[str] = None
+    # This persona has this address as username.
+    user_id: Optional[vtypes.ID] = None
+    # This persona has this address as explicit mail address for at least one ml.
+    subscriber_id: Optional[vtypes.ID] = None
+    # The mailinglists where this address is used as explicit address.
+    ml_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
+
+    database_table = "core.email_states"
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "EmailAddressReport":
+        if "ml_ids" in data:
+            data["ml_ids"] = set(data["ml_ids"])
+        return super().from_database(data)
+
+    @property
+    def persona_ids(self) -> set[vtypes.ID]:
+        """All persona ids associated with this defect address."""
+        ret = set()
+        if self.user_id:
+            ret.add(self.user_id)
+        if self.subscriber_id:
+            ret.add(self.subscriber_id)
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.status, self.address)
 
 
 @dataclasses.dataclass

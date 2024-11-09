@@ -9,11 +9,19 @@ from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common import now
 from cdedb.common.exceptions import QuotaException
 from cdedb.common.fields import (
-    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
+    PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS,
+    PERSONA_EVENT_FIELDS,
 )
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import (
-    USER_DICT, BackendTest, as_users, execsql, get_user, nearly_now, prepsql,
+    USER_DICT,
+    BackendTest,
+    as_users,
+    execsql,
+    get_user,
+    nearly_now,
+    prepsql,
 )
 
 
@@ -124,7 +132,8 @@ class TestCdEBackend(BackendTest):
             order=(("family_name,birth_name", True),))
         result = self.cde.submit_general_query(self.key, query)
         expectation = {6, 9, 15, 100}
-        self.assertEqual({e['id'] for e in result}, expectation)
+        self.assertEqual(
+            {e[query.scope.get_primary_key()] for e in result}, expectation)
 
     @as_users("vera")
     def test_user_search(self) -> None:
@@ -138,7 +147,7 @@ class TestCdEBackend(BackendTest):
             order=(("family_name", True),))
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
-                         {e['id'] for e in result})
+                         {e[query.scope.get_primary_key()] for e in result})
 
     @as_users("vera")
     def test_user_search_operators(self) -> None:
@@ -155,7 +164,7 @@ class TestCdEBackend(BackendTest):
                                                       datetime.datetime.now()))],
             order=(("family_name", True),))
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2}, {e['id'] for e in result})
+        self.assertEqual({2}, {e[query.scope.get_primary_key()] for e in result})
 
     @as_users("vera")
     def test_user_search_collation(self) -> None:
@@ -167,7 +176,7 @@ class TestCdEBackend(BackendTest):
             constraints=[("location", QueryOperators.match, 'Musterstadt')],
             order=(("address", True),))
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual([1, 27], [e['id'] for e in result])
+        self.assertEqual([1, 27], [e[query.scope.get_primary_key()] for e in result])
 
     @as_users("vera")
     def test_demotion(self) -> None:
@@ -566,7 +575,8 @@ class TestCdEBackend(BackendTest):
         )
         self.assertEqual(
             {self.user['id'], other_user['id']},
-            {e['id'] for e in self.cde.submit_general_query(self.key, query)},
+            {e[query.scope.get_primary_key()]
+             for e in self.cde.submit_general_query(self.key, query)},
         )
         self.assertEqual(
             2,

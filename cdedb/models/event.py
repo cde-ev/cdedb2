@@ -24,14 +24,23 @@ event realm tables:
   * event.log
 """
 import abc
+import collections
 import dataclasses
 import datetime
 import decimal
 import functools
 import logging
+import sys
 from collections.abc import Collection, Mapping
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, ForwardRef, Optional, get_args, get_origin,
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    ForwardRef,
+    Optional,
+    get_args,
+    get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
@@ -40,7 +49,10 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import User, cast_fields, now
 from cdedb.common.query import (
-    QueryScope, QuerySpec, QuerySpecEntry, make_course_query_spec,
+    QueryScope,
+    QuerySpec,
+    QuerySpecEntry,
+    make_course_query_spec,
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
@@ -217,6 +229,15 @@ class Event(EventDataclass):
             and (self.registration_hard_limit is None
                  or self.registration_hard_limit >= reference_time))
 
+    def is_visible_for(self, user: User, is_registered: bool, *,
+                       privileged: bool) -> bool:
+        """Whether an event is visible dependent on your own registration status.
+
+         :param privileged: If access in a privileged capacity is to be considered."""
+
+        return is_registered or self.is_visible or (privileged and (
+            "event_admin" in user.roles or user.persona_id in self.orgas))
+
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
@@ -231,9 +252,16 @@ class Event(EventDataclass):
     def conditional_fees(self) -> CdEDataclassMap["EventFee"]:
         return {fee.id: fee for fee in self.fees.values() if fee.is_conditional()}
 
-    def is_visible_for(self, user: User) -> bool:
-        return ("event_admin" in user.roles or user.persona_id in self.orgas
-                or self.is_visible)
+    @functools.cached_property
+    def grouped_fields(self) -> dict[
+        const.FieldAssociations,
+        dict[str, list["EventField"]],
+    ]:
+        ret: dict[const.FieldAssociations, dict[str, list[EventField]]]
+        ret = collections.defaultdict(dict)
+        for field in xsorted(self.fields.values()):
+            ret[field.association].setdefault(field.sort_group or "", []).append(field)
+        return ret
 
     def get_sortkey(self) -> Sortkey:
         return self.begin, self.end, self.title
@@ -464,17 +492,33 @@ class EventFee(EventDataclass):
 class EventField(EventDataclass):
     database_table = "event.field_definitions"
 
-    event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ProtoID
+    id: vtypes.ProtoID = dataclasses.field(metadata={'validation_exclude': True})
 
-    field_name: vtypes.RestrictiveIdentifier
-    title: str
+    event: Event = dataclasses.field(
+        init=False, compare=False, repr=False, metadata={'validation_exclude': True},
+    )
+    # Exclude during creation, update and request.
+    event_id: vtypes.ID = dataclasses.field(
+        metadata={'validation_exclude': True, 'request_exclude': True},
+    )
+
+    # Internal metadata.
+    field_name: vtypes.RestrictiveIdentifier = dataclasses.field(
+        metadata={'update_exclude': True})
     kind: const.FieldDatatypes
-    association: const.FieldAssociations
-    checkin: bool
-    sortkey: int
+    association: const.FieldAssociations = dataclasses.field(
+        metadata={'update_exclude': True})
 
-    entries: Optional[dict[str, str]]
+    # Userfacing metadata. Purely for UI.
+    title: str  # Userfacing label.
+    sort_group: Optional[str] = None  # Used to group multiple fields together.
+    sortkey: int = 0  # Sortkey of the field (within it's group).
+    description: Optional[str] = None  # Shown as hovertext of the label.
+
+    # Usage configuration, i.e. where is this field used.
+    checkin: bool = False
+
+    entries: Optional[dict[str, str]] = None
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
@@ -482,7 +526,13 @@ class EventField(EventDataclass):
         return super().from_database(data)
 
     def get_sortkey(self) -> Sortkey:
-        return self.sortkey, self.field_name
+        return (
+            self.event,
+            self.sort_group or chr(sys.maxunicode),  # Sort empty group last.
+            self.sortkey,
+            self.title,
+            self.field_name,
+        )
 
 
 @dataclasses.dataclass
@@ -708,6 +758,8 @@ class Course(EventDataclass):
 
     min_size: int
     max_size: int
+
+    is_visible: bool
 
     notes: Optional[str]
 

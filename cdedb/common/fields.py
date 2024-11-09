@@ -47,8 +47,8 @@ PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
 
 #: Names of columns associated to a cde (former)member
 PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
-    "address_supplement2", "address2", "postal_code2", "location2",
-    "country2", "weblink", "specialisation", "affiliation", "timeline",
+    "show_address", "show_address2", "address_supplement2", "address2", "postal_code2",
+    "location2", "country2", "weblink", "specialisation", "affiliation", "timeline",
     "interests", "free_form", "balance", "decided_search", "trial_member",
     "bub_search", "foto", "paper_expuls", "birth_name", "donation", "honorary_member",
 )
@@ -143,7 +143,7 @@ PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 
 #: Fields of a course associated to an event organized via the CdEDB
 COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "max_size", "min_size", "notes", "fields")
+                 "instructors", "max_size", "min_size", "is_visible", "notes", "fields")
 
 #: Fields specifying in which part a course is available
 COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")

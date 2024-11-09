@@ -27,7 +27,11 @@ import cdedb.models.event as models
 from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryOrder,
+    QueryScope,
 )
 from cdedb.common.sorting import xsorted
 

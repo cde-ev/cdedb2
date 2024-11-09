@@ -23,14 +23,23 @@ import psycopg2.extensions
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_array_validation as affirm_array, affirm_dataclass,
+    AbstractBackend,
+    access,
+    affirm_array_validation as affirm_array,
+    affirm_dataclass,
     affirm_validation as affirm,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    PARSE_OUTPUT_DATEFORMAT, CdEDBLog, CdEDBObject, DefaultReturnCode, LineResolutions,
-    RequestState, make_proxy, unwrap,
+    PARSE_OUTPUT_DATEFORMAT,
+    CdEDBLog,
+    CdEDBObject,
+    DefaultReturnCode,
+    LineResolutions,
+    RequestState,
+    make_proxy,
+    unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
@@ -38,7 +47,8 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
 from cdedb.common.roles import implying_realms
 from cdedb.common.validation.validate import (
-    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    is_optional,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
@@ -444,6 +454,8 @@ class CdEBaseBackend(AbstractBackend):
                     'pronouns_nametag': False,
                     'pronouns_profile': False,
                     'id': persona_id,
+                    'show_address': True,
+                    'show_address2': True,
                 }
                 # This applies a part of the newly imported data necessary for realm
                 # transition. The remaining data will be updated later.
@@ -594,3 +606,36 @@ class CdEBaseBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
+
+    @access("searchable")
+    def get_nearby_postal_codes(
+            self, rs: RequestState, postal_code: str, radius: int,
+    ) -> list[str]:
+        """Returns a list of german postal codes in the radius of the given postal code.
+
+        :param radius: The maximum distance in meters.
+        """
+        postal_code = affirm(str, postal_code)
+        radius = affirm(vtypes.NonNegativeInt, radius)
+
+        q = """
+            SELECT earth_location
+            FROM core.postal_code_locations
+            WHERE postal_code = %s
+        """
+        data = self.query_all(rs, q, (postal_code,))
+
+        if not data:
+            return []
+        earth_pos = data[0]['earth_location']
+
+        q = """
+            SELECT postal_code
+            FROM core.postal_code_locations
+            WHERE earth_distance(earth_location, %s) < %s
+        """
+        return [
+            e['postal_code'] for e in self.query_all(
+                rs, q, (earth_pos, radius),
+            )
+        ]

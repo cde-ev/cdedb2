@@ -20,7 +20,11 @@ from psycopg2.extras import Json, RealDictCursor
 import cdedb.models.event as models
 from cdedb.common import CdEDBObject
 from cdedb.config import (
-    DEFAULT_CONFIGPATH, Config, TestConfig, get_configpath, set_configpath,
+    DEFAULT_CONFIGPATH,
+    Config,
+    TestConfig,
+    get_configpath,
+    set_configpath,
 )
 from cdedb.models.droid import OrgaToken
 from cdedb.script import Script

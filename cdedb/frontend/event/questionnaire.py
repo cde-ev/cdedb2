@@ -17,14 +17,23 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, DefaultReturnCode, Error, RequestState, merge_dicts, unwrap,
+    CdEDBObject,
+    DefaultReturnCode,
+    Error,
+    RequestState,
+    merge_dicts,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation.validate import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
-    RequestConstraint, REQUESTdata, access, check_validation_optional as check_optional,
-    event_guard, request_extractor,
+    RequestConstraint,
+    REQUESTdata,
+    access,
+    check_validation_optional as check_optional,
+    event_guard,
+    request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 

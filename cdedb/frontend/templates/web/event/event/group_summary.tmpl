@@ -71,6 +71,17 @@
                         </td>
                     {% endfor %}
                     <td class="text-nowrap">
+                        {% if part_group.id in non_existing_mailinglists %}
+                            <form action="{{ cdedblink("event/create_event_mailinglist") }}"
+                                  method="POST" id="createeventmailinglistform{{ part_group.id }}"
+                                  class="display-inline">
+                                {{ util.anti_csrf_token("event/create_event_mailinglist") }}
+                                {{ util.input_hidden("part_group_id", part_group.id) }}
+                                {{ util.input_submit(
+                                        label=None, icon="envelope", aclass="btn btn-sm btn-success",
+                                        title=gettext("Create Mailinglist for this Part Group")) }}
+                            </form>
+                        {% endif %}
                         {{ util.href(cdedblink("event/change_part_group", {'part_group_id': part_group.id}),
                                      title=gettext("Change part group %(shortname)s")|format(shortname=part_group['shortname']),
                                      label=util.make_icon("pen"), anid="partgroup{}_change".format(part_group.id),

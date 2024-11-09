@@ -312,6 +312,8 @@
             "field_name": "transportation",
             "title": "Reist an mit",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -340,6 +342,8 @@
             "field_name": "contamination",
             "title": "Verseuchung",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 3,
             "checkin": false
         },
@@ -351,6 +355,8 @@
             "field_name": "may_reserve",
             "title": "Würde auf Isomatte schlafen",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -362,6 +368,8 @@
             "field_name": "brings_balls",
             "title": "Bringt Bälle mit",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": true
         },
@@ -373,6 +381,8 @@
             "field_name": "lodge",
             "title": "Zimmerwünsche",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -384,6 +394,8 @@
             "field_name": "room",
             "title": "Kursraum",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 2,
             "checkin": false
         },
@@ -395,6 +407,8 @@
             "field_name": "is_child",
             "title": "Ist U12",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "association": 1,
             "checkin": false
         },
@@ -405,6 +419,8 @@
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "title": "Anzahl Großbuchstaben",
             "sortkey": 0,
+            "sort_group": null,
+            "description": null,
             "id": 8,
             "kind": 3,
             "checkin": true
@@ -696,6 +712,7 @@
             "title": "Lustigsein f\u00fcr Fortgeschrittene",
             "max_size": 20,
             "instructors": "Bernd Lucke",
+            "is_visible": true,
             "notes": "Kursleiter hat Sekt angefordert."
         },
         "1": {
@@ -711,6 +728,7 @@
             "title": "Planetenretten f\u00fcr Anf\u00e4nger",
             "max_size": 10,
             "instructors": "ToFi & Co",
+            "is_visible": true,
             "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig."
         },
         "5": {
@@ -726,6 +744,7 @@
             "title": "Backup-Kurs",
             "max_size": null,
             "instructors": "TBA",
+            "is_visible": true,
             "notes": null
         },
         "3": {
@@ -741,6 +760,7 @@
             "title": "Kurzer Kurs",
             "max_size": 14,
             "instructors": "Heinrich und Thomas Mann",
+            "is_visible": true,
             "notes": null
         },
         "4": {
@@ -756,6 +776,7 @@
             "title": "Langer Kurs",
             "max_size": null,
             "instructors": "Stephen Hawking und Richard Feynman",
+            "is_visible": true,
             "notes": null
         },
         "13": {
@@ -768,6 +789,7 @@
             "instructors": null,
             "min_size": null,
             "max_size": null,
+            "is_visible": true,
             "notes": null,
             "fields": {}
         }

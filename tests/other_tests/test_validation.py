@@ -15,10 +15,29 @@ from cdedb.common import now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.validation.types import (
-    IBAN, ID, JSON, Email, EmptyDict, EmptyList, EventPartGroup, GenesisCase,
-    LegacyShortname, NonNegativeDecimal, NonNegativeInt, NonNegativeLargeDecimal,
-    PartialImportID, PasswordStrength, Persona, Phone, PositiveInt, PrintableASCII,
-    PrintableASCIIType, Realm, SafeStr, ShortnameRestrictiveIdentifier, StringType,
+    IBAN,
+    ID,
+    JSON,
+    Email,
+    EmptyDict,
+    EmptyList,
+    EventPartGroup,
+    GenesisCase,
+    LegacyShortname,
+    NonNegativeDecimal,
+    NonNegativeInt,
+    NonNegativeLargeDecimal,
+    PartialImportID,
+    PasswordStrength,
+    Persona,
+    Phone,
+    PositiveInt,
+    PrintableASCII,
+    PrintableASCIIType,
+    Realm,
+    SafeStr,
+    ShortnameRestrictiveIdentifier,
+    StringType,
     Vote,
 )
 from cdedb.config import Config

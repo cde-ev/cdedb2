@@ -58,6 +58,7 @@
     </div>
     {% endif %}
 
+    {# As this is a management page, hidden events are not shown for non-admins even if they are registered. #}
     {{ util.h(n_("Current Events")) }}
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for entry in events.values()|sort %}

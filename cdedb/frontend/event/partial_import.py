@@ -22,7 +22,11 @@ from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.filter import enum_entries_filter, safe_filter
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTfile, access, check_validation as check, event_guard,
+    REQUESTdata,
+    REQUESTfile,
+    access,
+    check_validation as check,
+    event_guard,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
 

@@ -53,26 +53,37 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 import base64
 import collections
 import copy
+import csv
 import dataclasses
 import datetime
 import decimal
 import distutils.util
+import enum
 import functools
 import io
 import itertools
 import json
 import logging
 import math
+import pathlib
 import re
 import string
 import typing
 import urllib.parse
 from collections.abc import Iterable, Mapping, Sequence
-from enum import Enum, IntEnum
-from types import TracebackType
+from types import TracebackType, UnionType
 from typing import (
-    Any, Callable, Optional, Protocol, TypeVar, Union, cast, get_args, get_origin,
-    get_type_hints, overload,
+    Any,
+    Callable,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
 )
 
 import magic
@@ -91,28 +102,45 @@ import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    CdEDBObject, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions, asciificator,
-    compute_checkdigit, now, parse_date, parse_datetime,
+    ASSEMBLY_BAR_SHORTNAME,
+    EPSILON,
+    EVENT_SCHEMA_VERSION,
+    INFINITE_ENUM_MAGIC_NUMBER,
+    CdEDBObject,
+    CdEDBObjectMap,
+    Error,
+    InfiniteEnum,
+    LineResolutions,
+    asciificator,
+    compute_checkdigit,
+    now,
+    parse_date,
+    parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.fields import EVENT_FIELD_SPEC, REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
-    MAX_QUERY_ORDERS, MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS,
-    Query, QueryOperators, QueryOrder, QueryScope, QuerySpec,
+    MAX_QUERY_ORDERS,
+    MULTI_VALUE_OPERATORS,
+    NO_VALUE_OPERATORS,
+    VALID_QUERY_OPERATORS,
+    Query,
+    QueryOperators,
+    QueryOrder,
+    QueryScope,
+    QuerySpec,
 )
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import ADMIN_KEYS, extract_roles
 from cdedb.common.sorting import xsorted
-from cdedb.common.validation.data import (
-    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, IBAN_LENGTHS,
-)
+from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 from cdedb.config import LazyConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.models.common import CdEDataclass
+from cdedb.uncommon.intenum import CdEIntEnum
 
 NoneType = type(None)
 
@@ -167,7 +195,8 @@ class ValidatorStorage(dict[type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: type[T]) -> Callable[..., T]:
-        if typing.get_origin(type_) is Union:
+        origin = typing.get_origin(type_)
+        if origin is Union or origin is UnionType:
             inner_type, none_type = typing.get_args(type_)
             if none_type is not NoneType:
                 raise KeyError("Complex unions not supported")
@@ -1372,12 +1401,14 @@ PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'mobile': NoneType,
     'address_supplement': NoneType,
     'address': NoneType,
+    'show_address': bool,
     'postal_code': NoneType,
     'location': NoneType,
     'country': NoneType,
     'birth_name': NoneType,
     'address_supplement2': NoneType,
     'address2': NoneType,
+    'show_address2': bool,
     'postal_code2': NoneType,
     'location2': NoneType,
     'country2': NoneType,
@@ -1408,12 +1439,14 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'mobile': Optional[Phone],
     'address_supplement': Optional[str],
     'address': Optional[str],
+    'show_address': bool,
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
     'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
+    'show_address2': bool,
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
     'country2': Optional[Country],
@@ -1493,12 +1526,14 @@ PERSONA_COMMON_FIELDS: dict[str, Any] = {
     'mobile': Optional[Phone],
     'address_supplement': Optional[str],
     'address': Optional[str],
+    'show_address': bool,
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
     'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
+    'show_address2': bool,
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
     'country2': Optional[Country],
@@ -1722,6 +1757,9 @@ def _phone(
     return Phone(phone_str)
 
 
+_GERMAN_POSTAL_CODES: set[str] = set()
+
+
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: Optional[str] = None, *,
@@ -1739,7 +1777,17 @@ def _german_postal_code(
         msg = n_("Invalid german postal code.")
         if not (len(val) == 5 and val.isdigit()):
             raise ValidationSummary(ValueError(argname, msg))
-        if val not in GERMAN_POSTAL_CODES and not ignore_warnings:
+        if not _GERMAN_POSTAL_CODES:
+            repo_path: pathlib.Path = _CONFIG['REPOSITORY_PATH']
+            _GERMAN_POSTAL_CODES.update(
+                e['plz'] for e in csv.DictReader(
+                    (
+                        repo_path / "tests" / "ancillary_files" / "plz.csv"
+                    ).read_text().splitlines(),
+                    delimiter=',',
+                )
+            )
+        if val not in _GERMAN_POSTAL_CODES and not ignore_warnings:
             raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
@@ -2705,25 +2753,6 @@ def _event_track_group(
 _create_optional_mapping_validator(EventTrackGroup, EventTrackGroupSetter)
 
 
-EVENT_FIELD_COMMON_FIELDS: TypeMapping = {
-    'kind': const.FieldDatatypes,
-    'association': const.FieldAssociations,
-    'entries': Any,  # type: ignore[dict-item]
-}
-
-
-EVENT_FIELD_OPTIONAL_FIELDS: TypeMapping = {
-    'title': str,
-    'sortkey': int,
-    'checkin': bool,
-}
-
-
-EVENT_FIELD_ALL_FIELDS: TypeMapping = {
-    **EVENT_FIELD_COMMON_FIELDS, **EVENT_FIELD_OPTIONAL_FIELDS,
-}
-
-
 @_add_typed_validator
 def _event_field(
     val: Any, argname: str = "event_field", *, field_name: Optional[str] = None,
@@ -2744,12 +2773,12 @@ def _event_field(
     if creation:
         if not val.get("title"):
             val["title"] = val.get("field_name")
-        mandatory_fields = {**EVENT_FIELD_COMMON_FIELDS,
-                            "field_name": RestrictiveIdentifier}
-        optional_fields = EVENT_FIELD_OPTIONAL_FIELDS
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_FIELD_ALL_FIELDS, 'id': ID}
+
+    mandatory_fields, optional_fields = models_event.EventField.validation_fields(
+        creation=creation)
+
+    if 'entries' in optional_fields:
+        optional_fields['entries'] = Any  # type: ignore[assignment]
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2758,9 +2787,14 @@ def _event_field(
         val["entries"] = None
     if "entries" in val and val["entries"] is not None:
         if isinstance(val["entries"], str):
-            val["entries"] = dict(
-                [y.strip() for y in x.split(';', 1)] for x in val["entries"].split('\n')
-            )
+            try:
+                val["entries"] = dict(
+                    [y.strip() for y in x.split(';', 1)]
+                     for x in val["entries"].split('\n')
+                )
+            except ValueError as e:
+                raise ValidationSummary(ValueError(
+                    'entries', n_("Value not well-formed."))) from e
         elif isinstance(val['entries'], list):
             with errs:
                 try:
@@ -2912,6 +2946,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
+    'is_visible': bool,
     'notes': Optional[str],
 }
 
@@ -3539,7 +3574,8 @@ def _serialized_event(
             _empty_dict, {'id': ID, 'event_id': ID, 'persona_id': ID}),
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': ID, 'event_id': ID, 'title': str,
-                           'field_name': RestrictiveIdentifier}),
+                           'field_name': RestrictiveIdentifier,
+                           'association': const.FieldAssociations}),
         'event.lodgement_groups': _augment_dict_validator(
             _lodgement_group, {'event_id': ID}),
         'event.lodgements': _augment_dict_validator(
@@ -3734,6 +3770,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'max_size': Optional[int],
     'min_size': Optional[int],
     'notes': Optional[str],
+    'is_visible': Optional[bool],
 }
 
 PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
@@ -4198,6 +4235,11 @@ def _mailinglist(
         if val["domain"].value not in subtype.available_domains:
             errs.append(ValueError("domain", n_(
                 "Invalid domain for this mailinglist type.")))
+
+    if not val.get('event_id'):
+        if val.get('event_part_group_id'):
+            errs.append(ValueError("event_id", n_(
+                "Cannot have event part group without event.")))
 
     if errs:
         raise errs
@@ -4986,7 +5028,7 @@ def _log_filter(
     return LogFilter(val)
 
 
-E = TypeVar('E', bound=Enum)
+E = TypeVar('E', bound=enum.Enum)
 
 
 def _enum_validator_maker(
@@ -5050,7 +5092,7 @@ def _db_subscription_state(
     return DatabaseSubscriptionState(val)
 
 
-IE = TypeVar("IE", bound=IntEnum)
+IE = TypeVar("IE", bound=CdEIntEnum)
 
 
 def _infinite_enum_validator_maker(anenum: type[IE], name: Optional[str] = None,

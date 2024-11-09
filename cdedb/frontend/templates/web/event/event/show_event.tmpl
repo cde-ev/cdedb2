@@ -73,9 +73,9 @@
                     {% endtrans %}
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
-                    {{- hard_limit if soft_limit is none else soft_limit|datetime(lang=lang) }}
+                    {{- (hard_limit if soft_limit is none else soft_limit)|datetime(lang=lang) }}
                     {% if ((values['event_id'] in user.orga or 'event_orga' in user.admin_views)
-                        or now() > soft_limit) and soft_limit != hard_limit %}
+                        or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
                         {% if hard_limit %}
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})
@@ -405,7 +405,7 @@
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
                                 {{ util.input_submit(
-                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary",
+                                        label=gettext("Create orga mailinglist"), aclass="btn btn-primary btn-wrap",
                                         icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
@@ -431,7 +431,7 @@
                                 {{ util.input_hidden("orgalist", value=False) }}
                                 {{ util.input_submit(
                                         label=gettext("Create participant mailinglist"),
-                                        aclass="btn btn-primary", icon="far fa-plus-square", readonly=not orgas,
+                                        aclass="btn btn-primary btn-wrap", icon="far fa-plus-square", readonly=not orgas,
                                         title=("" if orgas
                                                else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>

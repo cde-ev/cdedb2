@@ -292,6 +292,13 @@ _DEFAULTS = {
     "QUOTA_VIEWS_PER_DAY": 42,
     # maximal number of results for a member search
     "MAX_MEMBER_SEARCH_RESULTS": 200,
+    # available radius options for nearby search
+    "NEARBY_SEARCH_RADII": {
+        5_000: "5 km",
+        10_000: "10 km",
+        30_000: "30 km",
+        80_000: "80 km",
+    },
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('4.00'),
     # probably always 1 or 2

@@ -15,7 +15,8 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 # these are stored in the database, so provide them here for consistency
 from cdedb.uncommon.submanshim import (  # pylint: disable=unused-import # noqa: F401
-    SubscriptionAction, SubscriptionState,
+    SubscriptionAction,
+    SubscriptionState,
 )
 
 
@@ -43,6 +44,30 @@ class PersonaChangeStati(CdEIntEnum):
     nacked = 11  #:
     #: replaced by a change which could not wait
     displaced = 12
+
+
+@enum.unique
+class EmailStatus(CdEIntEnum):
+    """Spec for status of core.email_status.
+
+    This is intended to be extended in future revisions. Potential further
+    states are: whitelist, unconfirmed, mailinglists_disabled, all_disabled,
+    removed, unsuccessful_transmission.
+    """
+    normal = 1
+    defect = 10
+
+    @classmethod
+    def defect_states(cls) -> tuple["EmailStatus", ...]:
+        return (cls.defect,)
+
+    @classmethod
+    def notable_states(cls) -> tuple["EmailStatus", ...]:
+        """States which should cause a notification.
+
+        In some locations annotating every state could get really noisy.
+        """
+        return (cls.defect,)
 
 
 @enum.unique
@@ -139,12 +164,15 @@ class EventPartGroupType(CdEIntEnum):
     mutually_exclusive_courses = 2
     # Special type that imposes no constraints:
     Statistic = 100
+    # Special type for link to mailinglist with limited scope.
+    mailinglist_link = 200
 
     def get_icon(self) -> str:
         return {
             EventPartGroupType.Statistic: "chart-bar",
             EventPartGroupType.mutually_exclusive_participants: "user-lock",
             EventPartGroupType.mutually_exclusive_courses: "comment-slash",
+            EventPartGroupType.mailinglist_link: "envelope",
         }[self]
 
     def is_stats(self) -> bool:
@@ -176,6 +204,8 @@ class EventFeeType(CdEIntEnum):
     solidary_donation = 11
     solidary_increase = 12
     other_donation = 20
+    crisis_refund = 30
+    other_refund = 31
 
     def get_icon(self) -> str:
         return {
@@ -188,7 +218,8 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
-
+            EventFeeType.crisis_refund: "fire-extinguisher",
+            EventFeeType.other_refund: "person-military-to-person",
         }[self]
 
     def is_donation(self) -> bool:
@@ -278,6 +309,7 @@ class MailinglistTypes(CdEIntEnum):
     # The following types used to exist. To avoid conflicts, do not reuse:
     # event_associated_legacy = 22
     # event_orga_legacy = 23
+    event_associated_exclusive = 25
 
     assembly_associated = 30
     assembly_opt_in = 31
@@ -449,6 +481,8 @@ class CoreLogCodes(CdEIntEnum):
     realm_change = 40  #:
     username_change = 50  #:
     quota_violation = 60  #:
+    modify_email_status = 70  #:
+    delete_email_status = 71  #:
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:

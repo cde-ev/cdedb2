@@ -22,8 +22,17 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, build_msg, determine_age_class,
-    diacritic_patterns, get_hash, json_serialize, merge_dicts, now, unwrap,
+    CdEDBObject,
+    CdEDBObjectMap,
+    RequestState,
+    build_msg,
+    determine_age_class,
+    diacritic_patterns,
+    get_hash,
+    json_serialize,
+    merge_dicts,
+    now,
+    unwrap,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -31,10 +40,20 @@ from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.types import VALIDATOR_LOOKUP
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
-    CustomCSVDialect, Headers, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    TransactionObserver, access, cdedbid_filter, check_validation as check,
-    check_validation_optional as check_optional, event_guard,
-    inspect_validation as inspect, make_event_fee_reference, periodic,
+    CustomCSVDialect,
+    Headers,
+    REQUESTdata,
+    REQUESTdatadict,
+    REQUESTfile,
+    TransactionObserver,
+    access,
+    cdedbid_filter,
+    check_validation as check,
+    check_validation_optional as check_optional,
+    event_guard,
+    inspect_validation as inspect,
+    make_event_fee_reference,
+    periodic,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend
@@ -1701,10 +1720,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         complex_fee = self.eventproxy.calculate_complex_fee(
             rs, registration_id, visual_debug=True)
-        reference = make_event_fee_reference(
-            persona, rs.ambience['event'], donation=complex_fee.donation)
         fee = complex_fee.amount
         to_pay = fee - registration['amount_paid']
+        reference = make_event_fee_reference(persona, rs.ambience['event'])
 
         return {
             'registration': registration, 'persona': persona,

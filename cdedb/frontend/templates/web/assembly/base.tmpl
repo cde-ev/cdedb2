@@ -2,31 +2,31 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
-{% macro assembly_inner_navigation(data) %}
+{% macro assembly_inner_navigation(assembly) %}
         <div class="list-group tear-down">
-            {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), gettext("Overview"),
+            {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': assembly['id']}), gettext("Overview"),
                          aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'assembly_show')) }}
 
-            {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), gettext("Participants"),
+            {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': assembly['id']}), gettext("Participants"),
                          aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
 
-            {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
+            {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': assembly['id']}), gettext("Ballots"),
                          aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
-            {{ util.href(cdedblink("assembly/summary_ballots", {'assembly_id': data['id']}), gettext("Summary"),
+            {{ util.href(cdedblink("assembly/summary_ballots", {'assembly_id': assembly['id']}), gettext("Summary"),
                     aclass="list-group-item", icon="align-justify", active=(sidenav_active == 'assembly_summary')) }}
 
-            {{ util.href(cdedblink("assembly/list_attachments", {'assembly_id': data['id']}),
+            {{ util.href(cdedblink("assembly/list_attachments", {'assembly_id': assembly['id']}),
                     gettext("Attachments"), aclass="list-group-item", icon="file",
                     active=(sidenav_active == 'assembly_attachments')) }}
 
-            {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider) %}
-                {% if ambience['assembly']['is_active'] %}
-                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}),
+            {% if ("assembly_presider" in user.admin_views or assembly['id'] in user.presider) %}
+                {% if assembly['is_active'] %}
+                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': assembly['id']}),
                                  gettext("Configuration"), aclass="list-group-item", icon="cog",
                                   active=(sidenav_active == 'assembly_config')) }}
                 {% endif %}
-                {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}),
+                {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': assembly['id']}),
                              gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
                              active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
@@ -82,7 +82,7 @@
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["assembly_user"]),
                 (gettext("Assembly Administration"), ["assembly_mgmt"], None),
                 (gettext("Auditor"), ["auditor"], None),
             )) }}

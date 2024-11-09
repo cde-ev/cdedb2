@@ -1127,6 +1127,7 @@ tr.eventfee .money-negative {
     /*color: #3c763d;*/
     /*background-color: #dff0d8;*/
     color: #449d44;
+    white-space: nowrap;
 }
 tr.eventfee .money-positive {
     /*color: #31708f;*/
