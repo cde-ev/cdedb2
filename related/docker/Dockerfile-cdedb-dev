@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     less \
     vim \
     nano \
-    emacs
+    emacs-nox
 
 COPY ./doc/source/motd-container.txt /etc/motd.txt
 
