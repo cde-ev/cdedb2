@@ -160,6 +160,31 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         return val.strftime(formatstr)
 
 
+def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -> str:
+    """Pretty representation of duration."""
+    res = ""
+    n_ = gettext  # needed to extract translations
+    precise = False
+    if delta.days:
+        res += str(delta.days) + " " + gettext("days") + ", "
+        precise = True
+    if hours := delta.seconds // (60*60):
+        res += f"{hours} " + gettext("hours")
+        if precise:
+            return res
+        res += ", "
+        precise = True
+    if minutes := (delta.seconds % (60*60)) // 60:
+        res += f"{minutes} " + gettext("minutes")
+        if precise:
+            return res
+        res += ", "
+    if seconds := delta.seconds % 60:
+        res += f"{seconds} " + gettext("seconds")
+    res = res.removesuffix(", ")
+    return res
+
+
 @overload
 def money_filter(val: None, currency: str = "EUR", lang: str = "de",
                  ) -> None: ...
@@ -728,6 +753,7 @@ def xdict_entries_filter(items: Sequence[tuple[Any, CdEDBObject]], *args: str,
 JINJA_FILTERS = {
     'date': date_filter,
     'datetime': datetime_filter,
+    'timedelta': timedelta_filter,
     'money': money_filter,
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-11-09 21:33+0000\n"
+"POT-Creation-Date: 2024-11-09 23:33+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -64,9 +64,9 @@ msgstr ""
 #: cdedb/backend/event/registration.py:1152
 #: cdedb/backend/event/registration.py:1260
 #: cdedb/backend/event/registration.py:1585
-#: cdedb/backend/event/registration.py:1832
-#: cdedb/backend/event/registration.py:1866
-#: cdedb/backend/event/registration.py:1931 cdedb/backend/ml.py:188
+#: cdedb/backend/event/registration.py:1833
+#: cdedb/backend/event/registration.py:1867
+#: cdedb/backend/event/registration.py:1938 cdedb/backend/ml.py:188
 #: cdedb/backend/ml.py:297 cdedb/backend/ml.py:421 cdedb/backend/ml.py:459
 #: cdedb/backend/ml.py:491 cdedb/backend/ml.py:514 cdedb/backend/ml.py:712
 #: cdedb/backend/ml.py:758 cdedb/backend/ml.py:839 cdedb/backend/ml.py:875
@@ -1255,49 +1255,49 @@ msgstr ""
 msgid "Cannot book fee with amount of zero."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1870
+#: cdedb/backend/event/registration.py:1871
 msgid "Must give both or none."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1872
-#: cdedb/frontend/event/registration.py:1746
-#: cdedb/frontend/event/registration.py:1749
+#: cdedb/backend/event/registration.py:1873
+#: cdedb/frontend/event/registration.py:1744
+#: cdedb/frontend/event/registration.py:1747
 msgid "Must be in the past."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1874
+#: cdedb/backend/event/registration.py:1875
 msgid "Checkout must be after checkin."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1885
-#: cdedb/backend/event/registration.py:1905
+#: cdedb/backend/event/registration.py:1887
+#: cdedb/backend/event/registration.py:1910
 msgid "Inconsistent state."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1887
-#: cdedb/frontend/event/registration.py:1762
+#: cdedb/backend/event/registration.py:1889
+#: cdedb/frontend/event/registration.py:1760
 msgid "Must be after previous checkout."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1903
+#: cdedb/backend/event/registration.py:1908
 #, fuzzy
 msgid "Invalid checkout."
 msgstr "Annuntiationes"
 
-#: cdedb/backend/event/registration.py:1908
-#: cdedb/frontend/event/registration.py:1767
+#: cdedb/backend/event/registration.py:1913
+#: cdedb/frontend/event/registration.py:1765
 msgid "Must be before next checkin."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1941
+#: cdedb/backend/event/registration.py:1948
 msgid "Can only delete latest checkin."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1953
+#: cdedb/backend/event/registration.py:1960
 msgid "Can only delete consecutive transitions."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1956
+#: cdedb/backend/event/registration.py:1964
 msgid "Can only delete checkin and following checkout."
 msgstr ""
 
@@ -2348,7 +2348,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:186
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:288
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:289
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:301
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:323
 msgid "Mixed Lodging"
 msgstr ""
 
@@ -2359,7 +2359,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:193
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:302
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:303
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:305
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:327
 msgid "Participant List Consent"
 msgstr ""
 
@@ -2393,7 +2393,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:196
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:333
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:334
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:357
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:379
 #: cdedb/frontend/templates/web/generic.tmpl:75
 msgid "Notes"
 msgstr ""
@@ -2419,7 +2419,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:13
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:18
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:152
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:289
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:291
 msgid "Checkin"
 msgstr ""
 
@@ -3501,6 +3501,22 @@ msgstr ""
 
 #: cdedb/database/query.py:145
 msgid "Dict keys do not match."
+msgstr ""
+
+#: cdedb/filter.py:169
+msgid "days"
+msgstr ""
+
+#: cdedb/filter.py:172
+msgid "hours"
+msgstr ""
+
+#: cdedb/filter.py:178
+msgid "minutes"
+msgstr ""
+
+#: cdedb/filter.py:183
+msgid "seconds"
 msgstr ""
 
 #: cdedb/frontend/application.py:120 cdedb/frontend/cron.py:51
@@ -5027,7 +5043,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/generic.tmpl:16
 #: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:38
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:130
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:310
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:332
 msgid "Course Choices"
 msgstr ""
 
@@ -5399,17 +5415,17 @@ msgid "Not implemented"
 msgstr ""
 
 #: cdedb/frontend/event/registration.py:1717
-#: cdedb/frontend/event/registration.py:1790
+#: cdedb/frontend/event/registration.py:1788
 #, fuzzy
 msgid "Action failed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/frontend/event/registration.py:1752
+#: cdedb/frontend/event/registration.py:1750
 msgid "Must be after checkin."
 msgstr ""
 
+#: cdedb/frontend/event/registration.py:1752
 #: cdedb/frontend/event/registration.py:1754
-#: cdedb/frontend/event/registration.py:1756
 #, fuzzy
 msgid "Invalid timestamp."
 msgstr "Annuntiationes"
@@ -5706,7 +5722,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:468
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:495
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:145
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:408
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:430
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:209
 msgid "Are you sure?"
 msgstr ""
@@ -5782,7 +5798,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:195
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:398
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:136
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:397
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:419
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:200
 msgid "Actions"
 msgstr ""
@@ -5798,7 +5814,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:93
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:48
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:143
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:404
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:426
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:207
 msgid "Delete"
 msgstr ""
@@ -11001,7 +11017,7 @@ msgid "(Instructor)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:628
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:382
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:404
 msgid "Copy-Paste Template"
 msgstr ""
 
@@ -13707,7 +13723,7 @@ msgid "for %(track)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:42
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:336
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:358
 #, python-format
 msgid "%s. Choice"
 msgstr ""
@@ -13775,13 +13791,13 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:233
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:201
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:362
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:384
 msgid "Custom Fields"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:237
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:205
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:367
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:389
 msgid "Other Fields"
 msgstr ""
 
@@ -14749,7 +14765,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:183
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:266
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:299
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:321
 msgid "Registration Data"
 msgstr ""
 
@@ -14877,7 +14893,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:176
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:240
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:323
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:345
 msgid "Instructor of"
 msgstr ""
 
@@ -15204,6 +15220,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:242
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:243
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:258
 msgid "now"
 msgstr ""
 
@@ -15211,19 +15228,19 @@ msgstr ""
 msgid "Checkout time"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:273
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:299
 msgid "Checkout"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:406
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:428
 msgid "Registration has paid non-zero amount."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:412
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:434
 msgid "The registration will be permanently deleted."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:419
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:441
 msgid "Deletes the registration including all information shown here."
 msgstr ""
 
