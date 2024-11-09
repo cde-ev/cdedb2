@@ -131,6 +131,7 @@
             {% endif %}
         </dd>
 
+        {# TODO Adjust #}
         <dt title="{% trans %}Checked-In at{% endtrans %}">{% trans %}Checked-In at{% endtrans %}</dt>
         <dd id="checkin-time">
             {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}

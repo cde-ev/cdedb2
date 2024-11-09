@@ -1420,7 +1420,6 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(datetime.timezone.utc),
             'parts': {
                 1: {
                     'status': const.RegistrationPartStati.participant,
@@ -1449,7 +1448,6 @@ class TestEventBackend(BackendTest):
         expectation[4]['tracks'][2]['choices'] = data['tracks'][2]['choices']
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
-        expectation[4]['checkin'] = nearly_now()
         expectation[4]['mtime'] = nearly_now()
         expectation[4]['amount_owed'] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
@@ -1461,7 +1459,6 @@ class TestEventBackend(BackendTest):
         data = self.event.get_registrations(self.key, (1, 2, 4))
         self.assertEqual(expectation, data)
         new_reg: CdEDBObject = {
-            'checkin': None,
             'event_id': event_id,
             'list_consent': True,
             'mixed_lodging': False,
@@ -2509,7 +2506,6 @@ class TestEventBackend(BackendTest):
             'camping_mat_capacity': 0}
         # registration
         new_data['event.registrations'][1000] = {
-            'checkin': None,
             'event_id': 1,
             'fields': {'lodge': 'Langschläfer',
                        'behaviour': 'good'},

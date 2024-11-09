@@ -1653,9 +1653,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
             registration['parts'][part_id]['status']).is_present()
-        registrations = {
-            k: v for k, v in registrations.items()
-            if (not v['checkin'] and any(there(v, id) for id in parts))}
+        registrations = {k: v for k, v in registrations.items()
+                         if (len(v['checkin_transitions']) % 2 == 0
+                             and any(there(v, id) for id in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -1693,16 +1693,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration = self.eventproxy.get_registration(rs, registration_id)
         if registration['event_id'] != event_id:
             raise werkzeug.exceptions.NotFound(n_("Wrong associated event."))
-        if registration['checkin']:
-            rs.notify("warning", n_("Already checked in."))
+        if len(registration['checkin_transitions']) % 2 == 1:
+            rs.notify("error", n_("Already checked in."))
             return self.checkin_form(rs, event_id)
-
-        new_reg = {
-            'id': registration_id,
-            'checkin': now(),
-        }
-        code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
-        rs.notify_return_code(code)
+        code = self.eventproxy.add_checkin_transition(
+            rs, registration_id, const.CheckinTransitionType.checked_in)
+        rs.notify_return_code(code, error=n_("Already checked in."))
         return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
     def _get_payment_data(self, rs: RequestState, event_id: int,

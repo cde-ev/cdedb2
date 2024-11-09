@@ -889,6 +889,11 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
+            checkin_transitions = models.CheckinTransition.many_from_database(
+                self.query_all(
+                    rs, *models.CheckinTransition.get_select_query(registration_ids),
+                ),
+            )
             personalized_fees = models.PersonalizedFee.many_from_database(
                 self.query_all(
                     rs, *models.PersonalizedFee.get_select_query(registration_ids),
@@ -898,6 +903,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 self._get_event_fields(rs, event_id).values())
             for reg in ret.values():
                 reg['tracks'] = {}
+                reg['checkin_transitions'] = []
                 reg['personalized_fees'] = {}
                 reg['fields'] = cast_fields(reg['fields'], event_fields)
             for reg_track in tdata:
@@ -907,6 +913,9 @@ class EventRegistrationBackend(EventBaseBackend):
             for choice in choices:
                 reg_track = ret[choice['registration_id']]['tracks'][choice['track_id']]
                 reg_track['choices'][choice['course_id']] = choice['rank']
+            for transition in checkin_transitions.values():
+                reg = ret[transition.registration_id]
+                reg['checkin_transitions'].append(transition)
             for personalized_fee in personalized_fees.values():
                 reg = ret[personalized_fee.registration_id]
                 reg['personalized_fees'][personalized_fee.fee_id] = \
@@ -1798,3 +1807,25 @@ class EventRegistrationBackend(EventBaseBackend):
             self.cgitb_log()
             return False, index
         return True, len(data)
+
+    @access("event")
+    def add_checkin_transition(self, rs: RequestState, registration_id: int,
+                               ttype: const.CheckinTransitionType,
+                               ttime: datetime.datetime | None = None,
+                               ) -> DefaultReturnCode:
+        with Atomizer(rs):
+            reg = self.get_registration(rs, registration_id)
+            if not self.is_orga(rs, event_id=reg['event_id']):
+                raise PrivilegeError(n_("Not privileged."))
+            tparity = len(reg['checkin_transitions']) % 2
+            if not (tparity == 0 and ttype == const.CheckinTransitionType.checked_in or
+                    tparity == 1 and ttype == const.CheckinTransitionType.checked_out):
+                return 0
+
+            data: CdEDBObject = {
+                'registration_id': registration_id,
+                'transition_type': ttype,
+            }
+            if ttime:
+                data['ttime'] = ttime
+            return self.sql_insert(rs, models.CheckinTransition.database_table, data)

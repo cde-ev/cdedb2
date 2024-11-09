@@ -958,3 +958,15 @@ class PersonalizedFee(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (0, )
+
+@dataclasses.dataclass
+class CheckinTransition(EventDataclass):
+    database_table = "event.checkin_transitions"
+    entity_key = "registration_id"
+
+    registration_id: vtypes.ID
+    transition_type: const.CheckinTransitionType
+    ttime: datetime.datetime
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.ttime, self.registration_id, self.transition_type)

@@ -5,7 +5,7 @@ BEGIN;
             transition_type     integer NOT NULL DEFAULT 1,
             ttime               timestamp WITH TIME ZONE NOT NULL DEFAULT now()
     );
-    INSERT INTO event.checkin_transitions (registration_id, checkin)
+    INSERT INTO event.checkin_transitions (registration_id, ttime)
         SELECT id, checkin
         FROM event.registrations;
     ALTER TABLE event.checkin_transitions ALTER COLUMN transition_type DROP DEFAULT;

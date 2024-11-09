@@ -103,6 +103,12 @@ class RegistrationPartStati(CdEIntEnum):
                         RegistrationPartStati.participant,
                         RegistrationPartStati.waitlist)
 
+@enum.unique
+class CheckinTransitionType(CdEIntEnum):
+    """"All types of checkin transitions"""
+    checked_in = 1  #:
+    checked_out = 11  #:
+
 
 @enum.unique
 class FieldAssociations(CdEIntEnum):

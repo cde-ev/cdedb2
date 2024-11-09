@@ -128,7 +128,6 @@
 					"is_camping_mat": false
 				}
 			},
-			"checkin": null,
 			"list_consent": false,
 			"notes": "Reingelegt",
 			"parental_agreement": true,
@@ -219,7 +218,6 @@
 					"is_camping_mat": false
 				}
 			},
-			"checkin": null,
 			"list_consent": true,
 			"persona_id": 3,
 			"notes": null,

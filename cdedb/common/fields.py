@@ -151,7 +151,7 @@ COURSE_SEGMENT_FIELDS = ("id", "course_id", "track_id", "is_active")
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
-    "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
+    "parental_agreement", "mixed_lodging", "list_consent", "fields",
     "real_persona_id", "amount_paid", "amount_owed", "is_member")
 
 #: Fields of a registration which are specific for each part of the event

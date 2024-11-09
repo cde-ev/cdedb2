@@ -3027,7 +3027,6 @@ REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
-    'checkin': Optional[datetime.datetime],
     'fields': Mapping,
 }
 
@@ -3896,7 +3895,6 @@ PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
 PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
-    'checkin': Optional[datetime.datetime],
     'fields': Mapping,
     'personalized_fees': Mapping,
 }
