@@ -45,6 +45,7 @@ from cdedb.common import (
     PsycoJson,
     RequestState,
     cast_fields,
+    now,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -56,7 +57,8 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.filter import money_filter
+from cdedb.database.constants import CheckinTransitionType
+from cdedb.filter import datetime_filter, money_filter
 
 T = TypeVar("T")
 
@@ -1813,6 +1815,7 @@ class EventRegistrationBackend(EventBaseBackend):
                                ttype: const.CheckinTransitionType,
                                ttime: datetime.datetime | None = None,
                                ) -> DefaultReturnCode:
+        """Checkin a participant."""
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
             if not self.is_orga(rs, event_id=reg['event_id']):
@@ -1828,4 +1831,74 @@ class EventRegistrationBackend(EventBaseBackend):
             }
             if ttime:
                 data['ttime'] = ttime
-            return self.sql_insert(rs, models.CheckinTransition.database_table, data)
+            ret = self.sql_insert(rs, models.CheckinTransition.database_table, data)
+            msg = datetime_filter(ttime or now(), lang=rs.log_lang)
+            self.event_log(rs, const.EventLogCodes.checkin_transition_added,
+                           reg['event_id'], registration_id, msg)
+        return ret
+
+    @access("event")
+    def change_checkin_transitions(
+        self, rs: RequestState, registration_id: int, tid1: int,
+        ttime1: datetime.datetime, tid2: Optional[int] = None,
+        ttime2: Optional[datetime.datetime] = None,
+    ) -> DefaultReturnCode:
+        """Change the time a participant was present."""
+        tid1 = affirm(vtypes.ID, tid1)
+        ttime1 = affirm(datetime.datetime, ttime1)
+        tid2 = affirm_optional(vtypes.ID, tid2)
+        ttime2 = affirm_optional(datetime.datetime, ttime2)
+
+        if (tid2 and ttime2 is None) or (ttime2 and tid2 is None):
+            raise ValueError(n_("Must give both or none."))
+        elif ttime1 > now() or ttime2 and ttime2 > now():
+            raise ValueError(n_("Must be in the past"))
+        elif ttime2 and ttime1 > ttime2:
+            raise ValueError(n_("Checkout must be after checkin."))
+
+        with Atomizer(rs):
+            ret = 1
+            reg = self.get_registration(rs, registration_id)
+            if not self.is_orga(rs, registration_id=registration_id):
+                raise PrivilegeError(n_("Not privileged."))
+
+            iterator: Iterator[models.CheckinTransition] = iter(xsorted(reg['checkin_transitions']))
+            prev_ctt: Optional[models.CheckinTransition] = None
+            while transition := next(iterator, None):
+                if transition.id == tid1:
+                    if transition.transition_type != CheckinTransitionType.checked_in:
+                        raise RuntimeError(n_("Inconsistent state."))
+                    elif prev_ctt and prev_ctt.ttime > ttime1:
+                        raise ValueError(n_("Must be after previous checkout."))
+                    if transition.ttime != ttime1:
+                        msg = (f"{datetime_filter(transition.ttime, lang=rs.log_lang)}"
+                               f" -> {datetime_filter(ttime1, lang=rs.log_lang)}")
+                        transition.ttime = ttime1
+                        ret *= self.sql_update(rs, models.CheckinTransition.database_table,
+                                              transition.to_database())
+                        self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+                                       reg['event_id'], registration_id, msg)
+                    if tid2 is None:
+                        break
+                    assert ttime2 is not None
+
+                    # the checkout must be directly after the checkin
+                    transition = next(iterator, None)
+                    if transition is None or transition.id != tid2:
+                        raise KeyError(n_("Invalid checkout transition."))
+                    if transition.transition_type != CheckinTransitionType.checked_out:
+                        raise RuntimeError(n_("Inconsistent state."))
+                    if ((next_ctt := next(iterator, None))
+                            and transition.ttime > next_ctt.ttime):
+                        raise ValueError(n_("Must be before next checkin."))
+                    if transition.ttime != ttime2:
+                        msg = (f"{datetime_filter(transition.ttime, lang=rs.log_lang)}"
+                               f" -> {datetime_filter(ttime2, lang=rs.log_lang)}")
+                        transition.ttime = ttime2
+                        ret *= self.sql_update(rs, models.CheckinTransition.database_table,
+                                               transition.to_database())
+                        self.event_log(rs, const.EventLogCodes.checkin_transition_changed,
+                                       reg['event_id'], registration_id, msg)
+                    break
+                prev_ctt = transition
+            return ret

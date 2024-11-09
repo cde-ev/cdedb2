@@ -130,12 +130,6 @@
                 {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
             {% endif %}
         </dd>
-
-        {# TODO Adjust #}
-        <dt title="{% trans %}Checked-In at{% endtrans %}">{% trans %}Checked-In at{% endtrans %}</dt>
-        <dd id="checkin-time">
-            {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
-        </dd>
     </dl>
 
     <dl class="dl-horizontal col-md-6">
@@ -216,6 +210,82 @@
         {% endfor %}
         </div>
     {% endfor %}
+
+    {{ util.h(gettext("Presence"), level=4, underline=True) }}
+    <table id="checkin-transitions" class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{% trans %}Timespan{% endtrans %}</th>
+                <th>{# Change #}</th>
+                <th>{% trans %}Duration{% endtrans %}</th>
+                <th>{# action buttons #}</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for tpair in ambience['registration']['checkin_transitions']|batch(2) %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <form action="{{ cdedblink('event/change_checkin_transitions',
+                                           {'registration_id': ambience['registration']['id']}) }}"
+                      method="POST"
+                      id="changecheckintransitionform{{ loop.index }}">
+                    {{ util.anti_csrf_token('event/change_checkin_transitions') }}
+                    <td>
+                        <div class="input-group">
+                            {# TODO: display validation errors #}
+                            {{ util.input_hidden(name='tid1', value=tpair[0].id) }}
+                            {{ util.input_text(name='ttime1_' + tpair[0].id|string, type='datetime-local', arialabel=gettext('Checkin time'),
+                                               defaultvalue=tpair[0].ttime) }}
+                            <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
+                            {% if tpair|length == 1 %}
+                                <span class="input-group-addon">{% trans %}now{% endtrans %}</span>
+                                {{ util.input_text(name='', defaultvalue=gettext("now"), readonly=True) }}
+                            {% else %}
+                                {{ util.input_hidden(name='tid2', value=tpair[1].id) }}
+                                {{ util.input_text(name='ttime2_' + tpair[1].id|string, type='datetime-local', arialabel=gettext('Checkout time'),
+                                                   defaultvalue=tpair[1].ttime) }}
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {{ util.input_submit(icon='pen', label="", aclass="btn btn-primary btn-sm") }}
+                    </td>
+                </form>
+            {% if tpair|length == 1 %}
+                <td>
+                <form action="{{ cdedblink('event/add_checkin_transition') }}" method="POST"
+                    id="checkoutform">
+                    {{ util.anti_csrf_token('event/add_checkin_transition') }}
+                    {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                    {{ util.input_submit(label=gettext("Checkout"), aclass="btn btn-primary btn-sm", name='ttype',
+                                         value=enums.CheckinTransitionType.checked_out, readonly=is_locked) }}
+                </form>
+                </td>
+            {% else %}
+                {# TODO: filter for nice duration formatting #}
+                <td>{{ tpair[1].ttime - tpair[0].ttime }}</td>
+            {% endif %}
+                <td>
+                    Delete Button
+                </td>
+            </tr>
+        {% endfor %}
+        {% if ambience['registration']['checkin_transitions']|length % 2 == 0 %}
+            <tr>
+            <td>
+                <form action="{{ cdedblink('event/add_checkin_transition') }}" method="POST" id="checkinform">
+                    {{ util.anti_csrf_token('event/add_checkin_transition') }}
+                    {{ util.input_hidden(name="registration_id", value=ambience['registration']['id']) }}
+                    {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm", name='ttype',
+                                         value=enums.CheckinTransitionType.checked_in, readonly=is_locked) }}
+                </form>
+            </td>
+            <td></td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">

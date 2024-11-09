@@ -103,6 +103,7 @@ class RegistrationPartStati(CdEIntEnum):
                         RegistrationPartStati.participant,
                         RegistrationPartStati.waitlist)
 
+
 @enum.unique
 class CheckinTransitionType(CdEIntEnum):
     """"All types of checkin transitions"""
@@ -602,6 +603,9 @@ class EventLogCodes(CdEIntEnum):
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
     registration_status_changed = 300  #:
+    checkin_transition_added = 350  #:
+    checkin_transition_changed = 351  #:
+    checkin_transition_deleted = 352  #:
     personalized_fee_amount_set = 400  #:
     personalized_fee_amount_deleted = 401  #:
 

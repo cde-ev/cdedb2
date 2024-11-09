@@ -405,10 +405,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="batch_fees_form"),
                 rule("/batchfees", methods=_POST,
                      endpoint="batch_fees"),
-                rule("/checkin", methods=_GET,
-                     endpoint="checkin_form"),
-                rule("/checkin", methods=_POST,
-                     endpoint="checkin"),
                 sub('/droid', (
                     # API-functionality:
                     rule("/partial", methods=_GET,
@@ -655,9 +651,16 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="change_registrations_form"),
                     rule("/multiedit", methods=_POST,
                          endpoint="change_registrations"),
+                    rule("/checkin", methods=_GET, endpoint="checkin_form"),
                     sub('/<int:registration_id>', (
                         rule("/show", methods=_GET,
                              endpoint="show_registration"),
+                        sub("/checkin", (
+                            rule("/add", methods=_POST,
+                                 endpoint="add_checkin_transition"),
+                            rule("/change", methods=_POST,
+                                 endpoint="change_checkin_transitions"),
+                        )),
                         sub('/fee', (
                             rule("/summary", methods=_GET,
                                  endpoint="show_registration_fee"),

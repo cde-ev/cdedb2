@@ -6915,7 +6915,20 @@
             "rank": 2
         }
     ],
-    "event.checkin_transitions": [],
+    "event.checkin_transitions": [
+        {
+            "id": 1,
+            "registration_id": 6,
+            "transition_type": 1,
+            "ttime": "2022-02-22T17:00:00+00:00"
+        },
+        {
+            "id": 2,
+            "registration_id": 6,
+            "transition_type": 11,
+            "ttime": "2022-02-23T09:00:00+00:00"
+        }
+    ],
     "event.personalized_fees": [
         {
             "id": 1,

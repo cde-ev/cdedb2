@@ -959,6 +959,7 @@ class PersonalizedFee(EventDataclass):
     def get_sortkey(self) -> Sortkey:
         return (0, )
 
+
 @dataclasses.dataclass
 class CheckinTransition(EventDataclass):
     database_table = "event.checkin_transitions"
