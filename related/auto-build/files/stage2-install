@@ -101,7 +101,6 @@ python3 -m pip install --no-cache-dir --break-system-packages \
 # dPROD not present
 python3 -m pip install --no-cache-dir --break-system-packages \
     mypy==1.13.0 \
-    pylint==3.2.5 \
     ruff==0.7.3 \
     types-python-dateutil \
     types-bleach \
