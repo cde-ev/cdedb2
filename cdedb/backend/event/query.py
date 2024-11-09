@@ -127,6 +127,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     f" ON reg.id = fee{fee.id}.registration_id"
                     for fee in event.fees.values() if fee.is_personalized()
                 )
+                ttype = const.CheckinTransitionType
                 return f"""
                     (
                         SELECT {', '.join(REGISTRATION_FIELDS)},
@@ -149,6 +150,15 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     LEFT OUTER JOIN (
                         {timestamp_table(creation=False)}
                     ) AS mtime ON reg.persona_id = mtime.persona_id
+                    {checkin_join(ttype=ttype.checked_in, agg="MIN")}
+                    {checkin_join(ttype=ttype.checked_out, agg="MIN")}
+                    {checkin_join(ttype=ttype.checked_in, agg="MAX")}
+                    {checkin_join(ttype=ttype.checked_out, agg="MAX")}
+                    LEFT OUTER JOIN (
+                            SELECT registration_id, mod(COUNT(*), 2) = 1 as current
+                            FROM event.checkin_transitions
+                            GROUP BY registration_id
+                        ) AS checkin ON reg.id = checkin.registration_id
                     {full_part_tables}
                     {full_track_tables}
                     {course_choices_tables}
@@ -272,7 +282,7 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     WHERE event_id = {event_id}
                 """
 
-            # Step 6: Prepare template for timestamp information.
+            # Step 6: Prepare template for log timestamp information.
             def timestamp_table(creation: bool) -> str:
                 if creation:
                     param_name = 'creation_time'
@@ -287,7 +297,31 @@ class EventQueryBackend(EventBaseBackend):  # pylint: disable=abstract-method
                     GROUP BY persona_id
                 """
 
-            # Step 7: Construct the final view.
+            # Step 7: Prepare template for checkin information.
+            def checkin_join(ttype: const.CheckinTransitionType, agg: str) -> str:
+                param_name = ""
+                if agg.upper() == "MIN":
+                    param_name += "first_"
+                elif agg.upper() == "MAX":
+                    param_name += "last_"
+                else:
+                    raise NotImplementedError
+                if ttype == const.CheckinTransitionType.checked_in:
+                    param_name += "checkin"
+                elif ttype == const.CheckinTransitionType.checked_out:
+                    param_name += "checkout"
+                else:
+                    raise NotImplementedError
+                return f"""
+                        LEFT OUTER JOIN (
+                            SELECT registration_id, {agg}(ttime) AS ttime
+                            FROM event.checkin_transitions
+                            WHERE transition_type = {ttype}
+                            GROUP BY registration_id
+                        ) AS {param_name} ON reg.id = {param_name}.registration_id
+                        """
+
+            # Step 8: Construct the final view.
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)

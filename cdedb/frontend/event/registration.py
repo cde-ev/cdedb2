@@ -522,9 +522,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             will be retrieved from the input (meaning this is a new registration
             being created). Otherwise the data from `get_registration()['parts']`.
         :param skip: A list of field names to be excluded from retrieval and setting.
-            Can be used to avoid simulataneously opened tabs overwriting one another,
-            e.g. when editing a registration coming from the checkin page, the
-            `reg.checkin` field is skipped for that edit.
+            Can be used to avoid simulataneously opened tabs overwriting one another.
+            TODO No longer used after checkin refactoring. Remove this?
         :param check_enabled: If True, only retrieve data for fields where a
             corresponding enable checkbox is selected. Only relevant for the multiedit.
         """
@@ -555,7 +554,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
         if orga_input:
             standard_params.update({
-                "reg.checkin": Optional[datetime.datetime],  # type: ignore[dict-item]
                 "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
                 "reg.parental_agreement": bool,
             })
