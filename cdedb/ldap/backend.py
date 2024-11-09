@@ -25,6 +25,7 @@ from passlib.hash import sha512_crypt
 from psycopg import AsyncCursor, sql
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
+from twisted.python.util import InsensitiveDict
 
 from cdedb.config import SecretsConfig
 from cdedb.database.constants import SubscriptionState
@@ -454,7 +455,7 @@ class LDAPsqlBackend:
     def lower_ldap_filter_to_sql(
         cls,
         filter_: FilterLike,
-        attr_replacements: dict[str, str],
+        attr_replacements: InsensitiveDict,  # type: ignore[type-arg]
     ) -> tuple[sql.Composable, list["DatabaseValue_s"]]:
         """Lower the given LDAP filter to a SQL query.
 
@@ -522,15 +523,18 @@ class LDAPsqlBackend:
             if not isinstance(
                 filter_.substrings[0], pureldap.LDAPFilter_substrings_initial,
             ):
-                pattern += sql.SQL("'%', ")
-            pattern += sql.SQL(", '%', ").join(
-                sql.Placeholder() for _ in filter_.substrings
+                pattern += sql.SQL("'%%', ")
+            pattern += sql.SQL(", '%%', ").join(
+                sql.SQL("%s::text") for _ in filter_.substrings
             )
             if not isinstance(
                 filter_.substrings[-1], pureldap.LDAPFilter_substrings_final,
             ):
-                pattern += sql.SQL(", '%'")
+                pattern += sql.SQL(", '%%'")
             return (
+                # We need to use CONCAT here because we want to use both
+                # the wildcard character ('%', escaped as '%%')
+                # and placeholder substitution ('%s').
                 sql.SQL("{} LIKE CONCAT({})").format(
                     sql.Identifier(attr_replacements[filter_.type.decode()]),
                     pattern,
@@ -551,16 +555,16 @@ class LDAPsqlBackend:
         if filterObject is not None:
             # We have to replace the attribute names in the LDAP filter with the
             # corresponding column names in the SQL query.
-            attr_replacements = {
+            attr_replacements = InsensitiveDict({  # type: ignore[var-annotated]
                 "sn": "family_name",
                 "givenName": "given_names",
                 "mail": "username",
                 "uid": "id",
-            }
+            })
             filter_query, filter_params = self.lower_ldap_filter_to_sql(
                 filterObject, attr_replacements,
             )
-            query += sql.SQL(" AND ") + filter_query
+            query += sql.SQL(" AND (") + filter_query + sql.SQL(")")
             params += filter_params
         return [
             self.list_single_user(e["id"])
