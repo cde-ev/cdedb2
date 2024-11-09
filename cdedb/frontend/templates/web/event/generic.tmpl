@@ -390,7 +390,7 @@
             {% endif %}
 
             <li {% if violation.severity == 1 %} class="text-warning" {% elif violation.severity > 1 %} class="text-danger" {% endif %}>
-                {% trans course_link=course_link, constraint_shortname=ambience['event']['part_groups'][violation.part_group_id]['shortname'] %}
+                {% trans course_link=course_link, constraint_shortname=ambience['event']['track_groups'][violation.track_group_id]['shortname'] %}
                     {{ course_link }} is in violation of the {{ constraint_shortname }} mutually exclusive course constraint.
                 {% endtrans -%}
                 {# These are presorted. #}

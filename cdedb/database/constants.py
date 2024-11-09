@@ -161,9 +161,13 @@ class QuestionnaireUsages(CdEIntEnum):
 class EventPartGroupType(CdEIntEnum):
     # Weak constraints that only produce warnings:
     mutually_exclusive_participants = 1
+
+    # Removed, do not reuse:
     mutually_exclusive_courses = 2
+
     # Special type that imposes no constraints:
     Statistic = 100
+
     # Special type for link to mailinglist with limited scope.
     mailinglist_link = 200
 
@@ -171,7 +175,6 @@ class EventPartGroupType(CdEIntEnum):
         return {
             EventPartGroupType.Statistic: "chart-bar",
             EventPartGroupType.mutually_exclusive_participants: "user-lock",
-            EventPartGroupType.mutually_exclusive_courses: "comment-slash",
             EventPartGroupType.mailinglist_link: "envelope",
         }[self]
 
@@ -182,10 +185,12 @@ class EventPartGroupType(CdEIntEnum):
 @enum.unique
 class CourseTrackGroupType(CdEIntEnum):
     course_choice_sync = 1
+    mutually_exclusive_courses = 2
 
     def get_icon(self) -> str:
         return {
             CourseTrackGroupType.course_choice_sync: "bezier-curve",
+            CourseTrackGroupType.mutually_exclusive_courses: "comment-slash",
         }[self]
 
     def is_sync(self) -> bool:

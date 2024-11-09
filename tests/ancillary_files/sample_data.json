@@ -5039,22 +5039,6 @@
             "constraint_type": 1
         },
         {
-            "id": 8,
-            "event_id": 4,
-            "title": "Kurse 1. Hälfte",
-            "shortname": "Kurs 1H",
-            "notes": null,
-            "constraint_type": 2
-        },
-        {
-            "id": 9,
-            "event_id": 4,
-            "title": "Kurse 2. Hälfte",
-            "shortname": "Kurs 2H",
-            "notes": null,
-            "constraint_type": 2
-        },
-        {
             "id": 10,
             "event_id": 4,
             "title": "Mailingliste Windischleuba",
@@ -5134,30 +5118,6 @@
         },
         {
             "part_group_id": 7,
-            "part_id": 11
-        },
-        {
-            "part_group_id": 8,
-            "part_id": 6
-        },
-        {
-            "part_group_id": 8,
-            "part_id": 7
-        },
-        {
-            "part_group_id": 8,
-            "part_id": 8
-        },
-        {
-            "part_group_id": 9,
-            "part_id": 9
-        },
-        {
-            "part_group_id": 9,
-            "part_id": 10
-        },
-        {
-            "part_group_id": 9,
             "part_id": 11
         },
         {
@@ -5338,6 +5298,33 @@
             "notes": null,
             "constraint_type": 1,
             "sortkey": 3
+        },
+        {
+            "id": 4,
+            "event_id": 4,
+            "title": "Kurse 1. Hälfte",
+            "shortname": "Kurs 1H",
+            "notes": null,
+            "constraint_type": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 5,
+            "event_id": 4,
+            "title": "Kurse 2. Hälfte nachmittags",
+            "shortname": "Kurs 2Hn",
+            "notes": null,
+            "constraint_type": 2,
+            "sortkey": 4
+        },
+        {
+            "id": 6,
+            "event_id": 4,
+            "title": "Kurse 2. Hälfte morgens",
+            "shortname": "Kurs 2Hm",
+            "notes": null,
+            "constraint_type": 2,
+            "sortkey": 3
         }
     ],
     "event.track_group_tracks": [
@@ -5358,33 +5345,78 @@
         },
         {
             "id": 4,
-            "track_group_id": 3,
-            "track_id": 9
-        },
-        {
-            "id": 5,
-            "track_group_id": 3,
-            "track_id": 11
-        },
-        {
-            "id": 6,
-            "track_group_id": 3,
-            "track_id": 13
-        },
-        {
-            "id": 7,
             "track_group_id": 2,
             "track_id": 10
         },
         {
-            "id": 8,
+            "id": 5,
             "track_group_id": 2,
             "track_id": 12
         },
         {
-            "id": 9,
+            "id": 6,
             "track_group_id": 2,
             "track_id": 14
+        },
+        {
+            "id": 7,
+            "track_group_id": 3,
+            "track_id": 9
+        },
+        {
+            "id": 8,
+            "track_group_id": 3,
+            "track_id": 11
+        },
+        {
+            "id": 9,
+            "track_group_id": 3,
+            "track_id": 13
+        },
+        {
+            "id": 10,
+            "track_group_id": 4,
+            "track_id": 6
+        },
+        {
+            "id": 11,
+            "track_group_id": 4,
+            "track_id": 7
+        },
+        {
+            "id": 12,
+            "track_group_id": 4,
+            "track_id": 8
+        },
+        {
+            "id": 13,
+            "track_group_id": 5,
+            "track_id": 10
+        },
+        {
+            "id": 14,
+            "track_group_id": 5,
+            "track_id": 12
+        },
+        {
+            "id": 15,
+            "track_group_id": 5,
+            "track_id": 14
+        },
+        {
+            "id": 16,
+            "track_group_id": 6,
+            "track_id": 9
+        },
+        {
+            "id": 17,
+            "track_group_id": 6,
+            "track_id": 11
+        },
+        {
+            "id": 18,
+            "track_group_id": 6,
+            "track_id": 13
         }
     ],
     "event.field_definitions": [

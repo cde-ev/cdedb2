@@ -108,7 +108,7 @@ class MEPViolation(PartGroupConstraintViolation):
 
 
 @dataclass(frozen=True)
-class MECViolation(PartGroupConstraintViolation):
+class MECViolation(TrackGroupConstraintViolation):
     course_id: int
     track_ids: list[int]  # Sorted IDs of the tracks in violation.
     tracks_str: str  # Locale agnostic string representation of said tracks.
@@ -121,8 +121,8 @@ class MECViolation(PartGroupConstraintViolation):
     @property
     def constraint_type(
             self,
-    ) -> Literal[const.EventPartGroupType.mutually_exclusive_courses]:
-        return const.EventPartGroupType.mutually_exclusive_courses
+    ) -> Literal[const.CourseTrackGroupType.mutually_exclusive_courses]:
+        return const.CourseTrackGroupType.mutually_exclusive_courses
 
 
 @dataclass(frozen=True)
@@ -590,7 +590,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                         CCSViolation(tg_id, reg_id, reg['persona_id']))
 
         # Check courses for violations against mutual exclusiveness constraints.
-        mec = const.EventPartGroupType.mutually_exclusive_courses
+        mec = const.CourseTrackGroupType.mutually_exclusive_courses
         mec_violations = []
         if course_id is None:
             courses = self.eventproxy.get_courses(
@@ -600,10 +600,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             courses = self.eventproxy.get_courses(rs, (course_id,))
         courses = dict(keydictsort_filter(courses, EntitySorter.course))
-        track_part_map = {
-            track_id: track.part_id
-            for track_id, track in rs.ambience['event'].tracks.items()
-        }
 
         def track_id_sorter(track_ids: Iterable[int]) -> list[int]:
             return xsorted(track_ids,
@@ -612,15 +608,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         for course_id_, course in courses.items():
             # Gather the track and part ids of the courses active segments.
             track_ids = set(course['active_segments'])
-            part_ids = set(track_part_map[t_id] for t_id in track_ids)
-            for pg_id, part_group in pgs_by_type[mec]:
-                if len(part_ids & set(part_group.parts)) > 1:
+            for tg_id, track_group in tgs_by_type[mec]:
+                if len(track_ids & set(track_group.tracks)) > 1:
                     # Filter those tracks that belong to this part group.
                     sorted_track_ids = track_id_sorter(
-                        t_id for t_id in track_ids
-                        if track_part_map[t_id] in part_group.parts)
+                        t_id for t_id in track_ids if t_id in track_group.tracks)
                     mec_violations.append(MECViolation(
-                        pg_id, course_id_, sorted_track_ids,
+                        tg_id, course_id_, sorted_track_ids,
                         ", ".join(rs.ambience['event'].tracks[track_id].shortname
                                   for track_id in sorted_track_ids),
                     ))
