@@ -1,9 +1,9 @@
 BEGIN;
     CREATE TABLE event.checkin_transitions (
-            id serial PRIMARY KEY,
-            registration_id integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
-            transition_type integer NOT NULL DEFAULT 1,
-            ttime timestamp WITH TIMESTAMP NOT NULL DEFAULT now()
+            id                  serial PRIMARY KEY,
+            registration_id     integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+            transition_type     integer NOT NULL DEFAULT 1,
+            ttime               timestamp WITH TIME ZONE NOT NULL DEFAULT now()
     );
     INSERT INTO event.checkin_transitions (registration_id, checkin)
         SELECT id, checkin

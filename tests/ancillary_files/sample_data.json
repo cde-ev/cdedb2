@@ -6071,7 +6071,6 @@
             "amount_owed": "553.99",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
@@ -6092,7 +6091,6 @@
             "amount_owed": "466.49",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "lodge": "015112345678",
@@ -6115,7 +6113,6 @@
             "amount_owed": "504.48",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": false,
             "fields": {
                 "is_child": false,
@@ -6136,7 +6133,6 @@
             "amount_owed": "431.99",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {
                 "is_child": true,
@@ -6159,7 +6155,6 @@
             "amount_owed": "584.48",
             "parental_agreement": true,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "is_child": false,
@@ -6180,7 +6175,6 @@
             "amount_owed": "10.50",
             "parental_agreement": true,
             "mixed_lodging": true,
-            "checkin": null,
             "list_consent": true,
             "fields": {
                 "is_child": false,
@@ -6201,7 +6195,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6218,7 +6211,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6235,7 +6227,6 @@
             "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         },
@@ -6252,7 +6243,6 @@
             "amount_owed": "4.20",
             "parental_agreement": false,
             "mixed_lodging": false,
-            "checkin": null,
             "list_consent": false,
             "fields": {}
         }
@@ -6925,6 +6915,7 @@
             "rank": 2
         }
     ],
+    "event.checkin_transitions": [],
     "event.personalized_fees": [
         {
             "id": 1,

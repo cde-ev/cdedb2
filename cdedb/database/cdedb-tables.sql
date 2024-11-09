@@ -1104,10 +1104,10 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 
 CREATE TABLE event.checkin_transitions (
-        id serial PRIMARY KEY,
-        registration_id integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
-        transition_type integer NOT NULL,
-        ttime timestamp WITH TIMESTAMP NOT NULL DEFAULT now()
+        id                      serial PRIMARY KEY,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id) ON DELETE CASCADE,
+        transition_type         integer NOT NULL,
+        ttime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now()
 );
 CREATE INDEX checkin_transitions_registration_id_idx ON event.checkin_transitions(registration_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.checkin_transitions TO cdb_persona;
