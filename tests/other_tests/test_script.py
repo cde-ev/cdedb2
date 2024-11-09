@@ -55,14 +55,14 @@ class TestScript(unittest.TestCase):
     def test_outfile(self) -> None:
         buffer = io.StringIO()
         with redirect_to_file(buffer):
-            with tempfile.NamedTemporaryFile("w") as f:
+            with tempfile.NamedTemporaryFile("w", encoding="utf-8") as f:
                 s = self.get_script(outfile=f.name)
                 print("Not writing this to file.")
                 print("Not writing this to file either.", file=sys.stderr)
                 with s:
                     print("Writing this to file.")
                     print("This too!", file=sys.stderr)
-                with open(f.name) as fr:
+                with open(f.name, encoding="utf-8") as fr:
                     self.check_buffer(
                         fr, self.assertEqual, "Writing this to file.\nThis too!\n",
                         truncate=False)
@@ -102,7 +102,7 @@ class TestScript(unittest.TestCase):
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
-        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+        with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
             f.write("SYSLOG_LEVEL = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
@@ -132,7 +132,7 @@ class TestScript(unittest.TestCase):
 
         # check setting config options per config file
         # here, we need to set the relevant flags from the real_config manually
-        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+        with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")
@@ -169,7 +169,7 @@ class TestScript(unittest.TestCase):
 
         # check setting config options per config file
         # here, we need to set the relevant flags from the real_config manually
-        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+        with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
             f.write("LOCKDOWN = 42\n")
             f.write(f"DB_HOST = '{real_config['DB_HOST']}'\n")
             f.write(f"DB_PORT = {real_config['DB_PORT']}\n")

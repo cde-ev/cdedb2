@@ -17,8 +17,8 @@ from typing import (
     overload,
 )
 
-import ldaptor.protocols.pureldap as pureldap
 import psycopg.abc
+from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt

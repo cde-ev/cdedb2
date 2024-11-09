@@ -8,8 +8,8 @@ from typing import Any, Callable, Optional, Union
 
 import ldaptor.entryhelpers
 import ldaptor.ldiftree
-import ldaptor.protocols.pureldap as pureldap
 from ldaptor.attributeset import LDAPAttributeSet
+from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName
 from ldaptor.protocols.ldap.ldaperrors import (
     LDAPInvalidCredentials,

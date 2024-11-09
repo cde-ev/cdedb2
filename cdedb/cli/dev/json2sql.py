@@ -151,7 +151,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                 elif isinstance(entry[k], str) and xss_payload is not None:
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
-                        entry[k] = entry[k] + xss_payload
+                        entry[k] += xss_payload
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params_list.extend(entry[k] for k in keys)
@@ -187,7 +187,9 @@ def insert_postal_code_locations() -> SQLCommand:
     """
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
-    with pathlib.Path("/cdedb2/tests/ancillary_files/plz.csv").open() as f:
+    with pathlib.Path(
+            "/cdedb2/tests/ancillary_files/plz.csv",
+    ).open(encoding="utf-8") as f:
         entries = list(csv.DictReader(f, delimiter=',', quotechar='"'))
     command = f"""
         INSERT INTO

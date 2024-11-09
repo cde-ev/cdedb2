@@ -472,7 +472,7 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: Optional[vtypes.ID],
             position: Optional[InfiniteEnum[CourseFilterPositions]],
             ids: Optional[vtypes.IntCSVList], include_active: Optional[bool],
-            ) -> Response:
+    ) -> Response:
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -500,8 +500,7 @@ class EventCourseMixin(EventBaseFrontend):
             else:
                 include_states = (const.RegistrationPartStati.participant,)
             registration_ids = self.eventproxy.registrations_by_course(
-                rs, event_id, course_id, track_id, position, ids,
-                include_states)
+                rs, event_id, course_id, track_id, position, ids, include_states)
             registrations = self.eventproxy.get_registrations(
                 rs, registration_ids.keys())
             personas = self.coreproxy.get_personas(
@@ -510,21 +509,21 @@ class EventCourseMixin(EventBaseFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id].part_id]
-        for course_id, course in courses.items():  # pylint: disable=redefined-argument-from-local
+        for course_id_, course in courses.items():  # pylint: disable=redefined-argument-from-local
             for track in tracks.values():  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()
-                    and reg['tracks'][track.id]['course_id'] == course_id
-                    and reg['tracks'][track.id]['course_instructor'] != course_id
+                    and reg['tracks'][track.id]['course_id'] == course_id_
+                    and reg['tracks'][track.id]['course_instructor'] != course_id_
                 )
                 assigned_instructors = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track.id)['status'].is_involved()
-                    and reg['tracks'][track.id]['course_id'] == course_id
-                    and reg['tracks'][track.id]['course_instructor'] == course_id
+                    and reg['tracks'][track.id]['course_id'] == course_id_
+                    and reg['tracks'][track.id]['course_instructor'] == course_id_
                 )
-                course_infos[(course_id, track.id)] = {
+                course_infos[(course_id_, track.id)] = {
                     'assigned': assigned,
                     'assigned_instructors': assigned_instructors,
                     'is_happening': track.id in course['segments'],

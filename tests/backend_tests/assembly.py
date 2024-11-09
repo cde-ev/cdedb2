@@ -1004,7 +1004,7 @@ class TestAssemblyBackend(BackendTest):
         comment = "Ein Kommentar."
 
         # Comment not possible for future and running ballots
-        for ballot_id in {2, 14, 15}:
+        for ballot_id in (2, 14, 15):
             with self.assertRaises(ValueError) as cm:
                 self.assembly.comment_concluded_ballot(self.key, ballot_id, comment)
             self.assertIn("Comments are only allowed for concluded ballots.",
