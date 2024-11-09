@@ -25,6 +25,10 @@ select = [
 #    "B",  # flake8-bugbear
 #    "A",  # flake8-builtins  # Doesn't report much but seems useful.
     "COM",  # flake8-commas  # Enforces consistent trailing commas. Autofixable.
+    "PLE",  # pylint errrors.
+    "PLW",  # pylint warnings.
+    "PLC",  # pylint conventions.
+    "PLR",  # pylint refactoring suggestions.
 ]
 ignore = [
     "F405", # * import.
@@ -38,6 +42,12 @@ ignore = [
     "S608",  # SQL-Injection vector due to query string construction.
     "A003",  # Class attributes shadowing builtin.
     "TRY003",  # Exception message not defined in exception class.
+    "PLW2901",  # redefining for loop variable.
+    "PLW1641",  # non hashable child class.
+    "PLR09",  # Too many things in classes.
+    "PLR1702",  # Too many nested blocks.
+    "PLR6301",  # Method could be static.
+    "PLR2004",  # Magic value comparison.
 ]
 [tool.ruff.lint.per-file-ignores]
 "tests/frontend_tests/__init__.py" = ["F401"]
