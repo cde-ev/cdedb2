@@ -17,13 +17,21 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState, merge_dicts, now
+from cdedb.common import (
+    CdEDBObject,
+    RequestState,
+    get_mandatory_from_func,
+    get_mandatory_from_typedict,
+    merge_dicts,
+    now,
+)
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
 from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
+    PERSONA_COMMON_FIELDS,
     PERSONA_FULL_CREATION,
     filter_none,
 )
@@ -77,7 +85,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return self.render(rs, "base/create_user")
+        return self.render(rs, "base/create_user", {},
+                           get_mandatory_from_typedict(PERSONA_COMMON_FIELDS))
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
@@ -219,7 +228,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "base/configure_assembly")
+        mandatory_fields = (get_mandatory_from_func(self.change_assembly) |
+                            get_mandatory_from_typedict(ASSEMBLY_COMMON_FIELDS))
+        return self.render(rs, "base/configure_assembly",
+                           mandatory_fields=mandatory_fields)
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -246,7 +258,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "base/configure_assembly")
+        mandatory_fields = (get_mandatory_from_func(self.create_assembly)
+                            | get_mandatory_from_typedict(ASSEMBLY_COMMON_FIELDS))
+        return self.render(rs, "base/configure_assembly",
+                           mandatory_fields=mandatory_fields)
 
     @staticmethod
     def _get_mailinglist_setter(rs: RequestState, assembly: CdEDBObject,

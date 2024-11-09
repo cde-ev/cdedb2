@@ -70,7 +70,7 @@ import re
 import string
 import typing
 import urllib.parse
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
@@ -4431,7 +4431,7 @@ def _subscription_address(
         val, mandatory_fields, **kwargs))
 
 
-ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
+ASSEMBLY_COMMON_FIELDS: MutableMapping[str, Any] = {
     'title': str,
     # Assembly shortnames do not actually need to be that short.
     'shortname': Identifier,

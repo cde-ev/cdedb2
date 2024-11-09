@@ -30,6 +30,8 @@ from cdedb.common import (
     RequestState,
     abbreviation_mapper,
     get_hash,
+    get_mandatory_from_func,
+    get_mandatory_from_typedict,
     merge_dicts,
     now,
     unwrap,
@@ -135,7 +137,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             })
         return self.render(rs, "ballot/ballot_template", {
             'assembly_entries': assembly_entries,
-        })
+        }, mandatory_fields=get_mandatory_from_func(self.ballot_template_redirect))
 
     @access("assembly")
     @REQUESTdata("target_assembly_id", "source_id")
@@ -194,7 +196,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return self.render(rs, "ballot/configure_ballot", {
             'attachment_entries': attachment_entries,
             'selectize_data': selectize_data,
-        })
+        }, get_mandatory_from_typedict(BALLOT_EXPOSED_FIELDS))
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -670,7 +672,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return self.render(rs, "ballot/configure_ballot", {
             "attachment_entries": attachment_entries,
             "selectize_data": selectize_data,
-        })
+        }, get_mandatory_from_typedict(BALLOT_EXPOSED_FIELDS))
 
     @access("assembly", modi={"POST"})
     @assembly_guard
@@ -703,17 +705,19 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/reschedule_ballots")
 
         config_grouped = self.assemblyproxy.group_ballots_by_config(rs, assembly_id)
-        return self.render(rs, "ballot/reschedule_ballots", {
-            'ballots': grouped.upcoming, 'config_grouped': config_grouped})
+        return self.render(rs, "ballot/reschedule_ballots",
+                           {'ballots': grouped.upcoming,
+                            'config_grouped': config_grouped},
+                           get_mandatory_from_func(self.reschedule_ballots))
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("ballot_ids", "vote_begin", "vote_end", "vote_extension_end")
     def reschedule_ballots(
             self, rs: RequestState, assembly_id: int, ballot_ids: Collection[int],
-            vote_begin: Optional[datetime.datetime],
-            vote_end: Optional[datetime.datetime],
-            vote_extension_end: Optional[datetime.datetime]) -> Response:
+            vote_begin: datetime.datetime,
+            vote_end: datetime.datetime,
+            vote_extension_end: datetime.datetime) -> Response:
         """Change the voting dates for all selected ballots."""
         if rs.has_validation_errors():
             return self.reschedule_ballots_form(rs, assembly_id)
