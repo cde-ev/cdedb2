@@ -110,9 +110,9 @@
                                   "of lodgement wishes and the lodgement graph. Fieldtype: Text")) }}
         {{ util.form_input_select(name="reimbursement_iban_field_id", label=gettext("Field for Reimbursement IBAN"),
                                   entries=reimbursement_fields, nulloption=nbsp,
-                                   info=gettext("The custom field in which IBANs for reimbursements are saved."
-                                                " Will be automatically selected by certain fee related queries."
-                                                " Fieldtype: IBAN")) }}
+                                  info=gettext("The custom field in which IBANs for reimbursements are saved."
+                                               " Will be automatically selected by certain fee related queries."
+                                               " Fieldtype: IBAN")) }}
 
         <h4 class="heading-underline">{% trans %}Additional information for participants{% endtrans %}</h4>
         {{ util.form_input_textarea(
