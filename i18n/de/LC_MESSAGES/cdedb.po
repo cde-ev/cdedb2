@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2024-11-10 13:25+0100\n"
+"POT-Creation-Date: 2024-11-10 14:17+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -63,7 +63,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/event/registration.py:1021
 #: cdedb/backend/event/registration.py:1138
 #: cdedb/backend/event/registration.py:1247
-#: cdedb/backend/event/registration.py:1571 cdedb/backend/ml.py:188
+#: cdedb/backend/event/registration.py:1572 cdedb/backend/ml.py:188
 #: cdedb/backend/ml.py:297 cdedb/backend/ml.py:421 cdedb/backend/ml.py:459
 #: cdedb/backend/ml.py:491 cdedb/backend/ml.py:514 cdedb/backend/ml.py:713
 #: cdedb/backend/ml.py:759 cdedb/backend/ml.py:840 cdedb/backend/ml.py:876
@@ -1035,8 +1035,8 @@ msgid "Some of these personas do not exist or are archived."
 msgstr "Einige dieser Accounts existieren nicht oder sind archiviert."
 
 #: cdedb/backend/event/base.py:334
-msgid "Some of these orgas are not event users."
-msgstr "Einige dieser Orgas sind keine Veranstaltungsnutzer."
+msgid "Some of these personas are not event users."
+msgstr "Einige dieser Accounts sind keine Veranstaltungsnutzer."
 
 #: cdedb/backend/event/base.py:469
 msgid "Only orga tokens from one event allowed."
@@ -1227,7 +1227,7 @@ msgstr "Nicht für diese Veranstaltung angemeldet."
 #: cdedb/backend/event/registration.py:849
 #: cdedb/backend/event/registration.py:962
 #: cdedb/backend/event/registration.py:1563
-#: cdedb/backend/event/registration.py:1775
+#: cdedb/backend/event/registration.py:1776
 msgid "Only registrations from exactly one event allowed."
 msgstr "Nur Anmeldungen einer Veranstaltung werden unterstützt."
 
@@ -1270,7 +1270,7 @@ msgstr "Datensatz für Teil fehlt."
 msgid "Missing track dataset."
 msgstr "Fehlende Daten für Kursschiene."
 
-#: cdedb/backend/event/registration.py:1742
+#: cdedb/backend/event/registration.py:1743
 msgid "Cannot book fee with amount of zero."
 msgstr "Überweisung konnte nicht verbucht werden, da der Betrag Null ist."
 
@@ -3490,15 +3490,15 @@ msgstr "Diese Domain wird nicht unterstützt."
 msgid "Dict keys do not match."
 msgstr "Zueinander unpassende Datensätze."
 
-#: cdedb/frontend/application.py:125 cdedb/frontend/cron.py:51
+#: cdedb/frontend/application.py:126 cdedb/frontend/cron.py:51
 msgid "Refusing to start in debug/offline mode."
 msgstr "Start im Entwicklungs- oder Offlinemodus ist unzulässig."
 
-#: cdedb/frontend/application.py:241
+#: cdedb/frontend/application.py:242
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
-#: cdedb/frontend/application.py:344
+#: cdedb/frontend/application.py:345
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -3510,7 +3510,7 @@ msgstr ""
 "es leider auch zu ungewollten Beschränkungen kommen. Deine Limitierung wird "
 "im Laufe der nächsten Tage automatisch zurückgesetzt."
 
-#: cdedb/frontend/application.py:363
+#: cdedb/frontend/application.py:364
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -13872,6 +13872,11 @@ msgstr "%(name)s als Veranstaltungs-Betreuer entfernen"
 #, python-format
 msgid "%(count)s Parts"
 msgstr "%(count)s Teile"
+
+#: cdedb/frontend/templates/web/event/event/list_events.tmpl:39
+#, python-format
+msgid "%s Registrations"
+msgstr "%s Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:41
 #, python-format

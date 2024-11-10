@@ -54,8 +54,10 @@ def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
         or ("ml_admin" in rs.user.roles
-            and required_privilege == EventPrivileges.registrations_read_internal
+            and required_privilege == EP.registrations_read_internal
         )
+        or ("droid_quick_partial_export" in rs.user.roles
+            and required_privilege in EP.basic_read | EP.registrations_read)
         # or ("droid_orga" in rs.user.roles
         #     and required_privilege in OrgaTokenGrants.implied_privileges())
         # )

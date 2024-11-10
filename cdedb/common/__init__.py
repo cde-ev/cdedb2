@@ -43,8 +43,8 @@ from schulze_condorcet.types import Candidate
 
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.n_ import n_
 from cdedb.common.fields import Realm, Role
+from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
 from cdedb.config import LazyConfig
 from cdedb.database.connection import ConnectionContainer

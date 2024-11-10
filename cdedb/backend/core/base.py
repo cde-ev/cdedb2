@@ -1963,28 +1963,17 @@ class CoreBaseBackend(AbstractBackend):
                         event_id: Optional[int] = None) -> CdEDBObjectMap:
         """Get an event view on some data sets.
 
-        This is allowed for admins and for yourself in any case. Orgas can also
-        query users registered for one of their events; other event users can
-        query participants of events they participate themselves.
+        This is allowed for admins and for yourself in any case. Orgas and participants
+        can also query users registered for one of their events.
 
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        event_id = affirm_optional(vtypes.ID, event_id)
+        event_id = affirm_optional(vtypes.ID, event_id) or 0
         ret = self.retrieve_personas(rs, persona_ids, columns=PERSONA_EVENT_FIELDS)
-        # The event user view on a cde user contains lots of personal
-        # data. So we require the requesting user to be orga (to get access to
-        # all event users who are related to their event) or 'participant'
-        # of the requested event (to get access to all event users who are also
-        # 'participant' at the same event).
-        is_orga = False
-        if event_id:
-            is_orga = event_id in rs.user.orga
         if (persona_ids != {rs.user.persona_id}
-                and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin",
-                            "droid_quick_partial_export"})):
+                and not (rs.user.roles & {"event_admin", "cde_admin", "core_admin"})):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
             query = """
@@ -1996,17 +1985,8 @@ class CoreBaseBackend(AbstractBackend):
                         event.registration_parts AS rparts
                     ON rparts.registration_id = regs.id
                 WHERE
-                    {conditions}"""
-            conditions = ["regs.event_id = %s"]
-            params: list[Any] = [event_id]
-            # TODO: This code path is kind of horrible, considering how the meaning of
-            #  the event_id parameter changes dependent on permissions.
-            #  Should we really make this distinction in the backend?
-            if not is_orga:
-                conditions.append("rparts.status = %s")
-                params.append(const.RegistrationPartStati.participant)
-            query = query.format(conditions=' AND '.join(conditions))
-            data = self.query_all(rs, query, params)
+                    regs.event_id = %s"""
+            data = self.query_all(rs, query,  [event_id])
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
             if not (same_event and (rs.user.persona_id in all_users_inscope or

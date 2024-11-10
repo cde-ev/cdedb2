@@ -103,7 +103,7 @@ class EventEventMixin(EventBaseFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
 
         events_registrations: dict[vtypes.ProtoID, int] = {}
-        if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles['event']:
+        if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles.get('event', {}):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
                 events_registrations[event.id] = len(regs)
@@ -142,6 +142,7 @@ class EventEventMixin(EventBaseFrontend):
                 rs, ml_data.address)
         if self.is_privileged(rs, EventPrivileges.basic_read):
             params['minor_form_present'] = self.eventproxy.has_minor_form(rs, event_id)
+        if self.is_privileged(rs, EventPrivileges.all_read):
             constraint_violations = self.get_constraint_violations(
                 rs, event_id, registration_id=None, course_id=None)
             params['mep_violations'] = constraint_violations['mep_violations']
@@ -327,7 +328,7 @@ class EventEventMixin(EventBaseFrontend):
         try:
             self.eventproxy.validate_persona_ids(rs, {orga_id})
         except ValueError as e:
-            rs.append_validation_error(('persona_id', e))
+            rs.append_validation_error(('orga_id', e))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})

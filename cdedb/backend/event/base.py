@@ -331,7 +331,7 @@ class EventBaseBackend(EventLowLevelBackend):
             raise ValueError(n_(
                 "Some of these personas do not exist or are archived."))
         if not self.core.verify_personas(rs, persona_ids, {"event"}):
-            raise ValueError(n_("Some of these orgas are not event users."))
+            raise ValueError(n_("Some of these personas are not event users."))
 
     @access("event_admin")
     def add_event_helpers(self, rs: RequestState, persona_ids: Collection[int],

@@ -36,7 +36,7 @@
         </div>
         {% if "event_list" in user.admin_views %}
         <div class="col-sm-3 small">
-            {{ util.href(querylink(event['id']), "%s Registrations"|s|format(events_registrations[event.id]),
+            {{ util.href(querylink(event['id']), gettext("%s Registrations")|s|format(events_registrations[event.id]),
                          readonly="event_mgmt" not in user.admin_views) }},
             {% trans count=event['orgas']|length %}
                 {{ count }} Orga

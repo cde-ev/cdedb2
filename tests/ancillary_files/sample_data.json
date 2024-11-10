@@ -5996,7 +5996,12 @@
             "event_id": 4
         }
     ],
-    "event.helpers": [],
+    "event.helpers": [
+        {
+            "id": 1,
+            "persona_id": 42
+        }
+    ],
     "event.orga_apitokens": [
         {
             "id": 1,

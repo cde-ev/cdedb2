@@ -23,12 +23,13 @@ from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
+    Realm,
     RequestState,
     User,
     glue,
     make_proxy,
     now,
-    setup_logger, Realm,
+    setup_logger,
 )
 from cdedb.common.exceptions import (
     APITokenError,

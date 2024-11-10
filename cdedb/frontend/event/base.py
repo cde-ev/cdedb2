@@ -662,7 +662,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
 
     @access("event")
-    # TODO Be more lenient here
+    # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
     def constraint_violations(self, rs: RequestState, event_id: int) -> Response:
         params = self.get_constraint_violations(
