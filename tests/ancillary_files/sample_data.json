@@ -5960,6 +5960,7 @@
             "event_id": 4
         }
     ],
+    "event.helpers": [],
     "event.orga_apitokens": [
         {
             "id": 1,
