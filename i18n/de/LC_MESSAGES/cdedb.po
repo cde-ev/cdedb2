@@ -18403,7 +18403,7 @@ msgstr "Fehlende Kurseinteilungen"
 
 #: cdedb/i18n_additional.py:378
 msgid "IncorrectCourseAssignedCV"
-msgstr "Falsche Kurseinteilungen"
+msgstr "Fehlerhafte Kurseinteilungen"
 
 #: cdedb/i18n_additional.py:383
 msgid "str"

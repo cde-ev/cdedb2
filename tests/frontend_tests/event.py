@@ -4312,13 +4312,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_assignment_checks(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurseinteilung",
-                      "Prüfung")
-        self.assertTitle("Kurseinteilungsprüfung (Große Testakademie 2222)")
-        self.assertPresence("Ausfallende Kurse mit Teilnehmern")
-        self.assertPresence("Kabarett", div='problem_cancelled_with_p')
-        self.assertPresence("Teilnehmer ohne Kurs")
-        self.assertPresence("Anton", div='problem_no_course')
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Verstöße gegen Beschränkungen")
+        self.assertPresence("Ausfallende Kurse mit Teilnehmenden")
+        self.assertPresence("Kabarett", div='CancelledWithAttendeesCV-list')
+        self.assertPresence("Fehlende Kurseinteilungen")
+        self.assertPresence("Anton", div='NoCourseAssignedCV-list')
 
         # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
         # problem, but raises 'unchosen' problem
@@ -4335,13 +4334,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia E. Eventis, DB-5-1"""
         f['assign_action'] = 0
         self.submit(f)
 
-        self.traverse("Prüfung")
-        self.assertPresence("Teilnehmer in einem ungewählten Kurs")
-        self.assertPresence("Garcia", div='problem_unchosen')
-        self.assertPresence("Kursleiter im falschen Kurs")
-        self.assertPresence("Emilia", div='problem_instructor_wrong_course')
-        self.assertPresence("α", div='problem_instructor_wrong_course')
-        self.assertPresence("δ", div='problem_instructor_wrong_course')
+        self.traverse("Verstöße gegen Beschränkungen")
+        self.assertPresence("Fehlerhafte Kurseinteilungen")
+        self.assertPresence("Garcia Generalis ist in Kaffee in einen nicht"
+                            " gewählten Kurs (ε. Backup) eingeteilt.",
+                            div='IncorrectCourseAssignedCV-list')
+        self.assertPresence("Emilia E. Eventis ist in Sitzung nicht in"
+                            " seinen/ihren geleiteten Kurs (α. Heldentum) eingeteilt.",
+                            div='IncorrectCourseAssignedCV-list')
 
     @as_users("garcia")
     def test_course_display_with_different_participation_stati(self) -> None:
