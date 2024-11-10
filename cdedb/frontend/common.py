@@ -73,7 +73,6 @@ import werkzeug.wsgi
 
 import cdedb.common.query as query_mod
 import cdedb.common.validation.types as vtypes
-import cdedb.common.validation.validate as validate
 import cdedb.database.constants as const
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
@@ -130,6 +129,7 @@ from cdedb.common.roles import (
     roles_to_db_role,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.validation import validate
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -1044,13 +1044,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if attachment.get('file'):
             # noinspection PyUnresolvedReferences
             data = attachment['file'].read()
+        elif maintype == "text":
+            with open(attachment['path'], encoding="utf-8") as ft:
+                data = ft.read()
         else:
-            if maintype == "text":
-                with open(attachment['path']) as ft:
-                    data = ft.read()
-            else:
-                with open(attachment['path'], 'rb') as fb:
-                    data = fb.read()
+            with open(attachment['path'], 'rb') as fb:
+                data = fb.read()
         # Only support common types
         factories = {
             'application': email.mime.application.MIMEApplication,
@@ -2290,11 +2289,10 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(n_(
                         "You only have restricted moderator access and may not"
                         " change subscriptions."))
-            else:
-                if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(n_(
-                        "This page can only be accessed by appropriate "
-                        "admins."))
+            elif not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
+                raise werkzeug.exceptions.Forbidden(n_(
+                    "This page can only be accessed by appropriate "
+                    "admins."))
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)

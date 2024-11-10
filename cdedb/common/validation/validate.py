@@ -150,7 +150,7 @@ _LOGGER = logging.getLogger(__name__)
 _CONFIG = LazyConfig()
 
 T = TypeVar('T')
-T_Co = TypeVar('T_Co', covariant=True)
+T_co = TypeVar('T_co', covariant=True)
 F = TypeVar('F', bound=Callable[..., Any])
 DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
 
@@ -173,10 +173,10 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return self.args[index]
 
     def extend(self, errors: Iterable[Exception]) -> None:
-        self.args = self.args + tuple(errors)
+        self.args += tuple(errors)
 
     def append(self, error: Exception) -> None:
-        self.args = self.args + (error,)
+        self.args += (error,)
 
     def __enter__(self) -> None:
         pass
@@ -1020,7 +1020,7 @@ def _realm(
 ) -> Realm:
     """A realm in the sense of the DB."""
     val = _str(val, argname, **kwargs)
-    if val not in ("session", "core", "cde", "event", "ml", "assembly"):
+    if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
         raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
     return Realm(val)
 
@@ -1199,9 +1199,9 @@ def make_list_validator(type_: type[T]) -> ListValidator[T]:
     return list_validator
 
 
-class PairValidator(Protocol[T_Co]):
+class PairValidator(Protocol[T_co]):
     def __call__(self, val: Any, argname: Optional[str] = None, **kargs: Any,
-                 ) -> tuple[T_Co, T_Co]:
+                 ) -> tuple[T_co, T_co]:
         ...
 
 
@@ -1738,7 +1738,7 @@ def _phone(
             msg = n_("Invalid country code")
         elif npe.error_type == npe.NOT_A_NUMBER:
             msg = n_("This is not a phone number.")
-        elif npe.error_type in (npe.TOO_SHORT_AFTER_IDD, npe.TOO_SHORT_NSN):
+        elif npe.error_type in {npe.TOO_SHORT_AFTER_IDD, npe.TOO_SHORT_NSN}:
             msg = n_("Phone number too short")
         elif npe.error_type == npe.TOO_LONG:
             msg = n_("Phone number too long")
@@ -1958,7 +1958,7 @@ def _csvfile(
     """
     val = _input_file(val, argname, **kwargs)
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("text/csv", "text/plain", "application/csv"):
+    if mime not in {"text/csv", "text/plain", "application/csv"}:
         raise ValidationSummary(ValueError(
             argname, n_("Only text/csv allowed.")))
     val = _str(val.decode(encoding).strip(), argname, **kwargs)
@@ -1991,7 +1991,7 @@ def _profilepic(
         errs.append(ValueError(argname, n_("Too big.")))
 
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("image/jpeg", "image/jpg", "image/png"):
+    if mime not in {"image/jpeg", "image/jpg", "image/png"}:
         errs.append(ValueError(
             argname, n_("Only jpg and png allowed.")))
     if errs:
@@ -2258,7 +2258,7 @@ def _sepa_transactions(
                        ) > SEPA_TRANSACTIONS_LIMITS[attribute]:
                     errs.append(ValueError(attribute, n_("Too long.")))
 
-        if entry['type'] not in ("OOFF", "FRST", "RCUR"):
+        if entry['type'] not in {"OOFF", "FRST", "RCUR"}:
             errs.append(ValueError('type', n_("Invalid constant.")))
         if errs:
             continue  # TODO is this not equivalent to break in this situation?
@@ -2861,11 +2861,10 @@ def _event_fee(
             if 'condition' in val and val['condition'] is None:
                 errs.append(ValueError(
                     'condition', n_("Cannot unset condition for conditional fee.")))
-    else:
-        if (val['amount'] is None) != (val['condition'] is None):
-            for k in ('amount', 'condition'):
-                errs.append(ValueError(
-                    k, n_("Cannot have amount without condition or vice versa.")))
+    elif (val['amount'] is None) != (val['condition'] is None):
+        for k in ('amount', 'condition'):
+            errs.append(ValueError(
+                k, n_("Cannot have amount without condition or vice versa.")))
     if errs:
         raise errs
 
@@ -3371,16 +3370,15 @@ def _questionnaire_row(
             msg = n_("Cannot specify both field id and field name.")
             errs.append(ValueError(argname_prefix + 'field_id', msg))
             errs.append(ValueError(argname_prefix + 'field_name', msg))
+        elif value['field_name'] not in fields_by_name:
+            errs.append(KeyError(
+                argname_prefix + 'field_name',
+                n_("No field with name '%(name)s' exists."),
+                {"name": value['field_name']}))
         else:
-            if value['field_name'] not in fields_by_name:
-                errs.append(KeyError(
-                    argname_prefix + 'field_name',
-                    n_("No field with name '%(name)s' exists."),
-                    {"name": value['field_name']}))
-            else:
-                value['field_id'] = fields_by_name[value['field_name']].get('id')
-                if value['field_id']:
-                    del value['field_name']
+            value['field_id'] = fields_by_name[value['field_name']].get('id')
+            if value['field_id']:
+                del value['field_name']
     if 'field_id' not in value:
         value['field_id'] = None
 
@@ -3664,7 +3662,7 @@ def _serialized_event(
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
     for table, entity_dict in new_val.items():
-        if table not in ('id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'):
+        if table not in {'id', 'EVENT_SCHEMA_VERSION', 'timestamp', 'kind'}:
             for entity in entity_dict.values():
                 if entity.get('event_id') and entity['event_id'] != event_id:
                     errs.append(ValueError(table, n_("Mismatched event.")))
@@ -4255,10 +4253,9 @@ def _mailinglist(
     if "domain" not in val:
         errs.append(ValueError(
             "domain", "Must specify domain for setting mailinglist."))
-    else:
-        if val["domain"].value not in subtype.available_domains:
-            errs.append(ValueError("domain", n_(
-                "Invalid domain for this mailinglist type.")))
+    elif val["domain"].value not in subtype.available_domains:
+        errs.append(ValueError("domain", n_(
+            "Invalid domain for this mailinglist type.")))
 
     if not val.get('event_id'):
         if val.get('event_part_group_id'):
@@ -4782,7 +4779,7 @@ def _query_input(
 
         # Get value
         value = val.get(f"qval_{field}")
-        if value is None or value == "":
+        if not value:
             # No value supplied means no constraint
             # TODO: make empty string a valid constraint
             continue
@@ -4804,9 +4801,9 @@ def _query_input(
                     errs.extend(e)
                     continue
 
-                if operator in (QueryOperators.containsall,
+                if operator in {QueryOperators.containsall,
                                 QueryOperators.containssome,
-                                QueryOperators.containsnone):
+                                QueryOperators.containsnone}:
                     try:
                         vv = _non_regex(vv, field, **kwargs)
                     except ValidationSummary as e:
@@ -4819,12 +4816,12 @@ def _query_input(
             if not value:
                 continue
 
-            if (operator in (QueryOperators.between, QueryOperators.outside)
+            if (operator in {QueryOperators.between, QueryOperators.outside}
                     and len(value) != 2):
                 errs.append(ValueError(field, n_("Two endpoints required.")))
                 continue
 
-        elif operator in (QueryOperators.match, QueryOperators.unmatch):
+        elif operator in {QueryOperators.match, QueryOperators.unmatch}:
             # TODO remove all _or_None in this validator!
             try:
                 value = _ALL_TYPED[Optional[NonRegex]](  # type: ignore[index]
@@ -4832,7 +4829,7 @@ def _query_input(
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
-        elif operator in (QueryOperators.regex, QueryOperators.notregex):
+        elif operator in {QueryOperators.regex, QueryOperators.notregex}:
             try:
                 value = _ALL_TYPED[Optional[Regex]](  # type: ignore[index]
                     value, field, **kwargs)

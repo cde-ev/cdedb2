@@ -67,10 +67,10 @@ class TempConfig:
         self._real_configpath = get_configpath(fallback=True)
         if self._config:
             secrets = SecretsConfig()
-            self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
+            self._f = tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8")
             f = self._f.__enter__()
             # copy the real_config into the temporary config
-            with open(self._real_configpath) as cf:
+            with open(self._real_configpath, encoding="utf-8") as cf:
                 real_config = cf.read()
             f.write(real_config)
             # now, add all keyword config options. Since they are added _after_ the
@@ -100,7 +100,7 @@ class TempConfig:
         if self._config:
             return str(self._config)
         elif self._configpath:
-            return pathlib.Path(self._configpath).read_text()
+            return pathlib.Path(self._configpath).read_text(encoding="utf-8")
         else:
             return ""
 

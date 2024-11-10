@@ -278,8 +278,8 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
     `not_specified` and `other` to be equivalent to any Gender.
     """
     return (first == second
-            or first in (Genders.not_specified, Genders.other)
-            or second in (Genders.not_specified, Genders.other))
+            or first in {Genders.not_specified, Genders.other}
+            or second in {Genders.not_specified, Genders.other})
 
 
 def create_lodgement_wishes_graph(

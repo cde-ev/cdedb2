@@ -34,7 +34,7 @@ def _serialize(result: pp.ParseResults, outer_operator: Optional[str], ps: dict[
         'bool': lambda x: f"{x[0]}",
     }
     name = result.get_name()
-    if name in ('and', 'or', 'xor') and outer_operator is not None and name != outer_operator:
+    if name in {'and', 'or', 'xor'} and outer_operator is not None and name != outer_operator:
         return f"({functions[name](result)})"
     else:
         return functions[name](result)
@@ -54,7 +54,7 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
     }
 
     name = result.get_name()
-    operator = name if name in ('and', 'or', 'xor') else ('' if name == 'not' else None)
+    operator = name if name in {'and', 'or', 'xor'} else ('' if name == 'not' else None)
 
     if name == "field":
         value, text = None if condition_only else field_values[result[0]], f"field.{result[0]}"
@@ -76,14 +76,14 @@ def visual_debug(result: pp.ParseResults, field_values: dict[str, bool], part_va
 
     status = 'neutral' if value is None else 'true' if value else 'false'
 
-    if name in ('and', 'or', 'xor'):
+    if name in {'and', 'or', 'xor'}:
         if outer_operator is not None and name != outer_operator:
             return value, f'<span class="block {status}"><b>(</b>{text}<b>)</b></span>'
         elif top_level:
             return value, f'<span class="block {status}">{text}</span>'
         else:
             return value, text
-    elif name in ('true', 'false', 'field', 'part', 'bool'):
+    elif name in {'true', 'false', 'field', 'part', 'bool'}:
         if value is None:
             return value, f'<span class="">{text}</span>'
         return value, f'<span class="atom {status}">{text}</span>'
