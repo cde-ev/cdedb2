@@ -12,6 +12,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
@@ -156,6 +157,7 @@ class CdEDataclass:
         mandatory: TypeMapping = {}
         optional: TypeMapping = {}
         for field in dataclasses.fields(cls):
+            field.type = cast(type[Any], field.type)
             if field.metadata.get('validation_exclude'):
                 continue
             if creation:
