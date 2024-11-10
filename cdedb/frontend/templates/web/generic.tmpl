@@ -10,12 +10,12 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="nickname", label=gettext("Nickname")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
