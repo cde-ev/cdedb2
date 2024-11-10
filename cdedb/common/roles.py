@@ -189,6 +189,7 @@ PERSONA_DEFAULTS = {
     'is_searchable': False,
     'is_active': True,
     'title': None,
+    'nickname': None,
     'name_supplement': None,
     'gender': None,
     'pronouns': None,

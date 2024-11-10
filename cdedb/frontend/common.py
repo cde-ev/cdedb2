@@ -926,7 +926,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 msg[header] = ", ".join(effective)
         for header in ("From", "Reply-To", "Return-Path"):
             if value := headers.get(header):
-                msg[header] = value
+                msg[header] = str(value)
         if headers["Prefix"]:
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:

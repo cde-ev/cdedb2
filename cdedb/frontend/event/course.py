@@ -741,13 +741,13 @@ class EventCourseMixin(EventBaseFrontend):
         involved_attendees_lists = collections.defaultdict(list)
         for reg in registrations.values():
             for track_id, track in tracks.items():
-                if reg['parts'][tracks[track_id].part_id]['status'] in include_states:
+                if reg['parts'][track.part_id]['status'] in include_states:
                     for i, choice in enumerate(reg['tracks'][track_id]['choices']):
                         if i >= track.num_choices:
                             break
                         choice_counts[(choice, track_id)][i] += 1
                 course_id = reg['tracks'][track_id]['course_id']
-                if (reg['parts'][tracks[track_id].part_id]['status'].is_involved()
+                if (reg['parts'][track.part_id]['status'].is_involved()
                         and course_id is not None):
                     involved_attendees_lists[(course_id, track_id)].append(reg)
 

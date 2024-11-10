@@ -27,7 +27,7 @@ class TestApplication(FrontendTest):
         self.assertPresence("Veranstaltungen", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(self.user["display_name"], div="displayname")
+        self.assertPresence(self.user["given_names"], div="displayname")
 
     @as_users("berta")
     def test_403(self) -> None:
@@ -95,7 +95,7 @@ class TestApplication(FrontendTest):
         self.assertPresence("Mitglieder", div="navbar-collapse-1")
         self.assertPresence("Mailinglisten", div="navbar-collapse-1")
         self.assertPresence("Versammlungen", div="navbar-collapse-1")
-        self.assertPresence(self.user["display_name"], div="displayname")
+        self.assertPresence(self.user["given_names"], div="displayname")
 
     def test_error_catching(self) -> None:
         """

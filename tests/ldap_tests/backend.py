@@ -282,7 +282,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
             return await self.ldap.list_users(create_filter_object(filter_string))
 
         self.assertEqual(
-            await list_and_filter("(givenName=Kalif* al-*)"),
+            await list_and_filter("(givenName=K*l*i*)"),
             # Kalif ibn al-Ḥasan
             [DN("uid=11,ou=users,dc=cde-ev,dc=de")],
         )
@@ -293,7 +293,7 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertEqual(
             await list_and_filter("(&(givenName=A*)(!(uid=1)))"),
             [
-                # Annika and Akira but not Armin
+                # Annika and Akira but not Anton
                 DN("uid=27,ou=users,dc=cde-ev,dc=de"),
                 DN("uid=100,ou=users,dc=cde-ev,dc=de"),
             ],

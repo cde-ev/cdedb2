@@ -213,8 +213,7 @@ class LdapHandler:
         """
         if request.version != 3:
             raise ldaperrors.LDAPProtocolError(
-                "Version %u not supported" % request.version,
-            )
+                f"Version {request.version} not supported")
 
         self.check_controls(controls)
 

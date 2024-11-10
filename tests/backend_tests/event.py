@@ -53,10 +53,10 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_basics(self) -> None:
         data = self.core.get_event_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'name_supplement', 'display_name', 'telephone'}}
+                  {'id', 'name_supplement', 'nickname', 'telephone'}}
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)

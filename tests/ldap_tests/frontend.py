@@ -193,7 +193,7 @@ class TestLDAP(BasicTest):
         # users may access their own data
         attributes = ["objectClass", "cn"]
         expectation: dict[str, list[str]] = {
-            'cn': ['Anton Armin A. Administrator'],
+            'cn': ['Anton Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
         search_filter = (
@@ -306,9 +306,9 @@ class TestLDAP(BasicTest):
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
 
-            'cn': ['Anton Armin A. Administrator'],
+            'cn': ['Anton Administrator'],
             'displayName': ['Anton Administrator'],
-            'givenName': ['Anton Armin A.'],
+            'givenName': ['Anton'],
             'sn': ['Administrator'],
 
             # there is no password returned, since passwords may not be retrived but

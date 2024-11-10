@@ -3,8 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
-{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
-   util.persona_name makro here. #}
+{# Since the dataset is no full persona we can not use the util.persona_name makro here. #}
 {% set genesis_case_name = ambience['genesis_case']['given_names'] + " " + ambience['genesis_case']['family_name'] %}
 {% block title %}
     {% trans name=genesis_case_name %}

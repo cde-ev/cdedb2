@@ -87,11 +87,11 @@ class TestOffline(FrontendTest):
                           {'href': 'core/persona/1/adminchange'})
             self.assertTitle('Anton Administrator bearbeiten')
             f = self.response.forms['changedataform']
-            f['display_name'] = "Zelda"
+            f['nickname'] = "Zelda"
             f['birthday'] = "3.4.1933"
             self.submit(f)
             self.assertPresence("Zelda")
-            self.assertTitle("Anton Armin A. Administrator")
+            self.assertTitle("Anton Administrator")
             self.assertPresence("03.04.1933")
 
             # Test quick partial export

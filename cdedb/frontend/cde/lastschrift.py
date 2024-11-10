@@ -390,7 +390,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
                 transaction['account_owner'] = "{} {}".format(
-                    persona['given_names'], persona['family_name'])
+                    persona['legal_given_names'], persona['family_name'])
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])

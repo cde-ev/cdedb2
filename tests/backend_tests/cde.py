@@ -31,9 +31,9 @@ class TestCdEBackend(BackendTest):
     @as_users("berta", "vera")
     def test_basics(self) -> None:
         data = self.core.get_cde_user(self.key, self.user['id'])
-        data['display_name'] = "Zelda"
+        data['nickname'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'display_name', 'telephone'}}
+                  {'id', 'nickname', 'telephone'}}
         generation = self.core.changelog_get_generation(self.key, self.user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
@@ -127,7 +127,7 @@ class TestCdEBackend(BackendTest):
             spec=QueryScope.cde_member.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
-                ("given_names,display_name", QueryOperators.regex, '[ae]'),
+                ("given_names,nickname", QueryOperators.regex, '[ae]'),
                 ("country,country2", QueryOperators.empty, None)],
             order=(("family_name,birth_name", True),))
         result = self.cde.submit_general_query(self.key, query)
