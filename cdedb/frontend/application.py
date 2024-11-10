@@ -301,6 +301,7 @@ class Application(BaseApp):
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')
+                user.realm_roles = realm_roles
 
                 # Insert orga and moderator status context
                 orga: set[int] = set()

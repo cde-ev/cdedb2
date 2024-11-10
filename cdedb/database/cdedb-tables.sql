@@ -978,11 +978,11 @@ GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.helpers (
         id                      serial PRIMARY KEY,
-        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id),
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
 );
-GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON event.helpers TO cdb_admin;
 GRANT SELECT, UPDATE ON event.helpers_id_seq TO cdb_admin;
-GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
+GRANT SELECT ON event.helpers TO cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.orga_apitokens (
         id                      serial PRIMARY KEY,

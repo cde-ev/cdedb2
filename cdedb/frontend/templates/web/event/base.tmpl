@@ -168,15 +168,14 @@
     {% else %}
         <h3 class="heading-sidebar">{% trans %}Events{% endtrans %}</h3>
         <div class="list-group tear-down">
-            {% if 'event_mgmt' in user.admin_views %}
-                {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",
+            {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",
                              icon="caret-right", active=(sidenav_active == 'event_index')) }}
+            {% if 'event_list' in user.admin_views %}
                 {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
-            {% else %}
-                {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item", icon="caret-right",
-                             active=(sidenav_active == 'event_index')) }}
             {% endif %}
+            {{ util.href(cdedblink("event/list_event_helpers"), gettext("Event Helpers"), aclass="list-group-item",
+                         icon="handshake-angle", active=(sidenav_active == 'event_helpers')) }}
         </div>
         {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
             <div class="list-group tear-down">
@@ -198,12 +197,12 @@
     {% if ambience['event'] %}
         {% if user.persona_id in ambience['event']['orgas'] %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), ["event_mgmt"], None),
+                    (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
                     (gettext("Finance Administration"), ["finance"], None),
                 )) }}
         {% else %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), ["event_mgmt"], None),
+                    (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
                     (gettext("Orga Controls"), ["event_orga"], None),
                     (gettext("Finance Administration"), ["finance"], None),
                 )) }}

@@ -540,6 +540,8 @@ class EventLogCodes(CdEIntEnum):
     event_changed = 2  #:
     event_deleted = 3  #:
     event_archived = 4  #:
+    helper_added = 7  #:
+    helper_removed = 8  #:
     orga_added = 10  #:
     orga_removed = 11  #:
     part_created = 15  #:

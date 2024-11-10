@@ -103,7 +103,7 @@ class EventEventMixin(EventBaseFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
 
         events_registrations: dict[vtypes.ProtoID, int] = {}
-        if self.is_admin(rs):
+        if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles['event']:
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
                 events_registrations[event.id] = len(regs)
@@ -269,6 +269,45 @@ class EventEventMixin(EventBaseFrontend):
                                 error=n_("Nothing to remove."))
         return self.redirect(rs, "event/show_event")
 
+    @access("event")
+    def list_event_helpers(self, rs: RequestState) -> Response:
+        event_helper_ids = self.eventproxy.get_event_helpers(rs)
+        event_helpers = self.coreproxy.get_personas(rs, event_helper_ids)
+        return self.render(rs, 'event/list_event_helpers',
+                   {'event_helpers': event_helpers})
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdata("persona_id")
+    def add_event_helper(self, rs: RequestState, persona_id: vtypes.CdedbID,
+                         ) -> Response:
+        """Make an additional persona become orga."""
+        if rs.has_validation_errors():
+            # Shortcircuit if we have got no workable cdedbid
+            return self.list_event_helpers(rs)
+        try:
+            self.eventproxy.validate_persona_ids(rs, {persona_id})
+        except ValueError as e:
+            rs.append_validation_error(('persona_id', e))
+        if rs.has_validation_errors():
+            return self.list_event_helpers(rs)
+        code = self.eventproxy.add_event_helpers(rs, {persona_id})
+        rs.notify_return_code(code, error=n_("Action had no effect."))
+        return self.redirect(rs, "event/list_event_helpers")
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdata("persona_id")
+    def remove_event_helper(self, rs: RequestState, persona_id: vtypes.ID,
+                            ) -> Response:
+        """Remove a persona as orga of an event.
+
+        This is only available for admins. This can drop your own orga role.
+        """
+        if rs.has_validation_errors():
+            return self.list_event_helpers(rs)
+        code = self.eventproxy.remove_event_helper(rs, persona_id)
+        rs.notify_return_code(code, error=n_("Action had no effect."))
+        return self.redirect(rs, "event/list_event_helpers")
+
     @access("event_admin", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orga_id")
@@ -278,13 +317,10 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable cdedbid
             return self.show_event(rs, event_id)
-        if not self.coreproxy.verify_id(rs, orga_id, is_archived=False):
-            rs.append_validation_error(
-                ('orga_id',
-                 ValueError(n_("This user does not exist or is archived."))))
-        if not self.coreproxy.verify_persona(rs, orga_id, {"event"}):
-            rs.append_validation_error(
-                ('orga_id', ValueError(n_("This user is not an event user."))))
+        try:
+            self.eventproxy.validate_persona_ids(rs, {orga_id})
+        except ValueError as e:
+            rs.append_validation_error(('persona_id', e))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})

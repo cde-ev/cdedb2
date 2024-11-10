@@ -44,7 +44,7 @@ def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
     return (
         "event_admin" in rs.user.roles
         or event_id in rs.user.orga and required_privilege in orga_privileges
-        or ("event_helper" in rs.user.realm_roles
+        or ("event_helper" in rs.user.realm_roles['event']
             and required_privilege in event_helper_privileges)
         # finance_admins are allowed here to book event fees.
         or ("finance_admin" in rs.user.roles

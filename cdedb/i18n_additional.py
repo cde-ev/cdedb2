@@ -86,6 +86,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.event_changed"),
     n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.event_archived"),
+    n_("EventLogCodes.helper_added"),
+    n_("EventLogCodes.helper_removed"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),

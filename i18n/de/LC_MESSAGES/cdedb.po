@@ -16695,8 +16695,8 @@ msgid "advanced management"
 msgstr "Erweiterte Verwaltung"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:155
-msgid "ID of the new Subscriber"
-msgstr "ID des neuen Abonnenten"
+msgid "ID of the new subscribers"
+msgstr "ID der neuen Abonnenten"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:195
 #, python-format

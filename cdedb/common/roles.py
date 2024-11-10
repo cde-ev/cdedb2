@@ -300,7 +300,8 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
     "core_user", "core", "user_review",
     "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
     "finance",
-    "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
+    "event_user", "event_mgmt", "event_list", "event_orga",
+    "ml_mgmt_event", "ml_mod_event",
     "ml_user", "ml_mgmt", "ml_mod",
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
@@ -331,10 +332,10 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "finance_admin" in roles:
         result |= {"finance"}
     if "event_admin" in roles:
-        result |= {"event_user", "user_review", "event_mgmt", "event_orga",
-                   "ml_mgmt_event", "ml_mod_event"}
+        result |= {"event_user", "user_review", "event_mgmt", "event_list",
+                   "event_orga", "ml_mgmt_event", "ml_mod_event"}
     if "event_helper" in roles:
-        result |= {"event_orga"}
+        result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
         result |= {"ml_user", "ml_mgmt", "ml_mod"}
     if "cdelokal_admin" in roles:

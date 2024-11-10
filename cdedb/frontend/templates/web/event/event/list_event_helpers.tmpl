@@ -1,0 +1,73 @@
+{% set sidenav_active='event_helpers' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/logging.tmpl" as logging with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}Event Helpers{% endtrans %}
+    [{{ event_helpers|length }}]
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/list_event_helpers"), gettext("Event Helpers"), active="True") }}
+{% endblock %}
+{% block content %}
+    <p>
+        {% trans %}
+            Event helpers have comprehensive readonly access to event information which is not privacy-sensitive.
+            Specifically, they have only aggregated access to registration data.
+            By contrast, like orgas, event admins have full access to all event data.
+        {% endtrans %}
+    </p>
+    {% if 'event_mgmt' in user.admin_views %}
+        <form action="{{ cdedblink('event/add_event_helper') }}" method="POST"
+              id="addeventhelperform" class="p">
+            {{ util.anti_csrf_token('event/add_event_helper') }}
+            <div class="input-group has-success">
+                <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid="input-add-event-helper",
+                                   arialabel=gettext("ID of the new event helper")) }}
+                <script nonce="{{ csp_nonce }}">
+                    $('#input-add-event-helper').cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') }}',
+                        {{ {'kind': 'event_user'}|tojson }},
+                        {{ event_helpers|list|tojson }},
+                        false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+                    );
+                </script>
+                <div class="input-group-btn">
+                    {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
+                </div>
+            </div>
+            {{ util.output_errors('persona_id', wrapper=True) }}
+        </form>
+    {% endif %}
+
+    <div class="row" id="subscriber-list">
+        {% for list in event_helpers | slice(2 if event_helpers|length > 5 else 1) %}
+            <div class="col-sm-6">
+                <ul class="nosp slim">
+                    {% for persona_id in list %}
+                        <li class="hide-hover-container clearfix-after">
+                            {{ util.persona_anchor(event_helpers[persona_id]) }}
+                            {% if 'event_mgmt' in user.admin_views %}
+                                <form action="{{ cdedblink('event/remove_event_helper') }}"
+                                      method="POST"
+                                      id="removesubscriberform{{ persona_id }}"
+                                      class="hide-hover display-inline">
+                                    {{ util.anti_csrf_token('event/remove_event_helper') }}
+                                    {{ util.input_hidden(name="persona_id", value=persona_id) }}
+                                    {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                                            title=gettext("Remove %(name)s as event helper")|format(
+                                                name=util.persona_name(event_helpers[persona_id]))|s) }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -34,13 +34,10 @@
                 {%- endif %})
             {% endif %}
         </div>
-        {% if "event_mgmt" in user.admin_views %}
+        {% if "event_list" in user.admin_views %}
         <div class="col-sm-3 small">
-            <a href="{{ querylink(event['id']) }}">
-                {% trans count=events_registrations[event.id] %}
-                	{{ count }} Registrations
-                {% endtrans -%}
-            </a>,
+            {{ util.href(querylink(event['id']), "%s Registrations"|s|format(events_registrations[event.id]),
+                         readonly="event_mgmt" not in user.admin_views) }},
             {% trans count=event['orgas']|length %}
                 {{ count }} Orga
             {%- pluralize count -%}
@@ -63,7 +60,7 @@
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for entry in events.values()|sort %}
             {% if not entry['is_archived'] and
-                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                    ('event_list' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}
@@ -73,9 +70,17 @@
     <div class="list-group list-group-hover list-group-condensed" id="archived-events">
         {% for entry in events.values()|sort(reverse=True) %}
             {% if entry['is_archived'] and
-                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                    ('event_list' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block adminviews %}
+    {{ util.admin_views_toggle((
+            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["event_user"]),
+            (gettext("Event Administration"), ["event_mgmt", "event_list"], None),
+            (gettext("Auditor"), ["auditor"], None),
+    )) }}
 {% endblock %}

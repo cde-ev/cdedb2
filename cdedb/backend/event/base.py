@@ -324,6 +324,58 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_archived, event_id)
 
     @access("event_admin")
+    def validate_persona_ids(self, rs: RequestState, persona_ids: Collection[int],
+                             ) -> None:
+        """Validate whether persona_ids are valid for receiving event privileges."""
+        if not self.core.verify_ids(rs, persona_ids, is_archived=False):
+            raise ValueError(n_(
+                "Some of these personas do not exist or are archived."))
+        if not self.core.verify_personas(rs, persona_ids, {"event"}):
+            raise ValueError(n_("Some of these orgas are not event users."))
+
+    @access("event_admin")
+    def add_event_helpers(self, rs: RequestState, persona_ids: Collection[int],
+                          ) -> DefaultReturnCode:
+        """Add event helpers."""
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        ret = 1
+        with Atomizer(rs):
+            self.validate_persona_ids(rs, persona_ids)
+            for anid in xsorted(persona_ids):
+                # on conflict do nothing
+                r = self.sql_insert(rs, "event.helpers", {'persona_id': anid},
+                                    drop_on_conflict=True)
+                if r:
+                    self.event_log(rs, const.EventLogCodes.helper_added, event_id=None,
+                                   persona_id=anid)
+                ret *= r
+
+        # Update session helper status
+        if rs.user.persona_id in persona_ids:
+            rs.user.realm_roles['event'].add('event_helper')
+
+        return ret
+
+    @access("event_admin")
+    def remove_event_helper(self, rs: RequestState, persona_id: int,
+                            ) -> DefaultReturnCode:
+        """Remove a single event helper."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = "DELETE FROM event.helpers WHERE persona_id = %s"
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, [persona_id])
+            if ret:
+                self.event_log(rs, const.EventLogCodes.helper_removed, event_id=None,
+                               persona_id=persona_id)
+
+            # Update session helper status
+            if rs.user.persona_id == persona_id:
+                rs.user.realm_roles['event'].remove('event_helper')
+
+        return ret
+
+    @access("event_admin")
     def add_event_orgas(self, rs: RequestState, event_id: int,
                         persona_ids: Collection[int]) -> DefaultReturnCode:
         """Add orgas to an event.
@@ -338,11 +390,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
-                raise ValueError(n_(
-                    "Some of these orgas do not exist or are archived."))
-            if not self.core.verify_personas(rs, persona_ids, {"event"}):
-                raise ValueError(n_("Some of these orgas are not event users."))
+            self.validate_persona_ids(rs, persona_ids)
             self.assert_offline_lock(rs, event_id=event_id)
 
             for anid in xsorted(persona_ids):
