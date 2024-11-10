@@ -1772,7 +1772,7 @@ class TestAssemblyBackend(BackendTest):
 
                     self.assembly.get_ballot_result(self.key, ballot_id)
 
-                if assemblies[assembly_id]['is_active']:
+                if assembly['is_active']:
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
                 else:
                     with self.assertRaises(ValueError):
